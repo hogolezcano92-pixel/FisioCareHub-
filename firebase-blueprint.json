@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for patients and physiotherapists",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["patient", "physiotherapist"] },
+        "name": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "bio": { "type": "string" },
+        "documents": { 
+          "type": "array",
+          "items": { "type": "string", "format": "uri" }
+        },
+        "subscription": {
+          "type": "object",
+          "properties": {
+            "plan": { "type": "string", "enum": ["free", "basic", "premium"] },
+            "status": { "type": "string", "enum": ["active", "inactive", "trial"] },
+            "expiryDate": { "type": "string", "format": "date-time" },
+            "billingCycle": { "type": "string", "enum": ["monthly", "yearly"] }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "name"]
+    },
+    "MedicalRecord": {
+      "title": "Medical Record",
+      "description": "Shared medical records (prontuário) between physio and patient",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "physioId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "content": { "type": "string" },
+        "attachments": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "physioId", "content"]
+    },
+    "Triage": {
+      "title": "AI Triage",
+      "description": "Patient self-triage using AI",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "symptoms": { "type": "string" },
+        "aiAnalysis": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "symptoms", "aiAnalysis"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Scheduled physiotherapy sessions",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "physioId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "completed"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "physioId", "date", "status"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Real-time messages between users",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["senderId", "receiverId", "text"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/records/{recordId}": {
+      "schema": "MedicalRecord",
+      "description": "Medical records"
+    },
+    "/triages/{triageId}": {
+      "schema": "Triage",
+      "description": "AI Triage results"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Scheduled sessions"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Chat messages"
+    }
+  }
+}

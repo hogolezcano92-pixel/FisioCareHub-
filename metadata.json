@@ -1,0 +1,5 @@
+{
+  "name": "FisioCareHub",
+  "description": "Plataforma completa para conexão entre fisioterapeutas e pacientes, com prontuário compartilhado e triagem por IA.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

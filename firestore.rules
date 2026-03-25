@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, email format)
+    //   - name: string (required)
+    //   - role: string (required, 'patient' | 'physiotherapist')
+    //   - createdAt: string (required, ISO 8601)
+    //   - photoURL: string (optional, URI)
+    //   - bio: string (optional)
+    //   - documents: list (optional, list of URIs)
+    //   - subscription: map (optional)
+    //
+    // [Other collections follow similar patterns]
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isAuthenticated() &&
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "hogolezcano92@gmail.com" && request.auth.token.email_verified == true));
+    }
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidUser(data) {
+      let allowedFields = ['uid', 'email', 'name', 'role', 'createdAt', 'photoURL', 'bio', 'documents', 'subscription'];
+      return data.keys().hasOnly(allowedFields) &&
+             data.uid is string && 
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) && 
+             data.role in ['patient', 'physiotherapist'] && 
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // Medical Records
+    match /records/{recordId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.physioId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.physioId;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.physioId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Triages
+    match /triages/{triageId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.patientId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.patientId;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.patientId || isAdmin());
+    }
+
+    // Appointments
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.physioId || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.physioId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId;
+    }
+  }
+}
