@@ -31,9 +31,12 @@ service cloud.firestore {
     }
     function isAdmin() {
       return isAuthenticated() &&
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "hogolezcano92@gmail.com" && request.auth.token.email_verified == true));
+        ((request.auth.token.email == "hogolezcano92@gmail.com" || 
+          request.auth.token.email == "hugo_lezcano92@hotmail.com" ||
+          request.auth.token.email == "lezcanohugo662@gmail.com") && 
+          request.auth.token.email_verified == true ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
     function isValidEmail(email) {
       return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
@@ -43,12 +46,12 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      let allowedFields = ['uid', 'email', 'name', 'role', 'createdAt', 'photoURL', 'bio', 'documents', 'subscription'];
+      let allowedFields = ['uid', 'email', 'name', 'role', 'gender', 'createdAt', 'photoURL', 'bio', 'documents', 'subscription', 'phone', 'specialty', 'city', 'serviceType', 'status', 'approved'];
       return data.keys().hasOnly(allowedFields) &&
              data.uid is string && 
              data.uid == request.auth.uid &&
              isValidEmail(data.email) && 
-             data.role in ['patient', 'physiotherapist'] && 
+             data.role in ['patient', 'physiotherapist', 'admin'] && 
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              isValidDateString(data.createdAt);
     }
@@ -58,6 +61,44 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated();
+    }
+
+    // Physiotherapists (Professional profiles)
+    match /physiotherapists/{physioId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participants || isAdmin());
+    }
+
+    // Documents Collection
+    match /documents/{docId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.physioId || request.auth.uid == resource.data.patientId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.physioId;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.physioId || isAdmin());
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.physioId || isAdmin());
     }
 
     // Medical Records
@@ -83,10 +124,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Chats
-    match /chats/{chatId} {
+    // Test Collection (for connection testing)
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Settings (System Configuration)
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
+    }
+
+    // Messages (Legacy/Support - redirecting to chats)
+    match /messages/{messageId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId;
+      allow create: if isAuthenticated();
     }
   }
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db, storage, handleFirestoreError, OperationType } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSubscription } from '../hooks/useSubscription';
 import { 
   User, 
   Mail, 
@@ -19,11 +19,19 @@ import {
   Bell,
   Globe,
   LogOut,
-  AlertTriangle
+  AlertTriangle,
+  CreditCard,
+  Zap,
+  ExternalLink,
+  Crown,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { deleteUser, sendPasswordResetEmail } from 'firebase/auth';
+import { deleteUser, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { cn } from '../lib/utils';
+import { uploadProfilePhoto, uploadDocument } from '../services/supabaseStorage';
+import { getSupabase } from '../supabaseClient';
 
 type Tab = 'profile' | 'account' | 'settings';
 
@@ -32,13 +40,35 @@ export default function Profile() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [loadingPortal, setLoadingPortal] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check Supabase Configuration
+    try {
+      getSupabase();
+      setSupabaseStatus('connected');
+    } catch (e) {
+      setSupabaseStatus('error');
+    }
+  }, []);
   
   // Form fields
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
+  const [specialty, setSpecialty] = useState('');
+  const [city, setCity] = useState('');
+  const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
+
+  const subscriptionInfo = useSubscription();
+  const { isPro, loading: subLoading } = subscriptionInfo;
 
   useEffect(() => {
     if (user) {
@@ -48,6 +78,10 @@ export default function Profile() {
           setUserData(data);
           setName(data.name);
           setBio(data.bio || '');
+          setGender(data.gender || '');
+          setSpecialty(data.specialty || '');
+          setCity(data.city || '');
+          setServiceType(data.serviceType || 'ambos');
         }
         setLoading(false);
       });
@@ -60,13 +94,44 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
+      const userRef = doc(db, 'users', user.uid);
+      const updateData: any = {
         name,
-        bio
-      });
-      alert("Perfil atualizado com sucesso!");
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+        bio,
+      };
+
+      if (isPhysio) {
+        updateData.gender = gender;
+        updateData.specialty = specialty;
+        updateData.city = city;
+        updateData.serviceType = serviceType;
+      }
+
+      await updateDoc(userRef, updateData);
+
+      // Update Auth Profile if name changed
+      if (name !== user.displayName) {
+        await updateProfile(user, { displayName: name });
+      }
+
+      import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
+    } catch (err: any) {
+      console.error("Erro ao atualizar perfil:", err);
+      let errorMessage = "Erro ao atualizar perfil. Tente novamente.";
+      
+      if (err.message && err.message.includes('permission')) {
+        errorMessage = "Você não tem permissão para atualizar este perfil.";
+      } else {
+        try {
+          // Try to parse our custom error format if it was thrown by handleFirestoreError elsewhere
+          const parsed = JSON.parse(err.message);
+          errorMessage = `Erro no banco de dados: ${parsed.error}`;
+        } catch {
+          errorMessage = err.message || errorMessage;
+        }
+      }
+      
+      import('sonner').then(({ toast }) => toast.error(errorMessage));
     } finally {
       setUpdating(false);
     }
@@ -76,18 +141,57 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    setUpdating(true);
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      import('sonner').then(({ toast }) => toast.error("A imagem deve ter no máximo 5MB."));
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setUploadProgress(0);
     try {
-      const fileRef = ref(storage, `avatars/${user.uid}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
+      console.log("Iniciando upload de foto para Supabase...");
       
-      await updateDoc(doc(db, 'users', user.uid), { photoURL: url });
-      setUserData({ ...userData, photoURL: url });
-    } catch (err) {
-      alert("Erro ao enviar foto.");
+      // Simulate progress since Supabase SDK doesn't natively support it for simple uploads
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const url = await uploadProfilePhoto(user.uid, file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      console.log("URL da foto obtida do Supabase:", url);
+      
+      // Update Auth Profile
+      try {
+        await updateProfile(user, { photoURL: url });
+      } catch (authErr) {
+        console.warn("Erro ao atualizar perfil de autenticação (não crítico):", authErr);
+      }
+      
+      // Update Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { photoURL: url });
+      
+      // Update local state
+      setUserData((prev: any) => prev ? { ...prev, photoURL: url } : { photoURL: url });
+      import('sonner').then(({ toast }) => toast.success("Foto de perfil atualizada com sucesso!"));
+    } catch (err: any) {
+      console.error("Erro detalhado no upload para Supabase:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao enviar foto: " + (err.message || "Erro desconhecido")));
     } finally {
-      setUpdating(false);
+      setUploadingPhoto(false);
+      setUploadProgress(0);
+      // Reset input
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -97,15 +201,17 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      const fileRef = ref(storage, `docs/${user.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
+      console.log("Iniciando upload de documento para Supabase...");
+      const url = await uploadDocument(user.uid, file);
       
-      const newDocs = [...(userData.documents || []), url];
+      const currentDocs = userData?.documents || [];
+      const newDocs = [...currentDocs, url];
       await updateDoc(doc(db, 'users', user.uid), { documents: newDocs });
       setUserData({ ...userData, documents: newDocs });
-    } catch (err) {
-      alert("Erro ao enviar documento.");
+      import('sonner').then(({ toast }) => toast.success("Documento enviado com sucesso!"));
+    } catch (err: any) {
+      console.error("Erro no upload de documento para Supabase:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao enviar documento: " + (err.message || "Erro desconhecido")));
     } finally {
       setUpdating(false);
     }
@@ -115,9 +221,9 @@ export default function Profile() {
     if (!user?.email) return;
     try {
       await sendPasswordResetEmail(auth, user.email);
-      alert("E-mail de redefinição de senha enviado!");
+      import('sonner').then(({ toast }) => toast.success("E-mail de redefinição de senha enviado!"));
     } catch (err: any) {
-      alert("Erro ao enviar e-mail: " + err.message);
+      import('sonner').then(({ toast }) => toast.error("Erro ao enviar e-mail: " + err.message));
     }
   };
 
@@ -131,17 +237,70 @@ export default function Profile() {
       // 2. Delete Auth user
       await deleteUser(user);
       
-      alert("Sua conta foi excluída permanentemente.");
+      import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída permanentemente."));
       navigate('/');
     } catch (err: any) {
+      console.error("Erro ao excluir conta:", err);
       if (err.code === 'auth/requires-recent-login') {
-        alert("Para excluir sua conta, você precisa ter feito login recentemente. Por favor, saia e entre novamente antes de tentar excluir.");
+        import('sonner').then(({ toast }) => toast.error("Para excluir sua conta, você precisa ter feito login recentemente. Por favor, saia e entre novamente antes de tentar excluir."));
       } else {
-        alert("Erro ao excluir conta: " + err.message);
+        import('sonner').then(({ toast }) => toast.error("Erro ao excluir conta: " + err.message));
       }
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    try {
+      const response = await fetch('/api/notify/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        import('sonner').then(({ toast }) => toast.success("Sucesso! Um e-mail de teste foi enviado para: " + userData.email));
+      } else {
+        import('sonner').then(({ toast }) => toast.error("Erro na configuração: " + (data.error || "Verifique suas credenciais SMTP.")));
+      }
+    } catch (err) {
+      import('sonner').then(({ toast }) => toast.error("Erro ao conectar com o servidor de e-mail."));
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!user) return;
+    setLoadingPortal(true);
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          userEmail: user.email
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        import('sonner').then(({ toast }) => toast.error(data.error || "Erro ao abrir portal de gerenciamento."));
+        // If no customer found, maybe redirect to subscription page
+        if (response.status === 404) {
+          navigate('/dashboard/assinatura');
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao abrir portal:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao conectar com o servidor de pagamentos."));
+    } finally {
+      setLoadingPortal(false);
     }
   };
 
@@ -161,6 +320,21 @@ export default function Profile() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Configurações do Perfil</h1>
           <p className="text-slate-500">Gerencie suas informações, segurança e preferências.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {supabaseStatus === 'connected' ? (
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-100">
+              <CheckCircle size={12} /> Supabase Conectado
+            </span>
+          ) : supabaseStatus === 'error' ? (
+            <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-rose-100">
+              <AlertTriangle size={12} /> Supabase Desconectado
+            </span>
+          ) : (
+            <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-slate-100">
+              <Loader2 size={12} className="animate-spin" /> Verificando Supabase...
+            </span>
+          )}
         </div>
       </header>
 
@@ -207,15 +381,39 @@ export default function Profile() {
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                   <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="relative group">
-                      <img
-                        src={userData?.photoURL}
-                        alt={userData?.name}
-                        className="w-32 h-32 rounded-[2rem] object-cover border-4 border-slate-50 shadow-xl"
-                        referrerPolicy="no-referrer"
-                      />
+                      <div className="relative">
+                        <img
+                          src={userData?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`}
+                          alt={userData?.name}
+                          className={cn(
+                            "w-32 h-32 rounded-[2rem] object-cover border-4 border-slate-50 shadow-xl transition-all",
+                            uploadingPhoto && "opacity-50 blur-[2px]"
+                          )}
+                          referrerPolicy="no-referrer"
+                        />
+                        {uploadingPhoto && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px] rounded-[2rem]">
+                            <Loader2 className="animate-spin text-blue-600 mb-2" size={32} />
+                            <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${uploadProgress}%` }}
+                                className="h-full bg-blue-600"
+                              />
+                            </div>
+                            <p className="text-[10px] font-black text-blue-600 mt-1">{Math.round(uploadProgress)}%</p>
+                          </div>
+                        )}
+                      </div>
                       <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl cursor-pointer shadow-lg hover:bg-blue-700 transition-all hover:scale-110">
                         <Camera size={20} />
-                        <input type="file" className="hidden" onChange={handlePhotoUpload} accept="image/*" />
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          onChange={handlePhotoUpload} 
+                          accept="image/*" 
+                          disabled={uploadingPhoto}
+                        />
                       </label>
                     </div>
                     <div className="flex-1 space-y-2">
@@ -243,6 +441,46 @@ export default function Profile() {
                           className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                         />
                       </div>
+                      {isPhysio ? (
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Título (Gênero)</label>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setGender('male')}
+                              className={cn(
+                                "flex-1 py-4 rounded-2xl text-sm font-bold border transition-all",
+                                gender === 'male' ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                              )}
+                            >
+                              Dr.
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGender('female')}
+                              className={cn(
+                                "flex-1 py-4 rounded-2xl text-sm font-bold border transition-all",
+                                gender === 'female' ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                              )}
+                            >
+                              Dra.
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">E-mail (Não editável)</label>
+                          <input
+                            type="email"
+                            disabled
+                            value={userData?.email}
+                            className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-slate-400 cursor-not-allowed"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {isPhysio && (
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">E-mail (Não editável)</label>
                         <input
@@ -252,7 +490,44 @@ export default function Profile() {
                           className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-slate-400 cursor-not-allowed"
                         />
                       </div>
-                    </div>
+                    )}
+
+                    {isPhysio && (
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Especialidade</label>
+                          <input
+                            type="text"
+                            value={specialty}
+                            onChange={(e) => setSpecialty(e.target.value)}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                            placeholder="Ex: Ortopedia, Neuro..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Cidade</label>
+                          <input
+                            type="text"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                            placeholder="Sua cidade"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
+                          <select
+                            value={serviceType}
+                            onChange={(e: any) => setServiceType(e.target.value)}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                          >
+                            <option value="domicilio">A Domicílio</option>
+                            <option value="online">Online</option>
+                            <option value="ambos">Ambos</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Biografia / Especialidades</label>
@@ -325,6 +600,78 @@ export default function Profile() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
+                {/* Subscription Management Section */}
+                {isPhysio && (
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform" />
+                    
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                          <CreditCard size={24} className="text-blue-600" />
+                          Gerenciamento de Assinatura
+                        </h3>
+                        <div className={cn(
+                          "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2",
+                          isPro 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-100" 
+                            : "bg-slate-100 text-slate-500"
+                        )}>
+                          {isPro ? (
+                            <><Zap size={14} fill="currentColor" /> Plano Pro</>
+                          ) : (
+                            "Plano Basic"
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Status Atual</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-lg font-bold text-slate-900 capitalize">
+                              {subscriptionInfo?.status === 'active' ? 'Ativo' : 'Inativo / Pendente'}
+                            </p>
+                            {isPro && (
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-black uppercase tracking-widest">PRO</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Próxima Renovação</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {subscriptionInfo?.current_period_end ? new Date(subscriptionInfo.current_period_end).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {isPro ? (
+                          <button
+                            onClick={handleManageSubscription}
+                            disabled={loadingPortal}
+                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {loadingPortal ? <Loader2 className="animate-spin" size={20} /> : <ExternalLink size={20} />}
+                            Gerenciar no Stripe
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => navigate('/subscription')}
+                            className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                          >
+                            <Zap size={20} fill="currentColor" />
+                            Fazer Upgrade para Pro
+                          </button>
+                        )}
+                        <p className="text-xs text-slate-400 sm:max-w-[200px] leading-relaxed">
+                          Gerencie seus dados de pagamento, faturas e cancelamento diretamente no portal seguro do Stripe.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                   <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                     <Lock size={24} className="text-blue-600" />
@@ -414,6 +761,47 @@ export default function Profile() {
                         </div>
                       </div>
                       <button className="text-blue-600 font-bold text-sm">Alterar</button>
+                    </div>
+
+                    <div className="pt-6 border-t border-slate-100">
+                      <h4 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Sistema de E-mail</h4>
+                      <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
+                        <div className="flex items-start gap-4 mb-6">
+                          <div className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <Mail size={20} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-blue-900">Teste de Notificações</p>
+                            <p className="text-sm text-blue-700/70">
+                              Verifique se as notificações por e-mail estão configuradas corretamente enviando um teste para si mesmo.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                          <div className="flex gap-3">
+                            <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
+                            <div className="space-y-1">
+                              <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Configuração Necessária</p>
+                              <p className="text-xs text-amber-800 leading-relaxed">
+                                Para que os e-mails funcionem, você deve configurar as variáveis <strong>SMTP_USER</strong> e <strong>SMTP_PASS</strong> no menu de Configurações do AI Studio.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleTestEmail}
+                          disabled={testingEmail}
+                          className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {testingEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />}
+                          Enviar E-mail de Teste
+                        </button>
+                        <p className="text-[10px] text-blue-600/60 text-center mt-3 font-medium">
+                          O e-mail será enviado para: {userData?.email}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

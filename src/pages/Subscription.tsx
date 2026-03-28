@@ -6,76 +6,46 @@ import { motion } from 'motion/react';
 import { Check, Zap, Shield, Star, CreditCard, Loader2, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const PLANS = [
   {
-    id: 'free',
-    name: 'Plano Gratuito',
+    id: 'basic',
+    name: 'Plano Basic',
     price: '0,00',
     period: 'mês',
-    description: 'Para quem quer conhecer a plataforma.',
+    description: 'Recursos essenciais para começar seus atendimentos.',
     features: [
-      'Até 3 prontuários digitais',
-      '1 Triagem por IA',
-      'Acesso básico à agenda',
-      'Sem chat em tempo real'
+      'Perfil básico',
+      'Visibilidade limitada na busca',
+      'Até 5 solicitações de pacientes por mês',
+      'Acesso básico à agenda'
     ],
     color: 'slate',
-    popular: false
+    popular: false,
+    trial: null
   },
   {
-    id: 'basic',
-    name: 'Plano Básico',
+    id: 'pro',
+    name: 'Plano Pro',
     price: '39,90',
     period: 'mês',
-    description: 'Ideal para profissionais autônomos iniciando na plataforma.',
+    description: 'Acelere sua carreira com visibilidade total e recursos ilimitados.',
     features: [
-      'Até 20 pacientes ativos',
-      'Agenda de consultas completa',
-      'Prontuários digitais ilimitados',
-      'Suporte via e-mail',
-      'Triagem IA básica'
+      'Solicitações de pacientes ilimitadas',
+      'Prioridade no ranking de busca',
+      'Badge de profissional verificado',
+      'Perfil profissional completo',
+      'Suporte prioritário'
     ],
     color: 'blue',
-    popular: false
-  },
-  {
-    id: 'premium_monthly',
-    name: 'Premium Mensal',
-    price: '79,90',
-    period: 'mês',
-    description: 'Para clínicas e profissionais que buscam o máximo de produtividade.',
-    features: [
-      'Pacientes ilimitados',
-      'Triagem IA avançada e ilimitada',
-      'Chat em tempo real ilimitado',
-      'Relatórios de evolução em PDF',
-      'Suporte prioritário via WhatsApp',
-      'Personalização de prontuários'
-    ],
-    color: 'indigo',
-    popular: true
-  },
-  {
-    id: 'premium_yearly',
-    name: 'Premium Anual',
-    price: '699,90',
-    period: 'ano',
-    description: 'Economize mais de 25% com o pagamento anual antecipado.',
-    features: [
-      'Todos os recursos do Premium',
-      'Desconto exclusivo de 27%',
-      'Acesso antecipado a novas funções',
-      'Consultoria de marketing para fisios',
-      'Selo de Profissional Verificado'
-    ],
-    color: 'emerald',
-    popular: false
+    popular: true,
+    trial: '30 dias grátis'
   }
 ];
 
 export default function Subscription() {
-  const [user] = useAuthState(auth);
+  const [user, authLoading] = useAuthState(auth);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -83,46 +53,105 @@ export default function Subscription() {
 
   useEffect(() => {
     if (user) {
-      getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) {
-          setUserData(snap.data());
-        }
-        setLoading(false);
-      });
+      getDoc(doc(db, 'users', user.uid))
+        .then(snap => {
+          if (snap.exists()) {
+            setUserData(snap.data());
+          }
+        })
+        .catch(err => {
+          console.error("Erro ao carregar dados do usuário:", err);
+          toast.error("Erro ao carregar perfil.");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleSubscribe = async (planId: string) => {
     if (!user) return;
+    
+    if (planId === 'basic') {
+      setSubmitting(planId);
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          subscription: {
+            plan: 'basic',
+            status: 'active',
+            expiryDate: null,
+            billingCycle: 'monthly'
+          }
+        });
+        toast.success("Plano Basic ativado!");
+        navigate('/dashboard');
+      } catch (err) {
+        toast.error("Erro ao ativar plano gratuito.");
+      } finally {
+        setSubmitting(null);
+      }
+      return;
+    }
+
     setSubmitting(planId);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
     try {
-      const planType = planId.includes('premium') ? 'premium' : 'basic';
-      const billingCycle = planId.includes('yearly') ? 'yearly' : 'monthly';
-      
-      const expiryDate = new Date();
-      if (billingCycle === 'yearly') {
-        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-      } else {
-        expiryDate.setMonth(expiryDate.getMonth() + 1);
-      }
-
-      await updateDoc(doc(db, 'users', user.uid), {
-        subscription: {
-          plan: planType,
-          status: 'active',
-          expiryDate: expiryDate.toISOString(),
-          billingCycle
-        }
+      console.log("[Stripe] Initiating checkout for plan:", planId);
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          userId: user.uid,
+          userEmail: user.email,
+        }),
       });
 
-      alert(`Parabéns! Você agora é um assinante ${planType.toUpperCase()}.`);
-      navigate('/dashboard');
-    } catch (err) {
-      alert("Erro ao processar assinatura.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
+        console.error("[Stripe] Server error response:", errorData);
+        throw new Error(errorData.details || errorData.error || `Erro no servidor: ${response.status}`);
+      }
+
+      const session = await response.json();
+      console.log("[Stripe] Session response:", session);
+
+      if (session.error) {
+        throw new Error(session.error);
+      }
+
+      if (session.url) {
+        toast.info("Redirecionando para o pagamento seguro...");
+        console.log("[Stripe] Redirecting to:", session.url);
+        
+        // Use a small delay to ensure toast is visible
+        setTimeout(() => {
+          try {
+            // Try to escape iframe if possible
+            if (window.top && window.top !== window) {
+              console.log("[Stripe] Attempting redirect via window.top");
+              window.top.location.href = session.url;
+            } else {
+              window.location.href = session.url;
+            }
+          } catch (e) {
+            console.warn("[Stripe] Redirect failed (likely iframe restriction), opening in new tab", e);
+            // Fallback: Open in new tab if iframe redirect is blocked
+            window.open(session.url, '_blank', 'noopener,noreferrer');
+            // Also update current location as a last resort
+            window.location.href = session.url;
+          }
+        }, 1000);
+      } else {
+        throw new Error("URL de checkout não recebida do servidor.");
+      }
+    } catch (err: any) {
+      console.error("[Stripe] Checkout error:", err);
+      toast.error(err.message || "Erro ao iniciar pagamento.");
     } finally {
       setSubmitting(null);
     }
@@ -140,7 +169,7 @@ export default function Subscription() {
     );
   }
 
-  const currentPlan = userData?.subscription?.plan || 'free';
+  const currentPlan = userData?.subscription?.plan || 'basic';
 
   return (
     <div className="space-y-16 pb-20">
@@ -151,7 +180,7 @@ export default function Subscription() {
         </p>
       </header>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-2 max-w-5xl mx-auto gap-8">
         {PLANS.map((plan) => (
           <motion.div
             key={plan.id}
@@ -178,6 +207,9 @@ export default function Subscription() {
                 <span className="text-4xl font-black text-slate-900">R$ {plan.price}</span>
                 <span className="text-slate-500 font-medium">/{plan.period}</span>
               </div>
+              {plan.trial && (
+                <p className="text-blue-600 font-bold text-sm mt-2">Teste grátis: {plan.trial}</p>
+              )}
             </div>
 
             <div className="flex-1 space-y-4 mb-10">
@@ -185,8 +217,7 @@ export default function Subscription() {
                 <div key={i} className="flex items-start gap-3 text-sm text-slate-600">
                   <div className={cn(
                     "mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0",
-                    plan.color === 'blue' ? "bg-blue-50 text-blue-600" : 
-                    plan.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"
+                    plan.color === 'blue' ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-600"
                   )}>
                     <Check size={12} strokeWidth={3} />
                   </div>
@@ -196,20 +227,23 @@ export default function Subscription() {
             </div>
 
             <button
+              type="button"
               onClick={() => handleSubscribe(plan.id)}
-              disabled={submitting !== null || (currentPlan === 'premium' && plan.id === 'basic')}
+              disabled={submitting !== null}
               className={cn(
                 "w-full py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2",
                 plan.popular 
                   ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100" 
                   : "bg-slate-900 text-white hover:bg-slate-800",
-                (currentPlan === plan.id.replace('_monthly', '').replace('_yearly', '')) && "opacity-50 cursor-default"
+                currentPlan === plan.id && "opacity-50 cursor-default"
               )}
             >
               {submitting === plan.id ? (
                 <Loader2 className="animate-spin" />
-              ) : currentPlan === plan.id.replace('_monthly', '').replace('_yearly', '') ? (
+              ) : currentPlan === plan.id ? (
                 'Plano Atual'
+              ) : plan.id === 'pro' ? (
+                <>Começar 30 dias grátis <ArrowRight size={18} /></>
               ) : (
                 <>Assinar Agora <ArrowRight size={18} /></>
               )}

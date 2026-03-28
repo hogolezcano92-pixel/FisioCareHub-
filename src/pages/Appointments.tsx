@@ -11,7 +11,8 @@ import {
   updateDoc, 
   doc, 
   getDocs,
-  getDoc
+  getDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -33,6 +34,7 @@ export default function Appointments() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   
   // Form
   const [targetEmail, setTargetEmail] = useState('');
@@ -54,14 +56,45 @@ export default function Appointments() {
             orderBy('date', 'asc')
           );
 
-          return onSnapshot(q, (snap) => {
-            setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          const unsubscribe = onSnapshot(q, (snap) => {
+            const apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setAppointments(apps);
             setLoading(false);
+
+            // Check for ID in URL
+            const params = new URLSearchParams(window.location.search);
+            const appId = params.get('id');
+            if (appId && data.role === 'physiotherapist') {
+              const appToConfirm = apps.find(a => a.id === appId) as any;
+              if (appToConfirm && appToConfirm.status === 'pending') {
+                setSelectedAppId(appId);
+              }
+            }
           });
+
+          return () => unsubscribe();
         }
       });
     }
   }, [user]);
+
+  const sendEmail = async (to: string, subject: string, body: string) => {
+    try {
+      const response = await fetch('/api/notify/appointment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, subject, body }),
+      });
+      const data = await response.json();
+      if (data.status === 'skipped') {
+        console.warn("E-mail não enviado: SMTP não configurado.");
+      } else {
+        console.log("E-mail enviado com sucesso.");
+      }
+    } catch (err) {
+      console.error("Erro ao enviar e-mail:", err);
+    }
+  };
 
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,36 +105,95 @@ export default function Appointments() {
       // Find other user
       const q = query(
         collection(db, 'users'), 
-        where('email', '==', targetEmail),
+        where('email', '==', targetEmail.trim().toLowerCase()),
         where('role', '==', userData.role === 'patient' ? 'physiotherapist' : 'patient')
       );
       const snap = await getDocs(q);
       
       if (snap.empty) {
-        alert(userData.role === 'patient' ? "Fisioterapeuta não encontrado." : "Paciente não encontrado.");
+        import('sonner').then(({ toast }) => toast.error(userData.role === 'patient' ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
         setSubmitting(false);
         return;
       }
 
+      const targetUser = snap.docs[0].data();
       const targetId = snap.docs[0].id;
       const appointmentDate = new Date(`${date}T${time}`).toISOString();
 
-      await addDoc(collection(db, 'appointments'), {
+      const docRef = await addDoc(collection(db, 'appointments'), {
         patientId: userData.role === 'patient' ? user?.uid : targetId,
         physioId: userData.role === 'physiotherapist' ? user?.uid : targetId,
+        patientEmail: userData.role === 'patient' ? user?.email : targetEmail,
+        physioEmail: userData.role === 'physiotherapist' ? user?.email : targetEmail,
+        patientName: userData.role === 'patient' ? userData.name : targetUser.name,
+        physioName: userData.role === 'physiotherapist' ? userData.name : targetUser.name,
         date: appointmentDate,
         status: 'pending',
         notes,
         createdAt: new Date().toISOString()
       });
 
+      // Create notification for target user
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetId,
+        title: 'Nova Solicitação de Agendamento',
+        message: `${userData.name} solicitou uma consulta para o dia ${new Date(appointmentDate).toLocaleDateString('pt-BR')}.`,
+        type: 'appointment',
+        read: false,
+        createdAt: serverTimestamp(),
+        link: '/appointments'
+      });
+
+      // Send email notification
+      const confirmLink = `${window.location.origin}/appointments?id=${docRef.id}`;
+      
+      if (userData.role === 'patient') {
+        // Patient scheduling -> Notify Physio
+        await sendEmail(
+          targetEmail,
+          "Novo Agendamento - FisioCareHub",
+          `
+          <div style="font-family: sans-serif; color: #334155;">
+            <h2 style="color: #2563eb;">Olá, ${targetUser.name}!</h2>
+            <p>O paciente <strong>${userData.name}</strong> solicitou um novo agendamento.</p>
+            <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
+            <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
+            <br/>
+            <a href="${confirmLink}" style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Confirmar Agendamento
+            </a>
+          </div>
+          `
+        );
+      } else {
+        // Physio scheduling -> Notify Patient
+        await sendEmail(
+          targetEmail,
+          "Nova Consulta Agendada - FisioCareHub",
+          `
+          <div style="font-family: sans-serif; color: #334155;">
+            <h2 style="color: #2563eb;">Olá, ${targetUser.name}!</h2>
+            <p>O(A) ${userData.gender === 'female' ? 'Dra.' : 'Dr.'} <strong>${userData.name}</strong> agendou uma nova sessão para você.</p>
+            <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
+            <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
+            <br/>
+            <p>Acesse o painel para ver os detalhes da sua sessão.</p>
+          </div>
+          `
+        );
+      }
+
       setShowModal(false);
       setTargetEmail('');
       setDate('');
       setTime('');
       setNotes('');
+      import('sonner').then(({ toast }) => toast.success("Agendamento solicitado com sucesso!"));
     } catch (err) {
-      alert("Erro ao agendar.");
+      console.error("Erro ao agendar:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao agendar. Tente novamente."));
     } finally {
       setSubmitting(false);
     }
@@ -109,9 +201,62 @@ export default function Appointments() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
+      const app = appointments.find(a => a.id === id);
+      if (!app) return;
+
       await updateDoc(doc(db, 'appointments', id), { status });
+      
+      // Create notification for the other party
+      const targetId = isPhysio ? app.patientId : app.physioId;
+      const statusText = status === 'confirmed' ? 'confirmado' : 'cancelado';
+      
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetId,
+        title: `Agendamento ${statusText}`,
+        message: `Seu agendamento para o dia ${new Date(app.date).toLocaleDateString('pt-BR')} foi ${statusText}.`,
+        type: 'appointment',
+        read: false,
+        createdAt: serverTimestamp(),
+        link: '/appointments'
+      });
+      
+      // If confirmed, send email to patient
+      if (status === 'confirmed') {
+        await sendEmail(
+          app.patientEmail,
+          "Consulta Confirmada - FisioCareHub",
+          `
+          <div style="font-family: sans-serif; color: #334155;">
+            <h2 style="color: #10b981;">Olá, ${app.patientName}!</h2>
+            <p>Sua consulta com <strong>${app.physioName}</strong> foi confirmada.</p>
+            <p><strong>Data:</strong> ${new Date(app.date).toLocaleDateString('pt-BR')}</p>
+            <p><strong>Horário:</strong> ${new Date(app.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <br/>
+            <p>Estamos ansiosos para atendê-lo!</p>
+          </div>
+          `
+        );
+      } else if (status === 'cancelled') {
+        const targetEmail = isPhysio ? app.patientEmail : app.physioEmail;
+        const targetName = isPhysio ? app.patientName : app.physioName;
+        
+        await sendEmail(
+          targetEmail,
+          "Agendamento Cancelado - FisioCareHub",
+          `
+          <div style="font-family: sans-serif; color: #334155;">
+            <h2 style="color: #ef4444;">Aviso de Cancelamento</h2>
+            <p>Olá, ${targetName}.</p>
+            <p>Informamos que o agendamento para o dia <strong>${new Date(app.date).toLocaleDateString('pt-BR')}</strong> foi cancelado.</p>
+            <br/>
+            <p>Por favor, acesse o aplicativo para reagendar ou entrar em contato.</p>
+          </div>
+          `
+        );
+      }
+      import('sonner').then(({ toast }) => toast.success(`Status atualizado para ${status}`));
     } catch (err) {
-      alert("Erro ao atualizar status.");
+      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status."));
     }
   };
 
@@ -166,7 +311,7 @@ export default function Appointments() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <User size={14} />
-                    {isPhysio ? `Paciente: ${app.patientId.slice(0, 8)}...` : `Fisioterapeuta: ${app.physioId.slice(0, 8)}...`}
+                    {isPhysio ? `Paciente: ${app.patientName}` : `Fisioterapeuta: ${app.physioName}`}
                   </div>
                 </div>
               </div>
@@ -288,6 +433,54 @@ export default function Appointments() {
                   {submitting ? <Loader2 className="animate-spin" /> : 'Confirmar Agendamento'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Confirmation Modal for Link */}
+      <AnimatePresence>
+        {selectedAppId && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedAppId(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 text-center"
+            >
+              <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CalendarCheck size={40} />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Confirmar Agendamento?</h2>
+              <p className="text-slate-500 mb-8">
+                Você recebeu uma solicitação de consulta. Deseja confirmar agora?
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    updateStatus(selectedAppId, 'cancelled');
+                    setSelectedAppId(null);
+                  }}
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                >
+                  Recusar
+                </button>
+                <button
+                  onClick={() => {
+                    updateStatus(selectedAppId, 'confirmed');
+                    setSelectedAppId(null);
+                  }}
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+                >
+                  Confirmar
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

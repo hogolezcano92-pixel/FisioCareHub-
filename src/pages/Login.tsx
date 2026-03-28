@@ -21,9 +21,10 @@ export default function Login() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user exists in Firestore, if not create as patient by default
       const userSnap = await getDoc(doc(db, 'users', user.uid));
-      if (!userSnap.exists()) {
+      const isNewUser = !userSnap.exists();
+      
+      if (isNewUser) {
         const userPath = `users/${user.uid}`;
         try {
           await setDoc(doc(db, 'users', user.uid), {
@@ -41,6 +42,9 @@ export default function Login() {
         }
       }
       
+      const welcomeMsg = isNewUser ? 'Bem-vindo ao FisioCareHub!' : `Bem-vindo de volta, ${user.displayName || 'Usuário'}!`;
+      import('sonner').then(({ toast }) => toast.success(welcomeMsg));
+      
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -56,18 +60,21 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      import('sonner').then(({ toast }) => toast.success('Login realizado com sucesso!'));
       navigate('/dashboard');
     } catch (err: any) {
       console.error("Erro no login:", err);
       
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('E-mail ou senha incorretos.');
+        setError('E-mail ou senha incorretos. Verifique se digitou corretamente ou se já possui uma conta.');
       } else if (err.code === 'auth/invalid-email') {
         setError('E-mail inválido.');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('O login por e-mail está desativado no momento.');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Muitas tentativas sem sucesso. Tente novamente mais tarde.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Erro de conexão com o Firebase. Verifique sua internet ou se há algum bloqueador de anúncios (AdBlock) impedindo a conexão.');
       } else {
         setError(err.message || 'Ocorreu um erro ao entrar em sua conta.');
       }

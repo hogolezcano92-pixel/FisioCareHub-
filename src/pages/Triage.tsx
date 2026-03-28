@@ -1,27 +1,41 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { analyzeSymptoms } from '../lib/gemini';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit, Send, Loader2, History, ChevronDown, ChevronUp, Crown, ArrowRight } from 'lucide-react';
+import { Gatekeeper } from '../components/Gatekeeper';
+import { useSubscription } from '../hooks/useSubscription';
+import { BrainCircuit, Send, Loader2, History, ChevronDown, ChevronUp, Crown, ArrowRight, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { formatDate } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { formatDate, cn } from '../lib/utils';
 
 export default function Triage() {
   const [user] = useAuthState(auth);
   const [userData, setUserData] = useState<any>(null);
-  const [symptoms, setSymptoms] = useState('');
+  const [painLocation, setPainLocation] = useState('');
+  const [painDuration, setPainDuration] = useState('');
+  const [painIntensity, setPainIntensity] = useState(5);
+  const [serviceType, setServiceType] = useState<'domicilio' | 'online'>('online');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const navigate = useNavigate();
+
+  const { isPro } = useSubscription();
 
   useEffect(() => {
     if (user) {
       getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) setUserData(snap.data());
+        if (snap.exists()) {
+          const data = snap.data();
+          setUserData(data);
+          if (data.role === 'physiotherapist') {
+            navigate('/dashboard');
+          }
+        }
       });
 
       const fetchHistory = async () => {
@@ -39,32 +53,31 @@ export default function Triage() {
 
   const handleTriage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!symptoms.trim() || loading) return;
-
-    // Restriction for free patients removed as per user request
-    // if (userData?.role === 'patient' && (!userData?.subscription?.plan || userData?.subscription?.plan === 'free') && history.length >= 1) {
-    //   alert("Você atingiu o limite de triagens gratuitas. Faça o upgrade para continuar usando a IA.");
-    //   return;
-    // }
+    if (loading) return;
 
     setLoading(true);
     setAnalysis(null);
 
     try {
+      const symptoms = `Local: ${painLocation}, Tempo: ${painDuration}, Intensidade: ${painIntensity}, Tipo: ${serviceType}`;
       const result = await analyzeSymptoms(symptoms);
       setAnalysis(result);
 
       await addDoc(collection(db, 'triages'), {
         patientId: user?.uid,
-        symptoms,
+        painLocation,
+        painDuration,
+        painIntensity,
+        serviceType,
         aiAnalysis: result,
         createdAt: new Date().toISOString()
       });
 
       // Refresh history
-      setHistory([{ symptoms, aiAnalysis: result, createdAt: new Date().toISOString() }, ...history]);
+      setHistory([{ painLocation, painDuration, painIntensity, serviceType, aiAnalysis: result, createdAt: new Date().toISOString() }, ...history]);
+      import('sonner').then(({ toast }) => toast.success("Triagem enviada com sucesso!"));
     } catch (err) {
-      alert("Erro ao processar triagem. Tente novamente.");
+      import('sonner').then(({ toast }) => toast.error("Erro ao processar triagem. Tente novamente."));
     } finally {
       setLoading(false);
     }
@@ -76,66 +89,112 @@ export default function Triage() {
         <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <BrainCircuit size={32} />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900">Triagem Inteligente</h1>
-        <p className="text-slate-500 mt-2">Descreva seus sintomas e receba uma análise preliminar por IA.</p>
+        <h1 className="text-3xl font-bold text-slate-900">Triagem Inicial</h1>
+        <p className="text-slate-500 mt-2">Preencha os dados abaixo para uma avaliação preliminar.</p>
       </header>
 
-      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden">
-        {userData?.role === 'physiotherapist' && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
-              <BrainCircuit size={32} />
+      <Gatekeeper featureId="ai-triage">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden">
+          <form onSubmit={handleTriage} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Local da Dor</label>
+                <input
+                  type="text"
+                  value={painLocation}
+                  onChange={(e) => setPainLocation(e.target.value)}
+                  placeholder="Ex: Lombar, Joelho, Pescoço"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-600 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Tempo de Dor</label>
+                <input
+                  type="text"
+                  value={painDuration}
+                  onChange={(e) => setPainDuration(e.target.value)}
+                  placeholder="Ex: 3 dias, 2 semanas, 1 mês"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-600 outline-none transition-all"
+                  required
+                />
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Área do Paciente</h3>
-            <p className="text-slate-500 mt-2 max-w-xs">
-              A triagem por IA é uma ferramenta para pacientes descreverem sintomas antes da consulta.
-            </p>
-          </div>
-        )}
 
-        {/* Paywall overlay removed as per user request */}
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Intensidade da Dor (0 a 10): {painIntensity}</label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                value={painIntensity}
+                onChange={(e) => setPainIntensity(parseInt(e.target.value))}
+                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-purple-600"
+              />
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wider">
+                <span>Sem dor</span>
+                <span>Moderada</span>
+                <span>Insuportável</span>
+              </div>
+            </div>
 
-        <form onSubmit={handleTriage} className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">O que você está sentindo?</label>
-            <textarea
-              value={symptoms}
-              onChange={(e) => setSymptoms(e.target.value)}
-              placeholder="Ex: Sinto uma dor aguda na lombar ao me abaixar, que irradia para a perna direita há 3 dias..."
-              className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none transition-all resize-none"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-100 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : <><Send size={20} /> Analisar Sintomas</>}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setServiceType('domicilio')}
+                  className={cn(
+                    "flex-1 py-4 rounded-2xl border-2 font-bold transition-all",
+                    serviceType === 'domicilio' ? "border-purple-600 bg-purple-50 text-purple-600" : "border-slate-100 text-slate-500"
+                  )}
+                >
+                  Domicílio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setServiceType('online')}
+                  className={cn(
+                    "flex-1 py-4 rounded-2xl border-2 font-bold transition-all",
+                    serviceType === 'online' ? "border-purple-600 bg-purple-50 text-purple-600" : "border-slate-100 text-slate-500"
+                  )}
+                >
+                  Online
+                </button>
+              </div>
+            </div>
 
-        <AnimatePresence>
-          {analysis && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mt-10 p-6 bg-purple-50 rounded-2xl border border-purple-100 overflow-hidden"
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-100 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
-                <BrainCircuit size={20} /> Resultado da Análise
-              </h3>
-              <div className="prose prose-purple max-w-none text-purple-900/80">
-                <ReactMarkdown>{analysis}</ReactMarkdown>
-              </div>
-              <div className="mt-6 p-4 bg-white/50 rounded-xl text-xs text-purple-700 italic">
-                Aviso: Esta análise é gerada por inteligência artificial e serve apenas como orientação. 
-                Consulte sempre um fisioterapeuta ou médico para um diagnóstico preciso.
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              {loading ? <Loader2 className="animate-spin" /> : <><Send size={20} /> Enviar Triagem</>}
+            </button>
+          </form>
+
+          <AnimatePresence>
+            {analysis && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-10 p-6 bg-purple-50 rounded-2xl border border-purple-100 overflow-hidden"
+              >
+                <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <BrainCircuit size={20} /> Resultado da Análise
+                </h3>
+                <div className="prose prose-purple max-w-none text-purple-900/80">
+                  <ReactMarkdown>{analysis}</ReactMarkdown>
+                </div>
+                <div className="mt-6 p-4 bg-white/50 rounded-xl text-xs text-purple-700 italic">
+                  Aviso: Esta análise é gerada por inteligência artificial e serve apenas como orientação. 
+                  Consulte sempre um fisioterapeuta ou médico para um diagnóstico preciso.
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </Gatekeeper>
 
       {/* History */}
       <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">

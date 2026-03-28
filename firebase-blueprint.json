@@ -7,55 +7,54 @@
       "properties": {
         "uid": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["patient", "physiotherapist"] },
+        "role": { "type": "string", "enum": ["patient", "physiotherapist", "admin"] },
         "name": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
-        "bio": { "type": "string" },
-        "documents": { 
-          "type": "array",
-          "items": { "type": "string", "format": "uri" }
-        },
-        "subscription": {
-          "type": "object",
-          "properties": {
-            "plan": { "type": "string", "enum": ["free", "basic", "premium"] },
-            "status": { "type": "string", "enum": ["active", "inactive", "trial"] },
-            "expiryDate": { "type": "string", "format": "date-time" },
-            "billingCycle": { "type": "string", "enum": ["monthly", "yearly"] }
-          }
-        },
+        "phone": { "type": "string" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "specialty": { "type": "string" },
+        "city": { "type": "string" },
+        "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "role", "name"]
     },
-    "MedicalRecord": {
-      "title": "Medical Record",
-      "description": "Shared medical records (prontuário) between physio and patient",
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient specific data",
       "type": "object",
       "properties": {
-        "patientId": { "type": "string" },
-        "physioId": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "content": { "type": "string" },
-        "attachments": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "history": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Physiotherapist": {
+      "title": "Physiotherapist",
+      "description": "Physiotherapist specific data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "crefito": { "type": "string" },
+        "specialty": { "type": "string" },
+        "city": { "type": "string" },
+        "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
+        "photoURL": { "type": "string", "format": "uri" },
+        "documents": { 
           "type": "array",
           "items": { "type": "string", "format": "uri" }
         },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "approved": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending_approval", "approved", "rejected"] }
       },
-      "required": ["patientId", "physioId", "content"]
-    },
-    "Triage": {
-      "title": "AI Triage",
-      "description": "Patient self-triage using AI",
-      "type": "object",
-      "properties": {
-        "patientId": { "type": "string" },
-        "symptoms": { "type": "string" },
-        "aiAnalysis": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["patientId", "symptoms", "aiAnalysis"]
+      "required": ["uid", "name", "email", "crefito", "specialty", "city", "serviceType"]
     },
     "Appointment": {
       "title": "Appointment",
@@ -64,16 +63,46 @@
       "properties": {
         "patientId": { "type": "string" },
         "physioId": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "completed"] },
-        "notes": { "type": "string" },
+        "problem": { "type": "string" },
+        "specialty": { "type": "string" },
+        "location": { "type": "string" },
+        "desiredTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["waiting", "accepted", "completed", "cancelled"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["patientId", "physioId", "date", "status"]
+      "required": ["patientId", "problem", "specialty", "status"]
     },
-    "ChatMessage": {
-      "title": "Chat Message",
-      "description": "Real-time messages between users",
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment records",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "commission": { "type": "number" },
+        "patientId": { "type": "string" },
+        "physioId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "paid", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "commission", "patientId", "physioId", "status"]
+    },
+    "Triage": {
+      "title": "Triage",
+      "description": "Patient self-triage",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "painLocation": { "type": "string" },
+        "painDuration": { "type": "string" },
+        "painIntensity": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "serviceType": { "type": "string", "enum": ["domicilio", "online"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "painLocation", "painDuration", "painIntensity", "serviceType"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat messages between users and support",
       "type": "object",
       "properties": {
         "senderId": { "type": "string" },
@@ -82,7 +111,22 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "read": { "type": "boolean" }
       },
-      "required": ["senderId", "receiverId", "text"]
+      "required": ["senderId", "receiverId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notifications",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["message", "appointment", "system"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "link": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "type", "read", "createdAt"]
     }
   },
   "firestore": {
@@ -90,21 +134,33 @@
       "schema": "User",
       "description": "User profiles"
     },
-    "/records/{recordId}": {
-      "schema": "MedicalRecord",
-      "description": "Medical records"
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Patient profiles"
     },
-    "/triages/{triageId}": {
-      "schema": "Triage",
-      "description": "AI Triage results"
+    "/physiotherapists/{physioId}": {
+      "schema": "Physiotherapist",
+      "description": "Physiotherapist profiles"
     },
     "/appointments/{appointmentId}": {
       "schema": "Appointment",
       "description": "Scheduled sessions"
     },
-    "/chats/{chatId}": {
-      "schema": "ChatMessage",
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment records"
+    },
+    "/triages/{triageId}": {
+      "schema": "Triage",
+      "description": "Triage results"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
       "description": "Chat messages"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
     }
   }
 }
