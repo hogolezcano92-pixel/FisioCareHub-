@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Check, Zap, Shield, Star, CreditCard, Loader2, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { invokeFunction } from '../lib/supabase';
 
 const PLANS = [
   {
@@ -99,25 +100,12 @@ export default function Subscription() {
 
     try {
       console.log("[Stripe] Initiating checkout for plan:", planId);
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId,
-          userId: user.uid,
-          userEmail: user.email,
-        }),
+      const session = await invokeFunction('stripe-checkout', {
+        planId,
+        userId: user.uid,
+        userEmail: user.email,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
-        console.error("[Stripe] Server error response:", errorData);
-        throw new Error(errorData.details || errorData.error || `Erro no servidor: ${response.status}`);
-      }
-
-      const session = await response.json();
       console.log("[Stripe] Session response:", session);
 
       if (session.error) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { 
   collection, 
   query, 
@@ -80,19 +80,11 @@ export default function Appointments() {
 
   const sendEmail = async (to: string, subject: string, body: string) => {
     try {
-      const response = await fetch('/api/notify/appointment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, subject, body }),
-      });
-      const data = await response.json();
-      if (data.status === 'skipped') {
-        console.warn("E-mail não enviado: SMTP não configurado.");
-      } else {
-        console.log("E-mail enviado com sucesso.");
-      }
+      const { invokeFunction } = await import('../lib/supabase');
+      await invokeFunction('send-email', { to, subject, body });
+      console.log("E-mail enviado com sucesso via Edge Function.");
     } catch (err) {
-      console.error("Erro ao enviar e-mail:", err);
+      console.error("Erro ao enviar e-mail via Edge Function:", err);
     }
   };
 

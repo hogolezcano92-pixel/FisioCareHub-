@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, MessageSquare, Calendar, Info, X, Check } from 'lucide-react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { 
   collection, 
   query, 

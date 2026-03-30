@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { getSupabase } from '../supabaseClient';
+import { getSupabase } from '../lib/supabase';
 
 export interface SubscriptionInfo {
   plan: 'basic' | 'pro';

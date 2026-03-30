@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth, db, handleFirestoreError, OperationType } from '../firebase';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, Chrome } from 'lucide-react';
@@ -11,7 +11,31 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Por favor, digite seu e-mail para redefinir a senha.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      import('sonner').then(({ toast }) => toast.success('E-mail de redefinição enviado! Verifique sua caixa de entrada.'));
+    } catch (err: any) {
+      console.error("Erro ao enviar e-mail de redefinição:", err);
+      if (err.code === 'auth/user-not-found') {
+        setError('E-mail não encontrado em nossa base.');
+      } else {
+        setError('Erro ao enviar e-mail de redefinição. Tente novamente.');
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -88,62 +112,73 @@ export default function Login() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100"
+        className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100"
       >
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-slate-900">Bem-vindo de volta</h2>
-          <p className="text-slate-500 mt-2">Acesse sua conta para continuar.</p>
+          <p className="text-base text-slate-500 mt-2">Acesse sua conta para continuar.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">E-mail</label>
+            <label className="block text-base font-semibold text-slate-700 mb-2">E-mail</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-base"
                 placeholder="seu@email.com"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Senha</label>
+            <label className="block text-base font-semibold text-slate-700 mb-2">Senha</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-base"
                 placeholder="••••••••"
               />
             </div>
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>
+            <p className="text-red-600 text-sm bg-red-50 p-4 rounded-2xl">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" /> : 'Entrar'}
           </button>
 
-          <div className="relative my-6">
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading || loading}
+              className="text-base text-blue-600 font-semibold hover:underline disabled:opacity-50 transition-all"
+            >
+              {resetLoading ? 'Enviando e-mail...' : 'Esqueci minha senha / Recuperar acesso'}
+            </button>
+          </div>
+
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Ou continue com</span>
+              <span className="px-4 bg-white text-slate-500 font-medium">Ou continue com</span>
             </div>
           </div>
 
@@ -151,14 +186,14 @@ export default function Login() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
           >
-            <Chrome size={20} className="text-blue-600" />
+            <Chrome size={24} className="text-blue-600" />
             Entrar com Google
           </button>
         </form>
 
-        <p className="text-center mt-6 text-slate-500">
+        <p className="text-center mt-8 text-base text-slate-500">
           Não tem uma conta? <Link to="/register" className="text-blue-600 font-bold hover:underline">Cadastrar</Link>
         </p>
       </motion.div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { collection, addDoc, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { analyzeSymptoms } from '../lib/gemini';
 import { motion, AnimatePresence } from 'motion/react';

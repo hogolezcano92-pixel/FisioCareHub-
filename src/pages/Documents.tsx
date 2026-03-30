@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, getDoc, doc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Gatekeeper } from '../components/Gatekeeper';
@@ -25,7 +25,7 @@ import {
   Printer,
   Lock
 } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { generateDocument } from '../lib/gemini';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
@@ -99,28 +99,12 @@ export default function Documents() {
 
     setGenerating(true);
     try {
-      const getGeminiKey = () => {
-        try {
-          if (!process.env.GEMINI_API_KEY) {
-            console.warn("Atenção: GEMINI_API_KEY não encontrada no ambiente.");
-          }
-          return process.env.GEMINI_API_KEY || "";
-        } catch (e) {
-          return "";
-        }
-      };
-      const ai = new GoogleGenAI({ apiKey: getGeminiKey() });
-      const model = ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Você é um assistente administrativo para fisioterapeutas. 
-        Gere um documento do tipo "${selectedTemplate?.name || 'Documento Geral'}" para o paciente "${patientName}".
-        Informações adicionais: ${additionalInfo}
-        O documento deve ser profissional, formal e seguir as normas brasileiras de saúde.
-        Use Markdown para formatação.`,
-      });
-
-      const response = await model;
-      setGeneratedContent(response.text || '');
+      const content = await generateDocument(
+        selectedTemplate?.name || 'Documento Geral',
+        patientName,
+        additionalInfo
+      );
+      setGeneratedContent(content || '');
     } catch (err) {
       console.error("Erro ao gerar com IA:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao gerar documento. Tente novamente."));

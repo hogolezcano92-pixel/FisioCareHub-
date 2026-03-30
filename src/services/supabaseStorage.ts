@@ -1,4 +1,4 @@
-import { getSupabase } from '../supabaseClient';
+import { getSupabase } from '../lib/supabase';
 
 export interface UploadProgress {
   progress: number;
@@ -96,4 +96,19 @@ export const uploadDocument = async (
     .getPublicUrl(path);
 
   return publicUrlData.publicUrl;
+};
+
+export const checkBuckets = async (): Promise<{ avatars: boolean; documents: boolean }> => {
+  const supabase = getSupabase();
+  const { data: buckets, error } = await supabase.storage.listBuckets();
+  
+  if (error) {
+    console.error("Erro ao listar buckets:", error);
+    throw error;
+  }
+
+  return {
+    avatars: buckets.some(b => b.name === 'avatars'),
+    documents: buckets.some(b => b.name === 'documents'),
+  };
 };

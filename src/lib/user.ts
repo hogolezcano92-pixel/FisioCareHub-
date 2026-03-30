@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 export async function getUserName(uid: string): Promise<string> {

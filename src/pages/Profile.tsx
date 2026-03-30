@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSubscription } from '../hooks/useSubscription';
@@ -30,8 +30,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { deleteUser, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { cn } from '../lib/utils';
-import { uploadProfilePhoto, uploadDocument } from '../services/supabaseStorage';
-import { getSupabase } from '../supabaseClient';
+import { uploadProfilePhoto, uploadDocument, checkBuckets } from '../services/supabaseStorage';
+import { getSupabase, invokeFunction } from '../lib/supabase';
 
 type Tab = 'profile' | 'account' | 'settings';
 
@@ -46,19 +46,8 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
-  const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check Supabase Configuration
-    try {
-      getSupabase();
-      setSupabaseStatus('connected');
-    } catch (e) {
-      setSupabaseStatus('error');
-    }
-  }, []);
-  
   // Form fields
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -255,18 +244,21 @@ export default function Profile() {
   const handleTestEmail = async () => {
     setTestingEmail(true);
     try {
-      const response = await fetch('/api/notify/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const data = await invokeFunction('send-email', {
+        to: userData.email,
+        subject: "Teste de Notificação - FisioCareHub",
+        body: `<h1>Olá ${userData.name}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
+        type: "email"
       });
-      const data = await response.json();
-      if (response.ok) {
-        import('sonner').then(({ toast }) => toast.success("Sucesso! Um e-mail de teste foi enviado para: " + userData.email));
-      } else {
-        import('sonner').then(({ toast }) => toast.error("Erro na configuração: " + (data.error || "Verifique suas credenciais SMTP.")));
+      
+      if (data.error) {
+        throw new Error(data.error);
       }
-    } catch (err) {
-      import('sonner').then(({ toast }) => toast.error("Erro ao conectar com o servidor de e-mail."));
+      
+      import('sonner').then(({ toast }) => toast.success("Sucesso! Um e-mail de teste foi enviado para: " + userData.email));
+    } catch (err: any) {
+      console.error("Erro ao enviar e-mail de teste:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro na configuração: " + (err.message || "Verifique suas credenciais de e-mail.")));
     } finally {
       setTestingEmail(false);
     }
@@ -276,29 +268,20 @@ export default function Profile() {
     if (!user) return;
     setLoadingPortal(true);
     try {
-      const response = await fetch('/api/create-portal-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          userEmail: user.email
-        }),
+      const { url } = await invokeFunction('stripe-portal', {
+        userId: user.uid,
+        userEmail: user.email,
+        customerId: userData?.subscription?.stripeCustomerId
       });
       
-      const data = await response.json();
-      
-      if (response.ok && data.url) {
-        window.location.href = data.url;
+      if (url) {
+        window.location.href = url;
       } else {
-        import('sonner').then(({ toast }) => toast.error(data.error || "Erro ao abrir portal de gerenciamento."));
-        // If no customer found, maybe redirect to subscription page
-        if (response.status === 404) {
-          navigate('/dashboard/assinatura');
-        }
+        throw new Error("URL do portal não recebida.");
       }
-    } catch (err) {
-      console.error("Erro ao abrir portal:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao conectar com o servidor de pagamentos."));
+    } catch (err: any) {
+      console.error("Erro ao acessar portal:", err);
+      import('sonner').then(({ toast }) => toast.error(err.message || "Erro ao acessar portal de pagamentos."));
     } finally {
       setLoadingPortal(false);
     }
@@ -320,21 +303,6 @@ export default function Profile() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Configurações do Perfil</h1>
           <p className="text-slate-500">Gerencie suas informações, segurança e preferências.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {supabaseStatus === 'connected' ? (
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-100">
-              <CheckCircle size={12} /> Supabase Conectado
-            </span>
-          ) : supabaseStatus === 'error' ? (
-            <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-rose-100">
-              <AlertTriangle size={12} /> Supabase Desconectado
-            </span>
-          ) : (
-            <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-slate-100">
-              <Loader2 size={12} className="animate-spin" /> Verificando Supabase...
-            </span>
-          )}
         </div>
       </header>
 

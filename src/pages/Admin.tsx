@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { 
   doc, 
   getDoc, 
@@ -225,31 +225,28 @@ export default function Admin() {
       // Send Email Notification
       if (userData?.email) {
         try {
-          await fetch('/api/notify/appointment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: userData.email,
-              subject: 'Seu perfil foi Aprovado! - FisioCareHub',
-              body: `
-                <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                  <h2 style="color: #2563eb; margin-bottom: 16px;">Parabéns, ${userData.name}!</h2>
-                  <p>Temos o prazer de informar que seu perfil de fisioterapeuta foi <strong>aprovado</strong> pela nossa equipe administrativa.</p>
-                  <p>Agora você já pode começar a atender pacientes e gerenciar seus agendamentos através da nossa plataforma.</p>
-                  <div style="margin-top: 24px; padding: 16px; background-color: #f8fafc; border-radius: 8px;">
-                    <p style="margin: 0; font-weight: bold; color: #475569;">Próximos passos:</p>
-                    <ul style="margin-top: 8px; color: #64748b;">
-                      <li>Complete seu perfil com bio e fotos</li>
-                      <li>Defina seus horários de disponibilidade</li>
-                      <li>Configure seus valores de atendimento</li>
-                    </ul>
-                  </div>
-                  <p style="margin-top: 24px;">Seja bem-vindo(a) à nossa comunidade!</p>
-                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-                  <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Conectando saúde e bem-estar.</p>
+          const { invokeFunction } = await import('../lib/supabase');
+          await invokeFunction('send-email', {
+            to: userData.email,
+            subject: 'Seu perfil foi Aprovado! - FisioCareHub',
+            body: `
+              <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
+                <h2 style="color: #2563eb; margin-bottom: 16px;">Parabéns, ${userData.name}!</h2>
+                <p>Temos o prazer de informar que seu perfil de fisioterapeuta foi <strong>aprovado</strong> pela nossa equipe administrativa.</p>
+                <p>Agora você já pode começar a atender pacientes e gerenciar seus agendamentos através da nossa plataforma.</p>
+                <div style="margin-top: 24px; padding: 16px; background-color: #f8fafc; border-radius: 8px;">
+                  <p style="margin: 0; font-weight: bold; color: #475569;">Próximos passos:</p>
+                  <ul style="margin-top: 8px; color: #64748b;">
+                    <li>Complete seu perfil com bio e fotos</li>
+                    <li>Defina seus horários de disponibilidade</li>
+                    <li>Configure seus valores de atendimento</li>
+                  </ul>
                 </div>
-              `
-            })
+                <p style="margin-top: 24px;">Seja bem-vindo(a) à nossa comunidade!</p>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Conectando saúde e bem-estar.</p>
+              </div>
+            `
           });
         } catch (emailErr) {
           console.error("Erro ao enviar e-mail de aprovação:", emailErr);
@@ -289,25 +286,22 @@ export default function Admin() {
       // Send Email Notification
       if (userData?.email) {
         try {
-          await fetch('/api/notify/appointment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: userData.email,
-              subject: 'Atualização sobre seu perfil - FisioCareHub',
-              body: `
-                <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                  <h2 style="color: #dc2626; margin-bottom: 16px;">Olá, ${userData.name}</h2>
-                  <p>Gostaríamos de informar que, após a revisão, seu perfil de fisioterapeuta <strong>não foi aprovado</strong> neste momento.</p>
-                  <p>Isso pode ter ocorrido devido a informações incompletas ou documentos que não atendem aos nossos critérios atuais.</p>
-                  <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
-                    <p style="margin: 0; color: #991b1b;">Você pode entrar em contato com nosso suporte através do chat interno ou responder a este e-mail para entender melhor os motivos e como proceder.</p>
-                  </div>
-                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-                  <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Equipe de Suporte</p>
+          const { invokeFunction } = await import('../lib/supabase');
+          await invokeFunction('send-email', {
+            to: userData.email,
+            subject: 'Atualização sobre seu perfil - FisioCareHub',
+            body: `
+              <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
+                <h2 style="color: #dc2626; margin-bottom: 16px;">Olá, ${userData.name}</h2>
+                <p>Gostaríamos de informar que, após a revisão, seu perfil de fisioterapeuta <strong>não foi aprovado</strong> neste momento.</p>
+                <p>Isso pode ter ocorrido devido a informações incompletas ou documentos que não atendem aos nossos critérios atuais.</p>
+                <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                  <p style="margin: 0; color: #991b1b;">Você pode entrar em contato com nosso suporte através do chat interno ou responder a este e-mail para entender melhor os motivos e como proceder.</p>
                 </div>
-              `
-            })
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Equipe de Suporte</p>
+              </div>
+            `
           });
         } catch (emailErr) {
           console.error("Erro ao enviar e-mail de rejeição:", emailErr);

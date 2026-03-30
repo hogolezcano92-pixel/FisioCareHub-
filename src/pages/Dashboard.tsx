@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, getDocs, limit, orderBy, onSnapshot, doc, getCountFromServer, updateDoc } from 'firebase/firestore';
 import { useSubscription } from '../hooks/useSubscription';
 import { 
@@ -25,6 +25,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { invokeFunction } from '../lib/supabase';
 
 export default function Dashboard() {
   const [user, authLoading] = useAuthState(auth);
@@ -186,6 +187,27 @@ export default function Dashboard() {
   const remainingDays = getRemainingTrialDays();
   const isTrial = currentPlan === 'pro' && remainingDays > 0;
 
+  const handleManageSubscription = async () => {
+    if (!user) return;
+    try {
+      toast.info("Acessando portal de gerenciamento...");
+      const { url } = await invokeFunction('stripe-portal', {
+        userId: user.uid,
+        userEmail: user.email,
+        customerId: userData?.subscription?.stripeCustomerId
+      });
+      
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("URL do portal não recebida.");
+      }
+    } catch (err: any) {
+      console.error("Erro ao acessar portal:", err);
+      toast.error(err.message || "Erro ao acessar portal de pagamentos.");
+    }
+  };
+
   return (
     <div className="space-y-10 pb-12">
       {/* Welcome Header */}
@@ -195,7 +217,7 @@ export default function Dashboard() {
             <Sparkles size={14} />
             Bem-vindo de volta
           </div>
-          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter">
+          <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
                 Olá, seja bem-{userData?.gender === 'female' ? 'vinda' : 'vindo'} {userData?.gender === 'female' ? 'Dra.' : 'Dr.'} {userData?.name?.split(' ')[0]}! 👋
@@ -206,7 +228,7 @@ export default function Dashboard() {
               </>
             )}
           </h1>
-          <p className="text-slate-500 font-medium">
+          <p className="text-base text-slate-500 font-medium">
             Aqui está o que está acontecendo com seus atendimentos hoje.
           </p>
         </div>
@@ -237,7 +259,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+            className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
           >
             <div className={cn(
               "absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-[0.03] transition-transform group-hover:scale-110",
@@ -271,7 +293,7 @@ export default function Dashboard() {
               ) : (
                 <p className="text-4xl font-black text-slate-900 tracking-tighter">{stat.value}</p>
               )}
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-base font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
             </div>
           </motion.div>
         ))}
@@ -281,13 +303,13 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Consultas Recentes</h2>
-            <Link to="/appointments" className="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Consultas Recentes</h2>
+            <Link to="/appointments" className="text-base font-bold text-blue-600 hover:underline flex items-center gap-1">
               Ver todas <ChevronRight size={16} />
             </Link>
           </div>
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
             {apptsLoading ? (
               <div className="p-12 space-y-4">
                 {[1, 2, 3].map(i => (
@@ -312,14 +334,14 @@ export default function Dashboard() {
                 {recentAppointments.map((appt) => (
                   <div key={appt.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-sm">
+                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-base">
                         {new Date(appt.date).getDate()}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        <p className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                           {appt.service || 'Consulta Geral'}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                        <div className="flex items-center gap-3 text-sm text-slate-400 font-medium">
                           <span className="flex items-center gap-1"><Clock size={12} /> {appt.time}</span>
                           <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                           <span className="capitalize">{appt.status}</span>
@@ -343,9 +365,9 @@ export default function Dashboard() {
         <div className="space-y-8">
           {/* Subscription Status Card */}
           {isPhysio && (
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900">Status da Assinatura</h3>
+                <h3 className="text-xl font-black text-slate-900">Status da Assinatura</h3>
                 <div className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
                   subStatus === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
@@ -355,33 +377,33 @@ export default function Dashboard() {
               </div>
               
               <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                  <span className="text-sm font-bold text-slate-400">Plano</span>
-                  <span className="text-sm font-black text-slate-900 capitalize">{currentPlan}</span>
+                <div className="flex justify-between items-center py-4 border-b border-slate-50">
+                  <span className="text-base font-bold text-slate-400">Plano</span>
+                  <span className="text-base font-black text-slate-900 capitalize">{currentPlan}</span>
                 </div>
                 
                 {isTrial && (
-                  <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                    <span className="text-sm font-bold text-slate-400">Teste Grátis</span>
-                    <span className="text-sm font-black text-blue-600">{remainingDays} dias restantes</span>
+                  <div className="flex justify-between items-center py-4 border-b border-slate-50">
+                    <span className="text-base font-bold text-slate-400">Teste Grátis</span>
+                    <span className="text-base font-black text-blue-600">{remainingDays} dias restantes</span>
                   </div>
                 )}
 
                 {currentPlan === 'basic' ? (
                   <button 
                     onClick={() => navigate('/dashboard/assinatura')}
-                    className="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl font-black text-sm hover:bg-blue-100 transition-all"
+                    className="w-full py-5 bg-blue-50 text-blue-600 rounded-2xl font-black text-base hover:bg-blue-100 transition-all"
                   >
                     Teste o Plano Pro 30 dias grátis
                   </button>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-sm font-medium text-slate-500 text-center">
+                    <p className="text-base font-medium text-slate-500 text-center">
                       Você está inscrito no Plano Pro.
                     </p>
                     <button 
-                      onClick={() => navigate('/dashboard/assinatura')}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all"
+                      onClick={handleManageSubscription}
+                      className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-base hover:bg-slate-800 transition-all"
                     >
                       Gerenciar Assinatura
                     </button>
@@ -393,15 +415,15 @@ export default function Dashboard() {
 
           {/* Marketing Card */}
           {isPhysio && currentPlan === 'basic' && (
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[3rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700" />
               <div className="relative z-10 space-y-6">
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
                   <Sparkles size={24} />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-xl font-black tracking-tight">Experimente o Pro grátis por 30 dias</h3>
-                  <p className="text-blue-100 text-xs leading-relaxed font-medium">
+                  <h3 className="text-2xl font-black tracking-tight">Experimente o Pro grátis por 30 dias</h3>
+                  <p className="text-blue-100 text-sm leading-relaxed font-medium">
                     Receba mais pacientes e desbloqueie todos os recursos profissionais com o Plano Pro. Comece agora com 30 dias grátis!
                   </p>
                   <ul className="space-y-2">
@@ -412,7 +434,7 @@ export default function Dashboard() {
                       'Perfil completo',
                       'Maior visibilidade'
                     ].map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-[10px] font-bold text-blue-50">
+                      <li key={idx} className="flex items-center gap-2 text-xs font-bold text-blue-50">
                         <Check size={12} className="text-emerald-400" />
                         {item}
                       </li>
@@ -421,7 +443,7 @@ export default function Dashboard() {
                 </div>
                 <button 
                   onClick={() => navigate('/dashboard/assinatura')}
-                  className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl"
+                  className="w-full py-5 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-xl"
                 >
                   Testar Plano Pro
                 </button>
@@ -430,7 +452,7 @@ export default function Dashboard() {
           )}
 
           <div className={cn(
-            "bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden",
+            "bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-[3rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden",
             !isPro && "opacity-75 grayscale-[0.5]"
           )}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -446,10 +468,10 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
+                <h3 className="text-2xl font-black tracking-tight flex items-center gap-2">
                   Assistente IA
                 </h3>
-                <p className="text-blue-100 text-sm leading-relaxed font-medium">
+                <p className="text-blue-100 text-base leading-relaxed font-medium">
                   {isPro 
                     ? "Você tem 3 pacientes com dores crônicas que não evoluem há 2 semanas. Deseja sugestões de novos protocolos?"
                     : "Desbloqueie o Assistente IA para receber sugestões de protocolos baseadas em evidências."}
@@ -457,35 +479,35 @@ export default function Dashboard() {
               </div>
               <button 
                 onClick={() => isPro ? navigate('/triage') : navigate('/dashboard/assinatura')}
-                className="w-full py-3 bg-white text-blue-600 rounded-xl font-black text-sm hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 {isPro ? 'Analisar Casos' : 'Fazer Upgrade'}
               </button>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-            <h3 className="text-lg font-black text-slate-900">Ações Rápidas</h3>
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+            <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/chat" className="p-4 bg-slate-50 rounded-2xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={24} />
-                <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
+              <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
               </Link>
-              <Link to="/records" className="p-4 bg-slate-50 rounded-2xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                <FileText className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={24} />
-                <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Prontuários</p>
+              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                <FileText className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Prontuários</p>
               </Link>
               <Link to="/documents" className={cn(
-                "p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 group transition-all text-center space-y-2 relative",
+                "p-6 bg-slate-50 rounded-3xl hover:bg-indigo-50 group transition-all text-center space-y-2 relative",
                 !isPro && "opacity-50 grayscale"
               )}>
                 {!isPro && <Lock size={12} className="absolute top-2 right-2 text-slate-400" />}
-                <Users className="mx-auto text-slate-400 group-hover:text-indigo-600 transition-colors" size={24} />
-                <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-indigo-600">Documentos</p>
+                <Users className="mx-auto text-slate-400 group-hover:text-indigo-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-indigo-600">Documentos</p>
               </Link>
-              <Link to="/profile" className="p-4 bg-slate-50 rounded-2xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                <Activity className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={24} />
-                <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
+              <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                <Activity className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
               </Link>
             </div>
           </div>

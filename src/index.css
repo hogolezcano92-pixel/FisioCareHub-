@@ -4,4 +4,38 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Poppins", sans-serif;
+  
+  /* Custom Palette for Home Care */
+  --color-home-blue: #e0f2fe; /* light blue */
+  --color-home-green: #d1fae5; /* pastel green */
+  --color-home-peach: #ffedd5; /* peach */
+  --color-home-trust: #0ea5e9; /* trust blue */
+
+  /* Dark Mode Overrides */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+}
+
+.dark {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@keyframes pulse-custom {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.animate-pulse-custom {
+  animation: pulse-custom 2s infinite;
 }
