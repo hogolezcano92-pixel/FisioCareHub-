@@ -19,17 +19,17 @@ export default function About() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight"
+            className="text-4xl md:text-6xl font-black text-[#1A202C] tracking-tighter leading-tight"
           >
-            Transformando a Fisioterapia no <span className="text-sky-600">Conforto do seu Lar</span>
+            Redefinindo a Fisioterapia no <span className="text-sky-600">Lugar que Você Ama</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-slate-500 font-medium leading-relaxed"
+            className="text-xl text-[#1A202C] font-medium leading-relaxed"
           >
-            O FisioCareHub nasceu da necessidade de conectar pacientes que buscam reabilitação de qualidade com profissionais capacitados, eliminando as barreiras de deslocamento e garantindo um atendimento humanizado.
+            Acreditamos que a cura é potencializada pelo conforto e segurança do lar. Nossa missão é levar excelência clínica diretamente para sua casa, unindo tecnologia de ponta e cuidado humanizado para transformar sua reabilitação.
           </motion.p>
         </section>
 
@@ -66,8 +66,8 @@ export default function About() {
               <div className={`w-16 h-16 ${value.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                 <value.icon size={32} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{value.title}</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">{value.description}</p>
+              <h3 className="text-2xl font-black text-[#1A202C] tracking-tight">{value.title}</h3>
+              <p className="text-[#1A202C] font-medium leading-relaxed">{value.description}</p>
             </motion.div>
           ))}
         </section>
@@ -75,7 +75,7 @@ export default function About() {
         {/* Story Section */}
         <section className="bg-sky-50 rounded-[4rem] p-12 md:p-20 grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+            <h2 className="text-3xl md:text-5xl font-black text-[#1A202C] tracking-tighter leading-tight">
               Por que escolher o FisioCareHub?
             </h2>
             <div className="space-y-6">
@@ -89,7 +89,7 @@ export default function About() {
                   <div className="mt-1 w-6 h-6 bg-sky-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
                     <Shield size={14} />
                   </div>
-                  <p className="text-lg text-slate-700 font-bold">{item}</p>
+                  <p className="text-lg text-[#1A202C] font-bold">{item}</p>
                 </div>
               ))}
             </div>
@@ -107,7 +107,7 @@ export default function About() {
                   <Users size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-slate-900">+500</p>
+                  <p className="text-2xl font-black text-[#1A202C]">+500</p>
                   <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Famílias Atendidas</p>
                 </div>
               </div>

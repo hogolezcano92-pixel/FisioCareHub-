@@ -1,24 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, MessageSquare, Calendar, Info, X, Check } from 'lucide-react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../lib/firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  orderBy, 
-  limit, 
-  updateDoc, 
-  doc,
-  writeBatch
-} from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
 export default function NotificationBell() {
-  const [user] = useAuthState(auth);
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -26,18 +15,38 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(20)
-    );
+    const fetchNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+      if (error) {
+        console.error("Erro ao buscar notificações:", error);
+      } else {
+        setNotifications(data || []);
+      }
+    };
 
-    return () => unsubscribe();
+    fetchNotifications();
+
+    const channel = supabase
+      .channel(`notificacoes_bell_${user.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'notificacoes',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        fetchNotifications();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   useEffect(() => {
@@ -50,25 +59,38 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.lida).length;
 
   const markAsRead = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'notifications', id), { read: true });
+      const { error } = await supabase
+        .from('notificacoes')
+        .update({ lida: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
     } catch (err) {
       console.error("Error marking notification as read:", err);
     }
   };
 
   const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.read);
+    const unread = notifications.filter(n => !n.lida);
     if (unread.length === 0) return;
 
-    const batch = writeBatch(db);
-    unread.forEach(n => {
-      batch.update(doc(db, 'notifications', n.id), { read: true });
-    });
-    await batch.commit();
+    try {
+      const { error } = await supabase
+        .from('notificacoes')
+        .update({ lida: true })
+        .eq('user_id', user?.id)
+        .eq('lida', false);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+    } catch (err) {
+      console.error("Error marking all as read:", err);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -130,21 +152,21 @@ export default function NotificationBell() {
                       key={n.id}
                       className={cn(
                         "p-4 flex gap-3 transition-colors relative group",
-                        !n.read ? "bg-blue-50/30" : "hover:bg-slate-50"
+                        !n.lida ? "bg-blue-50/30" : "hover:bg-slate-50"
                       )}
                     >
                       <div className="mt-1">{getIcon(n.type)}</div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={cn("text-xs font-bold truncate", !n.read ? "text-slate-900" : "text-slate-600")}>
-                            {n.title}
+                          <p className={cn("text-xs font-bold truncate", !n.lida ? "text-slate-900" : "text-slate-600")}>
+                            {n.titulo}
                           </p>
                           <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">
-                            {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Agora'}
+                            {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">
-                          {n.message}
+                          {n.mensagem}
                         </p>
                         {n.link && (
                           <Link 
@@ -159,7 +181,7 @@ export default function NotificationBell() {
                           </Link>
                         )}
                       </div>
-                      {!n.read && (
+                      {!n.lida && (
                         <button 
                           onClick={() => markAsRead(n.id)}
                           className="absolute right-2 bottom-2 p-1 text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"

@@ -19,8 +19,8 @@ async function startServer() {
   // Edge Function get-config simulation
   app.get("/api/get-config", (req, res) => {
     res.json({
-      supabaseUrl: process.env.SUPABASE_URL || "",
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
+      supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "",
       firebaseApiKey: process.env.FIREBASE_API_KEY || "",
       firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID || "",

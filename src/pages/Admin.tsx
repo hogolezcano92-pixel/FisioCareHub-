@@ -15,6 +15,8 @@ import {
   limit
 } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { 
   Users, 
   UserCheck, 
@@ -40,13 +42,20 @@ import {
   Send,
   Bell,
   Trash2,
-  Save
+  Save,
+  AlertTriangle,
+  LogIn,
+  ArrowLeft,
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import Logo from '../components/Logo';
 
 export default function Admin() {
-  const [user, loadingAuth] = useAuthState(auth);
+  const { user: supabaseUser, loading: loadingSupabase } = useAuth();
+  const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -54,6 +63,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [firebaseLoginLoading, setFirebaseLoginLoading] = useState(false);
 
   // Real Data States
   const [users, setUsers] = useState<any[]>([]);
@@ -77,8 +87,8 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (!loadingAuth) {
-      if (!user) {
+    if (!loadingSupabase) {
+      if (!supabaseUser) {
         navigate('/login');
         return;
       }
@@ -90,34 +100,71 @@ export default function Admin() {
           'lezcanohugo662@gmail.com'
         ];
         
-        if (adminEmails.includes(user.email || '')) {
+        if (adminEmails.includes(supabaseUser.email || '')) {
           setIsAdmin(true);
           setCheckingAdmin(false);
           return;
         }
 
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists() && userDoc.data().role === 'admin') {
-            setIsAdmin(true);
-          } else {
+        // Se não estiver na lista hardcoded, tenta buscar no Firestore
+        // Mas isso só funciona se estiver logado no Firebase
+        if (firebaseUser) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (userDoc.exists() && userDoc.data().role === 'admin') {
+              setIsAdmin(true);
+            } else {
+              navigate('/dashboard');
+            }
+          } catch (err) {
+            console.error("Error checking admin status in Firestore:", err);
+            // Se der erro de permissão, pode ser que ele seja admin mas não tenha permissão de leitura ainda
+            // ou realmente não seja admin. Por segurança, não redireciona se ele estiver na lista de emails.
+          }
+        } else {
+          // Se não estiver na lista e não estiver logado no Firebase, redireciona
+          // Exceto se estivermos esperando o login do Firebase
+          if (!loadingFirebase) {
             navigate('/dashboard');
           }
-        } catch (err) {
-          console.error("Error checking admin status:", err);
-          navigate('/dashboard');
-        } finally {
-          setCheckingAdmin(false);
         }
+        setCheckingAdmin(false);
       };
 
       checkAdmin();
     }
-  }, [user, loadingAuth, navigate]);
+  }, [supabaseUser, loadingSupabase, firebaseUser, loadingFirebase, navigate]);
+
+  const handleFirebaseLogin = async () => {
+    setFirebaseLoginLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      // Força a seleção de conta para garantir que o popup seja percebido
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      await signInWithPopup(auth, provider);
+      import('sonner').then(({ toast }) => toast.success("Conectado ao Firebase com sucesso!"));
+    } catch (err: any) {
+      console.error("Erro no login Firebase:", err);
+      let errorMessage = "Erro ao conectar ao Firebase";
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        errorMessage = "O login foi cancelado. Por favor, mantenha a janela de login aberta até o fim.";
+      } else if (err.code === 'auth/popup-blocked') {
+        errorMessage = "O popup de login foi bloqueado pelo seu navegador. Por favor, permita popups para este site.";
+      } else {
+        errorMessage += ": " + err.message;
+      }
+      
+      import('sonner').then(({ toast }) => toast.error(errorMessage));
+    } finally {
+      setFirebaseLoginLoading(false);
+    }
+  };
 
   // Real-time Data Listeners
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || !firebaseUser) return;
 
     // Listen for Users
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -133,6 +180,8 @@ export default function Admin() {
         activePhysios: physios.filter((p: any) => p.status === 'approved' || p.approved === true).length,
         newPatients: patients.length
       }));
+    }, (error) => {
+      console.error("Erro ao ouvir usuários:", error);
     });
 
     // Listen for Payments
@@ -142,6 +191,8 @@ export default function Admin() {
       
       const revenue = paymentsData.reduce((acc, curr: any) => acc + (curr.amount || 0), 0);
       setStats(prev => ({ ...prev, totalRevenue: revenue }));
+    }, (error) => {
+      console.error("Erro ao ouvir pagamentos:", error);
     });
 
     // Listen for Pending Approvals
@@ -149,6 +200,9 @@ export default function Admin() {
       query(collection(db, 'physiotherapists'), where('status', '==', 'pending_approval')),
       (snapshot) => {
         setPendingPhysios(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      },
+      (error) => {
+        console.error("Erro ao ouvir aprovações:", error);
       }
     );
 
@@ -157,6 +211,9 @@ export default function Admin() {
       query(collection(db, 'appointments'), where('status', '==', 'waiting')),
       (snapshot) => {
         setStats(prev => ({ ...prev, pendingAppointments: snapshot.docs.length }));
+      },
+      (error) => {
+        console.error("Erro ao ouvir agendamentos:", error);
       }
     );
 
@@ -166,15 +223,15 @@ export default function Admin() {
       unsubApprovals();
       unsubAppointments();
     };
-  }, [isAdmin]);
+  }, [isAdmin, firebaseUser]);
 
   // Chat Listener
   useEffect(() => {
-    if (!isAdmin || !selectedChatUser) return;
+    if (!isAdmin || !selectedChatUser || !firebaseUser) return;
 
     const q = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', user?.uid),
+      where('participants', 'array-contains', firebaseUser?.uid),
       orderBy('createdAt', 'asc')
     );
 
@@ -182,15 +239,18 @@ export default function Admin() {
       const chatMessages = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter((msg: any) => 
-          msg.participants.includes(selectedChatUser.id)
+          msg.participants.includes(selectedChatUser.id) || 
+          msg.patientSupabaseId === selectedChatUser.id
         );
       setMessages(chatMessages);
+    }, (error) => {
+      console.error("Erro ao ouvir chat:", error);
     });
 
     return () => unsubMessages();
-  }, [isAdmin, selectedChatUser, user]);
+  }, [isAdmin, selectedChatUser, firebaseUser]);
 
-  if (!mounted || loadingAuth || checkingAdmin) return (
+  if (!mounted || loadingSupabase || checkingAdmin) return (
     <div className="flex flex-col items-center justify-center pt-32 space-y-4">
       <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Verificando permissões...</p>
@@ -198,6 +258,50 @@ export default function Admin() {
   );
 
   if (!isAdmin) return null;
+
+  // Se for admin mas não estiver logado no Firebase, mostra tela de conexão
+  if (!firebaseUser) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 max-w-md w-full text-center space-y-8"
+        >
+          <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+            <ShieldCheck size={48} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Restrito</h2>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.
+            </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-left">
+            <div className="flex gap-3">
+              <AlertTriangle className="text-amber-500 flex-shrink-0" size={20} />
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                <strong>Importante:</strong> Uma janela (popup) será aberta para o login. Certifique-se de que seu navegador permite popups e não feche a janela antes de concluir o processo.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleFirebaseLogin}
+            disabled={firebaseLoginLoading}
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 disabled:opacity-50"
+          >
+            {firebaseLoginLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <LogIn size={24} />}
+            Conectar ao Banco de Dados
+          </button>
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+            Use o mesmo e-mail: {supabaseUser?.email}
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   const handleApprovePhysio = async (physioId: string, userId: string) => {
     try {
@@ -231,7 +335,7 @@ export default function Admin() {
             subject: 'Seu perfil foi Aprovado! - FisioCareHub',
             body: `
               <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                <h2 style="color: #2563eb; margin-bottom: 16px;">Parabéns, ${userData.name}!</h2>
+                <h2 style="color: #2563eb; margin-bottom: 16px;">Parabéns, ${userData.name || 'Fisioterapeuta'}!</h2>
                 <p>Temos o prazer de informar que seu perfil de fisioterapeuta foi <strong>aprovado</strong> pela nossa equipe administrativa.</p>
                 <p>Agora você já pode começar a atender pacientes e gerenciar seus agendamentos através da nossa plataforma.</p>
                 <div style="margin-top: 24px; padding: 16px; background-color: #f8fafc; border-radius: 8px;">
@@ -292,7 +396,7 @@ export default function Admin() {
             subject: 'Atualização sobre seu perfil - FisioCareHub',
             body: `
               <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                <h2 style="color: #dc2626; margin-bottom: 16px;">Olá, ${userData.name}</h2>
+                <h2 style="color: #dc2626; margin-bottom: 16px;">Olá, ${userData.name || 'Fisioterapeuta'}</h2>
                 <p>Gostaríamos de informar que, após a revisão, seu perfil de fisioterapeuta <strong>não foi aprovado</strong> neste momento.</p>
                 <p>Isso pode ter ocorrido devido a informações incompletas ou documentos que não atendem aos nossos critérios atuais.</p>
                 <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
@@ -331,15 +435,21 @@ export default function Admin() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChatUser) return;
 
+    // Find patient's Firebase UID from existing messages
+    const patientMsg = messages.find((m: any) => m.patientFirebaseUid);
+    const patientFirebaseUid = patientMsg?.patientFirebaseUid || selectedChatUser.id;
+
     try {
       await addDoc(collection(db, 'chats'), {
-        senderId: user?.uid,
+        senderId: firebaseUser?.uid,
         receiverId: selectedChatUser.id,
-        participants: [user?.uid, selectedChatUser.id],
+        participants: [firebaseUser?.uid, patientFirebaseUid, selectedChatUser.id],
         text: newMessage,
         createdAt: serverTimestamp(),
         read: false,
-        type: 'support'
+        type: 'support',
+        patientSupabaseId: selectedChatUser.id,
+        patientFirebaseUid: patientFirebaseUid
       });
       
       // Notify user
@@ -350,7 +460,7 @@ export default function Admin() {
         type: 'message',
         read: false,
         createdAt: serverTimestamp(),
-        link: '/chat'
+        link: '/chat?support=true'
       });
 
       setNewMessage('');
@@ -364,7 +474,7 @@ export default function Admin() {
       await addDoc(collection(db, 'settings'), {
         commissionRate,
         updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
+        updatedBy: firebaseUser?.uid
       });
       import('sonner').then(({ toast }) => toast.success("Configurações salvas com sucesso!"));
     } catch (err) {
@@ -411,10 +521,7 @@ export default function Admin() {
           {/* Sidebar Header */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100">
             <div className={cn("flex items-center gap-2 overflow-hidden transition-all", !sidebarOpen && "lg:hidden")}>
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white flex-shrink-0">
-                <ShieldCheck size={20} />
-              </div>
-              <span className="font-black text-lg tracking-tighter text-blue-600">AdminHub</span>
+              <Logo size="sm" />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -457,11 +564,11 @@ export default function Admin() {
           <div className="p-4 border-t border-slate-100">
             <div className={cn("flex items-center gap-3 p-2 rounded-xl bg-slate-50 overflow-hidden", !sidebarOpen && "lg:justify-center")}>
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0">
-                {user?.email?.charAt(0).toUpperCase()}
+                {firebaseUser?.email?.charAt(0).toUpperCase()}
               </div>
               <div className={cn("flex-1 min-w-0 transition-opacity", !sidebarOpen && "lg:hidden")}>
                 <p className="text-xs font-bold text-slate-900 truncate">Admin Master</p>
-                <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+                <p className="text-[10px] text-slate-500 truncate">{firebaseUser?.email}</p>
               </div>
             </div>
           </div>
@@ -534,6 +641,28 @@ export default function Admin() {
                   </motion.div>
                 ))}
               </div>
+
+              {/* App Preview Button */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => window.location.href = '/preview'}
+                className="w-full mb-8 p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-[2rem] text-white shadow-xl shadow-cyan-100 flex items-center justify-between group relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/20 transition-colors" />
+                <div className="flex items-center gap-6 relative z-10">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                    <Smartphone size={32} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xl font-black tracking-tighter mb-1">Ver Prévia Mobile</h3>
+                    <p className="text-sm text-white/80 font-medium">Interface 'FisioCareHub' atualizada em alta fidelidade.</p>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:translate-x-2 transition-transform duration-500 relative z-10">
+                  <ArrowLeft className="rotate-180" size={24} />
+                </div>
+              </motion.button>
 
               {/* Recent Users Table */}
               <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
@@ -764,80 +893,175 @@ export default function Admin() {
           )}
 
           {activeTab === 'chat' && (
-            <div className="h-[600px] bg-white rounded-[2rem] border border-slate-100 shadow-sm flex overflow-hidden">
-              {/* User List */}
-              <div className="w-1/3 border-r border-slate-100 flex flex-col">
-                <div className="p-4 border-b border-slate-100">
-                  <h4 className="font-black text-slate-900">Conversas</h4>
+            <div className="h-[calc(100vh-200px)] min-h-[500px] bg-white rounded-[2.5rem] border border-slate-100 shadow-sm flex overflow-hidden relative">
+              {/* User List - Sidebar */}
+              <div className={cn(
+                "w-full md:w-1/3 border-r border-slate-100 flex flex-col bg-white transition-all duration-300",
+                selectedChatUser ? "hidden md:flex" : "flex"
+              )}>
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                  <h4 className="font-black text-slate-900 tracking-tight">Conversas</h4>
+                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                    <Search size={14} />
+                  </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                   {users.filter(u => u.role !== 'admin').map(u => (
                     <button
                       key={u.id}
                       onClick={() => setSelectedChatUser(u)}
                       className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all",
-                        selectedChatUser?.id === u.id ? "bg-blue-50 text-blue-600" : "hover:bg-slate-50"
+                        "w-full flex items-center gap-4 p-4 rounded-2xl transition-all group",
+                        selectedChatUser?.id === u.id 
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
+                          : "hover:bg-slate-50 text-slate-600"
                       )}
                     >
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold">
-                        {u.name?.charAt(0)}
+                      <div className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm transition-transform group-hover:scale-105",
+                        selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
+                      )}>
+                        {u.name?.charAt(0).toUpperCase()}
                       </div>
-                      <div className="text-left">
-                        <p className="text-sm font-bold truncate">{u.name}</p>
-                        <p className="text-[10px] text-slate-500 truncate">{u.role}</p>
+                      <div className="text-left flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="text-sm font-bold truncate">{u.name}</p>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
+                            u.role === 'physiotherapist' 
+                              ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-600")
+                              : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600")
+                          )}>
+                            {u.role === 'physiotherapist' ? 'Fisio' : 'Paciente'}
+                          </span>
+                        </div>
+                        <p className={cn(
+                          "text-[10px] truncate",
+                          selectedChatUser?.id === u.id ? "text-white/70" : "text-slate-400"
+                        )}>
+                          Clique para iniciar conversa
+                        </p>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Chat Area */}
-              <div className="flex-1 flex flex-col bg-slate-50/30">
+              {/* Chat Area - Main Content */}
+              <div className={cn(
+                "flex-1 flex flex-col bg-slate-50/30 transition-all duration-300",
+                !selectedChatUser ? "hidden md:flex" : "flex"
+              )}>
                 {selectedChatUser ? (
                   <>
-                    <div className="p-4 bg-white border-b border-slate-100 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                        {selectedChatUser.name?.charAt(0)}
+                    {/* Chat Header */}
+                    <div className="px-3 py-2.5 md:p-6 bg-white border-b border-slate-100 flex items-center gap-2 md:gap-4 h-[70px] md:h-auto">
+                      <button 
+                        onClick={() => setSelectedChatUser(null)}
+                        className="md:hidden p-1.5 -ml-1 text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
+                      <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm flex-shrink-0">
+                        {selectedChatUser.name?.charAt(0).toUpperCase()}
                       </div>
-                      <p className="font-bold text-slate-900">{selectedChatUser.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest">Online</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                      {messages.map((m) => (
-                        <div 
-                          key={m.id}
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
+                      {messages.map((m, idx) => {
+                        const mDate = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
+                        const prevM = idx > 0 ? messages[idx - 1] : null;
+                        const prevMDate = prevM?.createdAt?.toDate ? prevM.createdAt.toDate() : (prevM ? new Date() : null);
+                        
+                        const showDateSeparator = !prevMDate || 
+                          mDate.toDateString() !== prevMDate.toDateString();
+
+                        return (
+                          <div key={m.id} className="space-y-6">
+                            {showDateSeparator && (
+                              <div className="flex justify-center my-8">
+                                <div className="px-4 py-1 bg-slate-100/50 backdrop-blur-sm border border-slate-200/50 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                  {mDate.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </div>
+                              </div>
+                            )}
+                            <div 
+                              className={cn(
+                                "max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-sm relative group",
+                                m.senderId === firebaseUser?.uid 
+                                  ? "ml-auto bg-blue-600 text-white rounded-tr-none shadow-blue-100" 
+                                  : "bg-white border border-slate-200 text-slate-900 rounded-tl-none"
+                              )}
+                            >
+                              <p className="leading-relaxed font-medium break-words">{m.text}</p>
+                              <div className={cn(
+                                "text-[9px] mt-2 font-medium opacity-50",
+                                m.senderId === firebaseUser?.uid ? "text-right text-blue-100" : "text-left text-slate-500"
+                              )}>
+                                {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="p-3 md:p-6 bg-white border-t border-slate-100 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                      <div className="flex gap-3 md:gap-4 items-center max-w-4xl mx-auto w-full">
+                        <div className="flex-1 relative group">
+                          <input 
+                            type="text" 
+                            placeholder="Escreva sua mensagem aqui..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            className="w-full pl-6 pr-14 py-4 bg-slate-50 border border-slate-200 rounded-full outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 focus:bg-white transition-all font-medium text-sm md:text-base shadow-inner"
+                          />
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                            <button type="button" className="p-1.5 md:p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                              <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim()}
                           className={cn(
-                            "max-w-[80%] p-3 rounded-2xl text-sm",
-                            m.senderId === user?.uid 
-                              ? "ml-auto bg-blue-600 text-white rounded-tr-none" 
-                              : "bg-white border border-slate-100 text-slate-900 rounded-tl-none"
+                            "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg shadow-blue-200 flex-shrink-0",
+                            newMessage.trim() 
+                              ? "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95" 
+                              : "bg-slate-200 text-slate-400 cursor-not-allowed"
                           )}
                         >
-                          {m.text}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 bg-white border-t border-slate-100 flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Digite sua mensagem..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20"
-                      />
-                      <button 
-                        onClick={handleSendMessage}
-                        className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                      >
-                        <Send size={20} />
-                      </button>
+                          <Send className="w-6 h-6 md:w-7 md:h-7 translate-x-0.5 -translate-y-0.5" />
+                        </button>
+                      </div>
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-4">
-                    <MessageSquare size={48} strokeWidth={1} />
-                    <p className="text-sm font-medium">Selecione um usuário para iniciar o chat</p>
+                  /* Empty State */
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-white">
+                    <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center text-blue-600 mb-8 animate-bounce-slow">
+                      <MessageSquare size={48} strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Central de Suporte</h3>
+                    <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
+                      Selecione um usuário na lista ao lado para visualizar o histórico de mensagens e iniciar um novo atendimento.
+                    </p>
+                    <div className="mt-8 flex gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-100" />
+                      <div className="w-2 h-2 rounded-full bg-blue-200" />
+                      <div className="w-2 h-2 rounded-full bg-blue-300" />
+                    </div>
                   </div>
                 )}
               </div>

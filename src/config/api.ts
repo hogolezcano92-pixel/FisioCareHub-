@@ -10,21 +10,15 @@ export interface APIConfig {
   firebaseMeasurementId?: string;
 }
 
+// Inserindo seus dados reais para o motor do app ligar
 export let config: APIConfig = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
-  firebaseApiKey: ""
+  supabaseUrl: "https://exciqetztunqgxbwwodo.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2lxZXR6dHVucWd4Ynd3b2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDY0MDAsImV4cCI6MjA5MDA4MjQwMH0.nvxEce7JOaEIR7T2fpUwrtVOI3n84KcQtqveNr3OqAo",
+  firebaseApiKey: "" 
 };
 
+// Esta função agora devolve os dados na hora, sem tentar buscar na rede,
+// o que elimina o erro de tela branca no seu Preview.
 export const fetchConfig = async (): Promise<APIConfig> => {
-  try {
-    const response = await fetch("/api/get-config");
-    if (!response.ok) throw new Error("Falha ao carregar configurações");
-    const data = await response.json();
-    config = data;
-    return data;
-  } catch (error) {
-    console.error("Erro ao carregar configurações:", error);
-    throw error;
-  }
+  return config;
 };

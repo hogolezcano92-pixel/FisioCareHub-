@@ -46,7 +46,7 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      let allowedFields = ['uid', 'email', 'name', 'role', 'gender', 'createdAt', 'photoURL', 'bio', 'documents', 'subscription', 'phone', 'specialty', 'city', 'serviceType', 'status', 'approved'];
+      let allowedFields = ['uid', 'email', 'name', 'role', 'gender', 'createdAt', 'photoURL', 'bio', 'documents', 'subscription', 'phone', 'specialty', 'city', 'address', 'zipCode', 'country', 'serviceType', 'status', 'approved'];
       return data.keys().hasOnly(allowedFields) &&
              data.uid is string && 
              data.uid == request.auth.uid &&

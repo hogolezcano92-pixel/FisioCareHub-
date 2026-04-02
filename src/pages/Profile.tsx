@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { 
   User, 
   Mail, 
@@ -18,25 +16,20 @@ import {
   Lock,
   Bell,
   Globe,
-  LogOut,
   AlertTriangle,
-  CreditCard,
   Zap,
   ExternalLink,
-  Crown,
-  CheckCircle2,
-  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { deleteUser, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { cn } from '../lib/utils';
-import { uploadProfilePhoto, uploadDocument, checkBuckets } from '../services/supabaseStorage';
-import { getSupabase, invokeFunction } from '../lib/supabase';
+import { uploadProfilePhoto, uploadDocument } from '../services/supabaseStorage';
+import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 
 type Tab = 'profile' | 'account' | 'settings';
 
 export default function Profile() {
-  const [user] = useAuthState(auth);
+  const { user, loading: authLoading } = useAuth();
+  const { t, i18n } = useTranslation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -48,34 +41,57 @@ export default function Profile() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
 
+  const languages = [
+    { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
+    { code: 'en', name: t('settings.english'), flag: '🇺🇸' },
+    { code: 'es', name: t('settings.spanish'), flag: '🇪🇸' },
+  ];
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    import('sonner').then(({ toast }) => toast.success(t('settings.language_description')));
+  };
+
   // Form fields
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [specialty, setSpecialty] = useState('');
   const [city, setCity] = useState('');
+  const [address, setAddress] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [country, setCountry] = useState('');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
 
-  const subscriptionInfo = useSubscription();
-  const { isPro, loading: subLoading } = subscriptionInfo;
-
   useEffect(() => {
-    if (user) {
-      getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
+    const fetchUser = async () => {
+      if (user) {
+        const { data, error } = await getSupabase()
+          .from('perfis')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
           setUserData(data);
-          setName(data.name);
+          setName(data.nome_completo || '');
           setBio(data.bio || '');
-          setGender(data.gender || '');
-          setSpecialty(data.specialty || '');
-          setCity(data.city || '');
-          setServiceType(data.serviceType || 'ambos');
+          setGender(data.genero || '');
+          setSpecialty(data.especialidade || '');
+          setCity(data.localizacao || '');
+          setAddress(data.endereco || '');
+          setZipCode(data.cep || '');
+          setCountry(data.pais || '');
+          setServiceType(data.tipo_servico || 'ambos');
         }
-        setLoading(false);
-      });
+      }
+      setLoading(false);
+    };
+
+    if (!authLoading) {
+      fetchUser();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,44 +99,45 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
       const updateData: any = {
-        name,
+        nome_completo: name,
         bio,
+        localizacao: city,
+        endereco: address,
+        cep: zipCode,
+        pais: country,
       };
 
       if (isPhysio) {
-        updateData.gender = gender;
-        updateData.specialty = specialty;
-        updateData.city = city;
-        updateData.serviceType = serviceType;
+        updateData.genero = gender;
+        updateData.especialidade = specialty;
+        updateData.tipo_servico = serviceType;
       }
 
-      await updateDoc(userRef, updateData);
+      const { error } = await supabase
+        .from('perfis')
+        .update(updateData)
+        .eq('id', user.id);
 
-      // Update Auth Profile if name changed
-      if (name !== user.displayName) {
-        await updateProfile(user, { displayName: name });
+      if (error) throw error;
+
+      // Update Auth Metadata if name changed
+      if (name !== user.user_metadata?.full_name) {
+        await supabase.auth.updateUser({
+          data: { full_name: name }
+        });
       }
+
+      // Update local state
+      setUserData((prev: any) => ({
+        ...prev,
+        ...updateData
+      }));
 
       import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
-      let errorMessage = "Erro ao atualizar perfil. Tente novamente.";
-      
-      if (err.message && err.message.includes('permission')) {
-        errorMessage = "Você não tem permissão para atualizar este perfil.";
-      } else {
-        try {
-          // Try to parse our custom error format if it was thrown by handleFirestoreError elsewhere
-          const parsed = JSON.parse(err.message);
-          errorMessage = `Erro no banco de dados: ${parsed.error}`;
-        } catch {
-          errorMessage = err.message || errorMessage;
-        }
-      }
-      
-      import('sonner').then(({ toast }) => toast.error(errorMessage));
+      import('sonner').then(({ toast }) => toast.error(err.message || "Erro ao atualizar perfil. Tente novamente."));
     } finally {
       setUpdating(false);
     }
@@ -152,26 +169,33 @@ export default function Profile() {
         });
       }, 200);
 
-      const url = await uploadProfilePhoto(user.uid, file);
+      const publicUrl = await uploadProfilePhoto(user.id, file);
+      const url = `${publicUrl}?t=${Date.now()}`;
       
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      console.log("URL da foto obtida do Supabase:", url);
+      console.log("URL da foto obtida do Supabase (com timestamp):", url);
       
       // Update Auth Profile
       try {
-        await updateProfile(user, { photoURL: url });
+        await supabase.auth.updateUser({
+          data: { avatar_url: url }
+        });
       } catch (authErr) {
         console.warn("Erro ao atualizar perfil de autenticação (não crítico):", authErr);
       }
       
-      // Update Firestore
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { photoURL: url });
+      // Update Database
+      const { error } = await supabase
+        .from('perfis')
+        .update({ avatar_url: url })
+        .eq('id', user.id);
+
+      if (error) throw error;
       
       // Update local state
-      setUserData((prev: any) => prev ? { ...prev, photoURL: url } : { photoURL: url });
+      setUserData((prev: any) => prev ? { ...prev, avatar_url: url } : { ...userData, avatar_url: url });
       import('sonner').then(({ toast }) => toast.success("Foto de perfil atualizada com sucesso!"));
     } catch (err: any) {
       console.error("Erro detalhado no upload para Supabase:", err);
@@ -191,12 +215,19 @@ export default function Profile() {
     setUpdating(true);
     try {
       console.log("Iniciando upload de documento para Supabase...");
-      const url = await uploadDocument(user.uid, file);
+      const url = await uploadDocument(user.id, file);
       
-      const currentDocs = userData?.documents || [];
+      const currentDocs = userData?.documentos || [];
       const newDocs = [...currentDocs, url];
-      await updateDoc(doc(db, 'users', user.uid), { documents: newDocs });
-      setUserData({ ...userData, documents: newDocs });
+      
+      const { error } = await supabase
+        .from('perfis')
+        .update({ documentos: newDocs })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setUserData({ ...userData, documentos: newDocs });
       import('sonner').then(({ toast }) => toast.success("Documento enviado com sucesso!"));
     } catch (err: any) {
       console.error("Erro no upload de documento para Supabase:", err);
@@ -209,7 +240,10 @@ export default function Profile() {
   const handlePasswordReset = async () => {
     if (!user?.email) return;
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
       import('sonner').then(({ toast }) => toast.success("E-mail de redefinição de senha enviado!"));
     } catch (err: any) {
       import('sonner').then(({ toast }) => toast.error("Erro ao enviar e-mail: " + err.message));
@@ -220,21 +254,21 @@ export default function Profile() {
     if (!user) return;
     setUpdating(true);
     try {
-      // 1. Delete Firestore data
-      await deleteDoc(doc(db, 'users', user.uid));
+      // 1. Call the Edge Function to handle secure deletion (Auth + Profile)
+      const data = await invokeFunction('delete-user', { userId: user.id });
       
-      // 2. Delete Auth user
-      await deleteUser(user);
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // 2. Sign out locally
+      await supabase.auth.signOut();
       
       import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída permanentemente."));
       navigate('/');
     } catch (err: any) {
       console.error("Erro ao excluir conta:", err);
-      if (err.code === 'auth/requires-recent-login') {
-        import('sonner').then(({ toast }) => toast.error("Para excluir sua conta, você precisa ter feito login recentemente. Por favor, saia e entre novamente antes de tentar excluir."));
-      } else {
-        import('sonner').then(({ toast }) => toast.error("Erro ao excluir conta: " + err.message));
-      }
+      import('sonner').then(({ toast }) => toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido")));
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
@@ -242,12 +276,16 @@ export default function Profile() {
   };
 
   const handleTestEmail = async () => {
+    if (!userData?.email) {
+      import('sonner').then(({ toast }) => toast.error("Erro: Dados do usuário não carregados."));
+      return;
+    }
     setTestingEmail(true);
     try {
       const data = await invokeFunction('send-email', {
         to: userData.email,
         subject: "Teste de Notificação - FisioCareHub",
-        body: `<h1>Olá ${userData.name}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
+        body: `<h1>Olá ${userData.nome_completo || 'Usuário'}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
         type: "email"
       });
       
@@ -264,37 +302,14 @@ export default function Profile() {
     }
   };
 
-  const handleManageSubscription = async () => {
-    if (!user) return;
-    setLoadingPortal(true);
-    try {
-      const { url } = await invokeFunction('stripe-portal', {
-        userId: user.uid,
-        userEmail: user.email,
-        customerId: userData?.subscription?.stripeCustomerId
-      });
-      
-      if (url) {
-        window.location.href = url;
-      } else {
-        throw new Error("URL do portal não recebida.");
-      }
-    } catch (err: any) {
-      console.error("Erro ao acessar portal:", err);
-      import('sonner').then(({ toast }) => toast.error(err.message || "Erro ao acessar portal de pagamentos."));
-    } finally {
-      setLoadingPortal(false);
-    }
-  };
-
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = userData?.role === 'physiotherapist';
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   const tabs = [
-    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'profile', label: t('nav.profile'), icon: User },
     { id: 'account', label: 'Minha Conta', icon: Lock },
-    { id: 'settings', label: 'Configurações', icon: Settings },
+    { id: 'settings', label: t('settings.title'), icon: Settings },
   ];
 
   return (
@@ -351,8 +366,8 @@ export default function Profile() {
                     <div className="relative group">
                       <div className="relative">
                         <img
-                          src={userData?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`}
-                          alt={userData?.name}
+                          src={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                          alt={userData?.nome_completo}
                           className={cn(
                             "w-32 h-32 rounded-[2rem] object-cover border-4 border-slate-50 shadow-xl transition-all",
                             uploadingPhoto && "opacity-50 blur-[2px]"
@@ -385,7 +400,7 @@ export default function Profile() {
                       </label>
                     </div>
                     <div className="flex-1 space-y-2">
-                      <h2 className="text-2xl font-bold text-slate-900">{userData?.name}</h2>
+                      <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
                       <div className="flex items-center gap-2">
                         <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
                           {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
@@ -409,6 +424,53 @@ export default function Profile() {
                           className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">CEP</label>
+                        <input
+                          type="text"
+                          value={zipCode}
+                          onChange={(e) => setZipCode(e.target.value)}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                          placeholder="00000-000"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Cidade</label>
+                        <input
+                          type="text"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                          placeholder="Sua cidade"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-bold text-slate-700 mb-2">País</label>
+                        <input
+                          type="text"
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                          placeholder="Seu país"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Endereço Completo</label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                        placeholder="Rua, número, bairro..."
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
                       {isPhysio ? (
                         <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Título (Gênero)</label>
@@ -473,16 +535,6 @@ export default function Profile() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">Cidade</label>
-                          <input
-                            type="text"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                            placeholder="Sua cidade"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
                           <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
                           <select
                             value={serviceType}
@@ -534,12 +586,12 @@ export default function Profile() {
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      {userData.documents?.length === 0 ? (
+                      {userData.documentos?.length === 0 ? (
                         <div className="col-span-2 py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-400">
                           Nenhum documento enviado ainda.
                         </div>
                       ) : (
-                        userData.documents?.map((doc: string, i: number) => (
+                        userData.documentos?.map((doc: string, i: number) => (
                           <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
@@ -568,78 +620,6 @@ export default function Profile() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                {/* Subscription Management Section */}
-                {isPhysio && (
-                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform" />
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                          <CreditCard size={24} className="text-blue-600" />
-                          Gerenciamento de Assinatura
-                        </h3>
-                        <div className={cn(
-                          "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2",
-                          isPro 
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-100" 
-                            : "bg-slate-100 text-slate-500"
-                        )}>
-                          {isPro ? (
-                            <><Zap size={14} fill="currentColor" /> Plano Pro</>
-                          ) : (
-                            "Plano Basic"
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-6 mb-8">
-                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Status Atual</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-lg font-bold text-slate-900 capitalize">
-                              {subscriptionInfo?.status === 'active' ? 'Ativo' : 'Inativo / Pendente'}
-                            </p>
-                            {isPro && (
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-black uppercase tracking-widest">PRO</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Próxima Renovação</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {subscriptionInfo?.current_period_end ? new Date(subscriptionInfo.current_period_end).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        {isPro ? (
-                          <button
-                            onClick={handleManageSubscription}
-                            disabled={loadingPortal}
-                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                            {loadingPortal ? <Loader2 className="animate-spin" size={20} /> : <ExternalLink size={20} />}
-                            Gerenciar no Stripe
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => navigate('/subscription')}
-                            className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
-                          >
-                            <Zap size={20} fill="currentColor" />
-                            Fazer Upgrade para Pro
-                          </button>
-                        )}
-                        <p className="text-xs text-slate-400 sm:max-w-[200px] leading-relaxed">
-                          Gerencie seus dados de pagamento, faturas e cancelamento diretamente no portal seguro do Stripe.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                   <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                     <Lock size={24} className="text-blue-600" />
@@ -702,34 +682,51 @@ export default function Profile() {
                     Preferências do Aplicativo
                   </h3>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                          <Bell size={24} />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                            <Bell size={24} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">Notificações Push</p>
+                            <p className="text-sm text-slate-500">Alertas de novas mensagens e agendamentos.</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900">Notificações Push</p>
-                          <p className="text-sm text-slate-500">Alertas de novas mensagens e agendamentos.</p>
+                        <div className="w-12 h-6 bg-blue-600 rounded-full relative">
+                          <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
                         </div>
                       </div>
-                      <div className="w-12 h-6 bg-blue-600 rounded-full relative">
-                        <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                          <Globe size={24} />
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                            <Globe size={24} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{t('settings.language')}</p>
+                            <p className="text-sm text-slate-500">{t('settings.language_description')}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900">Idioma</p>
-                          <p className="text-sm text-slate-500">Português (Brasil)</p>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {languages.map((lang) => (
+                            <button
+                              key={lang.code}
+                              onClick={() => changeLanguage(lang.code)}
+                              className={cn(
+                                "flex items-center justify-center gap-2 p-3 rounded-xl font-bold transition-all border",
+                                i18n.language.startsWith(lang.code)
+                                  ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100"
+                                  : "bg-white border-slate-200 text-slate-600 hover:border-blue-300"
+                              )}
+                            >
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      <button className="text-blue-600 font-bold text-sm">Alterar</button>
-                    </div>
 
                     <div className="pt-6 border-t border-slate-100">
                       <h4 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Sistema de E-mail</h4>

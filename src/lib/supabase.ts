@@ -1,68 +1,145 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { config } from "../config/api";
 
-export let supabase: SupabaseClient | null = null;
-
-export const initSupabase = () => {
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    console.warn("Supabase config not ready yet.");
-    return;
-  }
-  supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
-  return supabase;
-};
+let supabaseInstance: SupabaseClient | null = null;
 
 export const getSupabase = (): SupabaseClient => {
-  if (!supabase) {
-    return initSupabase() as SupabaseClient;
+  if (!supabaseInstance) {
+    try {
+      // Prioritize config from api.ts which is the source of truth
+      let supabaseUrl = (config.supabaseUrl || "").trim();
+      let supabaseAnonKey = (config.supabaseAnonKey || "").trim();
+
+      // Fallback to environment variables if config is empty or invalid
+      if (!supabaseUrl || !supabaseUrl.startsWith("http")) {
+        supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
+      }
+      if (!supabaseAnonKey) {
+        supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+      }
+
+      // Final fallback to hardcoded values if still missing
+      if (!supabaseUrl || !supabaseUrl.startsWith("http")) {
+        supabaseUrl = "https://exciqetztunqgxbwwodo.supabase.co";
+      }
+      if (!supabaseAnonKey) {
+        supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2lxZXR6dHVucWd4Ynd3b2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDY0MDAsImV4cCI6MjA5MDA4MjQwMH0.nvxEce7JOaEIR7T2fpUwrtVOI3n84KcQtqveNr3OqAo";
+      }
+
+      console.log(`Inicializando Supabase com URL: ${supabaseUrl}`);
+
+      supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      });
+    } catch (err) {
+      console.error("Erro fatal ao criar cliente Supabase:", err);
+      // Retorna um objeto dummy para evitar crashes imediatos
+      return {} as SupabaseClient;
+    }
   }
-  return supabase;
+  return supabaseInstance;
 };
 
-/**
- * Helper to invoke Supabase Edge Functions
- */
-export const invokeFunction = async (functionName: string, body: any = {}) => {
-  try {
-    const client = getSupabase();
-    if (!client) throw new Error("Supabase client not initialized");
+// Proxy para permitir o uso de 'supabase' como se fosse a instância real, 
+// mas inicializando-a apenas quando necessário.
+export const supabase = new Proxy({} as SupabaseClient, {
+  get: (target, prop) => {
+    try {
+      const instance = getSupabase();
+      const value = (instance as any)[prop];
+      if (value === undefined) return undefined;
+      return typeof value === 'function' ? value.bind(instance) : value;
+    } catch (err) {
+      console.error(`Erro ao acessar propriedade '${String(prop)}' do Supabase:`, err);
+      return undefined;
+    }
+  }
+});
 
-    const { data, error } = await client.functions.invoke(functionName, {
-      body: body && Object.keys(body).length > 0 ? body : undefined,
+export const invokeFunction = async (name: string, body: any) => {
+  const instance = getSupabase();
+  
+  try {
+    const { data, error } = await instance.functions.invoke(name, {
+      body,
     });
 
     if (error) {
-      console.error(`Erro retornado pela função ${functionName}:`, error);
+      // Se falhar com erro de rede, tenta fetch direto como fallback
+      if (error.message?.includes("Failed to send a request")) {
+        console.warn(`SDK falhou ao invocar ${name}, tentando fetch direto...`);
+        return await directInvoke(name, body);
+      }
+      
+      console.error(`Erro ao invocar função ${name}:`, error);
       throw error;
     }
 
     return data;
   } catch (err: any) {
-    console.error(`Falha crítica ao invocar função ${functionName}:`, err);
+    if (err.message?.includes("Failed to send a request")) {
+      return await directInvoke(name, body);
+    }
     throw err;
   }
 };
 
-export async function callFisioAI(action: string, params: any = {}) {
-  try {
-    const client = getSupabase();
-    if (!client) return null;
+/**
+ * Fallback para invocar função via fetch direto caso o SDK falhe.
+ */
+async function directInvoke(name: string, body: any) {
+  const instance = getSupabase();
+  
+  // Tenta pegar do instance se config estiver vazio
+  const supabaseUrl = (instance as any).supabaseUrl || config.supabaseUrl;
+  const supabaseAnonKey = (instance as any).supabaseKey || config.supabaseAnonKey;
+  
+  const url = `${supabaseUrl}/functions/v1/${name}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${supabaseAnonKey}`
+    },
+    body: JSON.stringify(body)
+  });
 
-    const { data, error } = await client.functions.invoke('gemini-ai', {
-      body: { 
-        action: action,
-        payload: params 
-      },
-    });
-
-    if (error) {
-      console.error('Erro ao chamar a IA (Edge Function):', error);
-      return null;
-    }
-
-    return data;
-  } catch (err) {
-    console.error('Falha crítica ao invocar callFisioAI:', err);
-    return null;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erro na função ${name} (HTTP ${response.status}): ${errorText}`);
   }
+
+  return await response.json();
 }
+
+export const callFisioAI = async (action: string, payload: any) => {
+  return invokeFunction('gemini-ai', { action, payload });
+};
+
+export const initSupabase = () => {
+  try {
+    getSupabase();
+    console.log("Supabase inicializado com sucesso.");
+  } catch (error) {
+    console.error("Falha ao inicializar Supabase:", error);
+  }
+};
+
+export const handleSupabaseError = (error: any, operation: string, path: string) => {
+  const errInfo = {
+    error: error.message || String(error),
+    operationType: operation,
+    path,
+    authInfo: {
+      userId: supabase.auth.getUser().then(({ data }) => data.user?.id).catch(() => null),
+    }
+  };
+  console.error('Supabase Error:', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+};

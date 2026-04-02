@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")
 const SMTP_USER = Deno.env.get("SMTP_USER")
 const SMTP_PASS = Deno.env.get("SMTP_PASS")
 const SMTP_HOST = Deno.env.get("SMTP_HOST") || "smtp.gmail.com"
-const SMTP_PORT = Deno.env.get("SMTP_PORT") || "587"
+const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "587")
 const SMTP_FROM = Deno.env.get("SMTP_FROM") || SMTP_USER
 
 const corsHeaders = {
@@ -47,11 +48,29 @@ serve(async (req) => {
           status: 200,
         })
       } else if (SMTP_USER && SMTP_PASS) {
-        // Use SMTP (this is harder in Deno without a heavy library, but we can use a simple fetch to an SMTP relay or just inform the user)
-        // For now, let's assume we use Resend as it's the modern way for Edge Functions.
-        // If the user really needs SMTP, they might need a different setup.
-        // But I'll try to use a simple SMTP relay if available.
-        throw new Error("SMTP is not directly supported in this Edge Function yet. Please use RESEND_API_KEY.")
+        // Use SMTP
+        const client = new SmtpClient();
+        await client.connectTLS({
+          hostname: SMTP_HOST,
+          port: SMTP_PORT,
+          username: SMTP_USER,
+          password: SMTP_PASS,
+        });
+
+        await client.send({
+          from: SMTP_FROM || SMTP_USER,
+          to,
+          subject,
+          content: body,
+          html: body, // If body is HTML
+        });
+
+        await client.close();
+
+        return new Response(JSON.stringify({ status: "ok", provider: "smtp" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        })
       } else {
         throw new Error("No email provider configured (RESEND_API_KEY or SMTP credentials)")
       }

@@ -14,6 +14,9 @@
         "gender": { "type": "string", "enum": ["male", "female", "other"] },
         "specialty": { "type": "string" },
         "city": { "type": "string" },
+        "address": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "country": { "type": "string" },
         "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -29,6 +32,10 @@
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
+        "address": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
         "history": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["uid", "name", "email"]
@@ -45,6 +52,9 @@
         "crefito": { "type": "string" },
         "specialty": { "type": "string" },
         "city": { "type": "string" },
+        "address": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "country": { "type": "string" },
         "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
         "photoURL": { "type": "string", "format": "uri" },
         "documents": { 

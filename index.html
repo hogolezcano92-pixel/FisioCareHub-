@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FisioCareHub - Conectando Fisioterapeutas e Pacientes</title>
-    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0ea5e9" />
     <link rel="apple-touch-icon" href="/logo192.png" />
   </head>
@@ -12,13 +11,13 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Unregister any existing service workers to avoid "TypeError: Load failed" issues
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('SW registered: ', registration);
-          }).catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-          });
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker unregistered');
+          }
         });
       }
     </script>

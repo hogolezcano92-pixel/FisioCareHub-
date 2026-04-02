@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Activity, 
   Stethoscope, 
@@ -29,65 +30,153 @@ import {
   UserCheck,
   Home as HomeIcon
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
+interface Professional {
+  id: string;
+  name: string;
+  spec: string;
+  fullSpec: string;
+  img: string;
+  rating: number;
+  reviews: number;
+  bio: string;
+  location: string;
+}
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Todos');
+  const { t } = useTranslation();
+  const [nameQuery, setNameQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('Todos');
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  const filters = ['Todos', 'Ortopedia', 'Neurologia', 'Respiratória', 'Geriátrica'];
-
-  const professionals = [
-    { 
-      id: 1,
-      name: 'Dr. Ricardo Santos', 
-      spec: 'Ortopedia', 
-      fullSpec: 'Ortopedia e Traumatologia',
-      img: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400&h=400',
-      rating: 4.9,
-      reviews: 124,
-      bio: 'Especialista em reabilitação pós-cirúrgica e dores crônicas com mais de 10 anos de experiência.'
+  const specialtySlides = [
+    {
+      title: "Fisioterapia Traumato-Ortopédica",
+      description: "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa.",
+      image: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&q=80&w=1200",
+      icon: Bone,
+      color: "sky"
     },
-    { 
-      id: 2,
-      name: 'Dra. Juliana Lima', 
-      spec: 'Neurologia', 
-      fullSpec: 'Neurologia e Equilíbrio',
-      img: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=400&h=400',
-      rating: 5.0,
-      reviews: 89,
-      bio: 'Focada em pacientes pós-AVC e doenças neurodegenerativas, promovendo autonomia e qualidade de vida.'
+    {
+      title: "Fisioterapia Neurofuncional",
+      description: "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas.",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+      icon: Brain,
+      color: "emerald"
     },
-    { 
-      id: 3,
-      name: 'Dr. Marcos Oliveira', 
-      spec: 'Respiratória', 
-      fullSpec: 'Fisioterapia Respiratória',
-      img: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400&h=400',
-      rating: 4.8,
-      reviews: 156,
-      bio: 'Especialista em cuidados pulmonares e reabilitação cardiopulmonar para todas as idades.'
+    {
+      title: "Fisioterapia Geriátrica",
+      description: "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência.",
+      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
+      icon: Heart,
+      color: "orange"
     },
-    { 
-      id: 4,
-      name: 'Dra. Ana Beatriz', 
-      spec: 'Geriátrica', 
-      fullSpec: 'Fisioterapia Geriátrica',
-      img: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&q=80&w=400&h=400',
-      rating: 4.9,
-      reviews: 210,
-      bio: 'Dedicada ao cuidado de idosos, focando em prevenção de quedas e manutenção da mobilidade.'
+    {
+      title: "Fisioterapia Pediátrica",
+      description: "Atendimento lúdico e especializado para o desenvolvimento motor infantil, sem o estresse de clínicas.",
+      image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1200",
+      icon: Baby,
+      color: "indigo"
     },
+    {
+      title: "Fisioterapia Respiratória",
+      description: "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar.",
+      image: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200",
+      icon: Wind,
+      color: "blue"
+    },
+    {
+      title: "Fisioterapia Esportiva",
+      description: "Prevenção e tratamento de lesões para atletas com atendimento personalizado e focado no retorno rápido.",
+      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=1200",
+      icon: Zap,
+      color: "amber"
+    }
   ];
 
-  const filteredProfessionals = professionals.filter(pro => {
-    const matchesSearch = pro.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         pro.fullSpec.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'Todos' || pro.spec === activeFilter;
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    const slideInterval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % specialtySlides.length);
+    }, 5000);
+    return () => clearInterval(slideInterval);
+  }, [specialtySlides.length]);
+
+  const specialties = [
+    'Todos', 
+    'Gerontologia', 
+    'Neurofuncional', 
+    'Traumato-Ortopédica', 
+    'Respiratória', 
+    'Saúde da Mulher', 
+    'Pediátrica', 
+    'Cardiovascular', 
+    'Dermatofuncional', 
+    'Esportiva', 
+    'Oncologia'
+  ];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProfessionals();
+    }, 500); // Debounce de 500ms
+    return () => clearTimeout(timer);
+  }, [nameQuery, locationQuery, specialtyFilter]);
+
+  const fetchProfessionals = async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('perfis')
+        .select('*')
+        .eq('tipo_usuario', 'fisioterapeuta');
+
+      // Filtro por Nome ou E-mail (ilike para ignorar case)
+      if (nameQuery) {
+        query = query.or(`nome_completo.ilike.%${nameQuery}%,email.ilike.%${nameQuery}%`);
+      }
+
+      // Filtro por Localização (ilike para ignorar case)
+      if (locationQuery) {
+        query = query.ilike('localizacao', `%${locationQuery}%`);
+      }
+
+      // Filtro por Especialidade
+      if (specialtyFilter && specialtyFilter !== 'Todos') {
+        query = query.eq('especialidade', specialtyFilter);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedData: Professional[] = data.map((profile: any) => ({
+          id: profile.id,
+          name: profile.nome_completo || 'Fisioterapeuta',
+          spec: profile.especialidade || 'Geral',
+          fullSpec: profile.especialidade || 'Fisioterapia Geral',
+          img: profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
+          rating: 5.0, // Default para agora
+          reviews: 0,   // Default para agora
+          bio: profile.bio || 'Sem biografia disponível.',
+          location: profile.localizacao || 'Não informada'
+        }));
+        setProfessionals(mappedData);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar profissionais:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 bg-white dark:bg-slate-950 transition-colors duration-300">
@@ -127,18 +216,18 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 backdrop-blur-md border border-sky-100 rounded-full text-sky-600 text-sm font-black uppercase tracking-widest shadow-sm"
             >
               <Sparkles size={16} className="text-amber-400" />
-              Cuidado Humanizado em Casa
+              Líder em Reabilitação Domiciliar de Alta Performance
             </motion.div>
             
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-blue-950 dark:text-white leading-tight tracking-tight">
-              Sua Reabilitação no <br />
+            <h1 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white leading-tight tracking-tight">
+              {t('home.hero.title1')} <br />
               <span className="text-sky-600 dark:text-sky-400">
-                Conforto de Casa
+                {t('home.hero.title2')}
               </span>
             </h1>
             
-            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-medium">
-              Fisioterapia especializada para idosos e recuperação domiciliar com profissionais verificados e tecnologia de ponta.
+            <p className="text-base md:text-lg text-[#1A202C] dark:text-slate-400 max-w-2xl leading-relaxed font-medium">
+              {t('home.hero.subtitle')}
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
@@ -148,7 +237,7 @@ export default function Home() {
               >
                 <Link
                   to="/register"
-                  className="px-8 py-4 bg-sky-500 text-white rounded-full font-bold text-lg shadow-xl shadow-sky-500/30 flex items-center gap-2 transition-all hover:bg-sky-600"
+                  className="px-8 py-4 bg-sky-500 text-white rounded-full font-bold text-lg shadow-xl shadow-sky-500/30 flex items-center gap-2 transition-all hover:bg-sky-600 mb-8"
                 >
                   Agendar Avaliação <ArrowRight size={20} />
                 </Link>
@@ -162,7 +251,7 @@ export default function Home() {
                   <ShieldCheck size={24} />
                 </div>
                 <div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Fisioterapeutas Verificados</p>
+                  <p className="text-base font-bold text-[#1A202C] dark:text-white">Fisioterapeutas Verificados</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-sky-500" /> Selo de Qualidade FisioCare
                   </p>
@@ -171,7 +260,7 @@ export default function Home() {
             </div>
             
             <div className="pt-10 border-t border-slate-100 dark:border-slate-800">
-              <h4 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-widest text-center lg:text-left">
+              <h4 className="text-lg font-black text-[#1A202C] dark:text-white mb-6 uppercase tracking-widest text-center lg:text-left">
                 Conheça os Especialistas da Sua Região
               </h4>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">
@@ -200,7 +289,7 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start text-amber-400 mb-1">
                     {[1,2,3,4,5].map(i => <Star key={i} size={20} fill="currentColor" />)}
                   </div>
-                  <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">+500 profissionais na sua área</p>
+                  <p className="text-[#1A202C] dark:text-slate-400 font-bold text-lg">+500 profissionais na sua área</p>
                 </div>
               </div>
             </div>
@@ -229,93 +318,110 @@ export default function Home() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="absolute bottom-12 left-12 right-12 lg:right-auto lg:w-96 p-8 bg-white/70 dark:bg-slate-800/70 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 rounded-[3rem] shadow-2xl"
+            className="absolute bottom-16 left-6 right-6 lg:left-12 lg:right-auto lg:w-[28rem] p-8 md:p-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 rounded-[3rem] shadow-2xl z-10"
           >
-            <div className="flex items-center gap-5 mb-4">
-              <div className="w-16 h-16 bg-sky-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-sky-500/30">
-                <Heart size={32} />
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
+              <div className="w-20 h-20 bg-sky-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-sky-500/30 flex-shrink-0 rotate-3">
+                <Heart size={40} />
               </div>
-              <div>
-                <p className="text-sm font-black text-sky-600 uppercase tracking-widest">Cuidado Especial</p>
-                <p className="text-xl font-black text-slate-900 dark:text-white">Foco na Terceira Idade</p>
+              <div className="text-center sm:text-left">
+                <p className="text-sm font-black text-sky-600 uppercase tracking-[0.2em] mb-2">Atendimento VIP</p>
+                <p className="text-2xl font-black text-[#1A202C] dark:text-white leading-none tracking-tight">Fisioterapia Sem Limites</p>
               </div>
             </div>
-            <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              Atendimento adaptado para garantir segurança, autonomia e alegria no processo de reabilitação.
+            <p className="text-lg text-[#1A202C] dark:text-slate-400 leading-relaxed font-medium text-center sm:text-left">
+              Atenção total e personalizada para idosos e pós-operatórios. Qualidade de clínica com a conveniência e segurança do seu domicílio.
             </p>
           </motion.div>
+
+          {/* Suporte FisioCareHub Label */}
+          <div className="absolute bottom-4 left-6 z-20 opacity-70 pointer-events-none hidden md:block">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+              Suporte FisioCareHub
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* Specialties Section - Simplified & Large */}
+      {/* Specialties Slider Section - Modern & Professional */}
       <section className="py-24 px-8 lg:px-20 bg-white dark:bg-slate-950 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-2">
-            <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Nossos Serviços</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
-              Como podemos <span className="text-sky-500">ajudar hoje?</span>
+            <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Especialidades</h2>
+            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">
+              Excelência em <span className="text-sky-500">Diversas Áreas</span>
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { 
-                name: 'Recuperação de Fraturas', 
-                icon: Bone, 
-                color: 'sky', 
-                desc: 'Dores crônicas e quedas.',
-                gradient: 'from-sky-50 to-white dark:from-sky-900/20 dark:to-slate-900'
-              },
-              { 
-                name: 'Mobilidade e Equilíbrio', 
-                icon: Brain, 
-                color: 'emerald', 
-                desc: 'Pós-AVC ou Parkinson.',
-                gradient: 'from-emerald-50 to-white dark:from-emerald-900/20 dark:to-slate-900'
-              },
-              { 
-                name: 'Fisio Respiratória', 
-                icon: Wind, 
-                color: 'orange', 
-                desc: 'Saúde pulmonar em casa.',
-                gradient: 'from-orange-50 to-white dark:from-orange-900/20 dark:to-slate-900'
-              },
-              { 
-                name: 'Pós-Cirúrgica', 
-                icon: Activity, 
-                color: 'indigo', 
-                desc: 'Cicatrização e retorno.',
-                gradient: 'from-indigo-50 to-white dark:from-indigo-900/20 dark:to-slate-900'
-              },
-            ].map((spec, i) => (
+          <div className="relative h-[500px] md:h-[600px] rounded-[4rem] overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -10, scale: 1.02 }}
-                className={cn(
-                  "group relative overflow-hidden p-6 lg:p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl transition-all bg-gradient-to-br",
-                  spec.gradient
-                )}
+                key={currentSlide}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 1, ease: "easeInOut" }}
+                className="absolute inset-0"
               >
-                <div className="bg-white dark:bg-slate-800 rounded-full p-3 shadow-sm inline-flex items-center justify-center mb-4 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110">
-                  <div className={cn(
-                    "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-md",
-                    spec.color === 'sky' && "bg-sky-500 text-white",
-                    spec.color === 'emerald' && "bg-emerald-500 text-white",
-                    spec.color === 'orange' && "bg-orange-500 text-white",
-                    spec.color === 'indigo' && "bg-indigo-500 text-white",
-                  )}>
-                    <spec.icon size={24} className="md:hidden" />
-                    <spec.icon size={28} className="hidden md:block" />
-                  </div>
+                <img 
+                  src={specialtySlides[currentSlide].image} 
+                  className="w-full h-full object-cover"
+                  alt={specialtySlides[currentSlide].title}
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-950/90 via-blue-950/40 to-transparent" />
+                
+                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 text-white">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center gap-4 mb-6"
+                  >
+                    <div className={cn(
+                      "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg backdrop-blur-md",
+                      specialtySlides[currentSlide].color === 'sky' && "bg-sky-500/80",
+                      specialtySlides[currentSlide].color === 'emerald' && "bg-emerald-500/80",
+                      specialtySlides[currentSlide].color === 'orange' && "bg-orange-500/80",
+                      specialtySlides[currentSlide].color === 'indigo' && "bg-indigo-500/80",
+                      specialtySlides[currentSlide].color === 'blue' && "bg-blue-500/80",
+                      specialtySlides[currentSlide].color === 'amber' && "bg-amber-500/80",
+                    )}>
+                      {(() => {
+                        const Icon = specialtySlides[currentSlide].icon;
+                        return <Icon size={32} />;
+                      })()}
+                    </div>
+                    <h4 className="text-2xl md:text-4xl font-display font-bold tracking-tight">
+                      {specialtySlides[currentSlide].title}
+                    </h4>
+                  </motion.div>
+                  
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-lg md:text-xl text-sky-50/80 max-w-2xl font-medium leading-relaxed"
+                  >
+                    {specialtySlides[currentSlide].description}
+                  </motion.p>
                 </div>
-                <h4 className="text-lg md:text-xl font-display font-bold text-blue-950 dark:text-white mb-1 leading-tight">{spec.name}</h4>
-                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{spec.desc}</p>
               </motion.div>
-            ))}
+            </AnimatePresence>
+
+            {/* Slider Controls */}
+            <div className="absolute bottom-8 right-8 md:right-16 flex gap-3 z-20">
+              {specialtySlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  className={cn(
+                    "h-2 rounded-full transition-all duration-500",
+                    currentSlide === i ? "w-12 bg-sky-500" : "w-3 bg-white/30 hover:bg-white/50"
+                  )}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -325,7 +431,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 space-y-2">
             <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Simples e Rápido</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
+            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">
               Como funciona o <span className="text-sky-500">FisioCareHub?</span>
             </h3>
           </div>
@@ -337,22 +443,22 @@ export default function Home() {
             {[
               {
                 step: '01',
-                title: 'Triagem Inteligente',
-                desc: 'Responda algumas perguntas rápidas sobre seus sintomas e receba uma orientação inicial da nossa IA.',
+                title: 'Solicite seu Atendimento',
+                desc: 'Diga-nos o que você precisa e nossa plataforma encontrará o especialista mais próximo de você rapidamente.',
                 icon: ClipboardCheck,
                 color: 'bg-sky-500'
               },
               {
                 step: '02',
-                title: 'Escolha seu Fisio',
-                desc: 'Filtre por especialidade, localização e avaliações para encontrar o profissional ideal para você.',
+                title: 'Escolha seu Especialista',
+                desc: 'Analise perfis, especialidades e avaliações reais para escolher o profissional que melhor atende suas necessidades.',
                 icon: UserCheck,
                 color: 'bg-emerald-500'
               },
               {
                 step: '03',
-                title: 'Atendimento em Casa',
-                desc: 'Agende o melhor horário e receba o tratamento completo no conforto e segurança do seu lar.',
+                title: 'Recupere-se em Casa',
+                desc: 'Receba o tratamento completo com toda a atenção que você merece, no ambiente onde você se sente mais seguro.',
                 icon: HomeIcon,
                 color: 'bg-orange-500'
               }
@@ -374,8 +480,8 @@ export default function Home() {
                     {item.step}
                   </div>
                 </div>
-                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{item.title}</h4>
-                <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-xs">{item.desc}</p>
+                <h4 className="text-xl font-bold text-[#1A202C] dark:text-white mb-3">{item.title}</h4>
+                <p className="text-[#1A202C] dark:text-slate-400 font-medium leading-relaxed max-w-xs">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -387,43 +493,56 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Nossa Equipe</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Especialistas na Sua Região</h3>
+            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">Especialistas na Sua Região</h3>
             
             {/* Search and Filter Bar */}
-            <div className="max-w-4xl mx-auto pt-8 space-y-6">
+            <div className="max-w-5xl mx-auto pt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Nome Filter */}
               <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={24} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
                 <input 
                   type="text" 
-                  placeholder="Busque por nome ou especialidade..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full text-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white"
+                  placeholder="Nome do profissional..."
+                  value={nameQuery}
+                  onChange={(e) => setNameQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white"
                 />
               </div>
-              
-              <div className="flex flex-wrap justify-center gap-3">
-                {filters.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={cn(
-                      "px-6 py-2.5 rounded-full text-sm font-bold transition-all border",
-                      activeFilter === filter 
-                        ? "bg-sky-500 text-white border-sky-500 shadow-lg shadow-sky-500/30" 
-                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700 hover:border-sky-200 dark:hover:border-sky-800"
-                    )}
-                  >
-                    {filter}
-                  </button>
-                ))}
+
+              {/* Localização Filter */}
+              <div className="relative group">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Cidade ou Bairro..."
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white"
+                />
+              </div>
+
+              {/* Especialidade Filter */}
+              <div className="relative group">
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+                <select 
+                  value={specialtyFilter}
+                  onChange={(e) => setSpecialtyFilter(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white appearance-none cursor-pointer"
+                >
+                  {specialties.map(spec => (
+                    <option key={spec} value={spec}>{spec}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <ArrowRight size={16} className="rotate-90" />
+                </div>
               </div>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {filteredProfessionals.length > 0 ? (
-              filteredProfessionals.map((pro, i) => (
+            {professionals.length > 0 ? (
+              professionals.map((pro, i) => (
                 <motion.div
                   key={pro.id}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -447,13 +566,13 @@ export default function Home() {
                   
                   <div className="flex items-center gap-1 text-amber-400 mb-2">
                     <Star size={16} fill="currentColor" />
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{pro.rating}</span>
+                    <span className="text-sm font-bold text-[#1A202C] dark:text-white">{pro.rating}</span>
                     <span className="text-xs text-slate-400 font-medium">({pro.reviews})</span>
                   </div>
                   
-                  <h4 className="text-xl font-black text-slate-900 dark:text-white mb-1">{pro.name}</h4>
+                  <h4 className="text-xl font-black text-[#1A202C] dark:text-white mb-1">{pro.name}</h4>
                   <p className="text-sky-600 dark:text-sky-400 font-black text-xs uppercase tracking-widest mb-4">{pro.fullSpec}</p>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-8 leading-relaxed line-clamp-3">
+                  <p className="text-[#1A202C] dark:text-slate-400 text-sm font-medium mb-8 leading-relaxed line-clamp-3">
                     {pro.bio}
                   </p>
                   
@@ -474,63 +593,6 @@ export default function Home() {
                 <p className="text-slate-500 dark:text-slate-400">Tente ajustar sua busca ou filtros para encontrar o que procura.</p>
               </div>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="py-24 px-8 lg:px-20 bg-slate-50 dark:bg-slate-900/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Por que escolher o FisioCareHub?</h2>
-              <h3 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-white leading-tight tracking-tight">
-                SEGURANÇA EM <br />
-                <span className="text-sky-500 italic font-serif">CADA PASSO.</span>
-              </h3>
-              <div className="space-y-6">
-                {[
-                  { title: 'Profissionais Rigorosamente Avaliados', desc: 'Checamos antecedentes, formação e referências de cada fisioterapeuta.' },
-                  { title: 'Atendimento Personalizado', desc: 'Planos de tratamento criados especificamente para suas necessidades e limitações.' },
-                  { title: 'Acompanhamento para a Família', desc: 'Relatórios simples e diretos para que os familiares acompanhem a evolução.' }
-                ].map((item, i) => (
-                  <motion.div 
-                    key={i}
-                    whileHover={{ x: 10 }}
-                    className="flex gap-6 p-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm"
-                  >
-                    <div className="w-12 h-12 bg-sky-100 dark:bg-sky-900/50 rounded-full flex-shrink-0 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                      <CheckCircle2 size={24} />
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{item.title}</h4>
-                      <p className="text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{item.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-            <div className="relative">
-              <div className="rounded-[4rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800">
-                <img 
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070" 
-                  className="w-full aspect-square object-cover"
-                  alt="Happy elderly patient"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                className="absolute -bottom-10 -right-10 p-8 bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-700 max-w-xs"
-              >
-                <div className="flex text-amber-400 mb-3">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={20} fill="currentColor" />)}
-                </div>
-                <p className="text-slate-900 dark:text-white font-bold italic text-lg leading-relaxed">"O atendimento em casa mudou minha vida. Sinto-me segura e muito bem cuidada."</p>
-                <p className="text-slate-400 dark:text-slate-500 text-sm mt-3 font-bold uppercase tracking-widest">— Maria Silva, 74 anos</p>
-              </motion.div>
-            </div>
           </div>
         </div>
       </section>

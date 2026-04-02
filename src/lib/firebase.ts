@@ -1,36 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { config } from '../config/api';
+import firebaseConfig from '../../firebase-applet-config.json';
 
-export let auth: any = null;
-export let db: any = null;
-export let storage: any = null;
-
-export const initFirebase = () => {
-  if (!config.firebaseApiKey) {
-    console.warn("Firebase config not ready yet.");
-    return;
-  }
-
-  const firebaseConfig = {
-    apiKey: config.firebaseApiKey,
-    authDomain: config.firebaseAuthDomain,
-    projectId: config.firebaseProjectId,
-    storageBucket: config.firebaseStorageBucket,
-    messagingSenderId: config.firebaseMessagingSenderId,
-    appId: config.firebaseAppId,
-    measurementId: config.firebaseMeasurementId,
-  };
-
-  const app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
-
-  return { auth, db, storage };
-};
+// Initialize Firebase SDK
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
 
 export enum OperationType {
   CREATE = 'create',

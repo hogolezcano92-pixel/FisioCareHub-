@@ -1,17 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  addDoc, 
-  getDocs,
-  doc,
-  getDoc
-} from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, 
@@ -32,7 +22,8 @@ import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
 
 export default function Records() {
-  const [user] = useAuthState(auth);
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [userData, setUserData] = useState<any>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [triages, setTriages] = useState<any[]>([]);
@@ -54,24 +45,36 @@ export default function Records() {
   const [showAiPanel, setShowAiPanel] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setUserData(data);
+    const init = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserData(profile);
 
-          const q = query(
-            collection(db, 'records'),
-            where(data.role === 'patient' ? 'patientId' : 'physioId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-          );
+          const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+          const userIdField = isPhysio ? 'fisio_id' : 'paciente_id';
 
-          const unsubscribeRecords = onSnapshot(q, async (snap) => {
-            const recordsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const fetchRecords = async () => {
+            const { data: recordsData, error: recordsError } = await supabase
+              .from('prontuarios')
+              .select('*')
+              .eq(userIdField, user.id)
+              .order('data_registro', { ascending: false });
+
+            if (recordsError) {
+              console.error(recordsError);
+              return;
+            }
+
             setRecords(recordsData);
             
             // Resolve names
-            const otherRoleField = data.role === 'patient' ? 'physioId' : 'patientId';
+            const otherRoleField = isPhysio ? 'paciente_id' : 'fisio_id';
             const uidsToResolve = new Set<string>();
             recordsData.forEach((rec: any) => uidsToResolve.add(rec[otherRoleField]));
             
@@ -84,38 +87,48 @@ export default function Records() {
             setNameMap(resolvedNames);
             setLoading(false);
 
-            // Fetch triages for these patients if physio
-            if (data.role === 'physiotherapist' && recordsData.length > 0) {
-              const patientIds = Array.from(new Set(recordsData.map((r: any) => r.patientId)));
-              const chunks = [];
-              for (let i = 0; i < patientIds.length; i += 30) {
-                chunks.push(patientIds.slice(i, i + 30));
-              }
-
-              const triagePromises = chunks.map(chunk => 
-                getDocs(query(collection(db, 'triages'), where('patientId', 'in', chunk), orderBy('createdAt', 'desc')))
-              );
-
-              Promise.all(triagePromises).then(snaps => {
-                const allTriages = snaps.flatMap(s => s.docs.map(d => ({ id: d.id, ...d.data() })));
-                setTriages(allTriages);
-              });
-            } else if (data.role === 'patient') {
-              // Fetch own triages
-              const tq = query(collection(db, 'triages'), where('patientId', '==', user.uid), orderBy('createdAt', 'desc'));
-              onSnapshot(tq, (tsnap) => {
-                setTriages(tsnap.docs.map(d => ({ id: d.id, ...d.data() })));
-              });
+            // Fetch triages
+            if (isPhysio && recordsData.length > 0) {
+              const patientIds = Array.from(new Set(recordsData.map((r: any) => r.paciente_id)));
+              const { data: triagesData } = await supabase
+                .from('triagens')
+                .select('*')
+                .in('paciente_id', patientIds)
+                .order('data_triagem', { ascending: false });
+              
+              if (triagesData) setTriages(triagesData);
+            } else if (!isPhysio) {
+              const { data: triagesData } = await supabase
+                .from('triagens')
+                .select('*')
+                .eq('paciente_id', user.id)
+                .order('data_triagem', { ascending: false });
+              
+              if (triagesData) setTriages(triagesData);
             }
-          }, (err) => {
-            handleFirestoreError(err, OperationType.GET, 'records');
-          });
+          };
 
-          return () => unsubscribeRecords();
+          fetchRecords();
+
+          // Real-time subscription
+          const subscription = supabase
+            .channel('prontuarios_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'prontuarios' }, () => {
+              fetchRecords();
+            })
+            .subscribe();
+
+          return () => {
+            supabase.removeChannel(subscription);
+          };
         }
-      });
+      }
+    };
+
+    if (!authLoading) {
+      init();
     }
-  }, [user]);
+  }, [user, authLoading, navigate]);
 
   const handleAiGenerate = async () => {
     if (!aiNotes.trim() || generatingAi) return;
@@ -126,10 +139,12 @@ export default function Records() {
       setContent(prev => prev ? `${prev}\n\n${result}` : result);
       setShowAiPanel(false);
       setAiNotes('');
-      import('sonner').then(({ toast }) => toast.success("Documentação gerada com sucesso!"));
+      const { toast } = await import('sonner');
+      toast.success("Documentação gerada com sucesso!");
     } catch (err: any) {
       setError("Erro ao gerar documentação com IA.");
-      import('sonner').then(({ toast }) => toast.error("Erro ao gerar documentação com IA."));
+      const { toast } = await import('sonner');
+      toast.error("Erro ao gerar documentação com IA.");
     } finally {
       setGeneratingAi(false);
     }
@@ -137,60 +152,67 @@ export default function Records() {
 
   const handleCreateRecord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || submitting) return;
-
-    // Restriction for free physiotherapists
-    if (userData?.role === 'physiotherapist' && (!userData?.subscription?.plan || userData?.subscription?.plan === 'free') && records.length >= 3) {
-      setError("Você atingiu o limite de 3 prontuários no plano gratuito. Faça o upgrade para registros ilimitados.");
-      import('sonner').then(({ toast }) => toast.error("Limite do plano gratuito atingido."));
-      return;
-    }
+    if (!content.trim() || submitting || !user) return;
 
     setSubmitting(true);
     setError('');
     try {
       // Find patient by email
-      const q = query(collection(db, 'users'), where('email', '==', patientEmail.trim().toLowerCase()), where('role', '==', 'patient'));
-      const patientSnap = await getDocs(q);
+      const { data: patientData, error: patientError } = await supabase
+        .from('perfis')
+        .select('id')
+        .eq('email', patientEmail.trim().toLowerCase())
+        .eq('tipo_usuario', 'paciente')
+        .single();
       
-      if (patientSnap.empty) {
+      if (patientError || !patientData) {
         setError("Paciente não encontrado com este e-mail.");
-        import('sonner').then(({ toast }) => toast.error("Paciente não encontrado."));
+        const { toast } = await import('sonner');
+        toast.error("Paciente não encontrado.");
         setSubmitting(false);
         return;
       }
 
-      const patientId = patientSnap.docs[0].id;
+      const patientId = patientData.id;
       const attachmentUrls = [];
 
       // Upload files to Supabase
       for (const file of files) {
         try {
-          const url = await uploadDocument(user?.uid || 'unknown', file);
+          const url = await uploadDocument(user.id, file);
           attachmentUrls.push(url);
         } catch (uploadErr: any) {
           console.error("Erro no upload de anexo:", uploadErr);
-          import('sonner').then(({ toast }) => toast.error(`Erro ao enviar arquivo ${file.name}: ${uploadErr.message}`));
+          const { toast } = await import('sonner');
+          toast.error(`Erro ao enviar arquivo ${file.name}: ${uploadErr.message}`);
         }
       }
 
-      await addDoc(collection(db, 'records'), {
-        patientId,
-        physioId: user?.uid,
-        content,
-        attachments: attachmentUrls,
-        createdAt: new Date().toISOString()
-      });
+      const { error: insertError } = await supabase
+        .from('prontuarios')
+        .insert({
+          paciente_id: patientId,
+          fisio_id: user.id,
+          conteudo: {
+            text: content,
+            attachments: attachmentUrls
+          },
+          data_registro: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
 
       setShowNewModal(false);
       setContent('');
       setPatientEmail('');
       setFiles([]);
-      import('sonner').then(({ toast }) => toast.success("Prontuário salvo com sucesso!"));
+      const { toast } = await import('sonner');
+      toast.success("Prontuário salvo com sucesso!");
     } catch (err: any) {
       console.error(err);
       setError("Erro ao criar prontuário.");
-      import('sonner').then(({ toast }) => toast.error("Erro ao salvar prontuário."));
+      const { toast } = await import('sonner');
+      toast.error("Erro ao salvar prontuário.");
     } finally {
       setSubmitting(false);
     }
@@ -198,7 +220,7 @@ export default function Records() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = userData?.role === 'physiotherapist';
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   return (
     <div className="space-y-8">
@@ -228,19 +250,21 @@ export default function Records() {
               <div key={triage.id} className="bg-purple-50 p-6 rounded-3xl border border-purple-100">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-xs font-bold text-purple-400 uppercase tracking-wider">
-                    {formatDate(triage.createdAt)}
+                    {formatDate(triage.data_triagem)}
                   </div>
-                  {userData?.role === 'physiotherapist' && (
+                  {userData?.tipo_usuario === 'fisioterapeuta' && (
                     <div className="text-[10px] bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-bold">
-                      PACIENTE: {nameMap[triage.patientId] || triage.patientId.slice(0, 6)}
+                      PACIENTE: {nameMap[triage.paciente_id] || triage.paciente_id.slice(0, 6)}
                     </div>
                   )}
                 </div>
                 <div className="text-sm font-bold text-purple-900 mb-1">Sintomas:</div>
-                <p className="text-sm text-purple-800 line-clamp-2 mb-3">{triage.symptoms}</p>
-                <div className="text-xs text-purple-600 bg-white/50 p-3 rounded-xl border border-purple-100 italic">
-                  {triage.aiAnalysis.slice(0, 100)}...
-                </div>
+                <p className="text-sm text-purple-800 line-clamp-2 mb-3">{triage.sintomas}</p>
+                {triage.aiAnalysis && (
+                  <div className="text-xs text-purple-600 bg-white/50 p-3 rounded-xl border border-purple-100 italic">
+                    {triage.aiAnalysis.slice(0, 100)}...
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -271,7 +295,7 @@ export default function Records() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-                      {formatDate(record.createdAt)}
+                      {formatDate(record.data_registro)}
                     </div>
                     <div className="text-lg font-bold text-slate-900">
                       Atendimento Realizado
@@ -281,17 +305,17 @@ export default function Records() {
                 <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-4 py-2 rounded-full">
                   <User size={16} />
                   {isPhysio ? 'Paciente: ' : 'Fisioterapeuta: '}
-                  {nameMap[isPhysio ? record.patientId : record.physioId] || 'Carregando...'}
+                  {nameMap[isPhysio ? record.paciente_id : record.fisio_id] || 'Carregando...'}
                 </div>
               </div>
 
               <div className="prose prose-slate max-w-none text-slate-700 mb-6 whitespace-pre-wrap">
-                {record.content}
+                {record.conteudo?.text || record.conteudo}
               </div>
 
-              {record.attachments?.length > 0 && (
+              {record.conteudo?.attachments?.length > 0 && (
                 <div className="flex flex-wrap gap-3 pt-6 border-t border-slate-50">
-                  {record.attachments.map((url: string, i: number) => (
+                  {record.conteudo.attachments.map((url: string, i: number) => (
                     <a
                       key={i}
                       href={url}

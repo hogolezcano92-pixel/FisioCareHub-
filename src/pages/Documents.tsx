@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../lib/firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, getDoc, doc } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { Gatekeeper } from '../components/Gatekeeper';
-import { useSubscription } from '../hooks/useSubscription';
 import { 
   FileText, 
   Plus, 
@@ -39,7 +36,7 @@ const FAVORITE_TEMPLATES = [
 ];
 
 export default function Documents() {
-  const [user] = useAuthState(auth);
+  const { user, loading: authLoading } = useAuth();
   const [userData, setUserData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,29 +50,40 @@ export default function Documents() {
   const [viewingDoc, setViewingDoc] = useState<any>(null);
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
 
-  const { isPro } = useSubscription();
-
   useEffect(() => {
-    if (user) {
-      getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setUserData(data);
-          fetchDocuments(data);
+    const fetchUser = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserData(profile);
+          fetchDocuments(profile, user);
         }
-      });
-    }
-  }, [user]);
+      } else if (!authLoading) {
+        setLoading(false);
+      }
+    };
 
-  const fetchDocuments = async (currentUserData: any) => {
+    if (!authLoading) {
+      fetchUser();
+    }
+  }, [user, authLoading]);
+
+  const fetchDocuments = async (currentUserData: any, user: any) => {
     try {
-      const q = query(
-        collection(db, 'documents'),
-        where(currentUserData.role === 'physiotherapist' ? 'physioId' : 'patientEmail', '==', currentUserData.role === 'physiotherapist' ? user?.uid : user?.email),
-        orderBy('createdAt', 'desc')
-      );
-      const snap = await getDocs(q);
-      setDocuments(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const isPhysio = currentUserData.tipo_usuario === 'fisioterapeuta';
+      const { data, error } = await supabase
+        .from('documentos_gerados')
+        .select('*')
+        .eq(isPhysio ? 'physio_id' : 'patient_email', isPhysio ? user.id : user.email)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDocuments(data || []);
     } catch (err) {
       console.error("Erro ao buscar documentos:", err);
     } finally {
@@ -87,6 +95,7 @@ export default function Documents() {
     setSelectedTemplate(template || null);
     setGeneratedContent('');
     setPatientName('');
+    setPatientEmail('');
     setAdditionalInfo('');
     setIsModalOpen(true);
   };
@@ -117,27 +126,24 @@ export default function Documents() {
     if (!generatedContent) return;
 
     try {
-      const docRef = await addDoc(collection(db, 'documents'), {
-        physioId: user?.uid,
-        physioName: userData.name,
-        patientName,
-        patientEmail: patientEmail.trim().toLowerCase(),
-        type: selectedTemplate?.name || 'Documento Geral',
-        content: generatedContent,
-        createdAt: serverTimestamp(),
-      });
+      const { data: newDoc, error } = await supabase
+        .from('documentos_gerados')
+        .insert({
+          physio_id: user?.id,
+          physio_name: userData.nome_completo,
+          patient_name: patientName,
+          patient_email: patientEmail.trim().toLowerCase(),
+          type: selectedTemplate?.name || 'Documento Geral',
+          content: generatedContent,
+        })
+        .select()
+        .single();
 
-      setDocuments([{
-        id: docRef.id,
-        physioName: userData.name,
-        patientName,
-        patientEmail: patientEmail.trim().toLowerCase(),
-        type: selectedTemplate?.name || 'Documento Geral',
-        content: generatedContent,
-        createdAt: new Date(),
-      }, ...documents]);
+      if (error) throw error;
 
+      setDocuments([newDoc, ...documents]);
       setIsModalOpen(false);
+      import('sonner').then(({ toast }) => toast.success("Documento salvo com sucesso!"));
     } catch (err) {
       console.error("Erro ao salvar documento:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao salvar documento."));
@@ -146,8 +152,13 @@ export default function Documents() {
 
   const deleteDocument = async (id: string) => {
     try {
-      const { deleteDoc, doc } = await import('firebase/firestore');
-      await deleteDoc(doc(db, 'documents', id));
+      const { error } = await supabase
+        .from('documentos_gerados')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       setDocuments(documents.filter(d => d.id !== id));
       import('sonner').then(({ toast }) => toast.success("Documento excluído com sucesso."));
     } catch (err) {
@@ -163,7 +174,6 @@ export default function Documents() {
     if (!element) return;
 
     try {
-      // Ensure images are loaded and fonts are ready
       await document.fonts.ready;
       
       const canvas = await html2canvas(element, { 
@@ -179,12 +189,11 @@ export default function Documents() {
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
       const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = pdfWidth - 20; // 10mm margin on each side
+      const imgWidth = pdfWidth - 20;
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
       
-      // Handle multi-page if content is too long
       let heightLeft = imgHeight;
-      let position = 10; // 10mm top margin
+      let position = 10;
 
       pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
       heightLeft -= (pdfHeight - 20);
@@ -221,22 +230,21 @@ export default function Documents() {
     root.render(
       <div style={{ padding: '20px' }}>
         <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>{doc.type}</h1>
-        <p style={{ marginBottom: '20px' }}><strong>Paciente:</strong> {doc.patientName}</p>
+        <p style={{ marginBottom: '20px' }}><strong>Paciente:</strong> {doc.patient_name}</p>
         <ReactMarkdown>{doc.content}</ReactMarkdown>
         <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '12px', color: '#666' }}>
-          Documento gerado via FisioCareHub em {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
+          Documento gerado via FisioCareHub em {new Date(doc.created_at).toLocaleDateString()}
         </div>
       </div>
     );
 
-    // Wait for render
     setTimeout(async () => {
-      await exportToPDF(tempDiv.id, `${doc.type}-${doc.patientName}`);
+      await exportToPDF(tempDiv.id, `${doc.type}-${doc.patient_name}`);
       document.body.removeChild(tempDiv);
     }, 500);
   };
 
-  const isPhysio = userData?.role === 'physiotherapist';
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   return (
     <div className="space-y-8 pb-20">
@@ -250,52 +258,48 @@ export default function Documents() {
           </p>
         </div>
         {isPhysio && (
-          <Gatekeeper featureId="ai-documents">
-            <button 
-              onClick={() => handleCreateNew()}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
-            >
-              <Plus size={20} /> CRIAR NOVO DOCUMENTO
-            </button>
-          </Gatekeeper>
+          <button 
+            onClick={() => handleCreateNew()}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+          >
+            <Plus size={20} /> CRIAR NOVO DOCUMENTO
+          </button>
         )}
       </header>
 
       {/* Favorites Section - Only for Physio */}
       {isPhysio && (
-        <Gatekeeper featureId="ai-documents">
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Star className="text-amber-500 fill-amber-500" size={20} />
-              <h2 className="text-xl font-bold text-slate-900">FAVORITOS</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {FAVORITE_TEMPLATES.map((template) => (
-                <motion.div
-                  key={template.id}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden"
-                >
-                  <div className={`w-12 h-12 ${template.bg} ${template.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <template.icon size={24} />
+        <section>
+          <div className="flex items-center gap-2 mb-6">
+            <Star className="text-amber-500 fill-amber-500" size={20} />
+            <h2 className="text-xl font-bold text-slate-900">FAVORITOS</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {FAVORITE_TEMPLATES.map((template) => (
+              <motion.div
+                key={template.id}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden"
+              >
+                <div className={`w-12 h-12 ${template.bg} ${template.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  <template.icon size={24} />
+                </div>
+                <div className="flex-1 cursor-pointer" onClick={() => handleCreateNew(template)}>
+                  <h3 className="font-bold text-slate-900 leading-tight">{template.name}</h3>
+                  <p className="text-xs text-slate-400 mt-1">Clique para iniciar</p>
+                </div>
+                <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="p-1.5 text-slate-300 hover:text-red-500 transition-colors" title="Remover dos favoritos">
+                    <X size={14} />
+                  </button>
+                  <div className="p-1.5 text-slate-300">
+                    <FileText size={14} />
                   </div>
-                  <div className="flex-1 cursor-pointer" onClick={() => handleCreateNew(template)}>
-                    <h3 className="font-bold text-slate-900 leading-tight">{template.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1">Clique para iniciar</p>
-                  </div>
-                  <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-slate-300 hover:text-red-500 transition-colors" title="Remover dos favoritos">
-                      <X size={14} />
-                    </button>
-                    <div className="p-1.5 text-slate-300">
-                      <FileText size={14} />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        </Gatekeeper>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Recent Documents */}
@@ -343,9 +347,9 @@ export default function Documents() {
                         <span className="font-bold text-slate-900">{doc.type}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{isPhysio ? doc.patientName : (doc.physioName || 'Fisioterapeuta')}</td>
+                    <td className="px-6 py-4 text-slate-600">{isPhysio ? doc.patient_name : (doc.physio_name || 'Fisioterapeuta')}</td>
                     <td className="px-6 py-4 text-slate-500 text-sm">
-                      {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : new Date(doc.createdAt).toLocaleDateString()}
+                      {new Date(doc.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -579,7 +583,7 @@ export default function Documents() {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">{viewingDoc.type}</h2>
-                    <p className="text-xs text-slate-500">Paciente: {viewingDoc.patientName}</p>
+                    <p className="text-xs text-slate-500">Paciente: {viewingDoc.patient_name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -604,7 +608,7 @@ export default function Documents() {
                     <Printer size={20} />
                   </button>
                   <button 
-                    onClick={() => exportToPDF('view-content', `${viewingDoc.type}-${viewingDoc.patientName}`)}
+                    onClick={() => exportToPDF('view-content', `${viewingDoc.type}-${viewingDoc.patient_name}`)}
                     className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                     title="Baixar PDF"
                   >
@@ -622,10 +626,10 @@ export default function Documents() {
               <div className="flex-1 overflow-y-auto p-12">
                 <div id="view-content" className="bg-white p-8 border border-slate-100 shadow-sm rounded-lg prose prose-slate max-w-none">
                   <h1 className="text-center mb-8">{viewingDoc.type}</h1>
-                  <p className="mb-8"><strong>Paciente:</strong> {viewingDoc.patientName}</p>
+                  <p className="mb-8"><strong>Paciente:</strong> {viewingDoc.patient_name}</p>
                   <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
                   <div className="mt-16 pt-8 border-t border-slate-200 text-center text-sm text-slate-400">
-                    Documento gerado via FisioCareHub em {viewingDoc.createdAt?.toDate ? viewingDoc.createdAt.toDate().toLocaleDateString() : new Date(viewingDoc.createdAt).toLocaleDateString()}
+                    Documento gerado via FisioCareHub em {new Date(viewingDoc.created_at).toLocaleDateString()}
                   </div>
                 </div>
               </div>

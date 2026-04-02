@@ -20,17 +20,17 @@ export default function Partner() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight"
+            className="text-4xl md:text-6xl font-black text-[#1A202C] tracking-tighter leading-tight"
           >
-            Leve sua <span className="text-emerald-600">Carreira</span> para o Próximo Nível
+            Transforme sua <span className="text-emerald-600">Carreira</span> com Autonomia
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-slate-500 font-medium leading-relaxed"
+            className="text-xl text-[#1A202C] font-medium leading-relaxed"
           >
-            O FisioCareHub é a plataforma ideal para fisioterapeutas que desejam expandir sua agenda, gerenciar atendimentos domiciliares com facilidade e oferecer um cuidado de excelência.
+            Seja o protagonista da sua jornada profissional. Atenda no domicílio dos seus pacientes com a liberdade que você sempre quis e o suporte tecnológico que você merece. O FisioCareHub é o seu parceiro ideal para o crescimento sustentável.
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -80,8 +80,8 @@ export default function Partner() {
               <div className={`w-16 h-16 ${benefit.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                 <benefit.icon size={32} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{benefit.title}</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">{benefit.description}</p>
+              <h3 className="text-2xl font-black text-[#1A202C] tracking-tight">{benefit.title}</h3>
+              <p className="text-[#1A202C] font-medium leading-relaxed">{benefit.description}</p>
             </motion.div>
           ))}
         </section>
