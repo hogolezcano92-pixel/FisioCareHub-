@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { analyzeSymptoms } from '../lib/gemini';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { analyzeSymptoms } from '../lib/gemini'; // Esse era o antigo
+import { realizarTriagemIA } from '../services/openaiService'; // <-- ADICIONE ESTA LINHA AQUI
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   BrainCircuit, 
@@ -119,11 +125,11 @@ export default function Triage() {
 
     try {
       const symptomsStr = `Local: ${finalLocation}, Tempo: ${painDuration}, Intensidade: ${painIntensity}, Tipo: ${serviceType}`;
-      const result = await analyzeSymptoms(symptomsStr);
+      const result = await realizarTriagemIA(symptomsStr);
       setAnalysis(result);
 
       const { error } = await supabase
-        .from('triagens')
+        .from('triagem')
         .insert({
           paciente_id: user.id,
           sintomas: symptomsStr,
