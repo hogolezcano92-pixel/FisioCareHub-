@@ -131,7 +131,7 @@ export default function Triage() {
           gravidade: painIntensity.toString(),
           status: 'concluido',
           data_triagem: new Date().toISOString(),
-          aiAnalysis: result,
+          ai_Analysis: result,
         });
 
       if (error) throw error;
