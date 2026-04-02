@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { analyzeSymptoms } from '../lib/gemini'; // Esse era o antigo
+import { useAuth } from '../contexts/AuthContex';
 import { realizarTriagemIA } from '../services/openaiService'; // <-- ADICIONE ESTA LINHA AQUI
 import { motion, AnimatePresence } from 'motion/react';
 import { 
