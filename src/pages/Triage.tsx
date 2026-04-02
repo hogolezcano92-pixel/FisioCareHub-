@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { realizarTriagemIA } from '../services/openaiService'; // <-- ADICIONE ESTA LINHA AQUI
-import { motion, AnimatePresence } from 'framer/motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BrainCircuit, 
   Send, 
