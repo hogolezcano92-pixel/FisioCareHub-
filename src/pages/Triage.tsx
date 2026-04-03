@@ -86,7 +86,7 @@ export default function Triage() {
 
         const fetchHistory = async () => {
           const { data: triages } = await supabase
-            .from('triagens')
+            .from('triagem')
             .select('*')
             .eq('paciente_id', user.id)
             .order('data_triagem', { ascending: false });
@@ -123,7 +123,7 @@ export default function Triage() {
       setAnalysis(result);
 
       const { error } = await supabase
-        .from('triagens')
+        .from('triagem')
         .insert({
           paciente_id: user.id,
           sintomas: symptomsStr,
