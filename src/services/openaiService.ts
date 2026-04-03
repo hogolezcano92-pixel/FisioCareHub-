@@ -1,27 +1,24 @@
-import OpenAI from "openai";
-
-// Configuração para o Vite reconhecer a chave no Vercel
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true 
-});
-
+// Agora o frontend não fala mais com a OpenAI, ele fala com a sua API na Vercel
 export const realizarTriagemIA = async (relatoPaciente: string) => {
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { 
-          role: "system", 
-          content: "Você é um assistente de triagem fisioterapêutica para o app FisioCareHub. Analise o relato e retorne: 1. Nível de Urgência, 2. Possível Especialidade (Motora, Neuro ou Geriatria) e 3. Um breve conselho inicial." 
-        },
-        { role: "user", content: relatoPaciente }
-      ],
+    const response = await fetch('/api/triage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt: relatoPaciente }),
     });
 
-    return completion.choices[0].message.content;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro na comunicação com a IA');
+    }
+
+    const data = await response.json();
+    return data.text; // Retorna o texto da análise
   } catch (error) {
-    console.error("Erro na OpenAI:", error);
+    console.error("Erro na triagem:", error);
     return "Não foi possível realizar a triagem agora. Tente novamente.";
   }
 };
+
