@@ -130,7 +130,7 @@ export default function Triage() {
           gravidade: painIntensity.toString(),
           status: 'concluido',
           data_triagem: new Date().toISOString(),
-          aiAnalysis: result,
+          ai_analysis: result,
         });
 
       if (error) throw error;
@@ -139,7 +139,7 @@ export default function Triage() {
         sintomas: symptomsStr, 
         gravidade: painIntensity.toString(), 
         data_triagem: new Date().toISOString(),
-        aiAnalysis: result
+        ai_analysis: result
       };
       setHistory([newEntry, ...history]);
       
