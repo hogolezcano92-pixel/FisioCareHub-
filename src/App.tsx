@@ -59,7 +59,7 @@ import AppPreview from './pages/AppPreview';
 import About from './pages/About';
 import Partner from './pages/Partner';
 import ResetPassword from './pages/ResetPassword';
-import TestSmtp from './pages/TestSmtp';
+import Subscription from './pages/Subscription';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -455,17 +455,16 @@ function AppContent() {
             <Route path="/area-paciente" element={<Profile />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/chat" element={<Chat />} />
-            <Route path="/subscription" element={<Dashboard />} />
-            <Route path="/dashboard/assinatura" element={<Dashboard />} />
+            <Route path="/subscription" element={<Subscription />} />
+            <Route path="/dashboard/assinatura" element={<Subscription />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/admin" element={<Admin />} />
-        <Route path="/preview" element={<AppPreview />} />
+            <Route path="/preview" element={<AppPreview />} />
             <Route path="/about" element={<About />} />
             <Route path="/sobre" element={<About />} />
             <Route path="/partner" element={<Partner />} />
             <Route path="/seja-parceiro" element={<Partner />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/test-smtp" element={<TestSmtp />} />
           </Routes>
         </main>
 

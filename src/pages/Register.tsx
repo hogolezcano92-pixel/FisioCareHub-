@@ -19,6 +19,7 @@ export default function Register() {
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('Brasil');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
+  const [proKey, setProKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export default function Register() {
     // 1. Validação e Limpeza de Dados (Ponto CRÍTICO)
     const cleanName = name.trim();
     const cleanEmail = email.trim();
+    const isPro = role === 'fisioterapeuta' && proKey.trim().toUpperCase() === 'PRO2024';
 
     if (cleanName.length < 2) {
       setError("O nome completo deve ter pelo menos 2 caracteres.");
@@ -100,6 +102,7 @@ export default function Register() {
             cep: zipCode,
             pais: country,
             tipo_servico: role === 'fisioterapeuta' ? serviceType : null,
+            is_pro: isPro,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName}`,
             documentos: [],
             created_at: new Date().toISOString()
@@ -291,6 +294,17 @@ export default function Register() {
                   <option value="online">Online</option>
                   <option value="ambos">Ambos</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-slate-700 mb-2">Chave Pro (Opcional)</label>
+                <input
+                  type="text"
+                  value={proKey}
+                  onChange={(e) => setProKey(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base font-mono tracking-widest"
+                  placeholder="INSIRA SUA CHAVE PRO"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 font-medium">Se você possui uma chave de ativação, insira-a aqui para liberar recursos Pro.</p>
               </div>
             </motion.div>
           )}

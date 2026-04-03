@@ -14,12 +14,14 @@ import {
   Download,
   BrainCircuit,
   Send,
-  AlertCircle
+  AlertCircle,
+  Crown
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { generateMedicalRecord } from '../lib/gemini';
 import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
+import ProGuard from '../components/ProGuard';
 
 export default function Records() {
   const navigate = useNavigate();
@@ -230,12 +232,14 @@ export default function Records() {
           <p className="text-slate-500">Histórico completo de atendimentos e evoluções.</p>
         </div>
         {isPhysio && (
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
-          >
-            <Plus size={20} /> Novo Registro
-          </button>
+          <ProGuard variant="inline">
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+            >
+              <Plus size={20} /> Novo Registro
+            </button>
+          </ProGuard>
         )}
       </header>
 
@@ -377,14 +381,16 @@ export default function Records() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-bold text-slate-700">Evolução / Conduta</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowAiPanel(!showAiPanel)}
-                      className="flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100 transition-all"
-                    >
-                      <BrainCircuit size={14} />
-                      {showAiPanel ? 'Fechar Assistente IA' : 'Gerar com IA'}
-                    </button>
+                    <ProGuard variant="inline">
+                      <button
+                        type="button"
+                        onClick={() => setShowAiPanel(!showAiPanel)}
+                        className="flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100 transition-all"
+                      >
+                        <BrainCircuit size={14} />
+                        {showAiPanel ? 'Fechar Assistente IA' : 'Gerar com IA'}
+                      </button>
+                    </ProGuard>
                   </div>
 
                   <AnimatePresence>

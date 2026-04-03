@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { realizarTriagemIA } from '../services/openaiService'; // <-- ADICIONE ESTA LINHA AQUI
-import { motion, AnimatePresence } from 'framer-motion';
+import { analyzeSymptoms } from '../lib/gemini';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   BrainCircuit, 
   Send, 
@@ -87,7 +86,7 @@ export default function Triage() {
 
         const fetchHistory = async () => {
           const { data: triages } = await supabase
-            .from('triagem')
+            .from('triagens')
             .select('*')
             .eq('paciente_id', user.id)
             .order('data_triagem', { ascending: false });
@@ -120,18 +119,18 @@ export default function Triage() {
 
     try {
       const symptomsStr = `Local: ${finalLocation}, Tempo: ${painDuration}, Intensidade: ${painIntensity}, Tipo: ${serviceType}`;
-      const result = await realizarTriagemIA(symptomsStr);
+      const result = await analyzeSymptoms(symptomsStr);
       setAnalysis(result);
 
       const { error } = await supabase
-        .from('triagem')
+        .from('triagens')
         .insert({
           paciente_id: user.id,
           sintomas: symptomsStr,
           gravidade: painIntensity.toString(),
           status: 'concluido',
           data_triagem: new Date().toISOString(),
-          ai_analysis: result,
+          aiAnalysis: result,
         });
 
       if (error) throw error;

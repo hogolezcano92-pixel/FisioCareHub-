@@ -11,9 +11,11 @@ import {
   XCircle, 
   User, 
   Loader2,
-  CalendarCheck
+  CalendarCheck,
+  Crown
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
+import ProGuard from '../components/ProGuard';
 
 export default function Appointments() {
   const { user, loading: authLoading } = useAuth();
@@ -527,6 +529,25 @@ export default function Appointments() {
                     />
                   </div>
                 </div>
+
+                {isPhysio && (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+                        <CalendarIcon size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Agendamento Recorrente</p>
+                        <p className="text-[10px] text-slate-400 font-medium">Repetir semanalmente</p>
+                      </div>
+                    </div>
+                    <ProGuard variant="inline">
+                      <div className="w-12 h-6 bg-slate-200 rounded-full relative cursor-not-allowed opacity-50">
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                      </div>
+                    </ProGuard>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Observações</label>

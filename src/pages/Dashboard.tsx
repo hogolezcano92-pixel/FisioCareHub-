@@ -19,7 +19,8 @@ import {
   ArrowDownRight,
   Bell,
   Lock,
-  Loader2
+  Loader2,
+  Crown
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -27,9 +28,8 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [userData, setUserData] = useState<any>(null);
   const [stats, setStats] = useState({
     appointments: 0,
     patients: 0,
@@ -37,99 +37,20 @@ export default function Dashboard() {
     pendingTriages: 0
   });
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
-  const [userLoading, setUserLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [apptsLoading, setApptsLoading] = useState(true);
   const [patientSearch, setPatientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
-  const { userType } = useSubscription();
-
-  useEffect(() => {
-    if (patientSearch.length >= 3) {
-      const timer = setTimeout(() => {
-        searchPatients();
-      }, 500);
-      return () => clearTimeout(timer);
-    } else {
-      setSearchResults([]);
-    }
-  }, [patientSearch]);
-
-  const searchPatients = async () => {
-    setSearching(true);
-    try {
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('tipo_usuario', 'paciente')
-        .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%`)
-        .limit(5);
-
-      if (error) throw error;
-      setSearchResults(data || []);
-    } catch (err) {
-      console.error("Erro ao buscar pacientes:", err);
-    } finally {
-      setSearching(false);
-    }
-  };
-
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
-    } else if (user) {
-      fetchUserData(user.id);
+    } else if (profile) {
+      fetchStats(profile);
+      fetchRecentAppointments(profile);
     }
-  }, [user, authLoading, navigate]);
-
-  const fetchUserData = async (userId: string) => {
-    setUserLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') { // Record not found
-          console.log("Perfil não encontrado, criando perfil padrão...");
-          const { data: { user: authUser } } = await supabase.auth.getUser();
-          if (authUser) {
-            const newProfile = {
-              id: authUser.id,
-              email: authUser.email,
-              nome_completo: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
-              tipo_usuario: 'paciente', // Default to patient
-              bio: '',
-              avatar_url: authUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
-              created_at: new Date().toISOString()
-            };
-            const { error: createError } = await supabase.from('perfis').insert(newProfile);
-            if (!createError) {
-              setUserData(newProfile);
-              fetchStats(newProfile);
-              fetchRecentAppointments(newProfile);
-              return;
-            } else {
-              console.error("Erro ao criar perfil automático:", createError);
-            }
-          }
-        }
-        throw error;
-      }
-
-      setUserData(data);
-      fetchStats(data);
-      fetchRecentAppointments(data);
-    } catch (err) {
-      console.error("Erro ao carregar dados do usuário:", err);
-    } finally {
-      setUserLoading(false);
-    }
-  };
+  }, [user, profile, authLoading, navigate]);
 
   const fetchStats = async (data: any) => {
     if (!data) return;
@@ -185,23 +106,43 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      // Stripe Success handling removed
-    }
-  }, [user, navigate]);
-
-  if (authLoading || userLoading) return (
+  if (authLoading) return (
     <div className="flex flex-col items-center justify-center pt-32 space-y-4">
       <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Preparando seu Dashboard...</p>
     </div>
   );
 
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPro = profile?.is_pro;
 
   return (
     <div className="space-y-10 pb-12">
+      {/* Pro Banner for Physios */}
+      {isPhysio && !isPro && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-sky-500 to-blue-600 p-6 rounded-[2rem] text-white shadow-xl shadow-sky-100 flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+              <Crown size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black tracking-tight">Seja FisioCareHub Pro</h3>
+              <p className="text-blue-50 font-medium">Desbloqueie relatórios avançados, análises de desempenho e muito mais.</p>
+            </div>
+          </div>
+          <Link
+            to="/subscription"
+            className="px-8 py-3 bg-white text-blue-600 rounded-full font-black hover:bg-blue-50 transition-all shadow-lg whitespace-nowrap"
+          >
+            Ver Planos
+          </Link>
+        </motion.div>
+      )}
+
       {/* Welcome Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
@@ -212,11 +153,11 @@ export default function Dashboard() {
           <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
-                Olá, seja bem-{userData?.genero === 'female' ? 'vinda' : 'vindo'} {userData?.genero === 'female' ? 'Dra.' : 'Dr.'} {userData?.nome_completo?.split(' ')[0]}! 👋
+                Olá, seja bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo?.split(' ')[0]}! 👋
               </>
             ) : (
               <>
-                Olá paciente {userData?.nome_completo?.split(' ')[0]}! 👋
+                Olá paciente {profile?.nome_completo?.split(' ')[0]}! 👋
               </>
             )}
           </h1>
