@@ -87,3 +87,35 @@ export async function generateDocument(type: string, patientName: string, additi
     throw new Error("Não foi possível gerar o documento no momento.");
   }
 }
+
+export async function generateSOAPRecord(rawText: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: `Você é um Arquiteto de Software e Consultor HealthTech Sênior especializado em Fisioterapia.
+      Sua tarefa é converter o seguinte relato bruto de um atendimento de fisioterapia no padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano).
+      
+      Relato Bruto: "${rawText}"
+      
+      Instruções de Estruturação:
+      - S (Subjetivo): Relatos do paciente, queixas, nível de dor, histórico recente.
+      - O (Objetivo): Achados do exame físico, testes realizados, amplitude de movimento, força muscular.
+      - A (Avaliação): Seu raciocínio clínico, diagnóstico fisioterapêutico, evolução em relação às sessões anteriores.
+      - P (Plano): Conduta para as próximas sessões, orientações para casa, encaminhamentos.
+      
+      Retorne um objeto JSON com as chaves: "subjective", "objective", "assessment", "plan".
+      Seja técnico, profissional e use terminologia da fisioterapia brasileira (CREFITO).`,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (!response || !response.text) {
+      throw new Error("Resposta da IA inválida");
+    }
+    return JSON.parse(response.text);
+  } catch (error: any) {
+    console.error("Erro na geração de SOAP:", error);
+    throw new Error(error.message || "Não foi possível estruturar o prontuário SOAP no momento.");
+  }
+}

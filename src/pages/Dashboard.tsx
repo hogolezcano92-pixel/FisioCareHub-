@@ -20,12 +20,23 @@ import {
   Bell,
   Lock,
   Loader2,
-  Crown
+  Crown,
+  Route,
+  BookOpen,
+  Wallet
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+
+// New FisioCare Components
+import { PainDiary, ExerciseChecklist } from '../components/FisioCare/PatientCare';
+import { SOAPIntelligentRecord } from '../components/FisioCare/SOAPRecord';
+import { RouteOptimizer } from '../components/FisioCare/RouteOptimizer';
+import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
+import { DigitalLibrary } from '../components/FisioCare/DigitalLibrary';
+import ProGuard from '../components/ProGuard';
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -394,6 +405,55 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+      {/* New Features Section */}
+      <div className="space-y-12">
+        {isPhysio ? (
+          <>
+            {/* Physio Pro Features */}
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Recursos Profissionais</h2>
+                {!isPro && (
+                  <span className="px-4 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+                    Disponível no Pro
+                  </span>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 gap-8">
+                <ProGuard variant="full">
+                  <FinancialDashboard />
+                </ProGuard>
+
+                <div className="grid lg:grid-cols-2 gap-8">
+                  <ProGuard variant="full">
+                    <RouteOptimizer />
+                  </ProGuard>
+                  <ProGuard variant="full">
+                    <SOAPIntelligentRecord />
+                  </ProGuard>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Patient Features */}
+            <div className="space-y-8">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Seu Plano de Cuidado</h2>
+              <div className="grid lg:grid-cols-2 gap-8">
+                <div className="space-y-8">
+                  <PainDiary />
+                  <DigitalLibrary />
+                </div>
+                <div className="space-y-8">
+                  <ExerciseChecklist />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
