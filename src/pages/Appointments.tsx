@@ -74,7 +74,7 @@ export default function Appointments() {
       .from('appointments')
       .select(`
         *,
-        paciente:paciente_id (nome_completo, email),
+        paciente:patient_id (nome_completo, email),
         fisioterapeuta:fisio_id (nome_completo, email)
       `)
       .eq(isPhysio ? 'fisio_id' : 'paciente_id', profile.id)
@@ -108,7 +108,7 @@ export default function Appointments() {
           event: '*',
           schema: 'public',
           table: 'appointments',
-          filter: `${isPhysio ? 'fisio_id' : 'paciente_id'}=eq.${profile.id}`
+          filter: `${isPhysio ? 'fisio_id' : 'patient_id'}=eq.${profile.id}`
         },
         () => {
           fetchAppointments(profile);
@@ -177,8 +177,8 @@ export default function Appointments() {
       const { data: newApp, error: insertError } = await supabase
         .from('appointments')
         .insert({
-          paciente_id: userData.tipo_usuario === 'paciente' ? user?.id : targetUser.id,
-          fisio_id: userData.tipo_usuario === 'fisioterapeuta' ? user?.id : targetUser.id,
+          patient_id: userData.tipo_usuario === 'paciente' ? user?.id : targetUser.id,
+         physio_id: userData.tipo_usuario === 'fisioterapeuta' ? user?.id : targetUser.id,
           data_servico: appointmentDate,
           status: 'pendente',
           observacoes: notes,
@@ -186,8 +186,8 @@ export default function Appointments() {
         })
         .select(`
           *,
-          paciente:paciente_id (nome_completo, email),
-          fisioterapeuta:fisio_id (nome_completo, email)
+          paciente:patient_id (nome_completo, email),
+          fisioterapeuta:physio_id (nome_completo, email)
         `)
         .single();
 
