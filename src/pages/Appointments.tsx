@@ -175,7 +175,7 @@ export default function Appointments() {
 
       console.log("Iniciando inserção de agendamento no Supabase...");
       const { data: newApp, error: insertError } = await supabase
-        .from('agendamentos')
+        .from('appointments')
         .insert({
           paciente_id: userData.tipo_usuario === 'paciente' ? user?.id : targetUser.id,
           fisio_id: userData.tipo_usuario === 'fisioterapeuta' ? user?.id : targetUser.id,
