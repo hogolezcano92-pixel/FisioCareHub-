@@ -25,8 +25,7 @@ import ProGuard from '../components/ProGuard';
 
 export default function Records() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const [userData, setUserData] = useState<any>(null);
+  const { user, profile, loading: authLoading } = useAuth();
   const [records, setRecords] = useState<any[]>([]);
   const [triages, setTriages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,90 +46,86 @@ export default function Records() {
   const [showAiPanel, setShowAiPanel] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      if (user) {
-        const { data: profile } = await supabase
-          .from('perfis')
+    if (authLoading) return;
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const fetchRecords = async () => {
+      if (!profile) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+        const userIdField = isPhysio ? 'fisio_id' : 'paciente_id';
+
+        const { data: recordsData, error: recordsError } = await supabase
+          .from('prontuarios')
           .select('*')
-          .eq('id', user.id)
-          .single();
+          .eq(userIdField, user.id)
+          .order('data_registro', { ascending: false });
+
+        if (recordsError) throw recordsError;
+
+        setRecords(recordsData || []);
         
-        if (profile) {
-          setUserData(profile);
+        // Resolve names
+        const otherRoleField = isPhysio ? 'paciente_id' : 'fisio_id';
+        const uidsToResolve = new Set<string>();
+        (recordsData || []).forEach((rec: any) => uidsToResolve.add(rec[otherRoleField]));
+        
+        const resolvedNames: Record<string, string> = { ...nameMap };
+        await Promise.all(Array.from(uidsToResolve).map(async (uid) => {
+          if (!resolvedNames[uid]) {
+            resolvedNames[uid] = await getUserName(uid);
+          }
+        }));
+        setNameMap(resolvedNames);
 
-          const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
-          const userIdField = isPhysio ? 'fisio_id' : 'paciente_id';
-
-          const fetchRecords = async () => {
-            const { data: recordsData, error: recordsError } = await supabase
-              .from('prontuarios')
-              .select('*')
-              .eq(userIdField, user.id)
-              .order('data_registro', { ascending: false });
-
-            if (recordsError) {
-              console.error(recordsError);
-              return;
-            }
-
-            setRecords(recordsData);
-            
-            // Resolve names
-            const otherRoleField = isPhysio ? 'paciente_id' : 'fisio_id';
-            const uidsToResolve = new Set<string>();
-            recordsData.forEach((rec: any) => uidsToResolve.add(rec[otherRoleField]));
-            
-            const resolvedNames: Record<string, string> = { ...nameMap };
-            await Promise.all(Array.from(uidsToResolve).map(async (uid) => {
-              if (!resolvedNames[uid]) {
-                resolvedNames[uid] = await getUserName(uid);
-              }
-            }));
-            setNameMap(resolvedNames);
-            setLoading(false);
-
-            // Fetch triages
-            if (isPhysio && recordsData.length > 0) {
-              const patientIds = Array.from(new Set(recordsData.map((r: any) => r.paciente_id)));
-              const { data: triagesData } = await supabase
-                .from('triagens')
-                .select('*')
-                .in('paciente_id', patientIds)
-                .order('data_triagem', { ascending: false });
-              
-              if (triagesData) setTriages(triagesData);
-            } else if (!isPhysio) {
-              const { data: triagesData } = await supabase
-                .from('triagens')
-                .select('*')
-                .eq('paciente_id', user.id)
-                .order('data_triagem', { ascending: false });
-              
-              if (triagesData) setTriages(triagesData);
-            }
-          };
-
-          fetchRecords();
-
-          // Real-time subscription
-          const subscription = supabase
-            .channel('prontuarios_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'prontuarios' }, () => {
-              fetchRecords();
-            })
-            .subscribe();
-
-          return () => {
-            supabase.removeChannel(subscription);
-          };
+        // Fetch triages
+        if (isPhysio && (recordsData || []).length > 0) {
+          const patientIds = Array.from(new Set((recordsData || []).map((r: any) => r.paciente_id)));
+          const { data: triagesData } = await supabase
+            .from('triagens')
+            .select('*')
+            .in('paciente_id', patientIds)
+            .order('data_triagem', { ascending: false });
+          
+          if (triagesData) setTriages(triagesData);
+        } else if (!isPhysio) {
+          const { data: triagesData } = await supabase
+            .from('triagens')
+            .select('*')
+            .eq('paciente_id', user.id)
+            .order('data_triagem', { ascending: false });
+          
+          if (triagesData) setTriages(triagesData);
         }
+      } catch (err) {
+        console.error("Erro ao carregar prontuários:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (!authLoading) {
-      init();
-    }
-  }, [user, authLoading, navigate]);
+    fetchRecords();
+
+    // Real-time subscription
+    const subscription = supabase
+      .channel('prontuarios_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prontuarios' }, () => {
+        fetchRecords();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [user, profile, authLoading, navigate]);
 
   const handleAiGenerate = async () => {
     if (!aiNotes.trim() || generatingAi) return;
@@ -222,7 +217,7 @@ export default function Records() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
     <div className="space-y-8">
@@ -256,7 +251,7 @@ export default function Records() {
                   <div className="text-xs font-bold text-purple-400 uppercase tracking-wider">
                     {formatDate(triage.data_triagem)}
                   </div>
-                  {userData?.tipo_usuario === 'fisioterapeuta' && (
+                  {profile?.tipo_usuario === 'fisioterapeuta' && (
                     <div className="text-[10px] bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-bold">
                       PACIENTE: {nameMap[triage.paciente_id] || triage.paciente_id.slice(0, 6)}
                     </div>

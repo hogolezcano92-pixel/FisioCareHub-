@@ -36,8 +36,7 @@ const FAVORITE_TEMPLATES = [
 ];
 
 export default function Documents() {
-  const { user, loading: authLoading } = useAuth();
-  const [userData, setUserData] = useState<any>(null);
+  const { user, profile, loading: authLoading } = useAuth();
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,45 +50,38 @@ export default function Documents() {
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (user) {
-        const { data: profile } = await supabase
-          .from('perfis')
+    if (authLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchDocumentsData = async () => {
+      if (!profile) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+        const { data, error } = await supabase
+          .from('documentos_gerados')
           .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserData(profile);
-          fetchDocuments(profile, user);
-        }
-      } else if (!authLoading) {
+          .eq(isPhysio ? 'physio_id' : 'patient_email', isPhysio ? user.id : user.email)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setDocuments(data || []);
+      } catch (err) {
+        console.error("Erro ao buscar documentos:", err);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (!authLoading) {
-      fetchUser();
-    }
-  }, [user, authLoading]);
-
-  const fetchDocuments = async (currentUserData: any, user: any) => {
-    try {
-      const isPhysio = currentUserData.tipo_usuario === 'fisioterapeuta';
-      const { data, error } = await supabase
-        .from('documentos_gerados')
-        .select('*')
-        .eq(isPhysio ? 'physio_id' : 'patient_email', isPhysio ? user.id : user.email)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDocuments(data || []);
-    } catch (err) {
-      console.error("Erro ao buscar documentos:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchDocumentsData();
+  }, [user, profile, authLoading]);
 
   const handleCreateNew = (template?: any) => {
     setSelectedTemplate(template || null);
@@ -130,7 +122,7 @@ export default function Documents() {
         .from('documentos_gerados')
         .insert({
           physio_id: user?.id,
-          physio_name: userData.nome_completo,
+          physio_name: profile.nome_completo,
           patient_name: patientName,
           patient_email: patientEmail.trim().toLowerCase(),
           type: selectedTemplate?.name || 'Documento Geral',
@@ -244,7 +236,7 @@ export default function Documents() {
     }, 500);
   };
 
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
     <div className="space-y-8 pb-20">
