@@ -71,7 +71,7 @@ export default function Appointments() {
   const fetchAppointments = async (profile: any) => {
     const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
     const { data, error } = await supabase
-      .from('agendamentos')
+      .from('appointments')
       .select(`
         *,
         paciente:paciente_id (nome_completo, email),
@@ -107,7 +107,7 @@ export default function Appointments() {
         {
           event: '*',
           schema: 'public',
-          table: 'agendamentos',
+          table: 'appointments',
           filter: `${isPhysio ? 'fisio_id' : 'paciente_id'}=eq.${profile.id}`
         },
         () => {
