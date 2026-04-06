@@ -59,6 +59,7 @@ serve(async (req) => {
     
     for (const table of tables) {
       try {
+        console.log(`Attempting to delete from ${table} for user ${userId}`)
         if (table === 'agendamentos' || table === 'prontuarios' || table === 'mensagens') {
           // For chat messages, we check both sender and receiver
           if (table === 'mensagens') {
@@ -87,7 +88,32 @@ serve(async (req) => {
       }
     }
 
+    // 1.5 Delete from Storage
+    const buckets = ['avatars', 'documents']
+    for (const bucket of buckets) {
+      try {
+        console.log(`Attempting to delete from storage bucket ${bucket} for user ${userId}`)
+        if (bucket === 'avatars') {
+          const fileName = `avatar-${userId}.jpg`
+          await supabaseAdmin.storage.from(bucket).remove([fileName])
+        } else if (bucket === 'documents') {
+          // List all files in the user's folder
+          const { data: files, error: listError } = await supabaseAdmin.storage
+            .from(bucket)
+            .list(`documents/${userId}`)
+          
+          if (files && files.length > 0) {
+            const filesToDelete = files.map(f => `documents/${userId}/${f.name}`)
+            await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+          }
+        }
+      } catch (e) {
+        console.warn(`Could not delete from storage bucket ${bucket}:`, e.message)
+      }
+    }
+
     // 2. Delete from Auth
+    console.log(`Deleting user from Auth: ${userId}`)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (deleteError) {
