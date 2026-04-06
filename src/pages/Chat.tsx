@@ -114,23 +114,18 @@ export default function Chat() {
         .limit(100);
 
       if (msgs) {
-        const uids = new Set<string>();
-        msgs.forEach(m => {
-          if (m.remetente_id !== user.id) uids.add(m.remetente_id);
-          if (m.destinatario_id !== user.id) uids.add(m.destinatario_id);
-        });
+        const uids = Array.from(new Set(msgs.flatMap(m => [m.remetente_id, m.destinatario_id]).filter(id => id !== user.id)));
 
-        const chatUsers = await Promise.all(
-          Array.from(uids).map(async (uid) => {
-            const { data: uProfile } = await supabase
-              .from('perfis')
-              .select('*')
-              .eq('id', uid)
-              .single();
-            return uProfile;
-          })
-        );
-        setRecentChats(chatUsers.filter(u => u !== null));
+        if (uids.length > 0) {
+          const { data: chatUsers } = await supabase
+            .from('perfis')
+            .select('*')
+            .in('id', uids);
+          
+          if (chatUsers) {
+            setRecentChats(chatUsers);
+          }
+        }
       }
     };
 

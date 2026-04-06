@@ -19,8 +19,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const lastFetchedUserId = React.useRef<string | null>(null);
+
   const fetchProfile = async (userId: string, userMetadata?: any) => {
+    if (lastFetchedUserId.current === userId && profile) {
+      return profile;
+    }
+    
     try {
+      console.log('Fetching profile for:', userId);
       const { data, error } = await supabase
         .from('perfis')
         .select('*')
@@ -47,11 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Error creating default profile:', createError);
           return null;
         }
+        lastFetchedUserId.current = userId;
         return newProfile;
       } else if (error) {
         console.error('Error fetching profile:', error);
         return null;
       }
+      
+      lastFetchedUserId.current = userId;
       return data;
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
@@ -61,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
+      lastFetchedUserId.current = null; // Force re-fetch
       const p = await fetchProfile(user.id, user.user_metadata);
       setProfile(p);
     }
@@ -69,44 +80,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    async function getInitialSession() {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        if (mounted) {
-          setSession(initialSession);
-          const currentUser = initialSession?.user ?? null;
-          setUser(currentUser);
-          
-          if (currentUser) {
-            const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
-            if (mounted) setProfile(p);
-          }
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+    // Use onAuthStateChange as the primary source of truth.
+    // It will trigger with INITIAL_SESSION on mount.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log('Auth State Change:', event);
+      
       if (mounted) {
         setSession(currentSession);
         const currentUser = currentSession?.user ?? null;
         setUser(currentUser);
         
         if (currentUser) {
-          const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
-          if (mounted) setProfile(p);
+          // Only fetch if user changed or profile is missing
+          if (lastFetchedUserId.current !== currentUser.id) {
+            const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
+            if (mounted) {
+              setProfile(p);
+              setLoading(false);
+            }
+          } else {
+            setLoading(false);
+          }
         } else {
           setProfile(null);
+          lastFetchedUserId.current = null;
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     });
 

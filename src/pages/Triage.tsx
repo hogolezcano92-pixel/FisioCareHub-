@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -62,6 +62,8 @@ export default function Triage() {
   const [showHistory, setShowHistory] = useState(false);
   const navigate = useNavigate();
 
+  const lastLoadedUserId = useRef<string | null>(null);
+
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
@@ -69,7 +71,8 @@ export default function Triage() {
         return;
       }
 
-      if (profile) {
+      if (profile && lastLoadedUserId.current !== user.id) {
+        lastLoadedUserId.current = user.id;
         fetchHistory(user.id);
       }
     }

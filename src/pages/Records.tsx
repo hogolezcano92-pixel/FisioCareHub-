@@ -73,18 +73,24 @@ export default function Records() {
 
         setRecords(recordsData || []);
         
-        // Resolve names
+        // Resolve names in bulk
         const otherRoleField = isPhysio ? 'paciente_id' : 'fisio_id';
-        const uidsToResolve = new Set<string>();
-        (recordsData || []).forEach((rec: any) => uidsToResolve.add(rec[otherRoleField]));
+        const uidsToResolve = Array.from(new Set((recordsData || []).map((rec: any) => rec[otherRoleField])));
         
-        const resolvedNames: Record<string, string> = { ...nameMap };
-        await Promise.all(Array.from(uidsToResolve).map(async (uid) => {
-          if (!resolvedNames[uid]) {
-            resolvedNames[uid] = await getUserName(uid);
+        if (uidsToResolve.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('perfis')
+            .select('id, nome_completo')
+            .in('id', uidsToResolve);
+          
+          if (profilesData) {
+            const newNameMap = { ...nameMap };
+            profilesData.forEach(p => {
+              newNameMap[p.id] = p.nome_completo;
+            });
+            setNameMap(newNameMap);
           }
-        }));
-        setNameMap(resolvedNames);
+        }
 
         // Fetch triages
         if (isPhysio && (recordsData || []).length > 0) {

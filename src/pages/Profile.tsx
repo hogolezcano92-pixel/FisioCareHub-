@@ -66,46 +66,22 @@ export default function Profile() {
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        if (user) {
-          // Check buckets
-          const { data: buckets } = await supabase.storage.listBuckets();
-          const avatarsBucket = buckets?.find(b => b.name === 'avatars');
-          if (!avatarsBucket) {
-            console.warn("Bucket 'avatars' não encontrado. Certifique-se de criá-lo no Supabase.");
-          }
-
-          const { data, error } = await getSupabase()
-            .from('perfis')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-          if (data) {
-            setUserData(data);
-            setName(data.nome_completo || '');
-            setBio(data.bio || '');
-            setGender(data.genero || '');
-            setSpecialty(data.especialidade || '');
-            setCity(data.localizacao || '');
-            setAddress(data.endereco || '');
-            setZipCode(data.cep || '');
-            setCountry(data.pais || '');
-            setServiceType(data.tipo_servico || 'ambos');
-          }
-        }
-      } catch (err) {
-        console.error("Erro ao carregar perfil:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!authLoading) {
-      fetchUser();
+    if (profile) {
+      setUserData(profile);
+      setName(profile.nome_completo || '');
+      setBio(profile.bio || '');
+      setGender(profile.genero || '');
+      setSpecialty(profile.especialidade || '');
+      setCity(profile.localizacao || '');
+      setAddress(profile.endereco || '');
+      setZipCode(profile.cep || '');
+      setCountry(profile.pais || '');
+      setServiceType(profile.tipo_servico || 'ambos');
+      setLoading(false);
+    } else if (!authLoading && !user) {
+      navigate('/login');
     }
-  }, [user, authLoading]);
+  }, [profile, user, authLoading, navigate]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();

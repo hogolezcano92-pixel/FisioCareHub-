@@ -42,6 +42,7 @@ import { useTranslation } from 'react-i18next';
 // Components
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
+import KineAI from './components/KineAI';
 
 // Pages
 import Home from './pages/Home';
@@ -430,6 +431,7 @@ function AppContent() {
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
+        <KineAI />
         <NotificationHandler />
         <ScrollToTop />
         <Navbar />

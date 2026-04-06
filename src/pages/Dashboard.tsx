@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -54,10 +54,13 @@ export default function Dashboard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
+  const lastLoadedProfileId = useRef<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
-    } else if (profile) {
+    } else if (profile && lastLoadedProfileId.current !== profile.id) {
+      lastLoadedProfileId.current = profile.id;
       fetchStats(profile);
       fetchRecentAppointments(profile);
     }
