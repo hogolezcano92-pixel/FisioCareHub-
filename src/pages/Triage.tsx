@@ -70,10 +70,6 @@ export default function Triage() {
       }
 
       if (profile) {
-        if (profile.tipo_usuario === 'fisioterapeuta') {
-          navigate('/dashboard');
-          return;
-        }
         fetchHistory(user.id);
       }
     }

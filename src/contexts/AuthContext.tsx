@@ -117,8 +117,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error during signOut:', error);
+    } finally {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+      // Force reload to clear any remaining state if necessary, 
+      // but usually navigate is enough.
+      window.location.href = '/';
+    }
   };
 
   return (

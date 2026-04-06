@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Zap,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -28,7 +29,7 @@ import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 type Tab = 'profile' | 'account' | 'settings';
 
 export default function Profile() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
   const { t, i18n } = useTranslation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,8 @@ export default function Profile() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
+
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
@@ -65,27 +68,32 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (user) {
-        const { data, error } = await getSupabase()
-          .from('perfis')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      try {
+        if (user) {
+          const { data, error } = await getSupabase()
+            .from('perfis')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-        if (data) {
-          setUserData(data);
-          setName(data.nome_completo || '');
-          setBio(data.bio || '');
-          setGender(data.genero || '');
-          setSpecialty(data.especialidade || '');
-          setCity(data.localizacao || '');
-          setAddress(data.endereco || '');
-          setZipCode(data.cep || '');
-          setCountry(data.pais || '');
-          setServiceType(data.tipo_servico || 'ambos');
+          if (data) {
+            setUserData(data);
+            setName(data.nome_completo || '');
+            setBio(data.bio || '');
+            setGender(data.genero || '');
+            setSpecialty(data.especialidade || '');
+            setCity(data.localizacao || '');
+            setAddress(data.endereco || '');
+            setZipCode(data.cep || '');
+            setCountry(data.pais || '');
+            setServiceType(data.tipo_servico || 'ambos');
+          }
         }
+      } catch (err) {
+        console.error("Erro ao carregar perfil:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     if (!authLoading) {
@@ -134,6 +142,9 @@ export default function Profile() {
         ...updateData
       }));
 
+      // Refresh global profile
+      if (refreshProfile) await refreshProfile();
+
       import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
@@ -169,6 +180,19 @@ export default function Profile() {
         });
       }, 200);
 
+      // Check if bucket exists first (optional but helpful for debugging)
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const avatarsBucket = buckets?.find(b => b.name === 'avatars');
+        if (!avatarsBucket) {
+          console.warn("Bucket 'avatars' não encontrado. Tentando criar...");
+          // This might fail if RLS doesn't allow it, but it's worth a try
+          await supabase.storage.createBucket('avatars', { public: true });
+        }
+      } catch (bucketErr) {
+        console.warn("Erro ao verificar/criar bucket:", bucketErr);
+      }
+
       const publicUrl = await uploadProfilePhoto(user.id, file);
       const url = `${publicUrl}?t=${Date.now()}`;
       
@@ -196,6 +220,10 @@ export default function Profile() {
       
       // Update local state
       setUserData((prev: any) => prev ? { ...prev, avatar_url: url } : { ...userData, avatar_url: url });
+      
+      // Also update AuthContext profile
+      if (refreshProfile) await refreshProfile();
+
       import('sonner').then(({ toast }) => toast.success("Foto de perfil atualizada com sucesso!"));
     } catch (err: any) {
       console.error("Erro detalhado no upload para Supabase:", err);
@@ -279,10 +307,9 @@ export default function Profile() {
       }
       
       // 3. Sign out locally
-      await supabase.auth.signOut();
+      await signOut();
       
       import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída. Note que para exclusão total dos dados de autenticação, pode ser necessário contato com o suporte."));
-      navigate('/');
     } catch (err: any) {
       console.error("Erro ao excluir conta:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido")));
@@ -321,8 +348,6 @@ export default function Profile() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
-
   const tabs = [
     { id: 'profile', label: t('nav.profile'), icon: User },
     { id: 'account', label: 'Minha Conta', icon: Lock },
@@ -356,7 +381,14 @@ export default function Profile() {
               {tab.label}
             </button>
           ))}
-          <div className="pt-4 border-t border-slate-200 mt-4">
+          <div className="pt-4 border-t border-slate-200 mt-4 space-y-2">
+            <button
+              onClick={() => signOut()}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all"
+            >
+              <LogOut size={20} />
+              Sair da Conta
+            </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-600 hover:bg-red-50 transition-all"
