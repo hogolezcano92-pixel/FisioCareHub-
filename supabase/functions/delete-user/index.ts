@@ -94,8 +94,18 @@ serve(async (req) => {
       try {
         console.log(`Attempting to delete from storage bucket ${bucket} for user ${userId}`)
         if (bucket === 'avatars') {
-          const fileName = `avatar-${userId}.jpg`
-          await supabaseAdmin.storage.from(bucket).remove([fileName])
+          // List all files in the avatars bucket
+          const { data: files, error: listError } = await supabaseAdmin.storage
+            .from(bucket)
+            .list('', {
+              search: `avatar-${userId}`
+            })
+          
+          if (files && files.length > 0) {
+            const filesToDelete = files.map(f => f.name)
+            console.log(`Deleting ${filesToDelete.length} avatars for user ${userId}`)
+            await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+          }
         } else if (bucket === 'documents') {
           // List all files in the user's folder
           const { data: files, error: listError } = await supabaseAdmin.storage

@@ -69,6 +69,13 @@ export default function Profile() {
     const fetchUser = async () => {
       try {
         if (user) {
+          // Check buckets
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const avatarsBucket = buckets?.find(b => b.name === 'avatars');
+          if (!avatarsBucket) {
+            console.warn("Bucket 'avatars' não encontrado. Certifique-se de criá-lo no Supabase.");
+          }
+
           const { data, error } = await getSupabase()
             .from('perfis')
             .select('*')

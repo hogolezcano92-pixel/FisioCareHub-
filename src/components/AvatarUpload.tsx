@@ -66,29 +66,58 @@ export default function AvatarUpload({ userId, currentAvatarUrl, onUploadComplet
           },
         } as any);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Erro detalhado do Supabase Storage:", uploadError);
+        
+        if (uploadError.message === 'Bucket not found') {
+          throw new Error('O bucket "avatars" não foi encontrado no seu Supabase. Por favor, crie um bucket público chamado "avatars".');
+        }
+        
+        if (uploadError.message?.includes('row-level security') || uploadError.message?.includes('RLS')) {
+          throw new Error('Erro de permissão (RLS) no bucket "avatars". Verifique as políticas de segurança no painel do Supabase.');
+        }
+
+        throw uploadError;
+      }
+
+      console.log('Upload concluído com sucesso:', data);
 
       // 5. Obter URL pública e atualizar
-      const { data: { publicUrl } } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        throw new Error("Não foi possível obter a URL pública da imagem.");
+      }
+
       // Adicionar timestamp para evitar cache do navegador
       const finalUrl = `${publicUrl}?t=${Date.now()}`;
+      console.log('URL Final gerada:', finalUrl);
       
       // Atualizar metadados do usuário e tabela de perfis
-      await supabase.auth.updateUser({
-        data: { avatar_url: finalUrl }
-      });
+      console.log('Atualizando metadados do usuário e tabela perfis...');
+      
+      const [authUpdate, dbUpdate] = await Promise.all([
+        supabase.auth.updateUser({
+          data: { avatar_url: finalUrl }
+        }),
+        supabase.from('perfis')
+          .update({ avatar_url: finalUrl })
+          .eq('id', userId)
+      ]);
 
-      await supabase.from('perfis')
-        .update({ avatar_url: finalUrl })
-        .eq('id', userId);
+      if (authUpdate.error) console.warn('Erro ao atualizar metadados de auth:', authUpdate.error);
+      if (dbUpdate.error) {
+        console.error('Erro ao atualizar tabela perfis:', dbUpdate.error);
+        throw new Error(`Erro ao salvar no banco de dados: ${dbUpdate.error.message}`);
+      }
 
       onUploadComplete(finalUrl);
       toast.success('Foto de perfil atualizada!');
     } catch (err: any) {
-      console.error('Erro no upload:', err);
+      console.error('Erro completo no processo de upload:', err);
       const msg = err.message || 'Erro ao enviar a imagem.';
       setError(msg);
       toast.error(msg);
@@ -108,6 +137,10 @@ export default function AvatarUpload({ userId, currentAvatarUrl, onUploadComplet
               alt="Avatar" 
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+              }}
             />
           ) : (
             <Camera size={40} className="text-slate-400" />
