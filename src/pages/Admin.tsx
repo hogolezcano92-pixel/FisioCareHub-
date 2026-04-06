@@ -369,6 +369,13 @@ export default function Admin() {
         createdAt: serverTimestamp()
       });
 
+      // Manual refresh to ensure UI updates
+      const { data: updatedProfiles } = await supabase
+        .from('perfis')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (updatedProfiles) setSupabaseProfiles(updatedProfiles);
+
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado!"));
     } catch (err) {
       console.error("Error approving physio:", err);
@@ -411,6 +418,13 @@ export default function Admin() {
         read: false,
         createdAt: serverTimestamp()
       });
+
+      // Manual refresh
+      const { data: updatedProfiles } = await supabase
+        .from('perfis')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (updatedProfiles) setSupabaseProfiles(updatedProfiles);
 
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta rejeitado."));
     } catch (err) {
@@ -554,10 +568,10 @@ export default function Admin() {
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8">
                 {/* Basic Info Grid */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.email}</p>
+                    <p className="text-sm font-bold text-slate-900 break-all">{selectedUserDetail.email}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CREFITO</p>

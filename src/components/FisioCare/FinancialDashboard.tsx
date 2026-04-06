@@ -5,18 +5,18 @@ import { cn } from '../../lib/utils';
 
 export const FinancialDashboard = () => {
   const stats = [
-    { label: 'Saldo Disponível', value: 'R$ 2.450,00', icon: Wallet, color: 'bg-blue-600 shadow-blue-100' },
-    { label: 'Ganhos do Mês', value: 'R$ 8.120,00', icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-100' },
-    { label: 'Previsão de Recebimento', value: 'R$ 1.890,00', icon: CreditCard, color: 'bg-amber-600 shadow-amber-100' },
+    { label: 'Saldo Disponível', value: 'R$ 0,00', icon: Wallet, color: 'bg-blue-600 shadow-blue-100' },
+    { label: 'Ganhos do Mês', value: 'R$ 0,00', icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-100' },
+    { label: 'Previsão de Recebimento', value: 'R$ 0,00', icon: CreditCard, color: 'bg-amber-600 shadow-amber-100' },
   ];
 
   const weeklyData = [
-    { day: 'Seg', count: 8, height: 'h-32' },
-    { day: 'Ter', count: 10, height: 'h-40' },
-    { day: 'Qua', count: 6, height: 'h-24' },
-    { day: 'Qui', count: 9, height: 'h-36' },
-    { day: 'Sex', count: 12, height: 'h-48' },
-    { day: 'Sáb', count: 4, height: 'h-16' },
+    { day: 'Seg', count: 0, height: 'h-0' },
+    { day: 'Ter', count: 0, height: 'h-0' },
+    { day: 'Qua', count: 0, height: 'h-0' },
+    { day: 'Qui', count: 0, height: 'h-0' },
+    { day: 'Sex', count: 0, height: 'h-0' },
+    { day: 'Sáb', count: 0, height: 'h-0' },
     { day: 'Dom', count: 0, height: 'h-0' },
   ];
 

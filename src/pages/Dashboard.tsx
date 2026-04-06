@@ -374,15 +374,17 @@ export default function Dashboard() {
                   Assistente IA
                 </h3>
                 <p className="text-blue-100 text-base leading-relaxed font-medium">
-                  {isPhysio ? "Você tem 3 pacientes com dores crônicas que não evoluem há 2 semanas. Deseja sugestões de novos protocolos?" : "Sua Triagem IA está liberada! Analise seus sintomas agora com nossa inteligência artificial."}
+                  {isPhysio ? "Bem-vindo ao seu painel profissional. Como posso ajudar na gestão dos seus pacientes hoje?" : "Sua Triagem IA está liberada! Analise seus sintomas agora com nossa inteligência artificial."}
                 </p>
               </div>
-              <button 
-                onClick={() => navigate('/triage')}
-                className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                {isPhysio ? 'Analisar Casos' : 'Iniciar Triagem'}
-              </button>
+              {!isPhysio && (
+                <button 
+                  onClick={() => navigate('/triage')}
+                  className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  Iniciar Triagem
+                </button>
+              )}
             </div>
           </div>
 
