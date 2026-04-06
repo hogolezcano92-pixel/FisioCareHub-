@@ -96,22 +96,18 @@ export default function AvatarUpload({ userId, currentAvatarUrl, onUploadComplet
       const finalUrl = `${publicUrl}?t=${Date.now()}`;
       console.log('URL Final gerada:', finalUrl);
       
-      // Atualizar metadados do usuário e tabela de perfis
-      console.log('Atualizando metadados do usuário e tabela perfis...');
+      // 5. Atualizar apenas a tabela de perfis
+      // Removido supabase.auth.updateUser para evitar o erro "lock stolen" (race condition no localStorage)
+      // A tabela 'perfis' é a fonte de verdade para o app e o AuthContext irá atualizar o estado global.
+      console.log('Atualizando tabela perfis...');
       
-      const [authUpdate, dbUpdate] = await Promise.all([
-        supabase.auth.updateUser({
-          data: { avatar_url: finalUrl }
-        }),
-        supabase.from('perfis')
-          .update({ avatar_url: finalUrl })
-          .eq('id', userId)
-      ]);
-
-      if (authUpdate.error) console.warn('Erro ao atualizar metadados de auth:', authUpdate.error);
-      if (dbUpdate.error) {
-        console.error('Erro ao atualizar tabela perfis:', dbUpdate.error);
-        throw new Error(`Erro ao salvar no banco de dados: ${dbUpdate.error.message}`);
+      const { error: dbError } = await supabase.from('perfis')
+        .update({ avatar_url: finalUrl })
+        .eq('id', userId);
+      
+      if (dbError) {
+        console.error('Erro ao atualizar tabela perfis:', dbError);
+        throw new Error(`Erro ao salvar no banco de dados: ${dbError.message}`);
       }
 
       onUploadComplete(finalUrl);
