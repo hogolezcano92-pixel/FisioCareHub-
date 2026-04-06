@@ -32,8 +32,7 @@ const STEPS = [
 ];
 
 export default function Triage() {
-  const { user, loading: authLoading } = useAuth();
-  const [userData, setUserData] = useState<any>(null);
+  const { user, profile, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [painLocation, setPainLocation] = useState('');
   const [customLocation, setCustomLocation] = useState('');
@@ -64,45 +63,37 @@ export default function Triage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login', { state: { from: '/triage' } });
-      return;
-    }
-
-    const fetchUser = async () => {
-      if (user) {
-        const { data: profile } = await supabase
-          .from('perfis')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserData(profile);
-          if (profile.tipo_usuario === 'fisioterapeuta') {
-            navigate('/dashboard');
-          }
-        }
-
-        const fetchHistory = async () => {
-          const { data: triages } = await supabase
-            .from('triagem')
-            .select('*')
-            .eq('paciente_id', user.id)
-            .order('data_triagem', { ascending: false });
-          
-          if (triages) {
-            setHistory(triages);
-          }
-        };
-        fetchHistory();
-      }
-    };
-
     if (!authLoading) {
-      fetchUser();
+      if (!user) {
+        navigate('/login', { state: { from: '/triage' } });
+        return;
+      }
+
+      if (profile) {
+        if (profile.tipo_usuario === 'fisioterapeuta') {
+          navigate('/dashboard');
+          return;
+        }
+        fetchHistory(user.id);
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate]);
+
+  const fetchHistory = async (userId: string) => {
+    try {
+      const { data: triages } = await supabase
+        .from('triagens')
+        .select('*')
+        .eq('paciente_id', userId)
+        .order('data_triagem', { ascending: false });
+      
+      if (triages) {
+        setHistory(triages);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar histórico de triagens:", err);
+    }
+  };
 
   const handleTriage = async () => {
     if (loading || !user) return;
@@ -123,14 +114,14 @@ export default function Triage() {
       setAnalysis(result);
 
       const { error } = await supabase
-        .from('triagem')
+        .from('triagens')
         .insert({
           paciente_id: user.id,
           sintomas: symptomsStr,
           gravidade: painIntensity.toString(),
           status: 'concluido',
           data_triagem: new Date().toISOString(),
-          ai_analysis: result,
+          aiAnalysis: result,
         });
 
       if (error) throw error;
@@ -139,7 +130,7 @@ export default function Triage() {
         sintomas: symptomsStr, 
         gravidade: painIntensity.toString(), 
         data_triagem: new Date().toISOString(),
-        ai_analysis: result
+        aiAnalysis: result
       };
       setHistory([newEntry, ...history]);
       

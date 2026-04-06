@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userMetadata?: any) => {
     try {
       const { data, error } = await supabase
         .from('perfis')
@@ -27,7 +27,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
       
-      if (error) {
+      if (error && error.code === 'PGRST116') {
+        // Profile not found, create a default one (likely OAuth user)
+        console.log('Profile not found, creating default for user:', userId);
+        const { data: newProfile, error: createError } = await supabase
+          .from('perfis')
+          .insert({
+            id: userId,
+            nome_completo: userMetadata?.full_name || 'Usuário',
+            email: userMetadata?.email || '',
+            avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            tipo_usuario: 'paciente', // Default to patient for OAuth
+            pro: false
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating default profile:', createError);
+          return null;
+        }
+        return newProfile;
+      } else if (error) {
         console.error('Error fetching profile:', error);
         return null;
       }
@@ -40,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
-      const p = await fetchProfile(user.id);
+      const p = await fetchProfile(user.id, user.user_metadata);
       setProfile(p);
     }
   };
@@ -57,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(currentUser);
           
           if (currentUser) {
-            const p = await fetchProfile(currentUser.id);
+            const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
             if (mounted) setProfile(p);
           }
         }
@@ -79,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
         
         if (currentUser) {
-          const p = await fetchProfile(currentUser.id);
+          const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
           if (mounted) setProfile(p);
         } else {
           setProfile(null);

@@ -254,17 +254,34 @@ export default function Profile() {
     if (!user) return;
     setUpdating(true);
     try {
-      // 1. Call the Edge Function to handle secure deletion (Auth + Profile)
-      const data = await invokeFunction('delete-user', { userId: user.id });
+      console.log("Iniciando exclusão de conta para:", user.id);
       
-      if (data.error) {
-        throw new Error(data.error);
+      // 1. Try to call the Edge Function for full deletion (Auth + Profile + Storage)
+      try {
+        const data = await invokeFunction('delete-user', { userId: user.id });
+        if (data && data.error) {
+          console.warn("Edge Function delete-user falhou ou não existe:", data.error);
+          // Fallback to manual profile deletion if Edge Function fails
+        }
+      } catch (edgeErr) {
+        console.warn("Erro ao chamar Edge Function delete-user:", edgeErr);
+        // Fallback to manual profile deletion
+      }
+
+      // 2. Manual cleanup of the profile in 'perfis' table (Client-side fallback)
+      const { error: profileError } = await supabase
+        .from('perfis')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error("Erro ao excluir perfil no banco:", profileError);
       }
       
-      // 2. Sign out locally
+      // 3. Sign out locally
       await supabase.auth.signOut();
       
-      import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída permanentemente."));
+      import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída. Note que para exclusão total dos dados de autenticação, pode ser necessário contato com o suporte."));
       navigate('/');
     } catch (err: any) {
       console.error("Erro ao excluir conta:", err);

@@ -30,21 +30,32 @@ const Logo: React.FC<LogoProps> = ({
   };
 
   return (
-    <div className={cn("flex items-center gap-3 select-none", className)}>
+    <div className={cn("flex items-center gap-4 select-none group", className)}>
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative flex items-center justify-center"
       >
+        {/* Premium Background Glow */}
+        <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full group-hover:bg-blue-400/30 transition-all duration-500" />
+        
         {/* Home Care Icon: House + Professional Figure */}
-        <div className="w-10 h-10 sm:w-14 sm:h-14 bg-[#0EA5E9] rounded-2xl flex items-center justify-center shadow-md overflow-hidden relative">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#0EA5E9] to-[#2563EB] rounded-[1.5rem] flex items-center justify-center shadow-xl overflow-hidden relative border border-white/20">
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none">
+              <path d="M0 0L100 100M100 0L0 100" stroke="white" strokeWidth="1" />
+            </svg>
+          </div>
+          
           <svg
-            width="75%"
-            height="75%"
+            width="70%"
+            height="70%"
             viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            className="relative z-10"
           >
             {/* House Outline */}
             <motion.path
@@ -97,20 +108,23 @@ const Logo: React.FC<LogoProps> = ({
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col leading-tight"
+          className="flex flex-col leading-none"
         >
           <span className={cn(
-            "font-sans font-black tracking-tight text-2xl sm:text-3xl",
-            variant === 'dark' ? "text-[#0EA5E9]" : "text-white"
+            "font-sans font-black tracking-tighter text-2xl sm:text-4xl drop-shadow-sm",
+            variant === 'dark' ? "text-slate-900" : "text-white"
           )}>
-            FisioCareHub
+            FisioCare<span className="text-[#0EA5E9]">Hub</span>
           </span>
-          <span className={cn(
-            "text-[10px] sm:text-[12px] font-medium tracking-wider",
-            variant === 'dark' ? "text-slate-500" : "text-slate-300"
-          )}>
-            REABILITAÇÃO E PERFORMANCE
-          </span>
+          <div className="flex items-center gap-2 mt-1">
+            <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-white")} />
+            <span className={cn(
+              "text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em]",
+              variant === 'dark' ? "text-slate-400" : "text-blue-100"
+            )}>
+              Reabilitação & Performance
+            </span>
+          </div>
         </motion.div>
       )}
     </div>
