@@ -143,27 +143,11 @@ function LoadingScreen() {
 }
 
 function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { t } = useTranslation();
-  const [userData, setUserData] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    if (user) {
-      supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) setUserData(data);
-        });
-    } else {
-      setUserData(null);
-    }
-  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
@@ -173,7 +157,7 @@ function Navbar() {
   const navItems = [
     { name: t('nav.home'), path: user ? '/dashboard' : '/', icon: HomeIcon },
     ...(user ? [
-      ...(userData?.role === 'admin' || 
+      ...(profile?.role === 'admin' || 
           user.email === 'hugo_lezcano92@hotmail.com' || 
           user.email === 'hogolezcano92@gmail.com' || 
           user.email === 'lezcanohugo662@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
@@ -181,7 +165,7 @@ function Navbar() {
       { name: t('nav.documents'), path: '/documents', icon: FileSignature },
       { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
       { name: t('nav.records'), path: '/records', icon: FileText },
-      ...(userData?.tipo_usuario === 'paciente' || userData?.tipo_usuario === 'patient' ? [{ name: t('nav.triage'), path: '/triage', icon: BrainCircuit }] : []),
+      ...(profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'patient' ? [{ name: t('nav.triage'), path: '/triage', icon: BrainCircuit }] : []),
       { name: t('nav.profile'), path: '/profile', icon: User },
     ] : [
       { name: t('nav.login'), path: '/login', icon: User },
@@ -217,16 +201,27 @@ function Navbar() {
               </Link>
             ))}
             {user && (
-              <>
+              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-200">
+                <Link to="/profile" className="flex items-center gap-3 group">
+                  <div className="text-right hidden lg:block">
+                    <p className="text-sm font-black text-slate-900 leading-none">{profile?.nome_completo?.split(' ')[0]}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.tipo_usuario}</p>
+                  </div>
+                  <img 
+                    src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
+                    className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm group-hover:border-sky-500 transition-all"
+                    alt="profile"
+                  />
+                </Link>
                 <NotificationBell />
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-base font-black text-red-600 hover:bg-red-50 transition-all"
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  title={t('nav.logout')}
                 >
-                  <LogOut size={18} />
-                  <span className="hidden lg:inline">{t('nav.logout')}</span>
+                  <LogOut size={20} />
                 </button>
-              </>
+              </div>
             )}
           </div>
 

@@ -23,8 +23,9 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { uploadProfilePhoto, uploadDocument } from '../services/supabaseStorage';
+import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
+import AvatarUpload from '../components/AvatarUpload';
 
 type Tab = 'profile' | 'account' | 'settings';
 
@@ -34,8 +35,6 @@ export default function Profile() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
@@ -158,66 +157,6 @@ export default function Profile() {
       toast.error(err.message || "Erro ao atualizar perfil. Tente novamente.");
     } finally {
       setUpdating(false);
-    }
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      const { toast } = await import('sonner');
-      toast.error("A imagem deve ter no máximo 5MB.");
-      return;
-    }
-
-    setUploadingPhoto(true);
-    setUploadProgress(0);
-    try {
-      console.log("Iniciando upload de foto para Supabase Storage...");
-      
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => (prev >= 90 ? 90 : prev + 10));
-      }, 200);
-
-      // 1. Upload to Storage
-      const publicUrl = await uploadProfilePhoto(user.id, file);
-      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      console.log("Upload concluído. URL:", urlWithTimestamp);
-      
-      // 2. Update Auth Profile Metadata
-      await supabase.auth.updateUser({
-        data: { avatar_url: urlWithTimestamp }
-      });
-      
-      // 3. Update 'perfis' table
-      const { error: dbError } = await supabase
-        .from('perfis')
-        .update({ avatar_url: urlWithTimestamp })
-        .eq('id', user.id);
-
-      if (dbError) throw dbError;
-      
-      // 4. Update local and global state
-      setUserData((prev: any) => prev ? { ...prev, avatar_url: urlWithTimestamp } : { ...userData, avatar_url: urlWithTimestamp });
-      if (refreshProfile) await refreshProfile();
-
-      const { toast } = await import('sonner');
-      toast.success("Foto de perfil atualizada com sucesso!");
-    } catch (err: any) {
-      console.error("Erro no upload de foto:", err);
-      const { toast } = await import('sonner');
-      toast.error("Erro ao enviar foto: " + (err.message || "Erro desconhecido"));
-    } finally {
-      setUploadingPhoto(false);
-      setUploadProgress(0);
-      if (e.target) e.target.value = '';
     }
   };
 
@@ -409,42 +348,14 @@ export default function Profile() {
               >
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                   <div className="flex flex-col md:flex-row gap-8 items-start">
-                    <div className="relative group">
-                      <div className="relative">
-                        <img
-                          src={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                          alt={userData?.nome_completo}
-                          className={cn(
-                            "w-32 h-32 rounded-[2rem] object-cover border-4 border-slate-50 shadow-xl transition-all",
-                            uploadingPhoto && "opacity-50 blur-[2px]"
-                          )}
-                          referrerPolicy="no-referrer"
-                        />
-                        {uploadingPhoto && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px] rounded-[2rem]">
-                            <Loader2 className="animate-spin text-blue-600 mb-2" size={32} />
-                            <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${uploadProgress}%` }}
-                                className="h-full bg-blue-600"
-                              />
-                            </div>
-                            <p className="text-[10px] font-black text-blue-600 mt-1">{Math.round(uploadProgress)}%</p>
-                          </div>
-                        )}
-                      </div>
-                      <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl cursor-pointer shadow-lg hover:bg-blue-700 transition-all hover:scale-110">
-                        <Camera size={20} />
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          onChange={handlePhotoUpload} 
-                          accept="image/*" 
-                          disabled={uploadingPhoto}
-                        />
-                      </label>
-                    </div>
+                    <AvatarUpload 
+                      userId={user?.id || ''}
+                      currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                      onUploadComplete={(newUrl) => {
+                        setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
+                        if (refreshProfile) refreshProfile();
+                      }}
+                    />
                     <div className="flex-1 space-y-2">
                       <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
                       <div className="flex items-center gap-2">

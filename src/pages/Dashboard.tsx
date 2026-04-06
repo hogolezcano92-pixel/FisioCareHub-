@@ -164,11 +164,11 @@ export default function Dashboard() {
           <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
-                Olá, seja bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo?.split(' ')[0]}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Fisioterapeuta {profile?.nome_completo}! 👋
               </>
             ) : (
               <>
-                Olá paciente {profile?.nome_completo?.split(' ')[0]}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Paciente {profile?.nome_completo}! 👋
               </>
             )}
           </h1>
