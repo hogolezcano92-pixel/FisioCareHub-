@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { 
   doc, 
   getDoc, 
@@ -30,6 +31,7 @@ import {
   CheckCircle2, 
   XCircle, 
   Edit3,
+  Eye,
   Filter,
   Download,
   Activity,
@@ -67,8 +69,10 @@ export default function Admin() {
 
   // Real Data States
   const [users, setUsers] = useState<any[]>([]);
+  const [supabaseProfiles, setSupabaseProfiles] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [pendingPhysios, setPendingPhysios] = useState<any[]>([]);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -184,6 +188,29 @@ export default function Admin() {
       console.error("Erro ao ouvir usuários:", error);
     });
 
+    // Listen for Supabase Profiles
+    const fetchSupabaseProfiles = async () => {
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error("Erro ao buscar perfis Supabase:", error);
+      } else {
+        setSupabaseProfiles(data || []);
+      }
+    };
+
+    fetchSupabaseProfiles();
+    // Set up a simple poll or realtime subscription for Supabase
+    const channel = supabase
+      .channel('perfis-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, (payload) => {
+        fetchSupabaseProfiles();
+      })
+      .subscribe();
+
     // Listen for Payments
     const unsubPayments = onSnapshot(collection(db, 'payments'), (snapshot) => {
       const paymentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -222,6 +249,7 @@ export default function Admin() {
       unsubPayments();
       unsubApprovals();
       unsubAppointments();
+      supabase.removeChannel(channel);
     };
   }, [isAdmin, firebaseUser]);
 
@@ -303,18 +331,31 @@ export default function Admin() {
     );
   }
 
-  const handleApprovePhysio = async (physioId: string, userId: string) => {
+  const handleApprovePhysio = async (profileId: string, userId: string) => {
     try {
-      const userSnap = await getDoc(doc(db, 'users', userId));
-      const userData = userSnap.data();
+      // Update Supabase
+      const { error: supabaseError } = await supabase
+        .from('perfis')
+        .update({ 
+          aprovado: true, 
+          status_aprovacao: 'aprovado' 
+        })
+        .eq('id', profileId);
 
-      await updateDoc(doc(db, 'physiotherapists', physioId), {
-        status: 'approved',
-        approved: true
-      });
-      await updateDoc(doc(db, 'users', userId), {
-        status: 'approved'
-      });
+      if (supabaseError) throw supabaseError;
+
+      // Update Firebase (if exists)
+      try {
+        await updateDoc(doc(db, 'physiotherapists', profileId), {
+          status: 'approved',
+          approved: true
+        });
+        await updateDoc(doc(db, 'users', userId), {
+          status: 'approved'
+        });
+      } catch (fbErr) {
+        console.warn("Firebase update failed (might not exist):", fbErr);
+      }
       
       // Create notification
       await addDoc(collection(db, 'notifications'), {
@@ -326,37 +367,6 @@ export default function Admin() {
         createdAt: serverTimestamp()
       });
 
-      // Send Email Notification
-      if (userData?.email) {
-        try {
-          const { invokeFunction } = await import('../lib/supabase');
-          await invokeFunction('send-email', {
-            to: userData.email,
-            subject: 'Seu perfil foi Aprovado! - FisioCareHub',
-            body: `
-              <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                <h2 style="color: #2563eb; margin-bottom: 16px;">Parabéns, ${userData.name || 'Fisioterapeuta'}!</h2>
-                <p>Temos o prazer de informar que seu perfil de fisioterapeuta foi <strong>aprovado</strong> pela nossa equipe administrativa.</p>
-                <p>Agora você já pode começar a atender pacientes e gerenciar seus agendamentos através da nossa plataforma.</p>
-                <div style="margin-top: 24px; padding: 16px; background-color: #f8fafc; border-radius: 8px;">
-                  <p style="margin: 0; font-weight: bold; color: #475569;">Próximos passos:</p>
-                  <ul style="margin-top: 8px; color: #64748b;">
-                    <li>Complete seu perfil com bio e fotos</li>
-                    <li>Defina seus horários de disponibilidade</li>
-                    <li>Configure seus valores de atendimento</li>
-                  </ul>
-                </div>
-                <p style="margin-top: 24px;">Seja bem-vindo(a) à nossa comunidade!</p>
-                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-                <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Conectando saúde e bem-estar.</p>
-              </div>
-            `
-          });
-        } catch (emailErr) {
-          console.error("Erro ao enviar e-mail de aprovação:", emailErr);
-        }
-      }
-
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado!"));
     } catch (err) {
       console.error("Error approving physio:", err);
@@ -364,18 +374,31 @@ export default function Admin() {
     }
   };
 
-  const handleRejectPhysio = async (physioId: string, userId: string) => {
+  const handleRejectPhysio = async (profileId: string, userId: string) => {
     try {
-      const userSnap = await getDoc(doc(db, 'users', userId));
-      const userData = userSnap.data();
+      // Update Supabase
+      const { error: supabaseError } = await supabase
+        .from('perfis')
+        .update({ 
+          aprovado: false, 
+          status_aprovacao: 'rejeitado' 
+        })
+        .eq('id', profileId);
 
-      await updateDoc(doc(db, 'physiotherapists', physioId), {
-        status: 'rejected',
-        approved: false
-      });
-      await updateDoc(doc(db, 'users', userId), {
-        status: 'rejected'
-      });
+      if (supabaseError) throw supabaseError;
+
+      // Update Firebase (if exists)
+      try {
+        await updateDoc(doc(db, 'physiotherapists', profileId), {
+          status: 'rejected',
+          approved: false
+        });
+        await updateDoc(doc(db, 'users', userId), {
+          status: 'rejected'
+        });
+      } catch (fbErr) {
+        console.warn("Firebase update failed (might not exist):", fbErr);
+      }
       
       // Create notification
       await addDoc(collection(db, 'notifications'), {
@@ -387,31 +410,6 @@ export default function Admin() {
         createdAt: serverTimestamp()
       });
 
-      // Send Email Notification
-      if (userData?.email) {
-        try {
-          const { invokeFunction } = await import('../lib/supabase');
-          await invokeFunction('send-email', {
-            to: userData.email,
-            subject: 'Atualização sobre seu perfil - FisioCareHub',
-            body: `
-              <div style="font-family: sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 16px;">
-                <h2 style="color: #dc2626; margin-bottom: 16px;">Olá, ${userData.name || 'Fisioterapeuta'}</h2>
-                <p>Gostaríamos de informar que, após a revisão, seu perfil de fisioterapeuta <strong>não foi aprovado</strong> neste momento.</p>
-                <p>Isso pode ter ocorrido devido a informações incompletas ou documentos que não atendem aos nossos critérios atuais.</p>
-                <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
-                  <p style="margin: 0; color: #991b1b;">Você pode entrar em contato com nosso suporte através do chat interno ou responder a este e-mail para entender melhor os motivos e como proceder.</p>
-                </div>
-                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-                <p style="font-size: 12px; color: #94a3b8; text-align: center;">FisioCareHub - Equipe de Suporte</p>
-              </div>
-            `
-          });
-        } catch (emailErr) {
-          console.error("Erro ao enviar e-mail de rejeição:", emailErr);
-        }
-      }
-
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta rejeitado."));
     } catch (err) {
       console.error("Error rejecting physio:", err);
@@ -421,11 +419,25 @@ export default function Admin() {
 
   const handleBlockUser = async (userId: string, currentStatus: string) => {
     try {
-      const newStatus = currentStatus === 'blocked' ? 'approved' : 'blocked';
-      await updateDoc(doc(db, 'users', userId), {
-        status: newStatus
-      });
-      import('sonner').then(({ toast }) => toast.success(`Usuário ${newStatus === 'blocked' ? 'bloqueado' : 'desbloqueado'}!`));
+      const isBlocked = currentStatus === 'rejeitado' || currentStatus === 'blocked';
+      const newStatus = isBlocked ? 'aprovado' : 'rejeitado';
+      
+      // Update Supabase
+      await supabase
+        .from('perfis')
+        .update({ status_aprovacao: newStatus, aprovado: newStatus === 'aprovado' })
+        .eq('id', userId);
+
+      // Update Firebase (if exists)
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          status: newStatus === 'aprovado' ? 'approved' : 'blocked'
+        });
+      } catch (fbErr) {
+        console.warn("Firebase update failed:", fbErr);
+      }
+
+      import('sonner').then(({ toast }) => toast.success(`Status do usuário atualizado para: ${newStatus}!`));
     } catch (err) {
       console.error("Error toggling user status:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao alterar status do usuário."));
@@ -497,6 +509,146 @@ export default function Admin() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
+      {/* User Detail Modal */}
+      <AnimatePresence>
+        {selectedUserDetail && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedUserDetail(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-100">
+                    {selectedUserDetail.avatar_url ? (
+                      <img src={selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      selectedUserDetail.nome_completo?.charAt(0)
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo}</h3>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedUserDetail(null)}
+                  className="p-3 bg-white text-slate-400 hover:text-slate-900 rounded-2xl shadow-sm border border-slate-100 transition-all"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                {/* Basic Info Grid */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.email}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CREFITO</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.crefito || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Localização</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.localizacao || 'Não informada'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cadastro em</p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sobre / Bio</p>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-600 leading-relaxed italic">
+                    {selectedUserDetail.bio || 'Nenhuma biografia informada.'}
+                  </div>
+                </div>
+
+                {/* Documents */}
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentos e Comprovantes</p>
+                  {selectedUserDetail.documentos && selectedUserDetail.documentos.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedUserDetail.documentos.map((doc: string, idx: number) => (
+                        <a 
+                          key={idx} 
+                          href={doc} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-2xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-50 transition-all group"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <Download size={20} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">Documento Profissional {idx + 1}</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-black">Clique para baixar</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
+                      <p className="text-sm text-slate-400 font-bold">Nenhum documento anexado.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-8 border-t border-slate-100 flex gap-4">
+                {selectedUserDetail.status_aprovacao === 'pendente' ? (
+                  <>
+                    <button 
+                      onClick={() => {
+                        handleApprovePhysio(selectedUserDetail.id, selectedUserDetail.id);
+                        setSelectedUserDetail(null);
+                      }}
+                      className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+                    >
+                      Aprovar Cadastro
+                    </button>
+                    <button 
+                      onClick={() => {
+                        handleRejectPhysio(selectedUserDetail.id, selectedUserDetail.id);
+                        setSelectedUserDetail(null);
+                      }}
+                      className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-sm hover:bg-rose-100 transition-all"
+                    >
+                      Rejeitar
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => setSelectedUserDetail(null)}
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all"
+                  >
+                    Fechar Detalhes
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Sidebar Backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -729,7 +881,7 @@ export default function Admin() {
           {activeTab === 'users' && (
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Todos os Usuários</h3>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Todos os Usuários (Supabase)</h3>
                 <div className="flex items-center gap-2">
                   <Search className="text-slate-400" size={18} />
                   <input 
@@ -748,29 +900,63 @@ export default function Admin() {
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Nome</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Email</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Papel</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredUsers.map((u) => (
+                    {supabaseProfiles
+                      .filter(p => 
+                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        p.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900">{u.name}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500">
+                              {u.avatar_url ? (
+                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                u.nome_completo?.charAt(0)
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-slate-900">{u.nome_completo}</span>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-sm text-slate-500">{u.email}</td>
                         <td className="px-6 py-4">
-                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-md uppercase">
-                            {u.role}
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                            u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                          )}>
+                            {u.tipo_usuario}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
+                            u.status_aprovacao === 'aprovado' ? "bg-emerald-50 text-emerald-600" : 
+                            u.status_aprovacao === 'rejeitado' ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                          )}>
+                            {u.status_aprovacao || 'Pendente'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                              <Edit3 size={16} />
+                            <button 
+                              onClick={() => setSelectedUserDetail(u)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                              title="Ver Detalhes"
+                            >
+                              <Eye size={16} />
                             </button>
                             <button 
-                              onClick={() => handleBlockUser(u.id, u.status)}
+                              onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
                               className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Bloquear/Desbloquear"
                             >
-                              <XCircle size={16} />
+                              <Lock size={16} />
                             </button>
                           </div>
                         </td>
@@ -786,7 +972,7 @@ export default function Admin() {
             <div className="space-y-6">
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Aprovações Pendentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pendingPhysios.length === 0 ? (
+                {supabaseProfiles.filter(p => p.status_aprovacao === 'pendente').length === 0 ? (
                   <div className="col-span-full bg-white p-12 rounded-[2rem] border border-slate-100 text-center space-y-4">
                     <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                       <CheckCircle2 size={32} />
@@ -795,35 +981,66 @@ export default function Admin() {
                     <p className="text-sm text-slate-500">Não há fisioterapeutas aguardando aprovação no momento.</p>
                   </div>
                 ) : (
-                  pendingPhysios.map((physio) => (
+                  supabaseProfiles.filter(p => p.status_aprovacao === 'pendente').map((profile) => (
                     <motion.div 
-                      key={physio.id}
+                      key={profile.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
-                          {physio.name?.charAt(0)}
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold overflow-hidden">
+                          {profile.avatar_url ? (
+                            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            profile.nome_completo?.charAt(0)
+                          )}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{physio.name}</p>
-                          <p className="text-xs text-slate-500">{physio.email} • CREFITO: {physio.crefito}</p>
+                          <p className="font-bold text-slate-900">{profile.nome_completo}</p>
+                          <p className="text-xs text-slate-500">{profile.email} • CREFITO: {profile.crefito || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-wider">
-                        <div className="bg-slate-50 p-2 rounded-lg">Especialidade: {physio.specialty}</div>
-                        <div className="bg-slate-50 p-2 rounded-lg">Cidade: {physio.city}</div>
+                        <div className="bg-slate-50 p-2 rounded-lg truncate">Especialidade: {profile.especialidade || 'Não inf.'}</div>
+                        <div className="bg-slate-50 p-2 rounded-lg truncate">Tipo: {profile.tipo_usuario}</div>
                       </div>
+                      
+                      {profile.documentos && profile.documentos.length > 0 && (
+                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Documentos Anexados ({profile.documentos.length})</p>
+                          <div className="flex flex-wrap gap-2">
+                            {profile.documentos.map((doc: string, idx: number) => (
+                              <a 
+                                key={idx} 
+                                href={doc} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[10px] font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
+                              >
+                                Doc {idx + 1}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2 pt-2">
                         <button 
-                          onClick={() => handleApprovePhysio(physio.id, physio.uid)}
+                          onClick={() => setSelectedUserDetail(profile)}
+                          className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
+                          title="Ver Detalhes"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleApprovePhysio(profile.id, profile.id)}
                           className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors"
                         >
                           Aprovar
                         </button>
                         <button 
-                          onClick={() => handleRejectPhysio(physio.id, physio.uid)}
+                          onClick={() => handleRejectPhysio(profile.id, profile.id)}
                           className="flex-1 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors"
                         >
                           Rejeitar

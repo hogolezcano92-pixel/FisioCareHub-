@@ -19,6 +19,8 @@ export default function Register() {
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('Brasil');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
+  const [crefito, setCrefito] = useState('');
+  const [registrationDocs, setRegistrationDocs] = useState<File[]>([]);
   const [proKey, setProKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -85,7 +87,21 @@ export default function Register() {
       }
 
       if (authData.user) {
-        // 3. Criar o perfil detalhado na tabela 'perfis'
+        // 3. Upload documents if any (for physios)
+        const uploadedDocUrls: string[] = [];
+        if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
+          const { uploadDocument } = await import('../services/supabaseStorage');
+          for (const file of registrationDocs) {
+            try {
+              const url = await uploadDocument(authData.user.id, file);
+              uploadedDocUrls.push(url);
+            } catch (uploadErr) {
+              console.error("Erro no upload de documento de registro:", uploadErr);
+            }
+          }
+        }
+
+        // 4. Criar o perfil detalhado na tabela 'perfis'
         // Usamos upsert para evitar conflitos e garantir a criação do perfil
         const { error: profileError } = await supabase
           .from('perfis')
@@ -97,14 +113,17 @@ export default function Register() {
             bio: '',
             genero: role === 'fisioterapeuta' ? (gender || null) : null,
             especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
+            crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
             localizacao: city || null,
             endereco: address || null,
             cep: zipCode || null,
             pais: country || null,
             tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
             is_pro: isPro,
+            aprovado: role === 'paciente', // Patients are auto-approved for now, physios need manual approval
+            status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName}`,
-            documentos: [],
+            documentos: uploadedDocUrls,
             created_at: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -149,7 +168,11 @@ export default function Register() {
 
         <div className="flex gap-4 mb-8">
           <button
-            onClick={() => setRole('paciente')}
+            type="button"
+            onClick={() => {
+              console.log("Setting role to paciente");
+              setRole('paciente');
+            }}
             className={cn(
               "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
               role === 'paciente' 
@@ -161,7 +184,11 @@ export default function Register() {
             <span className="font-bold text-sm">Paciente</span>
           </button>
           <button
-            onClick={() => setRole('fisioterapeuta')}
+            type="button"
+            onClick={() => {
+              console.log("Setting role to fisioterapeuta");
+              setRole('fisioterapeuta');
+            }}
             className={cn(
               "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
               role === 'fisioterapeuta' 
@@ -273,10 +300,21 @@ export default function Register() {
               className="space-y-6"
             >
               <div>
+                <label className="block text-base font-semibold text-slate-700 mb-2">CREFITO</label>
+                <input
+                  type="text"
+                  required={role === 'fisioterapeuta'}
+                  value={crefito}
+                  onChange={(e) => setCrefito(e.target.value)}
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
+                  placeholder="Ex: 12345-F"
+                />
+              </div>
+              <div>
                 <label className="block text-base font-semibold text-slate-700 mb-2">Especialidade</label>
                 <input
                   type="text"
-                  required
+                  required={role === 'fisioterapeuta'}
                   value={specialty}
                   onChange={(e) => setSpecialty(e.target.value)}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
@@ -294,6 +332,22 @@ export default function Register() {
                   <option value="online">Online</option>
                   <option value="ambos">Ambos</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-slate-700 mb-2">Documentos Profissionais (PDF/Imagens)</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setRegistrationDocs(Array.from(e.target.files));
+                      }
+                    }}
+                    className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-2">Anexe seu CREFITO e documentos de identificação para validação.</p>
               </div>
               <div>
                 <label className="block text-base font-semibold text-slate-700 mb-2">Chave Pro (Opcional)</label>

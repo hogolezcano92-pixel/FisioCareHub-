@@ -63,6 +63,7 @@ export default function Profile() {
   const [address, setAddress] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('');
+  const [crefito, setCrefito] = useState('');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function Profile() {
       setAddress(profile.endereco || '');
       setZipCode(profile.cep || '');
       setCountry(profile.pais || '');
+      setCrefito(profile.crefito || '');
       setServiceType(profile.tipo_servico || 'ambos');
       setLoading(false);
     } else if (!authLoading && !user) {
@@ -96,6 +98,7 @@ export default function Profile() {
         endereco: address,
         cep: zipCode,
         pais: country,
+        crefito: isPhysio ? crefito : undefined,
         genero: isPhysio ? gender : undefined,
         especialidade: isPhysio ? specialty : undefined,
         tipo_servico: isPhysio ? serviceType : undefined,
@@ -465,6 +468,16 @@ export default function Profile() {
                     {isPhysio && (
                       <div className="grid md:grid-cols-2 gap-6">
                         <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">CREFITO</label>
+                          <input
+                            type="text"
+                            value={crefito}
+                            onChange={(e) => setCrefito(e.target.value)}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                            placeholder="Ex: 12345-F"
+                          />
+                        </div>
+                        <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Especialidade</label>
                           <input
                             type="text"
@@ -474,18 +487,21 @@ export default function Profile() {
                             placeholder="Ex: Ortopedia, Neuro..."
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
-                          <select
-                            value={serviceType}
-                            onChange={(e: any) => setServiceType(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                          >
-                            <option value="domicilio">A Domicílio</option>
-                            <option value="online">Online</option>
-                            <option value="ambos">Ambos</option>
-                          </select>
-                        </div>
+                      </div>
+                    )}
+
+                    {isPhysio && (
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
+                        <select
+                          value={serviceType}
+                          onChange={(e: any) => setServiceType(e.target.value)}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                        >
+                          <option value="domicilio">A Domicílio</option>
+                          <option value="online">Online</option>
+                          <option value="ambos">Ambos</option>
+                        </select>
                       </div>
                     )}
 
