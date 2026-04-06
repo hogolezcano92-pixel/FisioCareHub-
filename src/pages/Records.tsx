@@ -259,9 +259,9 @@ export default function Records() {
                 </div>
                 <div className="text-sm font-bold text-purple-900 mb-1">Sintomas:</div>
                 <p className="text-sm text-purple-800 line-clamp-2 mb-3">{triage.sintomas}</p>
-                {triage.aiAnalysis && (
+                {triage.ai_analysis && (
                   <div className="text-xs text-purple-600 bg-white/50 p-3 rounded-xl border border-purple-100 italic">
-                    {triage.aiAnalysis.slice(0, 100)}...
+                    {triage.ai_analysis.slice(0, 100)}...
                   </div>
                 )}
               </div>

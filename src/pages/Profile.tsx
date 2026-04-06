@@ -285,18 +285,21 @@ export default function Profile() {
       console.log("Iniciando exclusão de conta para:", user.id);
       
       // 1. Try to call the Edge Function for full deletion (Auth + Profile + Storage)
+      let edgeFunctionWorked = false;
       try {
         const data = await invokeFunction('delete-user', { userId: user.id });
-        if (data && data.error) {
-          console.warn("Edge Function delete-user falhou ou não existe:", data.error);
-          // Fallback to manual profile deletion if Edge Function fails
+        if (data && !data.error) {
+          console.log("Edge Function delete-user executada com sucesso.");
+          edgeFunctionWorked = true;
+        } else {
+          console.warn("Edge Function delete-user retornou erro:", data?.error);
         }
-      } catch (edgeErr) {
-        console.warn("Erro ao chamar Edge Function delete-user:", edgeErr);
-        // Fallback to manual profile deletion
+      } catch (edgeErr: any) {
+        console.warn("Erro ao chamar Edge Function delete-user:", edgeErr.message);
       }
 
       // 2. Manual cleanup of the profile in 'perfis' table (Client-side fallback)
+      // Even if Edge Function worked, we try this just in case, or if it failed.
       const { error: profileError } = await supabase
         .from('perfis')
         .delete()
@@ -309,10 +312,16 @@ export default function Profile() {
       // 3. Sign out locally
       await signOut();
       
-      import('sonner').then(({ toast }) => toast.success("Sua conta foi excluída. Note que para exclusão total dos dados de autenticação, pode ser necessário contato com o suporte."));
+      const { toast } = await import('sonner');
+      if (edgeFunctionWorked) {
+        toast.success("Sua conta e todos os seus dados foram excluídos com sucesso.");
+      } else {
+        toast.warning("Seu perfil foi removido, mas a exclusão total da conta de autenticação falhou. Por favor, entre em contato com o suporte para remoção definitiva.");
+      }
     } catch (err: any) {
       console.error("Erro ao excluir conta:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido")));
+      const { toast } = await import('sonner');
+      toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido"));
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);

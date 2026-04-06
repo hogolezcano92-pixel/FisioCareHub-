@@ -100,12 +100,15 @@ async function directInvoke(name: string, body: any) {
   
   const url = `${supabaseUrl}/functions/v1/${name}`;
   
+  const { data: { session } } = await instance.auth.getSession();
+  const token = session?.access_token || supabaseAnonKey;
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${supabaseAnonKey}`
+      'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify(body)
   });
