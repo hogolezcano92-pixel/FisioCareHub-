@@ -155,7 +155,7 @@ export default function Profile() {
       console.log("Iniciando upload de documento para Supabase...");
       const url = await uploadDocument(user.id, file);
       
-      const currentDocs = userData?.documentos || [];
+      const currentDocs = Array.isArray(userData?.documentos) ? userData.documentos : [];
       const newDocs = [...currentDocs, url];
       
       const { error } = await supabase
@@ -542,12 +542,12 @@ export default function Profile() {
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      {userData.documentos?.length === 0 ? (
+                      {!Array.isArray(userData.documentos) || userData.documentos.length === 0 ? (
                         <div className="col-span-2 py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-400">
                           Nenhum documento enviado ainda.
                         </div>
                       ) : (
-                        userData.documentos?.map((doc: string, i: number) => (
+                        userData.documentos.map((doc: string, i: number) => (
                           <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">

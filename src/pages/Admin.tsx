@@ -586,7 +586,7 @@ export default function Admin() {
                 {/* Documents */}
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentos e Comprovantes</p>
-                  {selectedUserDetail.documentos && selectedUserDetail.documentos.length > 0 ? (
+                  {Array.isArray(selectedUserDetail.documentos) && selectedUserDetail.documentos.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedUserDetail.documentos.map((doc: string, idx: number) => (
                         <a 
@@ -1192,7 +1192,7 @@ export default function Admin() {
                         <div className="bg-slate-50 p-2 rounded-lg truncate">Tipo: {profile.tipo_usuario}</div>
                       </div>
                       
-                      {profile.documentos && profile.documentos.length > 0 && (
+                      {Array.isArray(profile.documentos) && profile.documentos.length > 0 && (
                         <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Documentos Anexados ({profile.documentos.length})</p>
                           <div className="flex flex-wrap gap-2">

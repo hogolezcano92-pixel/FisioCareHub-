@@ -205,7 +205,10 @@ function Navbar() {
               <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-200">
                 <Link to="/profile" className="flex items-center gap-3 group">
                   <div className="text-right hidden lg:block">
-                    <p className="text-sm font-black text-slate-900 leading-none">{profile?.nome_completo?.split(' ')[0]}</p>
+                    <p className="text-sm font-black text-slate-900 leading-none">
+                      {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
+                      {profile?.nome_completo?.split(' ')[0]}
+                    </p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.tipo_usuario}</p>
                   </div>
                   <img 

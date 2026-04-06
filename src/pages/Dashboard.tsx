@@ -167,7 +167,7 @@ export default function Dashboard() {
           <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Fisioterapeuta {profile?.nome_completo}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}! 👋
               </>
             ) : (
               <>
