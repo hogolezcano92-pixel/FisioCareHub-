@@ -37,15 +37,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error && error.code === 'PGRST116') {
         // Profile not found, create a default one (likely OAuth user)
         console.log('Profile not found, creating default for user:', userId);
+        
+        // Check if there's a pending role from Register page (for OAuth)
+        const pendingRole = localStorage.getItem('pending_role');
+        const finalRole = userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
+        
+        // Clear the pending role after use
+        if (pendingRole) localStorage.removeItem('pending_role');
+
         const { data: newProfile, error: createError } = await supabase
           .from('perfis')
           .insert({
             id: userId,
-            nome_completo: userMetadata?.full_name || 'Usuário',
+            nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
             email: userMetadata?.email || '',
-            avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            tipo_usuario: 'paciente', // Default to patient for OAuth
-            is_pro: false
+            avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            tipo_usuario: finalRole,
+            crefito: userMetadata?.crefito || null,
+            especialidade: userMetadata?.especialidade || null,
+            is_pro: !!userMetadata?.is_pro,
+            aprovado: finalRole === 'paciente',
+            status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
           })
           .select()
           .single();

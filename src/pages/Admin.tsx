@@ -49,7 +49,9 @@ import {
   LogIn,
   ArrowLeft,
   Sparkles,
-  Smartphone
+  Smartphone,
+  Stethoscope,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -687,8 +689,10 @@ export default function Admin() {
           <nav className="flex-1 py-6 px-3 space-y-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'users', label: 'Usuários', icon: Users },
+              { id: 'physios', label: 'Fisioterapeutas', icon: Stethoscope },
+              { id: 'patients', label: 'Pacientes', icon: User },
               { id: 'approvals', label: 'Aprovações', icon: UserCheck },
+              { id: 'users', label: 'Todos Usuários', icon: Users },
               { id: 'financial', label: 'Financeiro', icon: DollarSign },
               { id: 'chat', label: 'Suporte Chat', icon: MessageSquare },
               { id: 'settings', label: 'Configurações', icon: Settings },
@@ -881,7 +885,7 @@ export default function Admin() {
           {activeTab === 'users' && (
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Todos os Usuários (Supabase)</h3>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Todos os Usuários</h3>
                 <div className="flex items-center gap-2">
                   <Search className="text-slate-400" size={18} />
                   <input 
@@ -900,6 +904,7 @@ export default function Admin() {
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Nome</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Email</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Papel</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">CREFITO</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Ações</th>
                     </tr>
@@ -934,6 +939,11 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
+                          <span className="text-xs font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-lg">
+                            {u.crefito || '---'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
                           <span className={cn(
                             "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
                             u.status_aprovacao === 'aprovado' ? "bg-emerald-50 text-emerald-600" : 
@@ -957,6 +967,182 @@ export default function Admin() {
                               title="Bloquear/Desbloquear"
                             >
                               <Lock size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'physios' && (
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Fisioterapeutas Cadastrados</h3>
+                  <p className="text-xs text-slate-500 font-medium">Lista exclusiva de profissionais.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Search className="text-slate-400" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar fisioterapeuta..." 
+                    className="text-sm border-none focus:ring-0 bg-transparent"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50">
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Profissional</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">CREFITO</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Especialidade</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {supabaseProfiles
+                      .filter(p => p.tipo_usuario === 'fisioterapeuta')
+                      .filter(p => 
+                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        p.crefito?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 overflow-hidden flex items-center justify-center text-xs font-bold text-blue-600">
+                              {u.avatar_url ? (
+                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                u.nome_completo?.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-slate-900 tracking-tight">{u.nome_completo}</p>
+                              <p className="text-[10px] text-slate-500 font-medium">{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-100">
+                            {u.crefito || 'PENDENTE'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-bold text-slate-600">{u.especialidade || '---'}</td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
+                            u.status_aprovacao === 'aprovado' ? "bg-emerald-50 text-emerald-600" : 
+                            u.status_aprovacao === 'rejeitado' ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                          )}>
+                            {u.status_aprovacao || 'Pendente'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => setSelectedUserDetail(u)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                              title="Ver Detalhes"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            {u.status_aprovacao === 'pendente' && (
+                              <button 
+                                onClick={() => handleApprovePhysio(u.id, u.id)}
+                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                                title="Aprovar"
+                              >
+                                <CheckCircle2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'patients' && (
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Pacientes Cadastrados</h3>
+                  <p className="text-xs text-slate-500 font-medium">Lista exclusiva de clientes.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Search className="text-slate-400" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar paciente..." 
+                    className="text-sm border-none focus:ring-0 bg-transparent"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50">
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Paciente</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Email</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Localização</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {supabaseProfiles
+                      .filter(p => p.tipo_usuario === 'paciente')
+                      .filter(p => 
+                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        p.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-500">
+                              {u.avatar_url ? (
+                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                u.nome_completo?.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-slate-900 tracking-tight">{u.nome_completo}</p>
+                              <p className="text-[10px] text-slate-500 font-medium">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 font-medium">{u.email}</td>
+                        <td className="px-6 py-4 text-xs font-bold text-slate-500">{u.localizacao || 'Não inf.'}</td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => setSelectedUserDetail(u)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                              title="Ver Detalhes"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
+                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Bloquear"
+                            >
+                              <Lock size={18} />
                             </button>
                           </div>
                         </td>

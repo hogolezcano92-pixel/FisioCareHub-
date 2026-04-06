@@ -7,7 +7,16 @@ import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Register() {
-  const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>('paciente');
+  const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>(() => {
+    const saved = localStorage.getItem('pending_role');
+    return (saved === 'fisioterapeuta' || saved === 'paciente') ? saved : 'paciente';
+  });
+
+  const handleRoleChange = (newRole: 'paciente' | 'fisioterapeuta') => {
+    console.log("Setting role to:", newRole);
+    setRole(newRole);
+    localStorage.setItem('pending_role', newRole);
+  };
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,22 +83,34 @@ export default function Register() {
     }
 
     try {
-      // 2. Criar o usuário no Supabase Auth
+      console.log("Starting registration for:", cleanEmail, "Role:", role);
+      // 2. Criar o usuário no Supabase Auth com metadados iniciais
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: password,
+        options: {
+          data: {
+            full_name: cleanName,
+            tipo_usuario: role,
+            crefito: role === 'fisioterapeuta' ? crefito : null,
+            especialidade: role === 'fisioterapeuta' ? specialty : null
+          }
+        }
       });
 
       if (authError) {
+        console.error("Auth signUp error:", authError);
         setError('Erro no cadastro: ' + authError.message);
         setLoading(false);
         return;
       }
 
       if (authData.user) {
+        console.log("User created in Auth:", authData.user.id);
         // 3. Upload documents if any (for physios)
         const uploadedDocUrls: string[] = [];
         if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
+          console.log("Uploading documents...");
           const { uploadDocument } = await import('../services/supabaseStorage');
           for (const file of registrationDocs) {
             try {
@@ -102,43 +123,41 @@ export default function Register() {
         }
 
         // 4. Criar o perfil detalhado na tabela 'perfis'
-        // Usamos upsert para evitar conflitos e garantir a criação do perfil
+        console.log("Upserting profile to 'perfis' table...");
+        const profileData = {
+          id: authData.user.id,
+          email: cleanEmail,
+          nome_completo: cleanName,
+          tipo_usuario: role,
+          bio: '',
+          genero: role === 'fisioterapeuta' ? (gender || null) : null,
+          especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
+          crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
+          localizacao: city || null,
+          endereco: address || null,
+          cep: zipCode || null,
+          pais: country || null,
+          tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
+          is_pro: isPro,
+          aprovado: role === 'paciente',
+          status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
+          documentos: uploadedDocUrls,
+          created_at: new Date().toISOString()
+        };
+
         const { error: profileError } = await supabase
           .from('perfis')
-          .upsert({
-            id: authData.user.id,
-            email: cleanEmail,
-            nome_completo: cleanName,
-            tipo_usuario: role,
-            bio: '',
-            genero: role === 'fisioterapeuta' ? (gender || null) : null,
-            especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
-            crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
-            localizacao: city || null,
-            endereco: address || null,
-            cep: zipCode || null,
-            pais: country || null,
-            tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
-            is_pro: isPro,
-            aprovado: role === 'paciente', // Patients are auto-approved for now, physios need manual approval
-            status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-            avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName}`,
-            documentos: uploadedDocUrls,
-            created_at: new Date().toISOString()
-          }, { onConflict: 'id' });
+          .upsert(profileData, { onConflict: 'id' });
 
         if (profileError) {
           console.error("Erro detalhado na criação do perfil:", profileError);
-          // Se o erro for de permissão ou tabela inexistente, avisamos o usuário
-          if (profileError.code === '42P01') {
-            setError("Erro técnico: Tabela 'perfis' não encontrada no banco de dados. Por favor, contate o suporte.");
-          } else {
-            setError("Sua conta foi criada, mas houve um erro ao configurar seu perfil (" + profileError.message + "). Tente fazer login.");
-          }
+          setError("Sua conta foi criada, mas houve um erro ao configurar seu perfil (" + profileError.message + "). Tente fazer login.");
         } else {
+          console.log("Profile created successfully!");
           const { toast } = await import('sonner');
           toast.success('Cadastro realizado com sucesso!', {
-            description: 'Verifique seu e-mail para confirmar a conta.'
+            description: 'Sua conta foi configurada. Faça login para continuar.'
           });
           navigate('/login');
         }
@@ -169,10 +188,7 @@ export default function Register() {
         <div className="flex gap-4 mb-8">
           <button
             type="button"
-            onClick={() => {
-              console.log("Setting role to paciente");
-              setRole('paciente');
-            }}
+            onClick={() => handleRoleChange('paciente')}
             className={cn(
               "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
               role === 'paciente' 
@@ -185,10 +201,7 @@ export default function Register() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              console.log("Setting role to fisioterapeuta");
-              setRole('fisioterapeuta');
-            }}
+            onClick={() => handleRoleChange('fisioterapeuta')}
             className={cn(
               "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
               role === 'fisioterapeuta' 
