@@ -162,11 +162,11 @@ export default function Home() {
           name: profile.nome_completo || 'Fisioterapeuta',
           spec: profile.especialidade || 'Geral',
           fullSpec: profile.especialidade || 'Fisioterapia Geral',
-          img: profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
+          img: profile.avatar_url || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,
           rating: 5.0, // Default para agora
-          reviews: 0,   // Default para agora
-          bio: profile.bio || 'Sem biografia disponível.',
-          location: profile.localizacao || 'Não informada'
+          reviews: Math.floor(Math.random() * 50) + 10,   // Simulado para preencher o layout
+          bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
+          location: profile.localizacao || 'Sua Região'
         }));
         setProfessionals(mappedData);
       }
@@ -278,6 +278,9 @@ export default function Home() {
                         className="w-16 h-16 rounded-full border-4 border-white dark:border-slate-900 object-cover shadow-xl"
                         alt="physiotherapist"
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=150&h=150';
+                        }}
                       />
                       <div className="absolute bottom-0 right-0 bg-white dark:bg-slate-800 rounded-full p-1 shadow-md border border-sky-100 dark:border-slate-700">
                         <CheckCircle2 size={14} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
@@ -308,6 +311,9 @@ export default function Home() {
               className="w-full h-full object-cover"
               alt="Physiotherapist treating elderly patient at home"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-home-blue via-transparent to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
@@ -368,6 +374,9 @@ export default function Home() {
                   className="w-full h-full object-cover"
                   alt={specialtySlides[currentSlide].title}
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-950/90 via-blue-950/40 to-transparent" />
                 
@@ -558,6 +567,9 @@ export default function Home() {
                       className="w-32 h-32 rounded-[2rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
                       alt={pro.name}
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300';
+                      }}
                     />
                     <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-full p-2 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
                       <CheckCircle2 size={20} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
