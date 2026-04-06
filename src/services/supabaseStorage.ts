@@ -20,35 +20,41 @@ export const uploadProfilePhoto = async (
   const supabase = getSupabase();
   console.log(`Tentando upload para o bucket "${bucket}"...`);
   
+  // 1. Upload the file
   const { data, error } = await supabase.storage
     .from(bucket)
     .upload(fileName, file, {
       upsert: true,
       contentType: file.type,
+      cacheControl: '3600',
     });
 
   if (error) {
     console.error("Erro retornado pelo Supabase Storage:", error);
     
-    // Se o erro for "Load failed", pode ser um problema de rede ou URL incorreta
     if (error.message === 'Load failed' || error.message?.includes('fetch')) {
-      throw new Error('Falha na conexão com o Supabase. Verifique se a URL do Supabase está correta e se você tem conexão com a internet.');
+      throw new Error('Falha na conexão com o Supabase. Verifique sua internet.');
     }
 
     if (error.message === 'Bucket not found') {
-      throw new Error(`O bucket "${bucket}" não foi encontrado. Por favor, crie-o no painel do Supabase.`);
+      throw new Error(`O bucket "${bucket}" não foi encontrado. Crie-o no painel do Supabase.`);
     }
 
-    if (error.message?.includes('row-level security') || error.message?.includes('RLS') || error.message?.includes('política de segurança')) {
-      throw new Error(`Erro de permissão (RLS): O bucket "${bucket}" precisa de uma política de acesso que permita uploads públicos (anon). Vá ao painel do Supabase -> Storage -> Buckets -> ${bucket} -> Policies e adicione uma política para permitir INSERT e UPDATE para usuários anônimos.`);
+    if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}". Verifique as políticas de segurança no Supabase.`);
     }
 
     throw error;
   }
 
+  // 2. Get the public URL
   const { data: publicUrlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(fileName);
+
+  if (!publicUrlData || !publicUrlData.publicUrl) {
+    throw new Error("Não foi possível obter a URL pública da imagem.");
+  }
 
   return publicUrlData.publicUrl;
 };
@@ -58,7 +64,7 @@ export const uploadDocument = async (
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<string> => {
-  const fileName = `${Date.now()}-${file.name}`;
+  const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
   const path = `documents/${userId}/${fileName}`;
   const bucket = 'documents';
 
@@ -75,17 +81,16 @@ export const uploadDocument = async (
   if (error) {
     console.error("Erro no upload de documento Supabase:", error);
     
-    // Se o erro for "Load failed", pode ser um problema de rede ou URL incorreta
     if (error.message === 'Load failed' || error.message?.includes('fetch')) {
-      throw new Error('Falha na conexão com o Supabase. Verifique se a URL do Supabase está correta e se você tem conexão com a internet.');
+      throw new Error('Falha na conexão com o Supabase.');
     }
 
     if (error.message === 'Bucket not found') {
-      throw new Error(`O bucket "${bucket}" não foi encontrado. Por favor, crie-o no painel do Supabase.`);
+      throw new Error(`O bucket "${bucket}" não foi encontrado.`);
     }
 
-    if (error.message?.includes('row-level security') || error.message?.includes('RLS') || error.message?.includes('política de segurança')) {
-      throw new Error(`Erro de permissão (RLS): O bucket "${bucket}" precisa de uma política de acesso que permita uploads públicos (anon). Vá ao painel do Supabase -> Storage -> Buckets -> ${bucket} -> Policies e adicione uma política para permitir INSERT e UPDATE para usuários anônimos.`);
+    if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}".`);
     }
 
     throw error;

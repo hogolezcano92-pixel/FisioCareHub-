@@ -107,20 +107,24 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      const updateData: any = {
+      const updateData = {
         nome_completo: name,
-        bio,
+        bio: bio,
         localizacao: city,
         endereco: address,
         cep: zipCode,
         pais: country,
+        genero: isPhysio ? gender : undefined,
+        especialidade: isPhysio ? specialty : undefined,
+        tipo_servico: isPhysio ? serviceType : undefined,
       };
 
-      if (isPhysio) {
-        updateData.genero = gender;
-        updateData.especialidade = specialty;
-        updateData.tipo_servico = serviceType;
-      }
+      // Clean undefined fields
+      Object.keys(updateData).forEach(key => 
+        (updateData as any)[key] === undefined && delete (updateData as any)[key]
+      );
+
+      console.log("Atualizando perfil no Supabase:", updateData);
 
       const { error } = await supabase
         .from('perfis')
@@ -131,9 +135,10 @@ export default function Profile() {
 
       // Update Auth Metadata if name changed
       if (name !== user.user_metadata?.full_name) {
-        await supabase.auth.updateUser({
+        const { error: authError } = await supabase.auth.updateUser({
           data: { full_name: name }
         });
+        if (authError) console.warn("Erro ao atualizar metadados de autenticação:", authError);
       }
 
       // Update local state
@@ -142,13 +147,15 @@ export default function Profile() {
         ...updateData
       }));
 
-      // Refresh global profile
+      // Refresh global profile context
       if (refreshProfile) await refreshProfile();
 
-      import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
+      const { toast } = await import('sonner');
+      toast.success("Perfil atualizado com sucesso!");
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
-      import('sonner').then(({ toast }) => toast.error(err.message || "Erro ao atualizar perfil. Tente novamente."));
+      const { toast } = await import('sonner');
+      toast.error(err.message || "Erro ao atualizar perfil. Tente novamente.");
     } finally {
       setUpdating(false);
     }
@@ -160,78 +167,56 @@ export default function Profile() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      import('sonner').then(({ toast }) => toast.error("A imagem deve ter no máximo 5MB."));
+      const { toast } = await import('sonner');
+      toast.error("A imagem deve ter no máximo 5MB.");
       return;
     }
 
     setUploadingPhoto(true);
     setUploadProgress(0);
     try {
-      console.log("Iniciando upload de foto para Supabase...");
+      console.log("Iniciando upload de foto para Supabase Storage...");
       
-      // Simulate progress since Supabase SDK doesn't natively support it for simple uploads
+      // Simulate progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
+        setUploadProgress(prev => (prev >= 90 ? 90 : prev + 10));
       }, 200);
 
-      // Check if bucket exists first (optional but helpful for debugging)
-      try {
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const avatarsBucket = buckets?.find(b => b.name === 'avatars');
-        if (!avatarsBucket) {
-          console.warn("Bucket 'avatars' não encontrado. Tentando criar...");
-          // This might fail if RLS doesn't allow it, but it's worth a try
-          await supabase.storage.createBucket('avatars', { public: true });
-        }
-      } catch (bucketErr) {
-        console.warn("Erro ao verificar/criar bucket:", bucketErr);
-      }
-
+      // 1. Upload to Storage
       const publicUrl = await uploadProfilePhoto(user.id, file);
-      const url = `${publicUrl}?t=${Date.now()}`;
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
       
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      console.log("URL da foto obtida do Supabase (com timestamp):", url);
+      console.log("Upload concluído. URL:", urlWithTimestamp);
       
-      // Update Auth Profile
-      try {
-        await supabase.auth.updateUser({
-          data: { avatar_url: url }
-        });
-      } catch (authErr) {
-        console.warn("Erro ao atualizar perfil de autenticação (não crítico):", authErr);
-      }
+      // 2. Update Auth Profile Metadata
+      await supabase.auth.updateUser({
+        data: { avatar_url: urlWithTimestamp }
+      });
       
-      // Update Database
-      const { error } = await supabase
+      // 3. Update 'perfis' table
+      const { error: dbError } = await supabase
         .from('perfis')
-        .update({ avatar_url: url })
+        .update({ avatar_url: urlWithTimestamp })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
       
-      // Update local state
-      setUserData((prev: any) => prev ? { ...prev, avatar_url: url } : { ...userData, avatar_url: url });
-      
-      // Also update AuthContext profile
+      // 4. Update local and global state
+      setUserData((prev: any) => prev ? { ...prev, avatar_url: urlWithTimestamp } : { ...userData, avatar_url: urlWithTimestamp });
       if (refreshProfile) await refreshProfile();
 
-      import('sonner').then(({ toast }) => toast.success("Foto de perfil atualizada com sucesso!"));
+      const { toast } = await import('sonner');
+      toast.success("Foto de perfil atualizada com sucesso!");
     } catch (err: any) {
-      console.error("Erro detalhado no upload para Supabase:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao enviar foto: " + (err.message || "Erro desconhecido")));
+      console.error("Erro no upload de foto:", err);
+      const { toast } = await import('sonner');
+      toast.error("Erro ao enviar foto: " + (err.message || "Erro desconhecido"));
     } finally {
       setUploadingPhoto(false);
       setUploadProgress(0);
-      // Reset input
       if (e.target) e.target.value = '';
     }
   };
@@ -280,47 +265,50 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
+    
+    const { toast } = await import('sonner');
     setUpdating(true);
+    
     try {
-      console.log("Iniciando exclusão de conta para:", user.id);
+      console.log("Iniciando processo de exclusão segura para:", user.id);
       
-      // 1. Try to call the Edge Function for full deletion (Auth + Profile + Storage)
-      let edgeFunctionWorked = false;
+      // 1. Call Edge Function for complete deletion (Auth + DB + Storage)
+      let edgeFunctionSuccess = false;
       try {
-        const data = await invokeFunction('delete-user', { userId: user.id });
-        if (data && !data.error) {
-          console.log("Edge Function delete-user executada com sucesso.");
-          edgeFunctionWorked = true;
+        const response = await invokeFunction('delete-user', { userId: user.id });
+        if (response && !response.error) {
+          console.log("Edge Function 'delete-user' executada com sucesso.");
+          edgeFunctionSuccess = true;
         } else {
-          console.warn("Edge Function delete-user retornou erro:", data?.error);
+          console.error("Erro retornado pela Edge Function:", response?.error);
         }
       } catch (edgeErr: any) {
-        console.warn("Erro ao chamar Edge Function delete-user:", edgeErr.message);
+        console.error("Falha ao invocar Edge Function:", edgeErr.message);
       }
 
-      // 2. Manual cleanup of the profile in 'perfis' table (Client-side fallback)
-      // Even if Edge Function worked, we try this just in case, or if it failed.
-      const { error: profileError } = await supabase
-        .from('perfis')
-        .delete()
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error("Erro ao excluir perfil no banco:", profileError);
+      // 2. Client-side fallback for 'perfis' table
+      if (!edgeFunctionSuccess) {
+        console.log("Tentando exclusão manual do perfil (fallback)...");
+        const { error: profileError } = await supabase
+          .from('perfis')
+          .delete()
+          .eq('id', user.id);
+          
+        if (profileError) console.error("Erro na exclusão manual do perfil:", profileError);
       }
       
-      // 3. Sign out locally
+      // 3. Final Sign Out and Redirect
       await signOut();
       
-      const { toast } = await import('sonner');
-      if (edgeFunctionWorked) {
-        toast.success("Sua conta e todos os seus dados foram excluídos com sucesso.");
+      if (edgeFunctionSuccess) {
+        toast.success("Sua conta e todos os seus dados foram excluídos permanentemente.");
       } else {
-        toast.warning("Seu perfil foi removido, mas a exclusão total da conta de autenticação falhou. Por favor, entre em contato com o suporte para remoção definitiva.");
+        toast.warning("Seu perfil foi removido. Se ainda conseguir acessar, entre em contato com o suporte para exclusão total da conta.");
       }
+      
+      navigate('/');
     } catch (err: any) {
-      console.error("Erro ao excluir conta:", err);
-      const { toast } = await import('sonner');
+      console.error("Erro fatal ao excluir conta:", err);
       toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido"));
     } finally {
       setUpdating(false);

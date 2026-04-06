@@ -1,176 +1,129 @@
 {
   "entities": {
-    "User": {
-      "title": "User",
+    "Perfil": {
+      "title": "Perfil",
       "description": "User profile for patients and physiotherapists",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
+        "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["patient", "physiotherapist", "admin"] },
-        "name": { "type": "string" },
-        "photoURL": { "type": "string", "format": "uri" },
-        "phone": { "type": "string" },
-        "gender": { "type": "string", "enum": ["male", "female", "other"] },
-        "specialty": { "type": "string" },
-        "city": { "type": "string" },
-        "address": { "type": "string" },
-        "zipCode": { "type": "string" },
-        "country": { "type": "string" },
-        "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "nome_completo": { "type": "string" },
+        "avatar_url": { "type": "string", "format": "uri" },
+        "bio": { "type": "string" },
+        "localizacao": { "type": "string" },
+        "endereco": { "type": "string" },
+        "cep": { "type": "string" },
+        "pais": { "type": "string" },
+        "tipo_usuario": { "type": "string", "enum": ["paciente", "fisioterapeuta", "admin"] },
+        "especialidade": { "type": "string" },
+        "genero": { "type": "string" },
+        "tipo_servico": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
+        "is_pro": { "type": "boolean" },
+        "documentos": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "role", "name"]
+      "required": ["id", "email", "nome_completo", "tipo_usuario"]
     },
-    "Patient": {
-      "title": "Patient",
-      "description": "Patient specific data",
-      "type": "object",
-      "properties": {
-        "uid": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "photoURL": { "type": "string", "format": "uri" },
-        "address": { "type": "string" },
-        "zipCode": { "type": "string" },
-        "city": { "type": "string" },
-        "country": { "type": "string" },
-        "history": { "type": "array", "items": { "type": "string" } }
-      },
-      "required": ["uid", "name", "email"]
-    },
-    "Physiotherapist": {
-      "title": "Physiotherapist",
-      "description": "Physiotherapist specific data",
-      "type": "object",
-      "properties": {
-        "uid": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "crefito": { "type": "string" },
-        "specialty": { "type": "string" },
-        "city": { "type": "string" },
-        "address": { "type": "string" },
-        "zipCode": { "type": "string" },
-        "country": { "type": "string" },
-        "serviceType": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
-        "photoURL": { "type": "string", "format": "uri" },
-        "documents": { 
-          "type": "array",
-          "items": { "type": "string", "format": "uri" }
-        },
-        "approved": { "type": "boolean" },
-        "status": { "type": "string", "enum": ["pending_approval", "approved", "rejected"] }
-      },
-      "required": ["uid", "name", "email", "crefito", "specialty", "city", "serviceType"]
-    },
-    "Appointment": {
-      "title": "Appointment",
+    "Agendamento": {
+      "title": "Agendamento",
       "description": "Scheduled physiotherapy sessions",
       "type": "object",
       "properties": {
-        "patientId": { "type": "string" },
-        "physioId": { "type": "string" },
-        "problem": { "type": "string" },
-        "specialty": { "type": "string" },
-        "location": { "type": "string" },
-        "desiredTime": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["waiting", "accepted", "completed", "cancelled"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "paciente_id": { "type": "string" },
+        "fisio_id": { "type": "string" },
+        "data_servico": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pendente", "confirmado", "concluido", "cancelado"] },
+        "problema": { "type": "string" },
+        "localizacao": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["patientId", "problem", "specialty", "status"]
+      "required": ["paciente_id", "fisio_id", "data_servico", "status"]
     },
-    "Payment": {
-      "title": "Payment",
-      "description": "Payment records",
+    "Prontuario": {
+      "title": "Prontuario",
+      "description": "Medical records",
       "type": "object",
       "properties": {
-        "amount": { "type": "number" },
-        "commission": { "type": "number" },
-        "patientId": { "type": "string" },
-        "physioId": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "paid", "failed"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "paciente_id": { "type": "string" },
+        "fisio_id": { "type": "string" },
+        "data_registro": { "type": "string", "format": "date-time" },
+        "conteudo": { "type": "string" },
+        "documentos": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["amount", "commission", "patientId", "physioId", "status"]
+      "required": ["paciente_id", "fisio_id", "conteudo"]
     },
-    "Triage": {
-      "title": "Triage",
+    "Triagem": {
+      "title": "Triagem",
       "description": "Patient self-triage",
       "type": "object",
       "properties": {
-        "patientId": { "type": "string" },
-        "painLocation": { "type": "string" },
-        "painDuration": { "type": "string" },
-        "painIntensity": { "type": "integer", "minimum": 0, "maximum": 10 },
-        "serviceType": { "type": "string", "enum": ["domicilio", "online"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "paciente_id": { "type": "string" },
+        "sintomas": { "type": "string" },
+        "gravidade": { "type": "string" },
+        "status": { "type": "string", "enum": ["pendente", "concluido"] },
+        "data_triagem": { "type": "string", "format": "date-time" },
+        "ai_analysis": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["patientId", "painLocation", "painDuration", "painIntensity", "serviceType"]
+      "required": ["paciente_id", "sintomas", "gravidade"]
     },
-    "Message": {
-      "title": "Message",
-      "description": "Chat messages between users and support",
+    "Mensagem": {
+      "title": "Mensagem",
+      "description": "Chat messages",
       "type": "object",
       "properties": {
-        "senderId": { "type": "string" },
-        "receiverId": { "type": "string" },
-        "text": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "read": { "type": "boolean" }
+        "id": { "type": "string" },
+        "remetente_id": { "type": "string" },
+        "destinatario_id": { "type": "string" },
+        "texto": { "type": "string" },
+        "lida": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["senderId", "receiverId", "text", "createdAt"]
+      "required": ["remetente_id", "destinatario_id", "texto"]
     },
-    "Notification": {
-      "title": "Notification",
+    "Notificacao": {
+      "title": "Notificacao",
       "description": "User notifications",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "type": { "type": "string", "enum": ["message", "appointment", "system"] },
-        "read": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "titulo": { "type": "string" },
+        "mensagem": { "type": "string" },
+        "tipo": { "type": "string", "enum": ["mensagem", "agendamento", "sistema"] },
+        "lida": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" },
         "link": { "type": "string" }
       },
-      "required": ["userId", "title", "message", "type", "read", "createdAt"]
+      "required": ["user_id", "titulo", "mensagem", "tipo"]
+    },
+    "DocumentoGerado": {
+      "title": "DocumentoGerado",
+      "description": "AI generated documents",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "physio_id": { "type": "string" },
+        "patient_email": { "type": "string", "format": "email" },
+        "patient_name": { "type": "string" },
+        "content": { "type": "string" },
+        "template_id": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["physio_id", "patient_email", "content"]
     }
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": "User",
-      "description": "User profiles"
-    },
-    "/patients/{patientId}": {
-      "schema": "Patient",
-      "description": "Patient profiles"
-    },
-    "/physiotherapists/{physioId}": {
-      "schema": "Physiotherapist",
-      "description": "Physiotherapist profiles"
-    },
-    "/appointments/{appointmentId}": {
-      "schema": "Appointment",
-      "description": "Scheduled sessions"
-    },
-    "/payments/{paymentId}": {
-      "schema": "Payment",
-      "description": "Payment records"
-    },
-    "/triages/{triageId}": {
-      "schema": "Triage",
-      "description": "Triage results"
-    },
-    "/messages/{messageId}": {
-      "schema": "Message",
-      "description": "Chat messages"
-    },
-    "/notifications/{notificationId}": {
-      "schema": "Notification",
-      "description": "User notifications"
-    }
+    "perfis": { "schema": "Perfil", "description": "User profiles" },
+    "agendamentos": { "schema": "Agendamento", "description": "Scheduled sessions" },
+    "prontuarios": { "schema": "Prontuario", "description": "Medical records" },
+    "triagens": { "schema": "Triagem", "description": "Triage results" },
+    "mensagens": { "schema": "Mensagem", "description": "Chat messages" },
+    "notificacoes": { "schema": "Notificacao", "description": "User notifications" },
+    "documentos_gerados": { "schema": "DocumentoGerado", "description": "AI generated documents" }
   }
 }

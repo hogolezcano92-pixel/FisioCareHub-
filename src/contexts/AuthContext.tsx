@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: userMetadata?.email || '',
             avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             tipo_usuario: 'paciente', // Default to patient for OAuth
-            pro: false
+            is_pro: false
           })
           .select()
           .single();
