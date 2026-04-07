@@ -101,9 +101,7 @@ export default function Admin() {
 
       const checkAdmin = async () => {
         const adminEmails = [
-          'hugo_lezcano92@hotmail.com', 
-          'hogolezcano92@gmail.com',
-          'lezcanohugo662@gmail.com'
+          'hogolezcano92@gmail.com'
         ];
         
         if (adminEmails.includes(supabaseUser.email || '')) {
@@ -177,15 +175,7 @@ export default function Admin() {
       const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setUsers(usersData);
       
-      // Update Stats
-      const physios = usersData.filter((u: any) => u.role === 'physiotherapist');
-      const patients = usersData.filter((u: any) => u.role === 'patient');
-      setStats(prev => ({
-        ...prev,
-        totalUsers: usersData.length,
-        activePhysios: physios.filter((p: any) => p.status === 'approved' || p.approved === true).length,
-        newPatients: patients.length
-      }));
+      // Stats are now updated from Supabase Profiles in fetchSupabaseProfiles
     }, (error) => {
       console.error("Erro ao ouvir usuários:", error);
     });
@@ -200,7 +190,19 @@ export default function Admin() {
       if (error) {
         console.error("Erro ao buscar perfis Supabase:", error);
       } else {
-        setSupabaseProfiles(data || []);
+        const profiles = data || [];
+        setSupabaseProfiles(profiles);
+        
+        // Update Stats from Supabase Profiles
+        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta');
+        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente');
+        
+        setStats(prev => ({
+          ...prev,
+          totalUsers: profiles.length,
+          activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado' || p.aprovado === true).length,
+          newPatients: patients.length
+        }));
       }
     };
 
@@ -1345,11 +1347,11 @@ export default function Admin() {
                           <p className="text-sm font-bold truncate">{u.name}</p>
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
-                            u.role === 'physiotherapist' 
+                            (u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta')
                               ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-600")
                               : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600")
                           )}>
-                            {u.role === 'physiotherapist' ? 'Fisio' : 'Paciente'}
+                            {(u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta') ? 'Fisio' : 'Paciente'}
                           </span>
                         </div>
                         <p className={cn(

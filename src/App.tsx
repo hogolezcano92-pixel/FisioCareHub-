@@ -159,9 +159,7 @@ function Navbar() {
     { name: t('nav.home'), path: user ? '/dashboard' : '/', icon: HomeIcon },
     ...(user ? [
       ...(profile?.role === 'admin' || 
-          user.email === 'hugo_lezcano92@hotmail.com' || 
-          user.email === 'hogolezcano92@gmail.com' || 
-          user.email === 'lezcanohugo662@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
+          user.email === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
       { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
       { name: t('nav.documents'), path: '/documents', icon: FileSignature },
       { name: t('nav.chat'), path: '/chat', icon: MessageSquare },

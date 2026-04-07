@@ -72,7 +72,7 @@ export default function Chat() {
           const { data: fallbackAdmin } = await supabase
             .from('perfis')
             .select('*')
-            .in('email', ['hugo_lezcano92@hotmail.com', 'hogolezcano92@gmail.com', 'lezcanohugo662@gmail.com'])
+            .in('email', ['hogolezcano92@gmail.com'])
             .limit(1)
             .single();
           adminData = fallbackAdmin;
@@ -80,7 +80,7 @@ export default function Chat() {
         
         if (adminData) {
           // Force role to admin for chat logic if it's one of the known admin emails
-          const adminEmails = ['hugo_lezcano92@hotmail.com', 'hogolezcano92@gmail.com', 'lezcanohugo662@gmail.com'];
+          const adminEmails = ['hogolezcano92@gmail.com'];
           if (adminEmails.includes(adminData.email)) {
             adminData.tipo_usuario = 'admin';
           }
@@ -385,7 +385,7 @@ export default function Chat() {
                   const { data: fallbackAdmin } = await supabase
                     .from('perfis')
                     .select('*')
-                    .in('email', ['hugo_lezcano92@hotmail.com', 'hogolezcano92@gmail.com', 'lezcanohugo662@gmail.com'])
+                    .in('email', ['hogolezcano92@gmail.com'])
                     .limit(1)
                     .single();
                   adminData = fallbackAdmin;
@@ -393,7 +393,7 @@ export default function Chat() {
                 
                 if (adminData) {
                   // Force role to admin for chat logic if it's one of the known admin emails
-                  const adminEmails = ['hugo_lezcano92@hotmail.com', 'hogolezcano92@gmail.com', 'lezcanohugo662@gmail.com'];
+                  const adminEmails = ['hogolezcano92@gmail.com'];
                   if (adminEmails.includes(adminData.email)) {
                     adminData.tipo_usuario = 'admin';
                   }

@@ -49,11 +49,17 @@ export default function Appointments() {
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
       const targetRole = currentProfile.tipo_usuario === 'paciente' ? 'fisioterapeuta' : 'paciente';
-      const { data, error } = await supabase
+      let query = supabase
         .from('perfis')
         .select('id, nome_completo, email')
-        .eq('tipo_usuario', targetRole)
-        .order('nome_completo');
+        .eq('tipo_usuario', targetRole);
+      
+      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
+      if (currentProfile.tipo_usuario === 'paciente') {
+        query = query.eq('status_aprovacao', 'aprovado');
+      }
+
+      const { data, error } = await query.order('nome_completo');
       
       if (error) throw error;
       if (data) setAvailableUsers(data);
