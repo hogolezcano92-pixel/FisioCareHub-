@@ -84,11 +84,11 @@ export default function Register() {
     const roleFinalIA = await realizarTriagemIA(`Usuário ${cleanName} selecionou ${role}.`);
     const finalType = roleFinalIA as 'paciente' | 'fisioterapeuta';
 
-    try {
+    
       console.log("Starting registration for:", cleanEmail, "Role:", finalType);
 
 
-    try {
+    
       console.log("Starting registration for:", cleanEmail, "Role:", role);
       // 2. Criar o usuário no Supabase Auth com metadados iniciais
       const { data: authData, error: authError } = await supabase.auth.signUp({
