@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
-
+import { realizarTriagemIA } from '../services/ai/triagemService';
 export default function Register() {
   const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>(() => {
     const saved = localStorage.getItem('pending_role');
