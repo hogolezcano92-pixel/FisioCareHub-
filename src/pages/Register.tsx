@@ -84,7 +84,7 @@ export default function Register() {
     const roleFinalIA = await realizarTriagemIA(`Usuário ${cleanName} selecionou ${role}.`);
     const finalType = roleFinalIA as 'paciente' | 'fisioterapeuta';
 
-    
+    try {
       console.log("Starting registration for:", cleanEmail, "Role:", finalType);
 
 
