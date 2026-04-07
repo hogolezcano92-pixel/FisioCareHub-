@@ -41,8 +41,8 @@ export default function Profile() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
 
-  const isPhysio = userData?.tipo === 'fisioterapeuta' || userData?.tipo_usuario === 'fisioterapeuta' || 
-                   userData?.tipo === 'physiotherapist' || userData?.tipo_usuario === 'physiotherapist';
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta' || 
+                   userData?.tipo_usuario === 'physiotherapist';
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
