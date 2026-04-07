@@ -124,11 +124,18 @@ export default function Register() {
 
         // 4. Criar o perfil detalhado na tabela 'perfis'
         console.log("Upserting profile to 'perfis' table...");
-        const profileData = {
+        
+        // Base data that is most likely to exist
+        const baseProfileData = {
           id: authData.user.id,
-          email: cleanEmail,
           nome_completo: cleanName,
           tipo_usuario: role,
+          email: cleanEmail,
+        };
+
+        // Full data with all fields
+        const fullProfileData = {
+          ...baseProfileData,
           telefone: '',
           bio: '',
           genero: role === 'fisioterapeuta' ? (gender || null) : null,
@@ -147,13 +154,28 @@ export default function Register() {
           created_at: new Date().toISOString()
         };
 
-        const { error: profileError } = await supabase
+        let { error: profileError } = await supabase
           .from('perfis')
-          .upsert(profileData);
+          .upsert(fullProfileData);
 
         if (profileError) {
-          console.error("Erro detalhado na criação do perfil:", profileError);
-          setError("Sua conta foi criada, mas houve um erro ao configurar seu perfil (" + profileError.message + "). Tente fazer login.");
+          console.warn("Erro ao criar perfil completo, tentando apenas dados básicos:", profileError);
+          // Retry with only base data if full data fails (likely due to missing columns)
+          const { error: retryError } = await supabase
+            .from('perfis')
+            .upsert(baseProfileData);
+          
+          if (retryError) {
+            console.error("Erro fatal na criação do perfil:", retryError);
+            setError("Sua conta foi criada, mas houve um erro ao configurar seu perfil (" + retryError.message + "). Tente fazer login.");
+          } else {
+            console.log("Profile created successfully with base data!");
+            const { toast } = await import('sonner');
+            toast.success('Cadastro realizado!', {
+              description: 'Sua conta foi configurada com os dados básicos. Faça login para continuar.'
+            });
+            navigate('/login');
+          }
         } else {
           console.log("Profile created successfully!");
           const { toast } = await import('sonner');

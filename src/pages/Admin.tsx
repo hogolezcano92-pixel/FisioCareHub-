@@ -182,28 +182,47 @@ export default function Admin() {
 
     // Listen for Supabase Profiles
     const fetchSupabaseProfiles = async () => {
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error("Erro ao buscar perfis Supabase:", error);
-      } else {
-        const profiles = data || [];
-        setSupabaseProfiles(profiles);
+      try {
+        let query = supabase
+          .from('perfis')
+          .select('*');
         
-        // Update Stats from Supabase Profiles
-        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist');
-        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient');
+        // Try to order by created_at, but handle failure if column doesn't exist
+        const { data, error } = await query;
         
-        setStats(prev => ({
-          ...prev,
-          totalUsers: profiles.length,
-          activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado' || p.aprovado === true).length,
-          newPatients: patients.length
-        }));
+        if (error) {
+          console.error("Erro ao buscar perfis Supabase:", error);
+          // Try again without any special ordering or filters if it failed
+          const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
+          if (retryError) throw retryError;
+          processProfiles(retryData || []);
+        } else {
+          processProfiles(data || []);
+        }
+      } catch (err) {
+        console.error("Erro fatal ao buscar perfis:", err);
       }
+    };
+
+    const processProfiles = (profiles: any[]) => {
+      setSupabaseProfiles(profiles);
+      
+      // Update Stats from Supabase Profiles
+      const physios = profiles.filter((u: any) => {
+        const role = (u.tipo_usuario || '').toLowerCase();
+        return role === 'fisioterapeuta' || role === 'physiotherapist';
+      });
+      const patients = profiles.filter((u: any) => {
+        const role = (u.tipo_usuario || '').toLowerCase();
+        return role === 'paciente' || role === 'patient';
+      });
+      
+      setStats(prev => ({
+        ...prev,
+        totalUsers: profiles.length,
+        activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado' || p.aprovado === true).length,
+        newPatients: patients.length
+      }));
     };
 
     fetchSupabaseProfiles();
@@ -346,7 +365,14 @@ export default function Admin() {
         })
         .eq('id', profileId);
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error("Supabase update error:", supabaseError);
+        if (supabaseError.message.includes('column')) {
+          import('sonner').then(({ toast }) => toast.error("Erro: Colunas de aprovação não encontradas no banco de dados."));
+        } else {
+          throw supabaseError;
+        }
+      }
 
       // Update Firebase (if exists)
       try {
@@ -362,26 +388,26 @@ export default function Admin() {
       }
       
       // Create notification
-      await addDoc(collection(db, 'notifications'), {
-        userId,
-        title: 'Perfil Aprovado!',
-        message: 'Seu perfil de fisioterapeuta foi aprovado pela administração.',
-        type: 'system',
-        read: false,
-        createdAt: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          userId,
+          title: 'Perfil Aprovado!',
+          message: 'Seu perfil de fisioterapeuta foi aprovado pela administração.',
+          type: 'system',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (notifErr) {
+        console.warn("Notification creation failed:", notifErr);
+      }
 
       // Manual refresh to ensure UI updates
-      const { data: updatedProfiles } = await supabase
-        .from('perfis')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (updatedProfiles) setSupabaseProfiles(updatedProfiles);
+      await fetchSupabaseProfiles();
 
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado!"));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error approving physio:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao aprovar fisioterapeuta."));
+      import('sonner').then(({ toast }) => toast.error("Erro ao aprovar fisioterapeuta: " + (err.message || "")));
     }
   };
 
@@ -396,7 +422,14 @@ export default function Admin() {
         })
         .eq('id', profileId);
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error("Supabase update error:", supabaseError);
+        if (supabaseError.message.includes('column')) {
+          import('sonner').then(({ toast }) => toast.error("Erro: Colunas de aprovação não encontradas no banco de dados."));
+        } else {
+          throw supabaseError;
+        }
+      }
 
       // Update Firebase (if exists)
       try {
@@ -412,26 +445,26 @@ export default function Admin() {
       }
       
       // Create notification
-      await addDoc(collection(db, 'notifications'), {
-        userId,
-        title: 'Perfil Rejeitado',
-        message: 'Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes.',
-        type: 'system',
-        read: false,
-        createdAt: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          userId,
+          title: 'Perfil Rejeitado',
+          message: 'Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes.',
+          type: 'system',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (notifErr) {
+        console.warn("Notification creation failed:", notifErr);
+      }
 
       // Manual refresh
-      const { data: updatedProfiles } = await supabase
-        .from('perfis')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (updatedProfiles) setSupabaseProfiles(updatedProfiles);
+      await fetchSupabaseProfiles();
 
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta rejeitado."));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error rejecting physio:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao rejeitar fisioterapeuta."));
+      import('sonner').then(({ toast }) => toast.error("Erro ao rejeitar fisioterapeuta: " + (err.message || "")));
     }
   };
 
@@ -978,10 +1011,12 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
-                      .filter(p => 
-                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        p.email?.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
+                      .filter(p => {
+                        const search = searchTerm.toLowerCase();
+                        const name = (p.nome_completo || '').toLowerCase();
+                        const email = (p.email || '').toLowerCase();
+                        return name.includes(search) || email.includes(search);
+                      })
                       .map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
@@ -1083,11 +1118,16 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
-                      .filter(p => p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist')
-                      .filter(p => 
-                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        p.crefito?.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
+                      .filter(p => {
+                        const role = (p.tipo_usuario || '').toLowerCase();
+                        return role === 'fisioterapeuta' || role === 'physiotherapist';
+                      })
+                      .filter(p => {
+                        const search = searchTerm.toLowerCase();
+                        const name = (p.nome_completo || '').toLowerCase();
+                        const crefito = (p.crefito || '').toLowerCase();
+                        return name.includes(search) || crefito.includes(search);
+                      })
                       .map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
@@ -1194,11 +1234,16 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
-                      .filter(p => p.tipo_usuario === 'paciente' || p.tipo_usuario === 'patient')
-                      .filter(p => 
-                        p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        p.email?.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
+                      .filter(p => {
+                        const role = (p.tipo_usuario || '').toLowerCase();
+                        return role === 'paciente' || role === 'patient';
+                      })
+                      .filter(p => {
+                        const search = searchTerm.toLowerCase();
+                        const name = (p.nome_completo || '').toLowerCase();
+                        const email = (p.email || '').toLowerCase();
+                        return name.includes(search) || email.includes(search);
+                      })
                       .map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">

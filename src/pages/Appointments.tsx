@@ -48,31 +48,51 @@ export default function Appointments() {
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
-      const isPatient = currentProfile.tipo_usuario === 'paciente' || currentProfile.tipo_usuario === 'patient';
+      const isPatient = (currentProfile.tipo_usuario || '').toLowerCase() === 'paciente' || (currentProfile.tipo_usuario || '').toLowerCase() === 'patient';
       const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email')
-        .or(`tipo_usuario.in.(${targetRoles.join(',')})`);
+        .select('id, nome_completo, email, tipo_usuario, status_aprovacao');
       
-      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
-      if (isPatient) {
-        query = query.eq('status_aprovacao', 'aprovado');
-      }
-
       const { data, error } = await query.order('nome_completo');
       
-      if (error) throw error;
-      if (data) setAvailableUsers(data);
+      if (error) {
+        console.error("Erro ao buscar usuários disponíveis:", error);
+        // Retry without ordering if it failed
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, tipo_usuario, status_aprovacao');
+        if (retryError) throw retryError;
+        filterAndSetUsers(retryData || [], isPatient, targetRoles);
+      } else {
+        filterAndSetUsers(data || [], isPatient, targetRoles);
+      }
     } catch (err) {
-      console.error("Erro ao buscar usuários disponíveis:", err);
+      console.error("Erro fatal ao buscar usuários disponíveis:", err);
     }
+  };
+
+  const filterAndSetUsers = (users: any[], isPatient: boolean, targetRoles: string[]) => {
+    const filtered = users.filter(u => {
+      const role = (u.tipo_usuario || '').toLowerCase();
+      const isTargetRole = targetRoles.includes(role);
+      
+      if (!isTargetRole) return false;
+      
+      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados (se a coluna existir)
+      if (isPatient) {
+        return u.status_aprovacao === 'aprovado' || u.aprovado === true || !u.status_aprovacao;
+      }
+      
+      return true;
+    });
+    
+    setAvailableUsers(filtered);
   };
 
   const fetchAppointments = async (currentProfile: any) => {
     try {
-      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
+      const role = (currentProfile.tipo_usuario || '').toLowerCase();
+      const isPhysio = role === 'fisioterapeuta' || role === 'physiotherapist';
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -80,12 +100,20 @@ export default function Appointments() {
           paciente:paciente_id (nome_completo, email),
           fisioterapeuta:fisio_id (nome_completo, email)
         `)
-        .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id)
-        .order('data_servico', { ascending: true });
+        .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
-      if (error) throw error;
-      
-      setAppointments(data || []);
+      if (error) {
+        console.error("Erro ao buscar agendamentos:", error);
+        // Retry without complex select if it failed (maybe columns missing in joins)
+        const { data: retryData, error: retryError } = await supabase
+          .from('agendamentos')
+          .select('*')
+          .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
+        if (retryError) throw retryError;
+        setAppointments(retryData || []);
+      } else {
+        setAppointments(data || []);
+      }
       
       // Check for ID in URL
       const params = new URLSearchParams(window.location.search);
