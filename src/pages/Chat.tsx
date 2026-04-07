@@ -64,7 +64,7 @@ export default function Chat() {
         let { data: adminData } = await supabase
           .from('perfis')
           .select('*')
-          .eq('tipo_usuario', 'admin')
+          .or('tipo.eq.admin,tipo_usuario.eq.admin')
           .limit(1)
           .single();
         
@@ -82,6 +82,7 @@ export default function Chat() {
           // Force role to admin for chat logic if it's one of the known admin emails
           const adminEmails = ['hogolezcano92@gmail.com'];
           if (adminEmails.includes(adminData.email)) {
+            adminData.tipo = 'admin';
             adminData.tipo_usuario = 'admin';
           }
           setTargetUser(adminData);
@@ -172,7 +173,8 @@ export default function Chat() {
       let subscriptionSupabase: any;
 
       const fetchMessages = async () => {
-        if (targetUser.tipo_usuario === 'admin') {
+        const isTargetAdmin = targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
+        if (isTargetAdmin) {
           if (!firebaseUser) {
             setLoading(false);
             return;
@@ -265,10 +267,10 @@ export default function Chat() {
 
       const filteredResults = data.filter(u => 
         u.id !== user.id && 
-        (userData?.tipo_usuario === 'admin' || 
-         ((userData?.tipo_usuario === 'paciente' || userData?.tipo_usuario === 'patient') 
-           ? (u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist') 
-           : (u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient')))
+        ((userData?.tipo === 'admin' || userData?.tipo_usuario === 'admin') || 
+         (((userData?.tipo === 'paciente' || userData?.tipo_usuario === 'paciente') || (userData?.tipo === 'patient' || userData?.tipo_usuario === 'patient')) 
+           ? ((u.tipo === 'fisioterapeuta' || u.tipo_usuario === 'fisioterapeuta') || (u.tipo === 'physiotherapist' || u.tipo_usuario === 'physiotherapist')) 
+           : ((u.tipo === 'paciente' || u.tipo_usuario === 'paciente') || (u.tipo === 'patient' || u.tipo_usuario === 'patient'))))
       );
 
       setSearchResults(filteredResults);
@@ -293,7 +295,8 @@ export default function Chat() {
     setInputText('');
 
     try {
-      if (targetUser.tipo_usuario === 'admin') {
+      const isTargetAdmin = targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
+      if (isTargetAdmin) {
         if (!firebaseUser) {
           const { toast } = await import('sonner');
           toast.error("Você precisa estar conectado ao banco de dados para falar com o suporte.");
@@ -334,7 +337,7 @@ export default function Chat() {
   const handleShareConversation = async () => {
     if (!messages.length || !targetUser || !user) return;
     const transcript = messages.map(m => {
-      const sender = m.remetente_id === user.id ? 'Eu' : targetUser.nome_completo;
+      const sender = m.remetente_id === user.id ? 'Eu' : (targetUser.nome_completo || targetUser.nome);
       return `[${formatDate(m.data_envio)}] ${sender}: ${m.conteudo}`;
     }).join('\n');
 
@@ -380,7 +383,7 @@ export default function Chat() {
                 let { data: adminData } = await supabase
                   .from('perfis')
                   .select('*')
-                  .eq('tipo_usuario', 'admin')
+                  .or('tipo.eq.admin,tipo_usuario.eq.admin')
                   .limit(1)
                   .single();
                 
@@ -398,6 +401,7 @@ export default function Chat() {
                   // Force role to admin for chat logic if it's one of the known admin emails
                   const adminEmails = ['hogolezcano92@gmail.com'];
                   if (adminEmails.includes(adminData.email)) {
+                    adminData.tipo = 'admin';
                     adminData.tipo_usuario = 'admin';
                   }
                   setTargetUser(adminData);
@@ -440,13 +444,13 @@ export default function Chat() {
                     <img 
                       src={u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`} 
                       className="w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-sm" 
-                      alt={u.nome_completo} 
+                      alt={u.nome_completo || u.nome} 
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{u.nome_completo}</p>
+                    <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{u.nome_completo || u.nome}</p>
                     <p className="text-xs text-slate-500 truncate">{u.email}</p>
                   </div>
                 </button>
@@ -478,14 +482,14 @@ export default function Chat() {
                   <img 
                     src={u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`} 
                     className="w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-sm" 
-                    alt={u.nome_completo} 
+                    alt={u.nome_completo || u.nome} 
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
                 </div>
                 <div className="flex-1 text-left">
                   <div className="flex justify-between items-center mb-0.5">
-                    <p className={cn("font-bold transition-colors", targetUser?.id === u.id ? "text-blue-600" : "text-slate-900")}>{u.nome_completo}</p>
+                    <p className={cn("font-bold transition-colors", targetUser?.id === u.id ? "text-blue-600" : "text-slate-900")}>{u.nome_completo || u.nome}</p>
                     <span className="text-[10px] text-slate-400 font-bold">12:45</span>
                   </div>
                   <p className="text-xs text-slate-500 truncate font-medium">Clique para ver as mensagens</p>
@@ -509,7 +513,7 @@ export default function Chat() {
             <div>
               <h2 className="text-3xl font-black text-slate-900 mb-3">Sua Central de Mensagens</h2>
               <p className="text-slate-500 font-medium leading-relaxed">
-                Conecte-se instantaneamente com seu {(userData?.tipo_usuario === 'paciente' || userData?.tipo_usuario === 'patient') ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
+                Conecte-se instantaneamente com seu {((userData?.tipo === 'paciente' || userData?.tipo_usuario === 'paciente') || (userData?.tipo === 'patient' || userData?.tipo_usuario === 'patient')) ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -535,13 +539,13 @@ export default function Chat() {
                   <img 
                     src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
                     className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-blue-50 shadow-md" 
-                    alt={targetUser.nome_completo} 
+                    alt={targetUser.nome_completo || targetUser.nome} 
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-5 md:h-5 bg-emerald-500 border-2 md:border-4 border-white rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-xs md:text-lg font-black text-slate-900 truncate pr-2 leading-tight">{targetUser.nome_completo}</h3>
+                  <h3 className="text-xs md:text-lg font-black text-slate-900 truncate pr-2 leading-tight">{targetUser.nome_completo || targetUser.nome}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                     <span className="text-[7px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest truncate">Online</span>
@@ -661,15 +665,15 @@ export default function Chat() {
                           <img 
                             src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
                             className="w-32 h-32 rounded-[2.5rem] object-cover mx-auto border-4 border-blue-50 shadow-2xl mb-4"
-                            alt={targetUser.nome_completo}
+                            alt={targetUser.nome_completo || targetUser.nome}
                             referrerPolicy="no-referrer"
                           />
                           <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-white rounded-2xl flex items-center justify-center text-white">
                             <CheckCheck size={16} />
                           </div>
                         </div>
-                        <h4 className="text-2xl font-black text-slate-900 leading-tight">{targetUser.nome_completo}</h4>
-                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">{targetUser.tipo_usuario}</p>
+                        <h4 className="text-2xl font-black text-slate-900 leading-tight">{targetUser.nome_completo || targetUser.nome}</h4>
+                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">{targetUser.tipo || targetUser.tipo_usuario}</p>
                       </div>
 
                       <div className="space-y-4">
@@ -685,7 +689,7 @@ export default function Chat() {
                           </div>
                         )}
 
-                        {userData?.tipo_usuario === 'admin' && (
+                        {((userData?.tipo === 'admin' || userData?.tipo_usuario === 'admin')) && (
                           <>
                             <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ID do Usuário</p>
@@ -749,7 +753,7 @@ export default function Chat() {
 
             {/* Footer / Input */}
             <footer className="p-2 md:p-6 bg-white border-t border-slate-50 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-              {targetUser.tipo_usuario === 'admin' && !firebaseUser ? (
+              {(targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin') && !firebaseUser ? (
                 <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-50 rounded-3xl border border-blue-100 mx-2 md:mx-0">
                   <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
                     <Lock className="w-4 h-4 md:w-6 md:h-6" />

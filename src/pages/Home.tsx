@@ -159,7 +159,7 @@ export default function Home() {
       if (data) {
         const mappedData: Professional[] = data.map((profile: any) => ({
           id: profile.id,
-          name: profile.nome_completo || 'Fisioterapeuta',
+          name: profile.nome_completo || profile.nome || 'Fisioterapeuta',
           spec: profile.especialidade || 'Geral',
           fullSpec: profile.especialidade || 'Fisioterapia Geral',
           img: profile.avatar_url || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,

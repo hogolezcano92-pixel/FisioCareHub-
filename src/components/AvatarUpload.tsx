@@ -102,7 +102,10 @@ export default function AvatarUpload({ userId, currentAvatarUrl, onUploadComplet
       console.log('Atualizando tabela perfis...');
       
       const { error: dbError } = await supabase.from('perfis')
-        .update({ avatar_url: finalUrl })
+        .update({ 
+          avatar_url: finalUrl,
+          foto_url: finalUrl 
+        })
         .eq('id', userId);
       
       if (dbError) {

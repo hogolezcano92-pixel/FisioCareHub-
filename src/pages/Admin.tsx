@@ -194,8 +194,8 @@ export default function Admin() {
         setSupabaseProfiles(profiles);
         
         // Update Stats from Supabase Profiles
-        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist');
-        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient');
+        const physios = profiles.filter((u: any) => (u.tipo === 'fisioterapeuta' || u.tipo_usuario === 'fisioterapeuta') || (u.tipo === 'physiotherapist' || u.tipo_usuario === 'physiotherapist'));
+        const patients = profiles.filter((u: any) => (u.tipo === 'paciente' || u.tipo_usuario === 'paciente') || (u.tipo === 'patient' || u.tipo_usuario === 'patient'));
         
         setStats(prev => ({
           ...prev,
@@ -551,12 +551,12 @@ export default function Admin() {
                     {selectedUserDetail.avatar_url ? (
                       <img src={selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      selectedUserDetail.nome_completo?.charAt(0)
+                      (selectedUserDetail.nome_completo || selectedUserDetail.nome)?.charAt(0)
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo || selectedUserDetail.nome}</h3>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo || selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
@@ -1199,7 +1199,7 @@ export default function Admin() {
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{profile.nome_completo}</p>
+                          <p className="font-bold text-slate-900">{profile.nome_completo || profile.nome}</p>
                           <p className="text-xs text-slate-500">{profile.email} • CREFITO: {profile.crefito || 'N/A'}</p>
                         </div>
                       </div>
@@ -1382,10 +1382,10 @@ export default function Admin() {
                         <ArrowLeft size={20} />
                       </button>
                       <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm flex-shrink-0">
-                        {selectedChatUser.name?.charAt(0).toUpperCase()}
+                        {(selectedChatUser.nome_completo || selectedChatUser.nome || selectedChatUser.name)?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.name}</p>
+                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.nome_completo || selectedChatUser.nome || selectedChatUser.name}</p>
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest">Online</p>

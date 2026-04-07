@@ -22,12 +22,14 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
   }
 
   // Pacientes sempre têm acesso
-  if (profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'patient') {
+  if (profile?.tipo === 'paciente' || profile?.tipo_usuario === 'paciente' || 
+      profile?.tipo === 'patient' || profile?.tipo_usuario === 'patient') {
     return <>{children}</>;
   }
 
   // Fisioterapeutas precisam ser Pro
-  if (profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist') {
+  if (profile?.tipo === 'fisioterapeuta' || profile?.tipo_usuario === 'fisioterapeuta' || 
+      profile?.tipo === 'physiotherapist' || profile?.tipo_usuario === 'physiotherapist') {
     if (profile?.is_pro) {
       return <>{children}</>;
     }

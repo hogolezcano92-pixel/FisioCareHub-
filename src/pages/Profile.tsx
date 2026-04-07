@@ -41,7 +41,8 @@ export default function Profile() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
 
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = userData?.tipo === 'fisioterapeuta' || userData?.tipo_usuario === 'fisioterapeuta' || 
+                   userData?.tipo === 'physiotherapist' || userData?.tipo_usuario === 'physiotherapist';
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
@@ -93,6 +94,7 @@ export default function Profile() {
     try {
       const updateData = {
         nome_completo: name,
+        nome: name,
         bio: bio,
         localizacao: city,
         endereco: address,
@@ -342,18 +344,18 @@ export default function Profile() {
                         if (refreshProfile) refreshProfile();
                       }}
                     />
-                    <div className="flex-1 space-y-2">
-                      <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                          {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
-                        </span>
-                        <span className="text-slate-400 text-sm">•</span>
-                        <span className="text-slate-500 text-sm flex items-center gap-1">
-                          <Mail size={14} /> {userData?.email}
-                        </span>
+                      <div className="flex-1 space-y-2">
+                        <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo || userData?.nome}</h2>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                            {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
+                          </span>
+                          <span className="text-slate-400 text-sm">•</span>
+                          <span className="text-slate-500 text-sm flex items-center gap-1">
+                            <Mail size={14} /> {userData?.email}
+                          </span>
+                        </div>
                       </div>
-                    </div>
                   </div>
 
                   <form onSubmit={handleUpdateProfile} className="mt-10 space-y-6">

@@ -48,13 +48,14 @@ export default function Appointments() {
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
-      const isPatient = currentProfile.tipo_usuario === 'paciente' || currentProfile.tipo_usuario === 'patient';
+      const isPatient = (currentProfile.tipo === 'paciente' || currentProfile.tipo_usuario === 'paciente') || 
+                        (currentProfile.tipo === 'patient' || currentProfile.tipo_usuario === 'patient');
       const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email')
-        .in('tipo_usuario', targetRoles);
+        .select('id, nome, nome_completo, email, tipo')
+        .or(`tipo.in.(${targetRoles.join(',')}),tipo_usuario.in.(${targetRoles.join(',')})`);
       
       // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
       if (isPatient) {
@@ -72,7 +73,8 @@ export default function Appointments() {
 
   const fetchAppointments = async (currentProfile: any) => {
     try {
-      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
+      const isPhysio = currentProfile.tipo === 'fisioterapeuta' || currentProfile.tipo_usuario === 'fisioterapeuta' || 
+                       currentProfile.tipo === 'physiotherapist' || currentProfile.tipo_usuario === 'physiotherapist';
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -104,7 +106,8 @@ export default function Appointments() {
   };
 
   const setupRealtime = (currentProfile: any) => {
-    const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
+    const isPhysio = currentProfile.tipo === 'fisioterapeuta' || currentProfile.tipo_usuario === 'fisioterapeuta' || 
+                     currentProfile.tipo === 'physiotherapist' || currentProfile.tipo_usuario === 'physiotherapist';
     const channel = supabase
       .channel('agendamentos_changes')
       .on(
@@ -147,7 +150,8 @@ export default function Appointments() {
 
     setSubmitting(true);
     try {
-      const isPatient = profile.tipo_usuario === 'paciente' || profile.tipo_usuario === 'patient';
+      const isPatient = (profile.tipo === 'paciente' || profile.tipo_usuario === 'paciente') || 
+                        (profile.tipo === 'patient' || profile.tipo_usuario === 'patient');
       let targetUser: any = null;
 
       if (selectedUserId) {
@@ -157,9 +161,9 @@ export default function Appointments() {
         
         const { data: targetUsers, error: targetError } = await supabase
           .from('perfis')
-          .select('id, nome_completo, email, tipo_usuario')
+          .select('id, nome, nome_completo, email, tipo, tipo_usuario')
           .eq('email', targetEmail.trim().toLowerCase())
-          .in('tipo_usuario', targetRoles);
+          .or(`tipo.in.(${targetRoles.join(',')}),tipo_usuario.in.(${targetRoles.join(',')})`);
 
         if (targetError || !targetUsers || targetUsers.length === 0) {
           import('sonner').then(({ toast }) => toast.error(isPatient ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
@@ -181,7 +185,8 @@ export default function Appointments() {
       const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
 
       console.log("Iniciando inserção de agendamento no Supabase...");
-      const isPhysio = profile.tipo_usuario === 'fisioterapeuta' || profile.tipo_usuario === 'physiotherapist';
+      const isPhysio = profile.tipo === 'fisioterapeuta' || profile.tipo_usuario === 'fisioterapeuta' || 
+                       profile.tipo === 'physiotherapist' || profile.tipo_usuario === 'physiotherapist';
 
       const { data: newApp, error: insertError } = await supabase
         .from('agendamentos')
@@ -235,8 +240,8 @@ export default function Appointments() {
           "Novo Agendamento - FisioCareHub",
           `
           <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo}!</h2>
-            <p>O paciente <strong>${profile.nome_completo}</strong> solicitou um novo agendamento.</p>
+            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo || targetUser.nome}!</h2>
+            <p>O paciente <strong>${profile.nome_completo || profile.nome}</strong> solicitou um novo agendamento.</p>
             <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
             <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
@@ -254,8 +259,8 @@ export default function Appointments() {
           "Nova Consulta Agendada - FisioCareHub",
           `
           <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo}!</h2>
-            <p>O(A) ${profile.genero === 'female' ? 'Dra.' : 'Dr.'} <strong>${profile.nome_completo}</strong> agendou uma nova sessão para você.</p>
+            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo || targetUser.nome}!</h2>
+            <p>O(A) ${profile.genero === 'female' ? 'Dra.' : 'Dr.'} <strong>${profile.nome_completo || profile.nome}</strong> agendou uma nova sessão para você.</p>
             <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
             <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
@@ -294,7 +299,8 @@ export default function Appointments() {
       if (error) throw error;
       
       // Create notification for the other party
-      const isPhysio = profile.tipo_usuario === 'fisioterapeuta' || profile.tipo_usuario === 'physiotherapist';
+      const isPhysio = profile.tipo === 'fisioterapeuta' || profile.tipo_usuario === 'fisioterapeuta' || 
+                       profile.tipo === 'physiotherapist' || profile.tipo_usuario === 'physiotherapist';
       const targetId = isPhysio ? app.paciente_id : app.fisio_id;
       const statusText = status === 'confirmado' ? 'confirmado' : 'cancelado';
       
@@ -316,8 +322,8 @@ export default function Appointments() {
           "Consulta Confirmada - FisioCareHub",
           `
           <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #10b981;">Olá, ${app.paciente.nome_completo}!</h2>
-            <p>Sua consulta com <strong>${app.fisioterapeuta.nome_completo}</strong> foi confirmada.</p>
+            <h2 style="color: #10b981;">Olá, ${app.paciente.nome_completo || app.paciente.nome}!</h2>
+            <p>Sua consulta com <strong>${app.fisioterapeuta.nome_completo || app.fisioterapeuta.nome}</strong> foi confirmada.</p>
             <p><strong>Data:</strong> ${new Date(app.data_servico).toLocaleDateString('pt-BR')}</p>
             <p><strong>Horário:</strong> ${new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
             <br/>
@@ -352,7 +358,8 @@ export default function Appointments() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
+  const isPhysio = profile?.tipo === 'fisioterapeuta' || profile?.tipo_usuario === 'fisioterapeuta' || 
+                   profile?.tipo === 'physiotherapist' || profile?.tipo_usuario === 'physiotherapist';
 
   return (
     <div className="space-y-8">
@@ -401,7 +408,7 @@ export default function Appointments() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <User size={14} />
-                    {isPhysio ? `Paciente: ${app.paciente?.nome_completo}` : `Fisioterapeuta: ${app.fisioterapeuta?.nome_completo}`}
+                    {isPhysio ? `Paciente: ${app.paciente?.nome_completo || app.paciente?.nome}` : `Fisioterapeuta: ${app.fisioterapeuta?.nome_completo || app.fisioterapeuta?.nome}`}
                   </div>
                 </div>
               </div>
@@ -482,7 +489,7 @@ export default function Appointments() {
                   >
                     <option value="">Selecione da lista...</option>
                     {availableUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.nome_completo} ({u.email})</option>
+                      <option key={u.id} value={u.id}>{u.nome_completo || u.nome} ({u.email})</option>
                     ))}
                   </select>
                   <div className="relative py-2">

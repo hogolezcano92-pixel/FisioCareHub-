@@ -127,8 +127,11 @@ export default function Register() {
         const profileData = {
           id: authData.user.id,
           email: cleanEmail,
+          nome: cleanName,
           nome_completo: cleanName,
+          tipo: role,
           tipo_usuario: role,
+          telefone: '',
           bio: '',
           genero: role === 'fisioterapeuta' ? (gender || null) : null,
           especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
@@ -141,6 +144,7 @@ export default function Register() {
           is_pro: isPro,
           aprovado: role === 'paciente',
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+          foto_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           documentos: uploadedDocUrls,
           created_at: new Date().toISOString()

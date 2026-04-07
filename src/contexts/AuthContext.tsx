@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Check if there's a pending role from Register page (for OAuth)
         const pendingRole = localStorage.getItem('pending_role');
-        const finalRole = userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
+        const finalRole = userMetadata?.tipo || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
         
         // Clear the pending role after use
         if (pendingRole) localStorage.removeItem('pending_role');
@@ -49,9 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('perfis')
           .insert({
             id: userId,
+            nome: userMetadata?.full_name || userMetadata?.name || 'Usuário',
             nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
             email: userMetadata?.email || '',
+            foto_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            tipo: finalRole,
             tipo_usuario: finalRole,
             crefito: userMetadata?.crefito || null,
             especialidade: userMetadata?.especialidade || null,

@@ -164,7 +164,7 @@ function Navbar() {
       { name: t('nav.documents'), path: '/documents', icon: FileSignature },
       { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
       { name: t('nav.records'), path: '/records', icon: FileText },
-      ...(profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'patient' ? [{ name: t('nav.triage'), path: '/triage', icon: BrainCircuit }] : []),
+      ...(profile?.tipo === 'paciente' || profile?.tipo_usuario === 'paciente' || profile?.tipo === 'patient' || profile?.tipo_usuario === 'patient' ? [{ name: t('nav.triage'), path: '/triage', icon: BrainCircuit }] : []),
       { name: t('nav.profile'), path: '/profile', icon: User },
     ] : [
       { name: t('nav.login'), path: '/login', icon: User },
@@ -204,10 +204,10 @@ function Navbar() {
                 <Link to="/profile" className="flex items-center gap-3 group">
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-black text-slate-900 leading-none">
-                      {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
-                      {profile?.nome_completo?.split(' ')[0]}
+                      {(profile?.tipo === 'fisioterapeuta' || profile?.tipo_usuario === 'fisioterapeuta') ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
+                      {(profile?.nome_completo || profile?.nome || '').split(' ')[0]}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.tipo_usuario}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.tipo || profile?.tipo_usuario}</p>
                   </div>
                   <img 
                     src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
