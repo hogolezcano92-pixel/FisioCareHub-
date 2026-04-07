@@ -7,7 +7,7 @@
 
 export const realizarTriagemIA = async (textoUsuario) => {
     // Aqui usamos a API da Groq (você precisará da chave no .env)
-    const API_KEY = process.env.VITE_GROQ_API_KEY; 
+    const API_KEY = import.meta.env.VITE_GROQ_API_KEY; 
 
     try {
         const resposta = await fetch("https://api.groq.com/openai/v1/chat/completions", {
