@@ -128,7 +128,6 @@ export default function Register() {
           id: authData.user.id,
           email: cleanEmail,
           nome_completo: cleanName,
-          tipo: role,
           tipo_usuario: role,
           telefone: '',
           bio: '',
