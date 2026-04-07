@@ -94,7 +94,6 @@ export default function Profile() {
     try {
       const updateData = {
         nome_completo: name,
-        nome: name,
         bio: bio,
         localizacao: city,
         endereco: address,
