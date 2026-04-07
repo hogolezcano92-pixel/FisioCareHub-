@@ -60,7 +60,7 @@ export default function Records() {
       }
 
       try {
-        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+        const isPhysio = (profile.plano || '').toLowerCase() === 'fisioterapeuta';
         const userIdField = isPhysio ? 'fisio_id' : 'paciente_id';
 
         const { data: recordsData, error: recordsError } = await supabase
@@ -165,7 +165,7 @@ export default function Records() {
         .from('perfis')
         .select('id')
         .eq('email', patientEmail.trim().toLowerCase())
-        .eq('tipo_usuario', 'paciente')
+        .eq('plano', 'free')
         .single();
       
       if (patientError || !patientData) {
@@ -223,7 +223,7 @@ export default function Records() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
 
   return (
     <div className="space-y-8">
@@ -257,7 +257,7 @@ export default function Records() {
                   <div className="text-xs font-bold text-purple-400 uppercase tracking-wider">
                     {formatDate(triage.data_triagem)}
                   </div>
-                  {profile?.tipo_usuario === 'fisioterapeuta' && (
+                  {(profile?.plano || '').toLowerCase() === 'fisioterapeuta' && (
                     <div className="text-[10px] bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-bold">
                       PACIENTE: {nameMap[triage.paciente_id] || triage.paciente_id.slice(0, 6)}
                     </div>

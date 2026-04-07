@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, Route, Clock, ChevronRight, Map as MapIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, Route, Clock, ChevronRight, Map as MapIcon, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface PatientLocation {
   id: string;
@@ -41,14 +43,56 @@ export const optimizeRoute = (currentLat: number, currentLng: number, patients: 
 };
 
 export const RouteOptimizer = () => {
-  const [patients, setPatients] = useState<PatientLocation[]>([
-    { id: '1', name: 'Dona Maria Silva', address: 'Rua das Flores, 123', lat: -23.5505, lng: -46.6333 },
-    { id: '2', name: 'Sr. João Pereira', address: 'Av. Paulista, 1000', lat: -23.5614, lng: -46.6559 },
-    { id: '3', name: 'Dona Alzira Costa', address: 'Rua Augusta, 500', lat: -23.5489, lng: -46.6444 },
-  ]);
-
+  const { profile } = useAuth();
+  const [patients, setPatients] = useState<PatientLocation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [optimizedRoute, setOptimizedRoute] = useState<PatientLocation[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
+
+  useEffect(() => {
+    const fetchPatientLocations = async () => {
+      if (!profile) return;
+      setLoading(true);
+      try {
+        // Fetch confirmed appointments for today
+        const today = new Date().toISOString().split('T')[0];
+        const { data: appts, error } = await supabase
+          .from('agendamentos')
+          .select(`
+            id,
+            paciente:paciente_id (id, nome_completo, endereco, localizacao)
+          `)
+          .eq('fisio_id', profile.id)
+          .eq('status', 'confirmado')
+          .gte('data_servico', today + 'T00:00:00Z')
+          .lte('data_servico', today + 'T23:59:59Z');
+
+        if (error) throw error;
+
+        const locations: PatientLocation[] = (appts || []).map((a: any) => {
+          // Simulate lat/lng if not present (in a real app, you'd geocode the address)
+          const lat = -23.5 + (Math.random() * 0.1);
+          const lng = -46.6 + (Math.random() * 0.1);
+          
+          return {
+            id: a.paciente.id,
+            name: a.paciente.nome_completo,
+            address: a.paciente.endereco || a.paciente.localizacao || 'Endereço não informado',
+            lat,
+            lng
+          };
+        });
+
+        setPatients(locations);
+      } catch (err) {
+        console.error("Erro ao carregar localizações dos pacientes:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatientLocations();
+  }, [profile]);
 
   const handleOptimize = () => {
     setIsOptimizing(true);
@@ -74,52 +118,67 @@ export const RouteOptimizer = () => {
         </div>
         <button 
           onClick={handleOptimize}
-          disabled={isOptimizing}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2"
+          disabled={isOptimizing || patients.length === 0}
+          className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 disabled:opacity-50"
         >
           {isOptimizing ? 'Otimizando...' : 'Otimizar Rota'}
         </button>
       </div>
 
       <div className="space-y-4">
-        {(optimizedRoute.length > 0 ? optimizedRoute : patients).map((p, index) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={cn(
-              "p-5 rounded-[2rem] border flex items-center justify-between gap-4 group transition-all",
-              optimizedRoute.length > 0 ? "bg-blue-50 border-blue-100" : "bg-slate-50 border-slate-100"
-            )}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black shadow-sm border border-slate-100">
-                {index + 1}
-              </div>
-              <div className="space-y-1">
-                <p className="font-black text-slate-900">{p.name}</p>
-                <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-                  <MapPin size={14} />
-                  {p.address}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="animate-spin text-blue-600" size={32} />
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Carregando Localizações...</p>
+          </div>
+        ) : patients.length === 0 ? (
+          <div className="p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+            <MapPin className="mx-auto mb-4 text-slate-300" size={40} />
+            <p className="text-slate-500 font-medium">Nenhum atendimento confirmado para hoje.</p>
+          </div>
+        ) : (
+          (optimizedRoute.length > 0 ? optimizedRoute : patients).map((p, index) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={cn(
+                "p-5 rounded-[2rem] border flex items-center justify-between gap-4 group transition-all",
+                optimizedRoute.length > 0 ? "bg-blue-50 border-blue-100" : "bg-slate-50 border-slate-100"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black shadow-sm border border-slate-100">
+                  {index + 1}
+                </div>
+                <div className="space-y-1">
+                  <p className="font-black text-slate-900">{p.name}</p>
+                  <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
+                    <MapPin size={14} />
+                    {p.address}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-black text-blue-600 uppercase tracking-widest">Previsão</p>
-                <p className="text-sm font-medium text-slate-500 flex items-center gap-1 justify-end">
-                  <Clock size={14} />
-                  {15 + index * 45} min
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-black text-blue-600 uppercase tracking-widest">Previsão</p>
+                  <p className="text-sm font-medium text-slate-500 flex items-center gap-1 justify-end">
+                    <Clock size={14} />
+                    {15 + index * 45} min
+                  </p>
+                </div>
+                <button 
+                  onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.address)}`, '_blank')}
+                  className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  <Navigation size={20} />
+                </button>
               </div>
-              <button className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all">
-                <Navigation size={20} />
-              </button>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))
+        )}
       </div>
 
       {optimizedRoute.length > 0 && (

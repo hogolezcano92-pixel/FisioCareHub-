@@ -21,15 +21,13 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
     ) : null;
   }
 
-  // Pacientes sempre têm acesso
-  if (profile?.tipo === 'paciente' || profile?.tipo_usuario === 'paciente' || 
-      profile?.tipo === 'patient' || profile?.tipo_usuario === 'patient') {
+  // Pacientes e Admins sempre têm acesso
+  if (profile?.plano === 'free' || profile?.plano === 'admin') {
     return <>{children}</>;
   }
 
   // Fisioterapeutas precisam ser Pro
-  if (profile?.tipo === 'fisioterapeuta' || profile?.tipo_usuario === 'fisioterapeuta' || 
-      profile?.tipo === 'physiotherapist' || profile?.tipo_usuario === 'physiotherapist') {
+  if (profile?.plano === 'fisioterapeuta') {
     if (profile?.is_pro) {
       return <>{children}</>;
     }

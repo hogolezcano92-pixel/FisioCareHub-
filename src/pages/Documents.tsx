@@ -64,7 +64,7 @@ export default function Documents() {
       }
 
       try {
-        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+        const isPhysio = (profile.plano || '').toLowerCase() === 'fisioterapeuta';
         const { data, error } = await supabase
           .from('documentos_gerados')
           .select('*')
@@ -236,7 +236,7 @@ export default function Documents() {
     }, 500);
   };
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
 
   return (
     <div className="space-y-8 pb-20">

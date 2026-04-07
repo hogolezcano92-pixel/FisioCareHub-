@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Circle, Clock, Play, Pause, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface Exercise {
   id: string;
@@ -12,13 +15,32 @@ interface Exercise {
 }
 
 export const PainDiary = () => {
+  const { profile } = useAuth();
   const [intensity, setIntensity] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const emojis = ['😊', '🙂', '😐', '🙁', '😟', '😣', '😖', '😫', '😭', '💀'];
 
-  const handleSave = () => {
-    if (intensity !== null) {
-      // Save to Supabase
-      console.log('Saving pain intensity:', intensity);
+  const handleSave = async () => {
+    if (intensity !== null && profile) {
+      setIsSaving(true);
+      try {
+        const { error } = await supabase
+          .from('diario_dor')
+          .insert({
+            paciente_id: profile.id,
+            intensidade: intensity,
+            data_registro: new Date().toISOString()
+          });
+
+        if (error) throw error;
+        toast.success('Diário de dor atualizado!');
+        setIntensity(null);
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao salvar no diário.');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -49,16 +71,18 @@ export const PainDiary = () => {
 
       <button
         onClick={handleSave}
-        disabled={intensity === null}
-        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 disabled:opacity-50 disabled:shadow-none"
+        disabled={intensity === null || isSaving}
+        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
       >
-        Registrar no Diário
+        {isSaving && <Loader2 className="animate-spin" size={20} />}
+        {isSaving ? 'Salvando...' : 'Registrar no Diário'}
       </button>
     </div>
   );
 };
 
 export const ExerciseChecklist = () => {
+  const { profile } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([
     { id: '1', title: 'Alongamento de Isquiotibiais', description: 'Mantenha a perna esticada por 30 segundos.', duration: 30, completed: false },
     { id: '2', title: 'Fortalecimento de Quadríceps', description: 'Extensão de joelho com caneleira (3x15).', duration: 300, completed: false },
@@ -69,7 +93,35 @@ export const ExerciseChecklist = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const fetchCompletions = async () => {
+      if (!profile) return;
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase
+          .from('checklist_exercicios')
+          .select('exercicio_id')
+          .eq('paciente_id', profile.id)
+          .gte('data_conclusao', today + 'T00:00:00Z');
+
+        if (error) throw error;
+        
+        if (data) {
+          const completedIds = data.map(d => d.exercicio_id);
+          setExercises(prev => prev.map(ex => ({
+            ...ex,
+            completed: completedIds.includes(ex.id)
+          })));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchCompletions();
+  }, [profile]);
+
+  useEffect(() => {
     let interval: any;
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
@@ -87,8 +139,37 @@ export const ExerciseChecklist = () => {
     setIsRunning(true);
   };
 
-  const toggleComplete = (id: string) => {
-    setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, completed: !ex.completed } : ex));
+  const toggleComplete = async (id: string) => {
+    if (!profile) return;
+    
+    const exercise = exercises.find(ex => ex.id === id);
+    if (!exercise) return;
+
+    const newCompleted = !exercise.completed;
+    
+    try {
+      if (newCompleted) {
+        await supabase.from('checklist_exercicios').insert({
+          paciente_id: profile.id,
+          exercicio_id: id,
+          concluido: true,
+          data_conclusao: new Date().toISOString()
+        });
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        await supabase.from('checklist_exercicios')
+          .delete()
+          .eq('paciente_id', profile.id)
+          .eq('exercicio_id', id)
+          .gte('data_conclusao', today + 'T00:00:00Z');
+      }
+      
+      setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex));
+      toast.success(newCompleted ? 'Exercício concluído!' : 'Exercício desmarcado');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar exercício.');
+    }
   };
 
   const formatTime = (seconds: number) => {

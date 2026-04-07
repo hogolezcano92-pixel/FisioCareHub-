@@ -44,7 +44,7 @@ export default function Subscription() {
     }
   };
 
-  if (profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'patient') {
+  if ((profile?.plano || '').toLowerCase() === 'free') {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
         <div className="bg-sky-50 p-12 rounded-[3rem] border border-sky-100 shadow-xl shadow-sky-100/50">

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User } from 'lucide-react';
 import { generateSOAPRecord } from '../../lib/groq';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SOAPData {
   subjective: string;
@@ -12,10 +14,17 @@ interface SOAPData {
   plan: string;
 }
 
-export const SOAPIntelligentRecord = () => {
+interface SOAPIntelligentRecordProps {
+  pacienteId?: string;
+  onSave?: () => void;
+}
+
+export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRecordProps) => {
+  const { profile } = useAuth();
   const [rawText, setRawText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [soapData, setSoapData] = useState<SOAPData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleProcess = async () => {
     if (!rawText.trim()) {
@@ -36,11 +45,41 @@ export const SOAPIntelligentRecord = () => {
     }
   };
 
-  const handleSave = () => {
-    // Save to Supabase
-    toast.success('Prontuário salvo no histórico do paciente.');
-    setSoapData(null);
-    setRawText('');
+  const handleSave = async () => {
+    if (!soapData || !profile) return;
+    
+    if (!pacienteId) {
+      toast.error('Selecione um paciente para salvar o prontuário.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('prontuarios')
+        .insert({
+          paciente_id: pacienteId,
+          fisio_id: profile.id,
+          data_registro: new Date().toISOString(),
+          conteudo: {
+            type: 'SOAP',
+            ...soapData,
+            raw: rawText
+          }
+        });
+
+      if (error) throw error;
+
+      toast.success('Prontuário salvo no histórico do paciente.');
+      setSoapData(null);
+      setRawText('');
+      if (onSave) onSave();
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao salvar prontuário.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -118,10 +157,15 @@ export const SOAPIntelligentRecord = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-3"
+                disabled={isSaving}
+                className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-3 disabled:opacity-50"
               >
-                <Save size={24} />
-                Salvar Prontuário
+                {isSaving ? (
+                  <Loader2 className="animate-spin" size={24} />
+                ) : (
+                  <Save size={24} />
+                )}
+                {isSaving ? 'Salvando...' : 'Salvar Prontuário'}
               </button>
             </div>
           </motion.div>

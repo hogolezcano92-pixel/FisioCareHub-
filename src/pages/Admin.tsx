@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
@@ -166,6 +166,49 @@ export default function Admin() {
     }
   };
 
+  const processProfiles = useCallback((profiles: any[]) => {
+    setSupabaseProfiles(profiles);
+    
+    // Update Stats from Supabase Profiles
+    const physios = profiles.filter((u: any) => {
+      const role = (u.plano || '').toLowerCase();
+      return role === 'fisioterapeuta';
+    });
+    const patients = profiles.filter((u: any) => {
+      const role = (u.plano || '').toLowerCase();
+      return role === 'free';
+    });
+    
+    setStats(prev => ({
+      ...prev,
+      totalUsers: profiles.length,
+      activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado').length,
+      newPatients: patients.length
+    }));
+  }, []);
+
+  const fetchSupabaseProfiles = useCallback(async () => {
+    try {
+      let query = supabase
+        .from('perfis')
+        .select('*');
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Erro ao buscar perfis Supabase:", error);
+        // Try again without any special ordering or filters if it failed
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
+        if (retryError) throw retryError;
+        processProfiles(retryData || []);
+      } else {
+        processProfiles(data || []);
+      }
+    } catch (err) {
+      console.error("Erro fatal ao buscar perfis:", err);
+    }
+  }, [processProfiles]);
+
   // Real-time Data Listeners
   useEffect(() => {
     if (!isAdmin || !firebaseUser) return;
@@ -174,62 +217,15 @@ export default function Admin() {
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setUsers(usersData);
-      
-      // Stats are now updated from Supabase Profiles in fetchSupabaseProfiles
     }, (error) => {
       console.error("Erro ao ouvir usuários:", error);
     });
-
-    // Listen for Supabase Profiles
-    const fetchSupabaseProfiles = async () => {
-      try {
-        let query = supabase
-          .from('perfis')
-          .select('*');
-        
-        // Try to order by created_at, but handle failure if column doesn't exist
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error("Erro ao buscar perfis Supabase:", error);
-          // Try again without any special ordering or filters if it failed
-          const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
-          if (retryError) throw retryError;
-          processProfiles(retryData || []);
-        } else {
-          processProfiles(data || []);
-        }
-      } catch (err) {
-        console.error("Erro fatal ao buscar perfis:", err);
-      }
-    };
-
-    const processProfiles = (profiles: any[]) => {
-      setSupabaseProfiles(profiles);
-      
-      // Update Stats from Supabase Profiles
-      const physios = profiles.filter((u: any) => {
-        const role = (u.tipo_usuario || '').toLowerCase();
-        return role === 'fisioterapeuta' || role === 'physiotherapist';
-      });
-      const patients = profiles.filter((u: any) => {
-        const role = (u.tipo_usuario || '').toLowerCase();
-        return role === 'paciente' || role === 'patient';
-      });
-      
-      setStats(prev => ({
-        ...prev,
-        totalUsers: profiles.length,
-        activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado' || p.aprovado === true).length,
-        newPatients: patients.length
-      }));
-    };
 
     fetchSupabaseProfiles();
     // Set up a simple poll or realtime subscription for Supabase
     const channel = supabase
       .channel('perfis-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, () => {
         fetchSupabaseProfiles();
       })
       .subscribe();
@@ -640,7 +636,7 @@ export default function Admin() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.plano || selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
@@ -944,17 +940,17 @@ export default function Admin() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm">
-                                {u.name?.charAt(0)}
+                                {u.nome_completo?.charAt(0)}
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-slate-900">{u.name}</p>
+                                <p className="text-sm font-bold text-slate-900">{u.nome_completo}</p>
                                 <p className="text-[10px] text-slate-500">{u.email}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-md uppercase tracking-wider">
-                              {u.role}
+                              {u.plano || u.role}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -1035,9 +1031,9 @@ export default function Admin() {
                         <td className="px-6 py-4">
                           <span className={cn(
                             "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
-                            u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                            u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                           )}>
-                            {u.tipo_usuario}
+                            {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -1119,8 +1115,8 @@ export default function Admin() {
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
                       .filter(p => {
-                        const role = (p.tipo_usuario || '').toLowerCase();
-                        return role === 'fisioterapeuta' || role === 'physiotherapist';
+                        const role = (p.plano || '').toLowerCase();
+                        return role === 'fisioterapeuta';
                       })
                       .filter(p => {
                         const search = searchTerm.toLowerCase();
@@ -1235,8 +1231,8 @@ export default function Admin() {
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
                       .filter(p => {
-                        const role = (p.tipo_usuario || '').toLowerCase();
-                        return role === 'paciente' || role === 'patient';
+                        const role = (p.plano || '').toLowerCase();
+                        return role === 'free';
                       })
                       .filter(p => {
                         const search = searchTerm.toLowerCase();
@@ -1301,7 +1297,7 @@ export default function Admin() {
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Aprovações Pendentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {supabaseProfiles.filter(p => 
-                  (p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist') && 
+                  (p.plano === 'fisioterapeuta') && 
                   (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
                 ).length === 0 ? (
                   <div className="col-span-full bg-white p-12 rounded-[2rem] border border-slate-100 text-center space-y-4">
@@ -1313,7 +1309,7 @@ export default function Admin() {
                   </div>
                 ) : (
                   supabaseProfiles.filter(p => 
-                    (p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist') && 
+                    (p.plano === 'fisioterapeuta') && 
                     (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
                   ).map((profile) => (
                     <motion.div 
@@ -1337,7 +1333,7 @@ export default function Admin() {
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-wider">
                         <div className="bg-slate-50 p-2 rounded-lg truncate">Especialidade: {profile.especialidade || 'Não inf.'}</div>
-                        <div className="bg-slate-50 p-2 rounded-lg truncate">Tipo: {profile.tipo_usuario}</div>
+                        <div className="bg-slate-50 p-2 rounded-lg truncate">Tipo: {profile.plano || profile.tipo_usuario}</div>
                       </div>
                       
                       {Array.isArray(profile.documentos) && profile.documentos.length > 0 && (
@@ -1472,18 +1468,18 @@ export default function Admin() {
                         "w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm transition-transform group-hover:scale-105",
                         selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
                       )}>
-                        {u.name?.charAt(0).toUpperCase()}
+                        {u.nome_completo?.charAt(0).toUpperCase()}
                       </div>
                       <div className="text-left flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="text-sm font-bold truncate">{u.name}</p>
+                          <p className="text-sm font-bold truncate">{u.nome_completo}</p>
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
-                            (u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta')
+                            (u.plano === 'fisioterapeuta' || u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta')
                               ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-600")
                               : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600")
                           )}>
-                            {(u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta') ? 'Fisio' : 'Paciente'}
+                            {(u.plano === 'fisioterapeuta' || u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta') ? 'Fisio' : 'Paciente'}
                           </span>
                         </div>
                         <p className={cn(
@@ -1514,10 +1510,10 @@ export default function Admin() {
                         <ArrowLeft size={20} />
                       </button>
                       <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm flex-shrink-0">
-                        {(selectedChatUser.nome_completo || selectedChatUser.name)?.charAt(0).toUpperCase()}
+                        {selectedChatUser.nome_completo?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.nome_completo || selectedChatUser.name}</p>
+                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.nome_completo}</p>
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest">Online</p>

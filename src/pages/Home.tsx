@@ -135,7 +135,7 @@ export default function Home() {
       let query = supabase
         .from('perfis')
         .select('*')
-        .eq('tipo_usuario', 'fisioterapeuta');
+        .eq('plano', 'fisioterapeuta');
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {
@@ -159,7 +159,7 @@ export default function Home() {
       if (data) {
         const mappedData: Professional[] = data.map((profile: any) => ({
           id: profile.id,
-          name: profile.nome_completo || profile.nome || 'Fisioterapeuta',
+          name: profile.nome_completo || 'Fisioterapeuta',
           spec: profile.especialidade || 'Geral',
           fullSpec: profile.especialidade || 'Fisioterapia Geral',
           img: profile.avatar_url || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,

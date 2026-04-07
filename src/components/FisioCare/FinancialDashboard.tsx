@@ -1,13 +1,65 @@
-import React from 'react';
-import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const FinancialDashboard = () => {
+  const { profile } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [financialStats, setFinancialStats] = useState({
+    balance: 0,
+    monthlyEarnings: 0,
+    forecast: 0,
+    growth: 0
+  });
+
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      if (!profile) return;
+      setLoading(true);
+      try {
+        // Simulating financial data based on appointments
+        // In a real app, you'd have a 'transacoes' or 'pagamentos' table
+        const { data: appts, error } = await supabase
+          .from('agendamentos')
+          .select('id, status, data_servico')
+          .eq('fisio_id', profile.id)
+          .eq('status', 'concluido');
+
+        if (error) throw error;
+
+        // Assuming a fixed price for simulation
+        const pricePerSession = 150;
+        const totalEarnings = (appts?.length || 0) * pricePerSession;
+        
+        // Filter for current month
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthlyAppts = appts?.filter(a => new Date(a.data_servico) >= firstDayOfMonth) || [];
+        const monthlyEarnings = monthlyAppts.length * pricePerSession;
+
+        setFinancialStats({
+          balance: totalEarnings * 0.7, // Simulated balance
+          monthlyEarnings: monthlyEarnings,
+          forecast: (appts?.length || 0) * pricePerSession * 1.2, // Simulated forecast
+          growth: 12 // Simulated growth
+        });
+      } catch (err) {
+        console.error("Erro ao carregar dados financeiros:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinancialData();
+  }, [profile]);
+
   const stats = [
-    { label: 'Saldo Disponível', value: 'R$ 0,00', icon: Wallet, color: 'bg-blue-600 shadow-blue-100' },
-    { label: 'Ganhos do Mês', value: 'R$ 0,00', icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-100' },
-    { label: 'Previsão de Recebimento', value: 'R$ 0,00', icon: CreditCard, color: 'bg-amber-600 shadow-amber-100' },
+    { label: 'Saldo Disponível', value: `R$ ${financialStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Wallet, color: 'bg-blue-600 shadow-blue-100' },
+    { label: 'Ganhos do Mês', value: `R$ ${financialStats.monthlyEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-100' },
+    { label: 'Previsão de Recebimento', value: `R$ ${financialStats.forecast.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'bg-amber-600 shadow-amber-100' },
   ];
 
   const weeklyData = [
@@ -40,7 +92,7 @@ export const FinancialDashboard = () => {
             </div>
             <div className="flex items-center gap-2 text-emerald-600 text-xs font-black">
               <ArrowUpRight size={14} />
-              +12% em relação ao mês anterior
+              +{financialStats.growth}% em relação ao mês anterior
             </div>
           </motion.div>
         ))}

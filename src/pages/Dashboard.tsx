@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -55,22 +55,13 @@ export default function Dashboard() {
   const [searching, setSearching] = useState(false);
 
   const lastLoadedProfileId = useRef<string | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-    } else if (profile && lastLoadedProfileId.current !== profile.id) {
-      lastLoadedProfileId.current = profile.id;
-      fetchStats(profile);
-      fetchRecentAppointments(profile);
-    }
-  }, [user, profile, authLoading, navigate]);
-
-  const fetchStats = async (data: any) => {
+  const fetchStats = useCallback(async (data: any) => {
     if (!data) return;
     setStatsLoading(true);
     try {
-      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
+      const isPatient = (data.plano || '').toLowerCase() === 'free';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const otherRoleField = isPatient ? 'fisio_id' : 'paciente_id';
       
@@ -94,20 +85,20 @@ export default function Dashboard() {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRecentAppointments = async (data: any) => {
+  const fetchRecentAppointments = useCallback(async (data: any) => {
     if (!data) return;
     setApptsLoading(true);
     try {
-      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
+      const isPatient = (data.plano || '').toLowerCase() === 'free';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const { data: appts, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          paciente:paciente_id (nome_completo, email),
-          fisioterapeuta:fisio_id (nome_completo, email)
+          paciente:paciente_id (nome_completo, email, avatar_url),
+          fisioterapeuta:fisio_id (nome_completo, email, avatar_url)
         `)
         .eq(roleField, data.id)
         .order('data_servico', { ascending: false })
@@ -120,7 +111,17 @@ export default function Dashboard() {
     } finally {
       setApptsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    } else if (profile && lastLoadedProfileId.current !== profile.id) {
+      lastLoadedProfileId.current = profile.id;
+      fetchStats(profile);
+      fetchRecentAppointments(profile);
+    }
+  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments]);
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -134,7 +135,7 @@ export default function Dashboard() {
         const { data, error } = await supabase
           .from('perfis')
           .select('*')
-          .or(`tipo_usuario.in.(paciente,patient)`)
+          .eq('plano', 'free')
           .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%`)
           .limit(5);
         
@@ -161,7 +162,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
+  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
   const isPro = profile?.is_pro;
 
   return (
@@ -301,7 +302,14 @@ export default function Dashboard() {
           {searchResults.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
               {searchResults.map((patient) => (
-                <div key={patient.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
+                <div 
+                  key={patient.id} 
+                  onClick={() => setSelectedPatientId(patient.id)}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer group",
+                    selectedPatientId === patient.id ? "bg-blue-50 border-blue-200 shadow-md" : "bg-slate-50 border-slate-100 hover:bg-white hover:shadow-md"
+                  )}
+                >
                   <div className="flex items-center gap-4">
                     <img
                       src={patient.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`}
@@ -309,16 +317,28 @@ export default function Dashboard() {
                       className="w-12 h-12 rounded-xl object-cover"
                     />
                     <div>
-                      <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{patient.nome_completo}</p>
+                      <p className={cn("font-bold transition-colors", selectedPatientId === patient.id ? "text-blue-700" : "text-slate-900 group-hover:text-blue-600")}>
+                        {patient.nome_completo}
+                      </p>
                       <p className="text-sm text-slate-500">{patient.email}</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => navigate(`/chat?user=${patient.id}`)}
-                    className="p-3 bg-white text-blue-600 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all"
-                  >
-                    <MessageSquare size={20} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {selectedPatientId === patient.id && (
+                      <div className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
+                        Selecionado
+                      </div>
+                    )}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/chat?user=${patient.id}`);
+                      }}
+                      className="p-3 bg-white text-blue-600 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all"
+                    >
+                      <MessageSquare size={20} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -470,9 +490,16 @@ export default function Dashboard() {
                     <RouteOptimizer />
                   </ProGuard>
                   <ProGuard variant="full">
-                    <SOAPIntelligentRecord />
+                    <SOAPIntelligentRecord 
+                      pacienteId={selectedPatientId || undefined} 
+                      onSave={() => {
+                        fetchStats(profile);
+                        fetchRecentAppointments(profile);
+                      }}
+                    />
                   </ProGuard>
                 </div>
+                <DigitalLibrary />
               </div>
             </div>
           </>

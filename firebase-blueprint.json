@@ -118,6 +118,31 @@
         "created_at": { "type": "string", "format": "date-time" }
       },
       "required": ["physio_id", "patient_email", "content"]
+    },
+    "DiarioDor": {
+      "title": "DiarioDor",
+      "description": "Patient pain intensity logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "paciente_id": { "type": "string" },
+        "intensidade": { "type": "number" },
+        "data_registro": { "type": "string", "format": "date-time" }
+      },
+      "required": ["paciente_id", "intensidade"]
+    },
+    "ChecklistExercicio": {
+      "title": "ChecklistExercicio",
+      "description": "Patient exercise completion logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "paciente_id": { "type": "string" },
+        "exercicio_id": { "type": "string" },
+        "concluido": { "type": "boolean" },
+        "data_conclusao": { "type": "string", "format": "date-time" }
+      },
+      "required": ["paciente_id", "exercicio_id", "concluido"]
     }
   },
   "firestore": {
@@ -127,6 +152,8 @@
     "triagens": { "schema": "Triagem", "description": "Triage results" },
     "mensagens": { "schema": "Mensagem", "description": "Chat messages" },
     "notificacoes": { "schema": "Notificacao", "description": "User notifications" },
-    "documentos_gerados": { "schema": "DocumentoGerado", "description": "AI generated documents" }
+    "documentos_gerados": { "schema": "DocumentoGerado", "description": "AI generated documents" },
+    "diario_dor": { "schema": "DiarioDor", "description": "Pain intensity logs" },
+    "checklist_exercicios": { "schema": "ChecklistExercicio", "description": "Exercise completion logs" }
   }
 }

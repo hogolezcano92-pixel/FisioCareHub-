@@ -91,7 +91,7 @@ export default function Register() {
         options: {
           data: {
             full_name: cleanName,
-            tipo_usuario: role,
+            plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
             crefito: role === 'fisioterapeuta' ? crefito : null,
             especialidade: role === 'fisioterapeuta' ? specialty : null
           }
@@ -129,7 +129,7 @@ export default function Register() {
         const baseProfileData = {
           id: authData.user.id,
           nome_completo: cleanName,
-          tipo_usuario: role,
+          plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
           email: cleanEmail,
         };
 
@@ -147,7 +147,6 @@ export default function Register() {
           pais: country || null,
           tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
           is_pro: isPro,
-          aprovado: role === 'paciente',
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           documentos: uploadedDocUrls,

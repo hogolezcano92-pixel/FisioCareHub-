@@ -48,19 +48,19 @@ export default function Appointments() {
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
-      const isPatient = (currentProfile.tipo_usuario || '').toLowerCase() === 'paciente' || (currentProfile.tipo_usuario || '').toLowerCase() === 'patient';
-      const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
+      const isPatient = (currentProfile.plano || '').toLowerCase() === 'free';
+      const targetRoles = isPatient ? ['fisioterapeuta'] : ['free'];
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email, tipo_usuario, status_aprovacao');
+        .select('id, nome_completo, email, plano, status_aprovacao');
       
       const { data, error } = await query.order('nome_completo');
       
       if (error) {
         console.error("Erro ao buscar usuários disponíveis:", error);
         // Retry without ordering if it failed
-        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, tipo_usuario, status_aprovacao');
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao');
         if (retryError) throw retryError;
         filterAndSetUsers(retryData || [], isPatient, targetRoles);
       } else {
@@ -73,14 +73,14 @@ export default function Appointments() {
 
   const filterAndSetUsers = (users: any[], isPatient: boolean, targetRoles: string[]) => {
     const filtered = users.filter(u => {
-      const role = (u.tipo_usuario || '').toLowerCase();
+      const role = (u.plano || '').toLowerCase();
       const isTargetRole = targetRoles.includes(role);
       
       if (!isTargetRole) return false;
       
-      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados (se a coluna existir)
+      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
       if (isPatient) {
-        return u.status_aprovacao === 'aprovado' || u.aprovado === true || !u.status_aprovacao;
+        return u.status_aprovacao === 'aprovado';
       }
       
       return true;
@@ -91,8 +91,8 @@ export default function Appointments() {
 
   const fetchAppointments = async (currentProfile: any) => {
     try {
-      const role = (currentProfile.tipo_usuario || '').toLowerCase();
-      const isPhysio = role === 'fisioterapeuta' || role === 'physiotherapist';
+      const role = (currentProfile.plano || '').toLowerCase();
+      const isPhysio = role === 'fisioterapeuta';
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -132,7 +132,8 @@ export default function Appointments() {
   };
 
   const setupRealtime = (currentProfile: any) => {
-    const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
+    const role = (currentProfile.plano || '').toLowerCase();
+    const isPhysio = role === 'fisioterapeuta';
     const channel = supabase
       .channel('agendamentos_changes')
       .on(
@@ -175,19 +176,20 @@ export default function Appointments() {
 
     setSubmitting(true);
     try {
-      const isPatient = profile.tipo_usuario === 'paciente' || profile.tipo_usuario === 'patient';
+      const role = (profile.plano || '').toLowerCase();
+      const isPatient = role === 'free';
       let targetUser: any = null;
 
       if (selectedUserId) {
         targetUser = availableUsers.find(u => u.id === selectedUserId);
       } else if (targetEmail) {
-        const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
+        const targetRoles = isPatient ? ['fisioterapeuta'] : ['free'];
         
         const { data: targetUsers, error: targetError } = await supabase
           .from('perfis')
-          .select('id, nome_completo, email, tipo_usuario')
+          .select('id, nome_completo, email, plano')
           .eq('email', targetEmail.trim().toLowerCase())
-          .or(`tipo_usuario.in.(${targetRoles.join(',')})`);
+          .or(`plano.in.(${targetRoles.join(',')})`);
 
         if (targetError || !targetUsers || targetUsers.length === 0) {
           import('sonner').then(({ toast }) => toast.error(isPatient ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
@@ -209,7 +211,7 @@ export default function Appointments() {
       const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
 
       console.log("Iniciando inserção de agendamento no Supabase...");
-      const isPhysio = profile.tipo_usuario === 'fisioterapeuta' || profile.tipo_usuario === 'physiotherapist';
+      const isPhysio = role === 'fisioterapeuta';
 
       const { data: newApp, error: insertError } = await supabase
         .from('agendamentos')
@@ -322,8 +324,8 @@ export default function Appointments() {
       if (error) throw error;
       
       // Create notification for the other party
-      const isPhysio = profile.tipo === 'fisioterapeuta' || profile.tipo_usuario === 'fisioterapeuta' || 
-                       profile.tipo === 'physiotherapist' || profile.tipo_usuario === 'physiotherapist';
+      const role = (profile.plano || '').toLowerCase();
+      const isPhysio = role === 'fisioterapeuta';
       const targetId = isPhysio ? app.paciente_id : app.fisio_id;
       const statusText = status === 'confirmado' ? 'confirmado' : 'cancelado';
       
@@ -381,7 +383,7 @@ export default function Appointments() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
+  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
 
   return (
     <div className="space-y-8">
