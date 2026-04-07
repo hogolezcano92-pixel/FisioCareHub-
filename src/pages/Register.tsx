@@ -81,6 +81,12 @@ export default function Register() {
       setLoading(false);
       return;
     }
+    const roleFinalIA = await realizarTriagemIA(`Usuário ${cleanName} selecionou ${role}.`);
+    const finalType = roleFinalIA as 'paciente' | 'fisioterapeuta';
+
+    try {
+      console.log("Starting registration for:", cleanEmail, "Role:", finalType);
+
 
     try {
       console.log("Starting registration for:", cleanEmail, "Role:", role);
@@ -91,7 +97,7 @@ export default function Register() {
         options: {
           data: {
             full_name: cleanName,
-            tipo_usuario: role,
+            tipo_usuario: finalType,
             crefito: role === 'fisioterapeuta' ? crefito : null,
             especialidade: role === 'fisioterapeuta' ? specialty : null
           }
