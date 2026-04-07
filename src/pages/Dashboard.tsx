@@ -70,8 +70,9 @@ export default function Dashboard() {
     if (!data) return;
     setStatsLoading(true);
     try {
-      const roleField = data.tipo_usuario === 'paciente' ? 'paciente_id' : 'fisio_id';
-      const otherRoleField = data.tipo_usuario === 'paciente' ? 'fisio_id' : 'paciente_id';
+      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
+      const roleField = isPatient ? 'paciente_id' : 'fisio_id';
+      const otherRoleField = isPatient ? 'fisio_id' : 'paciente_id';
       
       const [apptsCount, recsCount, triagesCount, otherRoles] = await Promise.all([
         supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq(roleField, data.id),
@@ -99,7 +100,8 @@ export default function Dashboard() {
     if (!data) return;
     setApptsLoading(true);
     try {
-      const roleField = data.tipo_usuario === 'paciente' ? 'paciente_id' : 'fisio_id';
+      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
+      const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const { data: appts, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -120,6 +122,38 @@ export default function Dashboard() {
     }
   };
 
+  useEffect(() => {
+    const searchPatients = async () => {
+      if (patientSearch.length < 3) {
+        setSearchResults([]);
+        return;
+      }
+      
+      setSearching(true);
+      try {
+        const { data, error } = await supabase
+          .from('perfis')
+          .select('*')
+          .in('tipo_usuario', ['paciente', 'patient'])
+          .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%`)
+          .limit(5);
+        
+        if (error) throw error;
+        setSearchResults(data || []);
+      } catch (err) {
+        console.error("Erro ao buscar pacientes:", err);
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (patientSearch) searchPatients();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [patientSearch]);
+
   if (authLoading) return (
     <div className="flex flex-col items-center justify-center pt-32 space-y-4">
       <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -127,7 +161,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
   const isPro = profile?.is_pro;
 
   return (

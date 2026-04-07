@@ -265,7 +265,10 @@ export default function Chat() {
 
       const filteredResults = data.filter(u => 
         u.id !== user.id && 
-        (userData?.tipo_usuario === 'admin' || (userData?.tipo_usuario === 'paciente' ? u.tipo_usuario === 'fisioterapeuta' : u.tipo_usuario === 'paciente'))
+        (userData?.tipo_usuario === 'admin' || 
+         ((userData?.tipo_usuario === 'paciente' || userData?.tipo_usuario === 'patient') 
+           ? (u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist') 
+           : (u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient')))
       );
 
       setSearchResults(filteredResults);
@@ -506,7 +509,7 @@ export default function Chat() {
             <div>
               <h2 className="text-3xl font-black text-slate-900 mb-3">Sua Central de Mensagens</h2>
               <p className="text-slate-500 font-medium leading-relaxed">
-                Conecte-se instantaneamente com seu {userData?.tipo_usuario === 'paciente' ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
+                Conecte-se instantaneamente com seu {(userData?.tipo_usuario === 'paciente' || userData?.tipo_usuario === 'patient') ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">

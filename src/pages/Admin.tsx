@@ -194,8 +194,8 @@ export default function Admin() {
         setSupabaseProfiles(profiles);
         
         // Update Stats from Supabase Profiles
-        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta');
-        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente');
+        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist');
+        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient');
         
         setStats(prev => ({
           ...prev,
@@ -949,7 +949,7 @@ export default function Admin() {
                         <td className="px-6 py-4">
                           <span className={cn(
                             "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
-                            u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                            u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                           )}>
                             {u.tipo_usuario}
                           </span>
@@ -1025,7 +1025,7 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
-                      .filter(p => p.tipo_usuario === 'fisioterapeuta')
+                      .filter(p => p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist')
                       .filter(p => 
                         p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         p.crefito?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1120,7 +1120,7 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
-                      .filter(p => p.tipo_usuario === 'paciente')
+                      .filter(p => p.tipo_usuario === 'paciente' || p.tipo_usuario === 'patient')
                       .filter(p => 
                         p.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         p.email?.toLowerCase().includes(searchTerm.toLowerCase())

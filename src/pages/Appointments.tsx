@@ -48,14 +48,16 @@ export default function Appointments() {
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
-      const targetRole = currentProfile.tipo_usuario === 'paciente' ? 'fisioterapeuta' : 'paciente';
+      const isPatient = currentProfile.tipo_usuario === 'paciente' || currentProfile.tipo_usuario === 'patient';
+      const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
+      
       let query = supabase
         .from('perfis')
         .select('id, nome_completo, email')
-        .eq('tipo_usuario', targetRole);
+        .in('tipo_usuario', targetRoles);
       
       // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
-      if (currentProfile.tipo_usuario === 'paciente') {
+      if (isPatient) {
         query = query.eq('status_aprovacao', 'aprovado');
       }
 
@@ -70,7 +72,7 @@ export default function Appointments() {
 
   const fetchAppointments = async (currentProfile: any) => {
     try {
-      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
+      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -102,7 +104,7 @@ export default function Appointments() {
   };
 
   const setupRealtime = (currentProfile: any) => {
-    const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
+    const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta' || currentProfile.tipo_usuario === 'physiotherapist';
     const channel = supabase
       .channel('agendamentos_changes')
       .on(
@@ -145,20 +147,22 @@ export default function Appointments() {
 
     setSubmitting(true);
     try {
+      const isPatient = profile.tipo_usuario === 'paciente' || profile.tipo_usuario === 'patient';
       let targetUser: any = null;
 
       if (selectedUserId) {
         targetUser = availableUsers.find(u => u.id === selectedUserId);
       } else if (targetEmail) {
-        const targetRole = profile.tipo_usuario === 'paciente' ? 'fisioterapeuta' : 'paciente';
+        const targetRoles = isPatient ? ['fisioterapeuta', 'physiotherapist'] : ['paciente', 'patient'];
+        
         const { data: targetUsers, error: targetError } = await supabase
           .from('perfis')
           .select('id, nome_completo, email, tipo_usuario')
           .eq('email', targetEmail.trim().toLowerCase())
-          .eq('tipo_usuario', targetRole);
+          .in('tipo_usuario', targetRoles);
 
         if (targetError || !targetUsers || targetUsers.length === 0) {
-          import('sonner').then(({ toast }) => toast.error(profile.tipo_usuario === 'paciente' ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
+          import('sonner').then(({ toast }) => toast.error(isPatient ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
           setSubmitting(false);
           return;
         }
@@ -177,11 +181,13 @@ export default function Appointments() {
       const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
 
       console.log("Iniciando inserção de agendamento no Supabase...");
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta' || profile.tipo_usuario === 'physiotherapist';
+
       const { data: newApp, error: insertError } = await supabase
         .from('agendamentos')
         .insert({
-          paciente_id: profile.tipo_usuario === 'paciente' ? user?.id : targetUser.id,
-          fisio_id: profile.tipo_usuario === 'fisioterapeuta' ? user?.id : targetUser.id,
+          paciente_id: isPatient ? user?.id : targetUser.id,
+          fisio_id: isPhysio ? user?.id : targetUser.id,
           data_servico: appointmentDate,
           status: 'pendente',
           observacoes: notes,
@@ -222,7 +228,7 @@ export default function Appointments() {
       const confirmLink = `${window.location.origin}/appointments?id=${newApp.id}`;
       const recipientEmail = targetUser.email;
       
-      if (profile.tipo_usuario === 'paciente') {
+      if (isPatient) {
         // Patient scheduling -> Notify Physio
         await sendEmail(
           recipientEmail,
@@ -288,7 +294,7 @@ export default function Appointments() {
       if (error) throw error;
       
       // Create notification for the other party
-      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta' || profile.tipo_usuario === 'physiotherapist';
       const targetId = isPhysio ? app.paciente_id : app.fisio_id;
       const statusText = status === 'confirmado' ? 'confirmado' : 'cancelado';
       
@@ -346,7 +352,7 @@ export default function Appointments() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
 
   return (
     <div className="space-y-8">
