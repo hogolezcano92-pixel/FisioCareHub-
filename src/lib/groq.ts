@@ -1,13 +1,18 @@
 import Groq from "groq-sdk";
 
+const apiKey = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GROQ_API_KEY : undefined);
+
 const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true // Since we are in the frontend
+  apiKey: apiKey || "MISSING_API_KEY",
+  dangerouslyAllowBrowser: true
 });
 
 const MODEL = "llama-3.3-70b-versatile"; // A good default for Groq
 
 export async function analyzeSymptoms(symptoms: string) {
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.");
+  }
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -31,6 +36,9 @@ export async function analyzeSymptoms(symptoms: string) {
 }
 
 export async function generateMedicalRecord(type: string, notes: string) {
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
+  }
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -54,6 +62,9 @@ export async function generateMedicalRecord(type: string, notes: string) {
 }
 
 export async function generateDocument(type: string, patientName: string, additionalInfo: string) {
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
+  }
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -77,6 +88,9 @@ export async function generateDocument(type: string, patientName: string, additi
 }
 
 export async function generateSOAPRecord(rawText: string) {
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
+  }
   try {
     const completion = await groq.chat.completions.create({
       messages: [

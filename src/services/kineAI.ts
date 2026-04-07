@@ -1,12 +1,17 @@
 import Groq from "groq-sdk";
 
+const apiKey = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GROQ_API_KEY : undefined);
+
 const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
+  apiKey: apiKey || "MISSING_API_KEY",
   dangerouslyAllowBrowser: true
 });
 
 export const kineAIService = {
   async chat(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
+    if (!apiKey || apiKey === "MISSING_API_KEY") {
+      return "Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.";
+    }
     try {
       const model = "llama-3.3-70b-versatile";
       
