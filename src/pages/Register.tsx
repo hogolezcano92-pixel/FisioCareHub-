@@ -98,8 +98,8 @@ export default function Register() {
           data: {
             full_name: cleanName,
             tipo_usuario: finalType,
-            crefito: role === 'fisioterapeuta' ? crefito : null,
-            especialidade: role === 'fisioterapeuta' ? specialty : null
+            crefito: finalType === 'fisioterapeuta' ? crefito : null,
+            especialidade: finalType === 'fisioterapeuta' ? specialty : null
           }
         }
       });
@@ -134,20 +134,20 @@ export default function Register() {
           id: authData.user.id,
           email: cleanEmail,
           nome_completo: cleanName,
-          tipo_usuario: role,
+          tipo_usuario: finalType,
           telefone: '',
           bio: '',
-          genero: role === 'fisioterapeuta' ? (gender || null) : null,
-          especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
-          crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
+          genero: finalType === 'fisioterapeuta' ? (gender || null) : null,
+          especialidade: finalType === 'fisioterapeuta' ? (specialty || null) : null,
+          crefito: finalType === 'fisioterapeuta' ? (crefito || null) : null,
           localizacao: city || null,
           endereco: address || null,
           cep: zipCode || null,
           pais: country || null,
-          tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
+          tipo_servico: finalType === 'fisioterapeuta' ? (serviceType || null) : null,
           is_pro: isPro,
-          aprovado: role === 'paciente',
-          status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+          aprovado: finalType === 'paciente',
+          status_aprovacao: finalType === 'paciente' ? 'aprovado' : 'pendente',
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           documentos: uploadedDocUrls,
           created_at: new Date().toISOString()
