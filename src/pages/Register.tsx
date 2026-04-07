@@ -127,7 +127,6 @@ export default function Register() {
         const profileData = {
           id: authData.user.id,
           email: cleanEmail,
-          nome: cleanName,
           nome_completo: cleanName,
           tipo: role,
           tipo_usuario: role,
