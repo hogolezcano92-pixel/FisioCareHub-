@@ -22,7 +22,7 @@ import {
   Printer,
   Lock
 } from 'lucide-react';
-import { generateDocument } from '../lib/gemini';
+import { generateDocument } from '../lib/groq';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';

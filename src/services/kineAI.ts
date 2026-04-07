@@ -1,11 +1,14 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import Groq from "groq-sdk";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const groq = new Groq({
+  apiKey: import.meta.env.VITE_GROQ_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 export const kineAIService = {
-  async chat(message: string, history: { role: 'user' | 'model', parts: { text: string }[] }[] = []) {
+  async chat(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
     try {
-      const model = "gemini-3-flash-preview";
+      const model = "llama-3.3-70b-versatile";
       
       const systemInstruction = `
         Você é a KineAI, a super assistente inteligente do FisioCareHub.
@@ -29,23 +32,22 @@ export const kineAIService = {
         - /ajuda: Listar o que posso fazer.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await groq.chat.completions.create({
         model,
-        contents: [
-          ...history,
-          { role: 'user', parts: [{ text: message }] }
+        messages: [
+          { role: 'system', content: systemInstruction },
+          ...history.map(h => ({ role: h.role, content: h.content })),
+          { role: 'user', content: message }
         ],
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 40,
-        }
+        temperature: 0.7,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: false,
       });
 
-      return response.text || "Desculpe, tive um problema para processar sua mensagem. Como posso ajudar de outra forma?";
+      return response.choices[0]?.message?.content || "Desculpe, tive um problema para processar sua mensagem. Como posso ajudar de outra forma?";
     } catch (error) {
-      console.error("Erro na KineAI:", error);
+      console.error("Erro na KineAI (Groq):", error);
       return "Ops! Estou passando por uma manutenção rápida. Tente novamente em instantes! 🛠️";
     }
   }

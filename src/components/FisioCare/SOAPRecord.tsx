@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { generateSOAPRecord } from '../../lib/gemini';
+import { generateSOAPRecord } from '../../lib/groq';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 

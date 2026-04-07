@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { analyzeSymptoms } from '../lib/gemini';
+import { analyzeSymptoms } from '../lib/groq';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   BrainCircuit, 

@@ -18,7 +18,7 @@ import {
   Crown
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
-import { generateMedicalRecord } from '../lib/gemini';
+import { generateMedicalRecord } from '../lib/groq';
 import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';

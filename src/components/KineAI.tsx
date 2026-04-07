@@ -91,8 +91,8 @@ export default function KineAI() {
 
     try {
       const history = messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
+        role: m.role === 'model' ? 'assistant' as const : 'user' as const,
+        content: m.text
       }));
 
       const aiResponse = await kineAIService.chat(text, history);
