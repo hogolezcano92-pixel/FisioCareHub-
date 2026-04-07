@@ -40,7 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Check if there's a pending role from Register page (for OAuth)
         const pendingRole = localStorage.getItem('pending_role');
-        const finalRole = userMetadata?.tipo || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
+        let finalRole: 'paciente' | 'fisioterapeuta' = 'paciente'; // padrão paciente
+
+      if (userMetadata?.tipo_usuario === 'fisioterapeuta') finalRole = 'fisioterapeuta';
+      else if (userMetadata?.tipo_usuario === 'paciente') finalRole = 'paciente';
+      else if (pendingRole === 'fisioterapeuta' || pendingRole === 'paciente') finalRole = pendingRole;
         
         // Clear the pending role after use
         if (pendingRole) localStorage.removeItem('pending_role');
