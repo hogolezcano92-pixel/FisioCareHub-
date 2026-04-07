@@ -70,8 +70,7 @@ export default function Dashboard() {
     if (!data) return;
     setStatsLoading(true);
     try {
-      const isPatient = data.tipo === 'paciente' || data.tipo_usuario === 'paciente' || 
-                        data.tipo === 'patient' || data.tipo_usuario === 'patient';
+      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const otherRoleField = isPatient ? 'fisio_id' : 'paciente_id';
       
@@ -101,8 +100,7 @@ export default function Dashboard() {
     if (!data) return;
     setApptsLoading(true);
     try {
-      const isPatient = data.tipo === 'paciente' || data.tipo_usuario === 'paciente' || 
-                        data.tipo === 'patient' || data.tipo_usuario === 'patient';
+      const isPatient = data.tipo_usuario === 'paciente' || data.tipo_usuario === 'patient';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const { data: appts, error } = await supabase
         .from('agendamentos')
@@ -136,8 +134,8 @@ export default function Dashboard() {
         const { data, error } = await supabase
           .from('perfis')
           .select('*')
-          .or(`tipo.in.(paciente,patient),tipo_usuario.in.(paciente,patient)`)
-          .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%,nome.ilike.%${patientSearch}%`)
+          .or(`tipo_usuario.in.(paciente,patient)`)
+          .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%`)
           .limit(5);
         
         if (error) throw error;
@@ -163,8 +161,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const isPhysio = profile?.tipo === 'fisioterapeuta' || profile?.tipo_usuario === 'fisioterapeuta' || 
-                   profile?.tipo === 'physiotherapist' || profile?.tipo_usuario === 'physiotherapist';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' || profile?.tipo_usuario === 'physiotherapist';
   const isPro = profile?.is_pro;
 
   return (
@@ -204,11 +201,11 @@ export default function Dashboard() {
           <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo || profile?.nome}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}! 👋
               </>
             ) : (
               <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Paciente {profile?.nome_completo || profile?.nome}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Paciente {profile?.nome_completo}! 👋
               </>
             )}
           </h1>

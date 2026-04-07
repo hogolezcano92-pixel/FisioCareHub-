@@ -194,8 +194,8 @@ export default function Admin() {
         setSupabaseProfiles(profiles);
         
         // Update Stats from Supabase Profiles
-        const physios = profiles.filter((u: any) => (u.tipo === 'fisioterapeuta' || u.tipo_usuario === 'fisioterapeuta') || (u.tipo === 'physiotherapist' || u.tipo_usuario === 'physiotherapist'));
-        const patients = profiles.filter((u: any) => (u.tipo === 'paciente' || u.tipo_usuario === 'paciente') || (u.tipo === 'patient' || u.tipo_usuario === 'patient'));
+        const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta' || u.tipo_usuario === 'physiotherapist');
+        const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente' || u.tipo_usuario === 'patient');
         
         setStats(prev => ({
           ...prev,
@@ -462,6 +462,57 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir permanentemente este perfil? Esta ação não pode ser desfeita.")) return;
+    
+    try {
+      const { error } = await supabase
+        .from('perfis')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
+      import('sonner').then(({ toast }) => toast.success("Perfil excluído com sucesso!"));
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao excluir perfil."));
+    }
+  };
+
+  const handleCleanupOrphans = async () => {
+    if (!window.confirm("Deseja remover perfis incompletos (sem nome ou email)? Isso ajuda a limpar registros de testes ou falhas no cadastro.")) return;
+    
+    try {
+      const { data: orphans, error: fetchError } = await supabase
+        .from('perfis')
+        .select('id')
+        .or('nome_completo.is.null,email.is.null,nome.is.null');
+      
+      if (fetchError) throw fetchError;
+      
+      if (!orphans || orphans.length === 0) {
+        import('sonner').then(({ toast }) => toast.info("Nenhum registro órfão encontrado."));
+        return;
+      }
+
+      const idsToDelete = orphans.map(o => o.id);
+      const { error: deleteError } = await supabase
+        .from('perfis')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (deleteError) throw deleteError;
+
+      setSupabaseProfiles(prev => prev.filter(p => !idsToDelete.includes(p.id)));
+      import('sonner').then(({ toast }) => toast.success(`${idsToDelete.length} registros órfãos removidos!`));
+    } catch (err) {
+      console.error("Error cleaning orphans:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao limpar registros."));
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChatUser) return;
 
@@ -551,12 +602,12 @@ export default function Admin() {
                     {selectedUserDetail.avatar_url ? (
                       <img src={selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      (selectedUserDetail.nome_completo || selectedUserDetail.nome)?.charAt(0)
+                      selectedUserDetail.nome_completo?.charAt(0)
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo || selectedUserDetail.nome}</h3>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo || selectedUserDetail.tipo_usuario}</p>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo}</h3>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
@@ -979,10 +1030,17 @@ export default function Admin() {
                             </button>
                             <button 
                               onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
-                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg"
                               title="Bloquear/Desbloquear"
                             >
                               <Lock size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Excluir Perfil"
+                            >
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>
@@ -1071,15 +1129,31 @@ export default function Admin() {
                             >
                               <Eye size={18} />
                             </button>
-                            {u.status_aprovacao === 'pendente' && (
-                              <button 
-                                onClick={() => handleApprovePhysio(u.id, u.id)}
-                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"
-                                title="Aprovar"
-                              >
-                                <CheckCircle2 size={18} />
-                              </button>
+                            {(u.status_aprovacao === 'pendente' || !u.status_aprovacao) && (
+                              <>
+                                <button 
+                                  onClick={() => handleApprovePhysio(u.id, u.id)}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                                  title="Aprovar"
+                                >
+                                  <CheckCircle2 size={18} />
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectPhysio(u.id, u.id)}
+                                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                  title="Rejeitar"
+                                >
+                                  <XCircle size={18} />
+                                </button>
+                              </>
                             )}
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Excluir"
+                            >
+                              <Trash2 size={18} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1155,10 +1229,17 @@ export default function Admin() {
                             </button>
                             <button 
                               onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
-                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg"
                               title="Bloquear"
                             >
                               <Lock size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Excluir"
+                            >
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
@@ -1174,7 +1255,10 @@ export default function Admin() {
             <div className="space-y-6">
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Aprovações Pendentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {supabaseProfiles.filter(p => p.status_aprovacao === 'pendente').length === 0 ? (
+                {supabaseProfiles.filter(p => 
+                  (p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist') && 
+                  (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
+                ).length === 0 ? (
                   <div className="col-span-full bg-white p-12 rounded-[2rem] border border-slate-100 text-center space-y-4">
                     <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                       <CheckCircle2 size={32} />
@@ -1183,7 +1267,10 @@ export default function Admin() {
                     <p className="text-sm text-slate-500">Não há fisioterapeutas aguardando aprovação no momento.</p>
                   </div>
                 ) : (
-                  supabaseProfiles.filter(p => p.status_aprovacao === 'pendente').map((profile) => (
+                  supabaseProfiles.filter(p => 
+                    (p.tipo_usuario === 'fisioterapeuta' || p.tipo_usuario === 'physiotherapist') && 
+                    (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
+                  ).map((profile) => (
                     <motion.div 
                       key={profile.id}
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -1199,7 +1286,7 @@ export default function Admin() {
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{profile.nome_completo || profile.nome}</p>
+                          <p className="font-bold text-slate-900">{profile.nome_completo}</p>
                           <p className="text-xs text-slate-500">{profile.email} • CREFITO: {profile.crefito || 'N/A'}</p>
                         </div>
                       </div>
@@ -1382,10 +1469,10 @@ export default function Admin() {
                         <ArrowLeft size={20} />
                       </button>
                       <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm flex-shrink-0">
-                        {(selectedChatUser.nome_completo || selectedChatUser.nome || selectedChatUser.name)?.charAt(0).toUpperCase()}
+                        {(selectedChatUser.nome_completo || selectedChatUser.name)?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.nome_completo || selectedChatUser.nome || selectedChatUser.name}</p>
+                        <p className="font-black text-slate-900 truncate text-sm md:text-lg pr-2">{selectedChatUser.nome_completo || selectedChatUser.name}</p>
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest">Online</p>
@@ -1520,7 +1607,13 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100">
+                <div className="pt-6 border-t border-slate-100 space-y-4">
+                  <button 
+                    onClick={handleCleanupOrphans}
+                    className="w-full py-3 bg-amber-50 text-amber-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-amber-100 transition-colors"
+                  >
+                    Limpar Registros Órfãos / Incompletos
+                  </button>
                   <button 
                     onClick={() => import('sonner').then(({ toast }) => toast.info("Cache do sistema limpo!"))}
                     className="w-full py-3 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-100 transition-colors"

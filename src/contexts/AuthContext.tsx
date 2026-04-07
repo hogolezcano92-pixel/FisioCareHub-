@@ -51,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: userId,
             nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
             email: userMetadata?.email || '',
-            foto_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             tipo_usuario: finalRole,
             crefito: userMetadata?.crefito || null,

@@ -142,7 +142,6 @@ export default function Register() {
           is_pro: isPro,
           aprovado: role === 'paciente',
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-          foto_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           documentos: uploadedDocUrls,
           created_at: new Date().toISOString()
@@ -150,7 +149,7 @@ export default function Register() {
 
         const { error: profileError } = await supabase
           .from('perfis')
-          .upsert(profileData, { onConflict: 'id' });
+          .insert(profileData);
 
         if (profileError) {
           console.error("Erro detalhado na criação do perfil:", profileError);
@@ -187,33 +186,17 @@ export default function Register() {
           <p className="text-base text-slate-500 mt-2">Escolha seu perfil e comece agora.</p>
         </div>
 
-        <div className="flex gap-4 mb-8">
-          <button
-            type="button"
-            onClick={() => handleRoleChange('paciente')}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
-              role === 'paciente' 
-                ? "border-blue-600 bg-blue-50 text-blue-600" 
-                : "border-slate-100 text-slate-500 hover:border-slate-200"
-            )}
+        <div className="mb-8">
+          <label className="block text-base font-semibold text-slate-700 mb-2">Tipo de Usuário</label>
+          <select
+            name="tipo_usuario"
+            value={role}
+            onChange={(e) => handleRoleChange(e.target.value as 'paciente' | 'fisioterapeuta')}
+            className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base transition-all"
           >
-            <User size={24} />
-            <span className="font-bold text-sm">Paciente</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRoleChange('fisioterapeuta')}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all",
-              role === 'fisioterapeuta' 
-                ? "border-blue-600 bg-blue-50 text-blue-600" 
-                : "border-slate-100 text-slate-500 hover:border-slate-200"
-            )}
-          >
-            <Stethoscope size={24} />
-            <span className="font-bold text-sm">Fisioterapeuta</span>
-          </button>
+            <option value="paciente">Paciente</option>
+            <option value="fisioterapeuta">Fisioterapeuta</option>
+          </select>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-6">
