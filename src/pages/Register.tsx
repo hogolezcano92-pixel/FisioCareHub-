@@ -149,7 +149,7 @@ export default function Register() {
 
         const { error: profileError } = await supabase
           .from('perfis')
-          .insert(profileData);
+          .upsert(profileData);
 
         if (profileError) {
           console.error("Erro detalhado na criação do perfil:", profileError);

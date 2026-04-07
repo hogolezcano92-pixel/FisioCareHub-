@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: newProfile, error: createError } = await supabase
           .from('perfis')
-          .insert({
+          .upsert({
             id: userId,
             nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
             email: userMetadata?.email || '',
