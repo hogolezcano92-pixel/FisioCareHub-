@@ -7,49 +7,81 @@ export default function SplashScreen() {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#e0f2f1] to-white overflow-hidden"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0F172A] overflow-hidden"
     >
-      {/* Glassmorphism Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#26a69a]/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00796b]/10 rounded-full blur-[100px]" />
+      {/* Background Glows */}
+      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-sky-500/10 rounded-full blur-[120px]" />
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
-        className="brand-wrapper text-center relative z-10 p-12 rounded-[3rem] bg-white/40 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.05)]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+        className="text-center relative z-10"
       >
-        <div className="logo-box w-[120px] h-[120px] bg-white rounded-[30px] flex justify-center items-center mx-auto mb-5 shadow-[0_20px_40px_rgba(0,0,0,0.05)]">
-          <svg viewBox="0 0 24 24" className="w-[70px] fill-[#00796b]">
-            <path d="M13.5,5.5L12,4C10.9,2.9 9.1,2.9 8,4L4.5,7.5L5.9,8.9L9.4,5.4L10.5,6.5L6.5,10.5L7.9,11.9L11.9,7.9L13,9H17V11H19V7H15L13.5,5.5M12,12C10.9,12 10,12.9 10,14C10,15.1 10.9,16 12,16C13.1,16 14,15.1 14,14C14,12.9 13.1,12 12,12M17.6,15.3L15.4,13.1L14,14.5L16.2,16.7L14.8,18.1L12.6,15.9L11.2,17.3L13.4,19.5L12,20.9L8.5,17.4L7.1,18.8L12,23.7L19,16.7L17.6,15.3Z" />
-          </svg>
+        {/* Stylized Spinal Column Icon */}
+        <div className="relative mb-8 flex justify-center">
+          <motion.div
+            animate={{ 
+              scale: [1, 1.05, 1],
+              filter: ["drop-shadow(0 0 10px rgba(37,99,235,0.3))", "drop-shadow(0 0 25px rgba(37,99,235,0.6))", "drop-shadow(0 0 10px rgba(37,99,235,0.3))"]
+            }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="w-24 h-32 flex flex-col items-center justify-between"
+          >
+            {[...Array(7)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 + 0.5 }}
+                className="h-3 bg-gradient-to-r from-blue-500 to-sky-400 rounded-full shadow-lg shadow-blue-500/20"
+                style={{ 
+                  width: `${30 + (Math.sin(i * 0.5) * 15) + 20}px`,
+                  opacity: 1 - (i * 0.05)
+                }}
+              />
+            ))}
+            {/* Central Line */}
+            <div className="absolute inset-y-0 w-[2px] bg-white/10 left-1/2 -translate-x-1/2 -z-10" />
+          </motion.div>
         </div>
         
-        <h1 className="app-name font-sans text-[2.5rem] font-bold color-[#1a3a3a] mb-2 leading-tight">
-          FisioCare<span className="text-[#00796b]">Hub</span>
-        </h1>
-        
-        <p className="tagline font-sans text-base text-[#557a7a] mb-8 font-medium">
-          Cuidado e Movimento para sua Vida
-        </p>
+        <div className="space-y-2">
+          <h1 className="font-sans text-5xl font-black tracking-tighter text-white">
+            FisioCare<span className="text-blue-500">Hub</span>
+          </h1>
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="font-sans text-sm text-slate-400 font-bold uppercase tracking-[0.3em]"
+          >
+            Tecnologia e Movimento
+          </motion.p>
+        </div>
 
-        <div className="loader flex gap-2 justify-center">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="dot w-[10px] h-[10px] bg-[#26a69a] rounded-full"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.3, 1, 0.3]
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.2
-              }}
+        {/* Loading Indicator */}
+        <div className="mt-12 flex flex-col items-center gap-4">
+          <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 4.5, ease: "easeInOut" }}
+              className="h-full bg-gradient-to-r from-blue-600 to-sky-400"
             />
-          ))}
+          </div>
+          <div className="flex gap-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-1.5 h-1.5 bg-blue-500 rounded-full"
+                animate={{ opacity: [0.2, 1, 0.2] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
         </div>
       </motion.div>
     </motion.div>
