@@ -93,8 +93,8 @@ export default function NotificationBell() {
     }
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
+  const getIcon = (tipo: string) => {
+    switch (tipo) {
       case 'message': return <MessageSquare size={16} className="text-blue-500" />;
       case 'appointment': return <Calendar size={16} className="text-emerald-500" />;
       default: return <Info size={16} className="text-slate-400" />;
@@ -150,12 +150,19 @@ export default function NotificationBell() {
                   {notifications.map((n) => (
                     <div 
                       key={n.id}
+                      onClick={() => {
+                        if (n.link) {
+                          markAsRead(n.id);
+                          setIsOpen(false);
+                          window.location.href = n.link;
+                        }
+                      }}
                       className={cn(
-                        "p-4 flex gap-3 transition-colors relative group",
+                        "p-4 flex gap-3 transition-colors relative group cursor-pointer",
                         !n.lida ? "bg-blue-50/30" : "hover:bg-slate-50"
                       )}
                     >
-                      <div className="mt-1">{getIcon(n.type)}</div>
+                      <div className="mt-1">{getIcon(n.tipo)}</div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-2">
                           <p className={cn("text-xs font-bold truncate", !n.lida ? "text-slate-900" : "text-slate-600")}>
@@ -169,21 +176,19 @@ export default function NotificationBell() {
                           {n.mensagem}
                         </p>
                         {n.link && (
-                          <Link 
-                            to={n.link}
-                            onClick={() => {
-                              markAsRead(n.id);
-                              setIsOpen(false);
-                            }}
+                          <span 
                             className="inline-block text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest pt-1"
                           >
                             Ver detalhes
-                          </Link>
+                          </span>
                         )}
                       </div>
                       {!n.lida && (
                         <button 
-                          onClick={() => markAsRead(n.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(n.id);
+                          }}
                           className="absolute right-2 bottom-2 p-1 text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Marcar como lida"
                         >

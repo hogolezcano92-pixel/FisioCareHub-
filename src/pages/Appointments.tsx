@@ -166,10 +166,19 @@ export default function Appointments() {
   const sendEmail = async (to: string, subject: string, body: string) => {
     try {
       const { invokeFunction } = await import('../lib/supabase');
-      await invokeFunction('send-email', { to, subject, body });
-      console.log("E-mail enviado com sucesso via Edge Function.");
+      const result = await invokeFunction('send-email', { to, subject, body });
+      console.log("Resultado do envio de e-mail:", result);
+      if (result && result.error) {
+        console.warn("A Edge Function retornou um erro (mas a invocação funcionou):", result.error);
+      } else {
+        console.log("E-mail enviado com sucesso via Edge Function.");
+      }
     } catch (err) {
-      console.error("Erro ao enviar e-mail via Edge Function:", err);
+      console.error("Erro CRÍTICO ao enviar e-mail via Edge Function:", err);
+      // Log more details if available
+      if (typeof err === 'object' && err !== null) {
+        console.error("Detalhes do erro:", JSON.stringify(err, null, 2));
+      }
     }
   };
 
@@ -248,7 +257,7 @@ export default function Appointments() {
           user_id: targetUser.id,
           titulo: 'Nova Solicitação de Agendamento',
           mensagem: `${profile.nome_completo} solicitou uma consulta para o dia ${new Date(appointmentDate).toLocaleDateString('pt-BR')}.`,
-          type: 'appointment',
+          tipo: 'appointment',
           lida: false,
           link: '/appointments'
         });
@@ -334,7 +343,7 @@ export default function Appointments() {
           user_id: targetId,
           titulo: `Agendamento ${statusText}`,
           mensagem: `Seu agendamento para o dia ${new Date(app.data_servico).toLocaleDateString('pt-BR')} foi ${statusText}.`,
-          type: 'appointment',
+          tipo: 'appointment',
           lida: false,
           link: '/appointments'
         });

@@ -326,6 +326,18 @@ export default function Chat() {
           });
 
         if (error) throw error;
+
+        // Create notification for recipient
+        await supabase
+          .from('notificacoes')
+          .insert({
+            user_id: targetUser.id,
+            titulo: 'Nova Mensagem',
+            mensagem: `${userData?.nome_completo || 'Alguém'} enviou uma mensagem para você.`,
+            tipo: 'message',
+            lida: false,
+            link: '/chat'
+          });
       }
     } catch (err) {
       console.error("Erro ao enviar mensagem:", err);
