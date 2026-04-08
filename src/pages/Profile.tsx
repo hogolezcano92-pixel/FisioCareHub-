@@ -20,8 +20,9 @@ import {
   Zap,
   ExternalLink,
   LogOut,
+  Crown,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { cn, resolveStorageUrl } from '../lib/utils';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
@@ -361,42 +362,70 @@ export default function Profile() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1">
+        <main className="flex-1 space-y-8">
           {loading ? renderLoadingSkeleton() : (
-            <AnimatePresence mode="wait">
-              {activeTab === 'profile' && (
-              <motion.div
-                key="profile"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
-              >
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <div className="flex flex-col md:flex-row gap-8 items-start">
-                    <AvatarUpload 
-                      userId={user?.id || ''}
-                      currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                      onUploadComplete={(newUrl) => {
-                        setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
-                        if (refreshProfile) refreshProfile();
-                      }}
-                    />
-                      <div className="flex-1 space-y-2">
-                        <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                            {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
-                          </span>
-                          <span className="text-slate-400 text-sm">•</span>
-                          <span className="text-slate-500 text-sm flex items-center gap-1">
-                            <Mail size={14} /> {userData?.email}
-                          </span>
-                        </div>
-                      </div>
+            <>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                  <AvatarUpload 
+                    userId={user?.id || ''}
+                    currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                    onUploadComplete={(newUrl) => {
+                      setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
+                      if (refreshProfile) refreshProfile();
+                    }}
+                  />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
+                      {isPhysio && (
+                        <Link 
+                          to="/subscription"
+                          className={cn(
+                            "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                            userData?.is_pro 
+                              ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                              : "bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700"
+                          )}
+                        >
+                          {userData?.is_pro ? (
+                            <>
+                              <Crown size={14} />
+                              Plano Pro Ativo
+                            </>
+                          ) : (
+                            <>
+                              <Zap size={14} />
+                              Upgrade para Pro
+                            </>
+                          )}
+                        </Link>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                        {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
+                      </span>
+                      <span className="text-slate-400 text-sm">•</span>
+                      <span className="text-slate-500 text-sm flex items-center gap-1">
+                        <Mail size={14} /> {userData?.email}
+                      </span>
+                    </div>
                   </div>
+                </div>
+              </div>
 
-                  <form onSubmit={handleUpdateProfile} className="mt-10 space-y-6">
+              <AnimatePresence mode="wait">
+                {activeTab === 'profile' && (
+                <motion.div
+                  key="profile"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
+                >
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <form onSubmit={handleUpdateProfile} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Nome de Exibição</label>
@@ -785,8 +814,9 @@ export default function Profile() {
               </motion.div>
             )}
           </AnimatePresence>
-        )}
-        </main>
+        </>
+      )}
+      </main>
       </div>
 
       {/* Delete Confirmation Modal */}

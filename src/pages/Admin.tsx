@@ -51,7 +51,8 @@ import {
   Sparkles,
   Smartphone,
   Stethoscope,
-  User
+  User,
+  Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
@@ -969,12 +970,19 @@ export default function Admin() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={cn(
-                              "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
-                              u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
-                            )}>
-                              {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className={cn(
+                                "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
+                                u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
+                              </span>
+                              {u.is_pro && (
+                                <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
+                                  <Crown size={8} /> PRO
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className={cn(
@@ -1056,12 +1064,19 @@ export default function Admin() {
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500">{u.email}</td>
                         <td className="px-6 py-4">
-                          <span className={cn(
-                            "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
-                            u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
-                          )}>
-                            {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
+                              u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                            )}>
+                              {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
+                            </span>
+                            {u.is_pro && (
+                              <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
+                                <Crown size={8} /> PRO
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-xs font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-lg">

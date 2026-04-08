@@ -11,6 +11,7 @@ import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef, lazy, Sus
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { 
   Activity, 
+  Crown,
   User, 
   FileText, 
   BrainCircuit, 
@@ -183,6 +184,7 @@ function Navbar() {
         { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+        { name: 'Assinatura', path: '/subscription', icon: Crown },
       ] : []),
 
       // Items for Patients
@@ -237,7 +239,15 @@ function Navbar() {
                       {profile?.plano === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
                       {(profile?.nome_completo || '').split(' ')[0]}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
+                    <div className="flex items-center justify-end gap-1">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
+                      {profile?.is_pro && (
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
+                          <Crown size={8} />
+                          PRO
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <img 
                     src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 

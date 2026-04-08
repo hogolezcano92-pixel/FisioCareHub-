@@ -278,9 +278,17 @@ export default function Dashboard() {
           </div>
           <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
-              <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">{profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}</span>! 👋
-              </>
+              <div className="flex flex-wrap items-center gap-3">
+                <span>
+                  Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">{profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}</span>! 👋
+                </span>
+                {isPro && (
+                  <span className="px-3 py-1 bg-amber-100 text-amber-600 text-xs font-black rounded-xl uppercase tracking-widest flex items-center gap-1.5 border border-amber-200">
+                    <Crown size={14} />
+                    PRO
+                  </span>
+                )}
+              </div>
             ) : (
               <>
                 Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">Paciente {profile?.nome_completo}</span>! 👋
