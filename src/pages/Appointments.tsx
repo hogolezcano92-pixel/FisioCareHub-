@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +20,7 @@ import ProGuard from '../components/ProGuard';
 
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -37,6 +39,10 @@ export default function Appointments() {
   useEffect(() => {
     if (!authLoading) {
       if (profile) {
+        if (profile.plano !== 'free') {
+          navigate('/dashboard');
+          return;
+        }
         fetchAppointments(profile);
         setupRealtime(profile);
         fetchAvailableUsers(profile);

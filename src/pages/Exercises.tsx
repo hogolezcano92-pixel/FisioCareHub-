@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,7 +20,8 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Exercises() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [exercises, setExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -37,8 +39,12 @@ export default function Exercises() {
   });
 
   useEffect(() => {
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      navigate('/dashboard');
+      return;
+    }
     fetchExercises();
-  }, []);
+  }, [profile]);
 
   const fetchExercises = async () => {
     try {

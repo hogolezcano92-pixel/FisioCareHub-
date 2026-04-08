@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -22,6 +23,7 @@ import { toast } from 'sonner';
 
 export default function Agenda() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +42,15 @@ export default function Agenda() {
   });
 
   useEffect(() => {
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      navigate('/dashboard');
+      return;
+    }
     if (user) {
       fetchAppointments();
       fetchPatients();
     }
-  }, [user, selectedDate]);
+  }, [user, selectedDate, profile]);
 
   const fetchPatients = async () => {
     const { data } = await supabase

@@ -44,6 +44,7 @@ import { useTranslation } from 'react-i18next';
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import KineAI from './components/KineAI';
+import SplashScreen from './components/SplashScreen';
 
 // Lazy Pages
 const Home = lazy(() => import('./pages/Home'));
@@ -172,14 +173,24 @@ function Navbar() {
     ...(user ? [
       ...(profile?.plano === 'admin' || 
           user.email === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
-      { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
-      { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
-      { name: t('nav.patients'), path: '/patients', icon: User },
-      { name: t('nav.exercises'), path: '/exercises', icon: Activity },
-      { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+      
+      // Items for Physiotherapists
+      ...(profile?.plano === 'fisioterapeuta' ? [
+        { name: t('nav.patients'), path: '/patients', icon: User },
+        { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
+        { name: t('nav.exercises'), path: '/exercises', icon: Activity },
+        { name: t('nav.records'), path: '/records', icon: FileText },
+        { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+      ] : []),
+
+      // Items for Patients
+      ...(profile?.plano === 'free' ? [
+        { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
+        { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
+      ] : []),
+
+      // Common Items
       { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
-      { name: t('nav.records'), path: '/records', icon: FileText },
-      ...(profile?.plano === 'free' ? [{ name: t('nav.triage'), path: '/triage', icon: BrainCircuit }] : []),
       { name: t('nav.profile'), path: '/profile', icon: User },
     ] : [
       { name: t('nav.login'), path: '/login', icon: User },
@@ -571,6 +582,8 @@ function AppContent() {
 
 export default function App() {
   const [configLoaded, setConfigLoaded] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [minTimePassed, setMinTimePassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -602,6 +615,19 @@ export default function App() {
     initialize();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinTimePassed(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (configLoaded && minTimePassed) {
+      setShowSplash(false);
+    }
+  }, [configLoaded, minTimePassed]);
+
   if (error) {
     return (
       <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4">
@@ -617,15 +643,23 @@ export default function App() {
     );
   }
 
-  if (!configLoaded) {
-    return <LoadingScreen />;
-  }
-
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </BrowserRouter>
+    <>
+      <AnimatePresence>
+        {showSplash && (
+          <SplashScreen />
+        )}
+      </AnimatePresence>
+
+      {configLoaded && (
+        <div className={cn(showSplash ? "hidden" : "block")}>
+          <BrowserRouter>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </BrowserRouter>
+        </div>
+      )}
+    </>
   );
 }

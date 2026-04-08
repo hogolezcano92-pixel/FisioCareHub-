@@ -57,6 +57,11 @@ export default function Documents() {
       return;
     }
 
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      window.location.href = '/dashboard';
+      return;
+    }
+
     const fetchDocumentsData = async () => {
       if (!profile) {
         setLoading(false);

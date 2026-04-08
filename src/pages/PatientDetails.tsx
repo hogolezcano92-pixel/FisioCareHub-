@@ -29,7 +29,7 @@ import { uploadDocument } from '../services/supabaseStorage';
 export default function PatientDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ficha');
@@ -69,10 +69,14 @@ export default function PatientDetails() {
   const [bibliotecaExercicios, setBibliotecaExercicios] = useState<any[]>([]);
 
   useEffect(() => {
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      navigate('/dashboard');
+      return;
+    }
     if (id && user) {
       fetchPatientData();
     }
-  }, [id, user]);
+  }, [id, user, profile]);
 
   const fetchPatientData = async () => {
     try {

@@ -24,7 +24,8 @@ import {
   Crown,
   Route,
   BookOpen,
-  Wallet
+  Wallet,
+  User
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -461,22 +462,48 @@ export default function Dashboard() {
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
-              </Link>
-              <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
-                <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
-              </Link>
-              <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
-              </Link>
-              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
-              </Link>
+              {isPhysio ? (
+                <>
+                  <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                    <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
+                  </Link>
+                  <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
+                    <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
+                  </Link>
+                  <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                    <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
+                  </Link>
+                  <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                    <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                    <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
+                  </Link>
+                  <button 
+                    onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
+                    className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
+                  >
+                    <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Teleconsulta</p>
+                  </button>
+                  <Link to="/triage" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                    <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
+                  </Link>
+                  <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                    <User className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

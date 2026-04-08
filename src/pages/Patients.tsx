@@ -40,10 +40,14 @@ export default function Patients() {
   });
 
   useEffect(() => {
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      window.location.href = '/dashboard';
+      return;
+    }
     if (user) {
       fetchPatients();
     }
-  }, [user]);
+  }, [user, profile]);
 
   const fetchPatients = async () => {
     try {

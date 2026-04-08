@@ -53,6 +53,11 @@ export default function Records() {
       return;
     }
 
+    if (profile && profile.plano !== 'fisioterapeuta') {
+      navigate('/dashboard');
+      return;
+    }
+
     const fetchRecords = async () => {
       if (!profile) {
         setLoading(false);
