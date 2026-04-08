@@ -598,18 +598,24 @@ export default function Profile() {
                         </div>
                       ) : (
                         userData.documentos.map((doc: string, i: number) => (
-                          <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
+                          <a 
+                            key={i} 
+                            href={doc.replace('/DOCUMENTS/', '/documents/')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-600 transition-all"
+                          >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
                                 <FileText size={20} />
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-slate-700 truncate max-w-[150px]">Documento_{i+1}</p>
-                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Validado</p>
+                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Ver Documento</p>
                               </div>
                             </div>
                             <CheckCircle size={20} className="text-emerald-600" />
-                          </div>
+                          </a>
                         ))
                       )}
                     </div>

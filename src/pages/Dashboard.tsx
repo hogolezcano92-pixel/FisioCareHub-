@@ -64,25 +64,38 @@ export default function Dashboard() {
     if (!data) return;
     setStatsLoading(true);
     try {
-      const isPatient = (data.plano || '').toLowerCase() === 'free';
-      const roleField = isPatient ? 'paciente_id' : 'fisio_id';
-      const otherRoleField = isPatient ? 'fisio_id' : 'paciente_id';
+      const isPhysio = (data.plano || '').toLowerCase() === 'fisioterapeuta';
       
-      const [apptsCount, recsCount, triagesCount, otherRoles] = await Promise.all([
-        supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq(roleField, data.id),
-        supabase.from('prontuarios').select('*', { count: 'exact', head: true }).eq(roleField, data.id),
-        supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
-        supabase.from('agendamentos').select(otherRoleField).eq(roleField, data.id)
-      ]);
+      if (isPhysio) {
+        const [apptsCount, patientsCount, recordsCount, triagesCount] = await Promise.all([
+          supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
+          supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
+          supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
+            supabase.from('atendimentos').select('id').eq('fisioterapeuta_id', data.id)
+          ),
+          supabase.from('triagens').select('*', { count: 'exact', head: true })
+        ]);
 
-      const uniqueOthers = new Set(otherRoles.data?.map((item: any) => item[otherRoleField])).size;
+        setStats({
+          appointments: apptsCount.count || 0,
+          patients: patientsCount.count || 0,
+          records: recordsCount.count || 0,
+          pendingTriages: triagesCount.count || 0
+        });
+      } else {
+        const [apptsCount, recsCount, triagesCount] = await Promise.all([
+          supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
+          supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
+          supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
+        ]);
 
-      setStats({
-        appointments: apptsCount.count || 0,
-        patients: uniqueOthers || 0,
-        records: recsCount.count || 0,
-        pendingTriages: triagesCount.count || 0
-      });
+        setStats({
+          appointments: apptsCount.count || 0,
+          patients: 1, // O próprio fisio
+          records: recsCount.count || 0,
+          pendingTriages: triagesCount.count || 0
+        });
+      }
     } catch (err) {
       console.error("Erro ao carregar estatísticas:", err);
     } finally {
@@ -222,11 +235,11 @@ export default function Dashboard() {
             <Bell size={20} />
           </button>
           <button 
-            onClick={() => navigate(isPhysio ? '/appointments' : '/triage')}
+            onClick={() => navigate(isPhysio ? '/agenda' : '/triage')}
             className="flex items-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
           >
             <Plus size={20} />
-            {isPhysio ? 'Nova Consulta' : 'Nova Triagem'}
+            {isPhysio ? 'Novo Atendimento' : 'Nova Triagem'}
           </button>
         </div>
       </header>
@@ -448,24 +461,21 @@ export default function Dashboard() {
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
+              <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
               </Link>
-              <button 
-                onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
-                className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
-              >
-                <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Teleconsulta</p>
-              </button>
-              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                <FileText className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Prontuários</p>
+              <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
+                <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
               </Link>
-              <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                <Activity className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
+              <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
+              </Link>
+              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
               </Link>
             </div>
           </div>

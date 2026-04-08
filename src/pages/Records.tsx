@@ -323,7 +323,7 @@ export default function Records() {
                   {record.conteudo.attachments.map((url: string, i: number) => (
                     <a
                       key={i}
-                      href={url}
+                      href={url.replace('/DOCUMENTS/', '/documents/')}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-bold transition-colors"

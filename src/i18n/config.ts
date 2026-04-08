@@ -7,7 +7,10 @@ const resources = {
     translation: {
       nav: {
         home: 'Início',
-        appointments: 'Agenda',
+        appointments: 'Agenda Antiga',
+        agenda: 'Agenda',
+        patients: 'Pacientes',
+        exercises: 'Exercícios',
         documents: 'Documentos',
         chat: 'Chat',
         records: 'Prontuários',
@@ -39,7 +42,10 @@ const resources = {
     translation: {
       nav: {
         home: 'Home',
-        appointments: 'Schedule',
+        appointments: 'Old Schedule',
+        agenda: 'Schedule',
+        patients: 'Patients',
+        exercises: 'Exercises',
         documents: 'Documents',
         chat: 'Chat',
         records: 'Medical Records',
@@ -71,7 +77,10 @@ const resources = {
     translation: {
       nav: {
         home: 'Inicio',
-        appointments: 'Agenda',
+        appointments: 'Agenda Antigua',
+        agenda: 'Agenda',
+        patients: 'Pacientes',
+        exercises: 'Ejercicios',
         documents: 'Documentos',
         chat: 'Chat',
         records: 'Historias Clínicas',

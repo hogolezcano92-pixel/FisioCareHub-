@@ -89,7 +89,7 @@ serve(async (req) => {
     }
 
     // 1.5 Delete from Storage
-    const buckets = ['avatars', 'DOCUMENTS']
+    const buckets = ['avatars', 'documents']
     for (const bucket of buckets) {
       try {
         console.log(`Attempting to delete from storage bucket ${bucket} for user ${userId}`)
@@ -106,7 +106,7 @@ serve(async (req) => {
             console.log(`Deleting ${filesToDelete.length} avatars for user ${userId}`)
             await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
           }
-        } else if (bucket === 'DOCUMENTS') {
+        } else if (bucket === 'documents') {
           // List all files in the user's folder
           const { data: files, error: listError } = await supabaseAdmin.storage
             .from(bucket)

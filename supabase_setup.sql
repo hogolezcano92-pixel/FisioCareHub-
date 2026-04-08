@@ -111,7 +111,7 @@ CREATE POLICY "Usuários enviam mensagens" ON public.mensagens FOR INSERT WITH C
 
 -- 4. Buckets de Storage
 -- Nota: Buckets devem ser criados via Dashboard ou API de Storage
--- Buckets sugeridos: 'avatars' (público), 'DOCUMENTS' (privado)
+-- Buckets sugeridos: 'avatars' (público), 'documents' (privado)
 
 -- 5. Funções Auxiliares (Opcional)
 -- Função para atualizar updated_at automaticamente

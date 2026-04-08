@@ -66,7 +66,7 @@ export const uploadDocument = async (
 ): Promise<string> => {
   const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
   const path = `${userId}/${fileName}`;
-  const bucket = 'DOCUMENTS';
+  const bucket = 'documents';
 
   const supabase = getSupabase();
   console.log(`Tentando upload de documento para o bucket "${bucket}"...`);
@@ -114,6 +114,6 @@ export const checkBuckets = async (): Promise<{ avatars: boolean; documents: boo
 
   return {
     avatars: buckets.some(b => b.name === 'avatars'),
-    documents: buckets.some(b => b.name === 'DOCUMENTS'),
+    documents: buckets.some(b => b.name === 'documents'),
   };
 };
