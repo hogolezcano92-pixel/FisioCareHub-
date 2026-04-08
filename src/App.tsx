@@ -564,6 +564,13 @@ export default function App() {
 
   useEffect(() => {
     const initialize = async () => {
+      const timeoutId = setTimeout(() => {
+        if (!configLoaded) {
+          console.warn("Initialization taking too long, forcing configLoaded to true");
+          setConfigLoaded(true);
+        }
+      }, 8000);
+
       try {
         // 1. Fetch config
         await fetchConfig();
@@ -572,8 +579,10 @@ export default function App() {
         initSupabase();
         
         // 3. Release interface
+        clearTimeout(timeoutId);
         setConfigLoaded(true);
       } catch (err: any) {
+        clearTimeout(timeoutId);
         console.error("Erro na inicialização:", err);
         setError(err.message || "Erro ao carregar configurações do sistema.");
       }

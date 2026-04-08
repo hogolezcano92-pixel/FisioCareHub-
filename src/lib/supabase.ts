@@ -37,8 +37,24 @@ export const getSupabase = (): SupabaseClient => {
       });
     } catch (err) {
       console.error("Erro fatal ao criar cliente Supabase:", err);
-      // Retorna um objeto dummy para evitar crashes imediatos
-      return {} as SupabaseClient;
+      // Retorna um objeto dummy funcional para evitar crashes em onAuthStateChange
+      const dummyClient = {
+        auth: {
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          getUser: async () => ({ data: { user: null }, error: null }),
+          getSession: async () => ({ data: { session: null }, error: null }),
+        },
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null })
+              })
+            })
+          })
+        })
+      } as unknown as SupabaseClient;
+      return dummyClient;
     }
   }
   return supabaseInstance;

@@ -97,33 +97,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log('Auth State Change:', event);
       
-      if (mounted) {
-        setSession(currentSession);
-        const currentUser = currentSession?.user ?? null;
-        setUser(currentUser);
-        
-        if (currentUser) {
-          // Only fetch if user changed or profile is missing
-          if (lastFetchedUserId.current !== currentUser.id) {
-            const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
-            if (mounted) {
-              setProfile(p);
+      try {
+        if (mounted) {
+          setSession(currentSession);
+          const currentUser = currentSession?.user ?? null;
+          setUser(currentUser);
+          
+          if (currentUser) {
+            // Only fetch if user changed or profile is missing
+            if (lastFetchedUserId.current !== currentUser.id) {
+              const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
+              if (mounted) {
+                setProfile(p);
+                setLoading(false);
+              }
+            } else {
               setLoading(false);
             }
           } else {
+            setProfile(null);
+            lastFetchedUserId.current = null;
             setLoading(false);
           }
-        } else {
-          setProfile(null);
-          lastFetchedUserId.current = null;
-          setLoading(false);
         }
+      } catch (err) {
+        console.error('Error in onAuthStateChange callback:', err);
+        if (mounted) setLoading(false);
       }
     });
+
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timed out, forcing loading to false');
+        setLoading(false);
+      }
+    }, 10000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
