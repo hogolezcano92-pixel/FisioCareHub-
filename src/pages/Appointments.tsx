@@ -45,13 +45,19 @@ export default function Appointments() {
       return;
     }
 
+    let cleanupRealtime: (() => void) | undefined;
+
     if (profile) {
       fetchAppointments(profile);
-      setupRealtime(profile);
+      cleanupRealtime = setupRealtime(profile);
       fetchAvailableUsers(profile);
     } else {
       setLoading(false);
     }
+
+    return () => {
+      if (cleanupRealtime) cleanupRealtime();
+    };
   }, [profile, authLoading, user]);
 
   const fetchAvailableUsers = async (currentProfile: any) => {
@@ -251,7 +257,7 @@ export default function Appointments() {
       console.log("Agendamento criado com sucesso:", newApp);
 
       // Create notification for target user
-      await supabase
+      const { error: notifError } = await supabase
         .from('notificacoes')
         .insert({
           user_id: targetUser.id,
@@ -261,6 +267,12 @@ export default function Appointments() {
           lida: false,
           link: '/appointments'
         });
+
+      if (notifError) {
+        console.error("Erro ao criar notificação no banco:", notifError);
+      } else {
+        console.log("Notificação criada com sucesso no banco para:", targetUser.id);
+      }
 
       // Send email notification
       const confirmLink = `${window.location.origin}/appointments?id=${newApp.id}`;

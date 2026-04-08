@@ -10,6 +10,7 @@ export default function NotificationBell() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function NotificationBell() {
   }, []);
 
   const unreadCount = notifications.filter(n => !n.lida).length;
+  const filteredNotifications = filter === 'all' ? notifications : notifications.filter(n => !n.lida);
 
   const markAsRead = async (id: string) => {
     try {
@@ -107,11 +109,14 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all"
+        className={cn(
+          "relative p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all",
+          isOpen && "bg-slate-50 text-blue-600"
+        )}
       >
-        <Bell size={20} />
+        <Bell size={20} className={cn(unreadCount > 0 && "animate-swing")} />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white">
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-sm">
             {unreadCount}
           </span>
         )}
@@ -125,29 +130,54 @@ export default function NotificationBell() {
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[100]"
           >
-            <div className="p-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-              <h4 className="font-black text-slate-900 text-sm tracking-tight">Notificações</h4>
-              {unreadCount > 0 && (
-                <button 
-                  onClick={markAllAsRead}
-                  className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 tracking-widest"
+            <div className="p-4 border-b border-slate-50 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-black text-slate-900 text-sm tracking-tight">Notificações</h4>
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={markAllAsRead}
+                    className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 tracking-widest"
+                  >
+                    Marcar todas como lidas
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                    filter === 'all' ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-white text-slate-400 hover:text-slate-600"
+                  )}
                 >
-                  Marcar todas como lidas
+                  Todas
                 </button>
-              )}
+                <button
+                  onClick={() => setFilter('unread')}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                    filter === 'unread' ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-white text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Não lidas ({unreadCount})
+                </button>
+              </div>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center space-y-2">
-                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
-                    <Bell size={24} />
+              {filteredNotifications.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto">
+                    <Bell size={32} />
                   </div>
-                  <p className="text-xs font-bold text-slate-400">Nenhuma notificação por enquanto.</p>
+                  <p className="text-xs font-bold text-slate-400">
+                    {filter === 'unread' ? "Você não tem notificações não lidas." : "Nenhuma notificação por enquanto."}
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-50">
-                  {notifications.map((n) => (
+                  {filteredNotifications.map((n) => (
                     <div 
                       key={n.id}
                       onClick={() => {

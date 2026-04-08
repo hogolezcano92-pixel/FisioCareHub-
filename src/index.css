@@ -60,6 +60,20 @@
   animation: pulse-custom 2s infinite;
 }
 
+@keyframes swing {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(5deg); }
+  80% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-swing {
+  animation: swing 1s ease-in-out infinite;
+  transform-origin: top center;
+}
+
 /* Corrigindo o texto digitado e o fundo */
 input {
   color: #1a1a1a !important;      /* Força o texto para cinza escuro/preto */
