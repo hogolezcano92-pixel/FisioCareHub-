@@ -24,7 +24,8 @@ import { toast } from 'sonner';
 export default function Patients() {
   const { user, profile } = useAuth();
   const [patients, setPatients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -50,20 +51,25 @@ export default function Patients() {
   }, [user, profile]);
 
   const fetchPatients = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('pacientes')
         .select('*')
         .eq('fisioterapeuta_id', user?.id)
         .order('nome');
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
       setPatients(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar pacientes:', err);
-      toast.error('Erro ao carregar lista de pacientes');
+      // Silenciamos o erro definindo como array vazio conforme solicitado
+      setPatients([]);
+      // Só armazenamos o erro se for algo crítico para debug interno
+      setError(err.message || 'Erro de conexão');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -106,17 +112,18 @@ export default function Patients() {
     p.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
+        <p className="text-slate-500 font-bold animate-pulse">Carregando pacientes...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Meus Pacientes</h1>
           <p className="text-slate-500 font-medium">Gerencie sua base de pacientes e prontuários.</p>
@@ -130,7 +137,7 @@ export default function Patients() {
         </button>
       </header>
 
-      <div className="relative">
+      <div className="relative w-full">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input
           type="text"
@@ -141,9 +148,9 @@ export default function Patients() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {filteredPatients.length === 0 ? (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center">
+          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center w-full">
             <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
               <User size={48} />
             </div>

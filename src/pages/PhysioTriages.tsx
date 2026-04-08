@@ -25,7 +25,8 @@ export default function PhysioTriages() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [triages, setTriages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTriage, setSelectedTriage] = useState<any | null>(null);
 
@@ -38,9 +39,10 @@ export default function PhysioTriages() {
   }, [profile, navigate]);
 
   const fetchTriages = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('triagens')
         .select(`
           *,
@@ -51,13 +53,14 @@ export default function PhysioTriages() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
       setTriages(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar triagens:', err);
-      toast.error('Erro ao carregar lista de triagens');
+      setTriages([]);
+      setError(err.message || 'Erro de conexão');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -77,32 +80,32 @@ export default function PhysioTriages() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Triagens Realizadas</h1>
           <p className="text-slate-500 font-medium">Acompanhe as avaliações de IA dos seus pacientes.</p>
         </div>
         
-        <div className="relative">
+        <div className="relative w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text"
             placeholder="Buscar por paciente ou região..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl w-full md:w-80 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
+            className="pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl w-full focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
           />
         </div>
       </header>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4 w-full">
           <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
           <p className="text-slate-500 font-bold animate-pulse">Carregando triagens...</p>
         </div>
       ) : filteredTriages.length === 0 ? (
-        <div className="bg-white p-20 rounded-[3rem] text-center space-y-4 border border-slate-100">
+        <div className="bg-white p-20 rounded-[3rem] text-center space-y-4 border border-slate-100 w-full">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
             <BrainCircuit size={40} />
           </div>
@@ -112,7 +115,7 @@ export default function PhysioTriages() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
           {filteredTriages.map((triage) => (
             <motion.div
               key={triage.id}

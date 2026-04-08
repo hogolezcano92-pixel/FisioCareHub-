@@ -17,6 +17,8 @@ export let config: APIConfig = {
   firebaseApiKey: "" 
 };
 
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.fisiocarehub.com";
+
 // Esta função agora devolve os dados na hora, sem tentar buscar na rede,
 // o que elimina o erro de tela branca no seu Preview.
 export const fetchConfig = async (): Promise<APIConfig> => {

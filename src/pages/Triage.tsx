@@ -48,6 +48,8 @@ export default function Triage() {
   const [analysis, setAnalysis] = useState<any | null>(null);
   const [displayedAnalysis, setDisplayedAnalysis] = useState('');
   const [history, setHistory] = useState<any[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
   // Form State
@@ -143,18 +145,23 @@ export default function Triage() {
   }, [user, authLoading, navigate]);
 
   const fetchHistory = async (userId: string) => {
+    setIsHistoryLoading(true);
+    setHistoryError(null);
     try {
-      const { data: triages } = await supabase
+      const { data: triages, error: supabaseError } = await supabase
         .from('triagens')
         .select('*')
         .eq('paciente_id', userId)
         .order('created_at', { ascending: false });
       
-      if (triages) {
-        setHistory(triages);
-      }
-    } catch (err) {
+      if (supabaseError) throw supabaseError;
+      setHistory(triages || []);
+    } catch (err: any) {
       console.error("Erro ao buscar histórico de triagens:", err);
+      setHistory([]);
+      setHistoryError(err.message || 'Erro de conexão');
+    } finally {
+      setIsHistoryLoading(false);
     }
   };
 
@@ -839,7 +846,12 @@ export default function Triage() {
               exit={{ opacity: 0, height: 0 }}
               className="border-t border-slate-50"
             >
-              {history.length === 0 ? (
+              {isHistoryLoading ? (
+                <div className="p-20 text-center space-y-4">
+                  <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mx-auto" />
+                  <p className="text-slate-500 font-bold animate-pulse">Carregando histórico...</p>
+                </div>
+              ) : history.length === 0 ? (
                 <div className="p-20 text-center space-y-4">
                   <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
                     <History size={32} />

@@ -23,7 +23,8 @@ export default function Exercises() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [exercises, setExercises] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -47,20 +48,23 @@ export default function Exercises() {
   }, [profile]);
 
   const fetchExercises = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('exercicios')
         .select('*')
         .or(`fisio_id.is.null,fisio_id.eq.${user?.id}`)
         .order('nome');
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
       setExercises(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar exercícios:', err);
-      toast.error('Erro ao carregar biblioteca');
+      setExercises([]);
+      setError(err.message || 'Erro de conexão');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -101,11 +105,18 @@ export default function Exercises() {
     ex.descricao?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-sky-500" size={48} /></div>;
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
+        <p className="text-slate-500 font-bold animate-pulse">Carregando biblioteca...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Biblioteca de Exercícios</h1>
           <p className="text-slate-500 font-medium">Crie e gerencie sua base de exercícios terapêuticos.</p>
@@ -119,7 +130,7 @@ export default function Exercises() {
         </button>
       </header>
 
-      <div className="relative">
+      <div className="relative w-full">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input
           type="text"
@@ -130,9 +141,9 @@ export default function Exercises() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
         {filteredExercises.length === 0 ? (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center">
+          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center w-full">
             <Dumbbell size={48} className="text-slate-200 mx-auto mb-4" />
             <h3 className="text-2xl font-black text-slate-900">Nenhum exercício encontrado</h3>
             <p className="text-slate-500 mt-2 font-medium">Sua biblioteca está vazia.</p>
