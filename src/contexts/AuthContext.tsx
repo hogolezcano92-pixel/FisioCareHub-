@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: userMetadata?.email || '',
             avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             tipo_usuario: finalRole,
+            plano: finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
             crefito: userMetadata?.crefito || null,
             especialidade: userMetadata?.especialidade || null,
             is_pro: !!userMetadata?.is_pro,

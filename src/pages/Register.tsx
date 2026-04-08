@@ -152,7 +152,9 @@ export default function Register() {
           id: authData.user.id,
           nome_completo: cleanName,
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
+          tipo_usuario: role,
           email: cleanEmail,
+          aprovado: role === 'paciente',
         };
 
         // Full data with all fields
