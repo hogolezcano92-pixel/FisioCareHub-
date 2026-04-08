@@ -150,7 +150,7 @@ export default function Dashboard() {
 
     const timer = setTimeout(() => {
       if (patientSearch) searchPatients();
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [patientSearch]);

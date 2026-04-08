@@ -82,6 +82,28 @@ export default function Register() {
       return;
     }
 
+    if (role === 'fisioterapeuta') {
+      if (!crefito.trim()) {
+        setError("O CREFITO é obrigatório para fisioterapeutas.");
+        setLoading(false);
+        return;
+      }
+      // Simple CREFITO validation: at least 4 digits
+      if (!/^\d{4,}/.test(crefito.trim())) {
+        setError("Por favor, insira um CREFITO válido.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // CEP validation (8 digits, ignore non-digits)
+    const cleanZip = zipCode.replace(/\D/g, '');
+    if (cleanZip.length !== 8) {
+      setError("Por favor, insira um CEP válido com 8 dígitos.");
+      setLoading(false);
+      return;
+    }
+
     try {
       console.log("Starting registration for:", cleanEmail, "Role:", role);
       // 2. Criar o usuário no Supabase Auth com metadados iniciais

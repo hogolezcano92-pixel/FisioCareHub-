@@ -67,21 +67,26 @@ export default function Profile() {
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
 
   useEffect(() => {
-    if (profile) {
-      setUserData(profile);
-      setName(profile.nome_completo || '');
-      setBio(profile.bio || '');
-      setGender(profile.genero || '');
-      setSpecialty(profile.especialidade || '');
-      setCity(profile.localizacao || '');
-      setAddress(profile.endereco || '');
-      setZipCode(profile.cep || '');
-      setCountry(profile.pais || '');
-      setCrefito(profile.crefito || '');
-      setServiceType(profile.tipo_servico || 'ambos');
-      setLoading(false);
-    } else if (!authLoading && !user) {
-      navigate('/login');
+    if (!authLoading) {
+      if (profile) {
+        setUserData(profile);
+        setName(profile.nome_completo || '');
+        setBio(profile.bio || '');
+        setGender(profile.genero || '');
+        setSpecialty(profile.especialidade || '');
+        setCity(profile.localizacao || '');
+        setAddress(profile.endereco || '');
+        setZipCode(profile.cep || '');
+        setCountry(profile.pais || '');
+        setCrefito(profile.crefito || '');
+        setServiceType(profile.tipo_servico || 'ambos');
+        setLoading(false);
+      } else if (!user) {
+        navigate('/login');
+      } else {
+        // User is logged in but profile is null (maybe error fetching)
+        setLoading(false);
+      }
     }
   }, [profile, user, authLoading, navigate]);
 
@@ -91,6 +96,17 @@ export default function Profile() {
 
     setUpdating(true);
     try {
+      // CEP validation if provided
+      if (zipCode) {
+        const cleanZip = zipCode.replace(/\D/g, '');
+        if (cleanZip.length > 0 && cleanZip.length !== 8) {
+          const { toast } = await import('sonner');
+          toast.error("Por favor, insira um CEP válido com 8 dígitos.");
+          setUpdating(false);
+          return;
+        }
+      }
+
       const updateData = {
         nome_completo: name,
         bio: bio,
@@ -268,13 +284,33 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-
   const tabs = [
     { id: 'profile', label: t('nav.profile'), icon: User },
     { id: 'account', label: 'Minha Conta', icon: Lock },
     { id: 'settings', label: t('settings.title'), icon: Settings },
   ];
+
+  const renderLoadingSkeleton = () => (
+    <div className="space-y-8 animate-pulse">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-8 items-start">
+          <div className="w-32 h-32 bg-slate-100 rounded-full" />
+          <div className="flex-1 space-y-4">
+            <div className="h-8 bg-slate-100 rounded-lg w-1/2" />
+            <div className="h-4 bg-slate-100 rounded-lg w-1/3" />
+          </div>
+        </div>
+        <div className="mt-10 space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="h-14 bg-slate-50 rounded-2xl" />
+            <div className="h-14 bg-slate-50 rounded-2xl" />
+          </div>
+          <div className="h-32 bg-slate-50 rounded-2xl" />
+          <div className="h-14 bg-blue-100 rounded-2xl w-40" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
@@ -323,8 +359,9 @@ export default function Profile() {
 
         {/* Main Content Area */}
         <main className="flex-1">
-          <AnimatePresence mode="wait">
-            {activeTab === 'profile' && (
+          {loading ? renderLoadingSkeleton() : (
+            <AnimatePresence mode="wait">
+              {activeTab === 'profile' && (
               <motion.div
                 key="profile"
                 initial={{ opacity: 0, x: 20 }}
@@ -729,6 +766,7 @@ export default function Profile() {
               </motion.div>
             )}
           </AnimatePresence>
+        )}
         </main>
       </div>
 

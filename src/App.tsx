@@ -7,7 +7,7 @@
 import { Routes, Route, Link, useNavigate, useLocation, BrowserRouter } from 'react-router-dom';
 import { supabase, initSupabase } from './lib/supabase';
 import { fetchConfig } from './config/api';
-import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef } from 'react';
+import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { 
   Activity, 
@@ -29,7 +29,8 @@ import {
   FileSignature,
   ShieldCheck,
   Bell,
-  Video
+  Video,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -44,23 +45,30 @@ import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import KineAI from './components/KineAI';
 
-// Pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Triage from './pages/Triage';
-import Records from './pages/Records';
-import Profile from './pages/Profile';
-import Appointments from './pages/Appointments';
-import Chat from './pages/Chat';
-import Documents from './pages/Documents';
-import Admin from './pages/Admin';
-import AppPreview from './pages/AppPreview';
-import About from './pages/About';
-import Partner from './pages/Partner';
-import ResetPassword from './pages/ResetPassword';
-import Subscription from './pages/Subscription';
+// Lazy Pages
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Triage = lazy(() => import('./pages/Triage'));
+const Records = lazy(() => import('./pages/Records'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Appointments = lazy(() => import('./pages/Appointments'));
+const Chat = lazy(() => import('./pages/Chat'));
+const Documents = lazy(() => import('./pages/Documents'));
+const Admin = lazy(() => import('./pages/Admin'));
+const AppPreview = lazy(() => import('./pages/AppPreview'));
+const About = lazy(() => import('./pages/About'));
+const Partner = lazy(() => import('./pages/Partner'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Subscription = lazy(() => import('./pages/Subscription'));
+
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+    <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Carregando...</p>
+  </div>
+);
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -440,30 +448,32 @@ function AppContent() {
           "flex-1 w-full",
           location.pathname === '/chat' ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
         )}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/triage" element={<Triage />} />
-            <Route path="/triagem-ia" element={<Triage />} />
-            <Route path="/records" element={<Records />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/area-paciente" element={<Profile />} />
-            <Route path="/appointments" element={<Appointments />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="/dashboard/assinatura" element={<Subscription />} />
-            <Route path="/documents" element={<Documents />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/preview" element={<AppPreview />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/sobre" element={<About />} />
-            <Route path="/partner" element={<Partner />} />
-            <Route path="/seja-parceiro" element={<Partner />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/triage" element={<Triage />} />
+              <Route path="/triagem-ia" element={<Triage />} />
+              <Route path="/records" element={<Records />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/area-paciente" element={<Profile />} />
+              <Route path="/appointments" element={<Appointments />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/dashboard/assinatura" element={<Subscription />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/preview" element={<AppPreview />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/sobre" element={<About />} />
+              <Route path="/partner" element={<Partner />} />
+              <Route path="/seja-parceiro" element={<Partner />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+            </Routes>
+          </Suspense>
         </main>
 
         {location.pathname !== '/chat' && (

@@ -37,11 +37,11 @@ export const uploadProfilePhoto = async (
     }
 
     if (error.message === 'Bucket not found') {
-      throw new Error(`O bucket "${bucket}" não foi encontrado. Crie-o no painel do Supabase.`);
+      throw new Error(`O bucket "${bucket}" não foi encontrado. Acesse o painel do Supabase > Storage e crie um bucket público chamado "${bucket}".`);
     }
 
     if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
-      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}". Verifique as políticas de segurança no Supabase.`);
+      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}". No painel do Supabase > Storage > Policies, adicione uma política permitindo INSERT e SELECT para usuários autenticados.`);
     }
 
     throw error;
@@ -86,11 +86,11 @@ export const uploadDocument = async (
     }
 
     if (error.message === 'Bucket not found') {
-      throw new Error(`O bucket "${bucket}" não foi encontrado.`);
+      throw new Error(`O bucket "${bucket}" não foi encontrado. Acesse o painel do Supabase > Storage e crie um bucket chamado "${bucket}".`);
     }
 
     if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
-      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}".`);
+      throw new Error(`Erro de permissão (RLS) no bucket "${bucket}". No painel do Supabase > Storage > Policies, adicione uma política permitindo INSERT e SELECT para usuários autenticados.`);
     }
 
     throw error;

@@ -125,7 +125,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchProfessionals();
-    }, 500); // Debounce de 500ms
+    }, 300); // Debounce de 300ms
     return () => clearTimeout(timer);
   }, [nameQuery, locationQuery, specialtyFilter]);
 
@@ -135,7 +135,8 @@ export default function Home() {
       let query = supabase
         .from('perfis')
         .select('*')
-        .eq('plano', 'fisioterapeuta');
+        .eq('plano', 'fisioterapeuta')
+        .eq('status_aprovacao', 'aprovado');
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {

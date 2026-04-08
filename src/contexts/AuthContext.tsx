@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('perfis')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error && error.code === 'PGRST116') {
         // Profile not found, create a default one (likely OAuth user)
