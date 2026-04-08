@@ -138,7 +138,8 @@ async function directInvoke(name: string, body: any) {
 }
 
 export const callFisioAI = async (action: string, payload: any) => {
-  return invokeFunction('gemini-ai', { action, payload });
+  // Groq is now used for AI logic via src/lib/groq.ts
+  throw new Error("Gemini function is deprecated. Use Groq service instead.");
 };
 
 export const initSupabase = () => {

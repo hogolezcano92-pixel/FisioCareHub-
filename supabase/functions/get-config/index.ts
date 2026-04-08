@@ -25,9 +25,6 @@ serve(async (req) => {
         measurementId: Deno.env.get("FIREBASE_MEASUREMENT_ID"),
         firestoreDatabaseId: Deno.env.get("FIREBASE_DATABASE_ID"),
       },
-      gemini: {
-        apiKey: Deno.env.get("GEMINI_API_KEY"),
-      },
       stripe: {
         publishableKey: Deno.env.get("STRIPE_PUBLISHABLE_KEY"),
       }
