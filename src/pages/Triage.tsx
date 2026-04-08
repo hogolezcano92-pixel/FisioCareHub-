@@ -61,6 +61,8 @@ export default function Triage() {
     regiao_dor: '',
     inicio_sintomas: '',
     tempo_sintomas: '',
+    // Dynamic questions based on region
+    perguntas_especificas: {} as Record<string, any>,
     historico_clinico: {
       fisioterapia_anterior: false,
       diagnostico_medico: false,
@@ -74,6 +76,7 @@ export default function Triage() {
       sensibilidade: false,
       controle_urinario: false,
       dor_noturna: false,
+      historico_cancer: false,
     },
     avaliacao_funcional: {
       movimentos_normais: true,
@@ -83,6 +86,35 @@ export default function Triage() {
     },
     escala_dor: 5,
   });
+
+  const REGION_QUESTIONS: Record<string, any[]> = {
+    'Quadril': [
+      { id: 'local_dor', label: 'A dor é mais lateral (lado) ou anterior (frente)?', type: 'select', options: ['Lateral', 'Anterior', 'Posterior (Glúteo)'] },
+      { id: 'piora_caminhar', label: 'A dor piora ao caminhar?', type: 'boolean' },
+      { id: 'piora_deitar', label: 'Piora ao deitar sobre o lado afetado?', type: 'boolean' },
+      { id: 'aumento_atividade', label: 'Houve aumento recente da atividade física?', type: 'boolean' }
+    ],
+    'Coluna Lombar': [
+      { id: 'irradiacao', label: 'A dor irradia para a perna?', type: 'boolean' },
+      { id: 'dormencia', label: 'Sente dormência ou formigamento?', type: 'boolean' },
+      { id: 'piora_sentado', label: 'A dor piora ao ficar muito tempo sentado?', type: 'boolean' }
+    ],
+    'Cervical': [
+      { id: 'irradiacao_braco', label: 'A dor irradia para o braço ou mão?', type: 'boolean' },
+      { id: 'tontura', label: 'Sente tontura ou dor de cabeça associada?', type: 'boolean' },
+      { id: 'rigidez_matinal', label: 'Sente muita rigidez ao acordar?', type: 'boolean' }
+    ],
+    'Joelho': [
+      { id: 'falseio', label: 'Sente sensação de "falseio" ou instabilidade?', type: 'boolean' },
+      { id: 'bloqueio', label: 'O joelho trava ou estala com dor?', type: 'boolean' },
+      { id: 'piora_escada', label: 'Piora ao subir ou descer escadas?', type: 'boolean' }
+    ],
+    'Ombro': [
+      { id: 'piora_elevar', label: 'Dói ao elevar o braço acima da cabeça?', type: 'boolean' },
+      { id: 'fraqueza_braco', label: 'Sente fraqueza para segurar objetos?', type: 'boolean' },
+      { id: 'piora_noite', label: 'A dor impede o sono ou piora à noite?', type: 'boolean' }
+    ]
+  };
 
   useEffect(() => {
     if (analysis?.relatorio) {
@@ -379,13 +411,19 @@ export default function Triage() {
               {/* Step 1: Main Complaint */}
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-black text-slate-900">Queixa Principal</h2>
+                  <h2 className="text-xl font-black text-slate-900">Queixa Principal</h2>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-2">Região do Corpo</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">Região do Corpo</label>
                       <select 
                         value={formData.regiao_dor}
-                        onChange={(e) => setFormData({...formData, regiao_dor: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData, 
+                            regiao_dor: e.target.value,
+                            perguntas_especificas: {} // Reset specific questions when region changes
+                          });
+                        }}
                         className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                       >
                         <option value="">Selecione a região</option>
@@ -394,9 +432,65 @@ export default function Triage() {
                         ))}
                       </select>
                     </div>
+
+                    {/* Dynamic Questions based on Region */}
+                    {formData.regiao_dor && REGION_QUESTIONS[formData.regiao_dor] && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 pt-4 border-t border-slate-100"
+                      >
+                        <h3 className="text-sm font-black text-indigo-600 uppercase tracking-widest">Perguntas Específicas</h3>
+                        {REGION_QUESTIONS[formData.regiao_dor].map((q) => (
+                          <div key={q.id} className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700 ml-1">{q.label}</label>
+                            {q.type === 'boolean' ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                {['Sim', 'Não'].map(opt => (
+                                  <button
+                                    key={opt}
+                                    onClick={() => setFormData({
+                                      ...formData,
+                                      perguntas_especificas: {
+                                        ...formData.perguntas_especificas,
+                                        [q.id]: opt === 'Sim'
+                                      }
+                                    })}
+                                    className={cn(
+                                      "p-3 rounded-xl border-2 text-sm font-bold transition-all",
+                                      formData.perguntas_especificas[q.id] === (opt === 'Sim') ? "border-indigo-600 bg-indigo-50 text-indigo-600" : "border-slate-100 bg-slate-50 text-slate-500"
+                                    )}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <select
+                                value={formData.perguntas_especificas[q.id] || ''}
+                                onChange={(e) => setFormData({
+                                  ...formData,
+                                  perguntas_especificas: {
+                                    ...formData.perguntas_especificas,
+                                    [q.id]: e.target.value
+                                  }
+                                })}
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                              >
+                                <option value="">Selecione</option>
+                                {q.options.map((opt: string) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-2">Como começou?</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Como começou?</label>
+                      <div className="grid grid-cols-1 gap-2">
                         {[
                           { id: 'queda', label: 'Após queda ou acidente' },
                           { id: 'fisica', label: 'Durante atividade física' },
@@ -417,7 +511,7 @@ export default function Triage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-2">Há quanto tempo sente isso?</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">Há quanto tempo sente isso?</label>
                       <input 
                         type="text" 
                         value={formData.tempo_sintomas}
@@ -504,9 +598,9 @@ export default function Triage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="text-amber-500" size={32} />
-                    <h2 className="text-2xl font-black text-slate-900">Sinais de Alerta</h2>
+                    <h2 className="text-xl font-black text-slate-900">Sinais de Alerta</h2>
                   </div>
-                  <p className="text-slate-500 font-medium">Marque se você apresenta algum destes sintomas associados à dor:</p>
+                  <p className="text-sm text-slate-500 font-medium">Marque se você apresenta algum destes sintomas associados à dor:</p>
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       { id: 'febre', label: 'Febre associada à dor' },
@@ -514,7 +608,8 @@ export default function Triage() {
                       { id: 'fraqueza', label: 'Fraqueza progressiva nos membros' },
                       { id: 'sensibilidade', label: 'Perda de sensibilidade' },
                       { id: 'controle_urinario', label: 'Perda de controle urinário ou intestinal' },
-                      { id: 'dor_noturna', label: 'Dor muito intensa à noite' }
+                      { id: 'dor_noturna', label: 'Dor muito intensa à noite' },
+                      { id: 'historico_cancer', label: 'Histórico prévio de câncer' }
                     ].map(flag => (
                       <button
                         key={flag.id}
@@ -672,7 +767,7 @@ export default function Triage() {
                     </div>
                   </div>
                 </div>
-                <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/20">
+                <div className="max-h-[80vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/20">
                   <div className="prose prose-invert prose-sm max-w-none bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner break-words whitespace-normal">
                     <ReactMarkdown>{displayedAnalysis || ''}</ReactMarkdown>
                   </div>
@@ -689,22 +784,24 @@ export default function Triage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  onClick={downloadReport}
-                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
-                >
-                  <Download size={18} /> Baixar Relatório
-                </button>
-                <button
-                  onClick={shareWithPhysio}
-                  className="py-4 bg-indigo-100 text-indigo-600 rounded-2xl font-black hover:bg-indigo-200 transition-all flex items-center justify-center gap-2"
-                >
-                  <Send size={18} /> Enviar ao Fisioterapeuta
-                </button>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={downloadReport}
+                    className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Download size={18} /> Baixar
+                  </button>
+                  <button
+                    onClick={shareWithPhysio}
+                    className="py-4 bg-indigo-100 text-indigo-600 rounded-2xl font-black hover:bg-indigo-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send size={18} /> Enviar
+                  </button>
+                </div>
                 <button
                   onClick={() => setCurrentStep(0)}
-                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all sm:col-span-2"
+                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
                 >
                   Nova Triagem
                 </button>

@@ -154,99 +154,68 @@ export async function generateTriageReport(data: any) {
     throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
   }
 
+  const prompt = `
+    Você é o Especialista de Triagem do FisioCareHub. Sua função é processar dados de pacientes e gerar um relatório de Raciocínio Clínico Fisioterapêutico de alto nível.
+
+    # DADOS DO PACIENTE
+    - Idade: ${data.idade} | Sexo: ${data.sexo} | Profissão: ${data.profissao}
+    - Região da Dor: ${data.regiao_dor}
+    - Início: ${data.inicio_sintomas} | Tempo: ${data.tempo_sintomas}
+    - Escala de Dor: ${data.escala_dor}/10
+    - Limitação Funcional: ${data.avaliacao_funcional.limitacao_atividades}
+    - Perguntas Específicas da Região: ${JSON.stringify(data.perguntas_especificas)}
+    - Red Flags: ${JSON.stringify(data.red_flags)}
+    - Histórico: ${JSON.stringify(data.historico_clinico)}
+    - Doenças: ${data.doencas_preexistentes.join(', ')}
+
+    # OBJETIVOS DA ANÁLISE
+    1. CLASSIFICAÇÃO CLÍNICA: Musculoesquelético, Neurológico, Cardiorrespiratório, Pós-operatório ou Esportivo.
+    2. SCORE DE GRAVIDADE: Verde (Leve), Amarelo (Moderado) ou Vermelho (Alto Risco/Red Flags).
+    3. HIPÓTESES FUNCIONAIS: Liste no máximo 3 hipóteses baseadas na biomecânica e sintomas.
+    4. TRIAGEM DE SEGURANÇA: Destaque Red Flags se houver.
+
+    # FORMATO DE SAÍDA (JSON)
+    {
+      "classificacao": "string",
+      "gravidade": "Verde | Amarelo | Vermelho",
+      "red_flag_detected": boolean,
+      "relatorio": "Markdown string"
+    }
+
+    # ESTRUTURA DO RELATÓRIO (Markdown)
+    ## 📑 Resumo da Triagem
+    - **Região:** ${data.regiao_dor}
+    - **Tempo:** ${data.tempo_sintomas}
+    - **Dor:** ${data.escala_dor}/10
+    - **Limitação:** ${data.avaliacao_funcional.limitacao_atividades}
+
+    ### 🔍 Análise Clínica Inicial
+    [Análise técnica unindo idade, ocupação e comportamento dos sintomas].
+
+    ### 💡 Hipóteses Funcionais
+    1. [Hipótese 1]
+    2. [Hipótese 2]
+    3. [Hipótese 3]
+
+    ### 🚨 Triagem de Risco
+    - **Classificação:** [Classificação Clínica]
+    - **Gravidade:** [Score]
+    - **Red Flags:** [Detalhes se houver]
+
+    ### 🩺 Sugestões de Avaliação
+    *O que o fisioterapeuta deve priorizar:*
+    - [Sugestão 1]
+    - [Sugestão 2]
+
+    ### 🏠 Recomendações Iniciais
+    - [Recomendação 1]
+    - [Recomendação 2]
+
+    ---
+    *Aviso: Suporte à decisão profissional. Imprescindível avaliação física.*
+  `;
+
   try {
-    const prompt = `
-      # PERSONA
-      Você é o Especialista de Triagem do FisioCareHub. Sua função é processar dados de pacientes de diversas áreas (Ortopedia, Geriatria, Neuro, Respiratória, etc.) e gerar um relatório de Raciocínio Clínico Fisioterapêutico de alto nível para orientar o atendimento domiciliar.
-
-      # PROCEDIMENTO DE ANÁLISE (STEP-BY-STEP)
-      1. CLASSIFICAÇÃO DA ÁREA: Com base na queixa, identifique a área predominante (Ex: Musculoesquelética, Neurofuncional, Gerontologia, Cardiovascular).
-      2. ANÁLISE BIOPSICOSSOCIAL: Conecte a idade, ocupação e estilo de vida à condição relatada.
-      3. TRIAGEM DE SEGURANÇA (CRÍTICO): Varra os dados em busca de Red Flags (sinais de risco de vida ou urgência médica) e Yellow Flags (riscos de cronicidade ou barreiras psicológicas).
-      4. COMPORTAMENTO DOS SINTOMAS: Avalie a irritabilidade do tecido/sistema (agudo vs. crônico) e fatores de melhora/piora.
-
-      # DADOS DO PACIENTE:
-      - Idade: ${data.idade}
-      - Sexo: ${data.sexo}
-      - Profissão: ${data.profissao}
-      - Atividade Física: ${data.atividade_fisica}
-      
-      # QUEIXA:
-      - Região: ${data.regiao_dor}
-      - Início: ${data.inicio_sintomas}
-      - Tempo: ${data.tempo_sintomas}
-      - Escala de Dor: ${data.escala_dor}/10
-      
-      # HISTÓRICO:
-      - Fisioterapia anterior: ${data.historico_clinico.fisioterapia_anterior ? 'Sim' : 'Não'}
-      - Diagnóstico médico: ${data.historico_clinico.diagnostico_medico ? 'Sim' : 'Não'}
-      - Exames: ${data.historico_clinico.exames_imagem.join(', ')}
-      - Doenças: ${data.doencas_preexistentes.join(', ')}
-      
-      # AVALIAÇÃO FUNCIONAL:
-      - Movimentos normais: ${data.avaliacao_funcional.movimentos_normais ? 'Sim' : 'Não'}
-      - Piora com movimento: ${data.avaliacao_funcional.piora_movimento ? 'Sim' : 'Não'}
-      - Melhora com repouso: ${data.avaliacao_funcional.melhora_repouso ? 'Sim' : 'Não'}
-      - Limitação atividades: ${data.avaliacao_funcional.limitacao_atividades}
-      
-      # RED FLAGS:
-      - Febre: ${data.red_flags.febre ? 'Sim' : 'Não'}
-      - Perda de peso: ${data.red_flags.perda_peso ? 'Sim' : 'Não'}
-      - Fraqueza progressiva: ${data.red_flags.fraqueza ? 'Sim' : 'Não'}
-      - Perda de sensibilidade: ${data.red_flags.sensibilidade ? 'Sim' : 'Não'}
-      - Perda de controle (urinário/intestinal): ${data.red_flags.controle_urinario ? 'Sim' : 'Não'}
-      - Dor intensa à noite: ${data.red_flags.dor_noturna ? 'Sim' : 'Não'}
-
-      # DIRETRIZES DE FORMATO (PARA RESPONSIVIDADE MOBILE)
-      - Use títulos claros (H2 e H3).
-      - Use listas (bullet points) para evitar blocos de texto longos que quebram o layout do celular.
-      - Destaque termos técnicos em **negrito**.
-      - Use citações (>) para o resumo clínico.
-
-      # TEMPLATE DE RELATÓRIO PROFISSIONAL (PARA O CAMPO 'relatorio')
-      Você deve gerar o relatório EXATAMENTE neste formato para o campo 'relatorio':
-
-      ## 📑 Resumo da Triagem
-      > **Região Afetada:** ${data.regiao_dor}
-      > **Tempo de Sintomas:** ${data.tempo_sintomas}
-      > **Escala de Dor:** ${data.escala_dor}/10
-      > **Limitação Funcional:** ${data.avaliacao_funcional.limitacao_atividades}
-
-      ---
-
-      ### 🔍 Raciocínio Clínico Integrado
-      **Área Predominante:** [Identifique a área]
-      **Perfil:** ${data.idade} anos, ${data.sexo} | **Ocupação:** ${data.profissao}
-
-      **Análise Técnica:**
-      [Análise técnica unindo os dados. Ex: Em pacientes idosos com queixa de queda, correlacione equilíbrio dinâmico e ambiente domiciliar. Em ortopedia, foque na biomecânica e carga].
-
-      ### 🚨 Triagem de Riscos (Flags)
-      - **Classificação Provável:** [Ex: Lesão Musculoesquelética]
-      - **Red Flags:** [Indique se ausentes ou liste os sinais identificados]
-      - **Gravidade:** [Verde/Amarelo/Vermelho]
-
-      ### 🩺 Sugestão de Abordagem
-      *O que o fisioterapeuta deve priorizar na visita:*
-      * 📍 **Testes e Escalas:** [Sugira 2 ou 3 testes específicos].
-      * 🎯 **Foco da Inspeção:** [Ex: Avaliar marcha, força muscular].
-
-      ### 🏠 Recomendações de Segurança
-      * [Oriente uma medida de precaução imediata para o paciente/família].
-
-      ---
-      *Aviso: Relatório gerado por IA para suporte à decisão profissional. Imprescindível avaliação física completa.*
-
-      # REQUISITO TÉCNICO
-      Retorne obrigatoriamente um JSON com o seguinte formato:
-      {
-        "classificacao": "string (Área Predominante)",
-        "gravidade": "string (Verde/Amarelo/Vermelho)",
-        "red_flag_detected": boolean,
-        "relatorio": "string (markdown seguindo o formato acima)"
-      }
-    `;
-
     const completion = await groq.chat.completions.create({
       messages: [
         {
