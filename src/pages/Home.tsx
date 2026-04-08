@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Activity, 
   Stethoscope, 
@@ -49,6 +50,8 @@ interface Professional {
 
 export default function Home() {
   const { t } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [nameQuery, setNameQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('Todos');
@@ -100,6 +103,12 @@ export default function Home() {
       color: "amber"
     }
   ];
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const slideInterval = setInterval(() => {

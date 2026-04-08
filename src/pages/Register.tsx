@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Register() {
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>(() => {
     const saved = localStorage.getItem('pending_role');
     return (saved === 'fisioterapeuta' || saved === 'paciente') ? saved : 'paciente';
   });
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleRoleChange = (newRole: 'paciente' | 'fisioterapeuta') => {
     console.log("Setting role to:", newRole);
@@ -35,7 +45,6 @@ export default function Register() {
   const [proKey, setProKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     setLoading(true);

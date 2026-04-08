@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/Logo';
 
 export default function Login() {
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +16,12 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
