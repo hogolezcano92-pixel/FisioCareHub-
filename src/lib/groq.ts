@@ -206,27 +206,33 @@ export async function generateTriageReport(data: any) {
       # TEMPLATE DE RELATÓRIO PROFISSIONAL (PARA O CAMPO 'relatorio')
       Você deve gerar o relatório EXATAMENTE neste formato para o campo 'relatorio':
 
-      ## 📑 Relatório de Triagem Fisioterapêutica
-      **Área Predominante:** [Identifique a área]
-      **Perfil:** ${data.idade} anos, ${data.sexo} | **Ocupação:** ${data.profissao}
-      **Queixa Principal:** ${data.regiao_dor} | **Intensidade/Impacto:** ${data.escala_dor}/10
+      ## 📑 Resumo da Triagem
+      > **Região Afetada:** ${data.regiao_dor}
+      > **Tempo de Sintomas:** ${data.tempo_sintomas}
+      > **Escala de Dor:** ${data.escala_dor}/10
+      > **Limitação Funcional:** ${data.avaliacao_funcional.limitacao_atividades}
 
       ---
 
       ### 🔍 Raciocínio Clínico Integrado
-      > [Análise técnica unindo os dados. Ex: Em pacientes idosos com queixa de queda, correlacione equilíbrio dinâmico e ambiente domiciliar. Em ortopedia, foque na biomecânica e carga].
+      **Área Predominante:** [Identifique a área]
+      **Perfil:** ${data.idade} anos, ${data.sexo} | **Ocupação:** ${data.profissao}
+
+      **Análise Técnica:**
+      [Análise técnica unindo os dados. Ex: Em pacientes idosos com queixa de queda, correlacione equilíbrio dinâmico e ambiente domiciliar. Em ortopedia, foque na biomecânica e carga].
 
       ### 🚨 Triagem de Riscos (Flags)
-      - **Status de Gravidade:** [Verde/Amarelo/Vermelho]
-      - **Alertas Identificados:** [Liste sinais identificados. Se nada houver, indique: "Baixo risco aparente"].
+      - **Classificação Provável:** [Ex: Lesão Musculoesquelética]
+      - **Red Flags:** [Indique se ausentes ou liste os sinais identificados]
+      - **Gravidade:** [Verde/Amarelo/Vermelho]
 
-      ### 🩺 Sugestão de Abordagem na Avaliação
+      ### 🩺 Sugestão de Abordagem
       *O que o fisioterapeuta deve priorizar na visita:*
-      * 📍 **Testes e Escalas:** [Sugira 2 ou 3 testes específicos da área].
-      * 🎯 **Foco da Inspeção:** [Ex: Avaliar marcha, força muscular manual ou ausculta pulmonar].
+      * 📍 **Testes e Escalas:** [Sugira 2 ou 3 testes específicos].
+      * 🎯 **Foco da Inspeção:** [Ex: Avaliar marcha, força muscular].
 
-      ### 🏠 Recomendações de Segurança (Home Care)
-      * [Oriente uma medida de precaução imediata para o paciente/família até a avaliação presencial].
+      ### 🏠 Recomendações de Segurança
+      * [Oriente uma medida de precaução imediata para o paciente/família].
 
       ---
       *Aviso: Relatório gerado por IA para suporte à decisão profissional. Imprescindível avaliação física completa.*

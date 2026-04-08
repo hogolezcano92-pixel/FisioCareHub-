@@ -62,6 +62,7 @@ const Patients = lazy(() => import('./pages/Patients'));
 const PatientDetails = lazy(() => import('./pages/PatientDetails'));
 const Agenda = lazy(() => import('./pages/Agenda'));
 const Exercises = lazy(() => import('./pages/Exercises'));
+const PhysioTriages = lazy(() => import('./pages/PhysioTriages'));
 const AppPreview = lazy(() => import('./pages/AppPreview'));
 const About = lazy(() => import('./pages/About'));
 const Partner = lazy(() => import('./pages/Partner'));
@@ -179,6 +180,7 @@ function Navbar() {
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
+        { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
       ] : []),
@@ -485,6 +487,7 @@ function AppContent() {
               <Route path="/patients/:id" element={<PatientDetails />} />
               <Route path="/agenda" element={<Agenda />} />
               <Route path="/exercises" element={<Exercises />} />
+              <Route path="/physio/triages" element={<PhysioTriages />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/subscription" element={<Subscription />} />
               <Route path="/dashboard/assinatura" element={<Subscription />} />

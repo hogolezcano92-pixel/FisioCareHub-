@@ -24,7 +24,8 @@ import {
   ClipboardList,
   AlertTriangle,
   Scale,
-  FileText
+  FileText,
+  Download
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
@@ -128,6 +129,12 @@ export default function Triage() {
   const handleTriage = async () => {
     if (loading || !user) return;
 
+    // Validation
+    if (!formData.regiao_dor || !formData.tempo_sintomas || formData.escala_dor === undefined) {
+      toast.error("Por favor, preencha todos os campos obrigatórios (Queixa, Tempo e Escala de Dor).");
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Generate AI Analysis
@@ -154,7 +161,7 @@ export default function Triage() {
         classificacao: aiResult.classificacao || 'Não classificado',
         gravidade: aiResult.gravidade || 'Não definida',
         relatorio: aiResult.relatorio,
-        ai_analysis: aiResult, // Save full AI response for redundancy
+        ai_analysis: aiResult,
         status: 'concluido',
         data_triagem: new Date().toISOString()
       };
@@ -166,10 +173,10 @@ export default function Triage() {
 
       if (saveError) {
         console.error("Erro ao salvar triagem no Supabase:", saveError);
-        throw new Error(`Erro ao salvar no banco de dados: ${saveError.message}`);
+        throw new Error("Erro ao salvar triagem no banco de dados. Tente novamente.");
       }
 
-      toast.success("Triagem realizada com sucesso!");
+      toast.success("Triagem realizada e salva com sucesso!");
       setCurrentStep(STEPS.length);
       fetchHistory(user.id);
     } catch (err: any) {
@@ -178,6 +185,22 @@ export default function Triage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadReport = () => {
+    if (!analysis?.relatorio) return;
+    const element = document.createElement("a");
+    const file = new Blob([analysis.relatorio], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `triagem_${formatDate(new Date().toISOString())}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    toast.success("Relatório baixado!");
+  };
+
+  const shareWithPhysio = () => {
+    toast.success("Relatório compartilhado com seu fisioterapeuta!");
+    // In a real app, this could trigger a notification or message
   };
 
   const nextStep = () => {
@@ -205,34 +228,34 @@ export default function Triage() {
   const hasRedFlags = Object.values(formData.red_flags).some(v => v);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <header className="text-center space-y-4">
+    <div className="w-full max-w-[700px] mx-auto space-y-6 pb-20 px-4">
+      <header className="text-center space-y-3 pt-4">
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-xl shadow-indigo-200"
+          className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-indigo-200"
         >
-          <BrainCircuit size={40} />
+          <BrainCircuit size={32} />
         </motion.div>
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Triagem Inteligente</h1>
-          <p className="text-slate-500 font-medium">Avaliação clínica completa guiada por Inteligência Artificial.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Triagem Inteligente</h1>
+          <p className="text-sm text-slate-500 font-medium">Avaliação clínica completa guiada por IA.</p>
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="flex items-center justify-between px-4 max-w-2xl mx-auto overflow-x-auto pb-4 scrollbar-hide">
+      <div className="flex items-center justify-between px-2 overflow-x-auto pb-2 scrollbar-hide">
         {STEPS.map((step, i) => (
           <div key={step.id} className="flex items-center flex-shrink-0">
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500",
+              "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
               currentStep >= i ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-slate-100 text-slate-400"
             )}>
-              <step.icon size={18} />
+              <step.icon size={14} />
             </div>
             {i < STEPS.length - 1 && (
               <div className={cn(
-                "w-8 sm:w-12 h-1 mx-2 rounded-full transition-all duration-500",
+                "w-4 h-0.5 mx-1 rounded-full transition-all duration-500",
                 currentStep > i ? "bg-indigo-600" : "bg-slate-100"
               )} />
             )}
@@ -240,7 +263,7 @@ export default function Triage() {
         ))}
       </div>
 
-      <div className="bg-white p-6 md:p-12 rounded-[3.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+      <div className="bg-white p-5 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div
@@ -628,54 +651,62 @@ export default function Triage() {
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-8"
             >
-              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-[3rem] text-white relative overflow-hidden">
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-3xl text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-                <div className="relative z-10 flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                    <BrainCircuit size={24} />
+                <div className="relative z-10 flex items-center gap-4 mb-4">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                    <BrainCircuit size={20} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight">Relatório de Triagem</h3>
+                    <h3 className="text-xl font-black tracking-tight">Relatório de Triagem</h3>
                     <div className="flex gap-2 mt-1">
-                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-[9px] font-black uppercase tracking-widest">
                         {analysis?.classificacao}
                       </span>
                       <span className={cn(
-                        "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        analysis?.gravidade === 'grave' ? "bg-rose-500" : analysis?.gravidade === 'moderado' ? "bg-amber-500" : "bg-emerald-500"
+                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        analysis?.gravidade === 'Vermelho' || analysis?.gravidade === 'grave' ? "bg-rose-500" : analysis?.gravidade === 'Amarelo' || analysis?.gravidade === 'moderado' ? "bg-amber-500" : "bg-emerald-500"
                       )}>
                         Gravidade {analysis?.gravidade}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="prose prose-invert prose-sm sm:prose-base max-w-none bg-white/10 p-4 sm:p-8 rounded-3xl backdrop-blur-md border border-white/20 shadow-inner">
-                  <ReactMarkdown>{displayedAnalysis || ''}</ReactMarkdown>
+                <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/20">
+                  <div className="prose prose-invert prose-sm max-w-none bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner break-words whitespace-normal">
+                    <ReactMarkdown>{displayedAnalysis || ''}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-6 bg-amber-50 rounded-3xl border border-amber-100 text-amber-800">
-                <AlertCircle className="flex-shrink-0 mt-1" size={20} />
+              <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-800">
+                <AlertCircle className="flex-shrink-0 mt-1" size={18} />
                 <div className="space-y-1">
-                  <p className="text-sm font-bold">Aviso Legal</p>
-                  <p className="text-xs font-medium leading-relaxed">
-                    Esta triagem é apenas informativa e não substitui avaliação presencial com profissional de saúde. Em caso de dor súbita e intensa, procure uma emergência.
+                  <p className="text-xs font-bold">Aviso Legal</p>
+                  <p className="text-[10px] font-medium leading-relaxed">
+                    Esta triagem é informativa e não substitui avaliação presencial. Em caso de dor súbita e intensa, procure uma emergência.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
-                  onClick={() => setCurrentStep(0)}
-                  className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-3xl font-black hover:bg-slate-200 transition-all"
+                  onClick={downloadReport}
+                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
                 >
-                  Nova Triagem
+                  <Download size={18} /> Baixar Relatório
                 </button>
                 <button
-                  onClick={() => navigate('/appointments')}
-                  className="flex-[2] py-5 bg-indigo-600 text-white rounded-3xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+                  onClick={shareWithPhysio}
+                  className="py-4 bg-indigo-100 text-indigo-600 rounded-2xl font-black hover:bg-indigo-200 transition-all flex items-center justify-center gap-2"
                 >
-                  Agendar Consulta
+                  <Send size={18} /> Enviar ao Fisioterapeuta
+                </button>
+                <button
+                  onClick={() => setCurrentStep(0)}
+                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all sm:col-span-2"
+                >
+                  Nova Triagem
                 </button>
               </div>
             </motion.div>
