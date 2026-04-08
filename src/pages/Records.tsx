@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { generateMedicalRecord } from '../lib/groq';
+import ReactMarkdown from 'react-markdown';
 import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
@@ -33,7 +34,8 @@ export default function Records() {
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   
   // New Record Form
-  const [patientEmail, setPatientEmail] = useState('');
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -78,18 +80,44 @@ export default function Records() {
         const uidsToResolve = Array.from(new Set((recordsData || []).map((rec: any) => rec[otherRoleField])));
         
         if (uidsToResolve.length > 0) {
+          const newNameMap = { ...nameMap };
+
+          // Try perfis first
           const { data: profilesData } = await supabase
             .from('perfis')
             .select('id, nome_completo')
             .in('id', uidsToResolve);
           
           if (profilesData) {
-            const newNameMap = { ...nameMap };
             profilesData.forEach(p => {
               newNameMap[p.id] = p.nome_completo;
             });
-            setNameMap(newNameMap);
           }
+
+          // Then try pacientes
+          const { data: pacientesData } = await supabase
+            .from('pacientes')
+            .select('id, nome')
+            .in('id', uidsToResolve);
+          
+          if (pacientesData) {
+            pacientesData.forEach(p => {
+              newNameMap[p.id] = p.nome;
+            });
+          }
+
+          setNameMap(newNameMap);
+        }
+
+        // Fetch physio's patients for the dropdown
+        if (isPhysio) {
+          const { data: physioPatients } = await supabase
+            .from('pacientes')
+            .select('id, nome')
+            .eq('fisioterapeuta_id', user.id)
+            .order('nome');
+          
+          if (physioPatients) setPatients(physioPatients);
         }
 
         // Fetch triages
@@ -155,28 +183,11 @@ export default function Records() {
 
   const handleCreateRecord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || submitting || !user) return;
+    if (!content.trim() || submitting || !user || !selectedPatientId) return;
 
     setSubmitting(true);
     setError('');
     try {
-      // Find patient by email
-      const { data: patientData, error: patientError } = await supabase
-        .from('perfis')
-        .select('id')
-        .eq('email', patientEmail.trim().toLowerCase())
-        .eq('plano', 'free')
-        .single();
-      
-      if (patientError || !patientData) {
-        setError("Paciente não encontrado com este e-mail.");
-        const { toast } = await import('sonner');
-        toast.error("Paciente não encontrado.");
-        setSubmitting(false);
-        return;
-      }
-
-      const patientId = patientData.id;
       const attachmentUrls = [];
 
       // Upload files to Supabase
@@ -194,7 +205,7 @@ export default function Records() {
       const { error: insertError } = await supabase
         .from('prontuarios')
         .insert({
-          paciente_id: patientId,
+          paciente_id: selectedPatientId,
           fisio_id: user.id,
           conteudo: {
             text: content,
@@ -207,10 +218,12 @@ export default function Records() {
 
       setShowNewModal(false);
       setContent('');
-      setPatientEmail('');
+      setSelectedPatientId('');
       setFiles([]);
       const { toast } = await import('sonner');
       toast.success("Prontuário salvo com sucesso!");
+      // Refresh records
+      window.location.reload();
     } catch (err: any) {
       console.error(err);
       setError("Erro ao criar prontuário.");
@@ -265,9 +278,9 @@ export default function Records() {
                 </div>
                 <div className="text-sm font-bold text-purple-900 mb-1">Sintomas:</div>
                 <p className="text-sm text-purple-800 line-clamp-2 mb-3">{triage.sintomas}</p>
-                {triage.ai_analysis && (
-                  <div className="text-xs text-purple-600 bg-white/50 p-3 rounded-xl border border-purple-100 italic">
-                    {triage.ai_analysis.slice(0, 100)}...
+                {triage.relatorio && (
+                  <div className="text-xs text-purple-600 bg-white/50 p-3 rounded-xl border border-purple-100 italic prose prose-purple prose-sm max-w-none line-clamp-3">
+                    <ReactMarkdown>{triage.relatorio}</ReactMarkdown>
                   </div>
                 )}
               </div>
@@ -314,8 +327,8 @@ export default function Records() {
                 </div>
               </div>
 
-              <div className="prose prose-slate max-w-none text-slate-700 mb-6 whitespace-pre-wrap">
-                {record.conteudo?.text || record.conteudo}
+              <div className="prose prose-slate prose-sm sm:prose-base max-w-none text-slate-700 mb-6 whitespace-pre-wrap">
+                <ReactMarkdown>{record.conteudo?.text || record.conteudo}</ReactMarkdown>
               </div>
 
               {record.conteudo?.attachments?.length > 0 && (
@@ -369,15 +382,18 @@ export default function Records() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">E-mail do Paciente</label>
-                  <input
-                    type="email"
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Paciente</label>
+                  <select
                     required
-                    value={patientEmail}
-                    onChange={(e) => setPatientEmail(e.target.value)}
+                    value={selectedPatientId}
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none"
-                    placeholder="paciente@email.com"
-                  />
+                  >
+                    <option value="">Selecione um paciente...</option>
+                    {patients.map(p => (
+                      <option key={p.id} value={p.id}>{p.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">

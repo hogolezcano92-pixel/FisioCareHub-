@@ -134,33 +134,40 @@ export default function Triage() {
       const aiResult = await generateTriageReport(formData);
       setAnalysis(aiResult);
 
-      // 2. Save to Database
-      const { error } = await supabase
-        .from('triagens')
-        .insert({
-          paciente_id: user.id,
-          idade: parseInt(formData.idade),
-          sexo: formData.sexo,
-          peso: parseFloat(formData.peso),
-          altura: parseFloat(formData.altura),
-          profissao: formData.profissao,
-          atividade_fisica: formData.atividade_fisica,
-          regiao_dor: formData.regiao_dor,
-          inicio_sintomas: formData.inicio_sintomas,
-          tempo_sintomas: formData.tempo_sintomas,
-          historico_clinico: formData.historico_clinico,
-          doencas_preexistentes: formData.doencas_preexistentes,
-          escala_dor: formData.escala_dor,
-          limitacao_funcional: formData.avaliacao_funcional.limitacao_atividades,
-          red_flag: aiResult.red_flag_detected,
-          classificacao: aiResult.classificacao,
-          gravidade: aiResult.gravidade,
-          relatorio: aiResult.relatorio,
-          status: 'concluido',
-          data_triagem: new Date().toISOString()
-        });
+      // 2. Prepare data for saving
+      const triageData = {
+        paciente_id: user.id,
+        idade: formData.idade ? parseInt(formData.idade) : null,
+        sexo: formData.sexo || null,
+        peso: formData.peso ? parseFloat(formData.peso) : null,
+        altura: formData.altura ? parseFloat(formData.altura) : null,
+        profissao: formData.profissao || null,
+        atividade_fisica: formData.atividade_fisica || null,
+        regiao_dor: formData.regiao_dor || null,
+        inicio_sintomas: formData.inicio_sintomas || null,
+        tempo_sintomas: formData.tempo_sintomas || null,
+        historico_clinico: formData.historico_clinico,
+        doencas_preexistentes: formData.doencas_preexistentes,
+        escala_dor: formData.escala_dor,
+        limitacao_funcional: formData.avaliacao_funcional.limitacao_atividades,
+        red_flag: !!aiResult.red_flag_detected,
+        classificacao: aiResult.classificacao || 'Não classificado',
+        gravidade: aiResult.gravidade || 'Não definida',
+        relatorio: aiResult.relatorio,
+        ai_analysis: aiResult, // Save full AI response for redundancy
+        status: 'concluido',
+        data_triagem: new Date().toISOString()
+      };
 
-      if (error) throw error;
+      // 3. Save to Database
+      const { error: saveError } = await supabase
+        .from('triagens')
+        .insert(triageData);
+
+      if (saveError) {
+        console.error("Erro ao salvar triagem no Supabase:", saveError);
+        throw new Error(`Erro ao salvar no banco de dados: ${saveError.message}`);
+      }
 
       toast.success("Triagem realizada com sucesso!");
       setCurrentStep(STEPS.length);
@@ -642,7 +649,7 @@ export default function Triage() {
                     </div>
                   </div>
                 </div>
-                <div className="prose prose-invert max-w-none bg-white/5 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
+                <div className="prose prose-invert prose-sm sm:prose-base max-w-none bg-white/10 p-4 sm:p-8 rounded-3xl backdrop-blur-md border border-white/20 shadow-inner">
                   <ReactMarkdown>{displayedAnalysis || ''}</ReactMarkdown>
                 </div>
               </div>
@@ -729,7 +736,7 @@ export default function Triage() {
                         </div>
                       </div>
                       <p className="text-slate-700 font-bold mb-2">{item.regiao_dor} - {item.tempo_sintomas}</p>
-                      <div className="text-slate-500 text-sm line-clamp-2 prose prose-sm max-w-none">
+                      <div className="text-slate-500 text-sm line-clamp-3 prose prose-slate prose-sm max-w-none">
                         <ReactMarkdown>{item.relatorio}</ReactMarkdown>
                       </div>
                     </div>

@@ -51,6 +51,7 @@ export default function Exercises() {
       const { data, error } = await supabase
         .from('exercicios')
         .select('*')
+        .or(`fisio_id.is.null,fisio_id.eq.${user?.id}`)
         .order('nome');
 
       if (error) throw error;
@@ -69,7 +70,10 @@ export default function Exercises() {
     try {
       const { error } = await supabase
         .from('exercicios')
-        .insert(formData);
+        .insert({
+          ...formData,
+          fisio_id: user?.id
+        });
 
       if (error) throw error;
 
