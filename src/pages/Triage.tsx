@@ -166,8 +166,8 @@ export default function Triage() {
       setCurrentStep(STEPS.length);
       fetchHistory(user.id);
     } catch (err: any) {
-      console.error(err);
-      toast.error("Erro ao processar triagem. Tente novamente.");
+      console.error("Erro detalhado na triagem:", err);
+      toast.error(err.message || "Erro ao processar triagem. Tente novamente.");
     } finally {
       setLoading(false);
     }

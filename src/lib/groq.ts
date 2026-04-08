@@ -109,7 +109,14 @@ export async function generateSOAPRecord(rawText: string) {
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Resposta da IA inválida");
-    return JSON.parse(content);
+    
+    try {
+      const cleanJson = content.replace(/```json\n?|```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error("Erro ao parsear JSON SOAP:", content);
+      throw new Error("Formato de resposta inválido.");
+    }
   } catch (error: any) {
     console.error("Erro na geração de SOAP (Groq):", error);
     throw new Error(error.message || "Não foi possível estruturar o prontuário SOAP no momento.");
@@ -215,7 +222,14 @@ export async function generateTriageReport(data: any) {
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Resposta da IA inválida");
-    return JSON.parse(content);
+    
+    try {
+      const cleanJson = content.replace(/```json\n?|```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error("Erro ao parsear JSON Triagem:", content);
+      throw new Error("A IA retornou um formato inválido. Por favor, tente novamente.");
+    }
   } catch (error: any) {
     console.error("Erro na geração de triagem (Groq):", error);
     throw new Error(error.message || "Não foi possível realizar a triagem no momento.");
