@@ -25,11 +25,14 @@ import {
   Route,
   BookOpen,
   Wallet,
-  User
+  User,
+  MapPin,
+  Thermometer,
+  AlertTriangle
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import { toast } from 'sonner';
 
 // New FisioCare Components
@@ -52,6 +55,7 @@ export default function Dashboard() {
     pendingTriages: 0
   });
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
+  const [recentTriages, setRecentTriages] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [apptsLoading, setApptsLoading] = useState(true);
   const [patientSearch, setPatientSearch] = useState('');
@@ -130,6 +134,24 @@ export default function Dashboard() {
     }
   }, []);
 
+  const fetchRecentTriages = useCallback(async () => {
+    try {
+      const { data: triages, error } = await supabase
+        .from('triagens')
+        .select(`
+          *,
+          paciente:paciente_id (nome_completo, avatar_url, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setRecentTriages(triages || []);
+    } catch (err) {
+      console.error("Erro ao carregar triagens recentes:", err);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -137,8 +159,11 @@ export default function Dashboard() {
       lastLoadedProfileId.current = profile.id;
       fetchStats(profile);
       fetchRecentAppointments(profile);
+      if (profile.plano?.toLowerCase() === 'fisioterapeuta') {
+        fetchRecentTriages();
+      }
     }
-  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments]);
+  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments, fetchRecentTriages]);
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -426,6 +451,77 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {/* Recent Triages for Physio */}
+          {isPhysio && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">Triagens <span className="text-indigo-600 italic">Inteligentes</span></h2>
+                <Link to="/records" className="text-base font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                  Ver todas <ChevronRight size={16} />
+                </Link>
+              </div>
+
+              <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
+                {recentTriages.length === 0 ? (
+                  <div className="p-20 text-center space-y-4">
+                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                      <BrainCircuit size={32} />
+                    </div>
+                    <p className="text-slate-500 font-medium">Nenhuma triagem recente.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-50">
+                    {recentTriages.map((triage) => (
+                      <div key={triage.id} className="p-6 hover:bg-slate-50 transition-colors group">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={triage.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${triage.paciente_id}`}
+                              alt={triage.paciente?.nome_completo}
+                              className="w-12 h-12 rounded-xl object-cover"
+                            />
+                            <div>
+                              <p className="text-base font-bold text-slate-900">{triage.paciente?.nome_completo}</p>
+                              <p className="text-xs text-slate-400 font-medium">{formatDate(triage.created_at)}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                              {triage.classificacao}
+                            </span>
+                            <span className={cn(
+                              "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                              triage.gravidade === 'grave' ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"
+                            )}>
+                              {triage.gravidade}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-sm text-slate-500 font-medium">
+                            <span className="flex items-center gap-1"><MapPin size={14} /> {triage.regiao_dor}</span>
+                            <span className="flex items-center gap-1"><Thermometer size={14} /> Dor {triage.escala_dor}/10</span>
+                            {triage.red_flag && (
+                              <span className="flex items-center gap-1 text-rose-600 font-bold">
+                                <AlertTriangle size={14} /> Red Flag!
+                              </span>
+                            )}
+                          </div>
+                          <button 
+                            onClick={() => navigate(`/records?patient=${triage.paciente_id}`)}
+                            className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
+                          >
+                            <ChevronRight size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions & AI Insights */}
