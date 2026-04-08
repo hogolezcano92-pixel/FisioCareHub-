@@ -15,29 +15,48 @@ export default function Subscription() {
   const handleUpgrade = async (method: 'payment' | 'key') => {
     setLoading(true);
     try {
-      if (method === 'key' && proKey !== 'PRO2024') {
-        toast.error('Chave inválida', {
-          description: 'A chave inserida não é válida ou já expirou.'
+      if (method === 'key') {
+        if (proKey !== 'PRO2024') {
+          toast.error('Chave inválida', {
+            description: 'A chave inserida não é válida ou já expirou.'
+          });
+          setLoading(false);
+          return;
+        }
+
+        const { error } = await supabase
+          .from('perfis')
+          .update({ is_pro: true })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        await refreshProfile();
+        toast.success('Assinatura Pro Ativada!', {
+          description: 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
         });
-        setLoading(false);
         return;
       }
 
-      const { error } = await supabase
-        .from('perfis')
-        .update({ is_pro: true })
-        .eq('id', profile.id);
+      // Stripe Payment Method
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
+          planId: 'pro',
+          userId: profile.id,
+          userEmail: profile.email
+        }
+      });
 
       if (error) throw error;
-
-      await refreshProfile();
-      toast.success('Assinatura Pro Ativada!', {
-        description: 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
-      });
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Não foi possível gerar o link de pagamento.');
+      }
     } catch (error: any) {
-      console.error('Erro ao atualizar para Pro:', error);
-      toast.error('Erro ao ativar assinatura', {
-        description: error.message
+      console.error('Erro ao processar assinatura:', error);
+      toast.error('Erro ao processar assinatura', {
+        description: error.message || 'Ocorreu um erro inesperado. Tente novamente.'
       });
     } finally {
       setLoading(false);

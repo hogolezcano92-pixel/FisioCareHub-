@@ -46,7 +46,7 @@ import ProGuard from '../components/ProGuard';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     appointments: 0,
@@ -64,6 +64,21 @@ export default function Dashboard() {
 
   const lastLoadedProfileId = useRef<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    const planId = searchParams.get('plan_id');
+    
+    if (sessionId && planId === 'pro') {
+      toast.success('Assinatura Pro Ativada!', {
+        description: 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
+      });
+      refreshProfile();
+      // Limpar os parâmetros da URL para não repetir o toast
+      navigate('/dashboard', { replace: true });
+    }
+  }, [searchParams, refreshProfile, navigate]);
 
   const fetchStats = useCallback(async (data: any) => {
     if (!data) return;
@@ -675,8 +690,13 @@ export default function Dashboard() {
                       }}
                     />
                   </ProGuard>
+                  <ProGuard variant="full">
+                    <EvolutionCharts />
+                  </ProGuard>
                 </div>
-                <DigitalLibrary />
+                <ProGuard variant="full">
+                  <DigitalLibrary />
+                </ProGuard>
               </div>
             </div>
           </>
