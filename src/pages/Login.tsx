@@ -100,7 +100,15 @@ export default function Login() {
 
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
-      navigate('/dashboard');
+      
+      // Check for redirect in URL
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirectTo');
+      if (redirectTo) {
+        navigate(redirectTo);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       console.error("Erro no login:", err);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');

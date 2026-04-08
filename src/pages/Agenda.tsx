@@ -23,7 +23,7 @@ import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Agenda() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
@@ -44,14 +44,21 @@ export default function Agenda() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      const currentPath = window.location.pathname + window.location.search;
+      navigate(`/login?redirectTo=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
     if (profile && profile.plano !== 'fisioterapeuta') {
       navigate('/dashboard');
       return;
     }
-    if (user) {
-      loadData();
-    }
-  }, [user, selectedDate, profile]);
+    
+    loadData();
+  }, [user, selectedDate, profile, authLoading]);
 
   const loadData = async () => {
     setIsLoading(true);

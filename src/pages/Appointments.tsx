@@ -37,20 +37,22 @@ export default function Appointments() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (profile) {
-        if (profile.plano !== 'free') {
-          navigate('/dashboard');
-          return;
-        }
-        fetchAppointments(profile);
-        setupRealtime(profile);
-        fetchAvailableUsers(profile);
-      } else {
-        setLoading(false);
-      }
+    if (authLoading) return;
+
+    if (!user) {
+      const currentPath = window.location.pathname + window.location.search;
+      navigate(`/login?redirectTo=${encodeURIComponent(currentPath)}`);
+      return;
     }
-  }, [profile, authLoading]);
+
+    if (profile) {
+      fetchAppointments(profile);
+      setupRealtime(profile);
+      fetchAvailableUsers(profile);
+    } else {
+      setLoading(false);
+    }
+  }, [profile, authLoading, user]);
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
@@ -372,6 +374,7 @@ export default function Appointments() {
         );
       }
       import('sonner').then(({ toast }) => toast.success(`Status atualizado para ${status}`));
+      setSelectedAppId(null);
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status."));
