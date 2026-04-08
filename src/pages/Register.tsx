@@ -22,6 +22,8 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [bio, setBio] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
@@ -150,33 +152,33 @@ export default function Register() {
         // 4. Criar o perfil detalhado na tabela 'perfis'
         console.log("Upserting profile to 'perfis' table...");
         
-        // Base data that is most likely to exist
+        // Base data that is most likely to exist (excluding documents which might fail if column is missing)
         const baseProfileData = {
           id: authData.user.id,
           nome_completo: cleanName,
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
           tipo_usuario: role,
           email: cleanEmail,
-        };
-
-        // Full data with all fields
-        const fullProfileData = {
-          ...baseProfileData,
-          telefone: '',
-          bio: '',
-          genero: role === 'fisioterapeuta' ? (gender || null) : null,
-          especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
-          crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
           localizacao: city || null,
           endereco: address || null,
           cep: zipCode || null,
           pais: country || null,
+          crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
+          especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
+          genero: role === 'fisioterapeuta' ? (gender || null) : null,
           tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
           is_pro: isPro,
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
-          documentos: uploadedDocUrls,
           created_at: new Date().toISOString()
+        };
+
+        // Full data with all fields including documents
+        const fullProfileData = {
+          ...baseProfileData,
+          telefone: telefone,
+          bio: bio,
+          documentos: uploadedDocUrls,
         };
 
         let { error: profileError } = await supabase
@@ -287,6 +289,27 @@ export default function Register() {
                 placeholder="Seu nome"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-base font-semibold text-slate-700 mb-2">Telefone</label>
+            <input
+              type="tel"
+              value={telefone}
+              onChange={(e) => setTelefone(e.target.value)}
+              className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-base font-semibold text-slate-700 mb-2">Biografia / Histórico</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              className="w-full h-24 px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base resize-none"
+              placeholder={role === 'fisioterapeuta' ? "Conte sobre sua formação..." : "Conte um pouco sobre seu histórico de saúde..."}
+            />
           </div>
 
           <div>

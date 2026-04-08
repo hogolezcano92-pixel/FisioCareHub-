@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.perfis (
     is_pro BOOLEAN DEFAULT false,
     aprovado BOOLEAN DEFAULT false,
     status_aprovacao TEXT DEFAULT 'pendente',
+    documentos TEXT[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -110,7 +111,7 @@ CREATE POLICY "Usuários enviam mensagens" ON public.mensagens FOR INSERT WITH C
 
 -- 4. Buckets de Storage
 -- Nota: Buckets devem ser criados via Dashboard ou API de Storage
--- Buckets sugeridos: 'avatars' (público), 'documents' (privado)
+-- Buckets sugeridos: 'avatars' (público), 'DOCUMENTS' (privado)
 
 -- 5. Funções Auxiliares (Opcional)
 -- Função para atualizar updated_at automaticamente

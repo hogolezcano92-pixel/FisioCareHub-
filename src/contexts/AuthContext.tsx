@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const lastFetchedUserId = React.useRef<string | null>(null);
 
@@ -34,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .maybeSingle();
       
-      if (error && error.code === 'PGRST116') {
+      if (!data && !error) {
         // Profile not found, create a default one (likely OAuth user)
         console.log('Profile not found, creating default for user:', userId);
         
@@ -143,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      // Don't set loading to true here to avoid immediate flicker/lock
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error during signOut:', error);
@@ -152,9 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       setLoading(false);
-      // Force reload to clear any remaining state if necessary, 
-      // but usually navigate is enough.
-      window.location.href = '/';
+      // Use navigate instead of window.location.href for better performance
+      navigate('/');
     }
   };
 

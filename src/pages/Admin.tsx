@@ -183,7 +183,8 @@ export default function Admin() {
       ...prev,
       totalUsers: profiles.length,
       activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado').length,
-      newPatients: patients.length
+      newPatients: patients.length,
+      pendingAppointments: prev.pendingAppointments // Keep existing
     }));
   }, []);
 
@@ -680,31 +681,43 @@ export default function Admin() {
                 {/* Documents */}
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentos e Comprovantes</p>
-                  {Array.isArray(selectedUserDetail.documentos) && selectedUserDetail.documentos.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {selectedUserDetail.documentos.map((doc: string, idx: number) => (
-                        <a 
-                          key={idx} 
-                          href={doc} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-2xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-50 transition-all group"
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                            <Download size={20} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-slate-900 truncate">Documento Profissional {idx + 1}</p>
-                            <p className="text-[10px] text-slate-400 uppercase font-black">Clique para baixar</p>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
-                      <p className="text-sm text-slate-400 font-bold">Nenhum documento anexado.</p>
-                    </div>
-                  )}
+                  {(() => {
+                    const docs = Array.isArray(selectedUserDetail.documentos) 
+                      ? selectedUserDetail.documentos 
+                      : (typeof selectedUserDetail.documentos === 'string' && selectedUserDetail.documentos.startsWith('[')
+                          ? JSON.parse(selectedUserDetail.documentos)
+                          : []);
+                    
+                    if (docs.length > 0) {
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {docs.map((doc: string, idx: number) => (
+                            <a 
+                              key={idx} 
+                              href={doc} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-2xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-50 transition-all group"
+                            >
+                              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <Download size={20} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-slate-900 truncate">Documento Profissional {idx + 1}</p>
+                                <p className="text-[10px] text-slate-500 font-medium truncate">{doc.split('/').pop()}</p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
+                        <p className="text-sm text-slate-400 font-bold">Nenhum documento anexado.</p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -933,12 +946,19 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {users.slice(0, 5).map((u) => (
+                      {supabaseProfiles
+                        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+                        .slice(0, 5)
+                        .map((u) => (
                         <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm">
-                                {u.nome_completo?.charAt(0)}
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm overflow-hidden">
+                                {u.avatar_url ? (
+                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  u.nome_completo?.charAt(0)
+                                )}
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-slate-900">{u.nome_completo}</p>
@@ -947,24 +967,31 @@ export default function Admin() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-md uppercase tracking-wider">
-                              {u.plano || u.role}
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider",
+                              u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                            )}>
+                              {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className={cn(
-                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                              u.status === 'approved' || u.approved ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
+                              u.status_aprovacao === 'aprovado' ? "bg-emerald-50 text-emerald-600" : 
+                              u.status_aprovacao === 'rejeitado' ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
                             )}>
-                              {u.status || 'Pendente'}
-                            </div>
+                              {u.status_aprovacao || 'Pendente'}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <button 
-                              onClick={() => handleBlockUser(u.id, u.status)}
-                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              onClick={() => {
+                                setActiveTab('users');
+                                setSelectedUserDetail(u);
+                              }}
+                              className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                             >
-                              <Lock size={18} />
+                              <Eye size={16} />
                             </button>
                           </td>
                         </tr>
@@ -1334,24 +1361,35 @@ export default function Admin() {
                         <div className="bg-slate-50 p-2 rounded-lg truncate">Tipo: {profile.plano || profile.tipo_usuario}</div>
                       </div>
                       
-                      {Array.isArray(profile.documentos) && profile.documentos.length > 0 && (
-                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Documentos Anexados ({profile.documentos.length})</p>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.documentos.map((doc: string, idx: number) => (
-                              <a 
-                                key={idx} 
-                                href={doc} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[10px] font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
-                              >
-                                Doc {idx + 1}
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {(() => {
+                        const docs = Array.isArray(profile.documentos) 
+                          ? profile.documentos 
+                          : (typeof profile.documentos === 'string' && profile.documentos.startsWith('[')
+                              ? JSON.parse(profile.documentos)
+                              : []);
+                        
+                        if (docs.length > 0) {
+                          return (
+                            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Documentos Anexados ({docs.length})</p>
+                              <div className="flex flex-wrap gap-2">
+                                {docs.map((doc: string, idx: number) => (
+                                  <a 
+                                    key={idx} 
+                                    href={doc} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[10px] font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
+                                  >
+                                    Doc {idx + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
 
                       <div className="flex items-center gap-2 pt-2">
                         <button 

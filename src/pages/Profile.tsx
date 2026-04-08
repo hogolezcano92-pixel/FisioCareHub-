@@ -57,6 +57,7 @@ export default function Profile() {
   // Form fields
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [specialty, setSpecialty] = useState('');
   const [city, setCity] = useState('');
@@ -72,6 +73,7 @@ export default function Profile() {
         setUserData(profile);
         setName(profile.nome_completo || '');
         setBio(profile.bio || '');
+        setTelefone(profile.telefone || '');
         setGender(profile.genero || '');
         setSpecialty(profile.especialidade || '');
         setCity(profile.localizacao || '');
@@ -110,6 +112,7 @@ export default function Profile() {
       const updateData = {
         nome_completo: name,
         bio: bio,
+        telefone: telefone,
         localizacao: city,
         endereco: address,
         cep: zipCode,
@@ -405,6 +408,19 @@ export default function Profile() {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Telefone</label>
+                        <input
+                          type="tel"
+                          value={telefone}
+                          onChange={(e) => setTelefone(e.target.value)}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">CEP</label>
                         <input
                           type="text"
@@ -414,9 +430,6 @@ export default function Profile() {
                           placeholder="00000-000"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-6">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Cidade</label>
                         <input
@@ -427,7 +440,7 @@ export default function Profile() {
                           placeholder="Sua cidade"
                         />
                       </div>
-                      <div className="md:col-span-2">
+                      <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">País</label>
                         <input
                           type="text"
