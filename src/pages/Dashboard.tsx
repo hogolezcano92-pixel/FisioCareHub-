@@ -202,14 +202,14 @@ export default function Dashboard() {
             <Sparkles size={14} />
             Bem-vindo de volta
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter">
+          <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-900 tracking-tighter">
             {isPhysio ? (
               <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} {profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">{profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}</span>! 👋
               </>
             ) : (
               <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} Paciente {profile?.nome_completo}! 👋
+                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">Paciente {profile?.nome_completo}</span>! 👋
               </>
             )}
           </h1>
@@ -356,7 +356,7 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Consultas Recentes</h2>
+            <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">Consultas <span className="text-blue-600 italic">Recentes</span></h2>
             <Link to="/appointments" className="text-base font-bold text-blue-600 hover:underline flex items-center gap-1">
               Ver todas <ChevronRight size={16} />
             </Link>
@@ -513,7 +513,7 @@ export default function Dashboard() {
           <>
             {/* Patient Features */}
             <div className="space-y-8">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Seu Plano de Cuidado</h2>
+              <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">Seu Plano de <span className="text-blue-600 italic">Cuidado</span></h2>
               
               <EvolutionCharts />
 

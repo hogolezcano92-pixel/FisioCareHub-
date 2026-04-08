@@ -220,9 +220,9 @@ export default function Home() {
               Líder em Reabilitação Domiciliar de Alta Performance
             </motion.div>
             
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-[#1A202C] dark:text-white leading-[0.9] tracking-tight">
               {t('home.hero.title1')} <br />
-              <span className="text-sky-600 dark:text-sky-400">
+              <span className="text-sky-600 dark:text-sky-400 italic">
                 {t('home.hero.title2')}
               </span>
             </h1>
@@ -353,10 +353,10 @@ export default function Home() {
       {/* Specialties Slider Section - Modern & Professional */}
       <section className="py-24 px-8 lg:px-20 bg-white dark:bg-slate-950 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 space-y-2">
-            <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Especialidades</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">
-              Excelência em <span className="text-sky-500">Diversas Áreas</span>
+          <div className="text-center mb-16 space-y-4">
+            <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Especialidades Médicas</p>
+            <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
+              Excelência em <span className="text-sky-500 italic">Diversas Áreas</span>
             </h3>
           </div>
 
@@ -439,10 +439,10 @@ export default function Home() {
       {/* How it Works Section */}
       <section className="py-24 px-8 lg:px-20 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16 space-y-2">
-            <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Simples e Rápido</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">
-              Como funciona o <span className="text-sky-500">FisioCareHub?</span>
+          <div className="text-center mb-16 space-y-4">
+            <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Simples e Rápido</p>
+            <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
+              Como funciona o <span className="text-sky-500 italic">FisioCareHub?</span>
             </h3>
           </div>
 

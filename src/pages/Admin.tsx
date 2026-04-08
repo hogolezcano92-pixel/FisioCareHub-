@@ -846,8 +846,10 @@ export default function Admin() {
             <button className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight capitalize truncate">
-              {activeTab === 'dashboard' ? 'Visão Geral' : activeTab}
+            <h2 className="text-xl sm:text-3xl font-display font-black text-slate-900 tracking-tight capitalize truncate">
+              {activeTab === 'dashboard' ? (
+                <>Visão <span className="text-blue-600 italic">Geral</span></>
+              ) : activeTab}
             </h2>
           </div>
 
