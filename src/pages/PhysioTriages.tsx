@@ -46,14 +46,25 @@ export default function PhysioTriages() {
         .from('triagens')
         .select(`
           *,
-          paciente:paciente_id (
+          paciente:perfis!paciente_id (
             nome_completo,
             avatar_url
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('Erro completo do Supabase ao buscar triagens:', supabaseError);
+        // Fallback para query simples
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('triagens')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) throw fallbackError;
+        setTriages(fallbackData || []);
+        return;
+      }
       setTriages(data || []);
     } catch (err: any) {
       console.error('Erro ao buscar triagens:', err);

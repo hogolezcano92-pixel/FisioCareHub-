@@ -57,7 +57,7 @@ export default function Patients() {
       const { data, error: supabaseError } = await supabase
         .from('pacientes')
         .select('*')
-        .eq('fisioterapeuta_id', user?.id)
+        .eq('fisio_id', user?.id)
         .order('nome');
 
       if (supabaseError) throw supabaseError;
@@ -83,7 +83,7 @@ export default function Patients() {
         .from('pacientes')
         .insert({
           ...formData,
-          fisioterapeuta_id: user.id
+          fisio_id: user.id
         });
 
       if (error) throw error;

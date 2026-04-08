@@ -72,7 +72,8 @@ export default function Dashboard() {
       const isPhysio = (data.plano || '').toLowerCase() === 'fisioterapeuta';
       
       if (isPhysio) {
-        const [apptsCount, patientsCount, recordsCount, triagesCount] = await Promise.all([
+        // Use Promise.allSettled for maximum resilience
+        const results = await Promise.allSettled([
           supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
           supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
@@ -81,28 +82,34 @@ export default function Dashboard() {
           supabase.from('triagens').select('*', { count: 'exact', head: true })
         ]);
 
+        const getCount = (res: any) => res.status === 'fulfilled' ? (res.value.count || 0) : 0;
+
         setStats({
-          appointments: apptsCount.count || 0,
-          patients: patientsCount.count || 0,
-          records: recordsCount.count || 0,
-          pendingTriages: triagesCount.count || 0
+          appointments: getCount(results[0]),
+          patients: getCount(results[1]),
+          records: getCount(results[2]),
+          pendingTriages: getCount(results[3])
         });
       } else {
-        const [apptsCount, recsCount, triagesCount] = await Promise.all([
+        const results = await Promise.allSettled([
           supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
         ]);
 
+        const getCount = (res: any) => res.status === 'fulfilled' ? (res.value.count || 0) : 0;
+
         setStats({
-          appointments: apptsCount.count || 0,
-          patients: 1, // O próprio fisio
-          records: recsCount.count || 0,
-          pendingTriages: triagesCount.count || 0
+          appointments: getCount(results[0]),
+          patients: 1,
+          records: getCount(results[1]),
+          pendingTriages: getCount(results[2])
         });
       }
     } catch (err) {
       console.error("Erro ao carregar estatísticas:", err);
+      // Fallback to zeros on critical error
+      setStats({ appointments: 0, patients: 0, records: 0, pendingTriages: 0 });
     } finally {
       setStatsLoading(false);
     }
@@ -118,17 +125,31 @@ export default function Dashboard() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:paciente_id (nome_completo, email, avatar_url),
-          fisioterapeuta:fisio_id (nome_completo, email, avatar_url)
+          paciente:perfis!paciente_id (nome_completo, email, avatar_url),
+          fisioterapeuta:perfis!fisio_id (nome_completo, email, avatar_url)
         `)
         .eq(roleField, data.id)
         .order('data_servico', { ascending: false })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro completo do Supabase ao carregar consultas recentes:", error);
+        // Fallback para query simples
+        const { data: fallbackAppts, error: fallbackError } = await supabase
+          .from('agendamentos')
+          .select('*')
+          .eq(roleField, data.id)
+          .order('data_servico', { ascending: false })
+          .limit(5);
+        
+        if (fallbackError) throw fallbackError;
+        setRecentAppointments(fallbackAppts || []);
+        return;
+      }
       setRecentAppointments(appts || []);
     } catch (err) {
       console.error("Erro ao carregar consultas recentes:", err);
+      setRecentAppointments([]);
     } finally {
       setApptsLoading(false);
     }
@@ -149,6 +170,7 @@ export default function Dashboard() {
       setRecentTriages(triages || []);
     } catch (err) {
       console.error("Erro ao carregar triagens recentes:", err);
+      setRecentTriages([]);
     }
   }, []);
 

@@ -103,8 +103,8 @@ export default function Appointments() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:paciente_id (nome_completo, email),
-          fisioterapeuta:fisio_id (nome_completo, email)
+          paciente:perfis!paciente_id (nome_completo, email),
+          fisioterapeuta:perfis!fisio_id (nome_completo, email)
         `)
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
@@ -229,21 +229,12 @@ export default function Appointments() {
           observacoes: notes,
           servico: service
         })
-        .select(`
-          *,
-          paciente:paciente_id (nome_completo, email),
-          fisioterapeuta:fisio_id (nome_completo, email)
-        `)
+        .select('id')
         .single();
 
       if (insertError) {
-        console.error("Erro ao inserir agendamento:", insertError);
+        console.error("Erro completo do Supabase ao inserir agendamento:", insertError);
         throw insertError;
-      }
-
-      if (!newApp) {
-        console.error("Nenhum dado retornado após inserção de agendamento.");
-        throw new Error("Falha ao criar agendamento: Nenhum dado retornado.");
       }
 
       console.log("Agendamento criado com sucesso:", newApp);

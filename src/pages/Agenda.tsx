@@ -16,7 +16,8 @@ import {
   ChevronRight,
   MapPin,
   MoreVertical,
-  Stethoscope
+  Stethoscope,
+  AlertTriangle
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -26,7 +27,8 @@ export default function Agenda() {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -47,39 +49,88 @@ export default function Agenda() {
       return;
     }
     if (user) {
-      fetchAppointments();
-      fetchPatients();
+      loadData();
     }
   }, [user, selectedDate, profile]);
 
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await Promise.all([
+        fetchAppointments(),
+        fetchPatients()
+      ]);
+    } catch (err: any) {
+      console.error('Erro ao carregar dados da agenda:', err);
+      setError(err.message || 'Erro de conexão');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchPatients = async () => {
-    const { data } = await supabase
-      .from('pacientes')
-      .select('id, nome')
-      .eq('fisioterapeuta_id', user?.id)
-      .order('nome');
-    setPatients(data || []);
+    try {
+      console.log('Buscando pacientes da tabela perfis...');
+      const { data, error: supabaseError } = await supabase
+        .from('perfis')
+        .select('id, nome_completo')
+        .eq('tipo_usuario', 'paciente')
+        .order('nome_completo');
+      
+      if (supabaseError) {
+        console.error('Erro completo do Supabase ao buscar pacientes:', supabaseError);
+        throw supabaseError;
+      }
+      
+      // Mapear nome_completo para nome para manter compatibilidade com o restante do componente
+      const mappedData = (data || []).map(p => ({
+        id: p.id,
+        nome: p.nome_completo
+      }));
+      
+      console.log('Pacientes encontrados:', mappedData.length);
+      setPatients(mappedData);
+    } catch (err) {
+      console.error('Erro ao buscar pacientes para agenda:', err);
+      setPatients([]);
+    }
   };
 
   const fetchAppointments = async () => {
     try {
-      const { data, error } = await supabase
+      console.log('Buscando atendimentos para data:', selectedDate);
+      const { data, error: supabaseError } = await supabase
         .from('atendimentos')
         .select(`
           *,
-          paciente:paciente_id (nome, telefone)
+          paciente:perfis!paciente_id (id, nome_completo)
         `)
-        .eq('fisioterapeuta_id', user?.id)
+        .eq('fisio_id', user?.id)
         .eq('data', selectedDate)
         .order('hora');
 
-      if (error) throw error;
+      if (supabaseError) {
+        console.error('Erro completo do Supabase ao buscar atendimentos:', supabaseError);
+        // Fallback para query simples se o join falhar
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('atendimentos')
+          .select('*')
+          .eq('fisio_id', user?.id)
+          .eq('data', selectedDate)
+          .order('hora');
+        
+        if (fallbackError) throw fallbackError;
+        setAppointments(fallbackData || []);
+        return;
+      }
+      
+      console.log('Atendimentos encontrados:', data?.length || 0);
       setAppointments(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar atendimentos:', err);
-      toast.error('Erro ao carregar agenda');
-    } finally {
-      setLoading(false);
+      setAppointments([]);
+      throw err;
     }
   };
 
@@ -93,7 +144,7 @@ export default function Agenda() {
         .from('atendimentos')
         .insert({
           ...formData,
-          fisioterapeuta_id: user.id
+          fisio_id: user.id
         });
 
       if (error) throw error;
@@ -132,8 +183,8 @@ export default function Agenda() {
   };
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Minha Agenda</h1>
           <p className="text-slate-500 font-medium">Controle seus atendimentos diários.</p>
@@ -148,7 +199,7 @@ export default function Agenda() {
       </header>
 
       {/* Seletor de Data */}
-      <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between w-full">
         <button onClick={() => changeDate(-1)} className="p-3 hover:bg-slate-50 rounded-xl transition-all text-slate-400">
           <ChevronLeft size={24} />
         </button>
@@ -168,14 +219,31 @@ export default function Agenda() {
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
+      {error && (
+        <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600 w-full">
+          <AlertTriangle size={24} />
+          <div>
+            <h3 className="font-black">Erro ao carregar agenda</h3>
+            <p className="text-sm font-medium opacity-80">{error}</p>
+          </div>
+          <button 
+            onClick={loadData}
+            className="ml-auto px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4 w-full">
           <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
+          <p className="text-slate-500 font-bold animate-pulse">Carregando agenda...</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {appointments.length === 0 ? (
-            <div className="bg-white p-20 rounded-[3rem] border border-slate-100 text-center">
+            <div className="bg-white p-20 rounded-[3rem] border border-slate-100 text-center w-full">
               <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CalendarIcon size={48} />
               </div>
@@ -188,7 +256,7 @@ export default function Agenda() {
                 key={app.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all"
+                className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all w-full"
               >
                 <div className="flex items-center gap-6">
                   <div className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 rounded-3xl text-slate-900">
@@ -290,6 +358,11 @@ export default function Agenda() {
                       <option key={p.id} value={p.id}>{p.nome}</option>
                     ))}
                   </select>
+                  {patients.length === 0 && !isLoading && (
+                    <p className="text-xs text-amber-600 font-bold mt-2 px-1">
+                      Nenhum paciente cadastrado. Vá em "Pacientes" para registrar um.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

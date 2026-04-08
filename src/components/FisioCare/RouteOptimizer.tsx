@@ -60,7 +60,7 @@ export const RouteOptimizer = () => {
           .from('agendamentos')
           .select(`
             id,
-            paciente:paciente_id (id, nome_completo, endereco, localizacao)
+            paciente:perfis!paciente_id (id, nome_completo, endereco, localizacao)
           `)
           .eq('fisio_id', profile.id)
           .eq('status', 'confirmado')
