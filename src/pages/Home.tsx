@@ -180,26 +180,26 @@ export default function Home() {
 
 
   return (
-    <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 bg-white dark:bg-slate-950 transition-colors duration-300">
+    <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 bg-slate-950 transition-colors duration-300">
       {/* Hero Section - Home Care Focus */}
-      <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-gradient-to-b from-sky-50 to-white dark:from-slate-900 dark:to-slate-950">
+      <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950">
         {/* Soft Background Shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div 
             animate={{ 
               scale: [1, 1.2, 1],
-              opacity: [0.3, 0.6, 0.3]
+              opacity: [0.1, 0.2, 0.1]
             }}
             transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-[10%] -left-[5%] w-[60%] h-[60%] bg-home-green/30 rounded-full blur-[100px]" 
+            className="absolute -top-[10%] -left-[5%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[100px]" 
           />
           <motion.div 
             animate={{ 
               scale: [1, 1.1, 1],
-              opacity: [0.2, 0.4, 0.2]
+              opacity: [0.1, 0.2, 0.1]
             }}
             transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[20%] right-[0%] w-[50%] h-[50%] bg-home-peach/30 rounded-full blur-[120px]" 
+            className="absolute top-[20%] right-[0%] w-[50%] h-[50%] bg-sky-500/20 rounded-full blur-[120px]" 
           />
         </div>
 
@@ -214,20 +214,20 @@ export default function Home() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 backdrop-blur-md border border-sky-100 rounded-full text-sky-600 text-sm font-black uppercase tracking-widest shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600/10 backdrop-blur-md border border-blue-500/20 rounded-full text-blue-400 text-sm font-black uppercase tracking-widest shadow-sm"
             >
-              <Sparkles size={16} className="text-amber-400" />
-              Líder em Reabilitação Domiciliar de Alta Performance
+              <Sparkles size={16} className="text-blue-400" />
+              LÍDER EM REABILITAÇÃO
             </motion.div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-[#1A202C] dark:text-white leading-[0.9] tracking-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tight">
               {t('home.hero.title1')} <br />
-              <span className="text-sky-600 dark:text-sky-400 italic">
+              <span className="text-blue-500 italic">
                 {t('home.hero.title2')}
               </span>
             </h1>
             
-            <p className="text-base md:text-lg text-[#1A202C] dark:text-slate-400 max-w-2xl leading-relaxed font-medium">
+            <p className="text-base md:text-lg text-slate-400 max-w-2xl leading-relaxed font-medium">
               {t('home.hero.subtitle')}
             </p>
             
@@ -238,7 +238,7 @@ export default function Home() {
               >
                 <Link
                   to="/register"
-                  className="px-8 py-4 bg-sky-500 text-white rounded-full font-bold text-lg shadow-xl shadow-sky-500/30 flex items-center gap-2 transition-all hover:bg-sky-600 mb-8"
+                  className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center gap-2 transition-all hover:bg-blue-700 mb-8"
                 >
                   Agendar Avaliação <ArrowRight size={20} />
                 </Link>
