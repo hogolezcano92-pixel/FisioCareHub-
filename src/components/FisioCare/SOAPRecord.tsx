@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User } from 'lucide-react';
-import { generateSOAPRecord } from '../../lib/groq';
+import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch } from 'lucide-react';
+import { generateSOAPRecord, summarizePatientHistory } from '../../lib/groq';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
@@ -25,6 +25,42 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [isProcessing, setIsProcessing] = useState(false);
   const [soapData, setSoapData] = useState<SOAPData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [historySummary, setHistorySummary] = useState<string | null>(null);
+
+  const handleSummarize = async () => {
+    if (!pacienteId) {
+      toast.error('Selecione um paciente para resumir o histórico.');
+      return;
+    }
+
+    setIsSummarizing(true);
+    try {
+      const { data: records, error } = await supabase
+        .from('prontuarios')
+        .select('conteudo')
+        .eq('paciente_id', pacienteId)
+        .order('data_registro', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      if (!records || records.length === 0) {
+        toast.error('Nenhum prontuário encontrado para este paciente.');
+        return;
+      }
+
+      const historyText = records.map(r => JSON.stringify(r.conteudo)).join('\n');
+      const summary = await summarizePatientHistory(historyText);
+      setHistorySummary(summary);
+      toast.success('Resumo gerado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao gerar resumo do histórico.');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
 
   const handleProcess = async () => {
     if (!rawText.trim()) {
@@ -92,10 +128,46 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           </h3>
           <p className="text-slate-500 font-medium">Insira o relato bruto e deixe a IA estruturar para você.</p>
         </div>
-        <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest">
-          Padrão Profissional
+        <div className="flex flex-col items-end gap-2">
+          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest">
+            Padrão Profissional
+          </div>
+          {pacienteId && (
+            <button
+              onClick={handleSummarize}
+              disabled={isSummarizing}
+              className="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest"
+            >
+              {isSummarizing ? <Loader2 className="animate-spin" size={12} /> : <FileSearch size={12} />}
+              Resumir Histórico IA
+            </button>
+          )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {historySummary && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-sky-50 p-6 rounded-[2rem] border border-sky-100 space-y-3 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-4">
+              <button onClick={() => setHistorySummary(null)} className="text-sky-400 hover:text-sky-600">
+                <CheckCircle2 size={20} />
+              </button>
+            </div>
+            <h4 className="text-xs font-black text-sky-600 uppercase tracking-widest flex items-center gap-2">
+              <Sparkles size={14} />
+              Resumo Clínico IA
+            </h4>
+            <p className="text-sm text-sky-800 font-medium leading-relaxed italic">
+              "{historySummary}"
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-4">
         <label className="block text-sm font-black text-slate-700 uppercase tracking-wider">Relato do Atendimento</label>

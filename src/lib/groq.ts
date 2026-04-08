@@ -115,3 +115,29 @@ export async function generateSOAPRecord(rawText: string) {
     throw new Error(error.message || "Não foi possível estruturar o prontuário SOAP no momento.");
   }
 }
+
+export async function summarizePatientHistory(history: string) {
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
+  }
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Você é um assistente sênior de fisioterapia. Resuma o histórico de atendimentos do paciente em um parágrafo conciso, destacando a evolução clínica, principais queixas e progresso no tratamento. Use uma linguagem profissional e técnica."
+        },
+        {
+          role: "user",
+          content: `Histórico de Prontuários: "${history}"`
+        }
+      ],
+      model: MODEL,
+    });
+
+    return completion.choices[0]?.message?.content || "Não foi possível gerar o resumo no momento.";
+  } catch (error: any) {
+    console.error("Erro no resumo de histórico (Groq):", error);
+    throw new Error(error.message || "Não foi possível gerar o resumo do histórico no momento.");
+  }
+}

@@ -19,6 +19,7 @@ import {
   ArrowDownRight,
   Bell,
   Lock,
+  Video,
   Loader2,
   Crown,
   Route,
@@ -36,7 +37,9 @@ import { SOAPIntelligentRecord } from '../components/FisioCare/SOAPRecord';
 import { RouteOptimizer } from '../components/FisioCare/RouteOptimizer';
 import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { DigitalLibrary } from '../components/FisioCare/DigitalLibrary';
+import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
 import ProGuard from '../components/ProGuard';
+import { Trophy, Medal, Star, Zap } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -449,13 +452,16 @@ export default function Dashboard() {
                 <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
                 <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
               </Link>
+              <button 
+                onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
+                className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
+              >
+                <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Teleconsulta</p>
+              </button>
               <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
                 <FileText className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
                 <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Prontuários</p>
-              </Link>
-              <Link to="/documents" className="p-6 bg-slate-50 rounded-3xl hover:bg-indigo-50 group transition-all text-center space-y-2 relative">
-                <Users className="mx-auto text-slate-400 group-hover:text-indigo-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-indigo-600">Documentos</p>
               </Link>
               <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
                 <Activity className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
@@ -508,13 +514,46 @@ export default function Dashboard() {
             {/* Patient Features */}
             <div className="space-y-8">
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">Seu Plano de Cuidado</h2>
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="space-y-8">
+              
+              <EvolutionCharts />
+
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
                   <PainDiary />
-                  <DigitalLibrary />
+                  <ExerciseChecklist />
                 </div>
                 <div className="space-y-8">
-                  <ExerciseChecklist />
+                  {/* Gamification Section */}
+                  <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                      <Trophy className="text-amber-500" size={24} />
+                      Suas Conquistas
+                    </h3>
+                    <div className="space-y-4">
+                      {[
+                        { label: 'Paciente Bronze', desc: '7 dias de exercícios', icon: Medal, color: 'text-amber-600 bg-amber-50', progress: 100 },
+                        { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: 100 },
+                        { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: 40 },
+                      ].map((badge, i) => (
+                        <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 transition-all">
+                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color)}>
+                            <badge.icon size={24} />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-black text-slate-900">{badge.label}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase">{badge.desc}</p>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className={cn("h-full transition-all duration-1000", badge.color.split(' ')[0].replace('text', 'bg'))}
+                                style={{ width: `${badge.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <DigitalLibrary />
                 </div>
               </div>
             </div>
