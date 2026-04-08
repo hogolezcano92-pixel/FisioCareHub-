@@ -20,7 +20,6 @@
         "tipo_servico": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
         "crefito": { "type": "string" },
         "is_pro": { "type": "boolean" },
-        "aprovado": { "type": "boolean" },
         "status_aprovacao": { "type": "string", "enum": ["pendente", "aprovado", "rejeitado"] },
         "documentos": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "created_at": { "type": "string", "format": "date-time" }

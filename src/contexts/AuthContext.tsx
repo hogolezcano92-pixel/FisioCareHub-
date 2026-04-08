@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             crefito: userMetadata?.crefito || null,
             especialidade: userMetadata?.especialidade || null,
             is_pro: !!userMetadata?.is_pro,
-            aprovado: finalRole === 'paciente',
             status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
           })
           .select()

@@ -356,7 +356,6 @@ export default function Admin() {
       const { error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          aprovado: true, 
           status_aprovacao: 'aprovado' 
         })
         .eq('id', profileId);
@@ -413,7 +412,6 @@ export default function Admin() {
       const { error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          aprovado: false, 
           status_aprovacao: 'rejeitado' 
         })
         .eq('id', profileId);
@@ -472,7 +470,7 @@ export default function Admin() {
       // Update Supabase
       await supabase
         .from('perfis')
-        .update({ status_aprovacao: newStatus, aprovado: newStatus === 'aprovado' })
+        .update({ status_aprovacao: newStatus })
         .eq('id', userId);
 
       // Update Firebase (if exists)

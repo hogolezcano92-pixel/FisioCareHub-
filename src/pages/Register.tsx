@@ -39,6 +39,9 @@ export default function Register() {
     setLoading(true);
     setError('');
     try {
+      // Salva o papel selecionado para que o AuthContext saiba qual perfil criar
+      localStorage.setItem('pending_role', role);
+      
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -154,7 +157,6 @@ export default function Register() {
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
           tipo_usuario: role,
           email: cleanEmail,
-          aprovado: role === 'paciente',
         };
 
         // Full data with all fields
