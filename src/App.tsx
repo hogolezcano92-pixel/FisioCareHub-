@@ -620,7 +620,7 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimePassed(true);
-    }, 2500);
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
 
