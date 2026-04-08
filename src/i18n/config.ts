@@ -7,7 +7,7 @@ const resources = {
     translation: {
       nav: {
         home: 'Início',
-        appointments: 'Agenda Antiga',
+        appointments: 'Agenda',
         agenda: 'Agenda',
         patients: 'Pacientes',
         exercises: 'Exercícios',
@@ -42,7 +42,7 @@ const resources = {
     translation: {
       nav: {
         home: 'Home',
-        appointments: 'Old Schedule',
+        appointments: 'Schedule',
         agenda: 'Schedule',
         patients: 'Patients',
         exercises: 'Exercises',
@@ -77,7 +77,7 @@ const resources = {
     translation: {
       nav: {
         home: 'Inicio',
-        appointments: 'Agenda Antigua',
+        appointments: 'Agenda',
         agenda: 'Agenda',
         patients: 'Pacientes',
         exercises: 'Ejercicios',

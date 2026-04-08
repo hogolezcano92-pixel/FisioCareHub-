@@ -22,7 +22,7 @@ import {
   Dna,
   X
 } from 'lucide-react';
-import { formatDate, cn } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 import { uploadDocument } from '../services/supabaseStorage';
 
@@ -440,7 +440,7 @@ export default function PatientDetails() {
                       <p className="text-xs font-black text-sky-500 uppercase tracking-widest mb-1">{arq.tipo}</p>
                       <p className="text-sm font-bold text-slate-900 truncate mb-4">{formatDate(arq.created_at)}</p>
                       <a 
-                        href={arq.arquivo_url} 
+                        href={resolveStorageUrl(arq.arquivo_url)} 
                         target="_blank" 
                         rel="noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 text-slate-600 rounded-xl font-black text-xs hover:bg-sky-500 hover:text-white transition-all"

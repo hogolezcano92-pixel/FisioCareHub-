@@ -65,11 +65,11 @@ export const uploadDocument = async (
   onProgress?: (progress: number) => void
 ): Promise<string> => {
   const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-  const path = `${userId}/${fileName}`;
+  const path = `fisioterapeutas/${userId}/${fileName}`;
   const bucket = 'documents';
 
   const supabase = getSupabase();
-  console.log(`Tentando upload de documento para o bucket "${bucket}"...`);
+  console.log(`Tentando upload de documento para o bucket "${bucket}" no caminho "${path}"...`);
 
   const { data, error } = await supabase.storage
     .from(bucket)

@@ -186,6 +186,8 @@ function Navbar() {
       // Items for Patients
       ...(profile?.plano === 'free' ? [
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
+        { name: t('nav.records'), path: '/records', icon: FileText },
+        { name: t('nav.documents'), path: '/documents', icon: FileSignature },
         { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
       ] : []),
 

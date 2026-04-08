@@ -22,7 +22,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { cn, resolveStorageUrl } from '../lib/utils';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
@@ -600,7 +600,7 @@ export default function Profile() {
                         userData.documentos.map((doc: string, i: number) => (
                           <a 
                             key={i} 
-                            href={doc.replace('/DOCUMENTS/', '/documents/')}
+                            href={resolveStorageUrl(doc)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-600 transition-all"

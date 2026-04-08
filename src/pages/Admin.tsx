@@ -54,7 +54,7 @@ import {
   User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Admin() {
@@ -694,7 +694,7 @@ export default function Admin() {
                           {docs.map((doc: string, idx: number) => (
                             <a 
                               key={idx} 
-                              href={doc.replace('/DOCUMENTS/', '/documents/')} 
+                              href={resolveStorageUrl(doc)} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-2xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-50 transition-all group"
@@ -1378,7 +1378,7 @@ export default function Admin() {
                                 {docs.map((doc: string, idx: number) => (
                                   <a 
                                     key={idx} 
-                                    href={doc.replace('/DOCUMENTS/', '/documents/')} 
+                                    href={resolveStorageUrl(doc)} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[10px] font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition-all"

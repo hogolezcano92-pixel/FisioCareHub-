@@ -17,7 +17,7 @@ import {
   AlertCircle,
   Crown
 } from 'lucide-react';
-import { formatDate, cn } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { generateMedicalRecord } from '../lib/groq';
 import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
@@ -50,11 +50,6 @@ export default function Records() {
 
     if (!user) {
       navigate('/login');
-      return;
-    }
-
-    if (profile && profile.plano !== 'fisioterapeuta') {
-      navigate('/dashboard');
       return;
     }
 
@@ -328,7 +323,7 @@ export default function Records() {
                   {record.conteudo.attachments.map((url: string, i: number) => (
                     <a
                       key={i}
-                      href={url.replace('/DOCUMENTS/', '/documents/')}
+                      href={resolveStorageUrl(url)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-bold transition-colors"

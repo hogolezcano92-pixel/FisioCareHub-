@@ -16,3 +16,13 @@ export function formatDate(date: any) {
     minute: '2-digit',
   });
 }
+
+export function resolveStorageUrl(url: string) {
+  if (!url) return '';
+  // Normaliza caminhos do Supabase Storage
+  // 1. Corrige problemas de caixa alta
+  // 2. Remove a pasta redundante 'documents/documents' e substitui por 'fisioterapeutas'
+  return url
+    .replace('/DOCUMENTS/', '/documents/')
+    .replace('/documents/documents/', '/documents/fisioterapeutas/');
+}

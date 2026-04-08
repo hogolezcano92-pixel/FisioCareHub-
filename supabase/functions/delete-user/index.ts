@@ -107,14 +107,17 @@ serve(async (req) => {
             await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
           }
         } else if (bucket === 'documents') {
-          // List all files in the user's folder
-          const { data: files, error: listError } = await supabaseAdmin.storage
-            .from(bucket)
-            .list(`${userId}`)
-          
-          if (files && files.length > 0) {
-            const filesToDelete = files.map(f => `${userId}/${f.name}`)
-            await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+          // List all files in the user's folder (checking old, new and redundant paths)
+          const folders = [`${userId}`, `fisioterapeutas/${userId}`, `documents/${userId}`]
+          for (const folder of folders) {
+            const { data: files } = await supabaseAdmin.storage
+              .from(bucket)
+              .list(folder)
+            
+            if (files && files.length > 0) {
+              const filesToDelete = files.map(f => `${folder}/${f.name}`)
+              await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+            }
           }
         }
       } catch (e) {
