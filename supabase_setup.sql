@@ -190,8 +190,8 @@ CREATE POLICY "Usuários podem inserir o próprio perfil" ON public.perfis FOR I
 CREATE POLICY "Fisios veem seus pacientes" ON public.pacientes FOR SELECT USING (auth.uid() = fisioterapeuta_id);
 CREATE POLICY "Fisios gerenciam seus pacientes" ON public.pacientes FOR ALL USING (auth.uid() = fisioterapeuta_id);
 
--- Atendimentos: Fisios gerenciam seus atendimentos
-CREATE POLICY "Fisios gerenciam seus atendimentos" ON public.atendimentos FOR ALL USING (auth.uid() = fisioterapeuta_id);
+-- Agendamentos: Fisios gerenciam seus agendamentos
+CREATE POLICY "Fisios gerenciam seus agendamentos" ON public.agendamentos FOR ALL USING (auth.uid() = fisio_id);
 
 -- Evoluções: Fisios gerenciam evoluções de seus pacientes
 CREATE POLICY "Fisios gerenciam evoluções" ON public.evolucoes FOR ALL USING (

@@ -38,7 +38,7 @@ export default function PatientDetails() {
   const [evolucoes, setEvolucoes] = useState<any[]>([]);
   const [arquivos, setArquivos] = useState<any[]>([]);
   const [prescricoes, setPrescricoes] = useState<any[]>([]);
-  const [atendimentos, setAtendimentos] = useState<any[]>([]);
+  const [agendamentos, setAgendamentos] = useState<any[]>([]);
 
   // Modal States
   const [showEvolucaoModal, setShowEvolucaoModal] = useState(false);
@@ -105,14 +105,14 @@ export default function PatientDetails() {
         .order('created_at', { ascending: false });
       setArquivos(arData || []);
 
-      // Fetch Atendimentos (for linking evolutions)
+      // Fetch Agendamentos (for linking evolutions)
       const { data: atData } = await supabase
-        .from('atendimentos')
+        .from('agendamentos')
         .select('*')
         .eq('paciente_id', id)
         .eq('status', 'realizado')
         .order('data', { ascending: false });
-      setAtendimentos(atData || []);
+      setAgendamentos(atData || []);
 
       // Fetch Prescrições
       const { data: preData } = await supabase
@@ -325,7 +325,7 @@ export default function PatientDetails() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-6 bg-slate-50 rounded-3xl text-center">
-                    <span className="text-3xl font-black text-slate-900">{atendimentos.length}</span>
+                    <span className="text-3xl font-black text-slate-900">{agendamentos.length}</span>
                     <p className="text-xs font-bold text-slate-400 uppercase mt-1">Sessões Realizadas</p>
                   </div>
                   <div className="p-6 bg-slate-50 rounded-3xl text-center">
@@ -574,7 +574,7 @@ export default function PatientDetails() {
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
                   >
                     <option value="">Selecione um atendimento realizado...</option>
-                    {atendimentos.map(at => (
+                    {agendamentos.map(at => (
                       <option key={at.id} value={at.id}>{formatDate(at.data)} - {at.hora.slice(0, 5)}</option>
                     ))}
                   </select>

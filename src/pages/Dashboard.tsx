@@ -74,10 +74,10 @@ export default function Dashboard() {
       if (isPhysio) {
         // Use Promise.allSettled for maximum resilience
         const results = await Promise.allSettled([
-          supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
-          supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
+          supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
+          supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
-            supabase.from('atendimentos').select('id').eq('fisioterapeuta_id', data.id)
+            supabase.from('agendamentos').select('id').eq('fisio_id', data.id)
           ),
           supabase.from('triagens').select('*', { count: 'exact', head: true })
         ]);
@@ -92,7 +92,7 @@ export default function Dashboard() {
         });
       } else {
         const results = await Promise.allSettled([
-          supabase.from('atendimentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
+          supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
         ]);
@@ -273,7 +273,7 @@ export default function Dashboard() {
             )}
           </h1>
           <p className="text-base text-slate-500 font-medium">
-            Aqui está o que está acontecendo com seus atendimentos hoje.
+            Aqui está o que está acontecendo com seus agendamentos hoje.
           </p>
         </div>
         <div className="flex items-center gap-3">

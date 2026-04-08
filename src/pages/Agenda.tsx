@@ -99,9 +99,9 @@ export default function Agenda() {
 
   const fetchAppointments = async () => {
     try {
-      console.log('Buscando atendimentos para data:', selectedDate);
+      console.log('Buscando agendamentos para data:', selectedDate);
       const { data, error: supabaseError } = await supabase
-        .from('atendimentos')
+        .from('agendamentos')
         .select(`
           *,
           paciente:perfis!paciente_id (id, nome_completo)
@@ -111,10 +111,10 @@ export default function Agenda() {
         .order('hora');
 
       if (supabaseError) {
-        console.error('Erro completo do Supabase ao buscar atendimentos:', supabaseError);
+        console.error('Erro completo do Supabase ao buscar agendamentos:', supabaseError);
         // Fallback para query simples se o join falhar
         const { data: fallbackData, error: fallbackError } = await supabase
-          .from('atendimentos')
+          .from('agendamentos')
           .select('*')
           .eq('fisio_id', user?.id)
           .eq('data', selectedDate)
@@ -125,10 +125,10 @@ export default function Agenda() {
         return;
       }
       
-      console.log('Atendimentos encontrados:', data?.length || 0);
+      console.log('Agendamentos encontrados:', data?.length || 0);
       setAppointments(data || []);
     } catch (err: any) {
-      console.error('Erro ao buscar atendimentos:', err);
+      console.error('Erro ao buscar agendamentos:', err);
       setAppointments([]);
       throw err;
     }
@@ -141,7 +141,7 @@ export default function Agenda() {
     setSubmitting(true);
     try {
       const { error } = await supabase
-        .from('atendimentos')
+        .from('agendamentos')
         .insert({
           ...formData,
           fisio_id: user.id
@@ -149,7 +149,7 @@ export default function Agenda() {
 
       if (error) throw error;
 
-      toast.success('Atendimento agendado!');
+      toast.success('Agendamento realizado!');
       setShowModal(false);
       fetchAppointments();
     } catch (err) {
@@ -163,7 +163,7 @@ export default function Agenda() {
   const updateStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
-        .from('atendimentos')
+        .from('agendamentos')
         .update({ status })
         .eq('id', id);
 
@@ -187,7 +187,7 @@ export default function Agenda() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Minha Agenda</h1>
-          <p className="text-slate-500 font-medium">Controle seus atendimentos diários.</p>
+          <p className="text-slate-500 font-medium">Controle seus agendamentos diários.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
