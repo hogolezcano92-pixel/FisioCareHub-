@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Crown, Check, ShieldCheck, Zap, CreditCard, Key, Loader2, ArrowRight, Star } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, invokeFunction } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
@@ -54,17 +54,11 @@ export default function Subscription() {
       }
 
       // Stripe Payment Method
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          planId: 'pro',
-          userId: profile.id,
-          userEmail: profile.email,
-          amount: 49.99,
-          isSubscription: true
-        }
+      const data = await invokeFunction('create-checkout-session', {
+        user_id: profile.id,
+        email: profile.email
       });
 
-      if (error) throw error;
       if (data?.url) {
         window.location.href = data.url;
       } else {
