@@ -391,6 +391,7 @@ function NotificationHandler() {
         table: 'notificacoes',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
+        console.log('[Realtime] Global notification received:', payload);
         if (!isInitialLoad.current) {
           const notification = payload.new;
           playSound();
@@ -403,7 +404,9 @@ function NotificationHandler() {
           });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Realtime] Global notification subscription status:', status);
+      });
 
     // Listener Global para Agendamentos (Realtime)
     const appointmentsChannel = supabase
@@ -413,6 +416,7 @@ function NotificationHandler() {
         schema: 'public', 
         table: 'agendamentos'
       }, (payload) => {
+        console.log('[Realtime] Appointment event received:', payload);
         if (!isInitialLoad.current) {
           const record = payload.new as any;
           // Filtro de Usuário: paciente ou fisioterapeuta
@@ -430,7 +434,9 @@ function NotificationHandler() {
           }
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Realtime] Appointments subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

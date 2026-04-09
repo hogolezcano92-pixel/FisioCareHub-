@@ -1,33 +1,74 @@
-import React from 'react';
-import { BookOpen, Download, Star, ChevronRight, ShoppingCart, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BookOpen, Download, Star, ChevronRight, ShoppingCart, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export const DigitalLibrary = () => {
-  const products = [
-    {
-      id: '1',
-      title: 'Manual do Cuidador de Idosos',
-      description: 'Guia completo com técnicas de mobilização, higiene e cuidados diários para familiares.',
-      price: 'R$ 47,00',
-      rating: 4.9,
-      reviews: 128,
-      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=400',
-      tag: 'Mais Vendido',
-      color: 'bg-blue-600 shadow-blue-100'
-    },
-    {
-      id: '2',
-      title: 'E-book: Fim da Dor Lombar em 21 dias',
-      description: 'Protocolo de exercícios terapêuticos e ergonomia para eliminar dores nas costas.',
-      price: 'R$ 67,00',
-      rating: 4.8,
-      reviews: 95,
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400',
-      tag: 'Recomendado',
-      color: 'bg-emerald-600 shadow-emerald-100'
+  const { profile } = useAuth();
+  const [materiais, setMateriais] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [buyingId, setBuyingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMateriais = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('materiais')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        setMateriais(data || []);
+      } catch (err) {
+        console.error("Erro ao buscar materiais:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMateriais();
+  }, []);
+
+  const handleBuy = async (material: any) => {
+    if (!profile) {
+      toast.error("Você precisa estar logado para comprar.");
+      return;
     }
-  ];
+
+    setBuyingId(material.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          user_id: profile.id,
+          email: profile.email,
+          product_id: material.id,
+          type: 'material'
+        }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error("Erro ao iniciar compra:", err);
+      toast.error("Erro ao processar compra. Tente novamente.");
+    } finally {
+      setBuyingId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="text-blue-600 animate-spin" size={48} />
+        <p className="text-slate-500 font-bold">Carregando biblioteca...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
@@ -39,13 +80,10 @@ export const DigitalLibrary = () => {
           </h3>
           <p className="text-slate-500 font-medium">Materiais exclusivos para potencializar sua recuperação.</p>
         </div>
-        <div className="flex items-center gap-2 text-blue-600 font-black text-sm cursor-pointer hover:underline">
-          Ver todos <ChevronRight size={16} />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {products.map((product, i) => (
+        {materiais.map((product, i) => (
           <motion.div
             key={product.id}
             initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
@@ -55,14 +93,14 @@ export const DigitalLibrary = () => {
           >
             <div className="relative h-48 overflow-hidden">
               <img 
-                src={product.image} 
-                alt={product.title}
+                src={product.imagem_url || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400'} 
+                alt={product.titulo}
                 className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute top-4 left-4">
-                <span className={cn("px-4 py-2 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg", product.color)}>
-                  {product.tag}
+                <span className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                  {product.tag || 'Novo'}
                 </span>
               </div>
             </div>
@@ -71,29 +109,39 @@ export const DigitalLibrary = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-1 text-amber-400">
                   <Star size={14} fill="currentColor" />
-                  <span className="text-xs font-black text-slate-900">{product.rating}</span>
-                  <span className="text-xs font-medium text-slate-400">({product.reviews} avaliações)</span>
+                  <span className="text-xs font-black text-slate-900">4.9</span>
+                  <span className="text-xs font-medium text-slate-400">(128 avaliações)</span>
                 </div>
                 <h4 className="text-xl font-black text-slate-900 tracking-tight leading-tight group-hover:text-blue-600 transition-colors">
-                  {product.title}
+                  {product.titulo}
                 </h4>
                 <p className="text-sm text-slate-500 font-medium line-clamp-2">
-                  {product.description}
+                  {product.descricao}
                 </p>
               </div>
 
               <div className="pt-4 mt-auto flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preço Único</p>
-                  <p className="text-2xl font-black text-slate-900">{product.price}</p>
+                  <p className="text-2xl font-black text-slate-900">R$ {product.preco?.toLocaleString()}</p>
                 </div>
-                <button className="p-4 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all">
-                  <ShoppingCart size={24} />
+                <button 
+                  onClick={() => handleBuy(product)}
+                  disabled={buyingId === product.id}
+                  className="p-4 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
+                >
+                  {buyingId === product.id ? <Loader2 className="animate-spin" size={24} /> : <ShoppingCart size={24} />}
                 </button>
               </div>
             </div>
           </motion.div>
         ))}
+
+        {materiais.length === 0 && (
+          <div className="col-span-full p-12 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center">
+            <p className="text-slate-400 font-bold">Nenhum material disponível no momento.</p>
+          </div>
+        )}
       </div>
 
       <div className="p-6 bg-blue-50 rounded-[2rem] border border-blue-100 flex items-center gap-4">

@@ -52,7 +52,12 @@ import {
   Smartphone,
   Stethoscope,
   User,
-  Crown
+  Crown,
+  BookOpen,
+  Plus,
+  Image as ImageIcon,
+  Tag,
+  FileText as FileIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
@@ -73,6 +78,7 @@ export default function Admin() {
   // Real Data States
   const [users, setUsers] = useState<any[]>([]);
   const [supabaseProfiles, setSupabaseProfiles] = useState<any[]>([]);
+  const [materiais, setMateriais] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [pendingPhysios, setPendingPhysios] = useState<any[]>([]);
   const [selectedUserDetail, setSelectedUserDetail] = useState<any>(null);
@@ -80,6 +86,15 @@ export default function Admin() {
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState('');
   const [commissionRate, setCommissionRate] = useState(20);
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({
+    titulo: '',
+    descricao: '',
+    preco: 0,
+    imagem_url: '',
+    arquivo_url: '',
+    tag: 'Novo'
+  });
   const [stats, setStats] = useState({
     totalUsers: 0,
     activePhysios: 0,
@@ -212,6 +227,20 @@ export default function Admin() {
     }
   }, [processProfiles]);
 
+  const fetchMateriais = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('materiais')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setMateriais(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar materiais:", err);
+    }
+  }, []);
+
   // Real-time Data Listeners
   useEffect(() => {
     if (!isAdmin || !firebaseUser) return;
@@ -225,11 +254,15 @@ export default function Admin() {
     });
 
     fetchSupabaseProfiles();
+    fetchMateriais();
     // Set up a simple poll or realtime subscription for Supabase
     const channel = supabase
       .channel('perfis-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, () => {
         fetchSupabaseProfiles();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'materiais' }, () => {
+        fetchMateriais();
       })
       .subscribe();
 
@@ -594,6 +627,51 @@ export default function Admin() {
     }
   };
 
+  const handleAddMaterial = async () => {
+    if (!newMaterial.titulo || !newMaterial.preco) {
+      import('sonner').then(({ toast }) => toast.error("Preencha o título e o preço."));
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('materiais')
+        .insert([newMaterial]);
+      
+      if (error) throw error;
+      
+      import('sonner').then(({ toast }) => toast.success("Material adicionado com sucesso!"));
+      setShowMaterialModal(false);
+      setNewMaterial({
+        titulo: '',
+        descricao: '',
+        preco: 0,
+        imagem_url: '',
+        arquivo_url: '',
+        tag: 'Novo'
+      });
+      fetchMateriais();
+    } catch (err) {
+      console.error("Erro ao adicionar material:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao adicionar material."));
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir este material?")) return;
+    try {
+      const { error } = await supabase
+        .from('materiais')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      fetchMateriais();
+      import('sonner').then(({ toast }) => toast.success("Material excluído!"));
+    } catch (err) {
+      console.error("Erro ao excluir material:", err);
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -798,6 +876,7 @@ export default function Admin() {
           <nav className="flex-1 py-6 px-3 space-y-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'materiais', label: 'Materiais (Loja)', icon: BookOpen },
               { id: 'physios', label: 'Fisioterapeutas', icon: Stethoscope },
               { id: 'patients', label: 'Pacientes', icon: User },
               { id: 'approvals', label: 'Aprovações', icon: UserCheck },
@@ -1012,6 +1091,166 @@ export default function Admin() {
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'materiais' && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Biblioteca de Cuidados</h3>
+                  <p className="text-slate-500 font-medium">Gerencie os materiais disponíveis para venda aos pacientes.</p>
+                </div>
+                <button 
+                  onClick={() => setShowMaterialModal(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
+                >
+                  <Plus size={20} />
+                  Novo Material
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {materiais.map((m) => (
+                  <div key={m.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all">
+                    <div className="h-40 relative overflow-hidden">
+                      <img 
+                        src={m.imagem_url || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400'} 
+                        alt={m.titulo}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
+                          {m.tag || 'Novo'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <h4 className="font-black text-slate-900 text-lg leading-tight mb-1">{m.titulo}</h4>
+                        <p className="text-xs text-slate-500 font-medium line-clamp-2">{m.descricao}</p>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                        <p className="text-xl font-black text-blue-600">R$ {m.preco?.toLocaleString()}</p>
+                        <button 
+                          onClick={() => handleDeleteMaterial(m.id)}
+                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {materiais.length === 0 && (
+                <div className="p-12 border-2 border-dashed border-slate-200 rounded-[3rem] text-center space-y-4">
+                  <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                    <BookOpen size={32} />
+                  </div>
+                  <p className="text-slate-400 font-bold">Nenhum material cadastrado ainda.</p>
+                </div>
+              )}
+
+              {/* Modal Novo Material */}
+              <AnimatePresence>
+                {showMaterialModal && (
+                  <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setShowMaterialModal(false)}
+                      className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                      className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Novo Material</h3>
+                        <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-900">
+                          <X size={24} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Título</label>
+                          <input 
+                            type="text" 
+                            value={newMaterial.titulo}
+                            onChange={(e) => setNewMaterial({...newMaterial, titulo: e.target.value})}
+                            placeholder="Ex: Guia de Exercícios"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Descrição</label>
+                          <textarea 
+                            value={newMaterial.descricao}
+                            onChange={(e) => setNewMaterial({...newMaterial, descricao: e.target.value})}
+                            placeholder="Breve descrição do conteúdo..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none h-24 resize-none"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Preço (R$)</label>
+                            <input 
+                              type="number" 
+                              value={newMaterial.preco}
+                              onChange={(e) => setNewMaterial({...newMaterial, preco: Number(e.target.value)})}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Tag</label>
+                            <input 
+                              type="text" 
+                              value={newMaterial.tag}
+                              onChange={(e) => setNewMaterial({...newMaterial, tag: e.target.value})}
+                              placeholder="Ex: Novo, Promo"
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">URL da Imagem</label>
+                          <input 
+                            type="text" 
+                            value={newMaterial.imagem_url}
+                            onChange={(e) => setNewMaterial({...newMaterial, imagem_url: e.target.value})}
+                            placeholder="https://..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">URL do Arquivo (Download)</label>
+                          <input 
+                            type="text" 
+                            value={newMaterial.arquivo_url}
+                            onChange={(e) => setNewMaterial({...newMaterial, arquivo_url: e.target.value})}
+                            placeholder="Link para o PDF/Vídeo..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={handleAddMaterial}
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
+                      >
+                        Salvar Material
+                      </button>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {activeTab === 'users' && (

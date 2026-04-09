@@ -277,7 +277,9 @@ export default function Dashboard() {
             Bem-vindo de volta
           </div>
           <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-900 tracking-tighter">
-            {isPhysio ? (
+            {!profile ? (
+              <span className="animate-pulse text-slate-300">Carregando...</span>
+            ) : isPhysio ? (
               <div className="flex flex-wrap items-center gap-3">
                 <span>
                   Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">{profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}</span>! 👋

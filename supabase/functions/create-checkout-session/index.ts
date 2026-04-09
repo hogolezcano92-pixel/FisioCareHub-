@@ -18,18 +18,18 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, email } = await req.json()
+    const { user_id, email, product_id, type } = await req.json()
     const userId = user_id
     const userEmail = email
 
     // Optional: Verify user with Supabase Auth if token is present
     const authHeader = req.headers.get('Authorization')
-    if (authHeader && SUPABASE_URL && SUPABASE_ANON_KEY) {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-      })
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: authHeader || "" } },
+    })
+
+    if (authHeader) {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
       if (authError || !user || user.id !== userId) {
         throw new Error("Unauthorized: Invalid user session")
       }
@@ -44,10 +44,42 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
+    let line_items = []
+    let mode: "subscription" | "payment" = "subscription"
+    let metadata: any = { user_id: userId }
+
+    if (type === 'material' && product_id) {
+      // Fetch material details
+      const { data: material, error: matError } = await supabase
+        .from('materiais')
+        .select('*')
+        .eq('id', product_id)
+        .single()
+      
+      if (matError || !material) {
+        throw new Error("Material não encontrado")
+      }
+
+      line_items = [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: material.titulo,
+              description: material.descricao,
+              images: material.imagem_url ? [material.imagem_url] : [],
+            },
+            unit_amount: Math.round(material.preco * 100),
+          },
+          quantity: 1,
+        },
+      ]
+      mode = "payment"
+      metadata.type = 'material'
+      metadata.product_id = product_id
+    } else {
+      // Default to PRO subscription
+      line_items = [
         {
           price_data: {
             currency: "brl",
@@ -62,21 +94,26 @@ serve(async (req) => {
           },
           quantity: 1,
         },
-      ],
-      mode: "subscription",
-      success_url: `${APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&plan_id=pro`,
+      ]
+      mode = "subscription"
+      metadata.plan = "pro_fisioterapeuta"
+    }
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items,
+      mode,
+      success_url: `${APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&type=${type || 'subscription'}`,
       cancel_url: `${APP_URL}/subscription`,
       customer_email: userEmail,
       client_reference_id: userId,
-      subscription_data: {
+      subscription_data: mode === "subscription" ? {
         metadata: {
           user_id: userId,
         },
-      },
-      metadata: {
-        user_id: userId,
-        plan: "pro_fisioterapeuta",
-      },
+      } : undefined,
+      metadata,
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

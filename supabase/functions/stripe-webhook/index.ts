@@ -79,6 +79,25 @@ serve(async (req) => {
 
         console.log(`[Stripe Webhook] Processando pagamento para usuário: ${user_id}`)
         
+        // Se for compra de material
+        if (session.metadata?.type === 'material') {
+          const { error: purchaseError } = await supabase
+            .from('compras_materiais')
+            .insert({
+              user_id: user_id,
+              material_id: session.metadata.product_id,
+              valor: session.amount_total / 100,
+              status: 'pago'
+            })
+          
+          if (purchaseError) {
+            console.error(`[Stripe Webhook] Erro ao registrar compra de material:`, purchaseError)
+          } else {
+            console.log(`[Stripe Webhook] Sucesso: Material ${session.metadata.product_id} comprado por ${user_id}`)
+          }
+          return new Response(JSON.stringify({ received: true }), { status: 200 })
+        }
+
         // 1. Atualizar a tabela perfis
         const { error: profileError } = await supabase
           .from('perfis')

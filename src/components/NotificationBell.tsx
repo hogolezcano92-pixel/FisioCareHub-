@@ -40,10 +40,13 @@ export default function NotificationBell() {
         schema: 'public', 
         table: 'notificacoes',
         filter: `user_id=eq.${user.id}`
-      }, () => {
+      }, (payload) => {
+        console.log('[Realtime] Notification received:', payload);
         fetchNotifications();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Realtime] Notification subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

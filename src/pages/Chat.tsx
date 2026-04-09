@@ -144,10 +144,13 @@ export default function Chat() {
 
         subscription = supabase
           .channel('recent_chats_sidebar')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens' }, () => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens' }, (payload) => {
+            console.log('[Realtime] Sidebar update event:', payload);
             fetchRecentChats();
           })
-          .subscribe();
+          .subscribe((status) => {
+            console.log('[Realtime] Sidebar subscription status:', status);
+          });
       } else if (!authLoading) {
         setLoading(false);
       }
@@ -232,14 +235,25 @@ export default function Chat() {
           subscriptionSupabase = supabase
             .channel(`chat_${targetUser.id}`)
             .on('postgres_changes', { 
-              event: '*', 
+              event: 'INSERT', 
               schema: 'public', 
-              table: 'mensagens',
-              filter: `or(and(remetente_id.eq.${user.id},destinatario_id.eq.${targetUser.id}),and(remetente_id.eq.${targetUser.id},destinatario_id.eq.${user.id}))`
-            }, () => {
-              fetchMessages();
+              table: 'mensagens'
+            }, (payload) => {
+              console.log('[Realtime] New message received:', payload);
+              const newMsg = payload.new;
+              // Check if the message belongs to the current conversation
+              const isRelevant = 
+                (newMsg.remetente_id === user.id && newMsg.destinatario_id === targetUser.id) ||
+                (newMsg.remetente_id === targetUser.id && newMsg.destinatario_id === user.id);
+              
+              if (isRelevant) {
+                console.log('[Realtime] Message is relevant, fetching messages...');
+                fetchMessages();
+              }
             })
-            .subscribe();
+            .subscribe((status) => {
+              console.log(`[Realtime] Chat subscription status for ${targetUser.id}:`, status);
+            });
         }
       };
 
