@@ -270,59 +270,130 @@ export default function Dashboard() {
       )}
 
       {/* Welcome Header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-[0.3em]">
-            <Sparkles size={14} />
-            Bem-vindo de volta
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {!profile ? (
+            <div className="w-16 h-16 bg-slate-100 animate-pulse rounded-full" />
+          ) : (
+            <img 
+              src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
+              alt={profile.nome_completo}
+              className="w-16 h-16 rounded-full border-2 border-white shadow-sm object-cover"
+            />
+          )}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
+              <Sparkles size={12} />
+              Painel do Paciente
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              {!profile ? (
+                <span className="animate-pulse text-slate-300">Carregando...</span>
+              ) : (
+                <>Olá, <span className="text-blue-600">{profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
+              )}
+            </h1>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-900 tracking-tighter">
-            {!profile ? (
-              <span className="animate-pulse text-slate-300">Carregando...</span>
-            ) : isPhysio ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <span>
-                  Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">{profile?.genero === 'female' ? 'Dra.' : 'Dr.'} {profile?.nome_completo}</span>! 👋
-                </span>
-                {isPro && (
-                  <span className="px-3 py-1 bg-amber-100 text-amber-600 text-xs font-black rounded-xl uppercase tracking-widest flex items-center gap-1.5 border border-amber-200">
-                    <Crown size={14} />
-                    PRO
-                  </span>
-                )}
-              </div>
-            ) : (
-              <>
-                Bem-{profile?.genero === 'female' ? 'vinda' : 'vindo'} <span className="text-blue-600 italic">Paciente {profile?.nome_completo}</span>! 👋
-              </>
-            )}
-          </h1>
-          <p className="text-base text-slate-500 font-medium">
-            Aqui está o que está acontecendo com seus agendamentos hoje.
-          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-blue-600 transition-all shadow-sm">
-            <Bell size={20} />
+        <div className="flex items-center gap-2">
+          <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm">
+            <Bell size={18} />
           </button>
-          <button 
-            onClick={() => navigate(isPhysio ? '/agenda' : '/triage')}
-            className="flex items-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
-          >
-            <Plus size={20} />
-            {isPhysio ? 'Novo Atendimento' : 'Nova Triagem'}
-          </button>
+          {!isPhysio && (
+            <button 
+              onClick={() => navigate('/triage')}
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+            >
+              <Plus size={18} />
+              Nova Triagem
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Stats Grid - Recipe 1: Data Grid feel */}
+      {/* Next Step Section for Patients */}
+      {!isPhysio && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center">
+                  <span className="text-xs font-black uppercase">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                  <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Próxima Consulta</p>
+                  <p className="text-lg font-black text-slate-900">
+                    {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
+                  </p>
+                  <p className="text-sm text-slate-500 font-medium">
+                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Presencial
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => navigate('/appointments')} className="p-3 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
+                  <Calendar size={28} />
+                </div>
+                <div>
+                  <p className="text-lg font-black text-slate-900">Agendar Consulta</p>
+                  <p className="text-sm text-slate-500 font-medium">Você não tem consultas pendentes.</p>
+                </div>
+              </div>
+              <button onClick={() => navigate('/triage')} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all">
+                Agendar
+              </button>
+            </div>
+          )}
+
+          {/* Quick Stats Summary (Compact) */}
+          <div className="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl flex items-center justify-around">
+            <div className="text-center">
+              <p className="text-2xl font-black">75%</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Melhora</p>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="text-center">
+              <p className="text-2xl font-black">{stats.appointments}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessões</p>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="text-center">
+              <p className="text-2xl font-black">12</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exercícios</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Dashboard (Moved to top for patients) */}
+      {!isPhysio && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Evolução da <span className="text-blue-600 italic">Dor</span></h2>
+            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <TrendingUp size={12} />
+              +75% de Melhora
+            </div>
+          </div>
+          <EvolutionCharts />
+        </div>
+      )}
+
+      {/* Stats Grid - Only for Physio or if not empty for patients */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'blue', trend: '+12%' },
-          { label: isPhysio ? 'Pacientes' : 'Fisioterapeutas', value: stats.patients, icon: Users, color: 'emerald', trend: '+5%' },
-          { label: 'Prontuários', value: stats.records, icon: FileText, color: 'indigo', trend: '+8%' },
-          { label: 'Triagens', value: stats.pendingTriages, icon: Activity, color: 'rose', trend: '-2%' },
-        ].map((stat, i) => (
+          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'blue', trend: '+12%', show: isPhysio || stats.appointments > 0 },
+          { label: isPhysio ? 'Pacientes' : 'Fisioterapeutas', value: stats.patients, icon: Users, color: 'emerald', trend: '+5%', show: isPhysio || stats.patients > 0 },
+          { label: 'Prontuários', value: stats.records, icon: FileText, color: 'indigo', trend: '+8%', show: isPhysio || stats.records > 0 },
+          { label: 'Triagens', value: stats.pendingTriages, icon: Activity, color: 'rose', trend: '0%', show: isPhysio || stats.pendingTriages > 0 },
+        ].filter(s => s.show).map((stat, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
@@ -347,13 +418,15 @@ export default function Dashboard() {
               )}>
                 <stat.icon size={28} />
               </div>
-              <div className={cn(
-                "flex items-center gap-1 text-xs font-black px-2 py-1 rounded-lg",
-                stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-              )}>
-                {stat.trend.startsWith('+') ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                {stat.trend}
-              </div>
+              {stat.trend !== '0%' && (
+                <div className={cn(
+                  "flex items-center gap-1 text-xs font-black px-2 py-1 rounded-lg",
+                  stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
+                )}>
+                  {stat.trend.startsWith('+') ? <ArrowUpRight size={12} /> : <Activity size={12} />}
+                  {stat.trend}
+                </div>
+              )}
             </div>
             
             <div className="space-y-1">
@@ -621,48 +694,22 @@ export default function Dashboard() {
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
             <div className="grid grid-cols-2 gap-4">
-              {isPhysio ? (
-                <>
-                  <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                    <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
-                  </Link>
-                  <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
-                    <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
-                  </Link>
-                  <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                    <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
-                  </Link>
-                  <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                    <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                    <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
-                  </Link>
-                  <button 
-                    onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
-                    className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
-                  >
-                    <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Teleconsulta</p>
-                  </button>
-                  <Link to="/triage" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                    <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
-                  </Link>
-                  <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                    <User className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                    <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
-                  </Link>
-                </>
-              )}
+              <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
+              </Link>
+              <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
+                <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
+              </Link>
+              <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
+              </Link>
+              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
+              </Link>
             </div>
           </div>
         </div>
@@ -712,52 +759,74 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            {/* Patient Features */}
+        {/* Patient Features */}
+        <div className="space-y-12">
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <PainDiary />
+              <ExerciseChecklist />
+            </div>
             <div className="space-y-8">
-              <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">Seu Plano de <span className="text-blue-600 italic">Cuidado</span></h2>
-              
-              <EvolutionCharts />
-
-              <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                  <PainDiary />
-                  <ExerciseChecklist />
-                </div>
-                <div className="space-y-8">
-                  {/* Gamification Section */}
-                  <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
-                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                      <Trophy className="text-amber-500" size={24} />
-                      Suas Conquistas
-                    </h3>
-                    <div className="space-y-4">
-                      {[
-                        { label: 'Paciente Bronze', desc: '7 dias de exercícios', icon: Medal, color: 'text-amber-600 bg-amber-50', progress: 100 },
-                        { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: 100 },
-                        { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: 40 },
-                      ].map((badge, i) => (
-                        <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 transition-all">
-                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color)}>
-                            <badge.icon size={24} />
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <p className="text-sm font-black text-slate-900">{badge.label}</p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase">{badge.desc}</p>
-                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className={cn("h-full transition-all duration-1000", badge.color.split(' ')[0].replace('text', 'bg'))}
-                                style={{ width: `${badge.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <DigitalLibrary />
+              {/* Quick Actions (2x2 Grid) */}
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+                <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                    <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
+                  </Link>
+                  <button 
+                    onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
+                    className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
+                  >
+                    <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-sky-600">Consulta</p>
+                  </button>
+                  <Link to="/triage" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                    <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
+                  </Link>
+                  <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                    <User className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
+                  </Link>
                 </div>
               </div>
+
+              {/* Gamification Section */}
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+                <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <Trophy className="text-amber-500" size={24} />
+                  Suas Conquistas
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Paciente Bronze', desc: '7 dias de exercícios', icon: Medal, color: 'text-amber-600 bg-amber-50', progress: 100 },
+                    { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: 100 },
+                    { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: 40 },
+                  ].map((badge, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 transition-all">
+                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color)}>
+                        <badge.icon size={24} />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-black text-slate-900">{badge.label}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase">{badge.desc}</p>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={cn("h-full transition-all duration-1000", badge.color.split(' ')[0].replace('text', 'bg'))}
+                            style={{ width: `${badge.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <DigitalLibrary />
             </div>
+          </div>
+        </div>
           </>
         )}
       </div>

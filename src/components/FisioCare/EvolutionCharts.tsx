@@ -55,12 +55,12 @@ export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = D
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Activity className="text-rose-500" size={20} />
+              <Activity className="text-blue-500" size={20} />
               Evolução da Dor
             </h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Escala de 0 a 10</p>
           </div>
-          <div className="px-3 py-1 bg-rose-50 text-rose-600 text-[10px] font-black rounded-full uppercase tracking-widest flex items-center gap-1">
+          <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest flex items-center gap-1">
             <TrendingUp size={12} className="rotate-180" />
             Melhora de 75%
           </div>
@@ -71,8 +71,8 @@ export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = D
             <AreaChart data={painData}>
               <defs>
                 <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -96,12 +96,12 @@ export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = D
                   border: 'none', 
                   boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
                 }}
-                itemStyle={{ color: '#f43f5e', fontWeight: 800 }}
+                itemStyle={{ color: '#3b82f6', fontWeight: 800 }}
               />
               <Area 
                 type="monotone" 
                 dataKey="level" 
-                stroke="#f43f5e" 
+                stroke="#3b82f6" 
                 strokeWidth={4}
                 fillOpacity={1} 
                 fill="url(#colorLevel)" 

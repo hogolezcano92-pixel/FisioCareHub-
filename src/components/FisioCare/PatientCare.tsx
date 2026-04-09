@@ -45,26 +45,26 @@ export const PainDiary = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
       <div className="space-y-2">
-        <h3 className="text-xl font-black text-slate-900 tracking-tight">Como você está se sentindo hoje?</h3>
-        <p className="text-slate-500 text-sm font-medium">Sua percepção de dor ajuda o Dr. Hugo a ajustar seu tratamento.</p>
+        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Como está sua dor agora?</h3>
+        <p className="text-slate-500 text-base font-medium">Sua percepção ajuda a ajustar seu tratamento em tempo real.</p>
       </div>
 
-      <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+      <div className="grid grid-cols-5 gap-3">
         {Array.from({ length: 10 }).map((_, i) => (
           <button
             key={i}
             onClick={() => setIntensity(i + 1)}
             className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all group",
+              "flex flex-col items-center gap-3 p-4 rounded-[2rem] border-2 transition-all group",
               intensity === i + 1 
-                ? "border-blue-600 bg-blue-50 text-blue-600 scale-105" 
-                : "border-slate-50 hover:border-slate-200 text-slate-400"
+                ? "border-blue-600 bg-blue-50 text-blue-600 scale-105 shadow-lg shadow-blue-100" 
+                : "border-slate-50 hover:border-slate-200 text-slate-400 bg-slate-50/50"
             )}
           >
-            <span className="text-2xl group-hover:scale-110 transition-transform">{emojis[i]}</span>
-            <span className="font-black text-xs">{i + 1}</span>
+            <span className="text-3xl group-hover:scale-110 transition-transform">{emojis[i]}</span>
+            <span className="font-black text-sm">{i + 1}</span>
           </button>
         ))}
       </div>
@@ -72,9 +72,18 @@ export const PainDiary = () => {
       <button
         onClick={handleSave}
         disabled={intensity === null || isSaving}
-        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+        className={cn(
+          "w-full py-6 rounded-[2rem] font-black text-xl transition-all shadow-2xl flex items-center justify-center gap-3",
+          intensity !== null 
+            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 scale-[1.02]" 
+            : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
+        )}
       >
-        {isSaving && <Loader2 className="animate-spin" size={20} />}
+        {isSaving ? (
+          <Loader2 className="animate-spin" size={24} />
+        ) : (
+          <CheckCircle2 size={24} />
+        )}
         {isSaving ? 'Salvando...' : 'Registrar no Diário'}
       </button>
     </div>
