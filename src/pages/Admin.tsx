@@ -57,7 +57,8 @@ import {
   Plus,
   Image as ImageIcon,
   Tag,
-  FileText as FileIcon
+  FileText as FileIcon,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
@@ -87,6 +88,9 @@ export default function Admin() {
   const [newMessage, setNewMessage] = useState('');
   const [commissionRate, setCommissionRate] = useState(20);
   const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [materialFile, setMaterialFile] = useState<File | null>(null);
   const [newMaterial, setNewMaterial] = useState({
     titulo: '',
     descricao: '',
@@ -627,6 +631,24 @@ export default function Admin() {
     }
   };
 
+  const uploadFile = async (file: File, bucket: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleAddMaterial = async () => {
     const precoNum = parseFloat(newMaterial.preco);
     
@@ -635,12 +657,28 @@ export default function Admin() {
       return;
     }
 
+    setUploading(true);
     try {
+      let finalImageUrl = newMaterial.imagem_url;
+      let finalArquivoUrl = newMaterial.arquivo_url;
+
+      // Upload image if selected
+      if (imageFile) {
+        finalImageUrl = await uploadFile(imageFile, 'materiais');
+      }
+
+      // Upload file if selected
+      if (materialFile) {
+        finalArquivoUrl = await uploadFile(materialFile, 'materiais');
+      }
+
       const { error } = await supabase
         .from('materiais')
         .insert([{
           ...newMaterial,
-          preco: precoNum
+          preco: precoNum,
+          imagem_url: finalImageUrl,
+          arquivo_url: finalArquivoUrl
         }]);
       
       if (error) {
@@ -650,6 +688,8 @@ export default function Admin() {
       
       import('sonner').then(({ toast }) => toast.success("Material adicionado com sucesso!"));
       setShowMaterialModal(false);
+      setImageFile(null);
+      setMaterialFile(null);
       setNewMaterial({
         titulo: '',
         descricao: '',
@@ -661,7 +701,9 @@ export default function Admin() {
       fetchMateriais();
     } catch (err: any) {
       console.error("Erro ao adicionar material:", err);
-      import('sonner').then(({ toast }) => toast.error(`Erro ao adicionar: ${err.message || 'Verifique se a tabela materiais existe no Supabase'}`));
+      import('sonner').then(({ toast }) => toast.error(`Erro ao adicionar: ${err.message || 'Verifique se a tabela e o bucket materiais existem no Supabase'}`));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -1232,32 +1274,86 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">URL da Imagem</label>
-                          <input 
-                            type="text" 
-                            value={newMaterial.imagem_url}
-                            onChange={(e) => setNewMaterial({...newMaterial, imagem_url: e.target.value})}
-                            placeholder="https://..."
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
-                          />
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Imagem do Material</label>
+                          <div className="flex items-center gap-4">
+                            <label className="flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50/50 transition-all cursor-pointer group">
+                              {imageFile ? (
+                                <div className="flex flex-col items-center gap-2">
+                                  <CheckCircle2 className="text-emerald-500" size={32} />
+                                  <span className="text-xs font-bold text-slate-600">{imageFile.name}</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center gap-2">
+                                  <Upload className="text-slate-400 group-hover:text-blue-500" size={32} />
+                                  <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600">Upload da Imagem</span>
+                                </div>
+                              )}
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                                className="hidden" 
+                              />
+                            </label>
+                            <div className="flex-1 space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400">OU use uma URL externa:</p>
+                              <input 
+                                type="text" 
+                                value={newMaterial.imagem_url}
+                                onChange={(e) => setNewMaterial({...newMaterial, imagem_url: e.target.value})}
+                                placeholder="https://..."
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
+
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">URL do Arquivo (Download)</label>
-                          <input 
-                            type="text" 
-                            value={newMaterial.arquivo_url}
-                            onChange={(e) => setNewMaterial({...newMaterial, arquivo_url: e.target.value})}
-                            placeholder="Link para o PDF/Vídeo..."
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
-                          />
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Arquivo (Download)</label>
+                          <div className="flex items-center gap-4">
+                            <label className="flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50/50 transition-all cursor-pointer group">
+                              {materialFile ? (
+                                <div className="flex flex-col items-center gap-1">
+                                  <FileIcon className="text-emerald-500" size={24} />
+                                  <span className="text-[10px] font-bold text-slate-600 truncate max-w-[120px]">{materialFile.name}</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center gap-1">
+                                  <Upload className="text-slate-400 group-hover:text-blue-500" size={24} />
+                                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Upload do Arquivo</span>
+                                </div>
+                              )}
+                              <input 
+                                type="file" 
+                                onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
+                                className="hidden" 
+                              />
+                            </label>
+                            <div className="flex-1 space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400">OU use uma URL externa:</p>
+                              <input 
+                                type="text" 
+                                value={newMaterial.arquivo_url}
+                                onChange={(e) => setNewMaterial({...newMaterial, arquivo_url: e.target.value})}
+                                placeholder="Link externo..."
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
 
                       <button 
                         onClick={handleAddMaterial}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
+                        disabled={uploading}
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        Salvar Material
+                        {uploading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Subindo...
+                          </>
+                        ) : 'Salvar Material'}
                       </button>
                     </motion.div>
                   </div>
