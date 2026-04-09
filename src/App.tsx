@@ -72,8 +72,8 @@ const Subscription = lazy(() => import('./pages/Subscription'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-    <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Carregando...</p>
+    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+    <p className="text-text-muted font-bold uppercase tracking-widest text-xs animate-pulse">Carregando...</p>
   </div>
 );
 
@@ -113,16 +113,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       }
 
       return (
-        <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4 transition-colors duration-300">
-          <div className="bg-white p-8 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-sky-100">
-            <div className="w-24 h-24 bg-sky-50 text-sky-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen bg-bg-general flex items-center justify-center p-4 transition-colors duration-300">
+          <div className="glass-card p-12 rounded-[3rem] max-w-md w-full text-center">
+            <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle size={48} />
             </div>
-            <h2 className="text-3xl font-display font-black text-slate-900 mb-2 tracking-tight">Ops! Algo deu errado</h2>
-            <p className="text-xl text-slate-500 mb-8 leading-relaxed">{errorMessage}</p>
+            <h2 className="text-3xl font-display font-black text-text-main mb-2 tracking-tight">Ops! Algo deu errado</h2>
+            <p className="text-xl text-text-muted mb-8 leading-relaxed">{errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
-              className="w-full py-5 bg-sky-500 text-white rounded-full font-black text-xl hover:bg-sky-600 transition-all shadow-xl shadow-sky-100"
+              className="w-full py-5 bg-primary text-white rounded-full font-black text-xl hover:bg-primary-hover transition-all shadow-premium"
             >
               Recarregar Aplicativo
             </button>
@@ -151,9 +151,9 @@ function ScrollToTop() {
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 transition-colors duration-300">
-      <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Carregando Sistema...</p>
+    <div className="min-h-screen bg-bg-general flex flex-col items-center justify-center space-y-4 transition-colors duration-300">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-text-muted font-bold uppercase tracking-widest text-xs">Carregando Sistema...</p>
     </div>
   );
 }
@@ -207,9 +207,9 @@ function Navbar() {
   ];
 
   return (
-    <nav className="bg-medical-pattern border-b border-slate-200/50 sticky top-0 z-50">
+    <nav className="bg-white/80 backdrop-blur-md border-b border-border-soft sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to={user ? "/dashboard" : "/"} className="group">
               <Logo />
@@ -223,10 +223,10 @@ function Navbar() {
                 key={`${item.name}-${item.path}`}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-base font-black transition-all",
+                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all",
                   location.pathname === item.path 
-                    ? "bg-sky-500 text-white shadow-lg shadow-sky-500/20" 
-                    : "text-[#1A202C] hover:bg-sky-50 hover:text-sky-600"
+                    ? "bg-primary text-white shadow-premium" 
+                    : "text-text-main hover:bg-primary/5 hover:text-primary"
                 )}
               >
                 <item.icon size={18} />
@@ -234,15 +234,15 @@ function Navbar() {
               </Link>
             ))}
             {user && (
-              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-200">
+              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-border-soft">
                 <Link to="/profile" className="flex items-center gap-3 group">
                   <div className="text-right hidden lg:block">
-                    <p className="text-sm font-black text-slate-900 leading-none">
+                    <p className="text-sm font-black text-text-main leading-none">
                       {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
                       {(profile?.nome_completo || '').split(' ')[0]}
                     </p>
                     <div className="flex items-center justify-end gap-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{profile?.plano}</p>
                       {isPro && (
                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
                           <Crown size={8} />
@@ -253,14 +253,14 @@ function Navbar() {
                   </div>
                   <img 
                     src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
-                    className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm group-hover:border-sky-500 transition-all"
+                    className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm group-hover:border-primary transition-all"
                     alt="profile"
                   />
                 </Link>
                 <NotificationBell />
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                   title={t('nav.logout')}
                 >
                   <LogOut size={20} />
@@ -476,7 +476,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-bg-general font-sans text-text-main flex flex-col transition-colors duration-300">
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
@@ -486,7 +486,7 @@ function AppContent() {
         <Navbar />
         <main className={cn(
           "flex-1 w-full",
-          location.pathname === '/chat' ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          location.pathname === '/chat' ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
         )}>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -522,33 +522,33 @@ function AppContent() {
         </main>
 
         {location.pathname !== '/chat' && (
-          <footer className="bg-white border-t border-slate-200 py-16">
-            <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-12">
+          <footer className="bg-white border-t border-border-soft py-20">
+            <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-16">
               <div className="space-y-6">
                 <Logo size="lg" />
-                <p className="text-base text-[#1A202C] leading-relaxed font-medium">
+                <p className="text-base text-text-muted leading-relaxed font-medium">
                   Sua reabilitação no conforto de casa. Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.
                 </p>
               </div>
               
               <div className="space-y-6">
-                <h4 className="text-2xl font-black text-[#1A202C] uppercase tracking-widest">LINKS RÁPIDOS</h4>
-                <ul className="space-y-5 text-base text-[#1A202C] font-medium">
-                  <li><Link to="/sobre" className="hover:text-sky-600 transition-colors">Sobre Nós</Link></li>
-                  <li><Link to="/seja-parceiro" className="hover:text-sky-600 transition-colors">Seja um Parceiro</Link></li>
-                  <li><Link to="/triagem-ia" className="hover:text-sky-600 transition-colors">Triagem IA</Link></li>
-                  <li><Link to="/area-paciente" className="hover:text-sky-600 transition-colors">Área do Paciente</Link></li>
+                <h4 className="text-xl font-black text-text-main uppercase tracking-widest">LINKS RÁPIDOS</h4>
+                <ul className="space-y-4 text-base text-text-muted font-medium">
+                  <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre Nós</Link></li>
+                  <li><Link to="/seja-parceiro" className="hover:text-primary transition-colors">Seja um Parceiro</Link></li>
+                  <li><Link to="/triagem-ia" className="hover:text-primary transition-colors">Triagem IA</Link></li>
+                  <li><Link to="/area-paciente" className="hover:text-primary transition-colors">Área do Paciente</Link></li>
                 </ul>
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-2xl font-black text-[#1A202C] uppercase tracking-widest">SUPORTE TÉCNICO</h4>
-                <p className="text-base text-[#1A202C] font-medium leading-relaxed">
+                <h4 className="text-xl font-black text-text-main uppercase tracking-widest">SUPORTE TÉCNICO</h4>
+                <p className="text-base text-text-muted font-medium leading-relaxed">
                   Exclusivo para dúvidas sobre o aplicativo e suporte técnico. Para falar com seu fisioterapeuta, utilize a agenda no perfil dele.
                 </p>
-                <ul className="space-y-5 text-base text-[#1A202C] font-medium">
-                  <li className="flex items-center gap-3"><Phone size={20} className="text-sky-500" /> (11) 98404-0563</li>
-                  <li className="flex items-center gap-3"><HelpCircle size={20} className="text-sky-500" /> suporte@fisiocarehub.com</li>
+                <ul className="space-y-4 text-base text-text-muted font-medium">
+                  <li className="flex items-center gap-3"><Phone size={20} className="text-primary" /> (11) 98404-0563</li>
+                  <li className="flex items-center gap-3"><HelpCircle size={20} className="text-primary" /> suporte@fisiocarehub.com</li>
                   <li className="flex items-center gap-3 text-emerald-600 font-black">
                     <a href="https://wa.me/5511984040563" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:underline">
                       <MessageCircle size={24} /> Suporte via WhatsApp
@@ -557,7 +557,7 @@ function AppContent() {
                 </ul>
               </div>
             </div>
-            <div className="max-w-7xl mx-auto px-4 text-center text-[#1A202C] text-sm mt-16 pt-8 border-t border-slate-200">
+            <div className="max-w-7xl mx-auto px-4 text-center text-text-muted text-sm mt-20 pt-8 border-t border-border-soft">
               &copy; {new Date().getFullYear()} FisioCareHub. Todos os direitos reservados. <br />
               <span className="text-xs mt-2 block">Cuidado humanizado e tecnologia para sua saúde.</span>
             </div>

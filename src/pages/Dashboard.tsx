@@ -232,6 +232,13 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [patientSearch]);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Bom dia';
+    if (hour >= 12 && hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  };
+
   if (authLoading) return (
     <div className="flex flex-col items-center justify-center pt-32 space-y-4">
       <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -271,8 +278,8 @@ export default function Dashboard() {
       )}
 
         {/* Welcome Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60 shadow-sm">
-          <div className="flex items-center gap-5">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-8 rounded-[2.5rem]">
+          <div className="flex items-center gap-6">
             {!profile ? (
               <div className="w-20 h-20 bg-slate-100 animate-pulse rounded-full" />
             ) : (
@@ -280,33 +287,34 @@ export default function Dashboard() {
                 <img 
                   src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
                   alt={profile.nome_completo}
-                  className="w-20 h-20 rounded-full border-4 border-white shadow-xl object-cover"
+                  className="w-20 h-20 rounded-full border-4 border-white shadow-premium object-cover"
                 />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 border-4 border-white rounded-full" />
+                <div className="absolute bottom-1 right-1 w-5 h-5 bg-primary border-4 border-white rounded-full" />
               </div>
             )}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.3em]">
+              <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
                 <Sparkles size={14} className="animate-pulse" />
                 {isPhysio ? 'Painel Profissional' : 'Painel do Paciente'}
               </div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-black text-text-main tracking-tight">
                 {!profile ? (
                   <span className="animate-pulse text-slate-300">Carregando...</span>
                 ) : (
-                  <>Olá, <span className="text-blue-600 italic">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : `Paciente ${profile?.nome_completo?.split(' ')[0]}`}</span>! 👋</>
+                  <>{getGreeting()}, <span className="text-primary">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
                 )}
               </h1>
+              <p className="text-text-muted font-medium">Bem-vindo ao FisioCareHub</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-4 bg-white/80 backdrop-blur-sm border border-white rounded-2xl text-slate-400 hover:text-blue-600 transition-all shadow-sm hover:shadow-md group">
+            <button className="p-4 glass-card-hover rounded-2xl text-text-muted hover:text-primary transition-all group">
               <Bell size={22} className="group-hover:rotate-12 transition-transform" />
             </button>
             {!isPhysio && (
               <button 
                 onClick={() => navigate('/triage')}
-                className="flex items-center gap-3 px-7 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 hover:scale-105 active:scale-95"
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all shadow-premium hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Plus size={20} />
                 Nova Triagem
@@ -319,59 +327,59 @@ export default function Dashboard() {
       {!isPhysio && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
-            <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between group hover:shadow-xl transition-all duration-500">
+            <div className="glass-card glass-card-hover p-6 rounded-[2.5rem] flex items-center justify-between group">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-blue-100">
+                <div className="w-16 h-16 bg-primary text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-primary/20">
                   <span className="text-[10px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
                   <span className="text-2xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Próxima Consulta</p>
-                  <p className="text-xl font-black text-slate-900 tracking-tight">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Próxima Consulta</p>
+                  <p className="text-xl font-black text-text-main tracking-tight">
                     {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
                   </p>
-                  <p className="text-sm text-slate-500 font-bold">
-                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-blue-500">Presencial</span>
+                  <p className="text-sm text-text-muted font-bold">
+                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-primary">Presencial</span>
                   </p>
                 </div>
               </div>
-              <button onClick={() => navigate('/appointments')} className="p-4 bg-slate-50 text-slate-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+              <button onClick={() => navigate('/appointments')} className="p-4 bg-bg-general text-text-muted rounded-2xl group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
                 <ChevronRight size={24} />
               </button>
             </div>
           ) : (
-            <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between group hover:shadow-xl transition-all duration-500">
+            <div className="glass-card glass-card-hover p-6 rounded-[2.5rem] flex items-center justify-between group">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center shadow-inner">
+                <div className="w-16 h-16 bg-bg-general text-text-muted rounded-2xl flex items-center justify-center shadow-inner">
                   <Calendar size={32} />
                 </div>
                 <div>
-                  <p className="text-xl font-black text-slate-900 tracking-tight">Agendar Consulta</p>
-                  <p className="text-sm text-slate-500 font-bold">Você não tem consultas pendentes.</p>
+                  <p className="text-xl font-black text-text-main tracking-tight">Agendar Consulta</p>
+                  <p className="text-sm text-text-muted font-bold">Você não tem consultas pendentes.</p>
                 </div>
               </div>
-              <button onClick={() => navigate('/triage')} className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+              <button onClick={() => navigate('/triage')} className="px-6 py-3 bg-primary text-white rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all shadow-lg shadow-primary/20">
                 Agendar
               </button>
             </div>
           )}
 
           {/* Quick Stats Summary (Compact) */}
-          <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl flex items-center justify-around relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+          <div className="bg-text-main p-8 rounded-[3rem] text-white shadow-2xl flex items-center justify-around relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             <div className="text-center relative z-10">
               <p className="text-3xl font-black">{stats.records > 0 ? '75%' : '0%'}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Melhora</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Melhora</p>
             </div>
             <div className="w-px h-10 bg-white/10 relative z-10" />
             <div className="text-center relative z-10">
               <p className="text-3xl font-black">{stats.appointments}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Sessões</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Sessões</p>
             </div>
             <div className="w-px h-10 bg-white/10 relative z-10" />
             <div className="text-center relative z-10">
               <p className="text-3xl font-black">{stats.records > 0 ? '12' : '0'}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Exercícios</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Exercícios</p>
             </div>
           </div>
         </div>
@@ -381,9 +389,9 @@ export default function Dashboard() {
       {!isPhysio && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Evolução da <span className="text-blue-600 italic">Dor</span></h2>
+            <h2 className="text-2xl font-black text-text-main tracking-tight">Evolução da <span className="text-primary italic">Dor</span></h2>
             {stats.records > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
                 <TrendingUp size={12} />
                 +75% de Melhora
               </div>
@@ -396,7 +404,7 @@ export default function Dashboard() {
       {/* Stats Grid - Only for Physio or if not empty for patients */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'blue', trend: '+12%', show: isPhysio || stats.appointments > 0 },
+          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'primary', trend: '+12%', show: isPhysio || stats.appointments > 0 },
           { label: isPhysio ? 'Pacientes' : 'Fisioterapeutas', value: stats.patients, icon: Users, color: 'emerald', trend: '+5%', show: isPhysio || stats.patients > 0 },
           { label: 'Prontuários', value: stats.records, icon: FileText, color: 'indigo', trend: '+8%', show: isPhysio || stats.records > 0 },
           { label: 'Triagens', value: stats.pendingTriages, icon: Activity, color: 'rose', trend: '0%', show: isPhysio || stats.pendingTriages > 0 },
@@ -406,19 +414,19 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+            className="glass-card glass-card-hover p-8 rounded-[3rem] group relative overflow-hidden"
           >
             <div className={cn(
               "absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-[0.03] transition-transform group-hover:scale-110",
-              stat.color === 'blue' ? "bg-blue-600" : 
+              stat.color === 'primary' ? "bg-primary" : 
               stat.color === 'emerald' ? "bg-emerald-600" :
               stat.color === 'indigo' ? "bg-indigo-600" : "bg-rose-600"
             )} />
             
             <div className="flex justify-between items-start mb-6">
               <div className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg",
-                stat.color === 'blue' && "bg-blue-50 text-blue-600 shadow-blue-100",
+                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all",
+                stat.color === 'primary' && "bg-primary/10 text-primary shadow-primary/10",
                 stat.color === 'emerald' && "bg-emerald-50 text-emerald-600 shadow-emerald-100",
                 stat.color === 'indigo' && "bg-indigo-50 text-indigo-600 shadow-indigo-100",
                 stat.color === 'rose' && "bg-rose-50 text-rose-600 shadow-rose-100",
@@ -427,7 +435,7 @@ export default function Dashboard() {
               </div>
               {stat.trend !== '0%' && (
                 <div className={cn(
-                  "flex items-center gap-1 text-xs font-black px-2 py-1 rounded-lg",
+                  "flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg",
                   stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
                 )}>
                   {stat.trend.startsWith('+') ? <ArrowUpRight size={12} /> : <Activity size={12} />}
@@ -440,28 +448,28 @@ export default function Dashboard() {
               {statsLoading ? (
                 <div className="h-10 w-16 bg-slate-100 animate-pulse rounded-lg"></div>
               ) : (
-                <p className="text-4xl font-black text-slate-900 tracking-tighter">{stat.value}</p>
+                <p className="text-4xl font-black text-text-main tracking-tighter">{stat.value}</p>
               )}
-              <p className="text-base font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-base font-bold text-text-muted uppercase tracking-widest">{stat.label}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
       {isPhysio && (
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+        <div className="glass-card p-8 rounded-[3rem] space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Buscar Pacientes</h3>
+            <h3 className="text-2xl font-black text-text-main tracking-tight">Buscar Pacientes</h3>
             <div className="relative w-full max-w-md">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                {searching ? <Loader2 className="animate-spin text-blue-600" size={20} /> : <Users className="text-slate-400" size={20} />}
+                {searching ? <Loader2 className="animate-spin text-primary" size={20} /> : <Users className="text-text-muted" size={20} />}
               </div>
               <input
                 type="text"
                 value={patientSearch}
                 onChange={(e) => setPatientSearch(e.target.value)}
                 placeholder="Buscar por nome ou e-mail..."
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                className="w-full pl-12 pr-4 py-4 bg-bg-general border border-border-soft rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all"
               />
             </div>
           </div>
@@ -474,7 +482,7 @@ export default function Dashboard() {
                   onClick={() => setSelectedPatientId(patient.id)}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer group",
-                    selectedPatientId === patient.id ? "bg-blue-50 border-blue-200 shadow-md" : "bg-slate-50 border-slate-100 hover:bg-white hover:shadow-md"
+                    selectedPatientId === patient.id ? "bg-primary/5 border-primary shadow-md" : "bg-bg-general border-border-soft hover:bg-white hover:shadow-md"
                   )}
                 >
                   <div className="flex items-center gap-4">
@@ -484,15 +492,15 @@ export default function Dashboard() {
                       className="w-12 h-12 rounded-xl object-cover"
                     />
                     <div>
-                      <p className={cn("font-bold transition-colors", selectedPatientId === patient.id ? "text-blue-700" : "text-slate-900 group-hover:text-blue-600")}>
+                      <p className={cn("font-bold transition-colors", selectedPatientId === patient.id ? "text-primary" : "text-text-main group-hover:text-primary")}>
                         {patient.nome_completo}
                       </p>
-                      <p className="text-sm text-slate-500">{patient.email}</p>
+                      <p className="text-sm text-text-muted">{patient.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {selectedPatientId === patient.id && (
-                      <div className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
+                      <div className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-widest">
                         Selecionado
                       </div>
                     )}
@@ -501,7 +509,7 @@ export default function Dashboard() {
                         e.stopPropagation();
                         navigate(`/chat?user=${patient.id}`);
                       }}
-                      className="p-3 bg-white text-blue-600 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all"
+                      className="p-3 bg-white text-primary rounded-xl shadow-sm hover:bg-primary hover:text-white transition-all"
                     >
                       <MessageSquare size={20} />
                     </button>
@@ -511,7 +519,7 @@ export default function Dashboard() {
             </div>
           )}
           {patientSearch.length >= 3 && searchResults.length === 0 && !searching && (
-            <p className="text-center text-slate-500 py-4">Nenhum paciente encontrado para "{patientSearch}"</p>
+            <p className="text-center text-text-muted py-4">Nenhum paciente encontrado para "{patientSearch}"</p>
           )}
         </div>
       )}
@@ -520,13 +528,13 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">Consultas <span className="text-blue-600 italic">Recentes</span></h2>
-            <Link to="/appointments" className="text-base font-bold text-blue-600 hover:underline flex items-center gap-1">
+            <h2 className="text-4xl font-display font-black text-text-main tracking-tight">Consultas <span className="text-primary italic">Recentes</span></h2>
+            <Link to="/appointments" className="text-base font-bold text-primary hover:underline flex items-center gap-1">
               Ver todas <ChevronRight size={16} />
             </Link>
           </div>
 
-          <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="glass-card rounded-[3rem] overflow-hidden">
             {apptsLoading ? (
               <div className="p-12 space-y-4">
                 {[1, 2, 3].map(i => (
@@ -541,33 +549,33 @@ export default function Dashboard() {
               </div>
             ) : recentAppointments.length === 0 ? (
               <div className="p-20 text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 bg-bg-general text-text-muted rounded-full flex items-center justify-center mx-auto">
                   <Calendar size={32} />
                 </div>
-                <p className="text-slate-500 font-medium">Nenhuma consulta agendada.</p>
+                <p className="text-text-muted font-medium">Nenhuma consulta agendada.</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-50">
+              <div className="divide-y divide-border-soft">
                 {recentAppointments.map((appt) => (
-                  <div key={appt.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group">
+                  <div key={appt.id} className="p-6 flex items-center justify-between hover:bg-bg-general transition-colors group">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-base">
+                      <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-black text-base">
                         {new Date(appt.data_servico).getDate()}
                       </div>
                       <div>
-                        <p className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        <p className="text-base font-bold text-text-main group-hover:text-primary transition-colors">
                           {isPhysio ? appt.paciente?.nome_completo : appt.fisioterapeuta?.nome_completo}
                         </p>
-                        <div className="flex items-center gap-3 text-sm text-slate-400 font-medium">
+                        <div className="flex items-center gap-3 text-sm text-text-muted font-medium">
                           <span className="flex items-center gap-1"><Clock size={12} /> {new Date(appt.data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                          <span className="w-1 h-1 bg-border-soft rounded-full"></span>
                           <span className="capitalize">{appt.status}</span>
                         </div>
                       </div>
                     </div>
                     <button 
                       onClick={() => navigate('/appointments')}
-                      className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl transition-all"
+                      className="p-2 text-text-muted hover:text-primary hover:bg-white rounded-xl transition-all"
                     >
                       <ChevronRight size={20} />
                     </button>
@@ -580,7 +588,7 @@ export default function Dashboard() {
           {/* Recent Triages */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight">
+              <h2 className="text-4xl font-display font-black text-text-main tracking-tight">
                 {isPhysio ? (
                   <>Triagens <span className="text-indigo-600 italic">Inteligentes</span></>
                 ) : (
@@ -595,13 +603,13 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="glass-card rounded-[3rem] overflow-hidden">
               {recentTriages.length === 0 ? (
                 <div className="p-20 text-center space-y-4">
-                  <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                  <div className="w-16 h-16 bg-bg-general text-text-muted rounded-full flex items-center justify-center mx-auto">
                     <BrainCircuit size={32} />
                   </div>
-                  <p className="text-slate-500 font-medium">Nenhuma triagem recente.</p>
+                  <p className="text-text-muted font-medium">Nenhuma triagem recente.</p>
                   {!isPhysio && (
                     <button 
                       onClick={() => navigate('/triage')}
@@ -612,9 +620,9 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-border-soft">
                   {recentTriages.map((triage) => (
-                    <div key={triage.id} className="p-6 hover:bg-slate-50 transition-colors group">
+                    <div key={triage.id} className="p-6 hover:bg-bg-general transition-colors group">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-4">
                           <img
@@ -624,10 +632,10 @@ export default function Dashboard() {
                             referrerPolicy="no-referrer"
                           />
                           <div>
-                            <p className="text-base font-bold text-slate-900">
+                            <p className="text-base font-bold text-text-main">
                               {isPhysio ? triage.paciente?.nome_completo : "Sua Avaliação"}
                             </p>
-                            <p className="text-xs text-slate-400 font-medium">{formatDate(triage.created_at)}</p>
+                            <p className="text-xs text-text-muted font-medium">{formatDate(triage.created_at)}</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -643,7 +651,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-slate-500 font-medium">
+                        <div className="flex items-center gap-4 text-sm text-text-muted font-medium">
                           <span className="flex items-center gap-1"><MapPin size={14} /> {triage.regiao_dor}</span>
                           <span className="flex items-center gap-1"><Thermometer size={14} /> Dor {triage.escala_dor}/10</span>
                           {triage.red_flag && (
@@ -654,7 +662,7 @@ export default function Dashboard() {
                         </div>
                         <button 
                           onClick={() => navigate(isPhysio ? `/records?patient=${triage.paciente_id}` : '/triage')}
-                          className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
+                          className="p-2 text-text-muted hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
                         >
                           <ChevronRight size={20} />
                         </button>
@@ -670,7 +678,7 @@ export default function Dashboard() {
         {/* Quick Actions & AI Insights */}
         <div className="space-y-8">
           <div className={cn(
-            "bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-[3rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden"
+            "bg-gradient-to-br from-indigo-600 to-primary p-8 rounded-[3rem] text-white shadow-2xl shadow-primary/20 relative overflow-hidden"
           )}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
             <div className="relative z-10 space-y-6">
@@ -690,7 +698,7 @@ export default function Dashboard() {
               {!isPhysio && (
                 <button 
                   onClick={() => navigate('/triage')}
-                  className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-white text-primary rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   Iniciar Triagem
                 </button>
@@ -699,24 +707,24 @@ export default function Dashboard() {
           </div>
 
           {isPhysio && (
-            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-              <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
+            <div className="glass-card p-8 rounded-[3rem] space-y-6">
+              <h3 className="text-xl font-black text-text-main">Ações Rápidas</h3>
               <div className="grid grid-cols-2 gap-4">
-                <Link to="/patients" className="p-6 bg-white/50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-blue-100 shadow-sm">
-                  <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
+                <Link to="/patients" className="p-6 bg-white/50 rounded-3xl hover:bg-primary/5 group transition-all text-center space-y-2 border border-border-soft hover:border-primary/20 shadow-sm">
+                  <Users className="mx-auto text-text-muted group-hover:text-primary transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-text-muted group-hover:text-primary">Pacientes</p>
                 </Link>
-                <Link to="/agenda" className="p-6 bg-white/50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-sky-100 shadow-sm">
-                  <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
+                <Link to="/agenda" className="p-6 bg-white/50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2 border border-border-soft hover:border-sky-100 shadow-sm">
+                  <Calendar className="mx-auto text-text-muted group-hover:text-sky-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-text-muted group-hover:text-sky-600">Agenda</p>
                 </Link>
-                <Link to="/exercises" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-emerald-100 shadow-sm">
-                  <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
+                <Link to="/exercises" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-border-soft hover:border-emerald-100 shadow-sm">
+                  <Activity className="mx-auto text-text-muted group-hover:text-emerald-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-text-muted group-hover:text-emerald-600">Exercícios</p>
                 </Link>
-                <Link to="/records" className="p-6 bg-white/50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-rose-100 shadow-sm">
-                  <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
+                <Link to="/records" className="p-6 bg-white/50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2 border border-border-soft hover:border-rose-100 shadow-sm">
+                  <FileText className="mx-auto text-text-muted group-hover:text-rose-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-text-muted group-hover:text-rose-600">Prontuários</p>
                 </Link>
               </div>
             </div>
@@ -790,23 +798,23 @@ export default function Dashboard() {
                     <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-sky-600">Consulta</p>
                   </button>
-                  <Link to="/triage" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-emerald-100 shadow-sm">
-                    <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
+                  <Link to="/triage" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-border-soft hover:border-emerald-100 shadow-sm">
+                    <BrainCircuit className="mx-auto text-text-muted group-hover:text-emerald-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-text-muted group-hover:text-emerald-600">Triagem</p>
                   </Link>
                   <button 
                     onClick={() => document.getElementById('digital-library')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="p-6 bg-white/50 rounded-3xl hover:bg-amber-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-amber-100 shadow-sm"
+                    className="p-6 bg-white/50 rounded-3xl hover:bg-amber-50 group transition-all text-center space-y-2 border border-border-soft hover:border-amber-100 shadow-sm"
                   >
-                    <BookOpen className="mx-auto text-slate-400 group-hover:text-amber-600 transition-colors" size={28} />
-                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-amber-600">Biblioteca</p>
+                    <BookOpen className="mx-auto text-text-muted group-hover:text-amber-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-text-muted group-hover:text-amber-600">Biblioteca</p>
                   </button>
                 </div>
               </div>
 
               {/* Gamification Section */}
-              <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-                <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+              <div className="glass-card p-8 rounded-[3rem] space-y-6">
+                <h3 className="text-xl font-black text-text-main flex items-center gap-2">
                   <Trophy className="text-amber-500" size={24} />
                   Suas Conquistas
                 </h3>
@@ -816,14 +824,14 @@ export default function Dashboard() {
                     { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: stats.pendingTriages > 0 ? 100 : 0 },
                     { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: stats.records > 5 ? 40 : 0 },
                   ].map((badge, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50/50 hover:border-slate-200 transition-all bg-white/30">
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-border-soft/50 hover:border-border-soft transition-all bg-white/30">
                       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-sm", badge.color, badge.progress === 0 && "grayscale opacity-50")}>
                         <badge.icon size={24} />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-black text-slate-900">{badge.label}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{badge.desc}</p>
-                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <p className="text-sm font-black text-text-main">{badge.label}</p>
+                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{badge.desc}</p>
+                        <div className="w-full h-1.5 bg-bg-general rounded-full overflow-hidden">
                           <div 
                             className={cn("h-full transition-all duration-1000", badge.color.split(' ')[0].replace('text', 'bg'))}
                             style={{ width: `${badge.progress}%` }}

@@ -6,12 +6,14 @@
   --font-display: "Playfair Display", serif;
   --font-accent: "Poppins", sans-serif;
   
-  /* Premium Brand Palette for FisioCareHub */
-  --color-brand-cyan: #00E5FF;
-  --color-brand-glow: #6FF7FF;
-  --color-brand-dark: #0F172A;
-  --color-brand-gray: #64748B;
-  --color-brand-light: #F8FAFC;
+  /* SaaS Health Premium Palette */
+  --color-primary: #14B8A6;
+  --color-primary-hover: #0F766E;
+  --color-bg-general: #F6FAF9;
+  --color-card: #FFFFFF;
+  --color-border-soft: #E6F2EF;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
 
   /* Custom Palette for Home Care */
   --color-home-blue: #e0f2fe; /* light blue */
@@ -20,8 +22,12 @@
   --color-home-trust: #0ea5e9; /* trust blue */
 
   /* Dark Mode Overrides */
-  --color-background: #ffffff;
+  --color-background: #F6FAF9;
   --color-foreground: #0F172A;
+
+  /* Premium Shadows */
+  --shadow-premium: 0 10px 30px -10px rgba(20, 184, 166, 0.1);
+  --shadow-premium-hover: 0 20px 40px -15px rgba(20, 184, 166, 0.2);
 }
 
 @layer utilities {
@@ -34,6 +40,14 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-premium;
+  }
+
+  .glass-card-hover {
+    @apply hover:bg-white/80 hover:shadow-premium-hover transition-all duration-300;
   }
 }
 
