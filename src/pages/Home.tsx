@@ -61,6 +61,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [proSlideIndex, setProSlideIndex] = useState(0);
+  const [itemsVisible, setItemsVisible] = useState(1);
+
+  useEffect(() => {
+    const updateItemsVisible = () => {
+      if (window.innerWidth >= 1024) setItemsVisible(4);
+      else if (window.innerWidth >= 768) setItemsVisible(2);
+      else setItemsVisible(1);
+    };
+    updateItemsVisible();
+    window.addEventListener('resize', updateItemsVisible);
+    return () => window.removeEventListener('resize', updateItemsVisible);
+  }, []);
 
   const specialtySlides = [
     {
@@ -108,7 +120,8 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    if (!authLoading && user) {
+    // Only redirect if at the root path and logged in
+    if (!authLoading && user && window.location.pathname === '/') {
       navigate('/dashboard');
     }
   }, [user, authLoading, navigate]);
@@ -147,7 +160,7 @@ export default function Home() {
       let query = supabase
         .from('perfis')
         .select('*')
-        .eq('plano', 'fisioterapeuta')
+        .eq('tipo_usuario', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
@@ -169,19 +182,79 @@ export default function Home() {
 
       if (error) throw error;
 
-      if (data) {
+      if (data && data.length > 0) {
         const mappedData: Professional[] = data.map((profile: any) => ({
           id: profile.id,
           name: profile.nome_completo || 'Fisioterapeuta',
           spec: profile.especialidade || 'Geral',
           fullSpec: profile.especialidade || 'Fisioterapia Geral',
           img: profile.avatar_url || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,
-          rating: 5.0, // Default para agora
-          reviews: Math.floor(Math.random() * 50) + 10,   // Simulado para preencher o layout
+          rating: 5.0,
+          reviews: Math.floor(Math.random() * 50) + 10,
           bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
           location: profile.localizacao || 'Sua Região'
         }));
         setProfessionals(mappedData);
+      } else {
+        // Sample data for demo if DB is empty
+        const samplePros: Professional[] = [
+          {
+            id: '1',
+            name: 'Dra. Ana Silva',
+            spec: 'Ortopedia',
+            fullSpec: 'Fisioterapia Traumato-Ortopédica',
+            img: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=300&h=300',
+            rating: 5.0,
+            reviews: 42,
+            bio: 'Especialista em reabilitação de coluna e membros inferiores com mais de 10 anos de experiência.',
+            location: 'São Paulo, SP'
+          },
+          {
+            id: '2',
+            name: 'Dr. Lucas Santos',
+            spec: 'Neurofuncional',
+            fullSpec: 'Fisioterapia Neurofuncional',
+            img: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=300&h=300',
+            rating: 4.9,
+            reviews: 38,
+            bio: 'Focado na recuperação de pacientes pós-AVC e doenças degenerativas com atendimento humanizado.',
+            location: 'Rio de Janeiro, RJ'
+          },
+          {
+            id: '3',
+            name: 'Dra. Juliana Costa',
+            spec: 'Pediátrica',
+            fullSpec: 'Fisioterapia Pediátrica',
+            img: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=300&h=300',
+            rating: 5.0,
+            reviews: 25,
+            bio: 'Atendimento lúdico para crianças com atraso no desenvolvimento motor e condições congênitas.',
+            location: 'Belo Horizonte, MG'
+          },
+          {
+            id: '4',
+            name: 'Dr. Ricardo Oliveira',
+            spec: 'Esportiva',
+            fullSpec: 'Fisioterapia Esportiva',
+            img: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300',
+            rating: 4.8,
+            reviews: 56,
+            bio: 'Especialista em retorno ao esporte e prevenção de lesões para atletas amadores e profissionais.',
+            location: 'Curitiba, PR'
+          },
+          {
+            id: '5',
+            name: 'Dra. Carla Mendes',
+            spec: 'Gerontologia',
+            fullSpec: 'Fisioterapia Geriátrica',
+            img: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300&h=300',
+            rating: 5.0,
+            reviews: 31,
+            bio: 'Dedicada à manutenção da autonomia e prevenção de quedas em idosos no ambiente domiciliar.',
+            location: 'Porto Alegre, RS'
+          }
+        ];
+        setProfessionals(samplePros);
       }
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error);
@@ -193,12 +266,12 @@ export default function Home() {
 
   const nextProSlide = () => {
     if (professionals.length === 0) return;
-    setProSlideIndex((prev) => (prev + 1) % professionals.length);
+    setProSlideIndex((prev) => (prev + 1) % (professionals.length - itemsVisible + 1));
   };
 
   const prevProSlide = () => {
     if (professionals.length === 0) return;
-    setProSlideIndex((prev) => (prev - 1 + professionals.length) % professionals.length);
+    setProSlideIndex((prev) => (prev - 1 + (professionals.length - itemsVisible + 1)) % (professionals.length - itemsVisible + 1));
   };
 
   return (
@@ -577,7 +650,7 @@ export default function Home() {
               <>
                 <div className="overflow-hidden px-4 py-10 -mx-4">
                   <motion.div
-                    animate={{ x: `-${proSlideIndex * (100 / (window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 2 : 1))}%` }}
+                    animate={{ x: `-${proSlideIndex * (100 / itemsVisible)}%` }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     className="flex gap-8"
                   >
