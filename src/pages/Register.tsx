@@ -120,7 +120,7 @@ export default function Register() {
 
     try {
       console.log("Starting registration for:", cleanEmail, "Role:", role);
-      // 2. Criar o usuário no Supabase Auth com metadados iniciais
+      // 2. Criar o usuário no Supabase Auth com metadados COMPLETOS
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: password,
@@ -130,7 +130,16 @@ export default function Register() {
             tipo_usuario: role,
             plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
             crefito: role === 'fisioterapeuta' ? crefito : null,
-            especialidade: role === 'fisioterapeuta' ? specialty : null
+            especialidade: role === 'fisioterapeuta' ? specialty : null,
+            telefone: telefone,
+            bio: bio,
+            localizacao: city,
+            endereco: address,
+            cep: zipCode,
+            pais: country,
+            genero: role === 'fisioterapeuta' ? gender : null,
+            tipo_servico: role === 'fisioterapeuta' ? serviceType : null,
+            is_pro: isPro
           }
         }
       });
@@ -162,8 +171,7 @@ export default function Register() {
         // 4. Criar o perfil detalhado na tabela 'perfis'
         console.log("Upserting profile to 'perfis' table...");
         
-        // Base data that is most likely to exist (excluding documents which might fail if column is missing)
-        const baseProfileData = {
+        const fullProfileData = {
           id: authData.user.id,
           nome_completo: cleanName,
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
@@ -180,61 +188,44 @@ export default function Register() {
           is_pro: isPro,
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
-          created_at: new Date().toISOString()
-        };
-
-        // Full data with all fields including documents
-        const fullProfileData = {
-          ...baseProfileData,
           telefone: telefone,
           bio: bio,
           documentos: uploadedDocUrls,
+          created_at: new Date().toISOString()
         };
 
-        let { error: profileError } = await supabase
+        // We try to upsert, but we don't block the user if it fails, 
+        // because the DB trigger or AuthContext will handle it later.
+        const { error: profileError } = await supabase
           .from('perfis')
           .upsert(fullProfileData);
 
         if (profileError) {
-          console.warn("Erro ao criar perfil completo, tentando apenas dados básicos:", profileError);
-          // Retry with only base data if full data fails (likely due to missing columns)
-          const { error: retryError } = await supabase
-            .from('perfis')
-            .upsert(baseProfileData);
-          
-          if (retryError) {
-            console.error("Erro fatal na criação do perfil:", retryError);
-            setError("Sua conta foi criada, mas houve um erro ao configurar seu perfil (" + retryError.message + "). Tente fazer login.");
-          } else {
-            console.log("Profile created successfully with base data!");
-            const { toast } = await import('sonner');
-            toast.success('Cadastro realizado!', {
-              description: 'Sua conta foi configurada com os dados básicos. Faça login para continuar.'
-            });
-            navigate('/login');
-          }
-        } else {
-          console.log("Profile created successfully!");
+          console.warn("Manual profile upsert failed (expected if email confirmation is on):", profileError.message);
+        }
 
-          // 5. Create subscription record if Pro Key was used
-          if (isPro) {
-            console.log("Creating subscription record for Pro Key...");
+        // 5. Create subscription record if Pro Key was used
+        if (isPro) {
+          console.log("Creating subscription record for Pro Key...");
+          try {
             await supabase.from('assinaturas').insert({
               user_id: authData.user.id,
               plano: 'pro',
               status: 'ativo',
               valor: 0,
               data_inicio: new Date().toISOString(),
-              data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+              data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
             });
+          } catch (err) {
+            console.warn("Erro ao criar assinatura inicial:", err);
           }
-
-          const { toast } = await import('sonner');
-          toast.success('Cadastro realizado com sucesso!', {
-            description: 'Sua conta foi configurada. Faça login para continuar.'
-          });
-          navigate('/login');
         }
+
+        const { toast } = await import('sonner');
+        toast.success('Cadastro realizado com sucesso!', {
+          description: 'Sua conta foi configurada. Faça login para continuar.'
+        });
+        navigate('/login');
       }
     } catch (err: any) {
       console.error("Erro inesperado durante o cadastro:", err);

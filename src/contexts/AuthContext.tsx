@@ -57,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             plano: userMetadata?.plano || (finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free'),
             crefito: userMetadata?.crefito || null,
             especialidade: userMetadata?.especialidade || null,
+            telefone: userMetadata?.telefone || null,
+            bio: userMetadata?.bio || null,
+            localizacao: userMetadata?.localizacao || null,
+            endereco: userMetadata?.endereco || null,
+            cep: userMetadata?.cep || null,
+            pais: userMetadata?.pais || null,
+            genero: userMetadata?.genero || null,
+            tipo_servico: userMetadata?.tipo_servico || null,
             is_pro: !!userMetadata?.is_pro,
             status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
           })

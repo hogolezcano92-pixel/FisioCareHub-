@@ -250,71 +250,77 @@ export default function Dashboard() {
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   return (
-    <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-8 pb-12 bg-[#F8FAFC] transition-colors duration-500">
-      <div className="max-w-7xl mx-auto space-y-10">
-        {/* Pro Banner for Physios */}
-      {isPhysio && !isPro && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-sky-500 to-blue-600 p-6 rounded-[2rem] text-white shadow-xl shadow-sky-100 flex flex-col md:flex-row items-center justify-between gap-4"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-              <Crown size={24} className="text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-black tracking-tight">Seja FisioCareHub Pro</h3>
-              <p className="text-blue-50 font-medium">Desbloqueie relatórios avançados, análises de desempenho e muito mais.</p>
-            </div>
-          </div>
-          <Link
-            to="/subscription"
-            className="px-8 py-3 bg-white text-blue-600 rounded-full font-black hover:bg-blue-50 transition-all shadow-lg whitespace-nowrap"
+    <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-8 pb-12 bg-[#F1F5F9] relative overflow-hidden transition-colors duration-500">
+      {/* Camada de Textura e Brilho de Fundo */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/50 via-transparent to-indigo-50/30 pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+      
+      <div className="max-w-7xl mx-auto space-y-10 relative z-10">
+        {/* Banner Pro para Fisioterapeutas */}
+        {isPhysio && !isPro && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-[2.5rem] text-white shadow-2xl shadow-blue-200/50 flex flex-col md:flex-row items-center justify-between gap-4 border border-white/10"
           >
-            Ver Planos
-          </Link>
-        </motion.div>
-      )}
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+                <Crown size={28} className="text-white drop-shadow-md" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black tracking-tight">Seja FisioCareHub Pro</h3>
+                <p className="text-blue-50 font-medium">Desbloqueie relatórios avançados e análise de desempenho.</p>
+              </div>
+            </div>
+            <Link
+              to="/subscription"
+              className="px-8 py-3 bg-white text-blue-700 rounded-full font-black hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
+            >
+              Ver Planos
+            </Link>
+          </motion.div>
+        )}
 
-        {/* Welcome Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-8 rounded-[2.5rem]">
+        {/* Cabeçalho de Boas-vindas */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/80 backdrop-blur-2xl p-8 rounded-[3rem] border border-white shadow-[0_8px_40px_rgba(0,0,0,0.04)]">
           <div className="flex items-center gap-6">
             {!profile ? (
-              <div className="w-20 h-20 bg-slate-100 animate-pulse rounded-full" />
+              <div className="w-20 h-20 bg-slate-200 animate-pulse rounded-full" />
             ) : (
               <div className="relative">
                 <img 
                   src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
                   alt={profile.nome_completo}
-                  className="w-20 h-20 rounded-full border-4 border-white shadow-premium object-cover"
+                  className="w-20 h-20 rounded-full border-4 border-white shadow-xl object-cover"
                 />
-                <div className="absolute bottom-1 right-1 w-5 h-5 bg-primary border-4 border-white rounded-full" />
+                <div className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full shadow-sm" />
               </div>
             )}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
-                <Sparkles size={14} className="animate-pulse" />
-                {isPhysio ? 'Painel Profissional' : 'Painel do Paciente'}
+              <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-[0.2em]">
+                <Sparkles size={14} className="text-blue-500" />
+                {isPhysio ? 'Gestão Profissional' : 'Sua Jornada de Saúde'}
               </div>
-              <h1 className="text-3xl font-black text-text-main tracking-tight">
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
                 {!profile ? (
-                  <span className="animate-pulse text-slate-300">Carregando...</span>
+                  <span className="animate-pulse text-slate-300">Conectando...</span>
                 ) : (
-                  <>{getGreeting()}, <span className="text-primary">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
+                  <>{getGreeting()}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
                 )}
               </h1>
-              <p className="text-text-muted font-medium">Bem-vindo ao FisioCareHub</p>
+              <p className="text-slate-500 font-semibold text-sm">Painel FisioCareHub • São Paulo, SP</p>
             </div>
           </div>
+          
           <div className="flex items-center gap-3">
-            <button className="p-4 glass-card-hover rounded-2xl text-text-muted hover:text-primary transition-all group">
-              <Bell size={22} className="group-hover:rotate-12 transition-transform" />
+            <button className="p-4 bg-white rounded-2xl text-slate-400 hover:text-primary hover:shadow-md transition-all border border-slate-100 group">
+              <Bell size={22} className="group-hover:animate-bounce" />
             </button>
             {!isPhysio && (
               <button 
                 onClick={() => navigate('/triage')}
-                className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all shadow-premium hover:scale-[1.02] active:scale-[0.98]"
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all shadow-lg shadow-blue-200 hover:scale-[1.02] active:scale-95"
               >
                 <Plus size={20} />
                 Nova Triagem
