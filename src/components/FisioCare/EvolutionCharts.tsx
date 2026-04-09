@@ -59,7 +59,7 @@ export function EvolutionCharts({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6"
+        className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -128,7 +128,7 @@ export function EvolutionCharts({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6"
+        className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-1">

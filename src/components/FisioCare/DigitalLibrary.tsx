@@ -80,7 +80,7 @@ export const DigitalLibrary = () => {
 
   if (loading) {
     return (
-      <div className="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+      <div className="bg-white/70 backdrop-blur-xl p-12 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="text-blue-600 animate-spin" size={48} />
         <p className="text-slate-500 font-bold">Carregando biblioteca...</p>
       </div>
@@ -88,7 +88,7 @@ export const DigitalLibrary = () => {
   }
 
   return (
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
+    <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
@@ -109,7 +109,7 @@ export const DigitalLibrary = () => {
               initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="group relative bg-slate-50 rounded-[2.5rem] border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-slate-100 transition-all flex flex-col"
+              className="group relative bg-white/50 backdrop-blur-sm rounded-[2.5rem] border border-white overflow-hidden hover:shadow-2xl hover:shadow-blue-100/50 transition-all duration-500 flex flex-col"
             >
               <div className="relative h-48 overflow-hidden">
                 <img 
@@ -156,9 +156,9 @@ export const DigitalLibrary = () => {
                       <button 
                         onClick={() => handleBuy(product)}
                         disabled={buyingId === product.id}
-                        className="p-4 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
+                        className="p-4 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100 transition-all disabled:opacity-50 group/btn"
                       >
-                        {buyingId === product.id ? <Loader2 className="animate-spin" size={24} /> : <ShoppingCart size={24} />}
+                        {buyingId === product.id ? <Loader2 className="animate-spin" size={24} /> : <ShoppingCart size={24} className="group-hover/btn:scale-110 transition-transform" />}
                       </button>
                     </>
                   ) : (

@@ -243,8 +243,9 @@ export default function Dashboard() {
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   return (
-    <div className="space-y-10 pb-12">
-      {/* Pro Banner for Physios */}
+    <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-8 pb-12 bg-[#F8FAFC] transition-colors duration-500">
+      <div className="max-w-7xl mx-auto space-y-10">
+        {/* Pro Banner for Physios */}
       {isPhysio && !isPro && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -269,104 +270,108 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Welcome Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {!profile ? (
-            <div className="w-16 h-16 bg-slate-100 animate-pulse rounded-full" />
-          ) : (
-            <img 
-              src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
-              alt={profile.nome_completo}
-              className="w-16 h-16 rounded-full border-2 border-white shadow-sm object-cover"
-            />
-          )}
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
-              <Sparkles size={12} />
-              Painel do Paciente
+        {/* Welcome Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60 shadow-sm">
+          <div className="flex items-center gap-5">
+            {!profile ? (
+              <div className="w-20 h-20 bg-slate-100 animate-pulse rounded-full" />
+            ) : (
+              <div className="relative">
+                <img 
+                  src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
+                  alt={profile.nome_completo}
+                  className="w-20 h-20 rounded-full border-4 border-white shadow-xl object-cover"
+                />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 border-4 border-white rounded-full" />
+              </div>
+            )}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.3em]">
+                <Sparkles size={14} className="animate-pulse" />
+                {isPhysio ? 'Painel Profissional' : 'Painel do Paciente'}
+              </div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                {!profile ? (
+                  <span className="animate-pulse text-slate-300">Carregando...</span>
+                ) : (
+                  <>Olá, <span className="text-blue-600 italic">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : `Paciente ${profile?.nome_completo?.split(' ')[0]}`}</span>! 👋</>
+                )}
+              </h1>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              {!profile ? (
-                <span className="animate-pulse text-slate-300">Carregando...</span>
-              ) : (
-                <>Olá, <span className="text-blue-600">Paciente {profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
-              )}
-            </h1>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm">
-            <Bell size={18} />
-          </button>
-          {!isPhysio && (
-            <button 
-              onClick={() => navigate('/triage')}
-              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-            >
-              <Plus size={18} />
-              Nova Triagem
+          <div className="flex items-center gap-3">
+            <button className="p-4 bg-white/80 backdrop-blur-sm border border-white rounded-2xl text-slate-400 hover:text-blue-600 transition-all shadow-sm hover:shadow-md group">
+              <Bell size={22} className="group-hover:rotate-12 transition-transform" />
             </button>
-          )}
-        </div>
-      </header>
+            {!isPhysio && (
+              <button 
+                onClick={() => navigate('/triage')}
+                className="flex items-center gap-3 px-7 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 hover:scale-105 active:scale-95"
+              >
+                <Plus size={20} />
+                Nova Triagem
+              </button>
+            )}
+          </div>
+        </header>
 
       {/* Next Step Section for Patients */}
       {!isPhysio && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center">
-                  <span className="text-xs font-black uppercase">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                  <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
+            <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between group hover:shadow-xl transition-all duration-500">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-blue-100">
+                  <span className="text-[10px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                  <span className="text-2xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Próxima Consulta</p>
-                  <p className="text-lg font-black text-slate-900">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Próxima Consulta</p>
+                  <p className="text-xl font-black text-slate-900 tracking-tight">
                     {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
                   </p>
-                  <p className="text-sm text-slate-500 font-medium">
-                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Presencial
+                  <p className="text-sm text-slate-500 font-bold">
+                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-blue-500">Presencial</span>
                   </p>
                 </div>
               </div>
-              <button onClick={() => navigate('/appointments')} className="p-3 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
-                <ChevronRight size={20} />
+              <button onClick={() => navigate('/appointments')} className="p-4 bg-slate-50 text-slate-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                <ChevronRight size={24} />
               </button>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
-                  <Calendar size={28} />
+            <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between group hover:shadow-xl transition-all duration-500">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center shadow-inner">
+                  <Calendar size={32} />
                 </div>
                 <div>
-                  <p className="text-lg font-black text-slate-900">Agendar Consulta</p>
-                  <p className="text-sm text-slate-500 font-medium">Você não tem consultas pendentes.</p>
+                  <p className="text-xl font-black text-slate-900 tracking-tight">Agendar Consulta</p>
+                  <p className="text-sm text-slate-500 font-bold">Você não tem consultas pendentes.</p>
                 </div>
               </div>
-              <button onClick={() => navigate('/triage')} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all">
+              <button onClick={() => navigate('/triage')} className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
                 Agendar
               </button>
             </div>
           )}
 
           {/* Quick Stats Summary (Compact) */}
-          <div className="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl flex items-center justify-around">
-            <div className="text-center">
-              <p className="text-2xl font-black">{stats.records > 0 ? '75%' : '0%'}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Melhora</p>
+          <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl flex items-center justify-around relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="text-center relative z-10">
+              <p className="text-3xl font-black">{stats.records > 0 ? '75%' : '0%'}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Melhora</p>
             </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <p className="text-2xl font-black">{stats.appointments}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessões</p>
+            <div className="w-px h-10 bg-white/10 relative z-10" />
+            <div className="text-center relative z-10">
+              <p className="text-3xl font-black">{stats.appointments}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Sessões</p>
             </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <p className="text-2xl font-black">{stats.records > 0 ? '12' : '0'}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exercícios</p>
+            <div className="w-px h-10 bg-white/10 relative z-10" />
+            <div className="text-center relative z-10">
+              <p className="text-3xl font-black">{stats.records > 0 ? '12' : '0'}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Exercícios</p>
             </div>
           </div>
         </div>
@@ -694,22 +699,22 @@ export default function Dashboard() {
           </div>
 
           {isPhysio && (
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
               <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
               <div className="grid grid-cols-2 gap-4">
-                <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                <Link to="/patients" className="p-6 bg-white/50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-blue-100 shadow-sm">
                   <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
                   <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
                 </Link>
-                <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
+                <Link to="/agenda" className="p-6 bg-white/50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-sky-100 shadow-sm">
                   <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
                   <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
                 </Link>
-                <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                <Link to="/exercises" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-emerald-100 shadow-sm">
                   <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
                   <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
                 </Link>
-                <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                <Link to="/records" className="p-6 bg-white/50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-rose-100 shadow-sm">
                   <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
                   <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
                 </Link>
@@ -771,27 +776,27 @@ export default function Dashboard() {
             </div>
             <div className="space-y-8">
               {/* Quick Actions (2x2 Grid) */}
-              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+              <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
                 <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <Link to="/chat" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                  <Link to="/chat" className="p-6 bg-white/50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-blue-100 shadow-sm">
                     <MessageSquare className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-blue-600">Chat</p>
                   </Link>
                   <button 
                     onClick={() => window.open(`https://meet.jit.si/FisioCareHub-${profile?.id || 'room'}`, '_blank')}
-                    className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2"
+                    className="p-6 bg-white/50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-sky-100 shadow-sm"
                   >
                     <Video className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-sky-600">Consulta</p>
                   </button>
-                  <Link to="/triage" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                  <Link to="/triage" className="p-6 bg-white/50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-emerald-100 shadow-sm">
                     <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
                   </Link>
                   <button 
                     onClick={() => document.getElementById('digital-library')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="p-6 bg-slate-50 rounded-3xl hover:bg-amber-50 group transition-all text-center space-y-2"
+                    className="p-6 bg-white/50 rounded-3xl hover:bg-amber-50 group transition-all text-center space-y-2 border border-slate-50 hover:border-amber-100 shadow-sm"
                   >
                     <BookOpen className="mx-auto text-slate-400 group-hover:text-amber-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-amber-600">Biblioteca</p>
@@ -800,7 +805,7 @@ export default function Dashboard() {
               </div>
 
               {/* Gamification Section */}
-              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+              <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
                 <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
                   <Trophy className="text-amber-500" size={24} />
                   Suas Conquistas
@@ -811,13 +816,13 @@ export default function Dashboard() {
                     { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: stats.pendingTriages > 0 ? 100 : 0 },
                     { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: stats.records > 5 ? 40 : 0 },
                   ].map((badge, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 transition-all">
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color, badge.progress === 0 && "grayscale opacity-50")}>
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50/50 hover:border-slate-200 transition-all bg-white/30">
+                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-sm", badge.color, badge.progress === 0 && "grayscale opacity-50")}>
                         <badge.icon size={24} />
                       </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-black text-slate-900">{badge.label}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase">{badge.desc}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{badge.desc}</p>
                         <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div 
                             className={cn("h-full transition-all duration-1000", badge.color.split(' ')[0].replace('text', 'bg'))}
@@ -837,6 +842,7 @@ export default function Dashboard() {
         </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );

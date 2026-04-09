@@ -45,7 +45,7 @@ export const PainDiary = () => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
+    <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8">
       <div className="space-y-2">
         <h3 className="text-2xl font-black text-slate-900 tracking-tight">Como está sua dor agora?</h3>
         <p className="text-slate-500 text-base font-medium">Sua percepção ajuda a ajustar seu tratamento em tempo real.</p>
@@ -59,8 +59,8 @@ export const PainDiary = () => {
             className={cn(
               "flex flex-col items-center gap-3 p-4 rounded-[2rem] border-2 transition-all group",
               intensity === i + 1 
-                ? "border-blue-600 bg-blue-50 text-blue-600 scale-105 shadow-lg shadow-blue-100" 
-                : "border-slate-50 hover:border-slate-200 text-slate-400 bg-slate-50/50"
+                ? "border-blue-600 bg-blue-600 text-white scale-110 shadow-xl shadow-blue-200" 
+                : "border-white bg-white/50 hover:border-blue-200 text-slate-400 hover:text-blue-400"
             )}
           >
             <span className="text-3xl group-hover:scale-110 transition-transform">{emojis[i]}</span>
@@ -73,10 +73,10 @@ export const PainDiary = () => {
         onClick={handleSave}
         disabled={intensity === null || isSaving}
         className={cn(
-          "w-full py-6 rounded-[2rem] font-black text-xl transition-all shadow-2xl flex items-center justify-center gap-3",
+          "w-full py-6 rounded-[2rem] font-black text-xl transition-all flex items-center justify-center gap-3",
           intensity !== null 
-            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 scale-[1.02]" 
-            : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
+            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-2xl shadow-blue-200 scale-[1.02] active:scale-95" 
+            : "bg-slate-100 text-slate-400 cursor-not-allowed"
         )}
       >
         {isSaving ? (
