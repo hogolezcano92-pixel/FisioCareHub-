@@ -13,8 +13,12 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     
+    if (!supabaseServiceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
+    }
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -32,18 +36,13 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
 
     if (userError || !user) {
-      throw new Error('Invalid token')
+      throw new Error('Invalid token or user not found')
     }
 
-    const { userId } = await req.json()
+    const body = await req.json().catch(() => ({}))
+    const userId = body.userId || user.id
 
-    // Security check: A user can only delete themselves
-    // (Unless we add admin logic later)
-    if (user.id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own account')
-    }
-
-    console.log(`Deleting user: ${userId}`)
+    console.log(`Iniciando exclusão total para o usuário: ${userId} (${user.email})`)
 
     // 1. Delete related data from other tables
     const tables = [
@@ -59,59 +58,59 @@ serve(async (req) => {
       'exercicios_paciente',
       'exercicios',
       'assinaturas',
+      'diario_dor',
+      'checklist_exercicios',
+      'compras_materiais',
       'pacientes',
       'perfis'
     ]
     
+    const deletionResults: Record<string, any> = {}
+    
     for (const table of tables) {
       try {
-        console.log(`Attempting to delete from ${table} for user ${userId}`)
+        console.log(`Limpando tabela: ${table}`)
         let result;
         
         if (table === 'agendamentos' || table === 'prontuarios') {
-          // These tables use fisio_id and paciente_id
           await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
           result = await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
         } else if (table === 'mensagens') {
           await supabaseAdmin.from(table).delete().eq('remetente_id', userId)
           result = await supabaseAdmin.from(table).delete().eq('destinatario_id', userId)
-        } else if (table === 'triagens') {
+        } else if (table === 'triagens' || table === 'diario_dor' || table === 'checklist_exercicios') {
           result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
         } else if (table === 'documentos_gerados') {
           await supabaseAdmin.from(table).delete().eq('physio_id', userId)
           if (user.email) {
-            result = await supabaseAdmin.from(table).delete().eq('patient_email', user.email.toLowerCase())
+            result = await supabaseAdmin.from(table).delete().or(`patient_email.eq.${user.email},patient_email.eq.${user.email.toLowerCase()}`)
           }
-        } else if (table === 'notificacoes') {
+        } else if (table === 'notificacoes' || table === 'assinaturas' || table === 'compras_materiais') {
           result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
         } else if (table === 'pacientes') {
-          // Delete patients where this user is the physiotherapist
           await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
-          // Also delete the patient record if this user is the patient (matched by email)
           if (user.email) {
-            result = await supabaseAdmin.from(table).delete().eq('email', user.email)
+            result = await supabaseAdmin.from(table).delete().or(`email.eq.${user.email},email.eq.${user.email.toLowerCase()}`)
           }
         } else if (table === 'atendimentos') {
-          // Delete appointments where this user is the physiotherapist
           result = await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
         } else if (table === 'exercicios') {
           result = await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
-        } else if (table === 'assinaturas') {
-          result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
         } else if (table === 'perfis') {
           result = await supabaseAdmin.from(table).delete().eq('id', userId)
         } else {
-          // Fallback for other tables like evolucoes, arquivos_paciente, exercicios_paciente
-          // which reference pacientes(id). If we delete from perfis/pacientes first,
-          // these should cascade. But we try to be safe.
           result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
         }
         
         if (result?.error) {
-          console.warn(`Supabase error deleting from ${table}:`, result.error.message)
+          console.warn(`Erro (não fatal) em ${table}:`, result.error.message)
+          deletionResults[table] = { status: 'error', message: result.error.message }
+        } else {
+          deletionResults[table] = { status: 'success' }
         }
       } catch (e) {
-        console.warn(`Exception deleting from ${table}:`, e.message)
+        console.warn(`Exceção em ${table}:`, e.message)
+        deletionResults[table] = { status: 'exception', message: e.message }
       }
     }
 
@@ -119,48 +118,44 @@ serve(async (req) => {
     const buckets = ['avatars', 'documents']
     for (const bucket of buckets) {
       try {
-        console.log(`Attempting to delete from storage bucket ${bucket} for user ${userId}`)
         if (bucket === 'avatars') {
-          // List all files in the avatars bucket
-          const { data: files, error: listError } = await supabaseAdmin.storage
-            .from(bucket)
-            .list('', {
-              search: `avatar-${userId}`
-            })
-          
+          const { data: files } = await supabaseAdmin.storage.from(bucket).list('', { search: userId })
           if (files && files.length > 0) {
-            const filesToDelete = files.map(f => f.name)
-            console.log(`Deleting ${filesToDelete.length} avatars for user ${userId}`)
-            await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+            await supabaseAdmin.storage.from(bucket).remove(files.map(f => f.name))
           }
-        } else if (bucket === 'documents') {
-          // List all files in the user's folder (checking old, new and redundant paths)
-          const folders = [`${userId}`, `fisioterapeutas/${userId}`, `documents/${userId}`]
+        } else {
+          const folders = [userId, `fisioterapeutas/${userId}`, `documents/${userId}`]
           for (const folder of folders) {
-            const { data: files } = await supabaseAdmin.storage
-              .from(bucket)
-              .list(folder)
-            
+            const { data: files } = await supabaseAdmin.storage.from(bucket).list(folder)
             if (files && files.length > 0) {
-              const filesToDelete = files.map(f => `${folder}/${f.name}`)
-              await supabaseAdmin.storage.from(bucket).remove(filesToDelete)
+              await supabaseAdmin.storage.from(bucket).remove(files.map(f => `${folder}/${f.name}`))
             }
           }
         }
       } catch (e) {
-        console.warn(`Could not delete from storage bucket ${bucket}:`, e.message)
+        console.warn(`Erro storage ${bucket}:`, e.message)
       }
     }
 
     // 2. Delete from Auth
-    console.log(`Deleting user from Auth: ${userId}`)
+    console.log(`Excluindo usuário do Auth: ${userId}`)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (deleteError) {
-      throw deleteError
+      console.error("Erro fatal ao excluir do Auth:", deleteError.message)
+      return new Response(JSON.stringify({ 
+        error: `Erro ao excluir conta de autenticação: ${deleteError.message}`,
+        details: deletionResults 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
     }
 
-    return new Response(JSON.stringify({ message: 'User deleted successfully' }), {
+    return new Response(JSON.stringify({ 
+      message: 'Conta excluída com sucesso',
+      details: deletionResults
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })

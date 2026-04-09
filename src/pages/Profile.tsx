@@ -223,7 +223,7 @@ export default function Profile() {
       const response = await invokeFunction('delete-user', { userId: user.id });
       
       if (response && !response.error) {
-        console.log("Edge Function 'delete-user' executada com sucesso.");
+        console.log("Edge Function 'delete-user' executada com sucesso:", response.message);
         
         // 2. Final Sign Out and Redirect
         await signOut();
@@ -232,15 +232,29 @@ export default function Profile() {
         navigate('/');
       } else {
         const errorMsg = response?.error || "Erro desconhecido na função de exclusão.";
-        console.error("Erro retornado pela Edge Function:", errorMsg);
+        console.error("Erro retornado pela Edge Function:", errorMsg, response?.details);
+        
+        // Se o erro for "User not found", talvez a conta já tenha sido excluída parcialmente
+        if (errorMsg.includes("not found") || errorMsg.includes("404")) {
+          await signOut();
+          toast.success("Processo de exclusão concluído.");
+          navigate('/');
+          return;
+        }
+
         toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
       }
     } catch (err: any) {
       console.error("Erro fatal ao excluir conta:", err);
       
-      // Se falhou a função, tentamos pelo menos limpar o perfil localmente se o erro for de permissão
-      // Mas avisamos o usuário que a conta principal ainda existe
-      toast.error("Erro ao processar exclusão total. Por favor, entre em contato com o suporte para remover sua conta permanentemente.");
+      // Fallback: Se a função falhou mas o erro indica que o usuário não existe mais no Auth
+      if (err.message?.includes("not found") || err.message?.includes("404")) {
+        await signOut();
+        navigate('/');
+        return;
+      }
+
+      toast.error("Erro ao processar exclusão total. Por favor, tente novamente ou entre em contato com o suporte.");
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
