@@ -183,10 +183,10 @@ export default function Triage() {
       // 2. Prepare data for saving
       const triageData = {
         paciente_id: user.id,
-        idade: formData.idade ? parseInt(formData.idade) : null,
+        idade: formData.idade ? (parseInt(formData.idade) || null) : null,
         sexo: formData.sexo || null,
-        peso: formData.peso ? parseFloat(formData.peso) : null,
-        altura: formData.altura ? parseFloat(formData.altura) : null,
+        peso: formData.peso ? (parseFloat(formData.peso) || null) : null,
+        altura: formData.altura ? (parseFloat(formData.altura) || null) : null,
         profissao: formData.profissao || null,
         atividade_fisica: formData.atividade_fisica || null,
         regiao_dor: formData.regiao_dor || null,
@@ -195,7 +195,7 @@ export default function Triage() {
         historico_clinico: formData.historico_clinico,
         doencas_preexistentes: formData.doencas_preexistentes,
         escala_dor: formData.escala_dor,
-        limitacao_funcional: formData.avaliacao_funcional.limitacao_atividades,
+        limitacao_funcional: formData.avaliacao_funcional?.limitacao_atividades || 'Não informada',
         red_flag: !!aiResult.red_flag_detected,
         classificacao: aiResult.classificacao || 'Não classificado',
         gravidade: aiResult.gravidade || 'Não definida',

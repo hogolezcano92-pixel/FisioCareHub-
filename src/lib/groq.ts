@@ -1,20 +1,36 @@
 import Groq from "groq-sdk";
 
-const apiKey = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GROQ_API_KEY : undefined);
+// Lazy initialization to ensure environment variables are loaded
+let groqInstance: Groq | null = null;
 
-const groq = new Groq({
-  apiKey: apiKey || "MISSING_API_KEY",
-  dangerouslyAllowBrowser: true
-});
+function getGroqClient() {
+  if (groqInstance) return groqInstance;
 
-const MODEL = "llama-3.3-70b-versatile"; // A good default for Groq
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GROQ_API_KEY : undefined);
+  
+  if (!apiKey || apiKey === "MISSING_API_KEY") {
+    console.error("VITE_GROQ_API_KEY não encontrada nas variáveis de ambiente.");
+    return null;
+  }
+
+  groqInstance = new Groq({
+    apiKey,
+    dangerouslyAllowBrowser: true
+  });
+  
+  return groqInstance;
+}
+
+const MODEL = "llama-3.3-70b-versatile";
 
 export async function analyzeSymptoms(symptoms: string) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.");
+  const client = getGroqClient();
+  if (!client) {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto.");
   }
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -36,11 +52,11 @@ export async function analyzeSymptoms(symptoms: string) {
 }
 
 export async function generateMedicalRecord(type: string, notes: string) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
-  }
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -62,11 +78,11 @@ export async function generateMedicalRecord(type: string, notes: string) {
 }
 
 export async function generateDocument(type: string, patientName: string, additionalInfo: string) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
-  }
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -88,11 +104,11 @@ export async function generateDocument(type: string, patientName: string, additi
 }
 
 export async function generateSOAPRecord(rawText: string) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
-  }
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -124,11 +140,11 @@ export async function generateSOAPRecord(rawText: string) {
 }
 
 export async function summarizePatientHistory(history: string) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
-  }
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -150,8 +166,9 @@ export async function summarizePatientHistory(history: string) {
 }
 
 export async function generateTriageReport(data: any) {
-  if (!apiKey || apiKey === "MISSING_API_KEY") {
-    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada.");
+  const client = getGroqClient();
+  if (!client) {
+    throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto.");
   }
 
   const prompt = `
@@ -162,11 +179,11 @@ export async function generateTriageReport(data: any) {
     - Região da Dor: ${data.regiao_dor}
     - Início: ${data.inicio_sintomas} | Tempo: ${data.tempo_sintomas}
     - Escala de Dor: ${data.escala_dor}/10
-    - Limitação Funcional: ${data.avaliacao_funcional.limitacao_atividades}
-    - Perguntas Específicas da Região: ${JSON.stringify(data.perguntas_especificas)}
-    - Red Flags: ${JSON.stringify(data.red_flags)}
-    - Histórico: ${JSON.stringify(data.historico_clinico)}
-    - Doenças: ${data.doencas_preexistentes.join(', ')}
+    - Limitação Funcional: ${data.avaliacao_funcional?.limitacao_atividades || 'Não informada'}
+    - Perguntas Específicas da Região: ${JSON.stringify(data.perguntas_especificas || {})}
+    - Red Flags: ${JSON.stringify(data.red_flags || {})}
+    - Histórico: ${JSON.stringify(data.historico_clinico || {})}
+    - Doenças: ${Array.isArray(data.doencas_preexistentes) ? data.doencas_preexistentes.join(', ') : 'Nenhuma'}
 
     # OBJETIVOS DA ANÁLISE
     1. CLASSIFICAÇÃO CLÍNICA: Musculoesquelético, Neurológico, Cardiorrespiratório, Pós-operatório ou Esportivo.
@@ -187,7 +204,7 @@ export async function generateTriageReport(data: any) {
     - **Região:** ${data.regiao_dor}
     - **Tempo:** ${data.tempo_sintomas}
     - **Dor:** ${data.escala_dor}/10
-    - **Limitação:** ${data.avaliacao_funcional.limitacao_atividades}
+    - **Limitação:** ${data.avaliacao_funcional?.limitacao_atividades || 'Não informada'}
 
     ### 🔍 Análise Clínica Inicial
     [Análise técnica unindo idade, ocupação e comportamento dos sintomas].
@@ -216,11 +233,11 @@ export async function generateTriageReport(data: any) {
   `;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "Você é o Especialista de Triagem do FisioCareHub. Você deve sempre responder em formato JSON válido conforme as instruções."
+          content: "Você é o Especialista de Triagem do FisioCareHub. Você deve sempre responder em formato JSON válido conforme as instruções. Não inclua blocos de código markdown, apenas o JSON puro."
         },
         {
           role: "user",
@@ -235,6 +252,7 @@ export async function generateTriageReport(data: any) {
     if (!content) throw new Error("Resposta da IA inválida");
     
     try {
+      // Tenta limpar possíveis marcações de markdown se a IA ignorar o system prompt
       const cleanJson = content.replace(/```json\n?|```/g, '').trim();
       return JSON.parse(cleanJson);
     } catch (parseError) {
@@ -243,6 +261,12 @@ export async function generateTriageReport(data: any) {
     }
   } catch (error: any) {
     console.error("Erro na geração de triagem (Groq):", error);
+    
+    // Se for erro de autenticação, fornece mensagem clara
+    if (error.status === 401) {
+      throw new Error("Chave de API do Groq inválida ou expirada. Verifique as configurações.");
+    }
+    
     throw new Error(error.message || "Não foi possível realizar a triagem no momento.");
   }
 }
