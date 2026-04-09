@@ -42,15 +42,45 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session
-      const user_id = session.metadata?.user_id || session.client_reference_id
+  try {
+    if (event.type === "checkout.session.completed" || event.type === "invoice.paid") {
+      const session = event.data.object as any
       
+      // No caso de invoice.paid, o user_id pode estar no metadata da invoice, 
+      // no metadata da subscription ou no customer metadata
+      let user_id = session.metadata?.user_id || session.client_reference_id
+      
+      // Se for invoice.paid e não temos user_id, tentamos buscar na subscription
+      if (!user_id && session.subscription && event.type === "invoice.paid") {
+        const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+        user_id = subscription.metadata?.user_id
+      }
+
+      // Se ainda não temos, tentamos buscar no customer do Stripe
+      if (!user_id && session.customer) {
+        const customer = await stripe.customers.retrieve(session.customer as string) as Stripe.Customer
+        user_id = customer.metadata?.user_id
+      }
+
       if (user_id) {
-        console.log(`[Stripe Webhook] Atualizando perfil para usuário: ${user_id}`)
+        console.log(`[Stripe Webhook] Verificando existência do usuário: ${user_id}`)
         
-        const { error } = await supabase
+        // Verificar se o usuário existe
+        const { data: existingUser, error: checkError } = await supabase
+          .from('perfis')
+          .select('id')
+          .eq('id', user_id)
+          .maybeSingle()
+
+        if (checkError || !existingUser) {
+          console.error(`[Stripe Webhook] Erro: Usuário ${user_id} não encontrado na tabela perfis.`)
+          return new Response(JSON.stringify({ error: "User not found" }), { status: 404 })
+        }
+
+        console.log(`[Stripe Webhook] Processando pagamento para usuário: ${user_id}`)
+        
+        // 1. Atualizar a tabela perfis
+        const { error: profileError } = await supabase
           .from('perfis')
           .update({ 
             is_pro: true, 
@@ -58,13 +88,13 @@ serve(async (req) => {
           })
           .eq('id', user_id)
 
-        if (error) {
-          console.error(`[Stripe Webhook] Erro ao atualizar perfil:`, error)
-          return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+        if (profileError) {
+          console.error(`[Stripe Webhook] Erro ao atualizar perfil:`, profileError)
+          throw profileError
         }
 
-        // Também criar registro na tabela assinaturas
-        await supabase
+        // 2. Atualizar ou criar registro na tabela assinaturas
+        const { error: subError } = await supabase
           .from('assinaturas')
           .upsert({
             user_id: user_id,
@@ -72,18 +102,22 @@ serve(async (req) => {
             status: 'ativo',
             valor: 49.99,
             data_inicio: new Date().toISOString(),
-            data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          })
+            data_expiracao: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString() // 32 dias para margem
+          }, { onConflict: 'user_id' })
 
-        console.log(`[Stripe Webhook] Perfil atualizado com sucesso para: ${user_id}`)
+        if (subError) {
+          console.error(`[Stripe Webhook] Erro ao atualizar assinaturas:`, subError)
+          // Não lançamos erro aqui para não dar falha no Stripe se o perfil já foi atualizado
+        }
+
+        console.log(`[Stripe Webhook] Sucesso: Usuário ${user_id} agora é PRO.`)
+      } else {
+        console.warn(`[Stripe Webhook] Aviso: user_id não encontrado no evento ${event.type}`)
       }
-      break
     }
-    case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription
-      // Opcional: buscar user_id via stripe customer id e desativar is_pro
-      break
-    }
+  } catch (err: any) {
+    console.error(`[Stripe Webhook] Erro no processamento: ${err.message}`)
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
 
   return new Response(JSON.stringify({ received: true }), {

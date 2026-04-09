@@ -68,6 +68,11 @@ serve(async (req) => {
       cancel_url: `${APP_URL}/subscription`,
       customer_email: userEmail,
       client_reference_id: userId,
+      subscription_data: {
+        metadata: {
+          user_id: userId,
+        },
+      },
       metadata: {
         user_id: userId,
         plan: "pro_fisioterapeuta",
