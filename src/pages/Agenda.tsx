@@ -52,7 +52,7 @@ export default function Agenda() {
       return;
     }
 
-    if (profile && profile.plano !== 'fisioterapeuta') {
+    if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       navigate('/dashboard');
       return;
     }

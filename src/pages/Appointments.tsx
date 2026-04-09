@@ -67,14 +67,14 @@ export default function Appointments() {
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email, plano, status_aprovacao');
+        .select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario');
       
       const { data, error } = await query.order('nome_completo');
       
       if (error) {
         console.error("Erro ao buscar usuários disponíveis:", error);
         // Retry without ordering if it failed
-        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao');
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario');
         if (retryError) throw retryError;
         filterAndSetUsers(retryData || [], isPatient, targetRoles);
       } else {
@@ -91,9 +91,9 @@ export default function Appointments() {
       
       if (!isTargetRole) return false;
       
-      // Se for paciente buscando fisioterapeuta, filtrar apenas os aprovados
+      // Se for paciente buscando fisioterapeuta, filtrar aprovados ou pendentes para visibilidade
       if (isPatient) {
-        return u.status_aprovacao === 'aprovado';
+        return u.status_aprovacao === 'aprovado' || u.status_aprovacao === 'pendente';
       }
       
       return true;

@@ -90,7 +90,7 @@ export default function Dashboard() {
         // Use Promise.allSettled for maximum resilience
         const results = await Promise.allSettled([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
-          supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
+          supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
             supabase.from('agendamentos').select('id').eq('fisio_id', data.id)
           ),
@@ -212,7 +212,7 @@ export default function Dashboard() {
         const { data, error } = await supabase
           .from('perfis')
           .select('*')
-          .eq('plano', 'free')
+          .eq('tipo_usuario', 'paciente')
           .or(`nome_completo.ilike.%${patientSearch}%,email.ilike.%${patientSearch}%`)
           .limit(5);
         

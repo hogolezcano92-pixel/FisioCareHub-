@@ -69,7 +69,7 @@ export default function PatientDetails() {
   const [bibliotecaExercicios, setBibliotecaExercicios] = useState<any[]>([]);
 
   useEffect(() => {
-    if (profile && profile.plano !== 'fisioterapeuta') {
+    if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       navigate('/dashboard');
       return;
     }

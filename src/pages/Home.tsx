@@ -161,7 +161,7 @@ export default function Home() {
         .from('perfis')
         .select('*')
         .eq('tipo_usuario', 'fisioterapeuta')
-        .eq('status_aprovacao', 'aprovado');
+        .in('status_aprovacao', ['aprovado', 'pendente']);
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {
