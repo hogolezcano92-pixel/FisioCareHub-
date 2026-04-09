@@ -45,46 +45,73 @@ serve(async (req) => {
 
     console.log(`Deleting user: ${userId}`)
 
-    // 1. Delete related data from other tables (if they exist)
-    // We do this manually to avoid foreign key constraint errors if CASCADE is not set
+    // 1. Delete related data from other tables
     const tables = [
       'agendamentos', 
       'notificacoes', 
       'triagens', 
       'prontuarios', 
       'mensagens', 
-      'documentos_gerados', 
+      'documentos_gerados',
+      'atendimentos',
+      'evolucoes',
+      'arquivos_paciente',
+      'exercicios_paciente',
+      'exercicios',
+      'assinaturas',
+      'pacientes',
       'perfis'
     ]
     
     for (const table of tables) {
       try {
         console.log(`Attempting to delete from ${table} for user ${userId}`)
-        if (table === 'agendamentos' || table === 'prontuarios' || table === 'mensagens') {
-          // For chat messages, we check both sender and receiver
-          if (table === 'mensagens') {
-            await supabaseAdmin.from(table).delete().eq('remetente_id', userId)
-            await supabaseAdmin.from(table).delete().eq('destinatario_id', userId)
-          } else {
-            await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
-            await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
-          }
-        } else if (table === 'triagens') {
+        let result;
+        
+        if (table === 'agendamentos' || table === 'prontuarios') {
+          // These tables use fisio_id and paciente_id
           await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
+          result = await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
+        } else if (table === 'mensagens') {
+          await supabaseAdmin.from(table).delete().eq('remetente_id', userId)
+          result = await supabaseAdmin.from(table).delete().eq('destinatario_id', userId)
+        } else if (table === 'triagens') {
+          result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
         } else if (table === 'documentos_gerados') {
           await supabaseAdmin.from(table).delete().eq('physio_id', userId)
           if (user.email) {
-            await supabaseAdmin.from(table).delete().eq('patient_email', user.email.toLowerCase())
+            result = await supabaseAdmin.from(table).delete().eq('patient_email', user.email.toLowerCase())
           }
         } else if (table === 'notificacoes') {
-          await supabaseAdmin.from(table).delete().eq('user_id', userId)
+          result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
+        } else if (table === 'pacientes') {
+          // Delete patients where this user is the physiotherapist
+          await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
+          // Also delete the patient record if this user is the patient (matched by email)
+          if (user.email) {
+            result = await supabaseAdmin.from(table).delete().eq('email', user.email)
+          }
+        } else if (table === 'atendimentos') {
+          // Delete appointments where this user is the physiotherapist
+          result = await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
+        } else if (table === 'exercicios') {
+          result = await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
+        } else if (table === 'assinaturas') {
+          result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
         } else if (table === 'perfis') {
-          await supabaseAdmin.from(table).delete().eq('id', userId)
+          result = await supabaseAdmin.from(table).delete().eq('id', userId)
         } else {
-          await supabaseAdmin.from(table).delete().eq('id', userId)
+          // Fallback for other tables like evolucoes, arquivos_paciente, exercicios_paciente
+          // which reference pacientes(id). If we delete from perfis/pacientes first,
+          // these should cascade. But we try to be safe.
+          result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
+        }
+        
+        if (result?.error) {
+          console.warn(`Supabase error deleting from ${table}:`, result.error.message)
         }
       } catch (e) {
-        console.warn(`Could not delete from ${table}:`, e.message)
+        console.warn(`Exception deleting from ${table}:`, e.message)
       }
     }
 

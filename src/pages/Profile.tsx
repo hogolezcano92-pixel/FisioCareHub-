@@ -220,43 +220,27 @@ export default function Profile() {
       console.log("Iniciando processo de exclusão segura para:", user.id);
       
       // 1. Call Edge Function for complete deletion (Auth + DB + Storage)
-      let edgeFunctionSuccess = false;
-      try {
-        const response = await invokeFunction('delete-user', { userId: user.id });
-        if (response && !response.error) {
-          console.log("Edge Function 'delete-user' executada com sucesso.");
-          edgeFunctionSuccess = true;
-        } else {
-          console.error("Erro retornado pela Edge Function:", response?.error);
-        }
-      } catch (edgeErr: any) {
-        console.error("Falha ao invocar Edge Function:", edgeErr.message);
-      }
-
-      // 2. Client-side fallback for 'perfis' table
-      if (!edgeFunctionSuccess) {
-        console.log("Tentando exclusão manual do perfil (fallback)...");
-        const { error: profileError } = await supabase
-          .from('perfis')
-          .delete()
-          .eq('id', user.id);
-          
-        if (profileError) console.error("Erro na exclusão manual do perfil:", profileError);
-      }
+      const response = await invokeFunction('delete-user', { userId: user.id });
       
-      // 3. Final Sign Out and Redirect
-      await signOut();
-      
-      if (edgeFunctionSuccess) {
+      if (response && !response.error) {
+        console.log("Edge Function 'delete-user' executada com sucesso.");
+        
+        // 2. Final Sign Out and Redirect
+        await signOut();
+        
         toast.success("Sua conta e todos os seus dados foram excluídos permanentemente.");
+        navigate('/');
       } else {
-        toast.warning("Seu perfil foi removido. Se ainda conseguir acessar, entre em contato com o suporte para exclusão total da conta.");
+        const errorMsg = response?.error || "Erro desconhecido na função de exclusão.";
+        console.error("Erro retornado pela Edge Function:", errorMsg);
+        toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
       }
-      
-      navigate('/');
     } catch (err: any) {
       console.error("Erro fatal ao excluir conta:", err);
-      toast.error("Erro ao excluir conta: " + (err.message || "Erro desconhecido"));
+      
+      // Se falhou a função, tentamos pelo menos limpar o perfil localmente se o erro for de permissão
+      // Mas avisamos o usuário que a conta principal ainda existe
+      toast.error("Erro ao processar exclusão total. Por favor, entre em contato com o suporte para remover sua conta permanentemente.");
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
