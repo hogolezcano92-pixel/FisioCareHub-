@@ -7,10 +7,12 @@ import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 export default function Subscription() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, subscription, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [proKey, setProKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
+
+  const isPro = subscription?.status === 'ativo';
 
   const handleUpgrade = async (method: 'payment' | 'key') => {
     setLoading(true);
@@ -24,12 +26,25 @@ export default function Subscription() {
           return;
         }
 
+        // Update assinaturas table
         const { error } = await supabase
+          .from('assinaturas')
+          .upsert({
+            user_id: profile.id,
+            plano: 'pro',
+            status: 'ativo',
+            valor: 49.99,
+            data_inicio: new Date().toISOString(),
+            data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          });
+
+        if (error) throw error;
+
+        // Also update perfis for legacy compatibility
+        await supabase
           .from('perfis')
           .update({ is_pro: true })
           .eq('id', profile.id);
-
-        if (error) throw error;
 
         await refreshProfile();
         toast.success('Assinatura Pro Ativada!', {
@@ -43,7 +58,9 @@ export default function Subscription() {
         body: {
           planId: 'pro',
           userId: profile.id,
-          userEmail: profile.email
+          userEmail: profile.email,
+          amount: 49.99,
+          isSubscription: true
         }
       });
 
@@ -63,7 +80,7 @@ export default function Subscription() {
     }
   };
 
-  if ((profile?.plano || '').toLowerCase() === 'free') {
+  if (profile?.tipo_usuario === 'paciente') {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
         <div className="bg-sky-50 p-12 rounded-[3rem] border border-sky-100 shadow-xl shadow-sky-100/50">
@@ -77,32 +94,35 @@ export default function Subscription() {
     );
   }
 
-  if (profile?.is_pro) {
+  if (isPro) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
         <div className="bg-emerald-50 p-12 rounded-[3rem] border border-emerald-100 shadow-xl shadow-emerald-100/50">
           <Crown size={64} className="text-emerald-500 mx-auto mb-6" />
-          <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Assinatura Pro Ativa</h2>
+          <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Assinatura PRO Ativa</h2>
           <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-8">
             Você está aproveitando o melhor do FisioCareHub. Todos os recursos avançados estão desbloqueados.
           </p>
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-black text-lg shadow-lg shadow-emerald-500/20">
-            Status: Assinante Pro
+            Status: Assinante PRO
           </div>
+          <p className="mt-6 text-sm text-slate-400 font-medium">
+            Sua assinatura expira em: {subscription?.data_expiracao ? new Date(subscription.data_expiracao).toLocaleDateString() : 'N/A'}
+          </p>
         </div>
       </div>
     );
   }
 
   const proFeatures = [
-    "Agendamentos Avançados e Recorrentes",
+    "Pacientes Ilimitados (Plano Free: até 5)",
+    "IA Completa (Análise e Sugestões)",
     "Relatórios de Evolução Detalhados",
     "Análise de Desempenho com Gráficos",
     "Exportação de Prontuários em PDF",
     "Suporte Prioritário 24/7",
     "Personalização de Protocolos",
-    "Gestão de Documentos Ilimitada",
-    "Acesso Antecipado a Novos Recursos"
+    "Gestão de Documentos Ilimitada"
   ];
 
   return (
@@ -116,7 +136,7 @@ export default function Subscription() {
           <Zap size={16} />
           Eleve sua Prática
         </motion.div>
-        <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tight">FisioCareHub <span className="text-sky-500">Pro</span></h1>
+        <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tight">FisioCareHub <span className="text-sky-500">PRO</span></h1>
         <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
           A ferramenta definitiva para fisioterapeutas que buscam excelência no atendimento domiciliar e online.
         </p>
@@ -125,7 +145,7 @@ export default function Subscription() {
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Features List */}
         <div className="space-y-8">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">O que você ganha com o Pro:</h2>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">O que você ganha com o PRO:</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {proFeatures.map((feature, index) => (
               <motion.div
@@ -155,12 +175,12 @@ export default function Subscription() {
           </div>
           
           <div className="mb-8">
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Plano Profissional</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Plano Profissional PRO</h3>
             <p className="text-slate-500 font-medium">Acesso total e ilimitado</p>
           </div>
 
           <div className="flex items-baseline gap-2 mb-10">
-            <span className="text-5xl font-black text-slate-900 tracking-tighter">R$ 49,90</span>
+            <span className="text-5xl font-black text-slate-900 tracking-tighter">R$ 49,99</span>
             <span className="text-xl text-slate-400 font-bold">/mês</span>
           </div>
 

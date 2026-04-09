@@ -31,7 +31,7 @@ import AvatarUpload from '../components/AvatarUpload';
 type Tab = 'profile' | 'account' | 'settings';
 
 export default function Profile() {
-  const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
+  const { user, profile, subscription, loading: authLoading, refreshProfile, signOut } = useAuth();
   const { t, i18n } = useTranslation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export default function Profile() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
 
-  const isPhysio = (userData?.plano || '').toLowerCase() === 'fisioterapeuta';
+  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
@@ -67,6 +67,8 @@ export default function Profile() {
   const [country, setCountry] = useState('');
   const [crefito, setCrefito] = useState('');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
+
+  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
 
   useEffect(() => {
     if (!authLoading) {
@@ -118,10 +120,10 @@ export default function Profile() {
         endereco: address,
         cep: zipCode,
         pais: country,
-        crefito: isPhysio ? crefito : undefined,
-        genero: isPhysio ? gender : undefined,
-        especialidade: isPhysio ? specialty : undefined,
-        tipo_servico: isPhysio ? serviceType : undefined,
+        crefito: isPhysio ? crefito : (userData?.crefito || undefined),
+        genero: isPhysio ? gender : (userData?.genero || undefined),
+        especialidade: isPhysio ? specialty : (userData?.especialidade || undefined),
+        tipo_servico: isPhysio ? serviceType : (userData?.tipo_servico || undefined),
       };
 
       // Clean undefined fields
@@ -383,12 +385,12 @@ export default function Profile() {
                           to="/subscription"
                           className={cn(
                             "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all",
-                            userData?.is_pro 
+                            isPro 
                               ? "bg-amber-100 text-amber-700 border border-amber-200" 
                               : "bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700"
                           )}
                         >
-                          {userData?.is_pro ? (
+                          {isPro ? (
                             <>
                               <Crown size={14} />
                               Plano Pro Ativo

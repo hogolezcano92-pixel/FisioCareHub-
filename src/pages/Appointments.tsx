@@ -62,8 +62,8 @@ export default function Appointments() {
 
   const fetchAvailableUsers = async (currentProfile: any) => {
     try {
-      const isPatient = (currentProfile.plano || '').toLowerCase() === 'free';
-      const targetRoles = isPatient ? ['fisioterapeuta'] : ['free'];
+      const isPatient = currentProfile.tipo_usuario === 'paciente';
+      const targetRoles = isPatient ? ['fisioterapeuta'] : ['paciente'];
       
       let query = supabase
         .from('perfis')
@@ -87,8 +87,7 @@ export default function Appointments() {
 
   const filterAndSetUsers = (users: any[], isPatient: boolean, targetRoles: string[]) => {
     const filtered = users.filter(u => {
-      const role = (u.plano || '').toLowerCase();
-      const isTargetRole = targetRoles.includes(role);
+      const isTargetRole = targetRoles.includes(u.tipo_usuario);
       
       if (!isTargetRole) return false;
       
@@ -105,8 +104,7 @@ export default function Appointments() {
 
   const fetchAppointments = async (currentProfile: any) => {
     try {
-      const role = (currentProfile.plano || '').toLowerCase();
-      const isPhysio = role === 'fisioterapeuta';
+      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -146,8 +144,7 @@ export default function Appointments() {
   };
 
   const setupRealtime = (currentProfile: any) => {
-    const role = (currentProfile.plano || '').toLowerCase();
-    const isPhysio = role === 'fisioterapeuta';
+    const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
     const channel = supabase
       .channel('agendamentos_changes')
       .on(
@@ -199,20 +196,19 @@ export default function Appointments() {
 
     setSubmitting(true);
     try {
-      const role = (profile.plano || '').toLowerCase();
-      const isPatient = role === 'free';
+      const isPatient = profile.tipo_usuario === 'paciente';
       let targetUser: any = null;
 
       if (selectedUserId) {
         targetUser = availableUsers.find(u => u.id === selectedUserId);
       } else if (targetEmail) {
-        const targetRoles = isPatient ? ['fisioterapeuta'] : ['free'];
+        const targetRoles = isPatient ? ['fisioterapeuta'] : ['paciente'];
         
         const { data: targetUsers, error: targetError } = await supabase
           .from('perfis')
-          .select('id, nome_completo, email, plano')
+          .select('id, nome_completo, email, tipo_usuario')
           .eq('email', targetEmail.trim().toLowerCase())
-          .or(`plano.in.(${targetRoles.join(',')})`);
+          .or(`tipo_usuario.in.(${targetRoles.join(',')})`);
 
         if (targetError || !targetUsers || targetUsers.length === 0) {
           import('sonner').then(({ toast }) => toast.error(isPatient ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
@@ -234,7 +230,7 @@ export default function Appointments() {
       const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
 
       console.log("Iniciando inserção de agendamento no Supabase...");
-      const isPhysio = role === 'fisioterapeuta';
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
 
       const { data: newApp, error: insertError } = await supabase
         .from('agendamentos')
@@ -344,8 +340,7 @@ export default function Appointments() {
       if (error) throw error;
       
       // Create notification for the other party
-      const role = (profile.plano || '').toLowerCase();
-      const isPhysio = role === 'fisioterapeuta';
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
       const targetId = isPhysio ? app.paciente_id : app.fisio_id;
       const statusText = status === 'confirmado' ? 'confirmado' : 'cancelado';
       
@@ -404,7 +399,7 @@ export default function Appointments() {
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
-  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
     <div className="space-y-8">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, 
@@ -22,7 +23,8 @@ import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Patients() {
-  const { user, profile } = useAuth();
+  const { user, profile, subscription } = useAuth();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function Patients() {
   });
 
   useEffect(() => {
-    if (profile && profile.plano !== 'fisioterapeuta') {
+    if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       window.location.href = '/dashboard';
       return;
     }
@@ -76,6 +78,17 @@ export default function Patients() {
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
+
+    if (!isPro && patients.length >= 5) {
+      toast.error('Limite de pacientes atingido', {
+        description: 'Assine o plano PRO para cadastrar pacientes ilimitados.'
+      });
+      setShowModal(false);
+      navigate('/subscription');
+      return;
+    }
 
     setSubmitting(true);
     try {

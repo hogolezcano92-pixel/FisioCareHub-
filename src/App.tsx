@@ -159,11 +159,13 @@ function LoadingScreen() {
 }
 
 function Navbar() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, subscription, signOut } = useAuth();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
 
   const handleLogout = async () => {
     await signOut();
@@ -177,7 +179,7 @@ function Navbar() {
           user.email === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
       
       // Items for Physiotherapists
-      ...(profile?.plano === 'fisioterapeuta' ? [
+      ...(profile?.tipo_usuario === 'fisioterapeuta' ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
@@ -188,7 +190,7 @@ function Navbar() {
       ] : []),
 
       // Items for Patients
-      ...(profile?.plano === 'free' ? [
+      ...(profile?.tipo_usuario === 'paciente' ? [
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
@@ -236,12 +238,12 @@ function Navbar() {
                 <Link to="/profile" className="flex items-center gap-3 group">
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-black text-slate-900 leading-none">
-                      {profile?.plano === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
+                      {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
                       {(profile?.nome_completo || '').split(' ')[0]}
                     </p>
                     <div className="flex items-center justify-end gap-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
-                      {profile?.is_pro && (
+                      {isPro && (
                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
                           <Crown size={8} />
                           PRO

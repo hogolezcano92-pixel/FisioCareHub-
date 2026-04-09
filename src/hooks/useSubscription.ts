@@ -1,54 +1,21 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface SubscriptionInfo {
-  status: 'active' | 'inactive' | 'canceled' | 'past_due' | 'trialing';
+  status: 'ativo' | 'cancelado' | 'expirado' | 'pendente' | null;
   expiryDate: string | null;
-  current_period_end: number | null;
   loading: boolean;
-  userType: 'paciente' | 'fisioterapeuta' | null;
+  userType: 'paciente' | 'fisioterapeuta' | 'admin' | null;
+  isPro: boolean;
 }
 
 export function useSubscription() {
-  const [subscription, setSubscription] = useState<SubscriptionInfo>({
-    status: 'active',
-    expiryDate: null,
-    current_period_end: null,
-    loading: false,
-    userType: null,
-  });
+  const { profile, subscription, loading } = useAuth();
 
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchUserType = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data } = await supabase
-          .from('perfis')
-          .select('tipo_usuario')
-          .eq('id', user.id)
-          .single();
-
-        if (data && mounted) {
-          setSubscription(prev => ({
-            ...prev,
-            userType: data.tipo_usuario
-          }));
-        }
-      } catch (err) {
-        console.error("Error fetching user type:", err);
-      }
-    };
-
-    fetchUserType();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return subscription;
+  return {
+    status: subscription?.status || null,
+    expiryDate: subscription?.data_expiracao || null,
+    loading,
+    userType: profile?.tipo_usuario || null,
+    isPro: profile?.plano === 'free' || profile?.plano === 'admin' || subscription?.status === 'ativo',
+  };
 }

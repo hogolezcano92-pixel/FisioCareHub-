@@ -46,7 +46,7 @@ import ProGuard from '../components/ProGuard';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     appointments: 0,
@@ -84,7 +84,7 @@ export default function Dashboard() {
     if (!data) return;
     setStatsLoading(true);
     try {
-      const isPhysio = (data.plano || '').toLowerCase() === 'fisioterapeuta';
+      const isPhysio = data.tipo_usuario === 'fisioterapeuta';
       
       if (isPhysio) {
         // Use Promise.allSettled for maximum resilience
@@ -134,7 +134,7 @@ export default function Dashboard() {
     if (!data) return;
     setApptsLoading(true);
     try {
-      const isPatient = (data.plano || '').toLowerCase() === 'free';
+      const isPatient = data.tipo_usuario === 'paciente';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
       const { data: appts, error } = await supabase
         .from('agendamentos')
@@ -239,8 +239,8 @@ export default function Dashboard() {
     </div>
   );
 
-  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
-  const isPro = profile?.is_pro;
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
 
   return (
     <div className="space-y-10 pb-12">

@@ -127,6 +127,7 @@ export default function Register() {
         options: {
           data: {
             full_name: cleanName,
+            tipo_usuario: role,
             plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
             crefito: role === 'fisioterapeuta' ? crefito : null,
             especialidade: role === 'fisioterapeuta' ? specialty : null
@@ -214,6 +215,20 @@ export default function Register() {
           }
         } else {
           console.log("Profile created successfully!");
+
+          // 5. Create subscription record if Pro Key was used
+          if (isPro) {
+            console.log("Creating subscription record for Pro Key...");
+            await supabase.from('assinaturas').insert({
+              user_id: authData.user.id,
+              plano: 'pro',
+              status: 'ativo',
+              valor: 0,
+              data_inicio: new Date().toISOString(),
+              data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+            });
+          }
+
           const { toast } = await import('sonner');
           toast.success('Cadastro realizado com sucesso!', {
             description: 'Sua conta foi configurada. Faça login para continuar.'

@@ -171,14 +171,8 @@ export default function Admin() {
     setSupabaseProfiles(profiles);
     
     // Update Stats from Supabase Profiles
-    const physios = profiles.filter((u: any) => {
-      const role = (u.plano || '').toLowerCase();
-      return role === 'fisioterapeuta';
-    });
-    const patients = profiles.filter((u: any) => {
-      const role = (u.plano || '').toLowerCase();
-      return role === 'free';
-    });
+    const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta');
+    const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente');
     
     setStats(prev => ({
       ...prev,
@@ -191,20 +185,27 @@ export default function Admin() {
 
   const fetchSupabaseProfiles = useCallback(async () => {
     try {
-      let query = supabase
+      // Fetch profiles and their latest active subscription
+      const { data, error } = await supabase
         .from('perfis')
-        .select('*');
-      
-      const { data, error } = await query;
+        .select('*, assinaturas(status, plano, data_expiracao)');
       
       if (error) {
         console.error("Erro ao buscar perfis Supabase:", error);
-        // Try again without any special ordering or filters if it failed
+        // Fallback retry
         const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
         if (retryError) throw retryError;
         processProfiles(retryData || []);
       } else {
-        processProfiles(data || []);
+        // Process profiles and attach subscription status
+        const profilesWithSub = data.map((p: any) => {
+          const activeSub = p.assinaturas?.find((s: any) => s.status === 'ativo');
+          return {
+            ...p,
+            is_pro: activeSub || p.is_pro // Keep is_pro as fallback or if already set
+          };
+        });
+        processProfiles(profilesWithSub || []);
       }
     } catch (err) {
       console.error("Erro fatal ao buscar perfis:", err);
@@ -636,7 +637,7 @@ export default function Admin() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.plano || selectedUserDetail.tipo_usuario}</p>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 

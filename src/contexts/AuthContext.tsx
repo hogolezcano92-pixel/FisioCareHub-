@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: any | null;
+  subscription: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
+  const [subscription, setSubscription] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -25,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string, userMetadata?: any) => {
     if (lastFetchedUserId.current === userId && profile) {
-      return profile;
+      return { profile, subscription };
     }
     
     try {
@@ -42,11 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Check if there's a pending role from Register page (for OAuth)
         const pendingRole = localStorage.getItem('pending_role');
-        const finalRole = userMetadata?.tipo || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
+        const finalRole = userMetadata?.tipo_usuario || userMetadata?.tipo || userMetadata?.plano || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
         
-        // Clear the pending role after use
-        if (pendingRole) localStorage.removeItem('pending_role');
-
         const { data: newProfile, error: createError } = await supabase
           .from('perfis')
           .upsert({
@@ -55,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: userMetadata?.email || '',
             avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
             tipo_usuario: finalRole,
-            plano: finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
+            plano: userMetadata?.plano || (finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free'),
             crefito: userMetadata?.crefito || null,
             especialidade: userMetadata?.especialidade || null,
             is_pro: !!userMetadata?.is_pro,
@@ -66,28 +65,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (createError) {
           console.error('Error creating default profile:', createError);
-          return null;
+          return { profile: null, subscription: null };
         }
+
+        // Clear the pending role after SUCCESSFUL use
+        if (pendingRole) localStorage.removeItem('pending_role');
         lastFetchedUserId.current = userId;
-        return newProfile;
+        return { profile: newProfile, subscription: null };
       } else if (error) {
         console.error('Error fetching profile:', error);
-        return null;
+        return { profile: null, subscription: null };
       }
       
       lastFetchedUserId.current = userId;
-      return data;
+      
+      // Fetch subscription
+      const { data: subData } = await supabase
+        .from('assinaturas')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'ativo')
+        .maybeSingle();
+      
+      return { profile: data, subscription: subData };
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
-      return null;
+      return { profile: null, subscription: null };
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
       lastFetchedUserId.current = null; // Force re-fetch
-      const p = await fetchProfile(user.id, user.user_metadata);
+      const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata);
       setProfile(p);
+      setSubscription(s);
     }
   };
 
@@ -108,9 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (currentUser) {
             // Only fetch if user changed or profile is missing
             if (lastFetchedUserId.current !== currentUser.id) {
-              const p = await fetchProfile(currentUser.id, currentUser.user_metadata);
+              const { profile: p, subscription: s } = await fetchProfile(currentUser.id, currentUser.user_metadata);
               if (mounted) {
                 setProfile(p);
+                setSubscription(s);
                 setLoading(false);
               }
             } else {
@@ -118,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             setProfile(null);
+            setSubscription(null);
             lastFetchedUserId.current = null;
             setLoading(false);
           }
@@ -160,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, subscription, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

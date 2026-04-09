@@ -11,7 +11,7 @@ interface ProGuardProps {
 }
 
 export default function ProGuard({ children, fallback, variant = 'full' }: ProGuardProps) {
-  const { profile, loading } = useAuth();
+  const { profile, subscription, loading } = useAuth();
 
   if (loading) {
     return variant === 'full' ? (
@@ -22,13 +22,15 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
   }
 
   // Pacientes e Admins sempre têm acesso
-  if (profile?.plano === 'free' || profile?.plano === 'admin') {
+  if (profile?.tipo_usuario === 'paciente' || profile?.plano === 'admin') {
     return <>{children}</>;
   }
 
   // Fisioterapeutas precisam ser Pro
-  if (profile?.plano === 'fisioterapeuta') {
-    if (profile?.is_pro) {
+  if (profile?.tipo_usuario === 'fisioterapeuta') {
+    const isPro = subscription?.status === 'ativo';
+    
+    if (isPro) {
       return <>{children}</>;
     }
 
@@ -55,16 +57,16 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
         <div className="w-20 h-20 bg-sky-50 text-sky-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
           <Crown size={40} />
         </div>
-        <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">Recurso Pro Exclusivo</h3>
+        <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">🔒 Recurso exclusivo PRO</h3>
         <p className="text-slate-500 max-w-md mx-auto mb-8 text-lg leading-relaxed">
-          Este recurso avançado está disponível apenas para assinantes Pro. Turbine sua clínica com relatórios detalhados e análises de desempenho.
+          Assine o plano PRO por R$49,99/mês para desbloquear todos os recursos avançados e turbine sua clínica.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/subscription"
             className="px-8 py-4 bg-sky-500 text-white rounded-full font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 flex items-center gap-2"
           >
-            Seja Pro Agora
+            Assinar PRO
             <ArrowRight size={20} />
           </Link>
           <button
