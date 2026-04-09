@@ -27,6 +27,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
+import ProGuard from '../components/ProGuard';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -64,7 +65,7 @@ export default function Documents() {
       }
 
       try {
-        const isPhysio = (profile.plano || '').toLowerCase() === 'fisioterapeuta';
+        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
         const { data, error } = await supabase
           .from('documentos_gerados')
           .select('*')
@@ -236,10 +237,11 @@ export default function Documents() {
     }, 500);
   };
 
-  const isPhysio = (profile?.plano || '').toLowerCase() === 'fisioterapeuta';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
-    <div className="space-y-8 pb-20">
+    <ProGuard>
+      <div className="space-y-8 pb-20">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Documentos e Relatórios</h1>
@@ -630,5 +632,6 @@ export default function Documents() {
         )}
       </AnimatePresence>
     </div>
+    </ProGuard>
   );
 }

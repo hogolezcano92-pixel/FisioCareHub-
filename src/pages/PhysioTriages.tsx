@@ -20,6 +20,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
+import ProGuard from '../components/ProGuard';
 
 export default function PhysioTriages() {
   const { user, profile } = useAuth();
@@ -31,7 +32,7 @@ export default function PhysioTriages() {
   const [selectedTriage, setSelectedTriage] = useState<any | null>(null);
 
   useEffect(() => {
-    if (profile && profile.plano !== 'fisioterapeuta') {
+    if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       navigate('/dashboard');
       return;
     }
@@ -91,7 +92,8 @@ export default function PhysioTriages() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20 w-full box-border overflow-wrap-break-word">
+    <ProGuard>
+      <div className="max-w-6xl mx-auto space-y-8 pb-20 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Triagens Realizadas</h1>
@@ -273,6 +275,7 @@ export default function PhysioTriages() {
         )}
       </AnimatePresence>
     </div>
+    </ProGuard>
   );
 }
 

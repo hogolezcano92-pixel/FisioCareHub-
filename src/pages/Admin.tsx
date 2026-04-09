@@ -974,9 +974,9 @@ export default function Admin() {
                             <div className="flex flex-col gap-1">
                               <span className={cn(
                                 "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
-                                u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                                u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                               )}>
-                                {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
+                                {u.tipo_usuario === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
                               </span>
                               {u.is_pro && (
                                 <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
@@ -1068,9 +1068,9 @@ export default function Admin() {
                           <div className="flex flex-col gap-1">
                             <span className={cn(
                               "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
-                              u.plano === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                              u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                             )}>
-                              {u.plano === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
+                              {u.tipo_usuario === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
                             </span>
                             {u.is_pro && (
                               <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
@@ -1340,7 +1340,7 @@ export default function Admin() {
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Aprovações Pendentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {supabaseProfiles.filter(p => 
-                  (p.plano === 'fisioterapeuta') && 
+                  (p.tipo_usuario === 'fisioterapeuta') && 
                   (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
                 ).length === 0 ? (
                   <div className="col-span-full bg-white p-12 rounded-[2rem] border border-slate-100 text-center space-y-4">
@@ -1352,7 +1352,7 @@ export default function Admin() {
                   </div>
                 ) : (
                   supabaseProfiles.filter(p => 
-                    (p.plano === 'fisioterapeuta') && 
+                    (p.tipo_usuario === 'fisioterapeuta') && 
                     (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
                   ).map((profile) => (
                     <motion.div 
@@ -1529,11 +1529,11 @@ export default function Admin() {
                           <p className="text-sm font-bold truncate">{u.nome_completo}</p>
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
-                            (u.plano === 'fisioterapeuta' || u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta')
+                            (u.tipo_usuario === 'fisioterapeuta' || u.role === 'physiotherapist')
                               ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-600")
                               : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600")
                           )}>
-                            {(u.plano === 'fisioterapeuta' || u.role === 'physiotherapist' || u.tipo_usuario === 'fisioterapeuta') ? 'Fisio' : 'Paciente'}
+                            {(u.tipo_usuario === 'fisioterapeuta' || u.role === 'physiotherapist') ? 'Fisio' : 'Paciente'}
                           </span>
                         </div>
                         <p className={cn(

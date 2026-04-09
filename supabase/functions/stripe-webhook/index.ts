@@ -1,27 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe?target=deno"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET")
-const FIREBASE_PROJECT_ID = Deno.env.get("VITE_FIREBASE_PROJECT_ID")
-const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT") // JSON string
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-}
-
-// Function to update Firestore via REST API
-async function updateFirestore(userId: string, data: any) {
-  if (!FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID missing")
-  
-  // This is a simplified version. In a real app, you'd need an access token from the service account.
-  // For now, we'll assume the user has configured the project correctly.
-  // If we can't get an access token easily, we'll log the update for now.
-  console.log(`[Firestore Update] User: ${userId}, Data:`, data)
-  
-  // Real implementation would use Google Auth to get a token and then call:
-  // PATCH https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/users/{user_id}?updateMask.fieldPaths=subscription.status&...
 }
 
 serve(async (req) => {
@@ -52,32 +40,48 @@ serve(async (req) => {
 
   console.log(`[Stripe Webhook] Event received: ${event.type}`)
 
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session
-      const userId = session.metadata?.userId
-      if (userId) {
-        await updateFirestore(userId, {
-          'subscription.stripeCustomerId': session.customer,
-          'subscription.status': 'active',
-          'subscription.plan': session.metadata?.planId || 'pro'
-        })
+      const user_id = session.metadata?.user_id
+      
+      if (user_id) {
+        console.log(`[Stripe Webhook] Atualizando perfil para usuário: ${user_id}`)
+        
+        const { error } = await supabase
+          .from('perfis')
+          .update({ 
+            is_pro: true, 
+            plano: 'pro' 
+          })
+          .eq('id', user_id)
+
+        if (error) {
+          console.error(`[Stripe Webhook] Erro ao atualizar perfil:`, error)
+          return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+        }
+
+        // Também criar registro na tabela assinaturas
+        await supabase
+          .from('assinaturas')
+          .upsert({
+            user_id: user_id,
+            plano: 'pro',
+            status: 'ativo',
+            valor: 49.99,
+            data_inicio: new Date().toISOString(),
+            data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+
+        console.log(`[Stripe Webhook] Perfil atualizado com sucesso para: ${user_id}`)
       }
-      break
-    }
-    case "invoice.payment_succeeded": {
-      const invoice = event.data.object as Stripe.Invoice
-      // Handle payment success email via another Edge Function or internal call
-      break
-    }
-    case "invoice.payment_failed": {
-      const invoice = event.data.object as Stripe.Invoice
-      // Handle payment failure email
       break
     }
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription
-      // Handle cancellation
+      // Opcional: buscar user_id via stripe customer id e desativar is_pro
       break
     }
   }
