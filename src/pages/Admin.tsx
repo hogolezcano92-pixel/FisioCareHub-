@@ -90,7 +90,7 @@ export default function Admin() {
   const [newMaterial, setNewMaterial] = useState({
     titulo: '',
     descricao: '',
-    preco: 0,
+    preco: '',
     imagem_url: '',
     arquivo_url: '',
     tag: 'Novo'
@@ -628,31 +628,40 @@ export default function Admin() {
   };
 
   const handleAddMaterial = async () => {
-    if (!newMaterial.titulo || !newMaterial.preco) {
-      import('sonner').then(({ toast }) => toast.error("Preencha o título e o preço."));
+    const precoNum = parseFloat(newMaterial.preco);
+    
+    if (!newMaterial.titulo || isNaN(precoNum)) {
+      import('sonner').then(({ toast }) => toast.error("Preencha o título e o preço corretamente."));
       return;
     }
+
     try {
       const { error } = await supabase
         .from('materiais')
-        .insert([newMaterial]);
+        .insert([{
+          ...newMaterial,
+          preco: precoNum
+        }]);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro Supabase:", error);
+        throw new Error(error.message);
+      }
       
       import('sonner').then(({ toast }) => toast.success("Material adicionado com sucesso!"));
       setShowMaterialModal(false);
       setNewMaterial({
         titulo: '',
         descricao: '',
-        preco: 0,
+        preco: '',
         imagem_url: '',
         arquivo_url: '',
         tag: 'Novo'
       });
       fetchMateriais();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao adicionar material:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao adicionar material."));
+      import('sonner').then(({ toast }) => toast.error(`Erro ao adicionar: ${err.message || 'Verifique se a tabela materiais existe no Supabase'}`));
     }
   };
 
@@ -1201,9 +1210,13 @@ export default function Admin() {
                           <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Preço (R$)</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={newMaterial.preco}
-                              onChange={(e) => setNewMaterial({...newMaterial, preco: Number(e.target.value)})}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                setNewMaterial({...newMaterial, preco: val});
+                              }}
+                              placeholder="0.00"
                               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                           </div>
