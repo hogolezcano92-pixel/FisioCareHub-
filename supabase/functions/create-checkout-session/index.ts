@@ -64,9 +64,10 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&plan_id=pro`,
       cancel_url: `${APP_URL}/subscription`,
       customer_email: userEmail,
+      client_reference_id: userId,
       metadata: {
         user_id: userId,
         plan: "pro_fisioterapeuta",

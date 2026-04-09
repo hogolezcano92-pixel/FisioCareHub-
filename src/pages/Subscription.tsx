@@ -12,7 +12,7 @@ export default function Subscription() {
   const [proKey, setProKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const isPro = subscription?.status === 'ativo';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   const handleUpgrade = async (method: 'payment' | 'key') => {
     setLoading(true);

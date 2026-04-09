@@ -45,7 +45,7 @@ serve(async (req) => {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session
-      const user_id = session.metadata?.user_id
+      const user_id = session.metadata?.user_id || session.client_reference_id
       
       if (user_id) {
         console.log(`[Stripe Webhook] Atualizando perfil para usuário: ${user_id}`)

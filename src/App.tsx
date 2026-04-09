@@ -165,7 +165,7 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   const handleLogout = async () => {
     await signOut();

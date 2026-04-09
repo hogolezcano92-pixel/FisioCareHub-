@@ -240,7 +240,7 @@ export default function Dashboard() {
   );
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   return (
     <div className="space-y-10 pb-12">

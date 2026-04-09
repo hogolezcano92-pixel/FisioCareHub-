@@ -28,7 +28,7 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
 
   // Fisioterapeutas precisam ser Pro
   if (profile?.tipo_usuario === 'fisioterapeuta') {
-    const isPro = subscription?.status === 'ativo';
+    const isPro = profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
     
     if (isPro) {
       return <>{children}</>;
