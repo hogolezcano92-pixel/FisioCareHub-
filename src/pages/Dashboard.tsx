@@ -290,7 +290,7 @@ export default function Dashboard() {
               {!profile ? (
                 <span className="animate-pulse text-slate-300">Carregando...</span>
               ) : (
-                <>Olá, <span className="text-blue-600">{profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
+                <>Olá, <span className="text-blue-600">Paciente {profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
               )}
             </h1>
           </div>
@@ -355,7 +355,7 @@ export default function Dashboard() {
           {/* Quick Stats Summary (Compact) */}
           <div className="bg-slate-900 p-6 rounded-[2.5rem] text-white shadow-xl flex items-center justify-around">
             <div className="text-center">
-              <p className="text-2xl font-black">75%</p>
+              <p className="text-2xl font-black">{stats.records > 0 ? '75%' : '0%'}</p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Melhora</p>
             </div>
             <div className="w-px h-8 bg-white/10" />
@@ -365,7 +365,7 @@ export default function Dashboard() {
             </div>
             <div className="w-px h-8 bg-white/10" />
             <div className="text-center">
-              <p className="text-2xl font-black">12</p>
+              <p className="text-2xl font-black">{stats.records > 0 ? '12' : '0'}</p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exercícios</p>
             </div>
           </div>
@@ -377,12 +377,14 @@ export default function Dashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Evolução da <span className="text-blue-600 italic">Dor</span></h2>
-            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-              <TrendingUp size={12} />
-              +75% de Melhora
-            </div>
+            {stats.records > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                <TrendingUp size={12} />
+                +75% de Melhora
+              </div>
+            )}
           </div>
-          <EvolutionCharts />
+          <EvolutionCharts melhora={stats.records > 0 ? 75 : 0} />
         </div>
       )}
 
@@ -691,27 +693,29 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
-            <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
-                <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
-              </Link>
-              <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
-                <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
-              </Link>
-              <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
-                <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
-              </Link>
-              <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
-              </Link>
+          {isPhysio && (
+            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+              <h3 className="text-xl font-black text-slate-900">Ações Rápidas</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Link to="/patients" className="p-6 bg-slate-50 rounded-3xl hover:bg-blue-50 group transition-all text-center space-y-2">
+                  <Users className="mx-auto text-slate-400 group-hover:text-blue-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-blue-600">Pacientes</p>
+                </Link>
+                <Link to="/agenda" className="p-6 bg-slate-50 rounded-3xl hover:bg-sky-50 group transition-all text-center space-y-2">
+                  <Calendar className="mx-auto text-slate-400 group-hover:text-sky-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-sky-600">Agenda</p>
+                </Link>
+                <Link to="/exercises" className="p-6 bg-slate-50 rounded-3xl hover:bg-emerald-50 group transition-all text-center space-y-2">
+                  <Activity className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-emerald-600">Exercícios</p>
+                </Link>
+                <Link to="/records" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
+                  <FileText className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
+                  <p className="text-xs font-black uppercase text-slate-400 group-hover:text-rose-600">Prontuários</p>
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       {/* New Features Section */}
@@ -764,7 +768,6 @@ export default function Dashboard() {
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               <PainDiary />
-              <ExerciseChecklist />
             </div>
             <div className="space-y-8">
               {/* Quick Actions (2x2 Grid) */}
@@ -786,10 +789,13 @@ export default function Dashboard() {
                     <BrainCircuit className="mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors" size={28} />
                     <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-600">Triagem</p>
                   </Link>
-                  <Link to="/profile" className="p-6 bg-slate-50 rounded-3xl hover:bg-rose-50 group transition-all text-center space-y-2">
-                    <User className="mx-auto text-slate-400 group-hover:text-rose-600 transition-colors" size={28} />
-                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-rose-600">Perfil</p>
-                  </Link>
+                  <button 
+                    onClick={() => document.getElementById('digital-library')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="p-6 bg-slate-50 rounded-3xl hover:bg-amber-50 group transition-all text-center space-y-2"
+                  >
+                    <BookOpen className="mx-auto text-slate-400 group-hover:text-amber-600 transition-colors" size={28} />
+                    <p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-amber-600">Biblioteca</p>
+                  </button>
                 </div>
               </div>
 
@@ -801,12 +807,12 @@ export default function Dashboard() {
                 </h3>
                 <div className="space-y-4">
                   {[
-                    { label: 'Paciente Bronze', desc: '7 dias de exercícios', icon: Medal, color: 'text-amber-600 bg-amber-50', progress: 100 },
-                    { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: 100 },
-                    { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: 40 },
+                    { label: 'Paciente Bronze', desc: '7 dias de exercícios', icon: Medal, color: 'text-amber-600 bg-amber-50', progress: stats.records > 0 ? 100 : 0 },
+                    { label: 'Foco Total', desc: 'Triagem concluída', icon: Zap, color: 'text-blue-600 bg-blue-50', progress: stats.pendingTriages > 0 ? 100 : 0 },
+                    { label: 'Superação', desc: 'Redução de 50% na dor', icon: Star, color: 'text-purple-600 bg-purple-50', progress: stats.records > 5 ? 40 : 0 },
                   ].map((badge, i) => (
                     <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 transition-all">
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color)}>
+                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", badge.color, badge.progress === 0 && "grayscale opacity-50")}>
                         <badge.icon size={24} />
                       </div>
                       <div className="flex-1 space-y-1">
@@ -823,7 +829,9 @@ export default function Dashboard() {
                   ))}
                 </div>
               </div>
-              <DigitalLibrary />
+              <div id="digital-library">
+                <DigitalLibrary />
+              </div>
             </div>
           </div>
         </div>

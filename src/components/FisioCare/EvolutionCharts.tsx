@@ -20,30 +20,39 @@ import { cn } from '../../lib/utils';
 interface EvolutionChartsProps {
   painData?: any[];
   exerciseData?: any[];
+  melhora?: number;
   className?: string;
 }
 
-const DEFAULT_PAIN_DATA = [
-  { day: 'Seg', level: 8 },
-  { day: 'Ter', level: 7 },
-  { day: 'Qua', level: 5 },
-  { day: 'Qui', level: 6 },
-  { day: 'Sex', level: 4 },
-  { day: 'Sáb', level: 3 },
-  { day: 'Dom', level: 2 },
+const EMPTY_PAIN_DATA = [
+  { day: 'Seg', level: 0 },
+  { day: 'Ter', level: 0 },
+  { day: 'Qua', level: 0 },
+  { day: 'Qui', level: 0 },
+  { day: 'Sex', level: 0 },
+  { day: 'Sáb', level: 0 },
+  { day: 'Dom', level: 0 },
 ];
 
-const DEFAULT_EXERCISE_DATA = [
-  { day: 'Seg', completed: 2, total: 5 },
-  { day: 'Ter', completed: 4, total: 5 },
-  { day: 'Qua', completed: 5, total: 5 },
-  { day: 'Qui', completed: 3, total: 5 },
-  { day: 'Sex', completed: 5, total: 5 },
-  { day: 'Sáb', completed: 4, total: 5 },
-  { day: 'Dom', completed: 5, total: 5 },
+const EMPTY_EXERCISE_DATA = [
+  { day: 'Seg', completed: 0, total: 0 },
+  { day: 'Ter', completed: 0, total: 0 },
+  { day: 'Qua', completed: 0, total: 0 },
+  { day: 'Qui', completed: 0, total: 0 },
+  { day: 'Sex', completed: 0, total: 0 },
+  { day: 'Sáb', completed: 0, total: 0 },
+  { day: 'Dom', completed: 0, total: 0 },
 ];
 
-export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = DEFAULT_EXERCISE_DATA, className }: EvolutionChartsProps) {
+export function EvolutionCharts({ 
+  painData = [], 
+  exerciseData = [], 
+  melhora = 0,
+  className 
+}: EvolutionChartsProps) {
+  const displayPainData = painData.length > 0 ? painData : EMPTY_PAIN_DATA;
+  const displayExerciseData = exerciseData.length > 0 ? exerciseData : EMPTY_EXERCISE_DATA;
+
   return (
     <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-8", className)}>
       {/* Pain Evolution Chart */}
@@ -60,15 +69,17 @@ export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = D
             </h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Escala de 0 a 10</p>
           </div>
-          <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest flex items-center gap-1">
-            <TrendingUp size={12} className="rotate-180" />
-            Melhora de 75%
-          </div>
+          {melhora > 0 && (
+            <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-widest flex items-center gap-1">
+              <TrendingUp size={12} className="rotate-180" />
+              Melhora de {melhora}%
+            </div>
+          )}
         </div>
 
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={painData}>
+            <AreaChart data={displayPainData}>
               <defs>
                 <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
@@ -127,14 +138,16 @@ export function EvolutionCharts({ painData = DEFAULT_PAIN_DATA, exerciseData = D
             </h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Concluídos vs Total</p>
           </div>
-          <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase tracking-widest">
-            Excelente
-          </div>
+          {exerciseData.length > 0 && (
+            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase tracking-widest">
+              Excelente
+            </div>
+          )}
         </div>
 
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={exerciseData}>
+            <BarChart data={displayExerciseData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="day" 

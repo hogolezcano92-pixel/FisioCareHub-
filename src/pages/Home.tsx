@@ -29,7 +29,9 @@ import {
   MapPin,
   ClipboardCheck,
   UserCheck,
-  Home as HomeIcon
+  Home as HomeIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -58,6 +60,7 @@ export default function Home() {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [proSlideIndex, setProSlideIndex] = useState(0);
 
   const specialtySlides = [
     {
@@ -187,6 +190,16 @@ export default function Home() {
     }
   };
 
+
+  const nextProSlide = () => {
+    if (professionals.length === 0) return;
+    setProSlideIndex((prev) => (prev + 1) % professionals.length);
+  };
+
+  const prevProSlide = () => {
+    if (professionals.length === 0) return;
+    setProSlideIndex((prev) => (prev - 1 + professionals.length) % professionals.length);
+  };
 
   return (
     <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 bg-slate-950 transition-colors duration-300">
@@ -559,60 +572,101 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="relative group">
             {professionals.length > 0 ? (
-              professionals.map((pro, i) => (
-                <motion.div
-                  key={pro.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ y: -10 }}
-                  className="bg-white dark:bg-slate-900 p-6 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col items-center text-center group"
-                >
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-sky-500/10 rounded-[2rem] blur-2xl group-hover:bg-sky-500/20 transition-colors" />
-                    <img 
-                      src={pro.img} 
-                      className="w-32 h-32 rounded-[2rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
-                      alt={pro.name}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300';
-                      }}
-                    />
-                    <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-full p-2 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
-                      <CheckCircle2 size={20} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 text-amber-400 mb-2">
-                    <Star size={16} fill="currentColor" />
-                    <span className="text-sm font-bold text-[#1A202C] dark:text-white">{pro.rating}</span>
-                    <span className="text-xs text-slate-400 font-medium">({pro.reviews})</span>
-                  </div>
-                  
-                  <h4 className="text-xl font-black text-[#1A202C] dark:text-white mb-1">{pro.name}</h4>
-                  <p className="text-sky-600 dark:text-sky-400 font-black text-xs uppercase tracking-widest mb-4">{pro.fullSpec}</p>
-                  <p className="text-[#1A202C] dark:text-slate-400 text-sm font-medium mb-8 leading-relaxed line-clamp-3">
-                    {pro.bio}
-                  </p>
-                  
-                  <Link
-                    to="/register"
-                    className="w-full py-4 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-2xl font-black text-sm shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
+              <>
+                <div className="overflow-hidden px-4 py-10 -mx-4">
+                  <motion.div
+                    animate={{ x: `-${proSlideIndex * (100 / (window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 2 : 1))}%` }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="flex gap-8"
                   >
-                    Ver Perfil Completo <ArrowRight size={16} />
-                  </Link>
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center">
-                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
-                  <Search size={40} />
+                    {professionals.map((pro, i) => (
+                      <motion.div
+                        key={pro.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="min-w-full md:min-w-[calc(50%-1rem)] lg:min-w-[calc(25%-1.5rem)] bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col items-center text-center group/card hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
+                      >
+                        <div className="relative mb-8">
+                          <div className="absolute inset-0 bg-sky-500/10 rounded-[2.5rem] blur-2xl group-hover/card:bg-sky-500/20 transition-colors" />
+                          <img 
+                            src={pro.img} 
+                            className="w-40 h-40 rounded-[2.5rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
+                            alt={pro.name}
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300';
+                            }}
+                          />
+                          <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-full p-2.5 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
+                            <CheckCircle2 size={24} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 text-amber-400 mb-3">
+                          <Star size={18} fill="currentColor" />
+                          <span className="text-base font-black text-[#1A202C] dark:text-white">{pro.rating}</span>
+                          <span className="text-sm text-slate-400 font-bold">({pro.reviews})</span>
+                        </div>
+                        
+                        <h4 className="text-2xl font-black text-[#1A202C] dark:text-white mb-1 tracking-tight">{pro.name}</h4>
+                        <p className="text-sky-600 dark:text-sky-400 font-black text-xs uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
+                        <p className="text-[#1A202C] dark:text-slate-400 text-base font-medium mb-8 leading-relaxed line-clamp-3">
+                          {pro.bio}
+                        </p>
+                        
+                        <Link
+                          to="/register"
+                          className="w-full py-5 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-[1.5rem] font-black text-sm shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
+                        >
+                          Ver Perfil Completo <ArrowRight size={18} />
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 </div>
-                <h4 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Nenhum especialista encontrado</h4>
-                <p className="text-slate-500 dark:text-slate-400">Tente ajustar sua busca ou filtros para encontrar o que procura.</p>
+
+                {/* Navigation Buttons */}
+                <div className="absolute top-1/2 -left-4 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={prevProSlide}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-sky-500 hover:scale-110 transition-all"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                </div>
+                <div className="absolute top-1/2 -right-4 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={nextProSlide}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-sky-500 hover:scale-110 transition-all"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+
+                {/* Indicators */}
+                <div className="flex justify-center gap-3 mt-12">
+                  {professionals.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setProSlideIndex(i)}
+                      className={cn(
+                        "h-2 rounded-full transition-all duration-500",
+                        proSlideIndex === i ? "w-10 bg-sky-500" : "w-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300"
+                      )}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="py-20 text-center">
+                <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-8 text-slate-400">
+                  <Search size={48} />
+                </div>
+                <h4 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Nenhum especialista encontrado</h4>
+                <p className="text-lg text-slate-500 dark:text-slate-400 font-medium">Tente ajustar sua busca ou filtros para encontrar o que procura.</p>
               </div>
             )}
           </div>
