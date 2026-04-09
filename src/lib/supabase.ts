@@ -79,15 +79,22 @@ export const supabase = new Proxy({} as SupabaseClient, {
 export const invokeFunction = async (name: string, body: any) => {
   const instance = getSupabase();
   
+  console.log(`Invocando função: ${name}`, body);
+
   try {
     const { data, error } = await instance.functions.invoke(name, {
       body,
     });
 
     if (error) {
-      // Se falhar com erro de rede, tenta fetch direto como fallback
-      if (error.message?.includes("Failed to send a request")) {
-        console.warn(`SDK falhou ao invocar ${name}, tentando fetch direto...`);
+      // Se falhar com erro de rede ou CORS, tenta fetch direto como fallback
+      const isNetworkError = 
+        error.message?.includes("Failed to send a request") || 
+        error.message?.includes("Load failed") ||
+        error.message?.includes("Failed to fetch");
+
+      if (isNetworkError) {
+        console.warn(`SDK falhou ao invocar ${name} (${error.message}), tentando fetch direto...`);
         return await directInvoke(name, body);
       }
       
@@ -97,7 +104,14 @@ export const invokeFunction = async (name: string, body: any) => {
 
     return data;
   } catch (err: any) {
-    if (err.message?.includes("Failed to send a request")) {
+    const isNetworkError = 
+      err.message?.includes("Failed to send a request") || 
+      err.message?.includes("Load failed") ||
+      err.message?.includes("Failed to fetch") ||
+      err.name === 'TypeError';
+
+    if (isNetworkError) {
+      console.warn(`Capturado erro de rede ao invocar ${name}: ${err.message}. Tentando fetch direto...`);
       return await directInvoke(name, body);
     }
     throw err;
@@ -110,31 +124,41 @@ export const invokeFunction = async (name: string, body: any) => {
 async function directInvoke(name: string, body: any) {
   const instance = getSupabase();
   
-  // Tenta pegar do instance se config estiver vazio
-  const supabaseUrl = (instance as any).supabaseUrl || config.supabaseUrl;
-  const supabaseAnonKey = (instance as any).supabaseKey || config.supabaseAnonKey;
+  // Usa config como fonte primária de verdade para a URL e Key
+  const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
+  const supabaseAnonKey = config.supabaseAnonKey;
   
   const url = `${supabaseUrl}/functions/v1/${name}`;
   
-  const { data: { session } } = await instance.auth.getSession();
-  const token = session?.access_token || supabaseAnonKey;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(body)
-  });
+  console.log(`Executando fetch direto para: ${url}`);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Erro na função ${name} (HTTP ${response.status}): ${errorText}`);
+  try {
+    const { data: { session } } = await instance.auth.getSession();
+    const token = session?.access_token || supabaseAnonKey;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erro na resposta do fetch direto (${response.status}):`, errorText);
+      throw new Error(`Erro na função ${name} (HTTP ${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`Sucesso no fetch direto para ${name}:`, result);
+    return result;
+  } catch (err: any) {
+    console.error(`Falha total ao invocar ${name} via fetch direto:`, err);
+    throw err;
   }
-
-  return await response.json();
 }
 
 export const callFisioAI = async (action: string, payload: any) => {

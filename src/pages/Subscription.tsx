@@ -54,6 +54,12 @@ export default function Subscription() {
       }
 
       // Stripe Payment Method
+      if (!profile) {
+        throw new Error('Usuário não identificado. Por favor, faça login novamente para assinar.');
+      }
+
+      console.log('Iniciando processo de assinatura para:', profile.email);
+
       const data = await invokeFunction('create-checkout-session', {
         user_id: profile.id,
         email: profile.email
