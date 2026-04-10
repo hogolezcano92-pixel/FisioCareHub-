@@ -10,7 +10,6 @@ import {
   CheckCircle, 
   Loader2, 
   Upload,
-  ShieldCheck,
   Settings,
   Trash2,
   Lock,
@@ -207,24 +206,6 @@ export default function Profile() {
       import('sonner').then(({ toast }) => toast.success("E-mail de redefinição de senha enviado!"));
     } catch (err: any) {
       import('sonner').then(({ toast }) => toast.error("Erro ao enviar e-mail: " + err.message));
-    }
-  };
-
-  const handleRegisterPasskey = async () => {
-    setUpdating(true);
-    try {
-      // O método correto no Supabase para cadastrar uma nova Passkey é addPasskey
-      const { error } = await (supabase.auth as any).addPasskey();
-      if (error) throw error;
-      
-      const { toast } = await import('sonner');
-      toast.success("Biometria cadastrada com sucesso! Agora você pode entrar usando Face ID.");
-    } catch (err: any) {
-      console.error("Erro ao cadastrar biometria:", err);
-      const { toast } = await import('sonner');
-      toast.error("Erro ao cadastrar biometria: " + (err.message || "Verifique se seu dispositivo suporta Passkeys."));
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -713,25 +694,6 @@ export default function Profile() {
                         <p className="text-sm text-slate-500">Seu e-mail principal para login e notificações.</p>
                       </div>
                       <span className="text-slate-600 font-medium">{userData?.email}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-                          <ShieldCheck size={24} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">Login com Biometria (Face ID)</p>
-                          <p className="text-sm text-slate-500">Acesse sua conta rapidamente usando biometria.</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleRegisterPasskey}
-                        disabled={updating}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50"
-                      >
-                        {updating ? <Loader2 className="animate-spin" /> : 'Cadastrar Biometria'}
-                      </button>
                     </div>
                   </div>
                 </div>
