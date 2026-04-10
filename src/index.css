@@ -21,9 +21,9 @@
   --color-home-peach: #ffedd5; /* peach */
   --color-home-trust: #0ea5e9; /* trust blue */
 
-  /* Dark Mode Overrides */
-  --color-background: #F6FAF9;
-  --color-foreground: #0F172A;
+  /* Dark Mode Overrides (Defaulting to Dark for Premium Feel) */
+  --color-background: #0B1120;
+  --color-foreground: #F8FAFC;
 
   /* Premium Shadows */
   --shadow-premium: 0 10px 30px -10px rgba(20, 184, 166, 0.1);
@@ -60,7 +60,7 @@
   }
   
   body {
-    @apply text-[#1A202C];
+    @apply text-slate-200;
   }
 }
 
