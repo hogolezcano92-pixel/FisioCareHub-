@@ -16,7 +16,8 @@ import {
   Activity,
   Crown,
   Users,
-  BookOpen
+  BookOpen,
+  Smartphone
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -74,7 +75,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       title: 'CONTA',
       items: [
         { name: 'Minha Conta', path: '/profile', icon: User },
-        ...(isAdmin ? [{ name: 'Painel Admin', path: '/admin', icon: ShieldCheck }] : []),
+        ...(isAdmin ? [
+          { name: 'Painel Admin', path: '/admin', icon: ShieldCheck },
+          { name: 'Prévia do App', path: '/preview', icon: Smartphone }
+        ] : []),
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }

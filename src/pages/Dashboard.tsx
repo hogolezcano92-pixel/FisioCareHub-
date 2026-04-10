@@ -28,7 +28,8 @@ import {
   User,
   MapPin,
   Thermometer,
-  AlertTriangle
+  AlertTriangle,
+  Smartphone
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -243,6 +244,7 @@ export default function Dashboard() {
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const isAdmin = profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   useEffect(() => {
     if (profile && isPhysio) {
@@ -394,6 +396,39 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+        
+        {/* Admin Special Preview Notification */}
+        {isAdmin && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12 p-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 rounded-[2.5rem] shadow-2xl shadow-blue-900/40"
+          >
+            <div className="bg-[#0B1120] rounded-[2.4rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32 rounded-full group-hover:bg-blue-600/20 transition-all duration-1000"></div>
+              
+              <div className="flex items-center gap-6 relative z-10">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-[2rem] flex items-center justify-center text-blue-400 border border-blue-500/30">
+                  <Smartphone size={40} className="animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tight mb-2">Novas Interfaces Mobile</h2>
+                  <p className="text-slate-400 font-medium max-w-md">
+                    Criei a visualização side-by-side (Paciente vs Fisioterapeuta) com os elementos fotorrealistas e wireframes que você solicitou.
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => navigate('/preview')}
+                className="relative z-10 px-10 py-5 bg-white text-slate-950 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl shadow-white/10 flex items-center gap-3 group/btn"
+              >
+                VER PRÉVIA AGORA
+                <ChevronRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Quick Actions - Moved to Top for Physio */}
         {isPhysio && (
