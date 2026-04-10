@@ -314,12 +314,7 @@ export default function Dashboard() {
               </div>
             )}
             
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-blue-400 font-bold text-[10px] uppercase tracking-[0.3em]">
-                <Sparkles size={14} className="text-blue-500 animate-pulse" />
-                {isPhysio ? 'Gestão Profissional' : 'Sua Jornada de Saúde'}
-              </div>
-              
+            <div className="space-y-2 flex-1">
               <div className="flex flex-col gap-1">
                 <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight opacity-90">
                   {getGreeting()},
@@ -377,19 +372,26 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <button className="p-5 bg-white/5 rounded-[1.5rem] text-slate-400 hover:text-blue-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
-              <Bell size={24} className="group-hover:animate-swing" />
-            </button>
-            {!isPhysio && (
-              <button 
-                onClick={() => navigate('/triage')}
-                className="flex items-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-sm hover:bg-blue-500 transition-all shadow-2xl shadow-blue-900/40 hover:scale-[1.02] active:scale-95 border border-white/10"
-              >
-                <Plus size={20} className="stroke-[3px]" />
-                Nova Triagem
+          <div className="flex flex-col items-end gap-4">
+            <div className="flex items-center gap-2 text-blue-400 font-bold text-[10px] uppercase tracking-[0.3em] bg-blue-500/10 px-4 py-2 rounded-full border border-blue-500/20">
+              <Sparkles size={14} className="text-blue-500 animate-pulse" />
+              {isPhysio ? 'Gestão Profissional' : 'Sua Jornada de Saúde'}
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <button className="p-5 bg-white/5 rounded-[1.5rem] text-slate-400 hover:text-blue-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
+                <Bell size={24} className="group-hover:animate-swing" />
               </button>
-            )}
+              {!isPhysio && (
+                <button 
+                  onClick={() => navigate('/triage')}
+                  className="flex items-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-sm hover:bg-blue-500 transition-all shadow-2xl shadow-blue-900/40 hover:scale-[1.02] active:scale-95 border border-white/10"
+                >
+                  <Plus size={20} className="stroke-[3px]" />
+                  Nova Triagem
+                </button>
+              )}
+            </div>
           </div>
         </header>
 

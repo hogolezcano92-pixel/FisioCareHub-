@@ -127,7 +127,7 @@ export default function KineAI() {
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 left-6 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
+          "fixed bottom-6 right-6 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
           isOpen ? "opacity-0 pointer-events-none" : "bg-gradient-to-br from-sky-500 to-blue-600 text-white"
         )}
       >
@@ -141,11 +141,11 @@ export default function KineAI() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 100, scale: 0.9, x: -50 }}
+            initial={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
             animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-            exit={{ opacity: 0, y: 100, scale: 0.9, x: -50 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
             className={cn(
-              "fixed bottom-6 left-6 z-[101] bg-white rounded-[2.5rem] shadow-2xl border border-sky-100 flex flex-col overflow-hidden transition-all duration-300",
+              "fixed bottom-6 right-6 z-[101] bg-white rounded-[2.5rem] shadow-2xl border border-sky-100 flex flex-col overflow-hidden transition-all duration-300",
               isExpanded ? "w-[90vw] h-[80vh] md:w-[600px] md:h-[700px]" : "w-[90vw] h-[500px] md:w-[400px] md:h-[600px]"
             )}
           >
