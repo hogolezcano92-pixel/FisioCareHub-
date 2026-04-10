@@ -46,6 +46,7 @@ import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import KineAI from './components/KineAI';
 import SplashScreen from './components/SplashScreen';
+import Onboarding from './components/Onboarding';
 import Sidebar from './components/Sidebar';
 
 // Lazy Pages
@@ -699,6 +700,7 @@ function AppContent() {
 export default function App() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [minTimePassed, setMinTimePassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -734,15 +736,24 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimePassed(true);
-    }, 4000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (configLoaded && minTimePassed) {
+      const hasCompletedOnboarding = localStorage.getItem('onboarding_completed');
+      if (!hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      }
       setShowSplash(false);
     }
   }, [configLoaded, minTimePassed]);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('onboarding_completed', 'true');
+    setShowOnboarding(false);
+  };
 
   if (error) {
     return (
@@ -761,13 +772,16 @@ export default function App() {
 
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showSplash && (
-          <SplashScreen />
+          <SplashScreen key="splash" />
+        )}
+        {showOnboarding && !showSplash && (
+          <Onboarding key="onboarding" onComplete={handleOnboardingComplete} />
         )}
       </AnimatePresence>
 
-      {configLoaded && (
+      {configLoaded && !showOnboarding && (
         <div className={cn(showSplash ? "hidden" : "block")}>
           <BrowserRouter>
             <AuthProvider>

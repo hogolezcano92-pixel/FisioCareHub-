@@ -632,6 +632,14 @@ export default function Admin() {
 
   const handleSaveSettings = async () => {
     try {
+      // Update Supabase
+      const { error: supabaseError } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'commission_rate', value: commissionRate.toString() }, { onConflict: 'key' });
+
+      if (supabaseError) throw supabaseError;
+
+      // Update Firebase for redundancy/realtime
       await addDoc(collection(db, 'settings'), {
         commissionRate,
         updatedAt: serverTimestamp(),

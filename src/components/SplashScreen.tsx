@@ -7,67 +7,62 @@ export default function SplashScreen() {
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1, ease: "easeInOut" }}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0B1120] overflow-hidden"
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#0B1120] via-[#0F172A] to-[#1E293B] overflow-hidden"
     >
-      {/* Background Subtle Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-400/5 rounded-full blur-[120px]" />
+      {/* Animated Background Elements */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3]
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px]" 
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.3, 1],
+          opacity: [0.2, 0.4, 0.2]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-blue-400/10 rounded-full blur-[120px]" 
+      />
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ 
+          opacity: 1, 
+          scale: [0.8, 1.05, 1],
+        }}
         transition={{ 
-          duration: 1.2, 
-          ease: [0.22, 1, 0.36, 1],
+          duration: 1.5, 
+          ease: "easeOut",
         }}
         className="text-center relative z-10 flex flex-col items-center"
       >
-        {/* Logo Section */}
-        <div className="mb-8">
-          <Logo size="xl" variant="light" />
-        </div>
-        
-        {/* Subtitle & Loading */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 1 }}
-          className="space-y-8 flex flex-col items-center"
+          animate={{ 
+            scale: [1, 1.02, 1],
+          }}
+          transition={{ 
+            duration: 2, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
         >
-          <div className="space-y-2">
-            <h2 className="text-white font-accent font-bold tracking-[0.3em] text-sm uppercase">
-              FisioCareHub
-            </h2>
-            <p className="text-blue-400/60 font-accent font-medium tracking-[0.15em] text-[10px] uppercase">
-              Reabilitação & Performance
-            </p>
-          </div>
-
-          {/* Minimalist Loading Bar */}
-          <div className="relative w-32 h-[2px] bg-white/5 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ x: "-100%" }}
-              animate={{ x: "100%" }}
-              transition={{ 
-                duration: 2.5, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
-              className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-blue-500 to-transparent"
-            />
-          </div>
+          <Logo size="xl" variant="light" />
         </motion.div>
-      </motion.div>
-      
-      {/* Footer Branding */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-12 text-white/10 text-[9px] font-black uppercase tracking-[0.5em]"
-      >
-        Premium Healthcare Experience
+        
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="mt-6"
+        >
+          <h1 className="text-white font-black text-2xl tracking-[0.2em] uppercase">
+            FisioCareHub
+          </h1>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
