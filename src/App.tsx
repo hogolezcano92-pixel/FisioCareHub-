@@ -46,6 +46,7 @@ import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import KineAI from './components/KineAI';
 import SplashScreen from './components/SplashScreen';
+import Sidebar from './components/Sidebar';
 
 // Lazy Pages
 const Home = lazy(() => import('./pages/Home'));
@@ -449,10 +450,19 @@ function NotificationHandler() {
 
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [showWhatsApp, setShowWhatsApp] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const isPatientArea = user && profile?.tipo_usuario === 'paciente';
+  const isPhysioArea = user && profile?.tipo_usuario === 'fisioterapeuta';
+  const isAdminArea = user && (profile?.plano === 'admin' || user.email === 'hogolezcano92@gmail.com');
+  const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
+  const isLandingPage = location.pathname === '/' || location.pathname === '/home';
+
+  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview';
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -476,20 +486,39 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-general font-sans text-text-main flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
         <KineAI />
         <NotificationHandler />
         <ScrollToTop />
-        <Navbar />
-        <main className={cn(
-          "flex-1 w-full",
-          location.pathname === '/chat' ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-        )}>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+        
+        {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
+
+        <div className="flex-1 flex flex-col min-w-0">
+          {!showSidebar ? <Navbar /> : (
+            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between">
+              <Logo size="sm" />
+              <div className="flex items-center gap-4">
+                <NotificationBell />
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  <Menu size={24} />
+                </button>
+              </div>
+            </header>
+          )}
+
+          <main className={cn(
+            "flex-1 w-full",
+            location.pathname === '/chat' || showSidebar ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
+            showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
+          )}>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/home" element={<Home />} />
               <Route path="/login" element={<Login />} />
@@ -521,7 +550,7 @@ function AppContent() {
           </Suspense>
         </main>
 
-        {location.pathname !== '/chat' && (
+        {!showSidebar && location.pathname !== '/chat' && (
           <footer className="bg-white border-t border-border-soft py-20">
             <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-16">
               <div className="space-y-6">
@@ -563,7 +592,8 @@ function AppContent() {
             </div>
           </footer>
         )}
-      </ErrorBoundary>
+      </div>
+    </ErrorBoundary>
 
       <AnimatePresence>
         {showWhatsApp && !user && location.pathname !== '/chat' && (
