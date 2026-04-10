@@ -115,14 +115,41 @@ export default function Appointments() {
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
       if (error) {
-        console.error("Erro ao buscar agendamentos:", error);
-        // Retry without complex select if it failed (maybe columns missing in joins)
-        const { data: retryData, error: retryError } = await supabase
+        console.error("Erro ao buscar agendamentos com join:", error);
+        
+        // Fallback: fetch without join and then fetch profiles manually
+        const { data: basicData, error: basicError } = await supabase
           .from('agendamentos')
           .select('*')
           .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
-        if (retryError) throw retryError;
-        setAppointments(retryData || []);
+        
+        if (basicError) throw basicError;
+        
+        if (basicData && basicData.length > 0) {
+          const patientIds = [...new Set(basicData.map(a => a.paciente_id))];
+          const physioIds = [...new Set(basicData.map(a => a.fisio_id))];
+          const allIds = [...new Set([...patientIds, ...physioIds])];
+          
+          const { data: profilesData } = await supabase
+            .from('perfis')
+            .select('id, nome_completo, email')
+            .in('id', allIds);
+          
+          const profilesMap = (profilesData || []).reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+          
+          const enrichedData = basicData.map(a => ({
+            ...a,
+            paciente: profilesMap[a.paciente_id] || { nome_completo: 'Usuário não encontrado', email: '' },
+            fisioterapeuta: profilesMap[a.fisio_id] || { nome_completo: 'Usuário não encontrado', email: '' }
+          }));
+          
+          setAppointments(enrichedData);
+        } else {
+          setAppointments([]);
+        }
       } else {
         setAppointments(data || []);
       }
@@ -131,7 +158,7 @@ export default function Appointments() {
       const params = new URLSearchParams(window.location.search);
       const appId = params.get('id');
       if (appId && isPhysio) {
-        const appToConfirm = data?.find(a => a.id === appId);
+        const appToConfirm = (data || []).find(a => a.id === appId);
         if (appToConfirm && appToConfirm.status === 'pendente') {
           setSelectedAppId(appId);
         }
@@ -208,7 +235,7 @@ export default function Appointments() {
           .from('perfis')
           .select('id, nome_completo, email, tipo_usuario')
           .eq('email', targetEmail.trim().toLowerCase())
-          .or(`tipo_usuario.in.(${targetRoles.join(',')})`);
+          .in('tipo_usuario', targetRoles);
 
         if (targetError || !targetUsers || targetUsers.length === 0) {
           import('sonner').then(({ toast }) => toast.error(isPatient ? "Fisioterapeuta não encontrado com este e-mail." : "Paciente não encontrado com este e-mail."));
@@ -232,7 +259,7 @@ export default function Appointments() {
       console.log("Iniciando inserção de agendamento no Supabase...");
       const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
 
-      const { data: newApp, error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('agendamentos')
         .insert({
           paciente_id: isPatient ? user?.id : targetUser.id,
@@ -242,14 +269,14 @@ export default function Appointments() {
           observacoes: notes,
           servico: service
         })
-        .select('id')
-        .single();
+        .select();
 
       if (insertError) {
         console.error("Erro completo do Supabase ao inserir agendamento:", insertError);
         throw insertError;
       }
 
+      const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
       console.log("Agendamento criado com sucesso:", newApp);
 
       // Create notification for target user
@@ -258,7 +285,7 @@ export default function Appointments() {
         .insert({
           user_id: targetUser.id,
           titulo: 'Nova Solicitação de Agendamento',
-          mensagem: `${profile.nome_completo} solicitou uma consulta para o dia ${new Date(appointmentDate).toLocaleDateString('pt-BR')}.`,
+          mensagem: `${profile.nome_completo || 'Alguém'} solicitou uma consulta para o dia ${new Date(appointmentDate).toLocaleDateString('pt-BR')}.`,
           tipo: 'appointment',
           lida: false,
           link: '/appointments'
@@ -271,7 +298,8 @@ export default function Appointments() {
       }
 
       // Send email notification
-      const confirmLink = `${window.location.origin}/appointments?id=${newApp.id}`;
+      const appId = newApp?.id || 'unknown';
+      const confirmLink = `${window.location.origin}/appointments?id=${appId}`;
       const recipientEmail = targetUser.email;
       
       if (isPatient) {
