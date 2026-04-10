@@ -79,11 +79,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-full bg-[#0B1120] border-r border-white/5">
       {/* Logo Section */}
-      <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+      <div className="p-6 border-b border-white/5">
         <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-          <Logo size="sm" />
+          <Logo size="sm" variant="light" />
         </Link>
       </div>
 
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
         {sections.map((section) => (
           <div key={section.title} className="space-y-2">
-            <h3 className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+            <h3 className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
               {section.title}
             </h3>
             <div className="space-y-1">
@@ -113,17 +113,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative",
                       isActive 
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20" 
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
                         : item.variant === 'danger'
-                          ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 active:scale-95"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95"
+                          ? "text-rose-400 hover:bg-rose-500/10 active:scale-95"
+                          : "text-slate-400 hover:bg-white/5 hover:text-white active:scale-95"
                     )}
                   >
                     <item.icon 
                       size={20} 
                       className={cn(
                         "transition-colors",
-                        isActive ? "text-white" : item.variant === 'danger' ? "text-rose-500" : "text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                        isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-blue-400"
                       )} 
                     />
                     <span>{item.name}</span>
@@ -142,18 +142,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </nav>
 
       {/* User Profile Summary */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+      <div className="p-4 border-t border-white/5">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5">
           <img 
             src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`}
             alt="Avatar"
-            className="w-10 h-10 rounded-xl object-cover border-2 border-white dark:border-slate-700 shadow-sm"
+            className="w-10 h-10 rounded-xl object-cover border-2 border-white/10 shadow-sm"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+            <p className="text-xs font-black text-white truncate">
               {profile?.nome_completo || 'Usuário'}
             </p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
               {profile?.plano || 'Paciente'}
             </p>
           </div>

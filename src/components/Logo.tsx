@@ -112,15 +112,15 @@ const Logo: React.FC<LogoProps> = ({
         >
           <span className={cn(
             "font-sans font-black tracking-tighter text-2xl sm:text-4xl drop-shadow-sm",
-            variant === 'dark' ? "text-slate-900" : "text-white"
+            variant === 'dark' ? "text-slate-900" : "text-[#38BDF8]"
           )}>
-            FisioCare<span className="text-[#0EA5E9]">Hub</span>
+            FisioCareHub
           </span>
           <div className="flex items-center gap-2 mt-1">
-            <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-white")} />
+            <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
             <span className={cn(
               "text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em]",
-              variant === 'dark' ? "text-slate-400" : "text-blue-100"
+              variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
             )}>
               Reabilitação & Performance
             </span>
