@@ -1,158 +1,27 @@
 {
   "entities": {
-    "Perfil": {
-      "title": "Perfil",
-      "description": "User profile for patients and physiotherapists",
+    "PatientExercise": {
+      "title": "PatientExercise",
+      "description": "Exercises prescribed by a physiotherapist to a patient.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "nome_completo": { "type": "string" },
-        "avatar_url": { "type": "string", "format": "uri" },
-        "bio": { "type": "string" },
-        "localizacao": { "type": "string" },
-        "endereco": { "type": "string" },
-        "cep": { "type": "string" },
-        "pais": { "type": "string" },
-        "tipo_usuario": { "type": "string", "enum": ["paciente", "fisioterapeuta", "admin"] },
-        "especialidade": { "type": "string" },
-        "genero": { "type": "string" },
-        "tipo_servico": { "type": "string", "enum": ["domicilio", "online", "ambos"] },
-        "crefito": { "type": "string" },
-        "is_pro": { "type": "boolean" },
-        "status_aprovacao": { "type": "string", "enum": ["pendente", "aprovado", "rejeitado"] },
-        "documentos": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "id": { "type": "string", "format": "uuid" },
+        "patient_id": { "type": "string", "format": "uuid", "description": "ID of the patient receiving the exercise." },
+        "physio_id": { "type": "string", "format": "uuid", "description": "ID of the physiotherapist who prescribed the exercise." },
+        "exercise_name": { "type": "string", "description": "Name of the exercise." },
+        "description": { "type": "string", "description": "Instructions or description of the exercise." },
+        "sets": { "type": "string", "description": "Number of sets." },
+        "reps": { "type": "string", "description": "Number of repetitions." },
+        "video_url": { "type": "string", "format": "uri", "description": "URL to a video demonstrating the exercise." },
         "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "email", "nome_completo", "tipo_usuario"]
-    },
-    "Agendamento": {
-      "title": "Agendamento",
-      "description": "Scheduled physiotherapy sessions",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "paciente_id": { "type": "string" },
-        "fisio_id": { "type": "string" },
-        "data_servico": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["pendente", "confirmado", "concluido", "cancelado"] },
-        "problema": { "type": "string" },
-        "localizacao": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["paciente_id", "fisio_id", "data_servico", "status"]
-    },
-    "Prontuario": {
-      "title": "Prontuario",
-      "description": "Medical records",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "paciente_id": { "type": "string" },
-        "fisio_id": { "type": "string" },
-        "data_registro": { "type": "string", "format": "date-time" },
-        "conteudo": { "type": "string" },
-        "documentos": { "type": "array", "items": { "type": "string", "format": "uri" } },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["paciente_id", "fisio_id", "conteudo"]
-    },
-    "Triagem": {
-      "title": "Triagem",
-      "description": "Patient self-triage",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "paciente_id": { "type": "string" },
-        "sintomas": { "type": "string" },
-        "gravidade": { "type": "string" },
-        "status": { "type": "string", "enum": ["pendente", "concluido"] },
-        "data_triagem": { "type": "string", "format": "date-time" },
-        "ai_analysis": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["paciente_id", "sintomas", "gravidade"]
-    },
-    "Mensagem": {
-      "title": "Mensagem",
-      "description": "Chat messages",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "remetente_id": { "type": "string" },
-        "destinatario_id": { "type": "string" },
-        "texto": { "type": "string" },
-        "lida": { "type": "boolean" },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["remetente_id", "destinatario_id", "texto"]
-    },
-    "Notificacao": {
-      "title": "Notificacao",
-      "description": "User notifications",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "user_id": { "type": "string" },
-        "titulo": { "type": "string" },
-        "mensagem": { "type": "string" },
-        "tipo": { "type": "string", "enum": ["mensagem", "agendamento", "sistema"] },
-        "lida": { "type": "boolean" },
-        "created_at": { "type": "string", "format": "date-time" },
-        "link": { "type": "string" }
-      },
-      "required": ["user_id", "titulo", "mensagem", "tipo"]
-    },
-    "DocumentoGerado": {
-      "title": "DocumentoGerado",
-      "description": "AI generated documents",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "physio_id": { "type": "string" },
-        "patient_email": { "type": "string", "format": "email" },
-        "patient_name": { "type": "string" },
-        "content": { "type": "string" },
-        "template_id": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" }
-      },
-      "required": ["physio_id", "patient_email", "content"]
-    },
-    "DiarioDor": {
-      "title": "DiarioDor",
-      "description": "Patient pain intensity logs",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "paciente_id": { "type": "string" },
-        "intensidade": { "type": "number" },
-        "data_registro": { "type": "string", "format": "date-time" }
-      },
-      "required": ["paciente_id", "intensidade"]
-    },
-    "ChecklistExercicio": {
-      "title": "ChecklistExercicio",
-      "description": "Patient exercise completion logs",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "paciente_id": { "type": "string" },
-        "exercicio_id": { "type": "string" },
-        "concluido": { "type": "boolean" },
-        "data_conclusao": { "type": "string", "format": "date-time" }
-      },
-      "required": ["paciente_id", "exercicio_id", "concluido"]
+      "required": ["patient_id", "physio_id", "exercise_name"]
     }
   },
   "firestore": {
-    "perfis": { "schema": "Perfil", "description": "User profiles" },
-    "agendamentos": { "schema": "Agendamento", "description": "Scheduled sessions" },
-    "prontuarios": { "schema": "Prontuario", "description": "Medical records" },
-    "triagens": { "schema": "Triagem", "description": "Triage results" },
-    "mensagens": { "schema": "Mensagem", "description": "Chat messages" },
-    "notificacoes": { "schema": "Notificacao", "description": "User notifications" },
-    "documentos_gerados": { "schema": "DocumentoGerado", "description": "AI generated documents" },
-    "diario_dor": { "schema": "DiarioDor", "description": "Pain intensity logs" },
-    "checklist_exercicios": { "schema": "ChecklistExercicio", "description": "Exercise completion logs" }
+    "patient_exercises": {
+      "schema": "PatientExercise",
+      "description": "Collection of exercises prescribed to patients."
+    }
   }
 }

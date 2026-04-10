@@ -64,6 +64,7 @@ const Patients = lazy(() => import('./pages/Patients'));
 const PatientDetails = lazy(() => import('./pages/PatientDetails'));
 const Agenda = lazy(() => import('./pages/Agenda'));
 const Exercises = lazy(() => import('./pages/Exercises'));
+const PatientExercises = lazy(() => import('./pages/PatientExercises'));
 const PhysioTriages = lazy(() => import('./pages/PhysioTriages'));
 const AppPreview = lazy(() => import('./pages/AppPreview'));
 const About = lazy(() => import('./pages/About'));
@@ -534,6 +535,7 @@ function AppContent() {
               <Route path="/patients/:id" element={<PatientDetails />} />
               <Route path="/agenda" element={<Agenda />} />
               <Route path="/exercises" element={<Exercises />} />
+              <Route path="/patient/exercises" element={<PatientExercises />} />
               <Route path="/physio/triages" element={<PhysioTriages />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/subscription" element={<Subscription />} />

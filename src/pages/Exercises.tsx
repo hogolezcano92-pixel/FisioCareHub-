@@ -14,7 +14,9 @@ import {
   Trash2, 
   Edit2,
   Play,
-  Dumbbell
+  Dumbbell,
+  Send,
+  User
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -27,6 +29,10 @@ export default function Exercises() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showPrescribeModal, setShowPrescribeModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<any>(null);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Form State
@@ -45,7 +51,22 @@ export default function Exercises() {
       return;
     }
     fetchExercises();
+    fetchPatients();
   }, [profile]);
+
+  const fetchPatients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pacientes')
+        .select('id, nome')
+        .eq('fisioterapeuta_id', user?.id)
+        .order('nome');
+      if (error) throw error;
+      setPatients(data || []);
+    } catch (err) {
+      console.error('Erro ao buscar pacientes:', err);
+    }
+  };
 
   const fetchExercises = async () => {
     setIsLoading(true);
@@ -95,6 +116,38 @@ export default function Exercises() {
     } catch (err) {
       console.error(err);
       toast.error('Erro ao salvar exercício');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePrescribeExercise = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatientId || !selectedExercise) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('patient_exercises')
+        .insert({
+          patient_id: selectedPatientId,
+          physio_id: user?.id,
+          exercise_name: selectedExercise.nome,
+          description: selectedExercise.descricao,
+          sets: selectedExercise.series,
+          reps: selectedExercise.repeticoes,
+          video_url: selectedExercise.video_url,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success('Exercício prescrito com sucesso!');
+      setShowPrescribeModal(false);
+      setSelectedPatientId('');
+      setSelectedExercise(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao prescrever exercício');
     } finally {
       setSubmitting(false);
     }
@@ -184,9 +237,21 @@ export default function Exercises() {
                       {ex.repeticoes || '0'} Reps
                     </span>
                   </div>
-                  <button className="text-slate-300 hover:text-red-500 transition-colors">
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setSelectedExercise(ex);
+                        setShowPrescribeModal(true);
+                      }}
+                      className="p-2 text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
+                      title="Prescrever para paciente"
+                    >
+                      <Send size={18} />
+                    </button>
+                    <button className="text-slate-300 hover:text-red-500 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -279,6 +344,68 @@ export default function Exercises() {
                   className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Exercício'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Prescrição */}
+      <AnimatePresence>
+        {showPrescribeModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPrescribeModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Prescrever Exercício</h2>
+                  <p className="text-slate-500 text-sm font-medium">Atribuir "{selectedExercise?.nome}" a um paciente.</p>
+                </div>
+                <button onClick={() => setShowPrescribeModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={24} /></button>
+              </div>
+
+              <form onSubmit={handlePrescribeExercise} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Selecionar Paciente</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <select
+                      required
+                      value={selectedPatientId}
+                      onChange={(e) => setSelectedPatientId(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none"
+                    >
+                      <option value="">Selecione um paciente...</option>
+                      {patients.map(p => (
+                        <option key={p.id} value={p.id}>{p.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Activity className="text-sky-500" size={20} />
+                    <span className="font-black text-slate-900">{selectedExercise?.nome}</span>
+                  </div>
+                  <div className="flex gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <span>{selectedExercise?.series || '0'} Séries</span>
+                    <span>{selectedExercise?.repeticoes || '0'} Reps</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting || !selectedPatientId}
+                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitting ? <Loader2 className="animate-spin" /> : (
+                    <>
+                      <Send size={20} />
+                      Confirmar Prescrição
+                    </>
+                  )}
                 </button>
               </form>
             </motion.div>

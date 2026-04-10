@@ -55,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           { name: 'Assinatura', path: '/subscription', icon: Crown },
         ] : [
           { name: 'Agenda', path: '/appointments', icon: Calendar },
+          { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
           { name: 'Prontuários', path: '/records', icon: FileText },
           { name: 'Documentos', path: '/documents', icon: FileSignature },
           { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
