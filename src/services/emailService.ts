@@ -13,13 +13,14 @@ interface EmailPayload {
 
 export const sendEmail = async (payload: EmailPayload) => {
   try {
-    // Garante que 'html' seja enviado se 'body' estiver presente
+    // A Edge Function exige exatamente os campos to, subject e html no body JSON.
     const finalPayload = {
-      ...payload,
+      to: payload.to,
+      subject: payload.subject,
       html: payload.html || payload.body
     };
 
-    console.log(`Disparando e-mail para ${finalPayload.to} (Evento: ${finalPayload.event})`);
+    console.log(`Disparando e-mail para ${finalPayload.to} (Evento: ${payload.event})`);
     
     // O nome da função no Supabase é 'Send-email' (case sensitive)
     invokeFunction('Send-email', finalPayload)

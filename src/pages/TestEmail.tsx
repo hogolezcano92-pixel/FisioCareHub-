@@ -22,6 +22,7 @@ export default function TestEmail() {
       console.log("Invocando função Send-email para:", email);
       
       // Chamando a Edge Function 'Send-email' via utilitário invokeFunction
+      // Enviando exatamente os campos exigidos: to, subject, html
       const data = await invokeFunction('Send-email', {
         to: email,
         subject: "Teste de Notificação - FisioCareHub",
@@ -34,8 +35,7 @@ export default function TestEmail() {
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
             <p style="font-size: 12px; color: #64748b;">Enviado por FisioCareHub - ${new Date().toLocaleString()}</p>
           </div>
-        `,
-        type: "email"
+        `
       });
 
       setResult(data);
