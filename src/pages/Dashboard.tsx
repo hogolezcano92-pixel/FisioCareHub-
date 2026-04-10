@@ -61,6 +61,8 @@ export default function Dashboard() {
   const [patientSearch, setPatientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [isAiExpanded, setIsAiExpanded] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
 
   const lastLoadedProfileId = useRef<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -239,15 +241,23 @@ export default function Dashboard() {
     return 'Boa noite';
   };
 
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+
+  useEffect(() => {
+    if (profile && isPhysio) {
+      setAiMessage(`Olá, Dr. ${profile.nome_completo.split(' ')[0]}! Notei que você tem atendimentos próximos no Morumbi. Deseja otimizar sua rota agora?`);
+    } else if (profile) {
+      setAiMessage(`Olá, ${profile.nome_completo.split(' ')[0]}! Sua Triagem IA está liberada. Vamos analisar seus sintomas?`);
+    }
+  }, [profile, isPhysio]);
+
   if (authLoading) return (
     <div className="flex flex-col items-center justify-center pt-32 space-y-4">
       <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Preparando seu Dashboard...</p>
     </div>
   );
-
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   return (
     <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-8 pb-12 bg-[#0B1120] relative overflow-hidden transition-colors duration-500">
@@ -341,6 +351,32 @@ export default function Dashboard() {
             )}
           </div>
         </header>
+
+        {/* Quick Actions - Moved to Top for Physio */}
+        {isPhysio && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            <Link to="/patients" className="p-6 bg-white/5 backdrop-blur-xl rounded-[2rem] hover:bg-blue-600/10 group transition-all text-center space-y-2 border border-white/10 hover:border-blue-500/20 shadow-xl shadow-blue-900/10">
+              <Users className="mx-auto text-slate-400 group-hover:text-blue-400 transition-colors" size={28} />
+              <p className="text-[10px] font-black uppercase text-slate-500 group-hover:text-blue-400 tracking-widest">Pacientes</p>
+            </Link>
+            <Link to="/agenda" className="p-6 bg-white/5 backdrop-blur-xl rounded-[2rem] hover:bg-blue-600/10 group transition-all text-center space-y-2 border border-white/10 hover:border-blue-500/20 shadow-xl shadow-blue-900/10">
+              <Calendar className="mx-auto text-slate-400 group-hover:text-blue-400 transition-colors" size={28} />
+              <p className="text-[10px] font-black uppercase text-slate-500 group-hover:text-blue-400 tracking-widest">Agenda</p>
+            </Link>
+            <Link to="/exercises" className="p-6 bg-white/5 backdrop-blur-xl rounded-[2rem] hover:bg-emerald-600/10 group transition-all text-center space-y-2 border border-white/10 hover:border-emerald-500/20 shadow-xl shadow-emerald-900/10">
+              <Activity className="mx-auto text-slate-400 group-hover:text-emerald-400 transition-colors" size={28} />
+              <p className="text-[10px] font-black uppercase text-slate-500 group-hover:text-emerald-400 tracking-widest">Exercícios</p>
+            </Link>
+            <Link to="/records" className="p-6 bg-white/5 backdrop-blur-xl rounded-[2rem] hover:bg-rose-600/10 group transition-all text-center space-y-2 border border-white/10 hover:border-rose-500/20 shadow-xl shadow-rose-900/10">
+              <FileText className="mx-auto text-slate-400 group-hover:text-rose-400 transition-colors" size={28} />
+              <p className="text-[10px] font-black uppercase text-slate-500 group-hover:text-rose-400 tracking-widest">Prontuários</p>
+            </Link>
+          </motion.div>
+        )}
 
       {/* Next Step Section for Patients */}
       {!isPhysio && (
@@ -469,7 +505,20 @@ export default function Dashboard() {
               {statsLoading ? (
                 <div className="h-10 w-16 bg-slate-800 animate-pulse rounded-lg"></div>
               ) : (
-                <p className="text-4xl font-black text-white tracking-tighter">{stat.value}</p>
+                <div className="flex items-end gap-3">
+                  <p className="text-4xl font-black text-white tracking-tighter">{stat.value}</p>
+                  {stat.label === 'Consultas' && (
+                    <div className="flex gap-0.5 h-8 items-end pb-1">
+                      {[40, 70, 45, 90, 65, 80, 50].map((h, idx) => (
+                        <div 
+                          key={idx} 
+                          className="w-1 bg-blue-500/40 rounded-full" 
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
               <p className="text-base font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
             </div>
@@ -698,58 +747,93 @@ export default function Dashboard() {
 
         {/* Quick Actions & AI Insights */}
         <div className="space-y-8">
-          <div className={cn(
-            "bg-gradient-to-br from-blue-600 to-indigo-800 p-8 rounded-[3rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10"
-          )}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+          <motion.div 
+            layout
+            onClick={() => setIsAiExpanded(!isAiExpanded)}
+            className={cn(
+              "bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 p-8 rounded-[3rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 cursor-pointer group",
+              isAiExpanded ? "lg:col-span-1 h-auto" : "h-fit"
+            )}
+          >
+            {/* Animated background pulse */}
+            <div className="absolute inset-0 bg-blue-400/10 animate-pulse pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+            
             <div className="relative z-10 space-y-6">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
-                  <BrainCircuit size={24} />
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
+                  <BrainCircuit size={24} className="animate-bounce" />
                 </div>
+                {isAiExpanded && (
+                  <button className="text-white/60 hover:text-white transition-colors">
+                    <ChevronRight size={20} className="rotate-90" />
+                  </button>
+                )}
               </div>
-              <div className="space-y-2">
+              
+              <div className="space-y-3">
                 <h3 className="text-2xl font-black tracking-tight flex items-center gap-2">
-                  Assistente IA
+                  Assistente <span className="text-blue-200">Viva</span>
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                 </h3>
-                <p className="text-blue-100 text-base leading-relaxed font-medium">
-                  {isPhysio ? "Bem-vindo ao seu painel profissional. Como posso ajudar na gestão dos seus pacientes hoje?" : "Sua Triagem IA está liberada! Analise seus sintomas agora com nossa inteligência artificial."}
+                <p className="text-blue-50/90 text-base leading-relaxed font-medium">
+                  {aiMessage}
                 </p>
               </div>
-              {!isPhysio && (
+
+              {isAiExpanded && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6 pt-4 border-t border-white/10"
+                >
+                  <div className="bg-black/20 backdrop-blur-xl p-4 rounded-2xl space-y-3">
+                    <p className="text-xs font-bold text-blue-200 uppercase tracking-widest">Sugestões de Ação</p>
+                    <div className="flex flex-wrap gap-2">
+                      {isPhysio ? (
+                        <>
+                          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-all border border-white/10">Gerar Relatório SOAP</button>
+                          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-all border border-white/10">Resumir Dia</button>
+                          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-all border border-white/10">Ditar Evolução</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-all border border-white/10">Ver Treino de Hoje</button>
+                          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-all border border-white/10">Relatar Dor</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Pergunte algo..." 
+                      className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm placeholder-white/50 outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <button className="p-3 bg-white text-blue-900 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg">
+                      <ArrowUpRight size={20} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {!isAiExpanded && !isPhysio && (
                 <button 
-                  onClick={() => navigate('/triage')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/triage');
+                  }}
                   className="w-full py-4 bg-white text-blue-900 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   Iniciar Triagem
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
 
-          {isPhysio && (
-            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 space-y-6 shadow-2xl shadow-blue-900/20">
-              <h3 className="text-xl font-black text-white">Ações Rápidas</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <Link to="/patients" className="p-6 bg-white/5 rounded-3xl hover:bg-blue-600/10 group transition-all text-center space-y-2 border border-white/5 hover:border-blue-500/20 shadow-sm">
-                  <Users className="mx-auto text-slate-500 group-hover:text-blue-400 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-500 group-hover:text-blue-400">Pacientes</p>
-                </Link>
-                <Link to="/agenda" className="p-6 bg-white/5 rounded-3xl hover:bg-blue-600/10 group transition-all text-center space-y-2 border border-white/5 hover:border-blue-500/20 shadow-sm">
-                  <Calendar className="mx-auto text-slate-500 group-hover:text-blue-400 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-500 group-hover:text-blue-400">Agenda</p>
-                </Link>
-                <Link to="/exercises" className="p-6 bg-white/5 rounded-3xl hover:bg-emerald-600/10 group transition-all text-center space-y-2 border border-white/5 hover:border-emerald-500/20 shadow-sm">
-                  <Activity className="mx-auto text-slate-500 group-hover:text-emerald-400 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-500 group-hover:text-emerald-400">Exercícios</p>
-                </Link>
-                <Link to="/records" className="p-6 bg-white/5 rounded-3xl hover:bg-rose-600/10 group transition-all text-center space-y-2 border border-white/5 hover:border-rose-500/20 shadow-sm">
-                  <FileText className="mx-auto text-slate-500 group-hover:text-rose-400 transition-colors" size={28} />
-                  <p className="text-xs font-black uppercase text-slate-500 group-hover:text-rose-400">Prontuários</p>
-                </Link>
-              </div>
-            </div>
-          )}
+          {/* Quick Actions - Removed from here as it was moved to top */}
         </div>
       </div>
       {/* New Features Section */}
@@ -760,22 +844,39 @@ export default function Dashboard() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-black text-white tracking-tight">Recursos Profissionais</h2>
-                {!isPro && (
-                  <span className="px-4 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-500/20">
-                    Disponível no Pro
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                    <option>Semana</option>
+                    <option>Mês</option>
+                  </select>
+                  {!isPro && (
+                    <span className="px-4 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-500/20">
+                      Disponível no Pro
+                    </span>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-1 gap-8">
-                <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl shadow-blue-900/20">
+                <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                  <div className="absolute top-8 right-8 z-20">
+                    <button className="p-2 bg-white/5 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                      <TrendingUp size={16} />
+                    </button>
+                  </div>
                   <ProGuard variant="full">
                     <FinancialDashboard />
                   </ProGuard>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">
-                  <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl shadow-blue-900/20">
+                  <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                    <div className="absolute top-8 right-8 z-20 flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/20">
+                        <MapPin size={12} />
+                        3 Pacientes na Rota
+                      </div>
+                    </div>
                     <ProGuard variant="full">
                       <RouteOptimizer />
                     </ProGuard>
@@ -881,6 +982,17 @@ export default function Dashboard() {
           </>
         )}
       </div>
+      {/* Floating Action Button (FAB) - Positioned safely */}
+      {isPhysio && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <button 
+            onClick={() => navigate('/agenda')}
+            className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-900/40 hover:bg-blue-500 hover:scale-110 active:scale-95 transition-all group border-4 border-white/10"
+          >
+            <Plus size={32} className="group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+        </div>
+      )}
     </div>
   </div>
   );
