@@ -68,7 +68,7 @@ export default function Profile() {
   const [crefito, setCrefito] = useState('');
   const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
 
-  const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   useEffect(() => {
     if (!authLoading) {
@@ -377,7 +377,15 @@ export default function Profile() {
                   />
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo}</h2>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo || 'Usuário'}</h2>
+                        {isPro && (
+                          <span className="flex items-center gap-1 px-3 py-1 bg-amber-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/20 border border-amber-400/50">
+                            <Crown size={10} fill="currentColor" />
+                            Pro
+                          </span>
+                        )}
+                      </div>
                       {isPhysio && (
                         <Link 
                           to="/subscription"

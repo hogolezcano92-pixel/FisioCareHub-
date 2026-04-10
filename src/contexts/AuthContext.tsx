@@ -46,34 +46,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const pendingRole = localStorage.getItem('pending_role');
         const finalRole = userMetadata?.tipo_usuario || userMetadata?.tipo || userMetadata?.plano || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
         
+        const defaultProfile = {
+          id: userId,
+          nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
+          email: userMetadata?.email || '',
+          avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+          tipo_usuario: finalRole,
+          plano: userMetadata?.plano || (finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free'),
+          crefito: userMetadata?.crefito || null,
+          especialidade: userMetadata?.especialidade || null,
+          telefone: userMetadata?.telefone || null,
+          bio: userMetadata?.bio || null,
+          localizacao: userMetadata?.localizacao || null,
+          endereco: userMetadata?.endereco || null,
+          cep: userMetadata?.cep || null,
+          pais: userMetadata?.pais || null,
+          genero: userMetadata?.genero || null,
+          tipo_servico: userMetadata?.tipo_servico || null,
+          is_pro: !!userMetadata?.is_pro,
+          status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
+        };
+
         const { data: newProfile, error: createError } = await supabase
           .from('perfis')
-          .upsert({
-            id: userId,
-            nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
-            email: userMetadata?.email || '',
-            avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            tipo_usuario: finalRole,
-            plano: userMetadata?.plano || (finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free'),
-            crefito: userMetadata?.crefito || null,
-            especialidade: userMetadata?.especialidade || null,
-            telefone: userMetadata?.telefone || null,
-            bio: userMetadata?.bio || null,
-            localizacao: userMetadata?.localizacao || null,
-            endereco: userMetadata?.endereco || null,
-            cep: userMetadata?.cep || null,
-            pais: userMetadata?.pais || null,
-            genero: userMetadata?.genero || null,
-            tipo_servico: userMetadata?.tipo_servico || null,
-            is_pro: !!userMetadata?.is_pro,
-            status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
-          })
+          .upsert(defaultProfile)
           .select()
           .single();
         
         if (createError) {
-          console.error('Error creating default profile:', createError);
-          return { profile: null, subscription: null };
+          console.error('Error creating default profile in DB:', createError);
+          // Fallback to metadata-based profile object even if DB upsert fails
+          return { profile: defaultProfile, subscription: null };
         }
 
         // Clear the pending role after SUCCESSFUL use
@@ -82,7 +85,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { profile: newProfile, subscription: null };
       } else if (error) {
         console.error('Error fetching profile:', error);
-        return { profile: null, subscription: null };
+        // Fallback to metadata-based profile object on error
+        const finalRole = userMetadata?.tipo_usuario || 'paciente';
+        const fallbackProfile = {
+          id: userId,
+          nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
+          email: userMetadata?.email || '',
+          avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+          tipo_usuario: finalRole,
+          plano: userMetadata?.plano || (finalRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'free'),
+          is_pro: !!userMetadata?.is_pro
+        };
+        return { profile: fallbackProfile, subscription: null };
       }
       
       lastFetchedUserId.current = userId;

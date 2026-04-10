@@ -307,7 +307,19 @@ export default function Dashboard() {
                 {!profile ? (
                   <span className="animate-pulse text-slate-600">Conectando...</span>
                 ) : (
-                  <>{getGreeting()}, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{isPhysio ? `Dr. ${profile?.nome_completo}` : profile?.nome_completo}</span>! 👋</>
+                  <div className="flex items-center gap-3">
+                    <span>{getGreeting()},</span>
+                    <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                      {isPhysio ? `Dr. ${profile?.nome_completo}` : profile?.nome_completo}
+                    </span>
+                    {isPro && (
+                      <span className="flex items-center gap-1 px-3 py-1 bg-amber-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/20 border border-amber-400/50">
+                        <Crown size={10} fill="currentColor" />
+                        Pro
+                      </span>
+                    )}
+                    <span>! 👋</span>
+                  </div>
                 )}
               </h1>
               <p className="text-slate-400 font-semibold text-sm">Bem-vindo a FisioCareHub, a sua plataforma de performance</p>
