@@ -31,7 +31,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   };
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isAdmin = profile?.plano === 'admin' || profile?.tipo_usuario === 'admin';
+  const isAdmin = profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   const sections = [
     {

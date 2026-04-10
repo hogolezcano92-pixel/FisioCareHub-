@@ -81,7 +81,7 @@ export default function Chat() {
         if (adminData) {
           // Force role to admin for chat logic if it's one of the known admin emails
           const adminEmails = ['hogolezcano92@gmail.com'];
-          if (adminEmails.includes(adminData.email)) {
+          if (adminEmails.includes(adminData.email?.toLowerCase())) {
             adminData.tipo = 'admin';
             adminData.tipo_usuario = 'admin';
           }
@@ -426,7 +426,7 @@ export default function Chat() {
                 if (adminData) {
                   // Force role to admin for chat logic if it's one of the known admin emails
                   const adminEmails = ['hogolezcano92@gmail.com'];
-                  if (adminEmails.includes(adminData.email)) {
+                  if (adminEmails.includes(adminData.email?.toLowerCase())) {
                     adminData.tipo = 'admin';
                     adminData.tipo_usuario = 'admin';
                   }

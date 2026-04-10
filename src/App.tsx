@@ -179,7 +179,7 @@ function Navbar() {
     { name: t('nav.home'), path: user ? '/dashboard' : '/', icon: HomeIcon },
     ...(user ? [
       ...(profile?.plano === 'admin' || 
-          user.email === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
+          user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
       
       // Items for Physiotherapists
       ...(profile?.tipo_usuario === 'fisioterapeuta' ? [
@@ -484,7 +484,7 @@ function AppContent() {
 
   const isPatientArea = user && profile?.tipo_usuario === 'paciente';
   const isPhysioArea = user && profile?.tipo_usuario === 'fisioterapeuta';
-  const isAdminArea = user && (profile?.plano === 'admin' || user.email === 'hogolezcano92@gmail.com');
+  const isAdminArea = user && (profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
 

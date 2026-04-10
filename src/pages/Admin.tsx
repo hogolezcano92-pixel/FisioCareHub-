@@ -124,7 +124,7 @@ export default function Admin() {
           'hogolezcano92@gmail.com'
         ];
         
-        if (adminEmails.includes(supabaseUser.email || '')) {
+        if (adminEmails.includes(supabaseUser.email?.toLowerCase() || '')) {
           setIsAdmin(true);
           setCheckingAdmin(false);
           return;
