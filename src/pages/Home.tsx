@@ -154,6 +154,15 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [nameQuery, locationQuery, specialtyFilter]);
 
+  useEffect(() => {
+    if (professionals.length > itemsVisible) {
+      const proInterval = setInterval(() => {
+        nextProSlide();
+      }, 4000);
+      return () => clearInterval(proInterval);
+    }
+  }, [professionals.length, itemsVisible, proSlideIndex]);
+
   const fetchProfessionals = async () => {
     try {
       setLoading(true);
@@ -660,41 +669,41 @@ export default function Home() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.1 }}
-                        className="min-w-full md:min-w-[calc(50%-1rem)] lg:min-w-[calc(25%-1.5rem)] bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col items-center text-center group/card hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
+                        className="min-w-full md:min-w-[calc(50%-1rem)] lg:min-w-[calc(25%-1.5rem)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col items-center text-center group/card hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
                       >
-                        <div className="relative mb-8">
-                          <div className="absolute inset-0 bg-sky-500/10 rounded-[2.5rem] blur-2xl group-hover/card:bg-sky-500/20 transition-colors" />
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 bg-sky-500/10 rounded-[2rem] blur-2xl group-hover/card:bg-sky-500/20 transition-colors" />
                           <img 
                             src={pro.img} 
-                            className="w-40 h-40 rounded-[2.5rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
+                            className="w-32 h-32 rounded-[2rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
                             alt={pro.name}
                             referrerPolicy="no-referrer"
                             onError={(e) => {
                               e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300';
                             }}
                           />
-                          <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-full p-2.5 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
-                            <CheckCircle2 size={24} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
+                          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-2 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
+                            <CheckCircle2 size={20} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-1.5 text-amber-400 mb-3">
-                          <Star size={18} fill="currentColor" />
-                          <span className="text-base font-black text-[#1A202C] dark:text-white">{pro.rating}</span>
-                          <span className="text-sm text-slate-400 font-bold">({pro.reviews})</span>
+                        <div className="flex items-center gap-1.5 text-amber-400 mb-2">
+                          <Star size={16} fill="currentColor" />
+                          <span className="text-sm font-black text-[#1A202C] dark:text-white">{pro.rating}</span>
+                          <span className="text-xs text-slate-400 font-bold">({pro.reviews})</span>
                         </div>
                         
-                        <h4 className="text-2xl font-black text-[#1A202C] dark:text-white mb-1 tracking-tight">{pro.name}</h4>
-                        <p className="text-sky-600 dark:text-sky-400 font-black text-xs uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
-                        <p className="text-[#1A202C] dark:text-slate-400 text-base font-medium mb-8 leading-relaxed line-clamp-3">
+                        <h4 className="text-xl font-black text-[#1A202C] dark:text-white mb-1 tracking-tight">{pro.name}</h4>
+                        <p className="text-sky-600 dark:text-sky-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">{pro.fullSpec}</p>
+                        <p className="text-[#1A202C] dark:text-slate-400 text-sm font-medium mb-6 leading-relaxed line-clamp-2">
                           {pro.bio}
                         </p>
                         
                         <Link
                           to="/register"
-                          className="w-full py-5 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-[1.5rem] font-black text-sm shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
+                          className="w-full py-4 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-2xl font-black text-xs shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
                         >
-                          Ver Perfil Completo <ArrowRight size={18} />
+                          Ver Perfil <ArrowRight size={16} />
                         </Link>
                       </motion.div>
                     ))}
