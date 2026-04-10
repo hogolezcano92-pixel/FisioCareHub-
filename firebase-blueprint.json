@@ -16,12 +16,48 @@
         "created_at": { "type": "string", "format": "date-time" }
       },
       "required": ["patient_id", "physio_id", "exercise_name"]
+    },
+    "LibraryMaterial": {
+      "title": "LibraryMaterial",
+      "description": "Educational materials available in the health library.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "cover_image": { "type": "string", "format": "uri" },
+        "file_url": { "type": "string", "format": "uri" },
+        "category": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "price", "file_url"]
+    },
+    "MaterialPurchase": {
+      "title": "MaterialPurchase",
+      "description": "Record of a material purchased by a patient.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "patient_id": { "type": "string", "format": "uuid" },
+        "material_id": { "type": "string", "format": "uuid" },
+        "purchased_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patient_id", "material_id"]
     }
   },
   "firestore": {
     "patient_exercises": {
       "schema": "PatientExercise",
       "description": "Collection of exercises prescribed to patients."
+    },
+    "library_materials": {
+      "schema": "LibraryMaterial",
+      "description": "Collection of educational materials."
+    },
+    "material_purchases": {
+      "schema": "MaterialPurchase",
+      "description": "Collection of material purchases."
     }
   }
 }

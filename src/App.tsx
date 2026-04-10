@@ -71,6 +71,7 @@ const About = lazy(() => import('./pages/About'));
 const Partner = lazy(() => import('./pages/Partner'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Subscription = lazy(() => import('./pages/Subscription'));
+const HealthLibrary = lazy(() => import('./pages/HealthLibrary'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -572,6 +573,7 @@ function AppContent() {
               <Route path="/partner" element={<Partner />} />
               <Route path="/seja-parceiro" element={<Partner />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/patient/library" element={<HealthLibrary />} />
             </Routes>
           </Suspense>
         </main>

@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   Activity,
   Crown,
-  Users
+  Users,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,6 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           { name: 'Prontuários', path: '/records', icon: FileText },
           { name: 'Documentos', path: '/documents', icon: FileSignature },
           { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
+          { name: 'Biblioteca de Saúde', path: '/patient/library', icon: BookOpen },
         ])
       ]
     },
