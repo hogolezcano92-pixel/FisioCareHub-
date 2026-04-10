@@ -487,8 +487,9 @@ function AppContent() {
   const isAdminArea = user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
+  const isAdminPage = location.pathname === '/admin';
 
-  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview';
+  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage;
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -523,7 +524,7 @@ function AppContent() {
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
 
         <div className="flex-1 flex flex-col min-w-0">
-          {!showSidebar ? <Navbar /> : (
+          {!showSidebar && !isAdminPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between">
               <Logo size="sm" />
               <div className="flex items-center gap-4">
@@ -536,11 +537,11 @@ function AppContent() {
                 </button>
               </div>
             </header>
-          )}
+          ))}
 
           <main className={cn(
             "flex-1 w-full",
-            location.pathname === '/chat' || showSidebar ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
+            location.pathname === '/chat' || showSidebar || isAdminPage ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
             showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
           )}>
             <Suspense fallback={<PageLoader />}>

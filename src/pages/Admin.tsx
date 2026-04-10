@@ -905,19 +905,19 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[70] w-64 bg-[#0B1120] border-r border-white/5 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100">
+          <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
             <div className={cn("flex items-center gap-2 overflow-hidden transition-all", !sidebarOpen && "lg:hidden")}>
-              <Logo size="sm" />
+              <Logo size="sm" variant="light" />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"
+              className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -945,25 +945,25 @@ export default function Admin() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group",
                   activeTab === item.id 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-100" 
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 )}
               >
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
+                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-slate-500 group-hover:text-blue-400")} />
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-100">
-            <div className={cn("flex items-center gap-3 p-2 rounded-xl bg-slate-50 overflow-hidden", !sidebarOpen && "lg:justify-center")}>
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0">
+          <div className="p-4 border-t border-white/5">
+            <div className={cn("flex items-center gap-3 p-2 rounded-xl bg-white/5 overflow-hidden", !sidebarOpen && "lg:justify-center")}>
+              <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-xs flex-shrink-0">
                 {firebaseUser?.email?.charAt(0).toUpperCase()}
               </div>
               <div className={cn("flex-1 min-w-0 transition-opacity", !sidebarOpen && "lg:hidden")}>
-                <p className="text-xs font-bold text-slate-900 truncate">Admin Master</p>
-                <p className="text-[10px] text-slate-500 truncate">{firebaseUser?.email}</p>
+                <p className="text-xs font-bold text-white truncate">Admin Master</p>
+                <p className="text-[10px] text-slate-400 truncate">{firebaseUser?.email}</p>
               </div>
             </div>
           </div>
