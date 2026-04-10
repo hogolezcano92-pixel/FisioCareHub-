@@ -195,11 +195,19 @@ export default function Dashboard() {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
-    } else if (profile && lastLoadedProfileId.current !== profile.id) {
-      lastLoadedProfileId.current = profile.id;
-      fetchStats(profile);
-      fetchRecentAppointments(profile);
-      fetchRecentTriages();
+    } else if (profile) {
+      // Redirect Admin to Admin Panel
+      if (profile.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com') {
+        navigate('/admin');
+        return;
+      }
+
+      if (lastLoadedProfileId.current !== profile.id) {
+        lastLoadedProfileId.current = profile.id;
+        fetchStats(profile);
+        fetchRecentAppointments(profile);
+        fetchRecentTriages();
+      }
     }
   }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments, fetchRecentTriages]);
 

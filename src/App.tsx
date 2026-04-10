@@ -176,13 +176,13 @@ function Navbar() {
   };
 
   const navItems = [
-    { name: t('nav.home'), path: user ? '/dashboard' : '/', icon: HomeIcon },
+    { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : '/dashboard') : '/', icon: HomeIcon },
     ...(user ? [
-      ...(profile?.plano === 'admin' || 
+      ...(profile?.tipo_usuario === 'admin' || 
           user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
       
       // Items for Physiotherapists
-      ...(profile?.tipo_usuario === 'fisioterapeuta' ? [
+      ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
@@ -483,8 +483,8 @@ function AppContent() {
   const navigate = useNavigate();
 
   const isPatientArea = user && profile?.tipo_usuario === 'paciente';
-  const isPhysioArea = user && profile?.tipo_usuario === 'fisioterapeuta';
-  const isAdminArea = user && (profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
+  const isPhysioArea = user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
+  const isAdminArea = user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
 

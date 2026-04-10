@@ -1512,7 +1512,7 @@ export default function Admin() {
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
                       .filter(p => {
-                        const role = (p.plano || '').toLowerCase();
+                        const role = (p.tipo_usuario || '').toLowerCase();
                         return role === 'fisioterapeuta';
                       })
                       .filter(p => {
@@ -1628,8 +1628,8 @@ export default function Admin() {
                   <tbody className="divide-y divide-slate-50">
                     {supabaseProfiles
                       .filter(p => {
-                        const role = (p.plano || '').toLowerCase();
-                        return role === 'free';
+                        const role = (p.tipo_usuario || '').toLowerCase();
+                        return role === 'paciente';
                       })
                       .filter(p => {
                         const search = searchTerm.toLowerCase();
@@ -2024,51 +2024,107 @@ export default function Admin() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="max-w-2xl bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Configurações do Sistema</h3>
-              
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Taxa de Comissão (%)</label>
-                  <div className="flex gap-4">
-                    <input 
-                      type="number" 
-                      value={commissionRate}
-                      onChange={(e) => setCommissionRate(Number(e.target.value))}
-                      className="flex-1 bg-slate-50 border-slate-200 rounded-xl px-4 py-2" 
-                    />
-                    <button 
-                      onClick={handleSaveSettings}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm"
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                </div>
+            <div className="max-w-4xl space-y-8">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Configurações do Sistema</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Taxa de Comissão (%)</label>
+                      <div className="flex gap-4">
+                        <input 
+                          type="number" 
+                          value={commissionRate}
+                          onChange={(e) => setCommissionRate(Number(e.target.value))}
+                          className="flex-1 bg-slate-50 border-slate-200 rounded-xl px-4 py-2" 
+                        />
+                        <button 
+                          onClick={handleSaveSettings}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notificações por Email</label>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-sm font-bold text-slate-700">Novos Cadastros</span>
-                    <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer">
-                      <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notificações por Email</label>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                          <span className="text-sm font-bold text-slate-700">Novos Cadastros</span>
+                          <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer">
+                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl opacity-50">
+                          <span className="text-sm font-bold text-slate-700">Novos Pagamentos</span>
+                          <div className="w-12 h-6 bg-slate-300 rounded-full relative cursor-pointer">
+                            <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Manutenção</label>
+                      <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                        <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                          Utilize estas ferramentas para manter a integridade dos dados da plataforma.
+                        </p>
+                        <button 
+                          onClick={handleCleanupOrphans}
+                          className="w-full py-3 bg-white text-amber-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-100 transition-colors border border-amber-200"
+                        >
+                          Limpar Registros Órfãos
+                        </button>
+                        <button 
+                          onClick={() => import('sonner').then(({ toast }) => toast.info("Cache do sistema limpo!"))}
+                          className="w-full py-3 bg-white text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-100 transition-colors border border-rose-200"
+                        >
+                          Limpar Cache Global
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Versão do Sistema</label>
+                      <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-slate-400">Build</span>
+                          <span className="text-xs font-mono">v2.4.0-stable</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-400">Ambiente</span>
+                          <span className="text-xs font-bold text-emerald-400">Produção</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-6 border-t border-slate-100 space-y-4">
-                  <button 
-                    onClick={handleCleanupOrphans}
-                    className="w-full py-3 bg-amber-50 text-amber-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-amber-100 transition-colors"
-                  >
-                    Limpar Registros Órfãos / Incompletos
-                  </button>
-                  <button 
-                    onClick={() => import('sonner').then(({ toast }) => toast.info("Cache do sistema limpo!"))}
-                    className="w-full py-3 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-100 transition-colors"
-                  >
-                    Limpar Cache do Sistema
-                  </button>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h4 className="text-lg font-black text-slate-900 mb-4 tracking-tight">Logs de Atividade</h4>
+                <div className="space-y-4">
+                  {[
+                    { action: 'Configuração alterada', user: 'Admin Master', time: '10 min atrás' },
+                    { action: 'Novo material adicionado', user: 'Admin Master', time: '1 hora atrás' },
+                    { action: 'Fisioterapeuta aprovado', user: 'Admin Master', time: '3 horas atrás' },
+                  ].map((log, i) => (
+                    <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="text-sm font-medium text-slate-600">{log.action}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-slate-900">{log.user}</p>
+                        <p className="text-[10px] text-slate-400">{log.time}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

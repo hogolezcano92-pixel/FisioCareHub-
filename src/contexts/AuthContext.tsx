@@ -109,7 +109,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('status', 'ativo')
         .maybeSingle();
       
-      return { profile: data, subscription: subData };
+      let finalProfile = data;
+      if (finalProfile && finalProfile.email?.toLowerCase() === 'hogolezcano92@gmail.com') {
+        finalProfile = {
+          ...finalProfile,
+          tipo_usuario: 'admin',
+          plano: 'admin'
+        };
+      }
+      
+      return { profile: finalProfile, subscription: subData };
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
       return { profile: null, subscription: null };

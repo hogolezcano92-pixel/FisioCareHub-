@@ -17,7 +17,10 @@ import {
   Crown,
   Users,
   BookOpen,
-  Smartphone
+  Smartphone,
+  LayoutDashboard,
+  DollarSign,
+  Settings
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,46 +42,56 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     navigate('/');
   };
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isAdmin = profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
+  const isAdmin = profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   const sections = [
-    {
-      title: 'ATENDIMENTO',
-      items: [
-        { name: 'Início', path: '/dashboard', icon: Home },
-        ...(isPhysio ? [
-          { name: 'Meus Pacientes', path: '/patients', icon: Users },
-          { name: 'Agenda', path: '/agenda', icon: Calendar },
-          { name: 'Exercícios', path: '/exercises', icon: Activity },
-          { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
-          { name: 'Prontuários', path: '/records', icon: FileText },
-          { name: 'Documentos', path: '/documents', icon: FileSignature },
-          { name: 'Assinatura', path: '/subscription', icon: Crown },
-        ] : [
-          { name: 'Agenda', path: '/appointments', icon: Calendar },
-          { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
-          { name: 'Prontuários', path: '/records', icon: FileText },
-          { name: 'Documentos', path: '/documents', icon: FileSignature },
-          { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
-          { name: 'Biblioteca de Saúde', path: '/patient/library', icon: BookOpen },
-        ])
-      ]
-    },
-    {
-      title: 'COMUNICAÇÃO',
-      items: [
-        { name: 'Chat', path: '/chat', icon: MessageSquare },
-      ]
-    },
+    ...(isAdmin ? [
+      {
+        title: 'ADMINISTRAÇÃO',
+        items: [
+          { name: 'Dashboard Admin', path: '/admin', icon: LayoutDashboard },
+          { name: 'Gerenciar Usuários', path: '/admin?tab=users', icon: Users },
+          { name: 'Biblioteca', path: '/admin?tab=library', icon: BookOpen },
+          { name: 'Pagamentos', path: '/admin?tab=payments', icon: DollarSign },
+          { name: 'Configurações', path: '/admin?tab=settings', icon: Settings },
+          { name: 'Prévia do App', path: '/preview', icon: Smartphone }
+        ]
+      }
+    ] : [
+      {
+        title: 'ATENDIMENTO',
+        items: [
+          { name: 'Início', path: '/dashboard', icon: Home },
+          ...(isPhysio ? [
+            { name: 'Meus Pacientes', path: '/patients', icon: Users },
+            { name: 'Agenda', path: '/agenda', icon: Calendar },
+            { name: 'Exercícios', path: '/exercises', icon: Activity },
+            { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
+            { name: 'Prontuários', path: '/records', icon: FileText },
+            { name: 'Documentos', path: '/documents', icon: FileSignature },
+            { name: 'Assinatura', path: '/subscription', icon: Crown },
+          ] : [
+            { name: 'Agenda', path: '/appointments', icon: Calendar },
+            { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
+            { name: 'Prontuários', path: '/records', icon: FileText },
+            { name: 'Documentos', path: '/documents', icon: FileSignature },
+            { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
+            { name: 'Biblioteca de Saúde', path: '/patient/library', icon: BookOpen },
+          ])
+        ]
+      },
+      {
+        title: 'COMUNICAÇÃO',
+        items: [
+          { name: 'Chat', path: '/chat', icon: MessageSquare },
+        ]
+      }
+    ]),
     {
       title: 'CONTA',
       items: [
         { name: 'Minha Conta', path: '/profile', icon: User },
-        ...(isAdmin ? [
-          { name: 'Painel Admin', path: '/admin', icon: ShieldCheck },
-          { name: 'Prévia do App', path: '/preview', icon: Smartphone }
-        ] : []),
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }

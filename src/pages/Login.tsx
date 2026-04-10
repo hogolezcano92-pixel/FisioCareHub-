@@ -109,11 +109,22 @@ export default function Login() {
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
       
+      // Get profile to check role
+      const { data: profileData } = await supabase
+        .from('perfis')
+        .select('tipo_usuario')
+        .eq('id', data.user?.id)
+        .maybeSingle();
+
+      const isAdmin = profileData?.tipo_usuario === 'admin' || cleanEmail.toLowerCase() === 'hogolezcano92@gmail.com';
+
       // Check for redirect in URL
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get('redirectTo');
       if (redirectTo) {
         navigate(redirectTo);
+      } else if (isAdmin) {
+        navigate('/admin');
       } else {
         navigate('/dashboard');
       }
