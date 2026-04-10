@@ -20,7 +20,13 @@ import {
   Zap,
   ExternalLink,
   LogOut,
+  CreditCard,
+  Building2,
+  DollarSign,
+  Shield,
+  Eye,
   Crown,
+  Download,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { cn, resolveStorageUrl } from '../lib/utils';
@@ -28,7 +34,9 @@ import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
 
-type Tab = 'profile' | 'account' | 'settings';
+type Tab = 
+  | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' // Patient tabs
+  | 'profile_prof' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
 
 export default function Profile() {
   const { user, profile, subscription, loading: authLoading, refreshProfile, signOut } = useAuth();
@@ -36,13 +44,12 @@ export default function Profile() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const [activeTab, setActiveTab] = useState<Tab>(isPhysio ? 'profile_prof' : 'profile');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
-
-  const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
@@ -288,11 +295,23 @@ export default function Profile() {
     }
   };
 
-  const tabs = [
-    { id: 'profile', label: t('nav.profile'), icon: User },
-    { id: 'account', label: 'Minha Conta', icon: Lock },
-    { id: 'settings', label: t('settings.title'), icon: Settings },
+  const patientTabs = [
+    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'security', label: 'Segurança', icon: Lock },
+    { id: 'notifications', label: 'Notificações', icon: Bell },
+    { id: 'payments', label: 'Pagamentos', icon: CreditCard },
+    { id: 'privacy', label: 'Privacidade', icon: Eye },
   ];
+
+  const physioTabs = [
+    { id: 'profile_prof', label: 'Perfil Profissional', icon: User },
+    { id: 'clinic', label: 'Dados da Clínica', icon: Building2 },
+    { id: 'subscription', label: 'Assinatura PRO', icon: Crown },
+    { id: 'earnings', label: 'Pagamentos Recebidos', icon: DollarSign },
+    { id: 'security', label: 'Segurança', icon: Lock },
+  ];
+
+  const currentTabs = isPhysio ? physioTabs : patientTabs;
 
   const renderLoadingSkeleton = () => (
     <div className="space-y-8 animate-pulse">
@@ -317,43 +336,46 @@ export default function Profile() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Configurações do Perfil</h1>
-          <p className="text-slate-500">Gerencie suas informações, segurança e preferências.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Minha Conta</h1>
+          <p className="text-slate-500 font-medium">Gerencie seu perfil, segurança e preferências do sistema.</p>
         </div>
       </header>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Navigation Sidebar */}
-        <aside className="lg:w-64 space-y-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all",
-                activeTab === tab.id 
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-100" 
-                  : "text-slate-600 hover:bg-white hover:shadow-sm"
-              )}
-            >
-              <tab.icon size={20} />
-              {tab.label}
-            </button>
-          ))}
-          <div className="pt-4 border-t border-slate-200 mt-4 space-y-2">
+        <aside className="lg:w-72 space-y-2">
+          <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm space-y-1">
+            {currentTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as Tab)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
+                  activeTab === tab.id 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                <tab.icon size={20} className={activeTab === tab.id ? "text-white" : "text-slate-400"} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm space-y-1">
             <button
               onClick={() => signOut()}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-rose-500 hover:bg-rose-50 transition-all"
             >
               <LogOut size={20} />
               Sair da Conta
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-600 hover:bg-red-50 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
             >
               <Trash2 size={20} />
               Excluir Conta
@@ -362,477 +384,439 @@ export default function Profile() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 space-y-8">
+        <main className="flex-1 min-w-0">
           {loading ? renderLoadingSkeleton() : (
-            <>
-              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-blue-900/5 relative overflow-hidden">
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50" />
-                
-                <div className="flex flex-col items-center text-center relative z-10">
-                  <div className="mb-6">
-                    <AvatarUpload 
-                      userId={user?.id || ''}
-                      currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                      onUploadComplete={(newUrl) => {
-                        setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
-                        if (refreshProfile) refreshProfile();
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="space-y-4 w-full max-w-md">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-center gap-2">
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-                          {userData?.nome_completo || 'Usuário'}
-                        </h2>
-                        {isPro && (
-                          <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20">
-                            <Crown size={10} fill="currentColor" />
-                            Pro
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-center">
-                        <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-[0.15em] border border-blue-100/50">
-                          {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {isPhysio && (
-                      <div className="pt-4">
-                        <Link 
-                          to="/subscription"
-                          className={cn(
-                            "w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg hover:scale-[1.02] active:scale-95",
-                            isPro 
-                              ? "bg-amber-50 text-amber-600 border border-amber-200 shadow-amber-100" 
-                              : "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700"
-                          )}
-                        >
-                          {isPro ? (
-                            <>
-                              <Crown size={18} />
-                              Plano Pro Ativo
-                            </>
-                          ) : (
-                            <>
-                              <Zap size={18} fill="currentColor" />
-                              Upgrade para Pro
-                            </>
-                          )}
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
+            <div className="space-y-8">
               <AnimatePresence mode="wait">
-                {activeTab === 'profile' && (
-                <motion.div
-                  key="profile"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-8"
-                >
-                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                    <form onSubmit={handleUpdateProfile} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Nome de Exibição</label>
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Telefone</label>
-                        <input
-                          type="tel"
-                          value={telefone}
-                          onChange={(e) => setTelefone(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                          placeholder="(00) 00000-0000"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">CEP</label>
-                        <input
-                          type="text"
-                          value={zipCode}
-                          onChange={(e) => setZipCode(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                          placeholder="00000-000"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Cidade</label>
-                        <input
-                          type="text"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                          placeholder="Sua cidade"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">País</label>
-                        <input
-                          type="text"
-                          value={country}
-                          onChange={(e) => setCountry(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                          placeholder="Seu país"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Endereço Completo</label>
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                        placeholder="Rua, número, bairro..."
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {isPhysio ? (
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">Título (Gênero)</label>
-                          <div className="flex gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setGender('male')}
-                              className={cn(
-                                "flex-1 py-4 rounded-2xl text-sm font-bold border transition-all",
-                                gender === 'male' ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                              )}
-                            >
-                              Dr.
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setGender('female')}
-                              className={cn(
-                                "flex-1 py-4 rounded-2xl text-sm font-bold border transition-all",
-                                gender === 'female' ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                              )}
-                            >
-                              Dra.
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">E-mail (Não editável)</label>
-                          <input
-                            type="email"
-                            disabled
-                            value={userData?.email}
-                            className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-slate-400 cursor-not-allowed"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {isPhysio && (
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">E-mail (Não editável)</label>
-                        <input
-                          type="email"
-                          disabled
-                          value={userData?.email}
-                          className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-slate-400 cursor-not-allowed"
-                        />
-                      </div>
-                    )}
-
-                    {isPhysio && (
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">CREFITO</label>
-                          <input
-                            type="text"
-                            value={crefito}
-                            onChange={(e) => setCrefito(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                            placeholder="Ex: 12345-F"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2">Especialidade</label>
-                          <input
-                            type="text"
-                            value={specialty}
-                            onChange={(e) => setSpecialty(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                            placeholder="Ex: Ortopedia, Neuro..."
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {isPhysio && (
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Atendimento</label>
-                        <select
-                          value={serviceType}
-                          onChange={(e: any) => setServiceType(e.target.value)}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                        >
-                          <option value="domicilio">A Domicílio</option>
-                          <option value="online">Online</option>
-                          <option value="ambos">Ambos</option>
-                        </select>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Biografia / Especialidades</label>
-                      <textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all"
-                        placeholder={isPhysio ? "Conte sobre sua formação e áreas de atuação..." : "Conte um pouco sobre seu histórico de saúde..."}
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={updating}
-                      className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {updating ? <Loader2 className="animate-spin" /> : 'Salvar Perfil'}
-                    </button>
-                  </form>
-                </div>
-
-                {isPhysio && (
-                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                          <ShieldCheck size={24} className="text-emerald-600" />
-                          Documentação Profissional
-                        </h3>
-                        <p className="text-slate-500 text-sm mt-1">Envie seus certificados para validação da conta.</p>
-                      </div>
-                      <label className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 cursor-pointer transition-all flex items-center gap-2">
-                        <Upload size={18} /> Upload
-                        <input type="file" className="hidden" onChange={handleDocUpload} />
-                      </label>
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {!Array.isArray(userData.documentos) || userData.documentos.length === 0 ? (
-                        <div className="col-span-2 py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-400">
-                          Nenhum documento enviado ainda.
-                        </div>
-                      ) : (
-                        userData.documentos.map((doc: string, i: number) => (
-                          <a 
-                            key={i} 
-                            href={resolveStorageUrl(doc)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-600 transition-all"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <FileText size={20} />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-slate-700 truncate max-w-[150px]">Documento_{i+1}</p>
-                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Ver Documento</p>
-                              </div>
-                            </div>
-                            <CheckCircle size={20} className="text-emerald-600" />
-                          </a>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === 'account' && (
-              <motion.div
-                key="account"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <Lock size={24} className="text-blue-600" />
-                    Segurança da Conta
-                  </h3>
-                  
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900">Alterar Senha</p>
-                        <p className="text-sm text-slate-500">Enviaremos um link de redefinição para seu e-mail.</p>
-                      </div>
-                      <button
-                        onClick={handlePasswordReset}
-                        className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-100 transition-all"
-                      >
-                        Redefinir Senha
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900">E-mail de Acesso</p>
-                        <p className="text-sm text-slate-500">Seu e-mail principal para login e notificações.</p>
-                      </div>
-                      <span className="text-slate-600 font-medium">{userData?.email}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-red-50 p-8 rounded-[2.5rem] border border-red-100">
-                  <h3 className="text-xl font-bold text-red-900 mb-2 flex items-center gap-2">
-                    <Trash2 size={24} />
-                    Zona de Perigo
-                  </h3>
-                  <p className="text-red-700/70 text-sm mb-6">
-                    Ao excluir sua conta, todos os seus dados, prontuários e histórico serão removidos permanentemente. Esta ação não pode ser desfeita.
-                  </p>
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="px-8 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                {(activeTab === 'profile' || activeTab === 'profile_prof') && (
+                  <motion.div
+                    key="profile"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
                   >
-                    Excluir Minha Conta Permanentemente
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'settings' && (
-              <motion.div
-                key="settings"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <Settings size={24} className="text-blue-600" />
-                    Preferências do Aplicativo
-                  </h3>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                            <Bell size={24} />
+                    {/* Profile Header Card */}
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-blue-900/5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-50" />
+                      
+                      <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                        <AvatarUpload 
+                          userId={user?.id || ''}
+                          currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                          onUploadComplete={(newUrl) => {
+                            setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
+                            if (refreshProfile) refreshProfile();
+                          }}
+                        />
+                        
+                        <div className="flex-1 text-center md:text-left space-y-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-center md:justify-start gap-3">
+                              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                                {userData?.nome_completo || 'Usuário'}
+                              </h2>
+                              {isPro && (
+                                <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20">
+                                  <Crown size={10} fill="currentColor" />
+                                  Pro
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-500 font-medium">{userData?.email}</p>
+                            <div className="flex justify-center md:justify-start pt-2">
+                              <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-blue-100/50">
+                                {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900">Notificações Push</p>
-                            <p className="text-sm text-slate-500">Alertas de novas mensagens e agendamentos.</p>
-                          </div>
-                        </div>
-                        <div className="w-12 h-6 bg-blue-600 rounded-full relative">
-                          <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                            <Globe size={24} />
+                    {/* Profile Form */}
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <User className="text-blue-600" size={24} />
+                        Informações Pessoais
+                      </h3>
+                      
+                      <form onSubmit={handleUpdateProfile} className="space-y-8">
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                            <input
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            />
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{t('settings.language')}</p>
-                            <p className="text-sm text-slate-500">{t('settings.language_description')}</p>
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Telefone de Contato</label>
+                            <input
+                              type="tel"
+                              value={telefone}
+                              onChange={(e) => setTelefone(e.target.value)}
+                              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                              placeholder="(00) 00000-0000"
+                            />
                           </div>
+                        </div>
+
+                        {isPhysio && (
+                          <div className="grid md:grid-cols-2 gap-8">
+                            <div className="space-y-2">
+                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CREFITO</label>
+                              <input
+                                type="text"
+                                value={crefito}
+                                onChange={(e) => setCrefito(e.target.value)}
+                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                placeholder="Ex: 12345-F"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Especialidade Principal</label>
+                              <input
+                                type="text"
+                                value={specialty}
+                                onChange={(e) => setSpecialty(e.target.value)}
+                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                placeholder="Ex: Ortopedia, Neuro..."
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Biografia / Resumo</label>
+                          <textarea
+                            value={bio}
+                            onChange={(e) => setBio(e.target.value)}
+                            className="w-full h-32 p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-slate-900"
+                            placeholder={isPhysio ? "Conte sobre sua formação e áreas de atuação..." : "Conte um pouco sobre seu histórico de saúde..."}
+                          />
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            disabled={updating}
+                            className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center gap-3 disabled:opacity-50"
+                          >
+                            {updating ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+                            Salvar Alterações
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'security' && (
+                  <motion.div
+                    key="security"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <Lock className="text-blue-600" size={24} />
+                        Segurança e Acesso
+                      </h3>
+                      
+                      <div className="space-y-6">
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="text-center md:text-left">
+                            <p className="text-lg font-black text-slate-900">Alterar Senha</p>
+                            <p className="text-sm text-slate-500 font-medium">Enviaremos um link de redefinição para seu e-mail de cadastro.</p>
+                          </div>
+                          <button
+                            onClick={handlePasswordReset}
+                            className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-sm"
+                          >
+                            Redefinir Senha
+                          </button>
+                        </div>
+
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="text-center md:text-left">
+                            <p className="text-lg font-black text-slate-900">Autenticação em Duas Etapas</p>
+                            <p className="text-sm text-slate-500 font-medium">Adicione uma camada extra de segurança à sua conta.</p>
+                          </div>
+                          <span className="px-4 py-2 bg-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Em Breve</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'notifications' && (
+                  <motion.div
+                    key="notifications"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <Bell className="text-blue-600" size={24} />
+                        Preferências de Notificação
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {[
+                          { label: 'Notificações Push', desc: 'Alertas em tempo real no navegador/celular.' },
+                          { label: 'E-mails de Agendamento', desc: 'Confirmações e lembretes de consultas.' },
+                          { label: 'Novas Mensagens', desc: 'Avisos de novas mensagens no chat.' },
+                          { label: 'Materiais Educativos', desc: 'Novidades na biblioteca de saúde.' }
+                        ].map((item, i) => (
+                          <div key={i} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between">
+                            <div>
+                              <p className="font-black text-slate-900">{item.label}</p>
+                              <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
+                            </div>
+                            <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer">
+                              <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'payments' && (
+                  <motion.div
+                    key="payments"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <CreditCard className="text-blue-600" size={24} />
+                        Métodos de Pagamento
+                      </h3>
+                      
+                      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-[3rem] space-y-4">
+                        <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                          <CreditCard size={40} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-black text-slate-900">Nenhum cartão cadastrado</p>
+                          <p className="text-sm text-slate-500 font-medium">Cadastre um cartão para facilitar o pagamento de consultas e materiais.</p>
+                        </div>
+                        <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
+                          Adicionar Cartão
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'privacy' && (
+                  <motion.div
+                    key="privacy"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <Eye className="text-blue-600" size={24} />
+                        Privacidade e Dados
+                      </h3>
+                      
+                      <div className="space-y-6">
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
+                          <p className="font-black text-slate-900">Visibilidade do Perfil</p>
+                          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                            Seu perfil é visível apenas para os fisioterapeutas com quem você agenda consultas. 
+                            Seus dados de saúde são protegidos por criptografia de ponta a ponta.
+                          </p>
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {languages.map((lang) => (
-                            <button
-                              key={lang.code}
-                              onClick={() => changeLanguage(lang.code)}
-                              className={cn(
-                                "flex items-center justify-center gap-2 p-3 rounded-xl font-bold transition-all border",
-                                i18n.language.startsWith(lang.code)
-                                  ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100"
-                                  : "bg-white border-slate-200 text-slate-600 hover:border-blue-300"
-                              )}
-                            >
-                              <span>{lang.flag}</span>
-                              <span>{lang.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                    <div className="pt-6 border-t border-slate-100">
-                      <h4 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Sistema de E-mail</h4>
-                      <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
-                        <div className="flex items-start gap-4 mb-6">
-                          <div className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <Mail size={20} />
-                          </div>
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center justify-between">
                           <div>
-                            <p className="font-bold text-blue-900">Teste de Notificações</p>
-                            <p className="text-sm text-blue-700/70">
-                              Verifique se as notificações por e-mail estão configuradas corretamente enviando um teste para si mesmo.
-                            </p>
+                            <p className="font-black text-slate-900">Exportar Meus Dados</p>
+                            <p className="text-xs text-slate-500 font-medium">Baixe uma cópia de todo o seu histórico em formato JSON.</p>
                           </div>
+                          <button className="p-4 bg-white text-slate-900 rounded-2xl hover:bg-slate-100 transition-all shadow-sm">
+                            <Download size={20} />
+                          </button>
                         </div>
-
-                        <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-                          <div className="flex gap-3">
-                            <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
-                            <div className="space-y-1">
-                              <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Configuração Necessária</p>
-                              <p className="text-xs text-amber-800 leading-relaxed">
-                                Para que os e-mails funcionem, você deve configurar as variáveis <strong>SMTP_USER</strong> e <strong>SMTP_PASS</strong> no menu de Configurações do AI Studio.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={handleTestEmail}
-                          disabled={testingEmail}
-                          className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {testingEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />}
-                          Enviar E-mail de Teste
-                        </button>
-                        <p className="text-[10px] text-blue-600/60 text-center mt-3 font-medium">
-                          O e-mail será enviado para: {userData?.email}
-                        </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
-      </main>
+                  </motion.div>
+                )}
+
+                {activeTab === 'clinic' && (
+                  <motion.div
+                    key="clinic"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <Building2 className="text-blue-600" size={24} />
+                        Dados da Clínica / Consultório
+                      </h3>
+                      
+                      <div className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CEP</label>
+                          <input
+                            type="text"
+                            value={zipCode}
+                            onChange={(e) => setZipCode(e.target.value)}
+                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            placeholder="00000-000"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cidade</label>
+                          <input
+                            type="text"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                          />
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Endereço Completo</label>
+                          <input
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            placeholder="Rua, número, complemento..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'subscription' && (
+                  <motion.div
+                    key="subscription"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 opacity-50" />
+                      
+                      <div className="relative z-10 space-y-8">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center shadow-lg shadow-amber-100">
+                            <Crown size={32} fill="currentColor" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-black text-slate-900">Plano FisioCare Pro</h3>
+                            <p className="text-slate-500 font-medium">Sua assinatura atual está {isPro ? 'Ativa' : 'Inativa'}.</p>
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Próximo Vencimento</p>
+                            <p className="text-2xl font-black text-slate-900">15 de Maio, 2026</p>
+                            <p className="text-sm text-slate-500 font-medium">Valor: R$ 149,90/mês</p>
+                          </div>
+                          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Método de Pagamento</p>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-6 bg-slate-900 rounded flex items-center justify-center text-[8px] text-white font-bold">VISA</div>
+                              <p className="text-lg font-black text-slate-900">**** 4242</p>
+                            </div>
+                            <button className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Alterar Cartão</button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-4 pt-4">
+                          <Link 
+                            to="/subscription"
+                            className="flex-1 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest text-center shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
+                          >
+                            Gerenciar Assinatura
+                          </Link>
+                          <button className="flex-1 py-5 bg-white border border-slate-200 text-rose-500 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-rose-50 transition-all">
+                            Cancelar Plano
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'earnings' && (
+                  <motion.div
+                    key="earnings"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <DollarSign className="text-emerald-600" size={24} />
+                        Pagamentos Recebidos
+                      </h3>
+                      
+                      <div className="grid md:grid-cols-3 gap-6 mb-8">
+                        <div className="p-8 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 space-y-1">
+                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Saldo Disponível</p>
+                          <p className="text-3xl font-black text-emerald-900">R$ 2.450,00</p>
+                        </div>
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">A Receber</p>
+                          <p className="text-3xl font-black text-slate-900">R$ 890,00</p>
+                        </div>
+                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total do Mês</p>
+                          <p className="text-3xl font-black text-slate-900">R$ 5.120,00</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
+                        {[
+                          { patient: 'Maria Silva', date: 'Hoje', val: 150.00 },
+                          { patient: 'João Pedro', date: 'Ontem', val: 150.00 },
+                          { patient: 'Ana Costa', date: '10 Abr', val: 200.00 }
+                        ].map((item, i) => (
+                          <div key={i} className="p-6 bg-white border border-slate-50 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-all">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black">
+                                {item.patient[0]}
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-900">{item.patient}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.date}</p>
+                              </div>
+                            </div>
+                            <p className="font-black text-emerald-600">+ R$ {item.val.toFixed(2)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </main>
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -68,13 +68,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       title: 'COMUNICAÇÃO',
       items: [
         { name: 'Chat', path: '/chat', icon: MessageSquare },
-        { name: 'Notificações', path: '/profile', icon: Bell },
       ]
     },
     {
       title: 'CONTA',
       items: [
-        { name: 'Perfil', path: '/profile', icon: User },
+        { name: 'Minha Conta', path: '/profile', icon: User },
         ...(isAdmin ? [{ name: 'Painel Admin', path: '/admin', icon: ShieldCheck }] : []),
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
