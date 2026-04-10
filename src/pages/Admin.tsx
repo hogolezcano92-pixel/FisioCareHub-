@@ -1025,7 +1025,7 @@ export default function Admin() {
           </div>
 
           <div className="flex-1 flex justify-center">
-            <h2 className="text-xl sm:text-2xl font-display font-black text-white tracking-widest uppercase text-center">
+            <h2 className="text-sm sm:text-base font-black text-white tracking-[0.3em] uppercase text-center">
               {activeTab === 'dashboard' ? 'PAINEL DE CONTROLE' : 
                activeTab === 'materiais' ? 'BIBLIOTECA' :
                activeTab === 'physios' ? 'FISIOTERAPEUTAS' :
