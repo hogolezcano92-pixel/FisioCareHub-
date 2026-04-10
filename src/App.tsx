@@ -171,9 +171,22 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(profile?.tipo_usuario)) {
-    // Redirect to their respective dashboard if they don't have access
-    if (profile?.tipo_usuario === 'admin') return <Navigate to="/admin" replace />;
+  const userRole = profile?.tipo_usuario;
+  const isAdmin = userRole === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
+  // If we are on a route that requires specific roles
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    if (isAdmin) return <Navigate to="/admin" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Special case: If an Admin tries to access the general dashboard, send them to /admin
+  if (location.pathname === '/dashboard' && isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  // Special case: If a non-admin tries to access /admin, send them to /dashboard
+  if (location.pathname === '/admin' && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -542,9 +555,9 @@ function AppContent() {
         
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 bg-bg-general">
           {!showSidebar && !isAdminPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between">
+            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] h-auto">
               <Logo size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
@@ -651,7 +664,7 @@ function AppContent() {
             initial={{ opacity: 0, scale: 0.5, x: 50 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.5, x: 50 }}
-            className="fixed bottom-6 right-7 z-[100] group"
+            className="fixed bottom-24 right-7 z-[100] group"
           >
             <div className="relative flex items-center">
               {/* Label que aparece apenas no hover */}
@@ -721,7 +734,7 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimePassed(true);
-    }, 3500);
+    }, 4000);
     return () => clearTimeout(timer);
   }, []);
 

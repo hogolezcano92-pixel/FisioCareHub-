@@ -196,12 +196,6 @@ export default function Dashboard() {
     if (!authLoading && !user) {
       navigate('/login');
     } else if (profile) {
-      // Redirect Admin to Admin Panel
-      if (profile.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com') {
-        navigate('/admin');
-        return;
-      }
-
       if (lastLoadedProfileId.current !== profile.id) {
         lastLoadedProfileId.current = profile.id;
         fetchStats(profile);

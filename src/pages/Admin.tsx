@@ -64,9 +64,10 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import Logo from '../components/Logo';
+import SplashScreen from '../components/SplashScreen';
 
 export default function Admin() {
-  const { user: supabaseUser, loading: loadingSupabase, signOut } = useAuth();
+  const { user: supabaseUser, loading: loadingSupabase, signOut, profile: authProfile } = useAuth();
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
@@ -116,52 +117,41 @@ export default function Admin() {
     setMounted(true);
   }, []);
 
+  // Strict Role Check to prevent "flash"
   useEffect(() => {
-    if (!loadingSupabase) {
-      if (!supabaseUser) {
-        navigate('/login');
-        return;
+    if (!loadingSupabase && supabaseUser) {
+      const userRole = authProfile?.tipo_usuario || supabaseUser.user_metadata?.role;
+      const isAdminEmail = supabaseUser.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+      
+      if (userRole === 'admin' || isAdminEmail) {
+        setIsAdmin(true);
+        setCheckingAdmin(false);
+      } else if (userRole) {
+        // If they have a role but it's not admin, get them out
+        navigate('/dashboard', { replace: true });
       }
+    } else if (!loadingSupabase && !supabaseUser) {
+      navigate('/login', { replace: true });
+    }
+  }, [supabaseUser, loadingSupabase, authProfile, navigate]);
 
-      const checkAdmin = async () => {
-        const adminEmails = [
-          'hogolezcano92@gmail.com'
-        ];
-        
-        if (adminEmails.includes(supabaseUser.email?.toLowerCase() || '')) {
-          setIsAdmin(true);
-          setCheckingAdmin(false);
-          return;
-        }
-
-        // Se não estiver na lista hardcoded, tenta buscar no Firestore
-        // Mas isso só funciona se estiver logado no Firebase
+  useEffect(() => {
+    if (isAdmin && !loadingFirebase) {
+      const checkFirebaseAdmin = async () => {
         if (firebaseUser) {
           try {
             const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
             if (userDoc.exists() && userDoc.data().role === 'admin') {
-              setIsAdmin(true);
-            } else {
-              navigate('/dashboard');
+              // Already confirmed
             }
           } catch (err) {
             console.error("Error checking admin status in Firestore:", err);
-            // Se der erro de permissão, pode ser que ele seja admin mas não tenha permissão de leitura ainda
-            // ou realmente não seja admin. Por segurança, não redireciona se ele estiver na lista de emails.
-          }
-        } else {
-          // Se não estiver na lista e não estiver logado no Firebase, redireciona
-          // Exceto se estivermos esperando o login do Firebase
-          if (!loadingFirebase) {
-            navigate('/dashboard');
           }
         }
-        setCheckingAdmin(false);
       };
-
-      checkAdmin();
+      checkFirebaseAdmin();
     }
-  }, [supabaseUser, loadingSupabase, firebaseUser, loadingFirebase, navigate]);
+  }, [isAdmin, firebaseUser, loadingFirebase]);
 
   const handleFirebaseLogin = async () => {
     setFirebaseLoginLoading(true);
@@ -365,38 +355,33 @@ export default function Admin() {
     return () => unsubMessages();
   }, [isAdmin, selectedChatUser, firebaseUser]);
 
-  if (!mounted || loadingSupabase || checkingAdmin) return (
-    <div className="flex flex-col items-center justify-center pt-32 space-y-4">
-      <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Verificando permissões...</p>
-    </div>
-  );
+  if (!mounted || loadingSupabase || checkingAdmin) return <SplashScreen />;
 
   if (!isAdmin) return null;
 
   // Se for admin mas não estiver logado no Firebase, mostra tela de conexão
   if (!firebaseUser) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-4">
+      <div className="min-h-[60vh] flex items-center justify-center p-4 bg-[#0B1120]">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 max-w-md w-full text-center space-y-8"
+          className="bg-white/5 p-12 rounded-[3rem] shadow-2xl border border-white/10 max-w-md w-full text-center space-y-8 backdrop-blur-xl"
         >
-          <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-24 h-24 bg-blue-600/10 text-blue-400 rounded-full flex items-center justify-center mx-auto border border-blue-500/20">
             <ShieldCheck size={48} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Restrito</h2>
-            <p className="text-slate-500 font-medium leading-relaxed">
+            <h2 className="text-3xl font-black text-white tracking-tight">Acesso Restrito</h2>
+            <p className="text-slate-400 font-medium leading-relaxed">
               Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.
             </p>
           </div>
 
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-left">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-left">
             <div className="flex gap-3">
-              <AlertTriangle className="text-amber-500 flex-shrink-0" size={20} />
-              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+              <AlertTriangle className="text-amber-400 flex-shrink-0" size={20} />
+              <p className="text-xs text-amber-200/70 leading-relaxed font-medium">
                 <strong>Importante:</strong> Uma janela (popup) será aberta para o login. Certifique-se de que seu navegador permite popups e não feche a janela antes de concluir o processo.
               </p>
             </div>
@@ -405,12 +390,12 @@ export default function Admin() {
           <button
             onClick={handleFirebaseLogin}
             disabled={firebaseLoginLoading}
-            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3 disabled:opacity-50"
           >
             {firebaseLoginLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <LogIn size={24} />}
             Conectar ao Banco de Dados
           </button>
-          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
             Use o mesmo e-mail: {supabaseUser?.email}
           </p>
         </motion.div>
@@ -763,8 +748,16 @@ export default function Admin() {
     { label: 'Consultas Pendentes', value: stats.pendingAppointments.toString(), icon: Calendar, color: 'rose' },
   ];
 
+  if (!mounted || checkingAdmin) {
+    return <SplashScreen />;
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
+    <div className="flex min-h-screen bg-[#0B1120] font-sans text-white -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
@@ -1017,10 +1010,10 @@ export default function Admin() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[#0B1120]">
         {/* Header */}
-        <header className="h-20 bg-[#0B1120]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 sm:px-8 flex-shrink-0 sticky top-0 z-40">
+        <header className="min-h-[5rem] sm:min-h-[6rem] pt-[env(safe-area-inset-top)] bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-6 sm:px-10 flex-shrink-0 sticky top-0 z-40 shadow-2xl">
           <div className="flex items-center gap-4 flex-1">
-            <button className="lg:hidden p-2 text-slate-400 hover:bg-white/5 rounded-lg" onClick={() => setSidebarOpen(true)}>
-              <Menu size={24} />
+            <button className="lg:hidden p-3 text-slate-400 hover:bg-white/10 rounded-2xl transition-all" onClick={() => setSidebarOpen(true)}>
+              <Menu size={28} />
             </button>
           </div>
 
@@ -1597,12 +1590,12 @@ export default function Admin() {
                         return name.includes(search) || crefito.includes(search);
                       }).length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-8 py-20 text-center">
-                            <div className="space-y-4">
-                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
-                                <Users size={32} />
+                          <td colSpan={5} className="px-8 py-24 text-center">
+                            <div className="space-y-6">
+                              <div className="w-20 h-20 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                                <Users size={40} />
                               </div>
-                              <p className="text-slate-500 font-bold">Nenhum fisioterapeuta encontrado.</p>
+                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">Nenhum fisioterapeuta encontrado.</p>
                             </div>
                           </td>
                         </tr>
@@ -1616,10 +1609,10 @@ export default function Admin() {
                           return name.includes(search) || crefito.includes(search);
                         })
                         .map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-blue-400 border border-white/10">
+                        <tr key={u.id} className="hover:bg-white/[0.03] transition-all group">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-5">
+                              <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-blue-400 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
                                 {u.avatar_url ? (
                                   <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
@@ -1627,59 +1620,59 @@ export default function Admin() {
                                 )}
                               </div>
                               <div>
-                                <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500 font-medium">{u.email}</p>
+                                <p className="text-base font-black text-white tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{u.email}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-5">
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20">
+                          <td className="px-8 py-6">
+                            <span className="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white text-[10px] font-black shadow-lg shadow-blue-900/20 uppercase tracking-widest">
                               {u.crefito || 'PENDENTE'}
                             </span>
                           </td>
-                          <td className="px-8 py-5 text-xs font-bold text-slate-400">{u.especialidade || '---'}</td>
-                          <td className="px-8 py-5">
+                          <td className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">{u.especialidade || '---'}</td>
+                          <td className="px-8 py-6">
                             <span className={cn(
-                              "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
-                              u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400" : 
-                              u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400" : "bg-amber-500/10 text-amber-400"
+                              "text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.15em] shadow-sm",
+                              u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
+                              u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                             )}>
                               {u.status_aprovacao || 'Pendente'}
                             </span>
                           </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-4">
                               <button 
                                 onClick={() => setSelectedUserDetail(u)}
-                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                className="p-3 text-blue-400 hover:bg-blue-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Ver Detalhes"
                               >
-                                <Eye size={18} />
+                                <Eye size={22} />
                               </button>
                               {(u.status_aprovacao === 'pendente' || !u.status_aprovacao) && (
                                 <>
                                   <button 
                                     onClick={() => handleApprovePhysio(u.id, u.id)}
-                                    className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                    className="p-3 text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                     title="Aprovar"
                                   >
-                                    <CheckCircle2 size={18} />
+                                    <CheckCircle2 size={22} />
                                   </button>
                                   <button 
                                     onClick={() => handleRejectPhysio(u.id, u.id)}
-                                    className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                    className="p-3 text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                     title="Rejeitar"
                                   >
-                                    <XCircle size={18} />
+                                    <XCircle size={22} />
                                   </button>
                                 </>
                               )}
                               <button 
                                 onClick={() => handleDeleteUser(u.id)}
-                                className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                className="p-3 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Excluir"
                               >
-                                <Trash2 size={18} />
+                                <Trash2 size={22} />
                               </button>
                             </div>
                           </td>
@@ -1730,12 +1723,12 @@ export default function Admin() {
                         return name.includes(search) || email.includes(search);
                       }).length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-8 py-20 text-center">
-                            <div className="space-y-4">
-                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
-                                <Users size={32} />
+                          <td colSpan={4} className="px-8 py-24 text-center">
+                            <div className="space-y-6">
+                              <div className="w-20 h-20 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                                <Users size={40} />
                               </div>
-                              <p className="text-slate-500 font-bold">Nenhum paciente encontrado.</p>
+                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">Nenhum paciente encontrado.</p>
                             </div>
                           </td>
                         </tr>
@@ -1749,10 +1742,10 @@ export default function Admin() {
                           return name.includes(search) || email.includes(search);
                         })
                         .map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-500 border border-white/10">
+                        <tr key={u.id} className="hover:bg-white/[0.03] transition-all group">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-5">
+                              <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-slate-500 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
                                 {u.avatar_url ? (
                                   <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
@@ -1760,35 +1753,35 @@ export default function Admin() {
                                 )}
                               </div>
                               <div>
-                                <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500 font-medium">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                                <p className="text-base font-black text-white tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-5 text-sm text-slate-400 font-medium">{u.email}</td>
-                          <td className="px-8 py-5 text-xs font-bold text-slate-500">{u.localizacao || 'Não inf.'}</td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-8 py-6 text-sm text-slate-400 font-bold">{u.email}</td>
+                          <td className="px-8 py-6 text-xs font-black text-slate-500 uppercase tracking-widest">{u.localizacao || 'Não inf.'}</td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-4">
                               <button 
                                 onClick={() => setSelectedUserDetail(u)}
-                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                className="p-3 text-blue-400 hover:bg-blue-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Ver Detalhes"
                               >
-                                <Eye size={18} />
+                                <Eye size={22} />
                               </button>
                               <button 
                                 onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
-                                className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                className="p-3 text-amber-400 hover:bg-amber-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Bloquear"
                               >
-                                <Lock size={18} />
+                                <Lock size={22} />
                               </button>
                               <button 
                                 onClick={() => handleDeleteUser(u.id)}
-                                className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                className="p-3 text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Excluir"
                               >
-                                <Trash2 size={18} />
+                                <Trash2 size={22} />
                               </button>
                             </div>
                           </td>
