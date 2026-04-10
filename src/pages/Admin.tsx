@@ -1018,48 +1018,56 @@ export default function Admin() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[#0B1120]">
         {/* Header */}
-        <header className="min-h-[5rem] sm:min-h-[6rem] pt-[env(safe-area-inset-top)] bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-6 sm:px-10 flex-shrink-0 sticky top-0 z-40 shadow-2xl">
-          <div className="flex items-center gap-4 flex-1">
-            <button className="lg:hidden p-3 text-slate-400 hover:bg-white/10 rounded-2xl transition-all" onClick={() => setSidebarOpen(true)}>
-              <Menu size={28} />
-            </button>
-          </div>
-
-          <div className="flex-1 flex justify-center">
-            <h2 className="text-sm sm:text-base font-black text-white tracking-[0.3em] uppercase text-center">
-              {activeTab === 'dashboard' ? 'PAINEL DE CONTROLE' : 
-               activeTab === 'materiais' ? 'BIBLIOTECA' :
-               activeTab === 'physios' ? 'FISIOTERAPEUTAS' :
-               activeTab === 'patients' ? 'PACIENTES' :
-               activeTab === 'approvals' ? 'APROVAÇÕES' :
-               activeTab === 'users' ? 'USUÁRIOS' :
-               activeTab === 'financial' ? 'FINANCEIRO' :
-               activeTab === 'chat' ? 'SUPORTE' :
-               activeTab === 'settings' ? 'CONFIGURAÇÕES' :
-               activeTab.replace(/([A-Z])/g, ' $1').trim()}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-end">
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-              <input 
-                type="text" 
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-40 md:w-64"
-              />
+        <header className="sticky top-0 z-40 w-full bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl pt-[env(safe-area-inset-top)]">
+          <div className="w-full px-4 sm:px-10 h-20 sm:h-24 flex items-center justify-between gap-4">
+            {/* Left Section */}
+            <div className="flex-1 flex items-center min-w-0">
+              <button 
+                className="lg:hidden p-3 text-slate-400 hover:bg-white/10 rounded-2xl transition-all active:scale-95" 
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu size={28} />
+              </button>
             </div>
-            <button className="p-2 text-slate-400 hover:text-blue-400 transition-colors relative">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B1120]" />
-            </button>
+
+            {/* Center Section - Title */}
+            <div className="flex-[2] flex justify-center min-w-0">
+              <h2 className="text-xs sm:text-sm md:text-base font-black text-white tracking-[0.2em] sm:tracking-[0.3em] uppercase text-center truncate px-2">
+                {activeTab === 'dashboard' ? 'PAINEL DE CONTROLE' : 
+                 activeTab === 'materiais' ? 'BIBLIOTECA' :
+                 activeTab === 'physios' ? 'FISIOTERAPEUTAS' :
+                 activeTab === 'patients' ? 'PACIENTES' :
+                 activeTab === 'approvals' ? 'APROVAÇÕES' :
+                 activeTab === 'users' ? 'USUÁRIOS' :
+                 activeTab === 'financial' ? 'FINANCEIRO' :
+                 activeTab === 'chat' ? 'SUPORTE' :
+                 activeTab === 'settings' ? 'CONFIGURAÇÕES' :
+                 activeTab.replace(/([A-Z])/g, ' $1').trim()}
+              </h2>
+            </div>
+
+            {/* Right Section - Actions */}
+            <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 min-w-0">
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32 lg:w-64"
+                />
+              </div>
+              <button className="p-2 text-slate-400 hover:text-blue-400 transition-colors relative flex-shrink-0">
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B1120]" />
+              </button>
+            </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-8 space-y-8 max-w-full overflow-x-hidden custom-scrollbar">
+        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -1117,28 +1125,6 @@ export default function Admin() {
                   </motion.div>
                 ))}
               </div>
-
-              {/* App Preview Button */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => window.location.href = '/preview'}
-                className="w-full mb-8 p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/20 flex items-center justify-between group relative overflow-hidden border border-white/10"
-              >
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/20 transition-colors" />
-                <div className="flex items-center gap-8 relative z-10">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-white/30">
-                    <Smartphone size={40} />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-2xl font-black tracking-tighter mb-1">Ver Prévia Mobile</h3>
-                    <p className="text-base text-white/70 font-medium">Interface 'FisioCareHub' em alta fidelidade.</p>
-                  </div>
-                </div>
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center group-hover:translate-x-2 transition-transform duration-500 relative z-10 border border-white/30">
-                  <ArrowLeft className="rotate-180" size={28} />
-                </div>
-              </motion.button>
 
               {/* Recent Users Table */}
               <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
