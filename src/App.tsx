@@ -413,26 +413,50 @@ function NotificationHandler() {
     // Listener Global para Agendamentos (Realtime)
     const appointmentsChannel = supabase
       .channel(`agendamentos_realtime_${user.id}`)
+      // Escuta novos agendamentos onde o usuário é o fisioterapeuta
       .on('postgres_changes', { 
-        event: '*', 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'agendamentos',
+        filter: `fisio_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('[Realtime] New appointment (as physio):', payload);
+        if (!isInitialLoad.current) {
+          playSound();
+          toast.success("Novo Agendamento", {
+            description: "Você recebeu uma nova solicitação de consulta."
+          });
+        }
+      })
+      // Escuta novos agendamentos onde o usuário é o paciente
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'agendamentos',
+        filter: `paciente_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('[Realtime] New appointment (as patient):', payload);
+        if (!isInitialLoad.current) {
+          playSound();
+          toast.success("Agendamento Registrado", {
+            description: "Sua solicitação de consulta foi enviada com sucesso."
+          });
+        }
+      })
+      // Escuta atualizações em agendamentos existentes
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
         schema: 'public', 
         table: 'agendamentos'
       }, (payload) => {
-        console.log('[Realtime] Appointment event received:', payload);
+        console.log('[Realtime] Appointment update received:', payload);
         if (!isInitialLoad.current) {
           const record = payload.new as any;
-          // Filtro de Usuário: paciente ou fisioterapeuta
           if (record && (record.paciente_id === user.id || record.fisio_id === user.id)) {
             playSound();
-            if (payload.eventType === 'INSERT') {
-              toast.success("Novo Agendamento", {
-                description: "Uma nova solicitação de agendamento foi criada."
-              });
-            } else if (payload.eventType === 'UPDATE') {
-              toast.info("Agendamento Atualizado", {
-                description: `O status do agendamento foi alterado para: ${record.status}`
-              });
-            }
+            toast.info("Agendamento Atualizado", {
+              description: `O status do agendamento foi alterado para: ${record.status}`
+            });
           }
         }
       })

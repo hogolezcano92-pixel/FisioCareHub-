@@ -280,7 +280,8 @@ export default function Appointments() {
       console.log("Agendamento criado com sucesso:", newApp);
 
       // Create notification for target user
-      const { error: notifError } = await supabase
+      console.log("Tentando criar notificação para o usuário:", targetUser.id);
+      const { data: notifData, error: notifError } = await supabase
         .from('notificacoes')
         .insert({
           user_id: targetUser.id,
@@ -289,12 +290,13 @@ export default function Appointments() {
           tipo: 'appointment',
           lida: false,
           link: '/appointments'
-        });
+        })
+        .select();
 
       if (notifError) {
         console.error("Erro ao criar notificação no banco:", notifError);
       } else {
-        console.log("Notificação criada com sucesso no banco para:", targetUser.id);
+        console.log("Notificação criada com sucesso no banco:", notifData);
       }
 
       // Send email notification
@@ -496,13 +498,16 @@ export default function Appointments() {
 
                 {app.status === 'pendente' && (
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => updateStatus(app.id, 'confirmado')}
-                      className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
-                      title="Confirmar"
-                    >
-                      <Check size={18} />
-                    </button>
+                    {/* Apenas o fisioterapeuta pode confirmar o agendamento */}
+                    {isPhysio && (
+                      <button
+                        onClick={() => updateStatus(app.id, 'confirmado')}
+                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                        title="Confirmar"
+                      >
+                        <Check size={18} />
+                      </button>
+                    )}
                     <button
                       onClick={() => updateStatus(app.id, 'cancelado')}
                       className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
