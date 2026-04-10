@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
+import { sendAppointmentConfirmation } from '../services/emailService';
 
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -193,25 +194,6 @@ export default function Appointments() {
     };
   };
 
-  const sendEmail = async (to: string, subject: string, body: string) => {
-    try {
-      const { invokeFunction } = await import('../lib/supabase');
-      const result = await invokeFunction('send-email', { to, subject, body });
-      console.log("Resultado do envio de e-mail:", result);
-      if (result && result.error) {
-        console.warn("A Edge Function retornou um erro (mas a invocação funcionou):", result.error);
-      } else {
-        console.log("E-mail enviado com sucesso via Edge Function.");
-      }
-    } catch (err) {
-      console.error("Erro CRÍTICO ao enviar e-mail via Edge Function:", err);
-      // Log more details if available
-      if (typeof err === 'object' && err !== null) {
-        console.error("Detalhes do erro:", JSON.stringify(err, null, 2));
-      }
-    }
-  };
-
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !time || submitting || !user || !profile) return;
@@ -300,47 +282,20 @@ export default function Appointments() {
       }
 
       // Send email notification
-      const appId = newApp?.id || 'unknown';
-      const confirmLink = `${window.location.origin}/appointments?id=${appId}`;
-      const recipientEmail = targetUser.email;
-      
-      if (isPatient) {
-        // Patient scheduling -> Notify Physio
-        await sendEmail(
-          recipientEmail,
-          "Novo Agendamento - FisioCareHub",
-          `
-          <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo}!</h2>
-            <p>O paciente <strong>${profile.nome_completo}</strong> solicitou um novo agendamento.</p>
-            <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
-            <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
-            <br/>
-            <a href="${confirmLink}" style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              Confirmar Agendamento
-            </a>
-          </div>
-          `
-        );
-      } else {
-        // Physio scheduling -> Notify Patient
-        await sendEmail(
-          recipientEmail,
-          "Nova Consulta Agendada - FisioCareHub",
-          `
-          <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #2563eb;">Olá, ${targetUser.nome_completo}!</h2>
-            <p>O(A) ${profile.genero === 'female' ? 'Dra.' : 'Dr.'} <strong>${profile.nome_completo}</strong> agendou uma nova sessão para você.</p>
-            <p><strong>Data:</strong> ${new Date(appointmentDate).toLocaleDateString('pt-BR')}</p>
-            <p><strong>Horário:</strong> ${new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p><strong>Observações:</strong> ${notes || 'Nenhuma'}</p>
-            <br/>
-            <p>Acesse o painel para ver os detalhes da sua sessão.</p>
-          </div>
-          `
-        );
-      }
+      const formattedDate = new Date(appointmentDate).toLocaleDateString('pt-BR');
+      const formattedTime = new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      sendAppointmentConfirmation(
+        isPatient ? profile.email : targetUser.email,
+        isPatient ? targetUser.email : profile.email,
+        {
+          patientName: isPatient ? profile.nome_completo : targetUser.nome_completo,
+          physioName: isPatient ? targetUser.nome_completo : profile.nome_completo,
+          date: formattedDate,
+          time: formattedTime,
+          service: service
+        }
+      );
 
       setShowModal(false);
       setTargetEmail('');
@@ -387,37 +342,34 @@ export default function Appointments() {
       
       // If confirmed, send email to patient
       if (status === 'confirmado') {
-        await sendEmail(
+        const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
+        const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        sendAppointmentConfirmation(
           app.paciente.email,
-          "Consulta Confirmada - FisioCareHub",
-          `
-          <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #10b981;">Olá, ${app.paciente.nome_completo}!</h2>
-            <p>Sua consulta com <strong>${app.fisioterapeuta.nome_completo}</strong> foi confirmada.</p>
-            <p><strong>Data:</strong> ${new Date(app.data_servico).toLocaleDateString('pt-BR')}</p>
-            <p><strong>Horário:</strong> ${new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <br/>
-            <p>Estamos ansiosos para atendê-lo!</p>
-          </div>
-          `
+          app.fisioterapeuta.email,
+          {
+            patientName: app.paciente.nome_completo,
+            physioName: app.fisioterapeuta.nome_completo,
+            date: formattedDate,
+            time: formattedTime,
+            service: app.servico || 'Consulta'
+          }
         );
       } else if (status === 'cancelado') {
         const targetEmail = isPhysio ? app.paciente.email : app.fisioterapeuta.email;
         const targetName = isPhysio ? app.paciente.nome_completo : app.fisioterapeuta.nome_completo;
         
-        await sendEmail(
-          targetEmail,
-          "Agendamento Cancelado - FisioCareHub",
-          `
-          <div style="font-family: sans-serif; color: #334155;">
-            <h2 style="color: #ef4444;">Aviso de Cancelamento</h2>
-            <p>Olá, ${targetName}.</p>
-            <p>Informamos que o agendamento para o dia <strong>${new Date(app.data_servico).toLocaleDateString('pt-BR')}</strong> foi cancelado.</p>
-            <br/>
-            <p>Por favor, acesse o aplicativo para reagendar ou entrar em contato.</p>
-          </div>
-          `
-        );
+        // Usamos sendEmail genérico do serviço para cancelamento por enquanto
+        import('../services/emailService').then(({ sendEmail }) => {
+          sendEmail({
+            to: targetEmail,
+            event: 'appointment',
+            subject: 'Agendamento Cancelado - FisioCareHub',
+            body: `Olá ${targetName}, informamos que o agendamento para o dia ${new Date(app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.`,
+            data: { ...app, status: 'cancelado' }
+          });
+        });
       }
       import('sonner').then(({ toast }) => toast.success(`Status atualizado para ${status}`));
       setSelectedAppId(null);

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { sendAppointmentConfirmation } from '../services/emailService';
 
 export default function Agenda() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -156,6 +157,30 @@ export default function Agenda() {
 
       if (error) throw error;
 
+      // Buscar e-mail do paciente para enviar confirmação
+      const patient = patients.find(p => p.id === formData.paciente_id);
+      if (patient) {
+        const { data: patientProfile } = await supabase
+          .from('perfis')
+          .select('email, nome_completo')
+          .eq('id', patient.id)
+          .single();
+
+        if (patientProfile && profile) {
+          sendAppointmentConfirmation(
+            patientProfile.email,
+            profile.email,
+            {
+              patientName: patientProfile.nome_completo,
+              physioName: profile.nome_completo,
+              date: new Date(formData.data).toLocaleDateString('pt-BR'),
+              time: formData.hora,
+              service: formData.tipo || 'Consulta'
+            }
+          );
+        }
+      }
+
       toast.success('Agendamento realizado!');
       setShowModal(false);
       fetchAppointments();
@@ -169,12 +194,52 @@ export default function Agenda() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
+      const app = appointments.find(a => a.id === id);
+      if (!app) return;
+
       const { error } = await supabase
         .from('agendamentos')
         .update({ status })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Enviar e-mail se confirmado ou cancelado
+      if (status === 'confirmado' || status === 'cancelado') {
+        const { data: patientProfile } = await supabase
+          .from('perfis')
+          .select('email, nome_completo')
+          .eq('id', app.paciente_id)
+          .single();
+
+        if (patientProfile && profile) {
+          if (status === 'confirmado') {
+            sendAppointmentConfirmation(
+              patientProfile.email,
+              profile.email,
+              {
+                patientName: patientProfile.nome_completo,
+                physioName: profile.nome_completo,
+                date: new Date(app.data || app.data_servico).toLocaleDateString('pt-BR'),
+                time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                service: app.tipo || app.servico || 'Consulta'
+              }
+            );
+          } else {
+            // Cancelamento
+            import('../services/emailService').then(({ sendEmail }) => {
+              sendEmail({
+                to: patientProfile.email,
+                event: 'appointment',
+                subject: 'Agendamento Cancelado - FisioCareHub',
+                body: `Olá ${patientProfile.nome_completo}, informamos que o agendamento para o dia ${new Date(app.data || app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.`,
+                data: { ...app, status: 'cancelado' }
+              });
+            });
+          }
+        }
+      }
+
       toast.success(`Status atualizado para ${status}`);
       fetchAppointments();
     } catch (err) {

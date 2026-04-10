@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
+import { sendWelcomeEmail } from '../services/emailService';
 
 export default function Register() {
   const { user, loading: authLoading } = useAuth();
@@ -153,6 +154,10 @@ export default function Register() {
 
       if (authData.user) {
         console.log("User created in Auth:", authData.user.id);
+        
+        // Disparar e-mail de boas-vindas (não bloqueia o fluxo)
+        sendWelcomeEmail(cleanEmail, cleanName);
+
         // 3. Upload documents if any (for physios)
         const uploadedDocUrls: string[] = [];
         if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
