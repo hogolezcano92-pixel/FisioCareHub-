@@ -47,6 +47,7 @@ import {
   Save,
   AlertTriangle,
   LogIn,
+  LogOut,
   ArrowLeft,
   Sparkles,
   Smartphone,
@@ -65,7 +66,7 @@ import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import Logo from '../components/Logo';
 
 export default function Admin() {
-  const { user: supabaseUser, loading: loadingSupabase } = useAuth();
+  const { user: supabaseUser, loading: loadingSupabase, signOut } = useAuth();
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
@@ -75,6 +76,9 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [firebaseLoginLoading, setFirebaseLoginLoading] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Real Data States
   const [users, setUsers] = useState<any[]>([]);
@@ -203,6 +207,8 @@ export default function Admin() {
   }, []);
 
   const fetchSupabaseProfiles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       // Fetch profiles and their latest active subscription
       const { data, error } = await supabase
@@ -226,8 +232,11 @@ export default function Admin() {
         });
         processProfiles(profilesWithSub || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro fatal ao buscar perfis:", err);
+      setError("Falha ao carregar perfis. Verifique sua conexão.");
+    } finally {
+      setLoading(false);
     }
   }, [processProfiles]);
 
@@ -259,6 +268,25 @@ export default function Admin() {
 
     fetchSupabaseProfiles();
     fetchMateriais();
+
+    // Fetch System Settings
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('*')
+          .eq('key', 'commission_rate')
+          .single();
+        
+        if (data) {
+          setCommissionRate(Number(data.value));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar configurações:", err);
+      }
+    };
+    fetchSettings();
+
     // Set up a simple poll or realtime subscription for Supabase
     const channel = supabase
       .channel(`perfis-changes-${Math.random().toString(36).substring(7)}`)
@@ -956,7 +984,7 @@ export default function Admin() {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-white/5 space-y-2">
             <div className={cn(
               "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
               !sidebarOpen && "lg:justify-center lg:p-2"
@@ -969,6 +997,19 @@ export default function Admin() {
                 <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
               </div>
             </div>
+            
+            <button
+              onClick={() => {
+                signOut().then(() => navigate('/'));
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
+                !sidebarOpen && "lg:justify-center"
+              )}
+            >
+              <LogOut size={20} />
+              <span className={cn(!sidebarOpen && "lg:hidden")}>Sair da Conta</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -1018,7 +1059,30 @@ export default function Admin() {
 
         {/* Content Area */}
         <div className="flex-1 p-4 sm:p-8 space-y-8 max-w-full overflow-x-hidden custom-scrollbar">
-          {activeTab === 'dashboard' && (
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Sincronizando Dados...</p>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-[2.5rem] text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center mx-auto">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-black text-white tracking-tight">Ops! Algo deu errado</h3>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">{error}</p>
+              <button 
+                onClick={() => fetchSupabaseProfiles()}
+                className="px-8 py-3 bg-white/5 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
+              >
+                Tentar Novamente
+              </button>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'dashboard' && (
             <>
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -1494,7 +1558,7 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'physios' && (
+          {!loading && !error && activeTab === 'physios' && (
             <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
@@ -1525,93 +1589,110 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {supabaseProfiles
-                      .filter(p => {
-                        const role = (p.tipo_usuario || '').toLowerCase();
-                        return role === 'fisioterapeuta';
-                      })
+                      .filter(p => (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta')
                       .filter(p => {
                         const search = searchTerm.toLowerCase();
                         const name = (p.nome_completo || '').toLowerCase();
                         const crefito = (p.crefito || '').toLowerCase();
                         return name.includes(search) || crefito.includes(search);
-                      })
-                      .map((u) => (
-                      <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-blue-400 border border-white/10">
-                              {u.avatar_url ? (
-                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                              ) : (
-                                u.nome_completo?.charAt(0)
+                      }).length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-8 py-20 text-center">
+                            <div className="space-y-4">
+                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                                <Users size={32} />
+                              </div>
+                              <p className="text-slate-500 font-bold">Nenhum fisioterapeuta encontrado.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                      supabaseProfiles
+                        .filter(p => (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta')
+                        .filter(p => {
+                          const search = searchTerm.toLowerCase();
+                          const name = (p.nome_completo || '').toLowerCase();
+                          const crefito = (p.crefito || '').toLowerCase();
+                          return name.includes(search) || crefito.includes(search);
+                        })
+                        .map((u) => (
+                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-blue-400 border border-white/10">
+                                {u.avatar_url ? (
+                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  u.nome_completo?.charAt(0)
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500 font-medium">{u.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20">
+                              {u.crefito || 'PENDENTE'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-xs font-bold text-slate-400">{u.especialidade || '---'}</td>
+                          <td className="px-8 py-5">
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
+                              u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400" : 
+                              u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400" : "bg-amber-500/10 text-amber-400"
+                            )}>
+                              {u.status_aprovacao || 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => setSelectedUserDetail(u)}
+                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                title="Ver Detalhes"
+                              >
+                                <Eye size={18} />
+                              </button>
+                              {(u.status_aprovacao === 'pendente' || !u.status_aprovacao) && (
+                                <>
+                                  <button 
+                                    onClick={() => handleApprovePhysio(u.id, u.id)}
+                                    className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                    title="Aprovar"
+                                  >
+                                    <CheckCircle2 size={18} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectPhysio(u.id, u.id)}
+                                    className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                    title="Rejeitar"
+                                  >
+                                    <XCircle size={18} />
+                                  </button>
+                                </>
                               )}
+                              <button 
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                title="Excluir"
+                              >
+                                <Trash2 size={18} />
+                              </button>
                             </div>
-                            <div>
-                              <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
-                              <p className="text-[10px] text-slate-500 font-medium">{u.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20">
-                            {u.crefito || 'PENDENTE'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-xs font-bold text-slate-400">{u.especialidade || '---'}</td>
-                        <td className="px-8 py-5">
-                          <span className={cn(
-                            "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
-                            u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400" : 
-                            u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400" : "bg-amber-500/10 text-amber-400"
-                          )}>
-                            {u.status_aprovacao || 'Pendente'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => setSelectedUserDetail(u)}
-                              className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                              title="Ver Detalhes"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            {(u.status_aprovacao === 'pendente' || !u.status_aprovacao) && (
-                              <>
-                                <button 
-                                  onClick={() => handleApprovePhysio(u.id, u.id)}
-                                  className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                                  title="Aprovar"
-                                >
-                                  <CheckCircle2 size={18} />
-                                </button>
-                                <button 
-                                  onClick={() => handleRejectPhysio(u.id, u.id)}
-                                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                  title="Rejeitar"
-                                >
-                                  <XCircle size={18} />
-                                </button>
-                              </>
-                            )}
-                            <button 
-                              onClick={() => handleDeleteUser(u.id)}
-                              className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
-          {activeTab === 'patients' && (
+          {!loading && !error && activeTab === 'patients' && (
             <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
@@ -1641,69 +1722,86 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {supabaseProfiles
-                      .filter(p => {
-                        const role = (p.tipo_usuario || '').toLowerCase();
-                        return role === 'paciente';
-                      })
+                      .filter(p => (p.tipo_usuario || '').toLowerCase() === 'paciente')
                       .filter(p => {
                         const search = searchTerm.toLowerCase();
                         const name = (p.nome_completo || '').toLowerCase();
                         const email = (p.email || '').toLowerCase();
                         return name.includes(search) || email.includes(search);
-                      })
-                      .map((u) => (
-                      <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-500 border border-white/10">
-                              {u.avatar_url ? (
-                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                              ) : (
-                                u.nome_completo?.charAt(0)
-                              )}
+                      }).length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-8 py-20 text-center">
+                            <div className="space-y-4">
+                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                                <Users size={32} />
+                              </div>
+                              <p className="text-slate-500 font-bold">Nenhum paciente encontrado.</p>
                             </div>
-                            <div>
-                              <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
-                              <p className="text-[10px] text-slate-500 font-medium">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                          </td>
+                        </tr>
+                      ) : (
+                      supabaseProfiles
+                        .filter(p => (p.tipo_usuario || '').toLowerCase() === 'paciente')
+                        .filter(p => {
+                          const search = searchTerm.toLowerCase();
+                          const name = (p.nome_completo || '').toLowerCase();
+                          const email = (p.email || '').toLowerCase();
+                          return name.includes(search) || email.includes(search);
+                        })
+                        .map((u) => (
+                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-500 border border-white/10">
+                                {u.avatar_url ? (
+                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  u.nome_completo?.charAt(0)
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-white tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500 font-medium">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5 text-sm text-slate-400 font-medium">{u.email}</td>
-                        <td className="px-8 py-5 text-xs font-bold text-slate-500">{u.localizacao || 'Não inf.'}</td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => setSelectedUserDetail(u)}
-                              className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                              title="Ver Detalhes"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
-                              className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
-                              title="Bloquear"
-                            >
-                              <Lock size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteUser(u.id)}
-                              className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-8 py-5 text-sm text-slate-400 font-medium">{u.email}</td>
+                          <td className="px-8 py-5 text-xs font-bold text-slate-500">{u.localizacao || 'Não inf.'}</td>
+                          <td className="px-8 py-5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => setSelectedUserDetail(u)}
+                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                title="Ver Detalhes"
+                              >
+                                <Eye size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
+                                className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                title="Bloquear"
+                              >
+                                <Lock size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                title="Excluir"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
-          {activeTab === 'approvals' && (
+          {!loading && !error && activeTab === 'approvals' && (
             <div className="space-y-8">
               <h3 className="text-2xl font-black text-white tracking-tight">Aprovações Pendentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1805,16 +1903,16 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'financial' && (
+          {!loading && !error && activeTab === 'financial' && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Receita Mensal</p>
-                  <p className="text-3xl font-black text-white tracking-tighter">R$ {(stats.totalRevenue * 0.8).toLocaleString()}</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Receita Mensal (Total)</p>
+                  <p className="text-3xl font-black text-white tracking-tighter">R$ {stats.totalRevenue.toLocaleString()}</p>
                 </div>
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Comissões (20%)</p>
-                  <p className="text-3xl font-black text-emerald-400 tracking-tighter">R$ {(stats.totalRevenue * 0.2).toLocaleString()}</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Comissões ({commissionRate}%)</p>
+                  <p className="text-3xl font-black text-emerald-400 tracking-tighter">R$ {(stats.totalRevenue * (commissionRate / 100)).toLocaleString()}</p>
                 </div>
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
                   <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Transações</p>
@@ -1832,28 +1930,41 @@ export default function Admin() {
                       <tr className="bg-white/5">
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão ({commissionRate}%)</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {payments.map((p) => (
-                        <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-8 py-5 text-xs text-slate-500 font-medium">
-                            {p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('pt-BR') : 'Recent'}
-                          </td>
-                          <td className="px-8 py-5 text-sm font-bold text-white">R$ {p.amount?.toLocaleString()}</td>
-                          <td className="px-8 py-5 text-sm font-bold text-emerald-400">R$ {p.commission?.toLocaleString()}</td>
-                          <td className="px-8 py-5">
-                            <span className={cn(
-                              "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                              p.status === 'paid' ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
-                            )}>
-                              {p.status}
-                            </span>
+                      {payments.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-8 py-20 text-center">
+                            <div className="space-y-4">
+                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                                <DollarSign size={32} />
+                              </div>
+                              <p className="text-slate-500 font-bold">Nenhuma transação encontrada.</p>
+                            </div>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        payments.map((p) => (
+                          <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-8 py-5 text-xs text-slate-500 font-medium">
+                              {p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('pt-BR') : 'Recent'}
+                            </td>
+                            <td className="px-8 py-5 text-sm font-bold text-white">R$ {p.amount?.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-sm font-bold text-emerald-400">R$ {(p.amount * (commissionRate / 100)).toLocaleString()}</td>
+                            <td className="px-8 py-5">
+                              <span className={cn(
+                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                                p.status === 'paid' || p.status === 'succeeded' ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                              )}>
+                                {p.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1861,7 +1972,7 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'chat' && (
+          {!loading && !error && activeTab === 'chat' && (
             <div className="h-[calc(100vh-200px)] min-h-[500px] bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl flex overflow-hidden relative">
               {/* User List - Sidebar */}
               <div className={cn(
@@ -2037,8 +2148,47 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'settings' && (
+          {!loading && !error && activeTab === 'settings' && (
             <div className="max-w-4xl space-y-8">
+              {/* Profile Settings */}
+              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
+                <h3 className="text-2xl font-black text-white tracking-tight">Meu Perfil Admin</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Nome Completo</label>
+                    <input 
+                      type="text"
+                      defaultValue={supabaseUser?.user_metadata?.full_name || 'Admin Master'}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
+                      id="admin-name"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">E-mail</label>
+                    <input 
+                      type="email"
+                      value={supabaseUser?.email || ''}
+                      disabled
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-500 font-bold outline-none cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+                <button 
+                  onClick={async () => {
+                    const name = (document.getElementById('admin-name') as HTMLInputElement).value;
+                    const { error } = await supabase.from('perfis').update({ nome_completo: name }).eq('id', supabaseUser?.id);
+                    if (error) {
+                      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar perfil."));
+                    } else {
+                      import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
+                    }
+                  }}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
+                >
+                  Atualizar Perfil
+                </button>
+              </div>
+
               <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
                 <h3 className="text-2xl font-black text-white tracking-tight">Configurações do Sistema</h3>
                 

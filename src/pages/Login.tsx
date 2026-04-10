@@ -6,22 +6,41 @@ import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/Logo';
 
+import SplashScreen from '../components/SplashScreen';
+import { AnimatePresence } from 'motion/react';
+
 export default function Login() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshProfile } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate('/dashboard');
+    if (!authLoading && user && !isAuthenticating) {
+      // If already logged in, redirect based on role
+      const checkRoleAndRedirect = async () => {
+        const { data: profileData } = await supabase
+          .from('perfis')
+          .select('tipo_usuario')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        const isAdmin = profileData?.tipo_usuario === 'admin' || user.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+        if (isAdmin) {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      };
+      checkRoleAndRedirect();
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, isAuthenticating]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -84,6 +103,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsAuthenticating(true);
     setError('');
 
     const cleanEmail = email.trim();
@@ -95,6 +115,7 @@ export default function Login() {
       });
 
       if (loginError) {
+        setIsAuthenticating(false);
         if (loginError.message.includes('Email not confirmed')) {
           setError('Por favor, confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
         } else if (loginError.message.includes('Invalid login credentials')) {
@@ -106,6 +127,9 @@ export default function Login() {
         return;
       }
 
+      // Force profile refresh to get the latest role
+      await refreshProfile();
+      
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
       
@@ -121,23 +145,30 @@ export default function Login() {
       // Check for redirect in URL
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get('redirectTo');
+      
       if (redirectTo) {
-        navigate(redirectTo);
+        navigate(redirectTo, { replace: true });
       } else if (isAdmin) {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err: any) {
       console.error("Erro no login:", err);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
+      setIsAuthenticating(false);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto pt-20">
+    <>
+      <AnimatePresence>
+        {isAuthenticating && <SplashScreen />}
+      </AnimatePresence>
+      
+      <div className="max-w-md mx-auto pt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -258,5 +289,6 @@ export default function Login() {
         </p>
       </motion.div>
     </div>
+    </>
   );
 }

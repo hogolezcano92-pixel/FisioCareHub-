@@ -4,7 +4,7 @@
  * Access-Control-Allow-Origin: *
  */
 
-import { Routes, Route, Link, useNavigate, useLocation, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation, BrowserRouter, Navigate } from 'react-router-dom';
 import { supabase, initSupabase } from './lib/supabase';
 import { fetchConfig } from './config/api';
 import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef, lazy, Suspense } from 'react';
@@ -160,6 +160,25 @@ function LoadingScreen() {
     </div>
   );
 }
+
+const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <SplashScreen />;
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(profile?.tipo_usuario)) {
+    // Redirect to their respective dashboard if they don't have access
+    if (profile?.tipo_usuario === 'admin') return <Navigate to="/admin" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 function Navbar() {
   const { user, profile, subscription, signOut } = useAuth();
@@ -550,31 +569,33 @@ function AppContent() {
               <Route path="/home" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/triage" element={<Triage />} />
-              <Route path="/triagem-ia" element={<Triage />} />
-              <Route path="/records" element={<Records />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/area-paciente" element={<Profile />} />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route path="/patients" element={<Patients />} />
-              <Route path="/patients/:id" element={<PatientDetails />} />
-              <Route path="/agenda" element={<Agenda />} />
-              <Route path="/exercises" element={<Exercises />} />
-              <Route path="/patient/exercises" element={<PatientExercises />} />
-              <Route path="/physio/triages" element={<PhysioTriages />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/subscription" element={<Subscription />} />
-              <Route path="/dashboard/assinatura" element={<Subscription />} />
-              <Route path="/documents" element={<Documents />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/preview" element={<AppPreview />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              
+              {/* Protected Routes */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+              <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+              <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
+              <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
+              <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
+              <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
+              <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Agenda /></ProtectedRoute>} />
+              <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Exercises /></ProtectedRoute>} />
+              <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
+              <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+              <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+              <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
+              <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
               <Route path="/about" element={<About />} />
               <Route path="/sobre" element={<About />} />
               <Route path="/partner" element={<Partner />} />
               <Route path="/seja-parceiro" element={<Partner />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/patient/library" element={<HealthLibrary />} />
+              <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
             </Routes>
           </Suspense>
         </main>
