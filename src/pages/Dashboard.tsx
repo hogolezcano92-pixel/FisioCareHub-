@@ -353,6 +353,11 @@ export default function Dashboard() {
                                   Pro
                                 </span>
                               )}
+                              {!isPhysio && (
+                                <span className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30 whitespace-nowrap">
+                                  Paciente
+                                </span>
+                              )}
                               <span className="text-3xl md:text-4xl font-black text-white whitespace-nowrap">! 👋</span>
                             </div>
                           )}
@@ -364,7 +369,10 @@ export default function Dashboard() {
               </div>
               
               <p className="text-slate-400 font-bold text-sm tracking-wide max-w-md">
-                Bem-vindo a FisioCareHub, a sua plataforma de performance
+                {isPhysio 
+                  ? "Bem-vindo a FisioCareHub, a sua plataforma de performance" 
+                  : "Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance"
+                }
               </p>
             </div>
           </div>
