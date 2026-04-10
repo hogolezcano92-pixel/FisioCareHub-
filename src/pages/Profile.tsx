@@ -213,7 +213,8 @@ export default function Profile() {
   const handleRegisterPasskey = async () => {
     setUpdating(true);
     try {
-      const { error } = await (supabase.auth as any).linkPasskey();
+      // O método correto no Supabase para cadastrar uma nova Passkey é addPasskey
+      const { error } = await (supabase.auth as any).addPasskey();
       if (error) throw error;
       
       const { toast } = await import('sonner');
