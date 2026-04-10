@@ -34,7 +34,7 @@ export default function NotificationBell() {
     fetchNotifications();
 
     const channel = supabase
-      .channel(`notificacoes_bell_${user.id}`)
+      .channel(`notificacoes_bell_${user.id}_${Math.random().toString(36).substring(7)}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 

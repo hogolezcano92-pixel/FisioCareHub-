@@ -150,7 +150,7 @@ export default function Records() {
 
     // Real-time subscription
     const subscription = supabase
-      .channel('prontuarios_changes')
+      .channel(`prontuarios_changes_${Math.random().toString(36).substring(7)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'prontuarios' }, () => {
         fetchRecords();
       })

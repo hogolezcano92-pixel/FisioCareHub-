@@ -146,7 +146,7 @@ export default function Appointments() {
   const setupRealtime = (currentProfile: any) => {
     const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
     const channel = supabase
-      .channel('agendamentos_changes')
+      .channel(`agendamentos_changes_${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         {

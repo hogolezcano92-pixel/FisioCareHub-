@@ -261,7 +261,7 @@ export default function Admin() {
     fetchMateriais();
     // Set up a simple poll or realtime subscription for Supabase
     const channel = supabase
-      .channel('perfis-changes')
+      .channel(`perfis-changes-${Math.random().toString(36).substring(7)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, () => {
         fetchSupabaseProfiles();
       })
