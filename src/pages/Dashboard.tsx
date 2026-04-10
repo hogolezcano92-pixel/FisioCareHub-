@@ -307,10 +307,10 @@ export default function Dashboard() {
                 {!profile ? (
                   <span className="animate-pulse text-slate-600">Conectando...</span>
                 ) : (
-                  <>{getGreeting()}, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{isPhysio ? `Dr. ${profile?.nome_completo?.split(' ')[0]}` : profile?.nome_completo?.split(' ')[0]}</span>! 👋</>
+                  <>{getGreeting()}, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{isPhysio ? `Dr. ${profile?.nome_completo}` : profile?.nome_completo}</span>! 👋</>
                 )}
               </h1>
-              <p className="text-slate-400 font-semibold text-sm">Painel FisioCareHub • São Paulo, SP</p>
+              <p className="text-slate-400 font-semibold text-sm">Bem-vindo a FisioCareHub, a sua plataforma de performance</p>
             </div>
           </div>
           
