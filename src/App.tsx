@@ -630,7 +630,7 @@ function AppContent() {
             initial={{ opacity: 0, scale: 0.5, x: 50 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.5, x: 50 }}
-            className="fixed bottom-[100px] right-[28px] z-[100] group"
+            className="fixed bottom-6 right-7 z-[100] group"
           >
             <div className="relative flex items-center">
               {/* Label que aparece apenas no hover */}

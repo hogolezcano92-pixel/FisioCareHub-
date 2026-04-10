@@ -127,7 +127,7 @@ export default function KineAI() {
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
+          "fixed bottom-[100px] right-6 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
           isOpen ? "opacity-0 pointer-events-none" : "bg-gradient-to-br from-sky-500 to-blue-600 text-white"
         )}
       >
