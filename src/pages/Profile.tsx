@@ -10,6 +10,7 @@ import {
   CheckCircle, 
   Loader2, 
   Upload,
+  ShieldCheck,
   Settings,
   Trash2,
   Lock,
