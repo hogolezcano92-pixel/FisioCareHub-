@@ -365,60 +365,68 @@ export default function Profile() {
         <main className="flex-1 space-y-8">
           {loading ? renderLoadingSkeleton() : (
             <>
-              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                  <AvatarUpload 
-                    userId={user?.id || ''}
-                    currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                    onUploadComplete={(newUrl) => {
-                      setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
-                      if (refreshProfile) refreshProfile();
-                    }}
-                  />
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-slate-900">{userData?.nome_completo || 'Usuário'}</h2>
+              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-blue-900/5 relative overflow-hidden">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50" />
+                
+                <div className="flex flex-col items-center text-center relative z-10">
+                  <div className="mb-6">
+                    <AvatarUpload 
+                      userId={user?.id || ''}
+                      currentAvatarUrl={userData?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                      onUploadComplete={(newUrl) => {
+                        setUserData((prev: any) => prev ? { ...prev, avatar_url: newUrl } : { ...userData, avatar_url: newUrl });
+                        if (refreshProfile) refreshProfile();
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 w-full max-w-md">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center gap-2">
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                          {userData?.nome_completo || 'Usuário'}
+                        </h2>
                         {isPro && (
-                          <span className="flex items-center gap-1 px-3 py-1 bg-amber-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/20 border border-amber-400/50">
+                          <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-[10px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20">
                             <Crown size={10} fill="currentColor" />
                             Pro
                           </span>
                         )}
                       </div>
-                      {isPhysio && (
+                      
+                      <div className="flex justify-center">
+                        <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-[0.15em] border border-blue-100/50">
+                          {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isPhysio && (
+                      <div className="pt-4">
                         <Link 
                           to="/subscription"
                           className={cn(
-                            "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                            "w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg hover:scale-[1.02] active:scale-95",
                             isPro 
-                              ? "bg-amber-100 text-amber-700 border border-amber-200" 
-                              : "bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700"
+                              ? "bg-amber-50 text-amber-600 border border-amber-200 shadow-amber-100" 
+                              : "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700"
                           )}
                         >
                           {isPro ? (
                             <>
-                              <Crown size={14} />
+                              <Crown size={18} />
                               Plano Pro Ativo
                             </>
                           ) : (
                             <>
-                              <Zap size={14} />
+                              <Zap size={18} fill="currentColor" />
                               Upgrade para Pro
                             </>
                           )}
                         </Link>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                        {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
-                      </span>
-                      <span className="text-slate-400 text-sm">•</span>
-                      <span className="text-slate-500 text-sm flex items-center gap-1">
-                        <Mail size={14} /> {userData?.email}
-                      </span>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
