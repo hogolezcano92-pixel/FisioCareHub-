@@ -29,40 +29,18 @@ export default function SplashScreen() {
       />
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ 
           opacity: 1, 
-          scale: [0.8, 1.05, 1],
+          scale: [0.9, 1.02, 1],
         }}
         transition={{ 
-          duration: 1.5, 
+          duration: 1.2, 
           ease: "easeOut",
         }}
         className="text-center relative z-10 flex flex-col items-center"
       >
-        <motion.div
-          animate={{ 
-            scale: [1, 1.02, 1],
-          }}
-          transition={{ 
-            duration: 2, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-        >
-          <Logo size="xl" variant="light" />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="mt-6"
-        >
-          <h1 className="text-white font-black text-2xl tracking-[0.2em] uppercase">
-            FisioCareHub
-          </h1>
-        </motion.div>
+        <Logo size="xl" variant="light" />
       </motion.div>
     </motion.div>
   );
