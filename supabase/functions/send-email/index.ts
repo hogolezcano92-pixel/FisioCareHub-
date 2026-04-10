@@ -1,12 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")
-const SMTP_USER = Deno.env.get("SMTP_USER")
-const SMTP_PASS = Deno.env.get("SMTP_PASS")
-const SMTP_HOST = Deno.env.get("SMTP_HOST") || "smtp.gmail.com"
-const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "587")
-const SMTP_FROM = Deno.env.get("SMTP_FROM") || SMTP_USER
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,61 +13,37 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, body, type = "email" } = await req.json()
+    const { to, subject, body, html, type = "email" } = await req.json()
 
     if (type === "email") {
-      if (RESEND_API_KEY) {
-        // Use Resend API
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${RESEND_API_KEY}`,
-          },
-          body: JSON.stringify({
-            from: SMTP_FROM || "onboarding@resend.dev",
-            to,
-            subject,
-            html: body,
-          }),
-        })
+      if (!RESEND_API_KEY) {
+        throw new Error("RESEND_API_KEY is not configured")
+      }
 
-        if (!res.ok) {
-          const error = await res.text()
-          throw new Error(`Resend error: ${error}`)
-        }
-
-        return new Response(JSON.stringify({ status: "ok", provider: "resend" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        })
-      } else if (SMTP_USER && SMTP_PASS) {
-        // Use SMTP
-        const client = new SmtpClient();
-        await client.connectTLS({
-          hostname: SMTP_HOST,
-          port: SMTP_PORT,
-          username: SMTP_USER,
-          password: SMTP_PASS,
-        });
-
-        await client.send({
-          from: SMTP_FROM || SMTP_USER,
+      // Use Resend API
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: Deno.env.get("RESEND_FROM") || "FisioCareHub <onboarding@resend.dev>",
           to,
           subject,
-          content: body,
-          html: body, // If body is HTML
-        });
+          html: html || body,
+        }),
+      })
 
-        await client.close();
-
-        return new Response(JSON.stringify({ status: "ok", provider: "smtp" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        })
-      } else {
-        throw new Error("No email provider configured (RESEND_API_KEY or SMTP credentials)")
+      if (!res.ok) {
+        const error = await res.text()
+        throw new Error(`Resend error: ${error}`)
       }
+
+      return new Response(JSON.stringify({ status: "ok", provider: "resend" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      })
     } else if (type === "sms") {
       const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID")
       const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")

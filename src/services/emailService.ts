@@ -5,19 +5,30 @@ export type EmailEvent = 'signup' | 'appointment';
 interface EmailPayload {
   to: string;
   subject: string;
-  body: string;
+  body?: string;
+  html?: string;
   event: EmailEvent;
   data?: any;
 }
 
 export const sendEmail = async (payload: EmailPayload) => {
   try {
-    console.log(`Disparando e-mail para ${payload.to} (Evento: ${payload.event})`);
+    // Garante que 'html' seja enviado se 'body' estiver presente
+    const finalPayload = {
+      ...payload,
+      html: payload.html || payload.body
+    };
+
+    console.log(`Disparando e-mail para ${finalPayload.to} (Evento: ${finalPayload.event})`);
     
-    // Não bloqueia o fluxo principal
-    invokeFunction('send-email', payload)
-      .then(result => console.log('E-mail enviado com sucesso:', result))
-      .catch(err => console.error('Falha silenciosa ao enviar e-mail:', err));
+    // O nome da função no Supabase é 'Send-email' (case sensitive)
+    invokeFunction('Send-email', finalPayload)
+      .then(result => {
+        console.log('Resposta da Function Send-email:', result);
+      })
+      .catch(err => {
+        console.error('Erro ao chamar Function Send-email:', err);
+      });
       
     return true;
   } catch (error) {

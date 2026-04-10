@@ -275,10 +275,10 @@ export default function Profile() {
     }
     setTestingEmail(true);
     try {
-      const data = await invokeFunction('send-email', {
+      const data = await invokeFunction('Send-email', {
         to: userData.email,
         subject: "Teste de Notificação - FisioCareHub",
-        body: `<h1>Olá ${userData.nome_completo || 'Usuário'}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
+        html: `<h1>Olá ${userData.nome_completo || 'Usuário'}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
         type: "email"
       });
       

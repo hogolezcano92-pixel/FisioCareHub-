@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, invokeFunction } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { Send, CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function TestSmtp() {
+export default function TestEmail() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -19,33 +19,29 @@ export default function TestSmtp() {
     setResult(null);
 
     try {
-      console.log("Invocando função send-email para:", email);
+      console.log("Invocando função Send-email para:", email);
       
-      // Chamando a Edge Function 'send-email'
-      const { data, error: funcError } = await supabase.functions.invoke('send-email', {
-        body: {
-          to: email,
-          subject: "Teste de Configuração SMTP - FisioCareHub",
-          body: `
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-              <h2 style="color: #0ea5e9;">Teste de SMTP Bem-sucedido!</h2>
-              <p>Olá,</p>
-              <p>Este é um e-mail de teste enviado para verificar se a configuração de SMTP no Supabase está funcionando corretamente.</p>
-              <p>Se você recebeu este e-mail, as notificações do sistema (Edge Functions) estão operacionais.</p>
-              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-              <p style="font-size: 12px; color: #64748b;">Enviado por FisioCareHub - ${new Date().toLocaleString()}</p>
-            </div>
-          `,
-          type: "email"
-        }
+      // Chamando a Edge Function 'Send-email' via utilitário invokeFunction
+      const data = await invokeFunction('Send-email', {
+        to: email,
+        subject: "Teste de Notificação - FisioCareHub",
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <h2 style="color: #0ea5e9;">Notificação FisioCareHub</h2>
+            <p>Olá,</p>
+            <p>Este é um e-mail de teste enviado para verificar se a integração com o <strong>Resend</strong> via Supabase Edge Functions está funcionando corretamente.</p>
+            <p>Se você recebeu este e-mail, as notificações do sistema estão operacionais.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #64748b;">Enviado por FisioCareHub - ${new Date().toLocaleString()}</p>
+          </div>
+        `,
+        type: "email"
       });
-
-      if (funcError) throw funcError;
 
       setResult(data);
       toast.success("E-mail de teste enviado! Verifique sua caixa de entrada.");
     } catch (err: any) {
-      console.error("Erro ao testar SMTP:", err);
+      console.error("Erro ao testar e-mail:", err);
       setError(err.message || "Erro ao invocar a função de e-mail.");
       toast.error("Falha ao enviar e-mail de teste.");
     } finally {
@@ -65,15 +61,14 @@ export default function TestSmtp() {
             <Mail size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Teste de SMTP</h1>
-            <p className="text-slate-500">Verifique se as notificações por e-mail estão funcionando.</p>
+            <h1 className="text-2xl font-bold text-slate-900">Teste de E-mail</h1>
+            <p className="text-slate-500">Verifique se as notificações via Resend estão funcionando.</p>
           </div>
         </div>
 
-        <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-8">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            <strong>Nota:</strong> Este teste verifica a função de <strong>Notificações (Edge Functions)</strong>. 
-            Para testar o e-mail de <strong>Cadastro/Senha</strong>, use o fluxo normal de login ou registro.
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl mb-8">
+          <p className="text-sm text-blue-800 leading-relaxed">
+            <strong>Nota:</strong> Este teste utiliza a Supabase Edge Function <code>Send-email</code> integrada ao <strong>Resend</strong>.
           </p>
         </div>
 
@@ -107,8 +102,8 @@ export default function TestSmtp() {
               <p className="text-sm font-bold text-red-900">Erro no Envio</p>
               <p className="text-xs text-red-700 mt-1">{error}</p>
               <p className="text-xs text-red-600 mt-2">
-                Verifique se você adicionou as chaves <code>SMTP_USER</code> e <code>SMTP_PASS</code> nos 
-                <strong> Edge Function Secrets</strong> do painel do Supabase.
+                Verifique se você configurou a <code>RESEND_API_KEY</code> nos 
+                <strong> Edge Function Secrets</strong> do Supabase.
               </p>
             </div>
           </div>
