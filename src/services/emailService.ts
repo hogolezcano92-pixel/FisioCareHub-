@@ -53,7 +53,7 @@ export const sendAppointmentConfirmation = async (
   }
 ) => {
   // Envia para o paciente
-  sendEmail({
+  await sendEmail({
     to: patientEmail,
     event: 'appointment',
     subject: 'Confirmação de Agendamento - FisioCareHub',
