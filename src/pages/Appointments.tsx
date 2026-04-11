@@ -386,28 +386,28 @@ export default function Appointments() {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
+    <div className="space-y-6">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Agenda de Consultas</h1>
-          <p className="text-slate-500">Gerencie seus horários e sessões.</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Agenda de Consultas</h1>
+          <p className="text-slate-500 text-sm font-medium">Gerencie seus horários e sessões.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
         >
-          <Plus size={20} /> Agendar Sessão
+          <Plus size={16} /> Agendar Sessão
         </button>
       </header>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {appointments.length === 0 ? (
-          <div className="bg-white p-20 rounded-[2.5rem] border border-slate-100 text-center">
-            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CalendarIcon size={40} />
+          <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center">
+            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CalendarIcon size={32} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Nenhuma consulta agendada</h3>
-            <p className="text-slate-500 mt-2">Suas sessões aparecerão aqui.</p>
+            <h3 className="text-xl font-black text-slate-900">Nenhuma consulta</h3>
+            <p className="text-slate-500 mt-1 text-sm font-medium">Suas sessões aparecerão aqui.</p>
           </div>
         ) : (
           appointments.map((app) => (
@@ -415,31 +415,31 @@ export default function Appointments() {
               key={app.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center",
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
                   app.status === 'confirmado' ? "bg-emerald-50 text-emerald-600" :
                   app.status === 'pendente' ? "bg-amber-50 text-amber-600" :
                   "bg-slate-50 text-slate-400"
                 )}>
-                  <CalendarCheck size={28} />
+                  <CalendarCheck size={24} />
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-slate-900">
+                  <div className="text-base font-black text-slate-900">
                     {formatDate(app.data_servico)}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <User size={14} />
-                    {isPhysio ? `Paciente: ${app.paciente?.nome_completo}` : `Fisioterapeuta: ${app.fisioterapeuta?.nome_completo}`}
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <User size={12} />
+                    {isPhysio ? `Paciente: ${app.paciente?.nome_completo}` : `Fisio: ${app.fisioterapeuta?.nome_completo}`}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className={cn(
-                  "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                   app.status === 'confirmado' ? "bg-emerald-100 text-emerald-700" :
                   app.status === 'pendente' ? "bg-amber-100 text-amber-700" :
                   app.status === 'cancelado' ? "bg-red-100 text-red-700" :
@@ -451,23 +451,22 @@ export default function Appointments() {
                 </span>
 
                 {app.status === 'pendente' && (
-                  <div className="flex gap-2">
-                    {/* Apenas o fisioterapeuta pode confirmar o agendamento */}
+                  <div className="flex gap-1.5">
                     {isPhysio && (
                       <button
                         onClick={() => updateStatus(app.id, 'confirmado')}
-                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all"
                         title="Confirmar"
                       >
-                        <Check size={18} />
+                        <Check size={16} />
                       </button>
                     )}
                     <button
                       onClick={() => updateStatus(app.id, 'cancelado')}
-                      className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                      className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all"
                       title="Cancelar"
                     >
-                      <XCircle size={18} />
+                      <XCircle size={16} />
                     </button>
                   </div>
                 )}
@@ -492,19 +491,19 @@ export default function Appointments() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8"
+              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-6 overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold">Agendar Sessão</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full">
-                  <X size={24} />
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Agendar Sessão</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                  <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={handleSchedule} className="space-y-6">
+              <form onSubmit={handleSchedule} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    {isPhysio ? 'Selecionar Paciente' : 'Selecionar Fisioterapeuta'}
+                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">
+                    {isPhysio ? 'Paciente' : 'Fisioterapeuta'}
                   </label>
                   <select
                     value={selectedUserId}
@@ -512,16 +511,16 @@ export default function Appointments() {
                       setSelectedUserId(e.target.value);
                       if (e.target.value) setTargetEmail('');
                     }}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 mb-2"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 mb-2 text-sm"
                   >
                     <option value="">Selecione da lista...</option>
                     {availableUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.nome_completo} ({u.email})</option>
+                      <option key={u.id} value={u.id}>{u.nome_completo}</option>
                     ))}
                   </select>
-                  <div className="relative py-2">
+                  <div className="relative py-1.5">
                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Ou digite o e-mail</span></div>
+                    <div className="relative flex justify-center text-[9px] uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Ou e-mail</span></div>
                   </div>
                   <input
                     type="email"
@@ -530,17 +529,17 @@ export default function Appointments() {
                       setTargetEmail(e.target.value);
                       if (e.target.value) setSelectedUserId('');
                     }}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                     placeholder="email@exemplo.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Serviço</label>
+                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Serviço</label>
                   <select
                     value={service}
                     onChange={(e) => setService(e.target.value)}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm"
                   >
                     <option value="Consulta de Fisioterapia">Consulta de Fisioterapia</option>
                     <option value="Avaliação Inicial">Avaliação Inicial</option>
@@ -550,64 +549,64 @@ export default function Appointments() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Data</label>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Data</label>
                     <input
                       type="date"
                       required
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Horário</label>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Hora</label>
                     <input
                       type="time"
                       required
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                     />
                   </div>
                 </div>
 
                 {isPhysio && (
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
-                        <CalendarIcon size={20} />
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm">
+                        <CalendarIcon size={18} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">Agendamento Recorrente</p>
-                        <p className="text-[10px] text-slate-400 font-medium">Repetir semanalmente</p>
+                        <p className="text-xs font-black text-slate-900">Recorrente</p>
+                        <p className="text-[9px] text-slate-400 font-medium">Semanalmente</p>
                       </div>
                     </div>
                     <ProGuard variant="inline">
-                      <div className="w-12 h-6 bg-slate-200 rounded-full relative cursor-not-allowed opacity-50">
-                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                      <div className="w-10 h-5 bg-slate-200 rounded-full relative cursor-not-allowed opacity-50">
+                        <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" />
                       </div>
                     </ProGuard>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Observações</label>
+                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Observações</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-24"
-                    placeholder="Alguma observação importante?"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-20 text-sm"
+                    placeholder="Notas..."
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full h-12 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
                 >
-                  {submitting ? <Loader2 className="animate-spin" /> : 'Confirmar Agendamento'}
+                  {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Agendamento'}
                 </button>
               </form>
             </motion.div>
@@ -629,22 +628,22 @@ export default function Appointments() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 text-center"
+              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-6 text-center"
             >
-              <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CalendarCheck size={40} />
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarCheck size={32} />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Confirmar Agendamento?</h2>
-              <p className="text-slate-500 mb-8">
+              <h2 className="text-xl font-black mb-1.5 text-slate-900">Confirmar Agendamento?</h2>
+              <p className="text-slate-500 text-sm font-medium mb-6">
                 Você recebeu uma solicitação de consulta. Deseja confirmar agora?
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     updateStatus(selectedAppId, 'cancelado');
                     setSelectedAppId(null);
                   }}
-                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                  className="flex-1 h-11 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
                 >
                   Recusar
                 </button>
@@ -653,7 +652,7 @@ export default function Appointments() {
                     updateStatus(selectedAppId, 'confirmado');
                     setSelectedAppId(null);
                   }}
-                  className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+                  className="flex-1 h-11 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                 >
                   Confirmar
                 </button>
