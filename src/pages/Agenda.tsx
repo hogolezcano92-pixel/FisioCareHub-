@@ -17,7 +17,8 @@ import {
   MapPin,
   MoreVertical,
   Stethoscope,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -31,6 +32,8 @@ export default function Agenda() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -112,7 +115,7 @@ export default function Agenda() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (id, nome_completo)
+          paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone)
         `)
         .eq('fisio_id', user?.id)
         .eq('data', selectedDate)
@@ -210,22 +213,19 @@ export default function Agenda() {
 
       // Enviar e-mail se confirmado ou cancelado
       if (status === 'confirmado' || status === 'cancelado') {
-        const { data: patientProfile } = await supabase
-          .from('perfis')
-          .select('email, nome_completo')
-          .eq('id', app.paciente_id)
-          .single();
+        const patientEmail = app.paciente?.email;
+        const patientName = app.paciente?.nome_completo || app.paciente?.nome;
 
-        if (patientProfile && profile) {
+        if (patientEmail && profile) {
           if (status === 'confirmado') {
             sendAppointmentConfirmation(
-              patientProfile.email,
+              patientEmail,
               profile.email,
               {
                 appointmentId: app.id,
-                patientName: patientProfile.nome_completo,
+                patientName: patientName || 'Paciente',
                 physioName: profile.nome_completo,
-                date: new Date(app.data || app.data_servico).toLocaleDateString('pt-BR'),
+                date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
                 time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                 service: app.tipo || app.servico || 'Consulta'
               }
@@ -234,11 +234,10 @@ export default function Agenda() {
             // Cancelamento
             import('../services/emailService').then(({ sendEmail }) => {
               sendEmail({
-                to: patientProfile.email,
+                to: patientEmail,
                 event: 'appointment',
                 subject: 'Agendamento Cancelado - FisioCareHub',
-                body: `Olá ${patientProfile.nome_completo}, informamos que o agendamento para o dia ${new Date(app.data || app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.`,
-                data: { ...app, status: 'cancelado' }
+                html: `<h1>Olá ${patientName}!</h1><p>Informamos que o agendamento para o dia ${app.data || new Date(app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.</p>`,
               });
             });
           }
@@ -246,6 +245,7 @@ export default function Agenda() {
       }
 
       toast.success(`Status atualizado para ${status}`);
+      setShowDetailsModal(false);
       fetchAppointments();
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
@@ -333,19 +333,25 @@ export default function Agenda() {
                 key={app.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all w-full"
+                onClick={() => {
+                  setSelectedAppointment(app);
+                  setShowDetailsModal(true);
+                }}
+                className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all w-full cursor-pointer group"
               >
                 <div className="flex items-center gap-6">
-                  <div className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 rounded-3xl text-slate-900">
+                  <div className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 rounded-3xl text-slate-900 group-hover:bg-blue-50 transition-colors">
                     <Clock size={20} className="text-sky-500 mb-1" />
-                    <span className="text-xl font-black">{app.hora.slice(0, 5)}</span>
+                    <span className="text-xl font-black">{app.hora?.slice(0, 5) || '--:--'}</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900">{app.paciente?.nome}</h3>
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
+                    </h3>
                     <div className="flex flex-wrap gap-4 mt-2">
                       <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                         <Stethoscope size={16} className="text-sky-500" />
-                        {app.tipo}
+                        {app.tipo || app.servico}
                       </div>
                       {app.local && (
                         <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
@@ -360,33 +366,46 @@ export default function Agenda() {
                 <div className="flex items-center gap-4">
                   <span className={cn(
                     "px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest",
-                    app.status === 'realizado' ? "bg-emerald-100 text-emerald-700" :
-                    app.status === 'agendado' ? "bg-sky-100 text-sky-700" :
+                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-100 text-emerald-700" :
+                    app.status === 'agendado' || app.status === 'pendente' ? "bg-sky-100 text-sky-700" :
                     "bg-red-100 text-red-700"
                   )}>
                     {app.status}
                   </span>
                   
                   <div className="flex gap-2">
-                    {app.status === 'agendado' && (
+                    {(app.status === 'agendado' || app.status === 'pendente') && (
                       <>
                         <button
-                          onClick={() => updateStatus(app.id, 'realizado')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStatus(app.id, 'confirmado');
+                          }}
                           className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-100 transition-all"
-                          title="Marcar como realizado"
+                          title="Confirmar"
                         >
                           <Check size={20} />
                         </button>
                         <button
-                          onClick={() => updateStatus(app.id, 'cancelado')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStatus(app.id, 'cancelado');
+                          }}
                           className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-all"
-                          title="Cancelar"
+                          title="Recusar"
                         >
                           <XCircle size={20} />
                         </button>
                       </>
                     )}
-                    <button className="p-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAppointment(app);
+                        setShowDetailsModal(true);
+                      }}
+                      className="p-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all"
+                    >
                       <MoreVertical size={20} />
                     </button>
                   </div>
@@ -396,6 +415,120 @@ export default function Agenda() {
           )}
         </div>
       )}
+
+      {/* Modal de Detalhes */}
+      <AnimatePresence>
+        {showDetailsModal && selectedAppointment && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDetailsModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Detalhes do Agendamento</h2>
+                <button onClick={() => setShowDetailsModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-6">
+                  <img 
+                    src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id}`}
+                    alt="Avatar"
+                    className="w-20 h-20 rounded-[2rem] object-cover border-4 border-slate-50 shadow-sm"
+                  />
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900">{selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
+                    <p className="text-slate-500 font-bold">{selectedAppointment.paciente?.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data e Hora</p>
+                    <div className="flex items-center gap-3 text-slate-900 font-black">
+                      <CalendarIcon size={20} className="text-blue-600" />
+                      {selectedAppointment.data || new Date(selectedAppointment.data_servico).toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-900 font-black mt-2">
+                      <Clock size={20} className="text-blue-600" />
+                      {selectedAppointment.hora || new Date(selectedAppointment.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Consulta</p>
+                    <div className="flex items-center gap-3 text-slate-900 font-black">
+                      <Stethoscope size={20} className="text-blue-600" />
+                      {selectedAppointment.tipo || selectedAppointment.servico}
+                    </div>
+                    {selectedAppointment.local && (
+                      <div className="flex items-center gap-3 text-slate-900 font-black mt-2">
+                        <MapPin size={20} className="text-blue-600" />
+                        {selectedAppointment.local}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedAppointment.observacoes && (
+                  <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Observações</p>
+                    <p className="text-slate-700 font-medium leading-relaxed">{selectedAppointment.observacoes}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    {(selectedAppointment.status === 'agendado' || selectedAppointment.status === 'pendente') && (
+                      <button
+                        onClick={() => updateStatus(selectedAppointment.id, 'confirmado')}
+                        className="flex-1 py-5 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
+                      >
+                        <Check size={20} />
+                        Confirmar
+                      </button>
+                    )}
+                    {selectedAppointment.status !== 'cancelado' && (
+                      <button
+                        onClick={() => updateStatus(selectedAppointment.id, 'cancelado')}
+                        className="flex-1 py-5 bg-red-50 text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                      >
+                        <XCircle size={20} />
+                        Recusar
+                      </button>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      const phone = selectedAppointment.paciente?.telefone?.replace(/\D/g, '');
+                      if (phone) {
+                        window.open(`https://wa.me/55${phone}`, '_blank');
+                      } else {
+                        toast.error('Telefone do paciente não cadastrado.');
+                      }
+                    }}
+                    className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                  >
+                    <MessageSquare size={20} />
+                    Enviar Mensagem ao Paciente
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal de Agendamento */}
       <AnimatePresence>
