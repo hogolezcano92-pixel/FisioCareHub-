@@ -17,14 +17,14 @@ export const sendEmail = async (payload: EmailPayload) => {
     const finalPayload = {
       to: payload.to,
       subject: payload.subject,
-      html: payload.html || payload.body
+      html: payload.html ?? payload.body ?? ''
     };
 
     console.log(`Disparando e-mail para ${finalPayload.to} (Evento: ${payload.event})`);
     
     // O nome da função no Supabase é 'Send-email' (case sensitive)
-    invokeFunction('Send-email', finalPayload)
-      .then(result => {
+    await invokeFunction('Send-email', finalPayload)
+      (result => {
         console.log('Resposta da Function Send-email:', result);
       })
       .catch(err => {
