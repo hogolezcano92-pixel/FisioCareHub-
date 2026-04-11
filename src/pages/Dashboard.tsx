@@ -735,16 +735,16 @@ export default function Dashboard() {
                 {recentAppointments.map((appt) => (
                   <div 
                     key={appt.id} 
-                    onClick={() => navigate(isPhysio ? `/agenda?id=${appt.id}` : `/appointments?id=${appt.id}`)}
+                    onClick={() => navigate(isPhysio ? `/agenda?agendamento_id=${appt.id}` : `/appointments?id=${appt.id}`)}
                     className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-blue-600/10 text-blue-400 rounded-2xl flex items-center justify-center font-black text-base border border-blue-500/20">
-                        {new Date(appt.data_servico || appt.data).getDate()}
+                        {new Date(appt.data).getDate()}
                       </div>
                       <div>
                         <p className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
-                          {isPhysio ? (appt.paciente?.nome_completo || appt.paciente?.nome || 'Paciente') : (appt.fisioterapeuta?.nome_completo || 'Fisioterapeuta')}
+                          {isPhysio ? (appt.nome_paciente || appt.paciente?.nome_completo || 'Paciente') : (appt.nome_fisioterapeuta || appt.fisioterapeuta?.nome_completo || 'Fisioterapeuta')}
                         </p>
                         <div className="flex items-center gap-3 text-sm text-slate-400 font-medium">
                           <span className="flex items-center gap-1">

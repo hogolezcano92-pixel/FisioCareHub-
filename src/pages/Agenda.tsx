@@ -67,7 +67,7 @@ export default function Agenda() {
   useEffect(() => {
     const checkUrlParams = async () => {
       const params = new URLSearchParams(window.location.search);
-      const appointmentId = params.get('id');
+      const appointmentId = params.get('agendamento_id');
       
       if (appointmentId) {
         // Primeiro tenta encontrar na lista atual
@@ -81,10 +81,7 @@ export default function Agenda() {
         // Se não encontrar, busca no banco para garantir que temos os dados
         const { data, error: fetchError } = await supabase
           .from('agendamentos')
-          .select(`
-            *,
-            paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone)
-          `)
+          .select('*')
           .eq('id', appointmentId)
           .single();
 
@@ -403,7 +400,7 @@ export default function Agenda() {
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
+                      {app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
                     </h3>
                     <div className="flex flex-wrap gap-4 mt-2">
                       <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
@@ -500,13 +497,13 @@ export default function Agenda() {
               <div className="space-y-8">
                 <div className="flex items-center gap-6">
                   <img 
-                    src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id}`}
+                    src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id || selectedAppointment.nome_paciente}`}
                     alt="Avatar"
                     className="w-20 h-20 rounded-[2rem] object-cover border-4 border-slate-50 shadow-sm"
                   />
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900">{selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
-                    <p className="text-slate-500 font-bold">{selectedAppointment.paciente?.email}</p>
+                    <h3 className="text-2xl font-black text-slate-900">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
+                    <p className="text-slate-500 font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
                   </div>
                 </div>
 
@@ -568,7 +565,7 @@ export default function Agenda() {
                   
                   <button
                     onClick={() => {
-                      const phone = selectedAppointment.paciente?.telefone?.replace(/\D/g, '');
+                      const phone = (selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone)?.replace(/\D/g, '');
                       if (phone) {
                         window.open(`https://wa.me/55${phone}`, '_blank');
                       } else {
