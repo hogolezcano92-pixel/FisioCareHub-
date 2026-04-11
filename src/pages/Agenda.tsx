@@ -64,6 +64,47 @@ export default function Agenda() {
     loadData();
   }, [user, selectedDate, profile, authLoading]);
 
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const appointmentId = params.get('id');
+      
+      if (appointmentId) {
+        // Primeiro tenta encontrar na lista atual
+        const existing = appointments.find(a => a.id === appointmentId);
+        if (existing) {
+          setSelectedAppointment(existing);
+          setShowDetailsModal(true);
+          return;
+        }
+
+        // Se não encontrar, busca no banco para garantir que temos os dados
+        const { data, error: fetchError } = await supabase
+          .from('agendamentos')
+          .select(`
+            *,
+            paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone)
+          `)
+          .eq('id', appointmentId)
+          .single();
+
+        if (data && !fetchError) {
+          setSelectedAppointment(data);
+          setShowDetailsModal(true);
+          
+          // Se a data for diferente da selecionada, atualiza a data para mostrar o contexto
+          if (data.data && data.data !== selectedDate) {
+            setSelectedDate(data.data);
+          }
+        }
+      }
+    };
+
+    if (!isLoading) {
+      checkUrlParams();
+    }
+  }, [isLoading, appointments.length]);
+
   const loadData = async () => {
     setIsLoading(true);
     setError(null);
@@ -132,7 +173,23 @@ export default function Agenda() {
           .order('hora');
         
         if (fallbackError) throw fallbackError;
-        setAppointments(fallbackData || []);
+        
+        if (fallbackData && fallbackData.length > 0) {
+          const patientIds = [...new Set(fallbackData.map(a => a.paciente_id))];
+          const { data: profiles } = await supabase
+            .from('perfis')
+            .select('id, nome_completo, email, avatar_url, telefone')
+            .in('id', patientIds);
+          
+          const profileMap = Object.fromEntries(profiles?.map(p => [p.id, p]) || []);
+          const enriched = fallbackData.map(a => ({
+            ...a,
+            paciente: profileMap[a.paciente_id]
+          }));
+          setAppointments(enriched);
+        } else {
+          setAppointments([]);
+        }
         return;
       }
       

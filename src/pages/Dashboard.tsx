@@ -139,6 +139,8 @@ export default function Dashboard() {
     try {
       const isPatient = data.tipo_usuario === 'paciente';
       const roleField = isPatient ? 'paciente_id' : 'fisio_id';
+      
+      // Tenta buscar com joins explícitos
       const { data: appts, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -147,29 +149,53 @@ export default function Dashboard() {
           fisioterapeuta:perfis!fisio_id (nome_completo, email, avatar_url)
         `)
         .eq(roleField, data.id)
-        .order('data_servico', { ascending: false })
+        .order('data', { ascending: false })
+        .order('hora', { ascending: false })
         .limit(5);
 
       if (error) {
-        console.error("Erro completo do Supabase ao carregar consultas recentes:", error);
-        // Fallback para query simples
-        const { data: fallbackAppts, error: fallbackError } = await supabase
+        console.error("Erro ao carregar consultas recentes (join):", error);
+        // Fallback para query simples e busca manual de perfis
+        const { data: simpleAppts, error: simpleError } = await supabase
           .from('agendamentos')
           .select('*')
           .eq(roleField, data.id)
-          .order('data_servico', { ascending: false })
+          .order('data', { ascending: false })
           .limit(5);
         
-        if (fallbackError) throw fallbackError;
-        setRecentAppointments(fallbackAppts || []);
-        return;
+        if (simpleError) throw simpleError;
+
+        if (simpleAppts && simpleAppts.length > 0) {
+          const targetIds = isPatient 
+            ? [...new Set(simpleAppts.map(a => a.fisio_id))]
+            : [...new Set(simpleAppts.map(a => a.paciente_id))];
+          
+          const { data: profiles } = await supabase
+            .from('perfis')
+            .select('id, nome_completo, email, avatar_url')
+            .in('id', targetIds);
+          
+          const profileMap = Object.fromEntries(profiles?.map(p => [p.id, p]) || []);
+          
+          const enriched = simpleAppts.map(a => ({
+            ...a,
+            paciente: !isPatient ? profileMap[a.paciente_id] : null,
+            fisioterapeuta: isPatient ? profileMap[a.fisio_id] : null
+          }));
+          
+          setRecentAppointments(enriched);
+        } else {
+          setRecentAppointments([]);
+        }
+      } else {
+        setRecentAppointments(appts || []);
       }
-      setRecentAppointments(appts || []);
     } catch (err) {
-      console.error("Erro ao carregar consultas recentes:", err);
+      console.error("Erro fatal ao carregar consultas recentes:", err);
       setRecentAppointments([]);
     } finally {
-      setApptsLoading(false);
+      setApptsLoading(true); // Mantém loading por um momento para evitar flicker
+      setTimeout(() => setApptsLoading(false), 100);
     }
   }, []);
 
@@ -707,28 +733,39 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-white/5">
                 {recentAppointments.map((appt) => (
-                  <div key={appt.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
+                  <div 
+                    key={appt.id} 
+                    onClick={() => navigate(isPhysio ? `/agenda?id=${appt.id}` : `/appointments?id=${appt.id}`)}
+                    className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-blue-600/10 text-blue-400 rounded-2xl flex items-center justify-center font-black text-base border border-blue-500/20">
-                        {new Date(appt.data_servico).getDate()}
+                        {new Date(appt.data_servico || appt.data).getDate()}
                       </div>
                       <div>
                         <p className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
-                          {isPhysio ? appt.paciente?.nome_completo : appt.fisioterapeuta?.nome_completo}
+                          {isPhysio ? (appt.paciente?.nome_completo || appt.paciente?.nome || 'Paciente') : (appt.fisioterapeuta?.nome_completo || 'Fisioterapeuta')}
                         </p>
                         <div className="flex items-center gap-3 text-sm text-slate-400 font-medium">
-                          <span className="flex items-center gap-1"><Clock size={12} /> {new Date(appt.data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} /> 
+                            {appt.hora || new Date(appt.data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                           <span className="w-1 h-1 bg-white/10 rounded-full"></span>
-                          <span className="capitalize">{appt.status}</span>
+                          <span className={cn(
+                            "capitalize px-2 py-0.5 rounded-md text-[10px] font-black",
+                            appt.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400" :
+                            appt.status === 'pendente' ? "bg-amber-500/20 text-amber-400" :
+                            "bg-slate-500/20 text-slate-400"
+                          )}>
+                            {appt.status}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => navigate('/appointments')}
-                      className="p-2 text-slate-500 hover:text-blue-400 hover:bg-white/5 rounded-xl transition-all"
-                    >
+                    <div className="p-2 text-slate-500 group-hover:text-blue-400 group-hover:bg-white/5 rounded-xl transition-all">
                       <ChevronRight size={20} />
-                    </button>
+                    </div>
                   </div>
                 ))}
               </div>
