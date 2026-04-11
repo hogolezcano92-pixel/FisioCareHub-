@@ -289,6 +289,7 @@ export default function Appointments() {
         isPatient ? profile.email : targetUser.email,
         isPatient ? targetUser.email : profile.email,
         {
+          appointmentId: newApp?.id || '',
           patientName: isPatient ? profile.nome_completo : targetUser.nome_completo,
           physioName: isPatient ? targetUser.nome_completo : profile.nome_completo,
           date: formattedDate,
@@ -349,6 +350,7 @@ export default function Appointments() {
           app.paciente.email,
           app.fisioterapeuta.email,
           {
+            appointmentId: app.id,
             patientName: app.paciente.nome_completo,
             physioName: app.fisioterapeuta.nome_completo,
             date: formattedDate,

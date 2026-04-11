@@ -13,12 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, body, html, type = "email" } = await req.json()
+    const { to, subject, body, html, appointmentId, type = "email" } = await req.json()
 
     if (type === "email") {
       if (!RESEND_API_KEY) {
         throw new Error("RESEND_API_KEY is not configured")
       }
+
+      console.log(`Enviando e-mail para ${to}${appointmentId ? ` (Agendamento: ${appointmentId})` : ''}`);
 
       // Use Resend API
       const res = await fetch("https://api.resend.com/emails", {

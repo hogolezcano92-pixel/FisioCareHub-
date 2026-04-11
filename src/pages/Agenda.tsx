@@ -148,18 +148,21 @@ export default function Agenda() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('agendamentos')
         .insert({
           ...formData,
           fisio_id: user.id
-        });
+        })
+        .select();
 
       if (error) throw error;
 
+      const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
+
       // Buscar e-mail do paciente para enviar confirmação
       const patient = patients.find(p => p.id === formData.paciente_id);
-      if (patient) {
+      if (patient && newApp) {
         const { data: patientProfile } = await supabase
           .from('perfis')
           .select('email, nome_completo')
@@ -171,6 +174,7 @@ export default function Agenda() {
             patientProfile.email,
             profile.email,
             {
+              appointmentId: newApp.id,
               patientName: patientProfile.nome_completo,
               physioName: profile.nome_completo,
               date: new Date(formData.data).toLocaleDateString('pt-BR'),
@@ -218,6 +222,7 @@ export default function Agenda() {
               patientProfile.email,
               profile.email,
               {
+                appointmentId: app.id,
                 patientName: patientProfile.nome_completo,
                 physioName: profile.nome_completo,
                 date: new Date(app.data || app.data_servico).toLocaleDateString('pt-BR'),
