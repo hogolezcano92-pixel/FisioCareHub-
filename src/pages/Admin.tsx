@@ -424,12 +424,11 @@ export default function Admin() {
     try {
       console.log(`Aprovando fisioterapeuta: ${profileId}`);
       
-      // Update Supabase - Update both status_aprovacao and aprovado boolean
+      // Update Supabase - Update status_aprovacao
       const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          status_aprovacao: 'aprovado',
-          aprovado: true 
+          status_aprovacao: 'aprovado'
         })
         .eq('id', profileId)
         .select();
@@ -498,8 +497,7 @@ export default function Admin() {
       const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          status_aprovacao: 'rejeitado',
-          aprovado: false
+          status_aprovacao: 'rejeitado'
         })
         .eq('id', profileId)
         .select();
