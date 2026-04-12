@@ -271,6 +271,7 @@ export default function Dashboard() {
   };
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isPending = isPhysio && profile?.status_aprovacao === 'pendente';
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
   const isAdmin = profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 

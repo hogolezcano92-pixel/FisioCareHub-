@@ -67,7 +67,7 @@ import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 
 export default function Admin() {
-  const { user: supabaseUser, loading: loadingSupabase, signOut, profile: authProfile } = useAuth();
+  const { user: supabaseUser, loading: loadingSupabase, signOut, profile: authProfile, refreshProfile } = useAuth();
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
@@ -136,6 +136,23 @@ export default function Admin() {
   }, [supabaseUser, loadingSupabase, authProfile, navigate]);
 
   useEffect(() => {
+    if (isAdmin && authProfile && authProfile.tipo_usuario !== 'admin') {
+      // Self-promote to admin in the database if the email matches the hardcoded admin
+      const selfPromote = async () => {
+        try {
+          console.log("Self-promoting to admin in Supabase...");
+          await supabase
+            .from('perfis')
+            .update({ tipo_usuario: 'admin', plano: 'admin' })
+            .eq('id', authProfile.id);
+          if (refreshProfile) refreshProfile();
+        } catch (err) {
+          console.warn("Self-promotion failed:", err);
+        }
+      };
+      selfPromote();
+    }
+
     if (isAdmin && !loadingFirebase) {
       const checkFirebaseAdmin = async () => {
         if (firebaseUser) {
@@ -405,31 +422,45 @@ export default function Admin() {
 
   const handleApprovePhysio = async (profileId: string, userId: string) => {
     try {
-      // Update Supabase
-      const { error: supabaseError } = await supabase
+      console.log(`Aprovando fisioterapeuta: ${profileId}`);
+      
+      // Update Supabase - Update both status_aprovacao and aprovado boolean
+      const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          status_aprovacao: 'aprovado' 
+          status_aprovacao: 'aprovado',
+          aprovado: true 
         })
-        .eq('id', profileId);
+        .eq('id', profileId)
+        .select();
 
       if (supabaseError) {
         console.error("Supabase update error:", supabaseError);
         if (supabaseError.message.includes('column')) {
           import('sonner').then(({ toast }) => toast.error("Erro: Colunas de aprovação não encontradas no banco de dados."));
+        } else if (supabaseError.message.includes('permission') || supabaseError.message.includes('row-level security')) {
+          import('sonner').then(({ toast }) => toast.error("Erro de permissão: Verifique se as políticas RLS do Supabase permitem que administradores editem perfis."));
         } else {
           throw supabaseError;
         }
+        return;
+      }
+
+      if (!updateData || updateData.length === 0) {
+        console.warn("Nenhum perfil foi atualizado no Supabase. Verifique as permissões RLS.");
+        import('sonner').then(({ toast }) => toast.error("Aviso: O perfil não foi atualizado no banco de dados. Verifique as permissões RLS."));
       }
 
       // Update Firebase (if exists)
       try {
         await updateDoc(doc(db, 'physiotherapists', profileId), {
           status: 'approved',
-          approved: true
+          approved: true,
+          status_aprovacao: 'aprovado'
         });
         await updateDoc(doc(db, 'users', userId), {
-          status: 'approved'
+          status: 'approved',
+          status_aprovacao: 'aprovado'
         });
       } catch (fbErr) {
         console.warn("Firebase update failed (might not exist):", fbErr);
@@ -452,7 +483,7 @@ export default function Admin() {
       // Manual refresh to ensure UI updates
       await fetchSupabaseProfiles();
 
-      import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado!"));
+      import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado com sucesso!"));
     } catch (err: any) {
       console.error("Error approving physio:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao aprovar fisioterapeuta: " + (err.message || "")));
@@ -461,31 +492,37 @@ export default function Admin() {
 
   const handleRejectPhysio = async (profileId: string, userId: string) => {
     try {
+      console.log(`Rejeitando fisioterapeuta: ${profileId}`);
+      
       // Update Supabase
-      const { error: supabaseError } = await supabase
+      const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
         .update({ 
-          status_aprovacao: 'rejeitado' 
+          status_aprovacao: 'rejeitado',
+          aprovado: false
         })
-        .eq('id', profileId);
+        .eq('id', profileId)
+        .select();
 
       if (supabaseError) {
         console.error("Supabase update error:", supabaseError);
-        if (supabaseError.message.includes('column')) {
-          import('sonner').then(({ toast }) => toast.error("Erro: Colunas de aprovação não encontradas no banco de dados."));
-        } else {
-          throw supabaseError;
-        }
+        throw supabaseError;
+      }
+
+      if (!updateData || updateData.length === 0) {
+        import('sonner').then(({ toast }) => toast.error("Aviso: O perfil não foi atualizado no banco de dados. Verifique as permissões RLS."));
       }
 
       // Update Firebase (if exists)
       try {
         await updateDoc(doc(db, 'physiotherapists', profileId), {
           status: 'rejected',
-          approved: false
+          approved: false,
+          status_aprovacao: 'rejeitado'
         });
         await updateDoc(doc(db, 'users', userId), {
-          status: 'rejected'
+          status: 'rejected',
+          status_aprovacao: 'rejeitado'
         });
       } catch (fbErr) {
         console.warn("Firebase update failed (might not exist):", fbErr);
@@ -534,6 +571,9 @@ export default function Admin() {
       } catch (fbErr) {
         console.warn("Firebase update failed:", fbErr);
       }
+
+      // Manual refresh
+      await fetchSupabaseProfiles();
 
       import('sonner').then(({ toast }) => toast.success(`Status do usuário atualizado para: ${newStatus}!`));
     } catch (err) {
