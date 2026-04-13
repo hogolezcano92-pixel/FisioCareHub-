@@ -979,12 +979,12 @@ export default function Admin() {
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
-            <div className={cn("flex items-center gap-2 overflow-hidden transition-all", !sidebarOpen && "lg:hidden")}>
+            <div className={cn("flex items-center gap-2 overflow-visible transition-all whitespace-nowrap min-w-0 flex-1", !sidebarOpen && "lg:hidden")}>
               <Logo size="sm" variant="light" />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all active:scale-95"
+              className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all active:scale-95 flex-shrink-0"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
