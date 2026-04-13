@@ -40,8 +40,45 @@ export const sendEmail = async (payload: EmailPayload) => {
   }
 };
 
-export const sendWelcomeEmail = async (email: string, name: string) => {
-  const welcomeHtml = `
+export const sendWelcomeEmail = async (email: string, name: string, role: 'paciente' | 'fisioterapeuta' = 'paciente') => {
+  const isPhysio = role === 'fisioterapeuta';
+  
+  const welcomeHtml = isPhysio ? `
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
+      <div style="background-color: #0ea5e9; padding: 40px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">FisioCareHub</h1>
+        <p style="color: #e0f2fe; margin: 10px 0 0 0; font-size: 16px;">Cadastro de Profissional</p>
+      </div>
+      <div style="padding: 40px 30px;">
+        <p style="font-size: 18px; color: #1e293b; margin-bottom: 24px;">Olá <strong>${name}</strong>,</p>
+        <p style="font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 32px;">
+          Seu cadastro como <strong>Fisioterapeuta</strong> no FisioCareHub foi recebido com sucesso! 
+        </p>
+        
+        <div style="background-color: #f0f9ff; border-radius: 12px; padding: 24px; margin-bottom: 32px; border: 1px solid #e0f2fe;">
+          <p style="margin: 0; color: #0369a1; font-size: 15px; font-weight: 600;">Próximos passos:</p>
+          <ul style="margin: 16px 0 0 0; padding-left: 20px; color: #0c4a6e; font-size: 14px; line-height: 1.8;">
+            <li>Nossa equipe analisará seus documentos e informações</li>
+            <li>Você receberá uma notificação assim que seu perfil for aprovado</li>
+            <li>Após a aprovação, você poderá configurar sua agenda e começar a atender</li>
+          </ul>
+        </div>
+
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 32px;">
+          Enquanto isso, você já pode acessar seu painel para completar as informações do seu perfil.
+        </p>
+
+        <div style="text-align: center;">
+          <a href="https://fisiocarehub.company/dashboard" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);">
+            Acessar Meu Painel
+          </a>
+        </div>
+      </div>
+      <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #f1f5f9;">
+        <p style="margin: 0; font-size: 12px; color: #94a3b8;">&copy; ${new Date().getFullYear()} FisioCareHub. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  ` : `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
       <div style="background-color: #0ea5e9; padding: 40px 20px; text-align: center;">
         <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">FisioCareHub</h1>
@@ -78,9 +115,9 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
   return sendEmail({
     to: email,
     event: 'signup',
-    subject: 'Bem-vindo ao FisioCareHub!',
+    subject: isPhysio ? 'Bem-vindo ao FisioCareHub - Cadastro de Profissional' : 'Bem-vindo ao FisioCareHub!',
     html: welcomeHtml,
-    data: { name }
+    data: { name, role }
   });
 };
 
