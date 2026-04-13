@@ -119,7 +119,7 @@ const Logo: React.FC<LogoProps> = ({
           <div className="flex items-center gap-2 mt-1">
             <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
             <span className={cn(
-              "text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em]",
+              "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
               variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
             )}>
               Reabilitação & Performance
