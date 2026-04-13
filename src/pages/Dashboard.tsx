@@ -218,10 +218,21 @@ export default function Dashboard() {
     }
   }, []);
 
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isApproved = profile?.status_aprovacao === 'aprovado';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const isAdmin = profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
     } else if (profile) {
+      // Redirect unapproved physios
+      if (isPhysio && !isApproved && !isAdmin) {
+        navigate('/aguardando-aprovacao', { replace: true });
+        return;
+      }
+
       if (lastLoadedProfileId.current !== profile.id) {
         lastLoadedProfileId.current = profile.id;
         fetchStats(profile);
@@ -229,7 +240,7 @@ export default function Dashboard() {
         fetchRecentTriages();
       }
     }
-  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments, fetchRecentTriages]);
+  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments, fetchRecentTriages, isPhysio, isApproved, isAdmin]);
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -269,11 +280,6 @@ export default function Dashboard() {
     if (hour >= 12 && hour < 18) return 'Boa tarde';
     return 'Boa noite';
   };
-
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isPending = isPhysio && profile?.status_aprovacao === 'pendente';
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
-  const isAdmin = profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   useEffect(() => {
     if (profile && isPhysio) {

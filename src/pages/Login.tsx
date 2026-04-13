@@ -27,13 +27,18 @@ export default function Login() {
       const checkRoleAndRedirect = async () => {
         const { data: profileData } = await supabase
           .from('perfis')
-          .select('tipo_usuario')
+          .select('tipo_usuario, status_aprovacao')
           .eq('id', user.id)
           .maybeSingle();
         
         const isAdmin = profileData?.tipo_usuario === 'admin' || user.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+        const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
+        const isApproved = profileData?.status_aprovacao === 'aprovado';
+
         if (isAdmin) {
           navigate('/admin', { replace: true });
+        } else if (isPhysio && !isApproved) {
+          navigate('/aguardando-aprovacao', { replace: true });
         } else {
           navigate('/dashboard', { replace: true });
         }
@@ -133,14 +138,16 @@ export default function Login() {
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
       
-      // Get profile to check role
+      // Get profile to check role and approval status
       const { data: profileData } = await supabase
         .from('perfis')
-        .select('tipo_usuario')
+        .select('tipo_usuario, status_aprovacao')
         .eq('id', data.user?.id)
         .maybeSingle();
 
       const isAdmin = profileData?.tipo_usuario === 'admin' || cleanEmail.toLowerCase() === 'hogolezcano92@gmail.com';
+      const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
+      const isApproved = profileData?.status_aprovacao === 'aprovado';
 
       // Check for redirect in URL
       const params = new URLSearchParams(window.location.search);
@@ -150,6 +157,8 @@ export default function Login() {
         navigate(redirectTo, { replace: true });
       } else if (isAdmin) {
         navigate('/admin', { replace: true });
+      } else if (isPhysio && !isApproved) {
+        navigate('/aguardando-aprovacao', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
