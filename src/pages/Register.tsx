@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
+import { uploadPhysioDocument } from '../services/supabaseStorage';
 import { sendWelcomeEmail } from '../services/emailService';
 
 export default function Register() {
@@ -43,11 +44,22 @@ export default function Register() {
     serviceType: 'ambos' as 'domicilio' | 'online' | 'ambos',
     gender: '' as 'male' | 'female' | 'other' | '',
     proKey: '',
+    rg_frente: null as File | null,
+    rg_verso: null as File | null,
+    crefito_frente: null as File | null,
+    crefito_verso: null as File | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({ ...prev, [name]: files[0] }));
+    }
   };
 
   const [showPassword, setShowPassword] = useState(false);
@@ -117,6 +129,12 @@ export default function Register() {
         setLoading(false);
         return;
       }
+
+      if (!formData.rg_frente || !formData.rg_verso || !formData.crefito_frente || !formData.crefito_verso) {
+        setError("Todos os documentos (RG e CREFITO) são obrigatórios para fisioterapeutas.");
+        setLoading(false);
+        return;
+      }
     }
 
     // CEP validation (8 digits, ignore non-digits)
@@ -148,7 +166,11 @@ export default function Register() {
             pais: formData.country,
             genero: role === 'fisioterapeuta' ? formData.gender : null,
             tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-            is_pro: isPro
+            is_pro: isPro,
+            rg_frente_url: null,
+            rg_verso_url: null,
+            crefito_frente_url: null,
+            crefito_verso_url: null
           }
         }
       });
@@ -166,10 +188,43 @@ export default function Register() {
         // Disparar e-mail de boas-vindas (não bloqueia o fluxo)
         sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta');
 
-        // 3. Upload documents if any (for physios)
+        // 3. Upload de documentos obrigatórios se for fisioterapeuta
+        let docUrls = {
+          rg_frente: null as string | null,
+          rg_verso: null as string | null,
+          crefito_frente: null as string | null,
+          crefito_verso: null as string | null
+        };
+
+        if (role === 'fisioterapeuta' && authData.user) {
+          try {
+            console.log("Uploading mandatory documents...");
+            const uploads = [
+              { file: formData.rg_frente!, type: 'rg_frente' as const },
+              { file: formData.rg_verso!, type: 'rg_verso' as const },
+              { file: formData.crefito_frente!, type: 'crefito_frente' as const },
+              { file: formData.crefito_verso!, type: 'crefito_verso' as const }
+            ];
+
+            const results = await Promise.all(
+              uploads.map(u => uploadPhysioDocument(authData.user!.id, u.file, u.type))
+            );
+
+            docUrls = {
+              rg_frente: results[0],
+              rg_verso: results[1],
+              crefito_frente: results[2],
+              crefito_verso: results[3]
+            };
+          } catch (uploadErr: any) {
+            console.error("Erro no upload de documentos obrigatórios:", uploadErr);
+          }
+        }
+
+        // 4. Upload de documentos adicionais se houver
         const uploadedDocUrls: string[] = [];
         if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
-          console.log("Uploading documents...");
+          console.log("Uploading additional documents...");
           const { uploadDocument } = await import('../services/supabaseStorage');
           for (const file of registrationDocs) {
             try {
@@ -181,7 +236,7 @@ export default function Register() {
           }
         }
 
-        // 4. Criar o perfil detalhado na tabela 'perfis'
+        // 5. Criar o perfil detalhado na tabela 'perfis'
         console.log("Upserting profile to 'perfis' table...");
         
         const fullProfileData = {
@@ -200,6 +255,10 @@ export default function Register() {
           tipo_servico: role === 'fisioterapeuta' ? (formData.serviceType || null) : null,
           is_pro: isPro,
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+          rg_frente_url: docUrls.rg_frente,
+          rg_verso_url: docUrls.rg_verso,
+          crefito_frente_url: docUrls.crefito_frente,
+          crefito_verso_url: docUrls.crefito_verso,
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           telefone: formData.telefone,
           bio: formData.bio,
@@ -440,20 +499,54 @@ export default function Register() {
                 </select>
               </div>
               <div>
-                <label className="block text-base font-semibold text-slate-700 mb-2">Documentos Profissionais (PDF/Imagens)</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(e) => {
-                      if (e.target.files) {
-                        setRegistrationDocs(Array.from(e.target.files));
-                      }
-                    }}
-                    className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
+                <label className="block text-base font-semibold text-slate-700 mb-2">Documentos Obrigatórios (RG e CREFITO)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500">RG Frente</label>
+                    <input
+                      type="file"
+                      name="rg_frente"
+                      accept="image/*,application/pdf"
+                      required
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500">RG Verso</label>
+                    <input
+                      type="file"
+                      name="rg_verso"
+                      accept="image/*,application/pdf"
+                      required
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500">CREFITO Frente</label>
+                    <input
+                      type="file"
+                      name="crefito_frente"
+                      accept="image/*,application/pdf"
+                      required
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500">CREFITO Verso</label>
+                    <input
+                      type="file"
+                      name="crefito_verso"
+                      accept="image/*,application/pdf"
+                      required
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-2">Anexe seu CREFITO e documentos de identificação para validação.</p>
+                <p className="text-[10px] text-slate-400 mt-2">O envio dos documentos é obrigatório para a aprovação do seu cadastro profissional.</p>
               </div>
               <div>
                 <label className="block text-base font-semibold text-slate-700 mb-2">Chave Pro (Opcional)</label>
