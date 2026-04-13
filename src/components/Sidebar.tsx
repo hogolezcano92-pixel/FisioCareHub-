@@ -44,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
   const isAdmin = profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+  const isApproved = profile?.status_aprovacao === 'aprovado' || isAdmin || profile?.tipo_usuario === 'paciente';
 
   const sections = [
     ...(isAdmin ? [
@@ -63,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         title: 'ATENDIMENTO',
         items: [
           { name: 'Início', path: '/dashboard', icon: Home },
-          ...(isPhysio ? [
+          ...(isPhysio && isApproved ? [
             { name: 'Meus Pacientes', path: '/patients', icon: Users },
             { name: 'Agenda', path: '/agenda', icon: Calendar },
             { name: 'Exercícios', path: '/exercises', icon: Activity },
@@ -71,22 +72,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Prontuários', path: '/records', icon: FileText },
             { name: 'Documentos', path: '/documents', icon: FileSignature },
             { name: 'Assinatura', path: '/subscription', icon: Crown },
-          ] : [
+          ] : []),
+          ...(profile?.tipo_usuario === 'paciente' ? [
             { name: 'Agenda', path: '/appointments', icon: Calendar },
             { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
             { name: 'Prontuários', path: '/records', icon: FileText },
             { name: 'Documentos', path: '/documents', icon: FileSignature },
             { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
             { name: 'Biblioteca de Saúde', path: '/patient/library', icon: BookOpen },
-          ])
+          ] : [])
         ]
       },
-      {
-        title: 'COMUNICAÇÃO',
-        items: [
-          { name: 'Chat', path: '/chat', icon: MessageSquare },
-        ]
-      }
+      ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
+        {
+          title: 'COMUNICAÇÃO',
+          items: [
+            { name: 'Chat', path: '/chat', icon: MessageSquare },
+          ]
+        }
+      ] : [])
     ]),
     {
       title: 'CONTA',
