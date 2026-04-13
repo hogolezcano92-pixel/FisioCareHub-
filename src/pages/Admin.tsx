@@ -1020,10 +1020,26 @@ export default function Admin() {
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
+
+            {/* Logout Button moved inside Nav */}
+            <div className="pt-2 mt-2 border-t border-white/5">
+              <button
+                onClick={() => {
+                  signOut().then(() => navigate('/'));
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
+                  !sidebarOpen && "lg:justify-center"
+                )}
+              >
+                <LogOut size={20} className="flex-shrink-0" />
+                <span className={cn(!sidebarOpen && "lg:hidden")}>Sair da Conta</span>
+              </button>
+            </div>
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-white/5 space-y-2">
+          <div className="p-4 border-t border-white/5">
             <div className={cn(
               "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
               !sidebarOpen && "lg:justify-center lg:p-2"
@@ -1036,19 +1052,6 @@ export default function Admin() {
                 <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
               </div>
             </div>
-            
-            <button
-              onClick={() => {
-                signOut().then(() => navigate('/'));
-              }}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
-                !sidebarOpen && "lg:justify-center"
-              )}
-            >
-              <LogOut size={20} />
-              <span className={cn(!sidebarOpen && "lg:hidden")}>Sair da Conta</span>
-            </button>
           </div>
         </div>
       </aside>
