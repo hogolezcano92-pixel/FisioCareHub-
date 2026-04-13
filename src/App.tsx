@@ -48,6 +48,7 @@ import KineAI from './components/KineAI';
 import SplashScreen from './components/SplashScreen';
 import Onboarding from './components/Onboarding';
 import Sidebar from './components/Sidebar';
+import AguardandoAprovacao from './pages/AguardandoAprovacao';
 
 // Lazy Pages
 const Home = lazy(() => import('./pages/Home'));
@@ -171,7 +172,10 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
   const { user, profile, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return <SplashScreen />;
+  // If loading or profile is not yet available but user is logged in, show splash
+  if (loading || (user && !profile)) {
+    return <SplashScreen />;
+  }
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -179,6 +183,19 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
 
   const userRole = profile?.tipo_usuario;
   const isAdmin = userRole === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+  const isApproved = profile?.status_aprovacao === 'aprovado';
+
+  // Block unapproved physiotherapists (except for profile and waiting page)
+  if (userRole === 'fisioterapeuta' && !isApproved && !isAdmin) {
+    if (location.pathname !== '/aguardando-aprovacao' && location.pathname !== '/profile') {
+      return <Navigate to="/aguardando-aprovacao" replace />;
+    }
+  }
+
+  // If approved user tries to access waiting page, send them to dashboard
+  if (location.pathname === '/aguardando-aprovacao' && (isApproved || isAdmin || userRole === 'paciente')) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // If we are on a route that requires specific roles
   if (allowedRoles && !allowedRoles.includes(userRole)) {
@@ -207,6 +224,7 @@ function Navbar() {
   const location = useLocation();
 
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const isApproved = profile?.status_aprovacao === 'aprovado' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   const handleLogout = async () => {
     await signOut();
@@ -214,13 +232,13 @@ function Navbar() {
   };
 
   const navItems = [
-    { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : '/dashboard') : '/', icon: HomeIcon },
+    { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', icon: HomeIcon },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || 
           user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
       
       // Items for Physiotherapists
-      ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' ? [
+      ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
@@ -239,8 +257,12 @@ function Navbar() {
       ] : []),
 
       // Common Items
-      { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
-      { name: t('nav.profile'), path: '/profile', icon: User },
+      ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
+        { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
+      ] : []),
+      ...(isApproved || profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'admin' ? [
+        { name: t('nav.profile'), path: '/profile', icon: User },
+      ] : []),
     ] : [
       { name: t('nav.login'), path: '/login', icon: User },
       { name: t('nav.register'), path: '/register', icon: Stethoscope },
@@ -527,7 +549,9 @@ function AppContent() {
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
   const isAdminPage = location.pathname === '/admin';
 
-  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage;
+  const isApproved = profile?.status_aprovacao === 'aprovado';
+  const isWaitingPage = location.pathname === '/aguardando-aprovacao';
+  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -562,7 +586,7 @@ function AppContent() {
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general">
-          {!showSidebar && !isAdminPage ? <Navbar /> : (showSidebar && (
+          {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] h-auto">
               <Logo size="sm" />
               <div className="flex items-center gap-4">
@@ -579,7 +603,7 @@ function AppContent() {
 
           <main className={cn(
             "flex-1 w-full",
-            location.pathname === '/chat' || showSidebar || isAdminPage ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
+            location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
             showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
           )}>
             <Suspense fallback={<PageLoader />}>
@@ -589,6 +613,11 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/aguardando-aprovacao" element={
+                <ProtectedRoute>
+                  <AguardandoAprovacao />
+                </ProtectedRoute>
+              } />
               
               {/* Protected Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
