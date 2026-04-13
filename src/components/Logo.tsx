@@ -126,12 +126,15 @@ const Logo: React.FC<LogoProps> = ({
                 Reabilitação
               </span>
             </div>
-            <span className={cn(
-              "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] pl-6",
-              variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
-            )}>
-              & Performance
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="h-[2px] w-4 bg-transparent" /> {/* Spacer to align with text above */}
+              <span className={cn(
+                "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
+                variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
+              )}>
+                & Performance
+              </span>
+            </div>
           </div>
         </motion.div>
       )}
