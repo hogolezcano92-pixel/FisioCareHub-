@@ -75,6 +75,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Subscription = lazy(() => import('./pages/Subscription'));
 const HealthLibrary = lazy(() => import('./pages/HealthLibrary'));
 const ConfirmAppointment = lazy(() => import('./pages/ConfirmAppointment'));
+const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -585,7 +586,7 @@ function AppContent() {
         
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
 
-        <div className="flex-1 flex flex-col min-w-0 bg-bg-general">
+        <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] h-auto">
               <Logo size="sm" />
@@ -645,9 +646,33 @@ function AppContent() {
               <Route path="/seja-parceiro" element={<Partner />} />
               <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
               <Route path="/agendamento/confirmar" element={<ConfirmAppointment />} />
+              <Route path="/physio/:id" element={<ProfessionalProfile />} />
             </Routes>
           </Suspense>
         </main>
+
+        {/* Novo Rodapé (Footer) solicitado */}
+        <footer className="mt-auto py-6 border-t border-gray-800 bg-transparent text-sm text-gray-500">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span>© 2026 FisioCareHub — Reabilitação & Performance</span>
+            </div>
+            
+            <div className="flex gap-6">
+              <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
+              <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
+              <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
+            </div>
+
+            <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-800">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-[10px] uppercase tracking-wider font-semibold">Sistema Online</span>
+            </div>
+          </div>
+        </footer>
 
         {!showSidebar && location.pathname !== '/chat' && (
           <footer className="bg-white border-t border-border-soft py-20">
