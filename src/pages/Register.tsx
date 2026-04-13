@@ -28,22 +28,30 @@ export default function Register() {
     setRole(newRole);
     localStorage.setItem('pending_role', newRole);
   };
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    telefone: '',
+    bio: '',
+    zipCode: '',
+    city: '',
+    country: 'Brasil',
+    address: '',
+    crefito: '',
+    specialty: '',
+    serviceType: 'ambos' as 'domicilio' | 'online' | 'ambos',
+    gender: '' as 'male' | 'female' | 'other' | '',
+    proKey: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [bio, setBio] = useState('');
-  const [specialty, setSpecialty] = useState('');
-  const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [country, setCountry] = useState('Brasil');
-  const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
-  const [crefito, setCrefito] = useState('');
   const [registrationDocs, setRegistrationDocs] = useState<File[]>([]);
-  const [proKey, setProKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,9 +82,9 @@ export default function Register() {
     setError('');
 
     // 1. Validação e Limpeza de Dados (Ponto CRÍTICO)
-    const cleanName = name.trim();
-    const cleanEmail = email.trim();
-    const isPro = role === 'fisioterapeuta' && proKey.trim().toUpperCase() === 'PRO2024';
+    const cleanName = formData.name.trim();
+    const cleanEmail = formData.email.trim();
+    const isPro = role === 'fisioterapeuta' && formData.proKey.trim().toUpperCase() === 'PRO2024';
 
     if (cleanName.length < 2) {
       setError("O nome completo deve ter pelo menos 2 caracteres.");
@@ -91,20 +99,20 @@ export default function Register() {
       return;
     }
 
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres.");
       setLoading(false);
       return;
     }
 
     if (role === 'fisioterapeuta') {
-      if (!crefito.trim()) {
+      if (!formData.crefito.trim()) {
         setError("O CREFITO é obrigatório para fisioterapeutas.");
         setLoading(false);
         return;
       }
       // Simple CREFITO validation: at least 4 digits
-      if (!/^\d{4,}/.test(crefito.trim())) {
+      if (!/^\d{4,}/.test(formData.crefito.trim())) {
         setError("Por favor, insira um CREFITO válido.");
         setLoading(false);
         return;
@@ -112,7 +120,7 @@ export default function Register() {
     }
 
     // CEP validation (8 digits, ignore non-digits)
-    const cleanZip = zipCode.replace(/\D/g, '');
+    const cleanZip = formData.zipCode.replace(/\D/g, '');
     if (cleanZip.length !== 8) {
       setError("Por favor, insira um CEP válido com 8 dígitos.");
       setLoading(false);
@@ -124,22 +132,22 @@ export default function Register() {
       // 2. Criar o usuário no Supabase Auth com metadados COMPLETOS
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
-        password: password,
+        password: formData.password,
         options: {
           data: {
             full_name: cleanName,
             tipo_usuario: role,
             plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
-            crefito: role === 'fisioterapeuta' ? crefito : null,
-            especialidade: role === 'fisioterapeuta' ? specialty : null,
-            telefone: telefone,
-            bio: bio,
-            localizacao: city,
-            endereco: address,
-            cep: zipCode,
-            pais: country,
-            genero: role === 'fisioterapeuta' ? gender : null,
-            tipo_servico: role === 'fisioterapeuta' ? serviceType : null,
+            crefito: role === 'fisioterapeuta' ? formData.crefito : null,
+            especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
+            telefone: formData.telefone,
+            bio: formData.bio,
+            localizacao: formData.city,
+            endereco: formData.address,
+            cep: formData.zipCode,
+            pais: formData.country,
+            genero: role === 'fisioterapeuta' ? formData.gender : null,
+            tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
             is_pro: isPro
           }
         }
@@ -182,19 +190,19 @@ export default function Register() {
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
           tipo_usuario: role,
           email: cleanEmail,
-          localizacao: city || null,
-          endereco: address || null,
-          cep: zipCode || null,
-          pais: country || null,
-          crefito: role === 'fisioterapeuta' ? (crefito || null) : null,
-          especialidade: role === 'fisioterapeuta' ? (specialty || null) : null,
-          genero: role === 'fisioterapeuta' ? (gender || null) : null,
-          tipo_servico: role === 'fisioterapeuta' ? (serviceType || null) : null,
+          localizacao: formData.city || null,
+          endereco: formData.address || null,
+          cep: formData.zipCode || null,
+          pais: formData.country || null,
+          crefito: role === 'fisioterapeuta' ? (formData.crefito || null) : null,
+          especialidade: role === 'fisioterapeuta' ? (formData.specialty || null) : null,
+          genero: role === 'fisioterapeuta' ? (formData.gender || null) : null,
+          tipo_servico: role === 'fisioterapeuta' ? (formData.serviceType || null) : null,
           is_pro: isPro,
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
-          telefone: telefone,
-          bio: bio,
+          telefone: formData.telefone,
+          bio: formData.bio,
           documentos: uploadedDocUrls,
           created_at: new Date().toISOString()
         };
@@ -275,20 +283,20 @@ export default function Register() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setGender('male')}
+                  onClick={() => setFormData(prev => ({ ...prev, gender: 'male' }))}
                   className={cn(
                     "flex-1 py-3 rounded-2xl text-sm font-bold border transition-all",
-                    gender === 'male' ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                    formData.gender === 'male' ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                   )}
                 >
                   Dr.
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGender('female')}
+                  onClick={() => setFormData(prev => ({ ...prev, gender: 'female' }))}
                   className={cn(
                     "flex-1 py-3 rounded-2xl text-sm font-bold border transition-all",
-                    gender === 'female' ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                    formData.gender === 'female' ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                   )}
                 >
                   Dra.
@@ -302,9 +310,10 @@ export default function Register() {
               <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type="text"
+                name="name"
                 required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={formData.name}
+                onChange={handleChange}
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-base"
                 placeholder="Seu nome"
               />
@@ -315,8 +324,9 @@ export default function Register() {
             <label className="block text-base font-semibold text-slate-700 mb-2">Telefone</label>
             <input
               type="tel"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              name="telefone"
+              value={formData.telefone}
+              onChange={handleChange}
               className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
               placeholder="(00) 00000-0000"
             />
@@ -325,8 +335,9 @@ export default function Register() {
           <div>
             <label className="block text-base font-semibold text-slate-700 mb-2">Biografia / Histórico</label>
             <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
               className="w-full h-24 px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base resize-none"
               placeholder={role === 'fisioterapeuta' ? "Conte sobre sua formação..." : "Conte um pouco sobre seu histórico de saúde..."}
             />
@@ -336,9 +347,10 @@ export default function Register() {
             <label className="block text-base font-semibold text-slate-700 mb-2">CEP</label>
             <input
               type="text"
+              name="zipCode"
               required
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value)}
+              value={formData.zipCode}
+              onChange={handleChange}
               className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
               placeholder="00000-000"
             />
@@ -349,9 +361,10 @@ export default function Register() {
               <label className="block text-base font-semibold text-slate-700 mb-2">Cidade</label>
               <input
                 type="text"
+                name="city"
                 required
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                value={formData.city}
+                onChange={handleChange}
                 className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
                 placeholder="Sua cidade"
               />
@@ -360,9 +373,10 @@ export default function Register() {
               <label className="block text-base font-semibold text-slate-700 mb-2">País</label>
               <input
                 type="text"
+                name="country"
                 required
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
+                value={formData.country}
+                onChange={handleChange}
                 className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
                 placeholder="Seu país"
               />
@@ -373,9 +387,10 @@ export default function Register() {
             <label className="block text-base font-semibold text-slate-700 mb-2">Endereço Completo</label>
             <input
               type="text"
+              name="address"
               required
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={formData.address}
+              onChange={handleChange}
               className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
               placeholder="Rua, número, bairro..."
             />
@@ -391,9 +406,10 @@ export default function Register() {
                 <label className="block text-base font-semibold text-slate-700 mb-2">CREFITO</label>
                 <input
                   type="text"
+                  name="crefito"
                   required={role === 'fisioterapeuta'}
-                  value={crefito}
-                  onChange={(e) => setCrefito(e.target.value)}
+                  value={formData.crefito}
+                  onChange={handleChange}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
                   placeholder="Ex: 12345-F"
                 />
@@ -402,9 +418,10 @@ export default function Register() {
                 <label className="block text-base font-semibold text-slate-700 mb-2">Especialidade</label>
                 <input
                   type="text"
+                  name="specialty"
                   required={role === 'fisioterapeuta'}
-                  value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
+                  value={formData.specialty}
+                  onChange={handleChange}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
                   placeholder="Ex: Ortopedia, Neuro..."
                 />
@@ -412,8 +429,9 @@ export default function Register() {
               <div>
                 <label className="block text-base font-semibold text-slate-700 mb-2">Tipo de Atendimento</label>
                 <select
-                  value={serviceType}
-                  onChange={(e: any) => setServiceType(e.target.value)}
+                  name="serviceType"
+                  value={formData.serviceType}
+                  onChange={handleChange}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base"
                 >
                   <option value="domicilio">A Domicílio</option>
@@ -441,8 +459,9 @@ export default function Register() {
                 <label className="block text-base font-semibold text-slate-700 mb-2">Chave Pro (Opcional)</label>
                 <input
                   type="text"
-                  value={proKey}
-                  onChange={(e) => setProKey(e.target.value.toUpperCase())}
+                  name="proKey"
+                  value={formData.proKey}
+                  onChange={(e) => setFormData(prev => ({ ...prev, proKey: e.target.value.toUpperCase() }))}
                   className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-base font-mono tracking-widest"
                   placeholder="INSIRA SUA CHAVE PRO"
                 />
@@ -457,9 +476,10 @@ export default function Register() {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type="email"
+                name="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-base"
                 placeholder="seu@email.com"
               />
@@ -472,9 +492,10 @@ export default function Register() {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-base"
                 placeholder="••••••••"
               />

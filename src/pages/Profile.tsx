@@ -63,17 +63,24 @@ export default function Profile() {
   };
 
   // Form fields
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
-  const [specialty, setSpecialty] = useState('');
-  const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [country, setCountry] = useState('');
-  const [crefito, setCrefito] = useState('');
-  const [serviceType, setServiceType] = useState<'domicilio' | 'online' | 'ambos'>('ambos');
+  const [formData, setFormData] = useState({
+    name: '',
+    bio: '',
+    telefone: '',
+    gender: '' as 'male' | 'female' | 'other' | '',
+    specialty: '',
+    city: '',
+    address: '',
+    zipCode: '',
+    country: '',
+    crefito: '',
+    serviceType: 'ambos' as 'domicilio' | 'online' | 'ambos',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
@@ -81,17 +88,19 @@ export default function Profile() {
     if (!authLoading) {
       if (profile) {
         setUserData(profile);
-        setName(profile.nome_completo || '');
-        setBio(profile.bio || '');
-        setTelefone(profile.telefone || '');
-        setGender(profile.genero || '');
-        setSpecialty(profile.especialidade || '');
-        setCity(profile.localizacao || '');
-        setAddress(profile.endereco || '');
-        setZipCode(profile.cep || '');
-        setCountry(profile.pais || '');
-        setCrefito(profile.crefito || '');
-        setServiceType(profile.tipo_servico || 'ambos');
+        setFormData({
+          name: profile.nome_completo || '',
+          bio: profile.bio || '',
+          telefone: profile.telefone || '',
+          gender: profile.genero || '',
+          specialty: profile.especialidade || '',
+          city: profile.localizacao || '',
+          address: profile.endereco || '',
+          zipCode: profile.cep || '',
+          country: profile.pais || '',
+          crefito: profile.crefito || '',
+          serviceType: profile.tipo_servico || 'ambos',
+        });
         setLoading(false);
       } else if (!user) {
         navigate('/login');
@@ -109,8 +118,8 @@ export default function Profile() {
     setUpdating(true);
     try {
       // CEP validation if provided
-      if (zipCode) {
-        const cleanZip = zipCode.replace(/\D/g, '');
+      if (formData.zipCode) {
+        const cleanZip = formData.zipCode.replace(/\D/g, '');
         if (cleanZip.length > 0 && cleanZip.length !== 8) {
           const { toast } = await import('sonner');
           toast.error("Por favor, insira um CEP válido com 8 dígitos.");
@@ -120,17 +129,17 @@ export default function Profile() {
       }
 
       const updateData = {
-        nome_completo: name,
-        bio: bio,
-        telefone: telefone,
-        localizacao: city,
-        endereco: address,
-        cep: zipCode,
-        pais: country,
-        crefito: isPhysio ? crefito : (userData?.crefito || undefined),
-        genero: isPhysio ? gender : (userData?.genero || undefined),
-        especialidade: isPhysio ? specialty : (userData?.especialidade || undefined),
-        tipo_servico: isPhysio ? serviceType : (userData?.tipo_servico || undefined),
+        nome_completo: formData.name,
+        bio: formData.bio,
+        telefone: formData.telefone,
+        localizacao: formData.city,
+        endereco: formData.address,
+        cep: formData.zipCode,
+        pais: formData.country,
+        crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
+        genero: isPhysio ? formData.gender : (userData?.genero || undefined),
+        especialidade: isPhysio ? formData.specialty : (userData?.especialidade || undefined),
+        tipo_servico: isPhysio ? formData.serviceType : (userData?.tipo_servico || undefined),
       };
 
       // Clean undefined fields
@@ -148,9 +157,9 @@ export default function Profile() {
       if (error) throw error;
 
       // Update Auth Metadata if name changed
-      if (name !== user.user_metadata?.full_name) {
+      if (formData.name !== user.user_metadata?.full_name) {
         const { error: authError } = await supabase.auth.updateUser({
-          data: { full_name: name }
+          data: { full_name: formData.name }
         });
         if (authError) console.warn("Erro ao atualizar metadados de autenticação:", authError);
       }
@@ -447,8 +456,9 @@ export default function Profile() {
                             <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                             <input
                               type="text"
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
+                              name="name"
+                              value={formData.name}
+                              onChange={handleChange}
                               className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                             />
                           </div>
@@ -456,8 +466,9 @@ export default function Profile() {
                             <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Telefone de Contato</label>
                             <input
                               type="tel"
-                              value={telefone}
-                              onChange={(e) => setTelefone(e.target.value)}
+                              name="telefone"
+                              value={formData.telefone}
+                              onChange={handleChange}
                               className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                               placeholder="(00) 00000-0000"
                             />
@@ -470,8 +481,9 @@ export default function Profile() {
                               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CREFITO</label>
                               <input
                                 type="text"
-                                value={crefito}
-                                onChange={(e) => setCrefito(e.target.value)}
+                                name="crefito"
+                                value={formData.crefito}
+                                onChange={handleChange}
                                 className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                                 placeholder="Ex: 12345-F"
                               />
@@ -480,8 +492,9 @@ export default function Profile() {
                               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Especialidade Principal</label>
                               <input
                                 type="text"
-                                value={specialty}
-                                onChange={(e) => setSpecialty(e.target.value)}
+                                name="specialty"
+                                value={formData.specialty}
+                                onChange={handleChange}
                                 className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                                 placeholder="Ex: Ortopedia, Neuro..."
                               />
@@ -492,8 +505,9 @@ export default function Profile() {
                         <div className="space-y-2">
                           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Biografia / Resumo</label>
                           <textarea
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
+                            name="bio"
+                            value={formData.bio}
+                            onChange={handleChange}
                             className="w-full h-32 p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-slate-900"
                             placeholder={isPhysio ? "Conte sobre sua formação e áreas de atuação..." : "Conte um pouco sobre seu histórico de saúde..."}
                           />
@@ -676,8 +690,9 @@ export default function Profile() {
                           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CEP</label>
                           <input
                             type="text"
-                            value={zipCode}
-                            onChange={(e) => setZipCode(e.target.value)}
+                            name="zipCode"
+                            value={formData.zipCode}
+                            onChange={handleChange}
                             className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                             placeholder="00000-000"
                           />
@@ -686,8 +701,9 @@ export default function Profile() {
                           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cidade</label>
                           <input
                             type="text"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
                             className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                           />
                         </div>
@@ -695,8 +711,9 @@ export default function Profile() {
                           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Endereço Completo</label>
                           <input
                             type="text"
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
                             className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                             placeholder="Rua, número, complemento..."
                           />
