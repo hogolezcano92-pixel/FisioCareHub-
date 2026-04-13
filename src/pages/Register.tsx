@@ -156,7 +156,7 @@ export default function Register() {
         console.log("User created in Auth:", authData.user.id);
         
         // Disparar e-mail de boas-vindas (não bloqueia o fluxo)
-        sendWelcomeEmail(cleanEmail, cleanName);
+        sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta');
 
         // 3. Upload documents if any (for physios)
         const uploadedDocUrls: string[] = [];
