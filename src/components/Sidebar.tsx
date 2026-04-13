@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       {
         title: 'ATENDIMENTO',
         items: [
-          { name: 'Início', path: '/dashboard', icon: Home },
+          { name: 'Início', path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
             { name: 'Meus Pacientes', path: '/patients', icon: Users },
             { name: 'Agenda', path: '/agenda', icon: Calendar },
@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     {
       title: 'CONTA',
       items: [
-        { name: 'Minha Conta', path: '/profile', icon: User },
+        ...(isApproved ? [{ name: 'Minha Conta', path: '/profile', icon: User }] : []),
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
