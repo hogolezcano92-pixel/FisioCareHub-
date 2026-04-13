@@ -116,13 +116,21 @@ const Logo: React.FC<LogoProps> = ({
           )}>
             FisioCareHub
           </span>
-          <div className="flex items-center gap-2 mt-1">
-            <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
+          <div className="flex flex-col mt-1">
+            <div className="flex items-center gap-2">
+              <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
+              <span className={cn(
+                "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
+                variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
+              )}>
+                Reabilitação
+              </span>
+            </div>
             <span className={cn(
-              "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
+              "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] pl-6",
               variant === 'dark' ? "text-slate-400" : "text-[#9CA3AF]"
             )}>
-              Reabilitação & Performance
+              & Performance
             </span>
           </div>
         </motion.div>
