@@ -673,11 +673,11 @@ export default function Dashboard() {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/chat?user=${patient.id}`);
+                        navigate(`/physio/${patient.id}`);
                       }}
                       className="p-3 bg-white/10 text-blue-400 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all border border-white/5"
                     >
-                      <MessageSquare size={20} />
+                      <User size={20} />
                     </button>
                   </div>
                 </div>
@@ -966,32 +966,28 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 gap-6">
-                <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
-                  <div className="absolute top-5 right-5 z-20">
-                    <button className="p-1.5 bg-white/5 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
-                      <TrendingUp size={14} />
-                    </button>
-                  </div>
-                  <ProGuard variant="full">
-                    <FinancialDashboard />
-                  </ProGuard>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-6">
+              <ProGuard variant="full">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
-                    <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
-                      <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
-                        <MapPin size={10} />
-                        3 Pacientes
-                      </div>
+                    <div className="absolute top-5 right-5 z-20">
+                      <button className="p-1.5 bg-white/5 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                        <TrendingUp size={14} />
+                      </button>
                     </div>
-                    <ProGuard variant="full">
-                      <RouteOptimizer />
-                    </ProGuard>
+                    <FinancialDashboard />
                   </div>
-                  <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
-                    <ProGuard variant="full">
+
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                      <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
+                          <MapPin size={10} />
+                          3 Pacientes
+                        </div>
+                      </div>
+                      <RouteOptimizer />
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
                       <SOAPIntelligentRecord 
                         pacienteId={selectedPatientId || undefined} 
                         onSave={() => {
@@ -999,20 +995,16 @@ export default function Dashboard() {
                           fetchRecentAppointments(profile);
                         }}
                       />
-                    </ProGuard>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+                      <EvolutionCharts />
+                    </div>
                   </div>
                   <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
-                    <ProGuard variant="full">
-                      <EvolutionCharts />
-                    </ProGuard>
+                    <DigitalLibrary />
                   </div>
                 </div>
-                <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
-                  <ProGuard variant="full">
-                    <DigitalLibrary />
-                  </ProGuard>
-                </div>
-              </div>
+              </ProGuard>
             </div>
           </>
         ) : (
