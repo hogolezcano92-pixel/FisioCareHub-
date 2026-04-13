@@ -108,7 +108,7 @@ const Logo: React.FC<LogoProps> = ({
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col leading-none"
+          className="flex flex-col leading-none whitespace-nowrap"
         >
           <span className={cn(
             "font-sans font-black tracking-tighter text-2xl sm:text-4xl drop-shadow-sm",
