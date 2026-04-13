@@ -290,3 +290,59 @@ CREATE POLICY "Fisios veem checklist dos pacientes vinculados" ON public.checkli
             AND p.fisioterapeuta_id = auth.uid()
         )
     );
+
+-- 7. Melhoria no Cadastro de Fisioterapeutas (Documentos Obrigatórios)
+
+-- Adicionar colunas na tabela 'perfis'
+ALTER TABLE public.perfis 
+ADD COLUMN IF NOT EXISTS rg_frente_url TEXT,
+ADD COLUMN IF NOT EXISTS rg_verso_url TEXT,
+ADD COLUMN IF NOT EXISTS crefito_frente_url TEXT,
+ADD COLUMN IF NOT EXISTS crefito_verso_url TEXT;
+
+-- Criar o bucket 'documentos_fisioterapeutas'
+INSERT INTO storage.buckets (id, name, public)
+SELECT 'documentos_fisioterapeutas', 'documentos_fisioterapeutas', false
+WHERE NOT EXISTS (
+    SELECT 1 FROM storage.buckets WHERE id = 'documentos_fisioterapeutas'
+);
+
+-- Políticas de segurança para o bucket 'documentos_fisioterapeutas'
+-- Nota: Aplicadas na tabela storage.objects
+
+CREATE POLICY "Fisioterapeutas podem fazer upload dos próprios documentos"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'documentos_fisioterapeutas' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Fisioterapeutas podem ver próprios documentos"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'documentos_fisioterapeutas' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Admins podem ver todos os documentos"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'documentos_fisioterapeutas' AND
+  (
+    EXISTS (
+      SELECT 1 FROM public.perfis
+      WHERE id = auth.uid() AND tipo_usuario = 'admin'
+    )
+  )
+);
+
+CREATE POLICY "Fisioterapeutas podem deletar próprios documentos"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'documentos_fisioterapeutas' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
