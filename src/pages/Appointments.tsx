@@ -18,6 +18,8 @@ import {
 import { formatDate, cn } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
 import { sendAppointmentConfirmation } from '../services/emailService';
+import PaymentModal from '../components/PaymentModal';
+import { Wallet } from 'lucide-react';
 
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -26,6 +28,11 @@ export default function Appointments() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  
+  // Payment State
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
   
   // Form
   const [targetEmail, setTargetEmail] = useState('');
@@ -50,6 +57,7 @@ export default function Appointments() {
 
     if (profile) {
       fetchAppointments(profile);
+      fetchSessions(profile);
       cleanupRealtime = setupRealtime(profile);
       fetchAvailableUsers(profile);
     } else {
@@ -101,6 +109,21 @@ export default function Appointments() {
     });
     
     setAvailableUsers(filtered);
+  };
+
+  const fetchSessions = async (currentProfile: any) => {
+    try {
+      const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
+      const { data, error } = await supabase
+        .from('sessoes')
+        .select('*')
+        .eq(isPhysio ? 'fisioterapeuta_id' : 'paciente_id', currentProfile.id);
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar sessões:", err);
+    }
   };
 
   const fetchAppointments = async (currentProfile: any) => {
@@ -260,6 +283,31 @@ export default function Appointments() {
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
       console.log("Agendamento criado com sucesso:", newApp);
+
+      // 2. Criar Sessão para Pagamento se o alvo for fisioterapeuta
+      if (newApp && targetUser.tipo_usuario === 'fisioterapeuta') {
+        // Buscar o preço da sessão do fisioterapeuta
+        const { data: physioProfile } = await supabase
+          .from('perfis')
+          .select('preco_sessao')
+          .eq('id', targetUser.id)
+          .single();
+
+        if (physioProfile?.preco_sessao) {
+          const { error: sessionError } = await supabase
+            .from('sessoes')
+            .insert({
+              paciente_id: isPatient ? user?.id : targetUser.id,
+              fisioterapeuta_id: isPhysio ? user?.id : targetUser.id,
+              data: date,
+              hora: time,
+              valor: physioProfile.preco_sessao,
+              status_pagamento: 'pendente'
+            });
+          
+          if (sessionError) console.error('Erro ao criar sessão para pagamento:', sessionError);
+        }
+      }
 
       // Create notification for target user
       console.log("Tentando criar notificação para o usuário:", targetUser.id);
@@ -449,6 +497,39 @@ export default function Appointments() {
                    app.status === 'confirmado' ? 'Confirmado' : 
                    app.status === 'cancelado' ? 'Cancelado' : 'Concluído'}
                 </span>
+
+                {app.status === 'confirmado' && !isPhysio && (
+                  (() => {
+                    const session = sessions.find(s => 
+                      s.paciente_id === app.paciente_id && 
+                      s.fisioterapeuta_id === app.fisio_id && 
+                      s.data === app.data_servico.split('T')[0]
+                    );
+                    
+                    if (session && session.status_pagamento === 'pendente') {
+                      return (
+                        <button
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setShowPaymentModal(true);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                        >
+                          <Wallet size={14} />
+                          Pagar Sessão
+                        </button>
+                      );
+                    } else if (session && session.status_pagamento === 'pago_app') {
+                      return (
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                          <Check size={12} />
+                          Pago
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()
+                )}
 
                 {app.status === 'pendente' && (
                   <div className="flex gap-1.5">
@@ -661,6 +742,17 @@ export default function Appointments() {
           </div>
         )}
       </AnimatePresence>
+
+      <PaymentModal 
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          if (profile) fetchSessions(profile);
+        } }
+        sessionId={selectedSession?.id}
+        amount={selectedSession?.valor}
+        physioId={selectedSession?.fisioterapeuta_id}
+      />
     </div>
   );
 }

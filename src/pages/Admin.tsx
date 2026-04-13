@@ -86,6 +86,7 @@ export default function Admin() {
   const [supabaseProfiles, setSupabaseProfiles] = useState<any[]>([]);
   const [materiais, setMateriais] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [pendingPhysios, setPendingPhysios] = useState<any[]>([]);
   const [selectedUserDetail, setSelectedUserDetail] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -247,6 +248,31 @@ export default function Admin() {
     }
   }, [processProfiles]);
 
+  const fetchSessions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sessoes')
+        .select(`
+          *,
+          paciente:perfis!paciente_id (nome_completo, email),
+          fisioterapeuta:perfis!fisioterapeuta_id (nome_completo, email)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setSessions(data || []);
+
+      // Update revenue stats from sessions
+      const sessionRevenue = (data || [])
+        .filter(s => s.status_pagamento === 'pago_app')
+        .reduce((acc, curr) => acc + Number(curr.valor), 0);
+      
+      setStats(prev => ({ ...prev, totalRevenue: sessionRevenue }));
+    } catch (err) {
+      console.error("Erro ao buscar sessões:", err);
+    }
+  }, []);
+
   const fetchMateriais = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -275,6 +301,7 @@ export default function Admin() {
 
     fetchSupabaseProfiles();
     fetchMateriais();
+    fetchSessions();
 
     // Fetch System Settings
     const fetchSettings = async () => {
@@ -706,6 +733,23 @@ export default function Admin() {
       .getPublicUrl(filePath);
 
     return publicUrl;
+  };
+
+  const handleMarkAsRepassado = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sessoes')
+        .update({ status_repasse: 'repassado_fisio' })
+        .eq('id', sessionId);
+      
+      if (error) throw error;
+      
+      import('sonner').then(({ toast }) => toast.success("Repasse marcado como concluído!"));
+      fetchSessions();
+    } catch (err) {
+      console.error("Erro ao marcar repasse:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status de repasse."));
+    }
   };
 
   const handleAddMaterial = async () => {
@@ -1582,6 +1626,104 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'financial' && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Receita Total (Sessões)</p>
+                  <p className="text-3xl font-black text-white tracking-tight">R$ {stats.totalRevenue.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Repasses Pendentes</p>
+                  <p className="text-3xl font-black text-amber-500 tracking-tight">
+                    {sessions.filter(s => s.status_pagamento === 'pago_app' && s.status_repasse === 'pendente').length}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Sessões Pagas</p>
+                  <p className="text-3xl font-black text-emerald-500 tracking-tight">
+                    {sessions.filter(s => s.status_pagamento === 'pago_app').length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-white/5">
+                  <h3 className="text-xl font-black text-white tracking-tight">Controle de Repasses</h3>
+                  <p className="text-sm text-slate-500 font-medium">Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white/5">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data/Hora</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Paciente</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Fisioterapeuta</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status Pagamento</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status Repasse</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {sessions
+                        .filter(s => s.status_pagamento === 'pago_app')
+                        .map((s) => (
+                        <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-8 py-5 text-sm font-bold text-white">
+                            {new Date(s.data).toLocaleDateString('pt-BR')} {s.hora}
+                          </td>
+                          <td className="px-8 py-5">
+                            <p className="text-sm font-bold text-white">{s.paciente?.nome_completo}</p>
+                            <p className="text-[10px] text-slate-500">{s.paciente?.email}</p>
+                          </td>
+                          <td className="px-8 py-5">
+                            <p className="text-sm font-bold text-white">{s.fisioterapeuta?.nome_completo}</p>
+                            <p className="text-[10px] text-slate-500">{s.fisioterapeuta?.email}</p>
+                          </td>
+                          <td className="px-8 py-5 text-sm font-black text-blue-400">
+                            R$ {Number(s.valor).toLocaleString()}
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest">
+                              Pago no App
+                            </span>
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className={cn(
+                              "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                              s.status_repasse === 'repassado_fisio' ? "bg-blue-500/10 text-blue-500" : "bg-amber-500/10 text-amber-500"
+                            )}>
+                              {s.status_repasse === 'repassado_fisio' ? 'Repassado' : 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-right">
+                            {s.status_repasse === 'pendente' && (
+                              <button 
+                                onClick={() => handleMarkAsRepassado(s.id)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                              >
+                                Marcar Repasse
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {sessions.filter(s => s.status_pagamento === 'pago_app').length === 0 && (
+                  <div className="p-12 text-center space-y-4">
+                    <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                      <DollarSign size={32} />
+                    </div>
+                    <p className="text-slate-500 font-bold">Nenhuma sessão paga encontrada.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
