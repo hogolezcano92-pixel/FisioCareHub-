@@ -334,18 +334,18 @@ export default function Home() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fisioterapia 4.0</span>
             </motion.div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter">
-              {t('home.hero.title1')} <br />
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter text-center">
+              CONECTANDO CUIDADO ESPECIALIZADO <br />
               <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic">
-                {t('home.hero.title2')}
+                E PROFISSIONALISMO DE ELITE
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed font-medium opacity-80">
-              {t('home.hero.subtitle')}
+            <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium opacity-80 text-center">
+              A plataforma inteligente que une pacientes em busca de reabilitação domiciliar a fisioterapeutas que buscam gestão eficiente e novos pacientes. Tecnologia e cuidado humanizado em um só lugar.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center gap-6 pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6">
               <motion.div
                 whileHover={{ scale: 1.02, y: -4 }}
                 whileTap={{ scale: 0.98 }}
@@ -353,11 +353,27 @@ export default function Home() {
               >
                 <Link
                   to="/register"
+                  onClick={() => localStorage.setItem('pending_role', 'paciente')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.5)] hover:bg-blue-500 transition-all group"
                 >
-                  Começar Agora <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                  <HomeIcon size={22} /> Quero Atendimento
                 </Link>
               </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02, y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full sm:w-auto"
+              >
+                <Link
+                  to="/register"
+                  onClick={() => localStorage.setItem('pending_role', 'fisioterapeuta')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-2 border-white/30 text-white rounded-[2rem] font-black text-lg hover:bg-white/10 transition-all group"
+                >
+                  <Stethoscope size={22} /> Sou Fisioterapeuta
+                </Link>
+              </motion.div>
+            </div>
               
               <div className="flex items-center gap-4 px-6 py-4 bg-white/5 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl">
                 <div className="flex -space-x-3">
@@ -377,7 +393,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
             
             <div className="pt-12 grid grid-cols-2 sm:grid-cols-4 gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
               <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
@@ -461,6 +476,61 @@ export default function Home() {
             <p className="text-lg text-slate-400 leading-relaxed font-medium">
               Atenção total e personalizada para idosos e pós-operatórios. Qualidade de clínica com a conveniência e segurança do seu domicílio.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Mirrored Benefits Section */}
+      <section className="py-32 px-6 lg:px-20 relative z-20 -mt-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Patient Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500"
+          >
+            <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-400 mb-8 group-hover:scale-110 transition-transform">
+              <Heart size={32} />
+            </div>
+            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">Recupere sua saúde com conforto e segurança.</h3>
+            <ul className="space-y-4">
+              {[
+                { text: "Encontre especialistas verificados", icon: UserCheck },
+                { text: "Atendimento domiciliar premium", icon: HomeIcon },
+                { text: "Acompanhamento de evolução", icon: Activity }
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-3 text-slate-400 font-medium">
+                  <item.icon size={20} className="text-blue-500" />
+                  {item.text}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Physio Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500"
+          >
+            <div className="w-16 h-16 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-400 mb-8 group-hover:scale-110 transition-transform">
+              <Stethoscope size={32} />
+            </div>
+            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">Impulsione sua carreira e simplifique sua rotina.</h3>
+            <ul className="space-y-4">
+              {[
+                { text: "Novos pacientes na sua região", icon: Users },
+                { text: "Agenda e prontuários digitais", icon: FileText },
+                { text: "Pagamentos garantidos", icon: ShieldCheck }
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-3 text-slate-400 font-medium">
+                  <item.icon size={20} className="text-indigo-500" />
+                  {item.text}
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </section>
@@ -565,22 +635,22 @@ export default function Home() {
             {[
               {
                 step: '01',
-                title: 'Solicitação Digital',
-                desc: 'Diga-nos o que você precisa e nossa IA encontrará o especialista ideal próximo de você.',
+                title: 'Solicitação Inteligente / Cadastro Rápido',
+                desc: 'Pacientes solicitam atendimento personalizado enquanto fisioterapeutas se cadastram em nossa rede de elite.',
                 icon: ClipboardCheck,
                 gradient: 'from-blue-500/20 to-sky-500/20'
               },
               {
                 step: '02',
-                title: 'Curadoria de Elite',
-                desc: 'Analise perfis verificados, especialidades e avaliações reais para escolher seu profissional.',
+                title: 'Curadoria de Elite / Aceite de Atendimento',
+                desc: 'Nossa IA sugere os melhores profissionais para cada caso, e o fisioterapeuta aceita o atendimento com um clique.',
                 icon: UserCheck,
                 gradient: 'from-indigo-500/20 to-purple-500/20'
               },
               {
                 step: '03',
-                title: 'Cuidado em Casa',
-                desc: 'Receba o tratamento completo com toda a atenção que você merece, no seu ambiente seguro.',
+                title: 'Cuidado e Gestão Unificados',
+                desc: 'O atendimento acontece com excelência enquanto o profissional utiliza nossas ferramentas de gestão integradas.',
                 icon: HomeIcon,
                 gradient: 'from-emerald-500/20 to-teal-500/20'
               }
