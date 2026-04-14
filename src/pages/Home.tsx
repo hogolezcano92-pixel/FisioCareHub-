@@ -284,195 +284,222 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-slate-950 transition-colors duration-300">
+    <div className="bg-slate-950 transition-colors duration-300 selection:bg-blue-500/30">
       {/* Hero Section - Home Care Focus */}
-      <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950">
-        {/* Soft Background Shapes */}
+      <section className="relative min-h-[95vh] flex flex-col lg:flex-row overflow-hidden">
+        {/* Advanced Background with Animated Gradients */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(11,17,32,1),rgba(2,6,23,1))]" />
           <motion.div 
             animate={{ 
               scale: [1, 1.2, 1],
-              opacity: [0.1, 0.2, 0.1]
+              opacity: [0.15, 0.25, 0.15],
+              x: [0, 50, 0],
+              y: [0, -30, 0]
             }}
-            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-[10%] -left-[5%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[100px]" 
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-[10%] -left-[5%] w-[70%] h-[70%] bg-blue-600/30 rounded-full blur-[120px]" 
           />
           <motion.div 
             animate={{ 
               scale: [1, 1.1, 1],
-              opacity: [0.1, 0.2, 0.1]
+              opacity: [0.1, 0.2, 0.1],
+              x: [0, -40, 0],
+              y: [0, 40, 0]
             }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[20%] right-[0%] w-[50%] h-[50%] bg-sky-500/20 rounded-full blur-[120px]" 
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[20%] right-[0%] w-[60%] h-[60%] bg-sky-500/20 rounded-full blur-[140px]" 
           />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
         </div>
 
-        <div className="flex-1 p-6 sm:p-10 lg:p-20 flex flex-col justify-center relative z-10">
+        <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-8"
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-10"
           >
             <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600/10 backdrop-blur-md border border-blue-500/20 rounded-full text-blue-400 text-sm font-black uppercase tracking-widest shadow-sm"
+              className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl"
             >
-              <Sparkles size={16} className="text-blue-400" />
-              LÍDER EM REABILITAÇÃO
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Plataforma Premium</span>
+              </div>
+              <div className="w-px h-4 bg-white/10 mx-1" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fisioterapia 4.0</span>
             </motion.div>
             
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter">
               {t('home.hero.title1')} <br />
-              <span className="text-blue-500 italic">
+              <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic">
                 {t('home.hero.title2')}
               </span>
             </h1>
             
-            <p className="text-base md:text-lg text-slate-400 max-w-2xl leading-relaxed font-medium">
+            <p className="text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed font-medium opacity-80">
               {t('home.hero.subtitle')}
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+            <div className="flex flex-col sm:flex-row items-center gap-6 pt-6">
               <motion.div
-                whileHover={{ scale: 1.05, translateY: -5 }}
+                whileHover={{ scale: 1.02, y: -4 }}
                 whileTap={{ scale: 0.98 }}
+                className="w-full sm:w-auto"
               >
                 <Link
                   to="/register"
-                  className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center gap-2 transition-all hover:bg-blue-700 mb-8"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.5)] hover:bg-blue-500 transition-all group"
                 >
-                  Agendar Avaliação <ArrowRight size={20} />
+                  Começar Agora <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
               </motion.div>
               
-              <motion.div 
-                whileHover={{ y: -5 }}
-                className="flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-sky-100 dark:border-slate-700 shadow-lg"
-              >
-                <div className="w-12 h-12 bg-sky-100 dark:bg-sky-900/50 rounded-full flex items-center justify-center text-sky-600 dark:text-sky-400">
-                  <ShieldCheck size={24} />
-                </div>
-                <div>
-                  <p className="text-base font-bold text-[#1A202C] dark:text-white">Fisioterapeutas Verificados</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
-                    <CheckCircle2 size={12} className="text-sky-500" /> Selo de Qualidade FisioCare
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-            
-            <div className="pt-10 border-t border-slate-100 dark:border-slate-800">
-              <h4 className="text-lg font-black text-[#1A202C] dark:text-white mb-6 uppercase tracking-widest text-center lg:text-left">
-                Conheça os Especialistas da Sua Região
-              </h4>
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">
-                <div className="flex -space-x-4">
-                  {[
-                    "https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=150&h=150",
-                    "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=150&h=150",
-                    "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=150&h=150",
-                    "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=150&h=150",
-                    "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=150&h=150"
-                  ].map((url, i) => (
-                    <div key={i} className="relative">
-                      <img 
-                        src={url} 
-                        className="w-16 h-16 rounded-full border-4 border-white dark:border-slate-900 object-cover shadow-xl"
-                        alt="physiotherapist"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=150&h=150';
-                        }}
-                      />
-                      <div className="absolute bottom-0 right-0 bg-white dark:bg-slate-800 rounded-full p-1 shadow-md border border-sky-100 dark:border-slate-700">
-                        <CheckCircle2 size={14} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
-                      </div>
-                    </div>
+              <div className="flex items-center gap-4 px-6 py-4 bg-white/5 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl">
+                <div className="flex -space-x-3">
+                  {[1, 2, 3].map((i) => (
+                    <img 
+                      key={i}
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`}
+                      className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800"
+                      alt="User"
+                    />
                   ))}
                 </div>
-                <div className="text-center lg:text-left">
-                  <div className="flex justify-center lg:justify-start text-amber-400 mb-1">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={20} fill="currentColor" />)}
+                <div>
+                  <p className="text-xs font-black text-white">+2k Pacientes Felizes</p>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={10} fill="currentColor" />)}
                   </div>
-                  <p className="text-[#1A202C] dark:text-slate-400 font-bold text-lg">+500 profissionais na sua área</p>
                 </div>
+              </div>
+            </div>
+            
+            <div className="pt-12 grid grid-cols-2 sm:grid-cols-4 gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
+                <ShieldCheck className="text-blue-500" /> CREFITO OK
+              </div>
+              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
+                <Activity className="text-blue-500" /> MONITORAMENTO
+              </div>
+              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
+                <Users className="text-blue-500" /> +500 FISIOS
+              </div>
+              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
+                <Heart className="text-blue-500" /> HUMANIZADO
               </div>
             </div>
           </motion.div>
         </div>
 
-        <div className="flex-1 relative min-h-[50vh] lg:min-h-full">
+        <div className="flex-1 relative min-h-[60vh] lg:min-h-full">
           <motion.div 
-            initial={{ opacity: 0, scale: 1.05 }}
+            initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2 }}
+            transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
             <img 
-              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2070" 
+              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070" 
               className="w-full h-full object-cover"
-              alt="Physiotherapist treating elderly patient at home"
+              alt="Physiotherapy session"
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070';
-              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-home-blue via-transparent to-transparent lg:block hidden" />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/20 to-transparent lg:block hidden" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+            
+            {/* Floating Glass UI Element */}
+            <motion.div
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-20 right-10 hidden lg:block p-6 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-[2.5rem] shadow-2xl z-20 w-64"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400">
+                  <Activity size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-white uppercase tracking-widest">Status Vital</p>
+                  <p className="text-lg font-black text-emerald-400">Estável</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: "85%" }}
+                    transition={{ duration: 2, delay: 1 }}
+                    className="h-full bg-emerald-500" 
+                  />
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 text-right">85% Recuperação</p>
+              </div>
+            </motion.div>
           </motion.div>
 
           {/* Floating Accessibility Card */}
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="absolute bottom-16 left-6 right-6 lg:left-12 lg:right-auto lg:w-[28rem] p-8 md:p-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 rounded-[3rem] shadow-2xl z-10"
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.8 }}
+            className="absolute bottom-16 left-6 right-6 lg:left-auto lg:right-12 lg:w-[30rem] p-10 bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] z-10"
           >
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
-              <div className="w-20 h-20 bg-sky-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-sky-500/30 flex-shrink-0 rotate-3">
-                <Heart size={40} />
+            <div className="flex items-start gap-6 mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-2xl flex-shrink-0 -rotate-6">
+                <Heart size={32} />
               </div>
-              <div className="text-center sm:text-left">
-                <p className="text-sm font-black text-sky-600 uppercase tracking-[0.2em] mb-2">Atendimento VIP</p>
-                <p className="text-2xl font-black text-[#1A202C] dark:text-white leading-none tracking-tight">Fisioterapia Sem Limites</p>
+              <div>
+                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-2">Cuidado Domiciliar</p>
+                <p className="text-3xl font-black text-white leading-none tracking-tight">Fisioterapia VIP</p>
               </div>
             </div>
-            <p className="text-lg text-[#1A202C] dark:text-slate-400 leading-relaxed font-medium text-center sm:text-left">
+            <p className="text-lg text-slate-400 leading-relaxed font-medium">
               Atenção total e personalizada para idosos e pós-operatórios. Qualidade de clínica com a conveniência e segurança do seu domicílio.
             </p>
           </motion.div>
-
-          {/* Suporte FisioCareHub Label */}
-          <div className="absolute bottom-4 left-6 z-20 opacity-70 pointer-events-none hidden md:block">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-              Suporte FisioCareHub
-            </span>
-          </div>
         </div>
       </section>
 
       {/* Specialties Slider Section - Modern & Professional */}
-      <section className="py-24 px-8 lg:px-20 bg-slate-950 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/20 to-slate-950 pointer-events-none" />
+      <section className="py-32 px-6 lg:px-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Especialidades Médicas</p>
-            <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
-              Excelência em <span className="text-sky-500 italic">Diversas Áreas</span>
-            </h3>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">Especialidades Médicas</p>
+              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
+                Excelência em <br />
+                <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent italic">Diversas Áreas</span>
+              </h3>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setCurrentSlide((prev) => (prev - 1 + specialtySlides.length) % specialtySlides.length)}
+                className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 transition-all"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button 
+                onClick={() => setCurrentSlide((prev) => (prev + 1) % specialtySlides.length)}
+                className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </div>
           </div>
 
-          <div className="relative h-[500px] md:h-[600px] rounded-[4rem] overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800">
+          <div className="relative h-[600px] rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] border border-white/5">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlide}
-                initial={{ opacity: 0, scale: 1.1 }}
+                initial={{ opacity: 0, scale: 1.05 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 1, ease: "easeInOut" }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute inset-0"
               >
                 <img 
@@ -480,34 +507,31 @@ export default function Home() {
                   className="w-full h-full object-cover"
                   alt={specialtySlides[currentSlide].title}
                   referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200';
-                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-950/90 via-blue-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
                 
-                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 text-white">
+                <div className="absolute bottom-0 left-0 right-0 p-10 md:p-20 text-white">
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="flex items-center gap-4 mb-6"
+                    className="flex items-center gap-6 mb-8"
                   >
                     <div className={cn(
-                      "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg backdrop-blur-md",
-                      specialtySlides[currentSlide].color === 'sky' && "bg-sky-500/80",
-                      specialtySlides[currentSlide].color === 'emerald' && "bg-emerald-500/80",
-                      specialtySlides[currentSlide].color === 'orange' && "bg-orange-500/80",
-                      specialtySlides[currentSlide].color === 'indigo' && "bg-indigo-500/80",
-                      specialtySlides[currentSlide].color === 'blue' && "bg-blue-500/80",
-                      specialtySlides[currentSlide].color === 'amber' && "bg-amber-500/80",
+                      "w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl backdrop-blur-3xl border border-white/20",
+                      specialtySlides[currentSlide].color === 'sky' && "bg-sky-500/40",
+                      specialtySlides[currentSlide].color === 'emerald' && "bg-emerald-500/40",
+                      specialtySlides[currentSlide].color === 'orange' && "bg-orange-500/40",
+                      specialtySlides[currentSlide].color === 'indigo' && "bg-indigo-500/40",
+                      specialtySlides[currentSlide].color === 'blue' && "bg-blue-500/40",
+                      specialtySlides[currentSlide].color === 'amber' && "bg-amber-500/40",
                     )}>
                       {(() => {
                         const Icon = specialtySlides[currentSlide].icon;
-                        return <Icon size={32} />;
+                        return <Icon size={40} className="text-white" />;
                       })()}
                     </div>
-                    <h4 className="text-2xl md:text-4xl font-display font-bold tracking-tight">
+                    <h4 className="text-3xl md:text-5xl font-display font-black tracking-tight">
                       {specialtySlides[currentSlide].title}
                     </h4>
                   </motion.div>
@@ -516,67 +540,49 @@ export default function Home() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="text-lg md:text-xl text-sky-50/80 max-w-2xl font-medium leading-relaxed"
+                    className="text-xl md:text-2xl text-slate-300 max-w-3xl font-medium leading-relaxed opacity-90"
                   >
                     {specialtySlides[currentSlide].description}
                   </motion.p>
                 </div>
               </motion.div>
             </AnimatePresence>
-
-            {/* Slider Controls */}
-            <div className="absolute bottom-8 right-8 md:right-16 flex gap-3 z-20">
-              {specialtySlides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={cn(
-                    "h-2 rounded-full transition-all duration-500",
-                    currentSlide === i ? "w-12 bg-sky-500" : "w-3 bg-white/30 hover:bg-white/50"
-                  )}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-      {/* How it Works Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-8 lg:px-20 bg-slate-950 relative overflow-hidden border-y border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/5 via-transparent to-sky-500/5 pointer-events-none" />
-        <div className="max-w-7xl mx-auto relative z-10 px-4 sm:px-6">
-          <div className="text-center mb-16 space-y-4">
-            <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Simples e Rápido</p>
-            <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
-              Como funciona o <span className="text-sky-500 italic">FisioCareHub?</span>
+      {/* How it Works Section - Bento Grid Style */}
+      <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-24 space-y-4">
+            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">Processo Inteligente</p>
+            <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
+              Sua Jornada de <span className="text-blue-500 italic">Recuperação</span>
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            {/* Connection Line (Desktop) */}
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-sky-100 dark:bg-sky-900 -translate-y-1/2 z-0" />
-            
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 step: '01',
-                title: 'Solicite seu Atendimento',
-                desc: 'Diga-nos o que você precisa e nossa plataforma encontrará o especialista mais próximo de você rapidamente.',
+                title: 'Solicitação Digital',
+                desc: 'Diga-nos o que você precisa e nossa IA encontrará o especialista ideal próximo de você.',
                 icon: ClipboardCheck,
-                color: 'bg-sky-500'
+                gradient: 'from-blue-500/20 to-sky-500/20'
               },
               {
                 step: '02',
-                title: 'Escolha seu Especialista',
-                desc: 'Analise perfis, especialidades e avaliações reais para escolher o profissional que melhor atende suas necessidades.',
+                title: 'Curadoria de Elite',
+                desc: 'Analise perfis verificados, especialidades e avaliações reais para escolher seu profissional.',
                 icon: UserCheck,
-                color: 'bg-emerald-500'
+                gradient: 'from-indigo-500/20 to-purple-500/20'
               },
               {
                 step: '03',
-                title: 'Recupere-se em Casa',
-                desc: 'Receba o tratamento completo com toda a atenção que você merece, no ambiente onde você se sente mais seguro.',
+                title: 'Cuidado em Casa',
+                desc: 'Receba o tratamento completo com toda a atenção que você merece, no seu ambiente seguro.',
                 icon: HomeIcon,
-                color: 'bg-orange-500'
+                gradient: 'from-emerald-500/20 to-teal-500/20'
               }
             ].map((item, i) => (
               <motion.div
@@ -585,73 +591,60 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2 }}
-                className="relative z-10 flex flex-col items-center text-center group"
+                className="group relative p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] hover:bg-white/10 transition-all duration-500"
               >
                 <div className={cn(
-                  "w-20 h-20 rounded-full flex items-center justify-center text-white shadow-xl mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6",
-                  item.color
-                )}>
-                  <item.icon size={36} />
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-900 dark:text-white font-black text-sm shadow-md border border-slate-100 dark:border-slate-700">
-                    {item.step}
+                  "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[3rem]",
+                  item.gradient
+                )} />
+                <div className="relative z-10">
+                  <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-white mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 border border-white/10">
+                    <item.icon size={36} className="text-blue-400" />
                   </div>
+                  <span className="text-5xl font-black text-white/10 absolute top-10 right-10 group-hover:text-blue-500/20 transition-colors">
+                    {item.step}
+                  </span>
+                  <h4 className="text-2xl font-black text-white mb-4 tracking-tight">{item.title}</h4>
+                  <p className="text-slate-400 font-medium leading-relaxed">{item.desc}</p>
                 </div>
-                <h4 className="text-xl font-bold text-[#1A202C] dark:text-white mb-3">{item.title}</h4>
-                <p className="text-[#1A202C] dark:text-slate-400 font-medium leading-relaxed max-w-xs">{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Professionals Section - Dynamic Grid with Search & Filter */}
-      <section className="py-24 px-4 sm:px-8 lg:px-20 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Nossa Equipe</h2>
-            <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">Especialistas na Sua Região</h3>
+      {/* Professionals Section - Dynamic Grid */}
+      <section className="py-32 px-6 lg:px-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Nossa Rede</p>
+              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">Especialistas <span className="text-blue-500 italic">Verificados</span></h3>
+            </div>
             
-            {/* Search and Filter Bar */}
-            <div className="max-w-5xl mx-auto pt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Nome Filter */}
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+            {/* Search and Filter Bar - Compact SaaS Style */}
+            <div className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Nome do profissional..."
+                  placeholder="Buscar por nome..."
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white"
+                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500"
                 />
               </div>
-
-              {/* Localização Filter */}
-              <div className="relative group">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Cidade ou Bairro..."
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white"
-                />
-              </div>
-
-              {/* Especialidade Filter */}
-              <div className="relative group">
-                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={20} />
+              <div className="relative w-full sm:w-48 group">
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <select 
                   value={specialtyFilter}
                   onChange={(e) => setSpecialtyFilter(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all dark:text-white appearance-none cursor-pointer"
+                  className="w-full pl-11 pr-10 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white appearance-none cursor-pointer"
                 >
                   {specialties.map(spec => (
-                    <option key={spec} value={spec}>{spec}</option>
+                    <option key={spec} value={spec} className="bg-slate-900">{spec}</option>
                   ))}
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <ArrowRight size={16} className="rotate-90" />
-                </div>
               </div>
             </div>
           </div>
@@ -659,130 +652,99 @@ export default function Home() {
           <div className="relative group">
             {professionals.length > 0 ? (
               <>
-                <div className="overflow-hidden px-4 py-10 -mx-4">
-                  <motion.div
-                    animate={{ x: `-${proSlideIndex * (100 / itemsVisible)}%` }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="flex gap-8"
-                  >
-                    {professionals.map((pro, i) => (
-                      <motion.div
-                        key={pro.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="min-w-full md:min-w-[calc(50%-1rem)] lg:min-w-[calc(25%-1.5rem)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col items-center text-center group/card hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
-                      >
-                        <div className="relative mb-6">
-                          <div className="absolute inset-0 bg-sky-500/10 rounded-[2rem] blur-2xl group-hover/card:bg-sky-500/20 transition-colors" />
-                          <img 
-                            src={pro.img} 
-                            className="w-32 h-32 rounded-[2rem] border-4 border-white dark:border-slate-800 object-cover shadow-2xl relative z-10"
-                            alt={pro.name}
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300';
-                            }}
-                          />
-                          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-2 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
-                            <div className="ping-online">
-                              <span className="ping-online-circle"></span>
-                              <span className="ping-online-dot"></span>
-                            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {professionals.slice(0, 8).map((pro, i) => (
+                    <motion.div
+                      key={pro.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }}
+                      className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center"
+                    >
+                      <div className="relative mb-8">
+                        <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
+                        <img 
+                          src={pro.img} 
+                          className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
+                          alt={pro.name}
+                        />
+                        <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border border-white/10 z-20">
+                          <div className="ping-online">
+                            <span className="ping-online-circle"></span>
+                            <span className="ping-online-dot"></span>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-1.5 text-amber-400 mb-2">
-                          <Star size={16} fill="currentColor" />
-                          <span className="text-sm font-black text-[#1A202C] dark:text-white">{pro.rating}</span>
-                          <span className="text-xs text-slate-400 font-bold">({pro.reviews})</span>
-                        </div>
-                        
-                        <h4 className="text-xl font-black text-[#1A202C] dark:text-white mb-1 tracking-tight">{pro.name}</h4>
-                        <p className="text-sky-600 dark:text-sky-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">{pro.fullSpec}</p>
-                        <p className="text-[#1A202C] dark:text-slate-400 text-sm font-medium mb-6 leading-relaxed line-clamp-2">
-                          {pro.bio}
-                        </p>
-                        
-                        <Link
-                          to={`/physio/${pro.id}`}
-                          className="w-full py-4 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-2xl font-black text-xs shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
-                        >
-                          Ver Perfil <ArrowRight size={16} />
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="absolute top-1/2 -left-4 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={prevProSlide}
-                    className="p-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-sky-500 hover:scale-110 transition-all"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                </div>
-                <div className="absolute top-1/2 -right-4 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={nextProSlide}
-                    className="p-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-sky-500 hover:scale-110 transition-all"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
-                </div>
-
-                {/* Indicators */}
-                <div className="flex justify-center gap-3 mt-12">
-                  {professionals.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setProSlideIndex(i)}
-                      className={cn(
-                        "h-2 rounded-full transition-all duration-500",
-                        proSlideIndex === i ? "w-10 bg-sky-500" : "w-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300"
-                      )}
-                    />
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5 text-amber-400 mb-3">
+                        <Star size={14} fill="currentColor" />
+                        <span className="text-sm font-black text-white">{pro.rating}</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
+                      </div>
+                      
+                      <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
+                      <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
+                      
+                      <Link
+                        to={`/physio/${pro.id}`}
+                        className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
+                      >
+                        Ver Perfil <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
+                    </motion.div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="py-20 text-center">
-                <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-8 text-slate-400">
+              <div className="py-32 text-center bg-white/5 rounded-[4rem] border border-white/5">
+                <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 text-slate-600">
                   <Search size={48} />
                 </div>
-                <h4 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Nenhum especialista encontrado</h4>
-                <p className="text-lg text-slate-500 dark:text-slate-400 font-medium">Tente ajustar sua busca ou filtros para encontrar o que procura.</p>
+                <h4 className="text-3xl font-black text-white mb-3 tracking-tight">Nenhum especialista encontrado</h4>
+                <p className="text-lg text-slate-500 font-medium">Tente ajustar sua busca ou filtros.</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto bg-gradient-to-br from-sky-500 to-sky-600 rounded-[3rem] p-10 md:p-16 text-center text-white relative overflow-hidden shadow-xl shadow-sky-200 dark:shadow-sky-900/20">
-          <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight">
-              VAMOS COMEÇAR <br /> A REABILITAÇÃO?
-            </h2>
-            <p className="text-base md:text-lg text-sky-50 font-medium">
-              Agende uma avaliação inicial hoje mesmo e descubra como a fisioterapia domiciliar pode transformar seu bem-estar.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 pt-2">
-              <Link
-                to="/register"
-                className="px-8 py-4 bg-white text-sky-600 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-lg"
+      {/* CTA Section - High Impact SaaS Style */}
+      <section className="py-32 px-6">
+        <div className="max-w-7xl mx-auto relative group">
+          <div className="absolute inset-0 bg-blue-600 rounded-[4rem] blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity" />
+          <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-24 text-center text-white overflow-hidden shadow-2xl">
+            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
+            <div className="relative z-10 space-y-10 max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="inline-block px-6 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.4em]"
               >
-                Cadastrar Agora
-              </Link>
-              <Link
-                to="/login"
-                className="px-8 py-4 bg-transparent border-2 border-white/30 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-all"
-              >
-                Fazer Login
-              </Link>
+                Pronto para a Mudança?
+              </motion.div>
+              <h2 className="text-4xl md:text-7xl font-display font-black tracking-tighter leading-none">
+                VAMOS COMEÇAR SUA <br />
+                <span className="italic opacity-80">NOVA JORNADA?</span>
+              </h2>
+              <p className="text-xl md:text-2xl text-blue-50 font-medium opacity-90 max-w-2xl mx-auto">
+                Agende uma avaliação inicial hoje mesmo e descubra como a fisioterapia domiciliar pode transformar seu bem-estar.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
+                <Link
+                  to="/register"
+                  className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-xl shadow-white/10 active:scale-95"
+                >
+                  Cadastrar Agora
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-10 py-5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl font-black text-base hover:bg-white/20 transition-all active:scale-95"
+                >
+                  Fazer Login
+                </Link>
+              </div>
             </div>
           </div>
         </div>
