@@ -8,24 +8,16 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     build: {
-      target: 'esnext',
-      modulePreload: {
-        polyfill: false
-      },
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('react')) return 'vendor-react';
-              if (id.includes('firebase')) return 'vendor-firebase';
-              if (id.includes('supabase')) return 'vendor-supabase';
-              if (id.includes('stripe')) return 'vendor-stripe';
-              if (id.includes('recharts')) return 'vendor-charts';
-              if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
-              if (id.includes('lucide-react') || id.includes('motion') || id.includes('sonner')) return 'vendor-ui';
-              return 'vendor';
-            }
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-supabase': ['@supabase/supabase-js'],
+            'vendor-ui': ['lucide-react', 'motion', 'sonner', 'clsx', 'tailwind-merge'],
+            'vendor-charts': ['recharts'],
+            'vendor-pdf': ['jspdf', 'html2canvas'],
+            'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
           }
         }
       }
