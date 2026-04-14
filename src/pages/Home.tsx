@@ -284,7 +284,7 @@ export default function Home() {
   };
 
   return (
-    <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8 bg-slate-950 transition-colors duration-300">
+    <div className="bg-slate-950 transition-colors duration-300">
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950">
         {/* Soft Background Shapes */}
@@ -324,7 +324,7 @@ export default function Home() {
               LÍDER EM REABILITAÇÃO
             </motion.div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tight">
               {t('home.hero.title1')} <br />
               <span className="text-blue-500 italic">
                 {t('home.hero.title2')}
@@ -700,7 +700,7 @@ export default function Home() {
                         </p>
                         
                         <Link
-                          to="/register"
+                          to={`/physio/${pro.id}`}
                           className="w-full py-4 bg-slate-50 dark:bg-slate-800 text-sky-600 dark:text-sky-400 rounded-2xl font-black text-xs shadow-sm hover:bg-sky-500 hover:text-white transition-all border border-sky-100 dark:border-slate-700 flex items-center justify-center gap-2 mt-auto"
                         >
                           Ver Perfil <ArrowRight size={16} />
