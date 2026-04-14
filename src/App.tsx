@@ -588,13 +588,13 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] h-auto">
+            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full">
               <Logo size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-600 hover:text-blue-600 transition-colors"
+                  className="p-2 text-slate-600 hover:text-blue-600 transition-colors rounded-xl hover:bg-slate-100"
                 >
                   <Menu size={24} />
                 </button>
@@ -603,13 +603,13 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full flex flex-col",
+            "flex-1 w-full flex flex-col min-w-0",
             location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
             <div className={cn(
-              "flex-1",
-              !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-12",
-              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
+              "flex-1 w-full",
+              !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-8 md:py-12",
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-6 lg:p-10"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
