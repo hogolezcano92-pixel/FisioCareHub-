@@ -603,119 +603,126 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full",
-            location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none px-0 py-0" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12",
-            showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
+            "flex-1 w-full flex flex-col",
+            location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/aguardando-aprovacao" element={
-                <ProtectedRoute>
-                  <AguardandoAprovacao />
-                </ProtectedRoute>
-              } />
-              
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
-              <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
-              <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
-              <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
-              <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
-              <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
-              <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Agenda /></ProtectedRoute>} />
-              <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Exercises /></ProtectedRoute>} />
-              <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
-              <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
-              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
-              <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
-              <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
-              <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
-              <Route path="/about" element={<About />} />
-              <Route path="/sobre" element={<About />} />
-              <Route path="/partner" element={<Partner />} />
-              <Route path="/seja-parceiro" element={<Partner />} />
-              <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
-              <Route path="/agendamento/confirmar" element={<ConfirmAppointment />} />
-              <Route path="/physio/:id" element={<ProfessionalProfile />} />
-            </Routes>
-          </Suspense>
-        </main>
-
-        {/* Novo Rodapé (Footer) solicitado */}
-        <footer className="mt-auto py-6 border-t border-gray-800 bg-transparent text-sm text-gray-500">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span>© 2026 FisioCareHub — Reabilitação & Performance</span>
-            </div>
-            
-            <div className="flex gap-6">
-              <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
-              <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
-              <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
+            <div className={cn(
+              "flex-1",
+              !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-12",
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-12"
+            )}>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/aguardando-aprovacao" element={
+                    <ProtectedRoute>
+                      <AguardandoAprovacao />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Protected Routes */}
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+                  <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+                  <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
+                  <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
+                  <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
+                  <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
+                  <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Agenda /></ProtectedRoute>} />
+                  <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Exercises /></ProtectedRoute>} />
+                  <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
+                  <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
+                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                  <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+                  <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+                  <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
+                  <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/sobre" element={<About />} />
+                  <Route path="/partner" element={<Partner />} />
+                  <Route path="/seja-parceiro" element={<Partner />} />
+                  <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
+                  <Route path="/agendamento/confirmar" element={<ConfirmAppointment />} />
+                  <Route path="/physio/:id" element={<ProfessionalProfile />} />
+                </Routes>
+              </Suspense>
             </div>
 
-            <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-800">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <span className="text-[10px] uppercase tracking-wider font-semibold">Sistema Online</span>
-            </div>
-          </div>
-        </footer>
+            {/* Novo Rodapé (Footer) solicitado - Only show in areas where it makes sense */}
+            {(showSidebar || isAdminPage || isWaitingPage) && (
+              <footer className="mt-auto py-6 border-t border-white/5 bg-transparent text-sm text-gray-500">
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span>© 2026 FisioCareHub — Reabilitação & Performance</span>
+                  </div>
+                  
+                  <div className="flex gap-6">
+                    <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
+                    <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
+                    <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
+                  </div>
 
-        {!showSidebar && location.pathname !== '/chat' && (
-          <footer className="bg-white border-t border-border-soft py-20">
-            <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-16">
-              <div className="space-y-6">
-                <Logo size="lg" />
-                <p className="text-base text-text-muted leading-relaxed font-medium">
-                  Sua reabilitação no conforto de casa. Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.
-                </p>
+                  <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-800">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-semibold">Sistema Online</span>
+                  </div>
+                </div>
+              </footer>
+            )}
+          </main>
+
+          {!showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && (
+            <footer className="bg-white border-t border-border-soft py-20">
+              <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-16">
+                <div className="space-y-6">
+                  <Logo size="lg" />
+                  <p className="text-base text-text-muted leading-relaxed font-medium">
+                    Sua reabilitação no conforto de casa. Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.
+                  </p>
+                </div>
+                
+                <div className="space-y-6">
+                  <h4 className="text-xl font-black text-text-main uppercase tracking-widest">LINKS RÁPIDOS</h4>
+                  <ul className="space-y-4 text-base text-text-muted font-medium">
+                    <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre Nós</Link></li>
+                    <li><Link to="/seja-parceiro" className="hover:text-primary transition-colors">Seja um Parceiro</Link></li>
+                    <li><Link to="/triagem-ia" className="hover:text-primary transition-colors">Triagem IA</Link></li>
+                    <li><Link to="/area-paciente" className="hover:text-primary transition-colors">Área do Paciente</Link></li>
+                  </ul>
+                </div>
+
+                <div className="space-y-6">
+                  <h4 className="text-xl font-black text-text-main uppercase tracking-widest">SUPORTE TÉCNICO</h4>
+                  <p className="text-base text-text-muted font-medium leading-relaxed">
+                    Exclusivo para dúvidas sobre o aplicativo e suporte técnico. Para falar com seu fisioterapeuta, utilize a agenda no perfil dele.
+                  </p>
+                  <ul className="space-y-4 text-base text-text-muted font-medium">
+                    <li className="flex items-center gap-3"><Phone size={20} className="text-primary" /> (11) 98404-0563</li>
+                    <li className="flex items-center gap-3"><HelpCircle size={20} className="text-primary" /> suporte@fisiocarehub.com</li>
+                    <li className="flex items-center gap-3 text-emerald-600 font-black">
+                      <a href="https://wa.me/5511984040563" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:underline">
+                        <MessageCircle size={24} /> Suporte via WhatsApp
+                      </a>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              
-              <div className="space-y-6">
-                <h4 className="text-xl font-black text-text-main uppercase tracking-widest">LINKS RÁPIDOS</h4>
-                <ul className="space-y-4 text-base text-text-muted font-medium">
-                  <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre Nós</Link></li>
-                  <li><Link to="/seja-parceiro" className="hover:text-primary transition-colors">Seja um Parceiro</Link></li>
-                  <li><Link to="/triagem-ia" className="hover:text-primary transition-colors">Triagem IA</Link></li>
-                  <li><Link to="/area-paciente" className="hover:text-primary transition-colors">Área do Paciente</Link></li>
-                </ul>
+              <div className="max-w-7xl mx-auto px-4 text-center text-text-muted text-sm mt-20 pt-8 border-t border-border-soft">
+                &copy; {new Date().getFullYear()} FisioCareHub. Todos os direitos reservados. <br />
+                <span className="text-xs mt-2 block">Cuidado humanizado e tecnologia para sua saúde.</span>
               </div>
-
-              <div className="space-y-6">
-                <h4 className="text-xl font-black text-text-main uppercase tracking-widest">SUPORTE TÉCNICO</h4>
-                <p className="text-base text-text-muted font-medium leading-relaxed">
-                  Exclusivo para dúvidas sobre o aplicativo e suporte técnico. Para falar com seu fisioterapeuta, utilize a agenda no perfil dele.
-                </p>
-                <ul className="space-y-4 text-base text-text-muted font-medium">
-                  <li className="flex items-center gap-3"><Phone size={20} className="text-primary" /> (11) 98404-0563</li>
-                  <li className="flex items-center gap-3"><HelpCircle size={20} className="text-primary" /> suporte@fisiocarehub.com</li>
-                  <li className="flex items-center gap-3 text-emerald-600 font-black">
-                    <a href="https://wa.me/5511984040563" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:underline">
-                      <MessageCircle size={24} /> Suporte via WhatsApp
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className="max-w-7xl mx-auto px-4 text-center text-text-muted text-sm mt-20 pt-8 border-t border-border-soft">
-              &copy; {new Date().getFullYear()} FisioCareHub. Todos os direitos reservados. <br />
-              <span className="text-xs mt-2 block">Cuidado humanizado e tecnologia para sua saúde.</span>
-            </div>
-          </footer>
-        )}
+            </footer>
+          )}
       </div>
     </ErrorBoundary>
 
