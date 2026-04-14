@@ -550,7 +550,7 @@ function AppContent() {
   const isAdminArea = user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
-  const isAdminPage = location.pathname === '/admin';
+  const isAdminPage = location.pathname.startsWith('/admin') || location.pathname === '/preview';
 
   const isApproved = profile?.status_aprovacao === 'aprovado';
   const isWaitingPage = location.pathname === '/aguardando-aprovacao';
@@ -663,30 +663,48 @@ function AppContent() {
 
             {/* Novo Rodapé (Footer) solicitado - Only show in areas where it makes sense */}
             {(showSidebar || isAdminPage || isWaitingPage) && (
-              <footer className="mt-auto py-6 border-t border-white/5 bg-transparent text-sm text-gray-500">
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+              <footer className={cn(
+                "mt-auto py-10 border-t bg-transparent text-sm",
+                isAdminPage 
+                  ? "border-white/10 bg-white/[0.02]" 
+                  : "border-white/5 text-slate-500"
+              )}>
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
                   <div className="flex items-center gap-2">
-                    <span>© 2026 FisioCareHub {isAdminPage ? "— Painel Administrativo" : "— Reabilitação & Performance"}</span>
+                    <span className={cn(
+                      "tracking-tight font-black",
+                      isAdminPage ? "text-lg text-white" : "text-sm text-slate-400 font-bold"
+                    )}>
+                      © 2026 FisioCareHub {isAdminPage ? "— Painel Administrativo" : "— Reabilitação & Performance"}
+                    </span>
                   </div>
                   
                   {isAdminPage ? (
-                    <div className="flex items-center gap-6">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">v2.4.0-stable</span>
+                    <div className="flex items-center gap-8">
+                      <div className="flex flex-col items-center md:items-end">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Versão do Sistema</span>
+                        <span className="text-xs font-black text-white bg-white/10 px-3 py-1 rounded-lg border border-white/10">v2.4.0-stable</span>
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex gap-6">
-                      <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
-                      <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
-                      <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
+                    <div className="flex gap-8 font-bold">
+                      <a href="/termos" className="hover:text-primary transition-colors">Termos</a>
+                      <a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a>
+                      <a href="/suporte" className="hover:text-primary transition-colors">Suporte</a>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-800">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="text-[10px] uppercase tracking-wider font-semibold">Sistema Online</span>
+                  <div className={cn(
+                    "flex items-center gap-3 px-6 py-2 rounded-full border transition-all shadow-lg",
+                    isAdminPage 
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-900/20"
+                      : "bg-gray-900/50 border-gray-800 text-gray-400"
+                  )}>
+                    <div className="relative flex h-3 w-3">
+                      <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
+                      <div className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></div>
+                    </div>
+                    <span className="text-xs uppercase tracking-[0.2em] font-black">Sistema Online</span>
                   </div>
                 </div>
               </footer>
