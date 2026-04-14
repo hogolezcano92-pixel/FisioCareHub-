@@ -44,11 +44,13 @@ import { useTranslation } from 'react-i18next';
 // Components
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
-import KineAI from './components/KineAI';
 import SplashScreen from './components/SplashScreen';
-import Onboarding from './components/Onboarding';
-import Sidebar from './components/Sidebar';
-import AguardandoAprovacao from './pages/AguardandoAprovacao';
+
+// Lazy Components
+const KineAI = lazy(() => import('./components/KineAI'));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const AguardandoAprovacao = lazy(() => import('./pages/AguardandoAprovacao'));
 
 // Lazy Pages
 const Home = lazy(() => import('./pages/Home'));
@@ -580,11 +582,15 @@ function AppContent() {
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
-        <KineAI />
+        <Suspense fallback={null}>
+          {!isAdminPage && <KineAI />}
+        </Suspense>
         <NotificationHandler />
         <ScrollToTop />
         
-        {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
+        <Suspense fallback={null}>
+          {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
+        </Suspense>
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
@@ -660,14 +666,20 @@ function AppContent() {
               <footer className="mt-auto py-6 border-t border-white/5 bg-transparent text-sm text-gray-500">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <span>© 2026 FisioCareHub — Reabilitação & Performance</span>
+                    <span>© 2026 FisioCareHub {isAdminPage ? "— Painel Administrativo" : "— Reabilitação & Performance"}</span>
                   </div>
                   
-                  <div className="flex gap-6">
-                    <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
-                    <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
-                    <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
-                  </div>
+                  {isAdminPage ? (
+                    <div className="flex items-center gap-6">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">v2.4.0-stable</span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-6">
+                      <a href="/termos" className="hover:text-blue-400 transition-colors">Termos</a>
+                      <a href="/privacidade" className="hover:text-blue-400 transition-colors">Privacidade</a>
+                      <a href="/suporte" className="hover:text-blue-400 transition-colors">Suporte</a>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-800">
                     <span className="relative flex h-2 w-2">
@@ -727,7 +739,7 @@ function AppContent() {
     </ErrorBoundary>
 
       <AnimatePresence>
-        {showWhatsApp && location.pathname !== '/chat' && (
+        {showWhatsApp && location.pathname !== '/chat' && !isAdminPage && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5, x: 50 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -836,7 +848,9 @@ export default function App() {
           <SplashScreen key="splash" />
         )}
         {showOnboarding && !showSplash && (
-          <Onboarding key="onboarding" onComplete={handleOnboardingComplete} />
+          <Suspense fallback={null}>
+            <Onboarding key="onboarding" onComplete={handleOnboardingComplete} />
+          </Suspense>
         )}
       </AnimatePresence>
 
