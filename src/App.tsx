@@ -664,48 +664,84 @@ function AppContent() {
             {/* Novo Rodapé (Footer) solicitado - Only show in areas where it makes sense */}
             {(showSidebar || isAdminPage || isWaitingPage) && (
               <footer className={cn(
-                "mt-auto py-10 border-t bg-transparent text-sm",
+                "mt-auto border-t transition-all duration-500",
                 isAdminPage 
-                  ? "border-white/10 bg-white/[0.02]" 
-                  : "border-white/5 text-slate-500"
+                  ? "bg-slate-950/50 backdrop-blur-md border-white/10 pt-12 pb-8" 
+                  : "bg-transparent border-white/5 py-10 text-slate-500"
               )}>
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "tracking-tight font-black",
-                      isAdminPage ? "text-lg text-white" : "text-sm text-slate-400 font-bold"
-                    )}>
-                      © 2026 FisioCareHub {isAdminPage ? "— Painel Administrativo" : "— Reabilitação & Performance"}
-                    </span>
-                  </div>
-                  
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   {isAdminPage ? (
-                    <div className="flex items-center gap-8">
-                      <div className="flex flex-col items-center md:items-end">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Versão do Sistema</span>
-                        <span className="text-xs font-black text-white bg-white/10 px-3 py-1 rounded-lg border border-white/10">v2.4.0-stable</span>
+                    <div className="space-y-12">
+                      {/* Top Section */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Logo size="sm" variant="light" />
+                            <div className="h-8 w-[1px] bg-white/10 mx-1" />
+                            <span className="text-2xl font-black text-white tracking-tighter">E-FISIO</span>
+                          </div>
+                          <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Portal Fisio Domiciliar</p>
+                          <div className="flex items-center gap-2 text-primary font-black text-sm">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            Painel Administrativo
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8">
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Links</h4>
+                            <nav className="flex flex-col gap-2">
+                              <a href="#" className="text-sm font-bold text-slate-300 hover:text-white transition-colors">Institucional</a>
+                              <a href="#" className="text-sm font-bold text-slate-300 hover:text-white transition-colors">Artigos</a>
+                            </nav>
+                          </div>
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Suporte</h4>
+                            <p className="text-sm font-bold text-slate-300 break-all">contato@Fisiocarehub.com.br</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col md:items-end justify-start space-y-4">
+                          <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-2xl flex items-center gap-3">
+                            <div className="relative flex h-2 w-2">
+                              <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
+                              <div className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></div>
+                            </div>
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Sistema Online</span>
+                          </div>
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">v2.4.0-stable</span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Section */}
+                      <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
+                        <div className="space-y-1">
+                          <p className="text-xs font-black text-white tracking-tight">Copyright © 2026 Portal Fisio Domiciliar</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Todos os direitos reservados</p>
+                        </div>
+                        
+                        <div className="flex flex-col md:items-end gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Realização:</span>
+                            <Logo size="xs" />
+                          </div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            Desenvolvido por: <span className="text-primary">Aí Studio Gemini</span>
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-8 font-bold">
-                      <a href="/termos" className="hover:text-primary transition-colors">Termos</a>
-                      <a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a>
-                      <a href="/suporte" className="hover:text-primary transition-colors">Suporte</a>
+                    /* Public Footer (Simple) */
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                      <span className="font-bold text-sm">© 2026 FisioCareHub — Reabilitação & Performance</span>
+                      <div className="flex gap-8 font-bold text-sm">
+                        <a href="/termos" className="hover:text-primary transition-colors">Termos</a>
+                        <a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a>
+                        <a href="/suporte" className="hover:text-primary transition-colors">Suporte</a>
+                      </div>
                     </div>
                   )}
-
-                  <div className={cn(
-                    "flex items-center gap-3 px-6 py-2 rounded-full border transition-all shadow-lg",
-                    isAdminPage 
-                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-900/20"
-                      : "bg-gray-900/50 border-gray-800 text-gray-400"
-                  )}>
-                    <div className="relative flex h-3 w-3">
-                      <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
-                      <div className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></div>
-                    </div>
-                    <span className="text-xs uppercase tracking-[0.2em] font-black">Sistema Online</span>
-                  </div>
                 </div>
               </footer>
             )}
