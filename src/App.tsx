@@ -273,64 +273,93 @@ function Navbar() {
   ];
 
   return (
-    <nav className="bg-slate-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+    <nav className="bg-slate-950/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
-            <Link to={user ? "/dashboard" : "/"} className="group">
-              <Logo variant="light" />
+            <Link to={user ? "/dashboard" : "/"} className="group transition-transform active:scale-95">
+              <Logo variant="light" size="sm" />
             </Link>
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-            {navItems.map((item) => (
-              <Link
-                key={`${item.name}-${item.path}`}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all",
-                  location.pathname === item.path 
-                    ? "bg-primary text-white shadow-premium" 
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <item.icon size={18} />
-                <span className="hidden lg:inline">{item.name}</span>
-              </Link>
-            ))}
-            {user && (
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={`${item.name}-${item.path}`}
+                  to={item.path}
+                  className={cn(
+                    "relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black transition-all group",
+                    isActive 
+                      ? "text-white" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <item.icon size={16} className={cn("transition-transform group-hover:scale-110", isActive ? "text-blue-400" : "text-slate-500")} />
+                  <span className="hidden lg:inline">{item.name}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 bg-blue-600/10 border border-blue-500/20 rounded-xl -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+            
+            {user ? (
               <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
-                <Link to="/profile" className="flex items-center gap-3 group">
-                  <div className="text-right hidden lg:block">
-                    <p className="text-sm font-black text-white leading-none">
+                <Link to="/profile" className="flex items-center gap-3 group p-1 pr-3 rounded-2xl hover:bg-white/5 transition-all">
+                  <div className="relative">
+                    <img 
+                      src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
+                      className="w-9 h-9 rounded-xl object-cover border border-white/10 group-hover:border-blue-500 transition-all"
+                      alt="profile"
+                    />
+                    {isPro && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center border-2 border-slate-950">
+                        <Crown size={8} className="text-slate-950" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left hidden lg:block">
+                    <p className="text-[13px] font-black text-white leading-tight">
                       {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
                       {(profile?.nome_completo || '').split(' ')[0]}
                     </p>
-                    <div className="flex items-center justify-end gap-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
-                      {isPro && (
-                        <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
-                          <Crown size={8} />
-                          PRO
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">
+                      {isPro ? 'Premium' : 'Free'}
+                    </p>
                   </div>
-                  <img 
-                    src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
-                    className="w-10 h-10 rounded-xl object-cover border-2 border-white/10 shadow-sm group-hover:border-primary transition-all"
-                    alt="profile"
-                  />
                 </Link>
-                <NotificationBell />
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
-                  title={t('nav.logout')}
+                <div className="flex items-center gap-1">
+                  <NotificationBell />
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                    title={t('nav.logout')}
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 ml-4">
+                <Link 
+                  to="/login" 
+                  className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
                 >
-                  <LogOut size={20} />
-                </button>
+                  Entrar
+                </Link>
+                <Link 
+                  to="/register" 
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-50 text-white hover:text-blue-600 rounded-xl text-[13px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                >
+                  Começar Agora
+                </Link>
               </div>
             )}
           </div>
@@ -594,13 +623,13 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full">
-              <Logo size="sm" />
+            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-[120] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full">
+              <Logo variant="light" size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-600 hover:text-blue-600 transition-colors rounded-xl hover:bg-slate-100"
+                  className="p-2 text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-white/5"
                 >
                   <Menu size={24} />
                 </button>
@@ -665,12 +694,12 @@ function AppContent() {
             {(showSidebar || isAdminPage || isWaitingPage) && (
               <footer className={cn(
                 "mt-auto border-t transition-all duration-300",
-                isAdminPage 
+                isAdminPage || showSidebar
                   ? "bg-white border-slate-100 py-6" 
                   : "bg-transparent border-white/5 py-10 text-slate-500"
               )}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  {isAdminPage ? (
+                  {isAdminPage || showSidebar ? (
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-bold tracking-widest uppercase">
                       <div className="text-slate-900">
                         © 2026 FisioCareHub
@@ -755,7 +784,7 @@ function AppContent() {
             initial={{ opacity: 0, scale: 0.5, x: 50 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.5, x: 50 }}
-            className="fixed bottom-28 right-6 z-[100] group"
+            className="fixed bottom-28 right-6 z-[40] group"
           >
             <div className="relative flex items-center">
               {/* Label que aparece apenas no hover */}
