@@ -11,6 +11,23 @@ export default defineConfig(({mode}) => {
       target: 'esnext',
       modulePreload: {
         polyfill: false
+      },
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) return 'vendor-react';
+              if (id.includes('firebase')) return 'vendor-firebase';
+              if (id.includes('supabase')) return 'vendor-supabase';
+              if (id.includes('stripe')) return 'vendor-stripe';
+              if (id.includes('recharts')) return 'vendor-charts';
+              if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
+              if (id.includes('lucide-react') || id.includes('motion') || id.includes('sonner')) return 'vendor-ui';
+              return 'vendor';
+            }
+          }
+        }
       }
     },
     define: {
