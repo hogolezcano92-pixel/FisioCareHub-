@@ -297,14 +297,14 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-8 pb-12 bg-[#0B1120] relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen pt-4 md:pt-8 pb-12 bg-[#0B1120] relative overflow-hidden transition-colors duration-500">
       {/* Camada de Textura e Brilho de Fundo Premium */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.1),transparent_50%)] pointer-events-none"></div>
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       
-      <div className="max-w-7xl mx-auto space-y-10 relative z-10">
+      <div className="max-w-7xl mx-auto space-y-8 md:space-y-10 relative z-10">
         {/* Banner Pro para Fisioterapeutas */}
         {isPhysio && !isPro && (
           <motion.div
@@ -372,7 +372,7 @@ export default function Dashboard() {
                     <div className="flex flex-col">
                       {profile.nome_completo.split(' ').map((namePart, idx, arr) => (
                         <div key={idx} className="flex items-baseline gap-2">
-                          <span className="text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter">
+                          <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter">
                             {namePart}
                           </span>
                           
