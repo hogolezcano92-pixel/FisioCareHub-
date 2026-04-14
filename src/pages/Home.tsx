@@ -342,7 +342,7 @@ export default function Home() {
               >
                 <Link
                   to="/register"
-                  className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center gap-2 transition-all hover:bg-blue-700 mb-8"
+                  className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center gap-2 transition-all hover:bg-blue-700 mb-8"
                 >
                   Agendar Avaliação <ArrowRight size={20} />
                 </Link>
@@ -455,8 +455,9 @@ export default function Home() {
       </section>
 
       {/* Specialties Slider Section - Modern & Professional */}
-      <section className="py-24 px-8 lg:px-20 bg-white dark:bg-slate-950 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-8 lg:px-20 bg-slate-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/20 to-slate-950 pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 space-y-4">
             <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Especialidades Médicas</p>
             <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
@@ -541,7 +542,8 @@ export default function Home() {
       </section>
 
       {/* How it Works Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-8 lg:px-20 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden">
+      <section className="py-16 md:py-24 px-4 sm:px-8 lg:px-20 bg-slate-950 relative overflow-hidden border-y border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/5 via-transparent to-sky-500/5 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative z-10 px-4 sm:px-6">
           <div className="text-center mb-16 space-y-4">
             <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Simples e Rápido</p>
@@ -603,7 +605,7 @@ export default function Home() {
       </section>
 
       {/* Professionals Section - Dynamic Grid with Search & Filter */}
-      <section className="py-24 px-4 sm:px-8 lg:px-20 bg-white dark:bg-slate-950">
+      <section className="py-24 px-4 sm:px-8 lg:px-20 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Nossa Equipe</h2>
