@@ -273,12 +273,12 @@ function Navbar() {
   ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-border-soft sticky top-0 z-50">
+    <nav className="bg-slate-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to={user ? "/dashboard" : "/"} className="group">
-              <Logo />
+              <Logo variant="light" />
             </Link>
           </div>
 
@@ -292,7 +292,7 @@ function Navbar() {
                   "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all",
                   location.pathname === item.path 
                     ? "bg-primary text-white shadow-premium" 
-                    : "text-text-main hover:bg-primary/5 hover:text-primary"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
                 )}
               >
                 <item.icon size={18} />
@@ -300,17 +300,17 @@ function Navbar() {
               </Link>
             ))}
             {user && (
-              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-border-soft">
+              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
                 <Link to="/profile" className="flex items-center gap-3 group">
                   <div className="text-right hidden lg:block">
-                    <p className="text-sm font-black text-text-main leading-none">
+                    <p className="text-sm font-black text-white leading-none">
                       {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
                       {(profile?.nome_completo || '').split(' ')[0]}
                     </p>
                     <div className="flex items-center justify-end gap-1">
-                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{profile?.plano}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.plano}</p>
                       {isPro && (
-                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
+                        <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] font-black rounded-md uppercase tracking-tighter flex items-center gap-0.5">
                           <Crown size={8} />
                           PRO
                         </span>
@@ -319,14 +319,14 @@ function Navbar() {
                   </div>
                   <img 
                     src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
-                    className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm group-hover:border-primary transition-all"
+                    className="w-10 h-10 rounded-xl object-cover border-2 border-white/10 shadow-sm group-hover:border-primary transition-all"
                     alt="profile"
                   />
                 </Link>
                 <NotificationBell />
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
                   title={t('nav.logout')}
                 >
                   <LogOut size={20} />
@@ -340,7 +340,7 @@ function Navbar() {
             {user && <NotificationBell />}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-[#1A202C] hover:text-blue-600 p-2"
+              className="text-white hover:text-primary p-2"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -609,7 +609,7 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full flex flex-col min-w-0",
+            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10",
             location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
             <div className={cn(
