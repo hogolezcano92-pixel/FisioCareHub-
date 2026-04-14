@@ -156,12 +156,14 @@ export default function Register() {
         password: formData.password,
         options: {
           data: {
-            full_name: cleanName,
-            tipo_usuario: role,
+            nome_completo: cleanName,
+            telefone: formData.telefone,
+            role: role,
+            tipo_usuario: role, // Mantido para compatibilidade
+            status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
             plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
             crefito: role === 'fisioterapeuta' ? formData.crefito : null,
             especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
-            telefone: formData.telefone,
             bio: formData.bio,
             localizacao: formData.city,
             endereco: formData.address,
@@ -169,11 +171,7 @@ export default function Register() {
             pais: formData.country,
             genero: role === 'fisioterapeuta' ? formData.gender : null,
             tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-            is_pro: isPro,
-            rg_frente_url: null,
-            rg_verso_url: null,
-            crefito_frente_url: null,
-            crefito_verso_url: null
+            is_pro: isPro
           }
         }
       });
