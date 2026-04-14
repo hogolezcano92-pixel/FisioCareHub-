@@ -32,15 +32,38 @@ export default function SplashScreen() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ 
           opacity: 1, 
-          scale: [0.9, 1.02, 1],
+          scale: [0.9, 1.05, 1],
         }}
         transition={{ 
-          duration: 1.2, 
-          ease: "easeOut",
+          duration: 1.5, 
+          ease: [0.22, 1, 0.36, 1],
         }}
         className="text-center relative z-10 flex flex-col items-center"
       >
-        <Logo size="xl" variant="light" />
+        <motion.div
+          animate={{
+            filter: ["blur(0px)", "blur(2px)", "blur(0px)"],
+            opacity: [1, 0.8, 1]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <Logo size="xl" variant="light" />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 flex items-center gap-3"
+        >
+          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Carregando Experiência</span>
+          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse [animation-delay:200ms]" />
+        </motion.div>
       </motion.div>
     </motion.div>
   );
