@@ -147,6 +147,9 @@ export default function Register() {
 
     try {
       console.log("Starting registration for:", cleanEmail, "Role:", role);
+      // Salva o papel selecionado como fallback
+      localStorage.setItem('pending_role', role);
+      
       // 2. Criar o usuário no Supabase Auth com metadados COMPLETOS
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
@@ -266,14 +269,20 @@ export default function Register() {
           created_at: new Date().toISOString()
         };
 
-        // We try to upsert, but we don't block the user if it fails, 
-        // because the DB trigger or AuthContext will handle it later.
-        const { error: profileError } = await supabase
-          .from('perfis')
-          .upsert(fullProfileData);
+        // We try to upsert. If it fails (e.g. email confirmation required), 
+        // the AuthContext will handle it upon first login.
+        try {
+          const { error: profileError } = await supabase
+            .from('perfis')
+            .upsert(fullProfileData);
 
-        if (profileError) {
-          console.warn("Manual profile upsert failed (expected if email confirmation is on):", profileError.message);
+          if (profileError) {
+            console.warn("Manual profile upsert failed (expected if email confirmation is on):", profileError.message);
+          } else {
+            console.log("Profile created successfully in DB.");
+          }
+        } catch (err) {
+          console.warn("Error during manual profile upsert:", err);
         }
 
         // 5. Create subscription record if Pro Key was used
