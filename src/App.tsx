@@ -784,23 +784,19 @@ export default function App() {
 
   useEffect(() => {
     const initialize = async () => {
+      console.log("Iniciando aplicação...");
       const timeoutId = setTimeout(() => {
-        if (!configLoaded) {
-          console.warn("Initialization taking too long, forcing configLoaded to true");
-          setConfigLoaded(true);
-        }
+        console.warn("Inicialização demorou demais, forçando carregamento...");
+        setConfigLoaded(true);
       }, 4000);
 
       try {
-        // 1. Fetch config
         await fetchConfig();
-        
-        // 2. Init Supabase
         initSupabase();
         
-        // 3. Release interface
         clearTimeout(timeoutId);
         setConfigLoaded(true);
+        console.log("Aplicação inicializada com sucesso.");
       } catch (err: any) {
         clearTimeout(timeoutId);
         console.error("Erro na inicialização:", err);
@@ -817,7 +813,9 @@ export default function App() {
       if (!hasCompletedOnboarding) {
         setShowOnboarding(true);
       }
-      setShowSplash(false);
+      // Pequeno delay para garantir que o estado de configLoaded se propague
+      const timer = setTimeout(() => setShowSplash(false), 500);
+      return () => clearTimeout(timer);
     }
   }, [configLoaded]);
 
@@ -843,22 +841,19 @@ export default function App() {
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        {showSplash && (
-          <SplashScreen key="splash" />
-        )}
-        {showOnboarding && !showSplash && (
-          <Suspense fallback={null}>
-            <Onboarding key="onboarding" onComplete={handleOnboardingComplete} />
-          </Suspense>
-        )}
-      </AnimatePresence>
-
-      {configLoaded && !showOnboarding && (
-        <div className={cn(showSplash ? "hidden" : "block")}>
+      {showSplash ? (
+        <SplashScreen />
+      ) : showOnboarding ? (
+        <Suspense fallback={<SplashScreen />}>
+          <Onboarding onComplete={handleOnboardingComplete} />
+        </Suspense>
+      ) : (
+        <div className="block">
           <BrowserRouter>
             <AuthProvider>
-              <AppContent />
+              <Suspense fallback={<SplashScreen />}>
+                <AppContent />
+              </Suspense>
             </AuthProvider>
           </BrowserRouter>
         </div>
