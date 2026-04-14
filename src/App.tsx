@@ -768,7 +768,6 @@ export default function App() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [minTimePassed, setMinTimePassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -778,7 +777,7 @@ export default function App() {
           console.warn("Initialization taking too long, forcing configLoaded to true");
           setConfigLoaded(true);
         }
-      }, 8000);
+      }, 4000);
 
       try {
         // 1. Fetch config
@@ -801,21 +800,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinTimePassed(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (configLoaded && minTimePassed) {
+    if (configLoaded) {
       const hasCompletedOnboarding = localStorage.getItem('onboarding_completed');
       if (!hasCompletedOnboarding) {
         setShowOnboarding(true);
       }
       setShowSplash(false);
     }
-  }, [configLoaded, minTimePassed]);
+  }, [configLoaded]);
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('onboarding_completed', 'true');
