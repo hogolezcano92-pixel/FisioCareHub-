@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
       
       if (!data && !error) {
-        // Profile not found, create a default one (likely OAuth user)
-        console.log('Profile not found, creating default for user:', userId);
+        // Profile not found, create a default one (likely OAuth user or first-time login)
+        console.log('Profile not found in DB, creating for user:', userId);
         
         // Check if there's a pending role from Register page (for OAuth)
         const pendingRole = localStorage.getItem('pending_role');
@@ -64,22 +64,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           genero: userMetadata?.genero || null,
           tipo_servico: userMetadata?.tipo_servico || null,
           is_pro: !!userMetadata?.is_pro,
-          status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente'
+          status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente',
+          created_at: new Date().toISOString()
         };
 
         const { data: newProfile, error: createError } = await supabase
           .from('perfis')
-          .upsert(defaultProfile)
+          .insert(defaultProfile)
           .select()
           .single();
         
         if (createError) {
-          console.error('Error creating default profile in DB:', createError);
-          // Fallback to metadata-based profile object even if DB upsert fails
+          console.error('Error creating profile in DB:', createError);
+          // If insert fails (maybe already exists now?), try to fetch again
+          const { data: retryData } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          
+          if (retryData) return { profile: retryData, subscription: null };
+          
+          // Fallback to metadata-based profile object
           return { profile: defaultProfile, subscription: null };
         }
 
-        // Clear the pending role after SUCCESSFUL use
         if (pendingRole) localStorage.removeItem('pending_role');
         lastFetchedUserId.current = userId;
         return { profile: newProfile, subscription: null };
