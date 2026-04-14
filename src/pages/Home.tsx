@@ -307,7 +307,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="flex-1 p-8 lg:p-20 flex flex-col justify-center relative z-10">
+        <div className="flex-1 p-6 sm:p-10 lg:p-20 flex flex-col justify-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -541,8 +541,8 @@ export default function Home() {
       </section>
 
       {/* How it Works Section */}
-      <section className="py-24 px-8 lg:px-20 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10">
+      <section className="py-16 md:py-24 px-4 sm:px-8 lg:px-20 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10 px-4 sm:px-6">
           <div className="text-center mb-16 space-y-4">
             <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.5em]">Simples e Rápido</p>
             <h3 className="text-4xl md:text-5xl font-display font-black text-[#1A202C] dark:text-white tracking-tight">
@@ -603,8 +603,8 @@ export default function Home() {
       </section>
 
       {/* Professionals Section - Dynamic Grid with Search & Filter */}
-      <section className="py-24 px-8 lg:px-20 bg-white dark:bg-slate-950">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-4 sm:px-8 lg:px-20 bg-white dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-sm font-bold text-sky-600 uppercase tracking-[0.4em]">Nossa Equipe</h2>
             <h3 className="text-3xl md:text-4xl font-display font-bold text-[#1A202C] dark:text-white tracking-tight">Especialistas na Sua Região</h3>

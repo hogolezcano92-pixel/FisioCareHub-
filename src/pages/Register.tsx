@@ -308,7 +308,7 @@ export default function Register() {
   };
 
   return (
-    <div className="max-w-md mx-auto pt-10">
+    <div className="max-w-md mx-auto pt-10 px-4 sm:px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

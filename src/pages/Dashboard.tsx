@@ -304,7 +304,7 @@ export default function Dashboard() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       
-      <div className="max-w-7xl mx-auto space-y-8 md:space-y-10 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-10 relative z-10">
         {/* Banner Pro para Fisioterapeutas */}
         {isPhysio && !isPro && (
           <motion.div
@@ -371,8 +371,8 @@ export default function Dashboard() {
                     {/* Nome Completo Empilhado Verticalmente */}
                     <div className="flex flex-col">
                       {profile.nome_completo.split(' ').map((namePart, idx, arr) => (
-                        <div key={idx} className="flex items-baseline gap-2">
-                          <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter">
+                        <div key={idx} className="flex flex-wrap items-baseline gap-2">
+                          <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
                             {namePart}
                           </span>
                           
@@ -572,7 +572,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Grid - Only for Physio or if not empty for patients */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'blue', trend: '+12%', show: isPhysio || stats.appointments > 0 },
           { label: isPhysio ? 'Pacientes' : 'Fisioterapeutas', value: stats.patients, icon: Users, color: 'emerald', trend: '+5%', show: isPhysio || stats.patients > 0 },

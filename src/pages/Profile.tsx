@@ -74,6 +74,8 @@ export default function Profile() {
     zipCode: '',
     country: '',
     crefito: '',
+    preco_sessao: 0,
+    stripe_account_id: '',
     serviceType: 'ambos' as 'domicilio' | 'online' | 'ambos',
   });
 
@@ -99,6 +101,8 @@ export default function Profile() {
           zipCode: profile.cep || '',
           country: profile.pais || '',
           crefito: profile.crefito || '',
+          preco_sessao: profile.preco_sessao || 0,
+          stripe_account_id: profile.stripe_account_id || '',
           serviceType: profile.tipo_servico || 'ambos',
         });
         setLoading(false);
@@ -137,6 +141,8 @@ export default function Profile() {
         cep: formData.zipCode,
         pais: formData.country,
         crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
+        preco_sessao: isPhysio ? Number(formData.preco_sessao) : (userData?.preco_sessao || undefined),
+        stripe_account_id: isPhysio ? formData.stripe_account_id : (userData?.stripe_account_id || undefined),
         genero: isPhysio ? formData.gender : (userData?.genero || undefined),
         especialidade: isPhysio ? formData.specialty : (userData?.especialidade || undefined),
         tipo_servico: isPhysio ? formData.serviceType : (userData?.tipo_servico || undefined),
@@ -345,7 +351,7 @@ export default function Profile() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4 sm:px-6 lg:px-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Minha Conta</h1>
@@ -498,6 +504,35 @@ export default function Profile() {
                                 className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
                                 placeholder="Ex: Ortopedia, Neuro..."
                               />
+                            </div>
+                          </div>
+                        )}
+
+                        {isPhysio && (
+                          <div className="grid md:grid-cols-2 gap-8">
+                            <div className="space-y-2">
+                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Preço da Sessão (R$)</label>
+                              <input
+                                type="number"
+                                name="preco_sessao"
+                                value={formData.preco_sessao}
+                                onChange={handleChange}
+                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                placeholder="0.00"
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Stripe Account ID</label>
+                              <input
+                                type="text"
+                                name="stripe_account_id"
+                                value={formData.stripe_account_id}
+                                onChange={handleChange}
+                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                placeholder="acct_..."
+                              />
+                              <p className="text-[10px] text-slate-400 ml-1">ID da sua conta Stripe Connect para receber pagamentos.</p>
                             </div>
                           </div>
                         )}
