@@ -179,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('Auth initialization timed out, forcing loading to false');
         setLoading(false);
       }
-    }, 10000);
+    }, 5000);
 
     return () => {
       mounted = false;
