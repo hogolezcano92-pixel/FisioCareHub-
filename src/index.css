@@ -62,10 +62,20 @@
   }
   
   body {
-    @apply text-slate-200;
+    @apply text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950;
     overflow-x: hidden;
     width: 100%;
     position: relative;
+  }
+
+  /* Premium Transitions */
+  button, a, .sidebar-item {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Dark Mode Secondary Text Contrast */
+  .dark .text-text-muted, .dark .text-slate-500 {
+    @apply text-slate-400;
   }
 
   img {
@@ -88,6 +98,32 @@
 }
 
 @layer utilities {
+  .premium-card {
+    @apply bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .badge-physio {
+    @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-100 dark:border-blue-800/30;
+  }
+
+  .badge-patient {
+    @apply bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 px-3 py-1 rounded-full text-xs font-bold border border-violet-100 dark:border-violet-800/30;
+  }
+
+  .badge-approved {
+    @apply bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-700/50 shadow-[0_0_10px_rgba(16,185,129,0.1)];
+  }
+
+  .ping-online {
+    @apply relative flex h-3 w-3;
+  }
+  .ping-online-circle {
+    @apply animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75;
+  }
+  .ping-online-dot {
+    @apply relative inline-flex rounded-full h-3 w-3 bg-emerald-500;
+  }
+
   .responsive-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
   }
