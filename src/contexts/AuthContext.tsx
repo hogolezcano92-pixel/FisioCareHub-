@@ -32,23 +32,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       console.log('Fetching profile for:', userId);
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      
+      // Retry logic to wait for the DB trigger if necessary
+      let data = null;
+      let error = null;
+      let retries = 3;
+      
+      while (retries > 0) {
+        const result = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        data = result.data;
+        error = result.error;
+        
+        if (data || error) break;
+        
+        console.log(`Profile not found, retrying... (${retries} left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        retries--;
+      }
       
       if (!data && !error) {
-        // Profile not found, create a default one (likely OAuth user or first-time login)
-        console.log('Profile not found in DB, creating for user:', userId);
+        // Profile still not found after retries, create a default one
+        console.log('Profile not found after retries, creating for user:', userId);
         
-        // Check if there's a pending role from Register page (for OAuth)
         const pendingRole = localStorage.getItem('pending_role');
-        const finalRole = userMetadata?.tipo_usuario || userMetadata?.tipo || userMetadata?.plano || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
+        const finalRole = userMetadata?.role || userMetadata?.tipo_usuario || userMetadata?.tipo || userMetadata?.plano || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
         
         const defaultProfile = {
           id: userId,
-          nome_completo: userMetadata?.full_name || userMetadata?.name || 'Usuário',
+          nome_completo: userMetadata?.nome_completo || userMetadata?.full_name || userMetadata?.name || 'Usuário',
           email: userMetadata?.email || '',
           avatar_url: userMetadata?.avatar_url || userMetadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
           tipo_usuario: finalRole,
@@ -64,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           genero: userMetadata?.genero || null,
           tipo_servico: userMetadata?.tipo_servico || null,
           is_pro: !!userMetadata?.is_pro,
-          status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente',
+          status_aprovacao: userMetadata?.status_aprovacao || (finalRole === 'paciente' ? 'aprovado' : 'pendente'),
           created_at: new Date().toISOString()
         };
 
@@ -76,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (createError) {
           console.error('Error creating profile in DB:', createError);
-          // If insert fails (maybe already exists now?), try to fetch again
           const { data: retryData } = await supabase
             .from('perfis')
             .select('*')
@@ -84,8 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
           
           if (retryData) return { profile: retryData, subscription: null };
-          
-          // Fallback to metadata-based profile object
           return { profile: defaultProfile, subscription: null };
         }
 
