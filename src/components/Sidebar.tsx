@@ -134,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative",
+                      "w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item",
                       isActive 
                         ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
                         : item.variant === 'danger'
