@@ -43,6 +43,8 @@ import { RouteOptimizer } from '../components/FisioCare/RouteOptimizer';
 import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { DigitalLibrary } from '../components/FisioCare/DigitalLibrary';
 import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
+import { Skeleton, CardSkeleton, ListSkeleton } from '../components/Skeleton';
+import ProBanner from '../components/ProBanner';
 import ProGuard from '../components/ProGuard';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
 
@@ -290,9 +292,29 @@ export default function Dashboard() {
   }, [profile, isPhysio]);
 
   if (authLoading) return (
-    <div className="flex flex-col items-center justify-center pt-32 space-y-4">
-      <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Preparando seu Dashboard...</p>
+    <div className="min-h-screen pt-20 bg-[#0B1120] px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-10">
+        <div className="flex items-center gap-6">
+          <Skeleton className="w-20 h-20 rounded-2xl" />
+          <div className="space-y-3 flex-1">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-64 rounded-2xl" />
+            <Skeleton className="h-64 rounded-2xl" />
+          </div>
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
     </div>
   );
 
@@ -310,23 +332,8 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 p-4 rounded-2xl text-white shadow-xl shadow-blue-900/30 flex flex-col md:flex-row items-center justify-between gap-4 border border-white/10"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center border border-white/20 shadow-inner">
-                <Crown size={24} className="text-white drop-shadow-md" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black tracking-tight">Seja FisioCareHub Pro</h3>
-                <p className="text-blue-100/80 text-xs font-medium">Desbloqueie relatórios avançados e análise de desempenho.</p>
-              </div>
-            </div>
-            <Link
-              to="/subscription"
-              className="px-6 py-2.5 bg-white text-blue-900 rounded-xl font-black text-sm hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
-            >
-              Ver Planos
-            </Link>
+            <ProBanner />
           </motion.div>
         )}
 
@@ -385,8 +392,12 @@ export default function Dashboard() {
                                   Pro
                                 </span>
                               )}
-                              {!isPhysio && (
-                                <span className="flex items-center gap-1 px-2.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-blue-500/30 whitespace-nowrap">
+                              {isPhysio ? (
+                                <span className="badge-physio whitespace-nowrap">
+                                  Fisioterapeuta
+                                </span>
+                              ) : (
+                                <span className="badge-patient whitespace-nowrap">
                                   Paciente
                                 </span>
                               )}
@@ -565,7 +576,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+          <div className="premium-card">
             <EvolutionCharts melhora={stats.records > 0 ? 75 : 0} />
           </div>
         </div>
@@ -584,7 +595,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 group relative overflow-hidden hover:bg-white/10 transition-all shadow-xl shadow-blue-900/10"
+            className="premium-card group relative overflow-hidden"
           >
             <div className={cn(
               "absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 rounded-full opacity-[0.05] transition-transform group-hover:scale-110",
@@ -623,7 +634,7 @@ export default function Dashboard() {
       </div>
 
       {isPhysio && (
-        <div className="bg-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10 space-y-5 shadow-2xl shadow-blue-900/20">
+        <div className="premium-card space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="text-lg font-black text-white tracking-tight">Buscar Pacientes</h3>
             <div className="relative w-full max-w-md">
@@ -703,18 +714,10 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-blue-900/20">
+          <div className="premium-card !p-0 overflow-hidden">
             {apptsLoading ? (
-              <div className="p-8 space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex items-center gap-3 animate-pulse">
-                    <div className="w-10 h-10 bg-slate-800 rounded-xl"></div>
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-slate-800 rounded w-1/3"></div>
-                      <div className="h-2 bg-slate-800 rounded w-1/4"></div>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-6">
+                <ListSkeleton count={3} />
               </div>
             ) : recentAppointments.length === 0 ? (
               <div className="p-12 text-center space-y-3">
@@ -783,7 +786,7 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-blue-900/20">
+            <div className="premium-card !p-0 overflow-hidden">
               {recentTriages.length === 0 ? (
                 <div className="p-12 text-center space-y-3">
                   <div className="w-12 h-12 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto border border-white/5">

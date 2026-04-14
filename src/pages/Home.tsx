@@ -683,7 +683,10 @@ export default function Home() {
                             }}
                           />
                           <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-2 shadow-xl border border-sky-100 dark:border-slate-700 z-20">
-                            <CheckCircle2 size={20} className="text-sky-500 fill-sky-50 dark:fill-sky-900" />
+                            <div className="ping-online">
+                              <span className="ping-online-circle"></span>
+                              <span className="ping-online-dot"></span>
+                            </div>
                           </div>
                         </div>
                         

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { ListSkeleton } from '../components/Skeleton';
 import { 
   User, 
   Plus, 
@@ -127,9 +128,15 @@ export default function Patients() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
-        <p className="text-slate-500 font-bold animate-pulse">Carregando pacientes...</p>
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+            <div className="h-4 w-64 bg-slate-100 dark:bg-slate-900 rounded-lg animate-pulse" />
+          </div>
+          <div className="h-14 w-40 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+        </div>
+        <ListSkeleton count={5} />
       </div>
     );
   }
@@ -161,13 +168,13 @@ export default function Patients() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
         {filteredPatients.length === 0 ? (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center w-full">
-            <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="col-span-full premium-card text-center w-full py-20">
+            <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
               <User size={48} />
             </div>
-            <h3 className="text-2xl font-black text-slate-900">Nenhum paciente encontrado</h3>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Nenhum paciente encontrado</h3>
             <p className="text-slate-500 mt-2 font-medium">Comece cadastrando seu primeiro paciente.</p>
           </div>
         ) : (
@@ -176,11 +183,11 @@ export default function Patients() {
               key={patient.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group cursor-pointer"
+              className="premium-card group cursor-pointer"
             >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500 overflow-hidden border-2 border-white shadow-sm">
+                  <div className="w-16 h-16 bg-sky-50 dark:bg-sky-900/20 rounded-2xl flex items-center justify-center text-sky-500 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm">
                     {patient.foto_url ? (
                       <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
                     ) : (
@@ -188,7 +195,7 @@ export default function Patients() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-sky-600 transition-colors">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white leading-tight group-hover:text-sky-600 transition-colors">
                       {patient.nome}
                     </h3>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -196,34 +203,34 @@ export default function Patients() {
                     </p>
                   </div>
                 </div>
-                <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all">
+                <button className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
                   <MoreVertical size={20} />
                 </button>
               </div>
 
               <div className="space-y-3 mb-6">
                 {patient.email && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
                     <Mail size={16} className="text-slate-400" />
                     {patient.email}
                   </div>
                 )}
                 {patient.telefone && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
                     <Phone size={16} className="text-slate-400" />
                     {patient.telefone}
                   </div>
                 )}
-                <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
                   <Calendar size={16} className="text-slate-400" />
                   Nasc: {patient.data_nascimento ? new Date(patient.data_nascimento).toLocaleDateString('pt-BR') : 'Não informado'}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+              <div className="flex items-center justify-between pt-6 border-t border-slate-50 dark:border-slate-800">
                 <div className="flex -space-x-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">
+                    <div key={i} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-400">
                       <FileText size={12} />
                     </div>
                   ))}
