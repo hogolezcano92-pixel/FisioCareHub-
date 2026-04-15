@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🏥 FisioCareHub
 
-# Run and deploy your AI Studio app
+O **FisioCareHub** é um marketplace de fisioterapia moderno, focado em conectar pacientes a fisioterapeutas para atendimentos domiciliares e online com triagem inteligente.
 
-This contains everything you need to run your app locally.
+## 🚀 Tecnologias Utilizadas
+* **Front-end:** React + Vite + TypeScript
+* **Estilização:** Tailwind CSS
+* **Backend/Database:** Supabase
+* **Inteligência Artificial:** Groq SDK (Triagem de Sintomas)
+* **Pagamentos:** Stripe
+* **E-mails:** Resend
 
-View your app in AI Studio: https://ai.studio/apps/dc36d35e-8bea-4bd4-9882-ce83115fa3a7
+## 🛠️ Funcionalidades
+- [x] Agendamento de consultas domiciliares.
+- [x] Triagem inteligente baseada em IA para análise de sintomas.
+- [x] Pagamento integrado via Stripe.
+- [x] Autenticação segura com Google (Firebase/Supabase).
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 📦 Como rodar o projeto
+1. Clone o repositório.
+2. Instale as dependências: `npm install`
+3. Configure as variáveis de ambiente no arquivo `.env`.
+4. Inicie o servidor: `npm run dev`
