@@ -81,6 +81,8 @@ const ConfirmAppointment = lazy(() => import('./pages/ConfirmAppointment'));
 const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
+const FindPhysio = lazy(() => import('./pages/FindPhysio'));
+const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -691,6 +693,9 @@ function AppContent() {
                   <Route path="/physio/:id" element={<ProfessionalProfile />} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
+                  <Route path="/buscar-fisio" element={<FindPhysio />} />
+                  <Route path="/fisioterapeuta" element={<FindPhysio />} />
+                  <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </div>
