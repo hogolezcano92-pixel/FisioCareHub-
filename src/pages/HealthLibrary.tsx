@@ -163,8 +163,8 @@ export default function HealthLibrary() {
   if (loading && materials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-        <p className="text-slate-500 font-medium">Carregando biblioteca...</p>
+        <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
+        <p className="text-slate-400 font-medium">Carregando biblioteca...</p>
       </div>
     );
   }
@@ -176,11 +176,11 @@ export default function HealthLibrary() {
       {/* Cart Toggle Button */}
       <button
         onClick={() => setShowCart(true)}
-        className="fixed bottom-8 right-8 z-50 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center gap-2 group"
+        className="fixed bottom-8 right-8 z-50 bg-sky-500 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center gap-2 group shadow-sky-900/40"
       >
         <ShoppingCart size={24} />
         {cart.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
+          <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-950">
             {cart.length}
           </span>
         )}
@@ -198,25 +198,25 @@ export default function HealthLibrary() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCart(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60]"
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[40]"
             />
             <motion.aside
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-white z-[70] shadow-2xl flex flex-col"
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 z-[41] shadow-2xl flex flex-col border-l border-white/10"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center">
                     <ShoppingCart size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900">Seu Carrinho</h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{cart.length} itens</p>
+                    <h2 className="text-xl font-black text-white">Seu Carrinho</h2>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{cart.length} itens</p>
                   </div>
                 </div>
-                <button onClick={() => setShowCart(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
+                <button onClick={() => setShowCart(false)} className="p-2 hover:bg-white/5 rounded-xl transition-all">
                   <X size={24} className="text-slate-400" />
                 </button>
               </div>
@@ -224,19 +224,19 @@ export default function HealthLibrary() {
               <div className="flex-1 overflow-y-auto p-8 space-y-6">
                 {cart.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center">
+                    <div className="w-20 h-20 bg-white/5 text-slate-700 rounded-full flex items-center justify-center">
                       <ShoppingCart size={40} />
                     </div>
                     <p className="text-slate-500 font-medium">Seu carrinho está vazio.</p>
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 bg-slate-50 rounded-3xl group relative">
+                    <div key={item.id} className="flex gap-4 p-4 bg-white/5 rounded-3xl group relative border border-white/5">
                       <img src={item.cover_image} className="w-20 h-20 rounded-2xl object-cover" alt={item.title} />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-900 truncate">{item.title}</h4>
-                        <p className="text-xs text-slate-500 font-medium">{item.category}</p>
-                        <p className="text-blue-600 font-black mt-1">R$ {item.price.toFixed(2)}</p>
+                        <h4 className="font-bold text-white truncate">{item.title}</h4>
+                        <p className="text-xs text-slate-400 font-medium">{item.category}</p>
+                        <p className="text-sky-400 font-black mt-1">R$ {item.price.toFixed(2)}</p>
                       </div>
                       <button 
                         onClick={() => removeFromCart(item.id)}
@@ -250,14 +250,14 @@ export default function HealthLibrary() {
               </div>
 
               {cart.length > 0 && (
-                <div className="p-8 border-t border-slate-100 space-y-6">
+                <div className="p-8 border-t border-white/5 space-y-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">Total</span>
-                    <span className="text-3xl font-black text-slate-900">R$ {cartTotal.toFixed(2)}</span>
+                    <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">Total</span>
+                    <span className="text-3xl font-black text-white">R$ {cartTotal.toFixed(2)}</span>
                   </div>
                   <button
                     onClick={handleCheckout}
-                    className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
+                    className="w-full py-5 bg-sky-500 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-sky-900/20 hover:bg-sky-600 transition-all flex items-center justify-center gap-3"
                   >
                     Finalizar Compra
                     <ArrowRight size={20} />
@@ -272,8 +272,8 @@ export default function HealthLibrary() {
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Biblioteca de Saúde</h1>
-          <p className="text-slate-500 font-medium">Materiais educativos e guias para sua performance e reabilitação.</p>
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400 tracking-tight">Biblioteca de Saúde</h1>
+          <p className="text-slate-400 font-medium">Materiais educativos e guias para sua performance e reabilitação.</p>
         </div>
       </header>
 
@@ -285,12 +285,12 @@ export default function HealthLibrary() {
             onClick={() => setSelectedCategory(cat.name)}
             className={cn(
               "group relative aspect-square rounded-[2rem] overflow-hidden border-2 transition-all",
-              selectedCategory === cat.name ? "border-blue-600 scale-95" : "border-transparent hover:border-slate-200"
+              selectedCategory === cat.name ? "border-sky-500 scale-95" : "border-transparent hover:border-white/10"
             )}
           >
             <img src={cat.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={cat.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent flex flex-col justify-end p-4 text-left">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">A partir de</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-4 text-left">
+              <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">A partir de</p>
               <p className="text-white font-black text-xs leading-tight">{cat.name}</p>
               <p className="text-white/80 font-bold text-[10px] mt-1">R$ {cat.price.toFixed(2)}</p>
             </div>
@@ -307,7 +307,7 @@ export default function HealthLibrary() {
             placeholder="Buscar materiais..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-slate-900 shadow-sm"
+            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all font-medium text-white shadow-sm"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -318,8 +318,8 @@ export default function HealthLibrary() {
               className={cn(
                 "px-6 py-4 rounded-2xl text-sm font-black whitespace-nowrap transition-all uppercase tracking-widest",
                 selectedCategory === category
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                  : "bg-white text-slate-500 border border-slate-100 hover:bg-slate-50"
+                  ? "bg-sky-500 text-white shadow-lg shadow-sky-900/20"
+                  : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"
               )}
             >
               {category}
@@ -330,12 +330,12 @@ export default function HealthLibrary() {
 
       {/* Grid */}
       {filteredMaterials.length === 0 ? (
-        <div className="bg-white p-20 rounded-[3rem] border border-slate-100 text-center space-y-4">
-          <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+        <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center space-y-4">
+          <div className="w-20 h-20 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto">
             <BookOpen size={40} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">Nenhum material encontrado</h3>
-          <p className="text-slate-500 max-w-xs mx-auto">
+          <h3 className="text-xl font-bold text-white">Nenhum material encontrado</h3>
+          <p className="text-slate-400 max-w-xs mx-auto">
             {materials.length === 0 
               ? "A biblioteca está sendo preparada. Em breve teremos materiais incríveis para você!"
               : "Tente ajustar sua busca ou filtro para encontrar o que procura."}
@@ -353,10 +353,10 @@ export default function HealthLibrary() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 transition-all overflow-hidden flex flex-col"
+                className="group bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-sm hover:shadow-2xl hover:shadow-sky-900/20 transition-all overflow-hidden flex flex-col"
               >
                 {/* Cover Image */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                <div className="relative aspect-[16/10] overflow-hidden bg-white/5">
                   <img
                     src={material.cover_image || `https://picsum.photos/seed/${material.id}/800/500`}
                     alt={material.title}
@@ -364,7 +364,7 @@ export default function HealthLibrary() {
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-black text-blue-600 uppercase tracking-widest shadow-sm">
+                    <span className="px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-[10px] font-black text-sky-400 uppercase tracking-widest shadow-sm border border-white/10">
                       {material.category}
                     </span>
                   </div>
@@ -380,18 +380,18 @@ export default function HealthLibrary() {
                 {/* Content */}
                 <div className="p-8 flex-1 flex flex-col space-y-4">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xl font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
                       {material.title}
                     </h3>
-                    <p className="text-sm text-slate-500 font-medium line-clamp-2 leading-relaxed">
+                    <p className="text-sm text-slate-400 font-medium line-clamp-2 leading-relaxed">
                       {material.description}
                     </p>
                   </div>
 
-                  <div className="pt-4 mt-auto flex items-center justify-between border-t border-slate-50">
+                  <div className="pt-4 mt-auto flex items-center justify-between border-t border-white/5">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preço</span>
-                      <span className="text-2xl font-black text-slate-900">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Preço</span>
+                      <span className="text-2xl font-black text-white">
                         {material.price === 0 ? 'Grátis' : `R$ ${material.price.toFixed(2)}`}
                       </span>
                     </div>
@@ -399,7 +399,7 @@ export default function HealthLibrary() {
                     {isPurchased ? (
                       <button
                         onClick={() => handleAccess(material.file_url)}
-                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200"
+                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/20"
                       >
                         <ExternalLink size={16} />
                         Acessar
@@ -410,8 +410,8 @@ export default function HealthLibrary() {
                         className={cn(
                           "flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg",
                           inCart 
-                            ? "bg-emerald-50 text-emerald-600 shadow-emerald-100" 
-                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
+                            ? "bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20 border border-emerald-500/20" 
+                            : "bg-sky-500 text-white hover:bg-sky-600 shadow-sky-900/20"
                         )}
                       >
                         {inCart ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />}
@@ -427,13 +427,13 @@ export default function HealthLibrary() {
       )}
 
       {/* Info Banner */}
-      <div className="bg-blue-50/50 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-6 border border-blue-100/50">
-        <div className="w-16 h-16 bg-blue-600 text-white rounded-3xl flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+      <div className="bg-sky-500/5 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-6 border border-sky-500/10">
+        <div className="w-16 h-16 bg-sky-500 text-white rounded-3xl flex items-center justify-center shadow-lg shadow-sky-900/20 shrink-0">
           <AlertCircle size={32} />
         </div>
         <div className="space-y-1 text-center md:text-left">
-          <h4 className="text-lg font-black text-blue-900">Dúvidas sobre os materiais?</h4>
-          <p className="text-sm text-blue-700 font-medium">
+          <h4 className="text-lg font-black text-sky-400">Dúvidas sobre os materiais?</h4>
+          <p className="text-sm text-slate-400 font-medium">
             Todos os materiais são desenvolvidos por especialistas e revisados por nossa equipe técnica. 
             Em caso de problemas com o download, entre em contato com o suporte.
           </p>

@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 
 export default function Partner() {
   return (
-    <div className="min-h-screen bg-white pt-24 pb-20">
+    <div className="min-h-screen bg-slate-950 pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-4 space-y-20">
         {/* Hero Section */}
         <section className="text-center space-y-8 max-w-4xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-sm font-black uppercase tracking-widest"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-sm font-black uppercase tracking-widest border border-emerald-500/20"
           >
             <Sparkles size={16} />
             Seja um Parceiro
@@ -20,15 +20,15 @@ export default function Partner() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-6xl font-black text-[#1A202C] tracking-tighter leading-tight"
+            className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight"
           >
-            Transforme sua <span className="text-emerald-600">Carreira</span> com Autonomia
+            Transforme sua <span className="text-emerald-400">Carreira</span> com Autonomia
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-[#1A202C] font-medium leading-relaxed"
+            className="text-xl text-slate-400 font-medium leading-relaxed"
           >
             Seja o protagonista da sua jornada profissional. Atenda no domicílio dos seus pacientes com a liberdade que você sempre quis e o suporte tecnológico que você merece. O FisioCareHub é o seu parceiro ideal para o crescimento sustentável.
           </motion.p>
@@ -40,7 +40,7 @@ export default function Partner() {
           >
             <Link 
               to="/register" 
-              className="px-10 py-5 bg-emerald-600 text-white rounded-full font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center gap-2"
+              className="px-10 py-5 bg-emerald-600 text-white rounded-full font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/20 flex items-center gap-2"
             >
               Cadastrar Agora <ArrowRight size={20} />
             </Link>
@@ -54,19 +54,19 @@ export default function Partner() {
               icon: TrendingUp,
               title: "Aumente sua Renda",
               description: "Tenha acesso a uma base constante de pacientes em sua região, sem custos fixos de consultório.",
-              color: "bg-emerald-50 text-emerald-600"
+              color: "bg-emerald-500/10 text-emerald-400"
             },
             {
               icon: Users,
               title: "Gestão Simplificada",
               description: "Agenda digital, prontuários eletrônicos e triagem inteligente para otimizar seu tempo.",
-              color: "bg-sky-50 text-sky-600"
+              color: "bg-sky-500/10 text-sky-400"
             },
             {
               icon: Shield,
               title: "Selo de Verificado",
               description: "Ganhe destaque e credibilidade com nosso selo de verificação após a análise de currículo.",
-              color: "bg-indigo-50 text-indigo-600"
+              color: "bg-indigo-500/10 text-indigo-400"
             }
           ].map((benefit, i) => (
             <motion.div
@@ -75,21 +75,21 @@ export default function Partner() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all space-y-6"
+              className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm hover:shadow-xl transition-all space-y-6"
             >
-              <div className={`w-16 h-16 ${benefit.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+              <div className={`w-16 h-16 ${benefit.color} rounded-2xl flex items-center justify-center shadow-lg border border-white/5`}>
                 <benefit.icon size={32} />
               </div>
-              <h3 className="text-2xl font-black text-[#1A202C] tracking-tight">{benefit.title}</h3>
-              <p className="text-[#1A202C] font-medium leading-relaxed">{benefit.description}</p>
+              <h3 className="text-2xl font-black text-white tracking-tight">{benefit.title}</h3>
+              <p className="text-slate-400 font-medium leading-relaxed">{benefit.description}</p>
             </motion.div>
           ))}
         </section>
 
         {/* Requirements Section */}
-        <section className="bg-slate-900 rounded-[4rem] p-12 md:p-20 text-white grid md:grid-cols-2 gap-12 items-center">
+        <section className="bg-slate-900/50 backdrop-blur-xl rounded-[4rem] p-12 md:p-20 text-white grid md:grid-cols-2 gap-12 items-center border border-white/10">
           <div className="space-y-8">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
               O que você precisa para começar?
             </h2>
             <div className="space-y-6">
@@ -101,7 +101,7 @@ export default function Partner() {
                 "Equipamentos básicos para atendimento em casa."
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                  <div className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 flex-shrink-0 border border-emerald-500/20">
                     <Check size={14} />
                   </div>
                   <p className="text-lg font-bold text-slate-300">{item}</p>
@@ -109,8 +109,8 @@ export default function Partner() {
               ))}
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 space-y-8">
-            <h3 className="text-2xl font-black">Como funciona o processo?</h3>
+          <div className="bg-white/5 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 space-y-8">
+            <h3 className="text-2xl font-black text-white">Como funciona o processo?</h3>
             <div className="space-y-6">
               {[
                 { step: "01", title: "Cadastro", desc: "Preencha seus dados e envie seus documentos." },
@@ -119,9 +119,9 @@ export default function Partner() {
                 { step: "04", title: "Atendimento", desc: "Receba solicitações e comece a atender." }
               ].map((item, i) => (
                 <div key={i} className="flex gap-6">
-                  <span className="text-emerald-500 font-black text-2xl">{item.step}</span>
+                  <span className="text-emerald-400 font-black text-2xl">{item.step}</span>
                   <div>
-                    <h4 className="text-xl font-black">{item.title}</h4>
+                    <h4 className="text-xl font-black text-white">{item.title}</h4>
                     <p className="text-slate-400 font-medium">{item.desc}</p>
                   </div>
                 </div>

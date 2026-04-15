@@ -365,12 +365,12 @@ export default function Dashboard() {
                 </h1>
                 
                 {!profile ? (
-                  <span className="text-xl font-black animate-pulse text-slate-700">Conectando...</span>
+                  <span className="text-xl font-black animate-pulse text-slate-600">Conectando...</span>
                 ) : (
                   <div className="flex flex-col leading-[0.9] pt-0.5">
                     {/* Título Dr. se for fisioterapeuta */}
                     {isPhysio && (
-                      <span className="text-base md:text-lg font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter mb-0">
+                      <span className="text-base md:text-lg font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter mb-0">
                         Dr.
                       </span>
                     )}
@@ -379,7 +379,7 @@ export default function Dashboard() {
                     <div className="flex flex-col">
                       {profile.nome_completo.split(' ').map((namePart, idx, arr) => (
                         <div key={idx} className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
+                          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
                             {namePart}
                           </span>
                           
@@ -420,19 +420,19 @@ export default function Dashboard() {
           </div>
           
           <div className="flex flex-col items-start lg:items-end gap-3 mt-2 lg:mt-0">
-            <div className="flex items-center gap-2 text-blue-400 font-bold text-[8px] uppercase tracking-[0.2em] bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">
-              <Sparkles size={10} className="text-blue-500 animate-pulse" />
+            <div className="flex items-center gap-2 text-sky-400 font-bold text-[8px] uppercase tracking-[0.2em] bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
+              <Sparkles size={10} className="text-sky-500 animate-pulse" />
               {isPhysio ? 'Gestão Profissional' : 'Sua Jornada de Saúde'}
             </div>
             
             <div className="flex items-center gap-2">
-              <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-blue-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
+              <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
                 <Bell size={18} className="group-hover:animate-swing" />
               </button>
               {!isPhysio && (
                 <button 
                   onClick={() => navigate('/triage')}
-                  className="btn-primary-compact !px-4 !py-2 !text-xs"
+                  className="btn-primary-compact !px-4 !py-2 !text-xs !bg-sky-500 hover:!bg-sky-600"
                 >
                   <Plus size={14} className="stroke-[3px]" />
                   Nova Triagem
@@ -447,13 +447,13 @@ export default function Dashboard() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 rounded-2xl shadow-xl shadow-blue-900/30"
+            className="mb-8 p-1 bg-gradient-to-r from-sky-600 via-indigo-600 to-cyan-600 rounded-2xl shadow-xl shadow-sky-900/30"
           >
             <div className="bg-[#0B1120] rounded-[0.95rem] p-5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-24 -mt-24 rounded-full group-hover:bg-blue-600/20 transition-all duration-1000"></div>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-sky-600/10 blur-[80px] -mr-24 -mt-24 rounded-full group-hover:bg-sky-600/20 transition-all duration-1000"></div>
               
               <div className="flex items-center gap-4 relative z-10">
-                <div className="w-14 h-14 bg-blue-600/20 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/30">
+                <div className="w-14 h-14 bg-sky-600/20 rounded-xl flex items-center justify-center text-sky-400 border border-sky-500/30">
                   <Smartphone size={28} className="animate-pulse" />
                 </div>
                 <div>
@@ -482,13 +482,13 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-3"
           >
-            <Link to="/patients" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-blue-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-blue-500/20 shadow-xl shadow-blue-900/10">
-              <Users className="mx-auto text-slate-400 group-hover:text-blue-400 transition-colors" size={24} />
-              <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-blue-400 tracking-widest">Pacientes</p>
+            <Link to="/patients" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-sky-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-sky-500/20 shadow-xl shadow-sky-900/10">
+              <Users className="mx-auto text-slate-400 group-hover:text-sky-400 transition-colors" size={24} />
+              <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-sky-400 tracking-widest">Pacientes</p>
             </Link>
-            <Link to="/agenda" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-blue-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-blue-500/20 shadow-xl shadow-blue-900/10">
-              <Calendar className="mx-auto text-slate-400 group-hover:text-blue-400 transition-colors" size={24} />
-              <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-blue-400 tracking-widest">Agenda</p>
+            <Link to="/agenda" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-sky-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-sky-500/20 shadow-xl shadow-sky-900/10">
+              <Calendar className="mx-auto text-slate-400 group-hover:text-sky-400 transition-colors" size={24} />
+              <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-sky-400 tracking-widest">Agenda</p>
             </Link>
             <Link to="/exercises" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-emerald-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-emerald-500/20 shadow-xl shadow-emerald-900/10">
               <Activity className="mx-auto text-slate-400 group-hover:text-emerald-400 transition-colors" size={24} />
@@ -507,21 +507,21 @@ export default function Dashboard() {
           {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
             <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-blue-600 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-blue-900/40">
+                <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
                   <span className="text-[9px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
                   <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
                 </div>
                 <div>
-                  <p className="text-[9px] font-bold text-blue-400 uppercase tracking-[0.15em] mb-0.5">Próxima Consulta</p>
+                  <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em] mb-0.5">Próxima Consulta</p>
                   <p className="text-lg font-black text-white tracking-tight">
                     {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
                   </p>
                   <p className="text-xs text-slate-400 font-bold">
-                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-blue-400">Presencial</span>
+                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-sky-400">Presencial</span>
                   </p>
                 </div>
               </div>
-              <button onClick={() => navigate('/appointments')} className="p-3 bg-white/5 text-slate-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+              <button onClick={() => navigate('/appointments')} className="p-3 bg-white/5 text-slate-400 rounded-xl group-hover:bg-sky-500 group-hover:text-white transition-all shadow-sm">
                 <ChevronRight size={20} />
               </button>
             </div>
@@ -536,7 +536,7 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-400 font-bold">Você não tem consultas pendentes.</p>
                 </div>
               </div>
-              <button onClick={() => navigate('/triage')} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40">
+              <button onClick={() => navigate('/triage')} className="px-5 py-2.5 bg-sky-500 text-white rounded-xl font-bold text-xs hover:bg-sky-400 transition-all shadow-lg shadow-sky-900/40">
                 Agendar
               </button>
             </div>
@@ -567,7 +567,7 @@ export default function Dashboard() {
       {!isPhysio && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-white tracking-tight">Evolução da <span className="text-blue-400 italic">Dor</span></h2>
+            <h2 className="text-xl font-black text-white tracking-tight">Evolução da <span className="text-sky-400 italic">Dor</span></h2>
             {stats.records > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">
                 <TrendingUp size={10} />
@@ -584,7 +584,7 @@ export default function Dashboard() {
       {/* Stats Grid - Only for Physio or if not empty for patients */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
-          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'blue', trend: '+12%', show: isPhysio || stats.appointments > 0 },
+          { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'sky', trend: '+12%', show: isPhysio || stats.appointments > 0 },
           { label: isPhysio ? 'Pacientes' : 'Fisioterapeutas', value: stats.patients, icon: Users, color: 'emerald', trend: '+5%', show: isPhysio || stats.patients > 0 },
           { label: 'Prontuários', value: stats.records, icon: FileText, color: 'indigo', trend: '+8%', show: isPhysio || stats.records > 0 },
           { label: 'Triagens', value: stats.pendingTriages, icon: Activity, color: 'rose', trend: '0%', show: isPhysio || stats.pendingTriages > 0 },
@@ -598,7 +598,7 @@ export default function Dashboard() {
           >
             <div className={cn(
               "absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-[0.05] transition-transform group-hover:scale-110",
-              stat.color === 'blue' ? "bg-blue-600" : 
+              stat.color === 'sky' ? "bg-sky-600" : 
               stat.color === 'emerald' ? "bg-emerald-600" :
               stat.color === 'indigo' ? "bg-indigo-600" : "bg-rose-600"
             )} />
@@ -606,7 +606,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start mb-3">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all border border-white/5",
-                stat.color === 'blue' && "bg-blue-500/10 text-blue-400 shadow-blue-900/20",
+                stat.color === 'sky' && "bg-sky-500/10 text-sky-400 shadow-sky-900/20",
                 stat.color === 'emerald' && "bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20",
                 stat.color === 'indigo' && "bg-indigo-500/10 text-indigo-400 shadow-indigo-900/20",
                 stat.color === 'rose' && "bg-rose-500/10 text-rose-400 shadow-rose-900/20",
@@ -638,7 +638,7 @@ export default function Dashboard() {
             <h3 className="text-base font-black text-white tracking-tight">Buscar Pacientes</h3>
             <div className="relative w-full max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                {searching ? <Loader2 className="animate-spin text-blue-500" size={16} /> : <Users className="text-slate-500" size={16} />}
+                {searching ? <Loader2 className="animate-spin text-sky-500" size={16} /> : <Users className="text-slate-500" size={16} />}
               </div>
               <input
                 type="text"
@@ -658,7 +658,7 @@ export default function Dashboard() {
                   onClick={() => setSelectedPatientId(patient.id)}
                   className={cn(
                     "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group",
-                    selectedPatientId === patient.id ? "bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-900/20" : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                    selectedPatientId === patient.id ? "bg-sky-600/10 border-sky-500 shadow-lg shadow-sky-900/20" : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -668,7 +668,7 @@ export default function Dashboard() {
                       className="w-10 h-10 rounded-lg object-cover border border-white/10"
                     />
                     <div>
-                      <p className={cn("text-sm font-bold transition-colors", selectedPatientId === patient.id ? "text-blue-400" : "text-white group-hover:text-blue-400")}>
+                      <p className={cn("text-sm font-bold transition-colors", selectedPatientId === patient.id ? "text-sky-400" : "text-white group-hover:text-sky-400")}>
                         {patient.nome_completo}
                       </p>
                       <p className="text-[10px] text-slate-400">{patient.email}</p>
@@ -676,7 +676,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     {selectedPatientId === patient.id && (
-                      <div className="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded-full uppercase tracking-widest">
+                      <div className="px-2 py-0.5 bg-sky-600 text-white text-[8px] font-black rounded-full uppercase tracking-widest">
                         Selecionado
                       </div>
                     )}
@@ -685,7 +685,7 @@ export default function Dashboard() {
                         e.stopPropagation();
                         navigate(`/physio/${patient.id}`);
                       }}
-                      className="p-2 bg-white/10 text-blue-400 rounded-lg shadow-sm hover:bg-blue-600 hover:text-white transition-all border border-white/5"
+                      className="p-2 bg-white/10 text-sky-400 rounded-lg shadow-sm hover:bg-sky-600 hover:text-white transition-all border border-white/5"
                     >
                       <User size={16} />
                     </button>
@@ -704,7 +704,7 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-white tracking-tight">Consultas <span className="text-blue-400 italic">Recentes</span></h2>
+            <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">Consultas <span className="text-blue-400 italic">Recentes</span></h2>
             <Link 
               to={isPhysio ? "/agenda?view=all" : "/appointments"} 
               className="text-xs font-bold text-blue-400 hover:underline flex items-center gap-1"
@@ -770,7 +770,7 @@ export default function Dashboard() {
           {/* Recent Triages */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black text-white tracking-tight">
+              <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
                 {isPhysio ? (
                   <>Triagens <span className="text-indigo-400 italic">Inteligentes</span></>
                 ) : (

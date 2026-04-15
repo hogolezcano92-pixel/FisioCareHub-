@@ -83,10 +83,10 @@ export default function Subscription() {
   if (profile?.tipo_usuario === 'paciente') {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-sky-50 p-12 rounded-[3rem] border border-sky-100 shadow-xl shadow-sky-100/50">
-          <ShieldCheck size={64} className="text-sky-500 mx-auto mb-6" />
-          <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Você já é VIP!</h2>
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+        <div className="bg-sky-500/5 backdrop-blur-xl p-12 rounded-[3rem] border border-sky-500/20 shadow-2xl">
+          <ShieldCheck size={64} className="text-sky-400 mx-auto mb-6" />
+          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400 mb-4 tracking-tight">Você já é VIP!</h2>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
             Como paciente, todos os recursos do FisioCareHub já estão liberados para você. Aproveite sua jornada de reabilitação!
           </p>
         </div>
@@ -97,16 +97,16 @@ export default function Subscription() {
   if (isPro) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-emerald-50 p-12 rounded-[3rem] border border-emerald-100 shadow-xl shadow-emerald-100/50">
-          <Crown size={64} className="text-emerald-500 mx-auto mb-6" />
-          <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Assinatura PRO Ativa</h2>
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-8">
+        <div className="bg-emerald-500/5 backdrop-blur-xl p-12 rounded-[3rem] border border-emerald-500/20 shadow-2xl">
+          <Crown size={64} className="text-emerald-400 mx-auto mb-6" />
+          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-4 tracking-tight">Assinatura PRO Ativa</h2>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
             Você está aproveitando o melhor do FisioCareHub. Todos os recursos avançados estão desbloqueados.
           </p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-black text-lg shadow-lg shadow-emerald-500/20">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-full font-black text-lg shadow-lg shadow-emerald-900/20">
             Status: Assinante PRO
           </div>
-          <p className="mt-6 text-sm text-slate-400 font-medium">
+          <p className="mt-6 text-sm text-slate-500 font-black uppercase tracking-widest">
             Sua assinatura expira em: {subscription?.data_expiracao ? new Date(subscription.data_expiracao).toLocaleDateString() : 'N/A'}
           </p>
         </div>
@@ -131,13 +131,13 @@ export default function Subscription() {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full font-black text-sm uppercase tracking-widest mb-6 border border-sky-100"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500/10 text-sky-400 rounded-full font-black text-sm uppercase tracking-widest mb-6 border border-sky-500/20"
         >
           <Zap size={16} />
           Eleve sua Prática
         </motion.div>
-        <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tight">FisioCareHub <span className="text-sky-500">PRO</span></h1>
-        <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+        <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 mb-6 tracking-tight">FisioCareHub <span className="text-sky-500">PRO</span></h1>
+        <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
           A ferramenta definitiva para fisioterapeutas que buscam excelência no atendimento domiciliar e online.
         </p>
       </div>
@@ -145,7 +145,7 @@ export default function Subscription() {
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Features List */}
         <div className="space-y-8">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">O que você ganha com o PRO:</h2>
+          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">O que você ganha com o PRO:</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {proFeatures.map((feature, index) => (
               <motion.div
@@ -153,12 +153,12 @@ export default function Subscription() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all"
+                className="flex items-start gap-3 bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-sm hover:shadow-md transition-all"
               >
-                <div className="mt-1 w-6 h-6 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="mt-1 w-6 h-6 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
                   <Check size={14} />
                 </div>
-                <span className="text-slate-700 font-bold text-sm leading-tight">{feature}</span>
+                <span className="text-slate-300 font-bold text-sm leading-tight">{feature}</span>
               </motion.div>
             ))}
           </div>
@@ -168,27 +168,27 @@ export default function Subscription() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-10 rounded-[3rem] shadow-2xl border-2 border-sky-500 relative overflow-hidden"
+          className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border-2 border-sky-500 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 bg-sky-500 text-white px-8 py-2 rounded-bl-3xl font-black text-sm uppercase tracking-widest">
             Mais Popular
           </div>
           
           <div className="mb-8">
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Plano Profissional PRO</h3>
-            <p className="text-slate-500 font-medium">Acesso total e ilimitado</p>
+            <h3 className="text-2xl font-black text-white mb-2">Plano Profissional PRO</h3>
+            <p className="text-slate-400 font-medium">Acesso total e ilimitado</p>
           </div>
 
           <div className="flex items-baseline gap-2 mb-10">
-            <span className="text-5xl font-black text-slate-900 tracking-tighter">R$ 49,99</span>
-            <span className="text-xl text-slate-400 font-bold">/mês</span>
+            <span className="text-5xl font-black text-white tracking-tighter">R$ 49,99</span>
+            <span className="text-xl text-slate-500 font-bold">/mês</span>
           </div>
 
           <div className="space-y-4">
             <button
               onClick={() => handleUpgrade('payment')}
               disabled={loading}
-              className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-xl hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-xl hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" /> : (
                 <>
@@ -200,35 +200,35 @@ export default function Subscription() {
 
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-100"></span>
+                <span className="w-full border-t border-white/10"></span>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-4 bg-white text-slate-400 font-black uppercase tracking-widest">ou use uma chave</span>
+                <span className="px-4 bg-slate-900 text-slate-500 font-black uppercase tracking-widest">ou use uma chave</span>
               </div>
             </div>
 
             {showKeyInput ? (
               <div className="space-y-4">
                 <div className="relative">
-                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
                   <input
                     type="text"
                     value={proKey}
                     onChange={(e) => setProKey(e.target.value.toUpperCase())}
                     placeholder="INSIRA SUA CHAVE PRO"
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest"
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white"
                   />
                 </div>
                 <button
                   onClick={() => handleUpgrade('key')}
                   disabled={loading || !proKey}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-lg hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="animate-spin" /> : 'Ativar com Chave'}
                 </button>
                 <button
                   onClick={() => setShowKeyInput(false)}
-                  className="w-full py-2 text-slate-400 font-bold text-sm hover:text-slate-600"
+                  className="w-full py-2 text-slate-500 font-bold text-sm hover:text-slate-300"
                 >
                   Cancelar
                 </button>
@@ -236,7 +236,7 @@ export default function Subscription() {
             ) : (
               <button
                 onClick={() => setShowKeyInput(true)}
-                className="w-full py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl font-black text-lg hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2"
+                className="w-full py-4 bg-white/5 border-2 border-white/10 text-white rounded-2xl font-black text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2"
               >
                 <Key size={20} />
                 Tenho uma Chave
@@ -244,11 +244,11 @@ export default function Subscription() {
             )}
           </div>
 
-          <div className="mt-10 pt-8 border-t border-slate-50 text-center">
+          <div className="mt-10 pt-8 border-t border-white/5 text-center">
             <div className="flex items-center justify-center gap-1 text-amber-400 mb-2">
               {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
             </div>
-            <p className="text-sm text-slate-400 font-medium">
+            <p className="text-sm text-slate-500 font-medium">
               Avaliado como 5 estrelas por mais de 500 profissionais
             </p>
           </div>
@@ -264,11 +264,11 @@ export default function Subscription() {
           { icon: Crown, title: "Exclusivo", desc: "Recursos Premium" }
         ].map((badge, i) => (
           <div key={i} className="space-y-2">
-            <div className="w-12 h-12 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+            <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-sky-500/20">
               <badge.icon size={24} />
             </div>
-            <h4 className="font-black text-slate-900 text-sm uppercase tracking-wider">{badge.title}</h4>
-            <p className="text-xs text-slate-400 font-medium">{badge.desc}</p>
+            <h4 className="font-black text-white text-sm uppercase tracking-wider">{badge.title}</h4>
+            <p className="text-xs text-slate-500 font-medium">{badge.desc}</p>
           </div>
         ))}
       </div>
