@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-1 space-y-6">
-            <Logo size="md" textOnly />
+            <Logo size="md" textOnly variant="light" />
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
               Conectando fisioterapeutas e pacientes com tecnologia e cuidado.
             </p>
@@ -78,7 +78,7 @@ export default function Footer() {
         {/* Bottom Copyright */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5 text-center">
           <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            © {currentYear} FisioCareHub. Todos os direitos reservados.
+            © {currentYear} <span className="text-white">FisioCareHub</span>. Todos os direitos reservados.
           </p>
         </div>
       </div>
