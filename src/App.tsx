@@ -628,7 +628,7 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-[120] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full">
+            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-[120] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full rounded-b-xl shadow-lg">
               <Logo variant="light" size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
@@ -689,7 +689,7 @@ function AppContent() {
                   <Route path="/partner" element={<Partner />} />
                   <Route path="/seja-parceiro" element={<Partner />} />
                   <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
-                  <Route path="/agendamento/confirmar" element={<ConfirmAppointment />} />
+                  <Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} />
                   <Route path="/physio/:id" element={<ProfessionalProfile />} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
