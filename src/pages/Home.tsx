@@ -352,11 +352,11 @@ export default function Home() {
                 className="w-full sm:w-auto"
               >
                 <Link
-                  to="/register"
-                  onClick={() => localStorage.setItem('pending_role', 'paciente')}
+                  to={user ? "/buscar-fisio" : "/register"}
+                  onClick={() => !user && localStorage.setItem('pending_role', 'paciente')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.5)] hover:bg-blue-500 transition-all group"
                 >
-                  <HomeIcon size={22} /> Quero Atendimento
+                  <HomeIcon size={22} /> Encontrar Fisioterapeuta
                 </Link>
               </motion.div>
 
@@ -704,18 +704,12 @@ export default function Home() {
                   className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500"
                 />
               </div>
-              <div className="relative w-full sm:w-48 group">
-                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
-                <select 
-                  value={specialtyFilter}
-                  onChange={(e) => setSpecialtyFilter(e.target.value)}
-                  className="w-full pl-11 pr-10 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white appearance-none cursor-pointer"
-                >
-                  {specialties.map(spec => (
-                    <option key={spec} value={spec} className="bg-slate-900">{spec}</option>
-                  ))}
-                </select>
-              </div>
+              <button 
+                onClick={() => navigate('/buscar-fisio')}
+                className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20"
+              >
+                Ver Todos
+              </button>
             </div>
           </div>
           

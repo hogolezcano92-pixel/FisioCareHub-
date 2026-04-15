@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   AlertCircle,
   User,
+  Users,
   ClipboardList,
   AlertTriangle,
   Scale,
@@ -237,9 +238,31 @@ export default function Triage() {
     toast.success("Relatório baixado!");
   };
 
-  const shareWithPhysio = () => {
-    toast.success("Relatório compartilhado com seu fisioterapeuta!");
-    // In a real app, this could trigger a notification or message
+  const shareWithPhysio = async () => {
+    if (!user || !analysis) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('solicitacoes_atendimento')
+        .insert({
+          paciente_id: user.id,
+          descricao: `Triagem IA realizada para ${formData.regiao_dor}. Gravidade: ${analysis.gravidade}. Classificação: ${analysis.classificacao}.`,
+          localizacao: profile?.localizacao || 'Não informada',
+          especialidade: formData.regiao_dor,
+          status: 'pendente'
+        });
+
+      if (error) throw error;
+
+      toast.success("Sua solicitação foi enviada para a rede de fisioterapeutas!");
+      navigate('/buscar-fisio');
+    } catch (err) {
+      console.error('Erro ao criar solicitação:', err);
+      toast.error('Erro ao enviar solicitação');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const nextStep = () => {
@@ -801,9 +824,9 @@ export default function Triage() {
                   </button>
                   <button
                     onClick={shareWithPhysio}
-                    className="py-4 bg-primary/10 text-primary rounded-2xl font-black hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
+                    className="py-4 bg-primary text-white rounded-2xl font-black hover:bg-primary-hover transition-all shadow-premium flex items-center justify-center gap-2"
                   >
-                    <Send size={18} /> Enviar
+                    <Users size={18} /> Solicitar Atendimento
                   </button>
                 </div>
                 <button
