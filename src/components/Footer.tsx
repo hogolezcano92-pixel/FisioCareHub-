@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-1 space-y-6">
-            <Logo size="md" />
+            <Logo size="md" textOnly />
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
               Conectando fisioterapeutas e pacientes com tecnologia e cuidado.
             </p>
