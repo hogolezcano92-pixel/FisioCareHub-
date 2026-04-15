@@ -57,7 +57,7 @@ function CheckoutForm({ sessionId, amount, onCancel, onSuccess }: { sessionId: s
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+          className="flex-1 py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
         >
           Cancelar
         </button>
@@ -130,7 +130,7 @@ export default function PaymentModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -142,16 +142,16 @@ export default function PaymentModal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-8 overflow-hidden"
+            className="relative w-full max-w-md bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden border border-white/10"
           >
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center border border-blue-500/20">
                   <Wallet size={20} />
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Pagamento da Sessão</h2>
+                <h2 className="text-xl font-black text-white tracking-tight">Pagamento da Sessão</h2>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+              <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
                 <X size={24} />
               </button>
             </div>

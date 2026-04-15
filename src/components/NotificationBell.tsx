@@ -113,8 +113,8 @@ export default function NotificationBell() {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "relative p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all",
-          isOpen && "bg-slate-50 text-blue-600"
+          "relative p-2 text-slate-400 hover:text-blue-400 hover:bg-white/5 rounded-xl transition-all",
+          isOpen && "bg-white/5 text-blue-400"
         )}
       >
         <Bell size={20} className={cn(unreadCount > 0 && "animate-swing")} />
@@ -131,15 +131,15 @@ export default function NotificationBell() {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[100]"
+            className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-3xl shadow-2xl border border-white/10 overflow-hidden z-[50]"
           >
-            <div className="p-4 border-b border-slate-50 bg-slate-50/50 space-y-3">
+            <div className="p-4 border-b border-white/5 bg-white/5 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-black text-slate-900 text-sm tracking-tight">Notificações</h4>
+                <h4 className="font-black text-white text-sm tracking-tight">Notificações</h4>
                 {unreadCount > 0 && (
                   <button 
                     onClick={markAllAsRead}
-                    className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 tracking-widest"
+                    className="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-widest"
                   >
                     Marcar todas como lidas
                   </button>
@@ -151,7 +151,7 @@ export default function NotificationBell() {
                   onClick={() => setFilter('all')}
                   className={cn(
                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                    filter === 'all' ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-white text-slate-400 hover:text-slate-600"
+                    filter === 'all' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "bg-white/5 text-slate-500 hover:text-slate-300"
                   )}
                 >
                   Todas
@@ -160,7 +160,7 @@ export default function NotificationBell() {
                   onClick={() => setFilter('unread')}
                   className={cn(
                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                    filter === 'unread' ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-white text-slate-400 hover:text-slate-600"
+                    filter === 'unread' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "bg-white/5 text-slate-500 hover:text-slate-300"
                   )}
                 >
                   Não lidas ({unreadCount})
@@ -171,15 +171,15 @@ export default function NotificationBell() {
             <div className="max-h-[400px] overflow-y-auto">
               {filteredNotifications.length === 0 ? (
                 <div className="p-12 text-center space-y-3">
-                  <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto">
+                  <div className="w-16 h-16 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto">
                     <Bell size={32} />
                   </div>
-                  <p className="text-xs font-bold text-slate-400">
+                  <p className="text-xs font-bold text-slate-500">
                     {filter === 'unread' ? "Você não tem notificações não lidas." : "Nenhuma notificação por enquanto."}
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-white/5">
                   {filteredNotifications.map((n) => (
                     <div 
                       key={n.id}
@@ -192,16 +192,16 @@ export default function NotificationBell() {
                       }}
                       className={cn(
                         "p-4 flex gap-3 transition-colors relative group cursor-pointer",
-                        !n.lida ? "bg-blue-50/30" : "hover:bg-slate-50"
+                        !n.lida ? "bg-blue-500/5" : "hover:bg-white/5"
                       )}
                     >
                       <div className="mt-1">{getIcon(n.tipo)}</div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={cn("text-xs font-bold truncate", !n.lida ? "text-slate-900" : "text-slate-600")}>
+                          <p className={cn("text-xs font-bold truncate", !n.lida ? "text-white" : "text-slate-400")}>
                             {n.titulo}
                           </p>
-                          <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">
+                          <span className="text-[9px] text-slate-500 font-medium whitespace-nowrap">
                             {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -210,7 +210,7 @@ export default function NotificationBell() {
                         </p>
                         {n.link && (
                           <span 
-                            className="inline-block text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest pt-1"
+                            className="inline-block text-[10px] font-black text-blue-400 hover:underline uppercase tracking-widest pt-1"
                           >
                             Ver detalhes
                           </span>
@@ -234,11 +234,11 @@ export default function NotificationBell() {
               )}
             </div>
 
-            <div className="p-3 bg-slate-50/50 border-t border-slate-50 text-center">
+            <div className="p-3 bg-white/5 border-t border-white/5 text-center">
               <Link 
                 to="/profile" 
                 onClick={() => setIsOpen(false)}
-                className="text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 tracking-widest"
+                className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-300 tracking-widest"
               >
                 Ver todas as notificações
               </Link>
