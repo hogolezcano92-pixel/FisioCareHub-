@@ -76,14 +76,14 @@ export default function Appointments() {
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario');
+        .select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
       
       const { data, error } = await query.order('nome_completo');
       
       if (error) {
         console.error("Erro ao buscar usuários disponíveis:", error);
         // Retry without ordering if it failed
-        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario');
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
         if (retryError) throw retryError;
         filterAndSetUsers(retryData || [], isPatient, targetRoles);
       } else {
@@ -133,8 +133,8 @@ export default function Appointments() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (nome_completo, email, telefone, endereco),
-          fisioterapeuta:perfis!fisio_id (nome_completo, email, telefone, endereco)
+          paciente:perfis!paciente_id (id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url),
+          fisioterapeuta:perfis!fisio_id (id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url)
         `)
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
@@ -156,7 +156,7 @@ export default function Appointments() {
           
           const { data: profilesData } = await supabase
             .from('perfis')
-            .select('id, nome_completo, email, telefone, endereco')
+            .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url')
             .in('id', allIds);
           
           const profilesMap = (profilesData || []).reduce((acc: any, p: any) => {
@@ -341,11 +341,20 @@ export default function Appointments() {
         {
           appointmentId: newApp?.id || '',
           patientName: isPatient ? profile.nome_completo : targetUser.nome_completo,
+          patientEmail: isPatient ? profile.email : targetUser.email,
           patientPhone: isPatient ? profile.telefone : targetUser.telefone,
           patientAddress: isPatient ? profile.endereco : targetUser.endereco,
+          patientCity: isPatient ? profile.cidade : targetUser.cidade,
+          patientState: isPatient ? profile.estado : targetUser.estado,
+          patientZip: isPatient ? profile.cep : targetUser.cep,
+          patientDOB: isPatient 
+            ? (profile.data_nascimento ? new Date(profile.data_nascimento).toLocaleDateString('pt-BR') : undefined)
+            : (targetUser.data_nascimento ? new Date(targetUser.data_nascimento).toLocaleDateString('pt-BR') : undefined),
+          patientAvatar: isPatient ? profile.avatar_url : targetUser.avatar_url,
           physioName: isPatient ? targetUser.nome_completo : profile.nome_completo,
           physioPhone: isPatient ? targetUser.telefone : profile.telefone,
           physioAddress: isPatient ? targetUser.endereco : profile.endereco,
+          physioEmail: isPatient ? targetUser.email : profile.email,
           date: formattedDate,
           time: formattedTime,
           service: service,
@@ -396,42 +405,40 @@ export default function Appointments() {
           link: '/appointments'
         });
       
-      // If confirmed, send email to patient
-      if (status === 'confirmado') {
+      // If confirmed or cancelled, send email
+      if (status === 'confirmado' || status === 'cancelado') {
         const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
         const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const { sendAppointmentStatusEmail } = await import('../services/emailService');
 
-        sendAppointmentConfirmation(
-          app.paciente.email,
-          app.fisioterapeuta.email,
-          {
-            appointmentId: app.id,
-            patientName: app.paciente.nome_completo,
-            patientPhone: app.paciente.telefone,
-            patientAddress: app.paciente.endereco,
-            physioName: app.fisioterapeuta.nome_completo,
-            physioPhone: app.fisioterapeuta.telefone,
-            physioAddress: app.fisioterapeuta.endereco,
-            date: formattedDate,
-            time: formattedTime,
-            service: app.servico || 'Consulta',
-            notes: app.observacoes
-          }
-        );
-      } else if (status === 'cancelado') {
-        const targetEmail = isPhysio ? app.paciente.email : app.fisioterapeuta.email;
-        const targetName = isPhysio ? app.paciente.nome_completo : app.fisioterapeuta.nome_completo;
-        
-        // Usamos sendEmail genérico do serviço para cancelamento por enquanto
-        import('../services/emailService').then(({ sendEmail }) => {
-          sendEmail({
-            to: targetEmail,
-            event: 'appointment',
-            subject: 'Agendamento Cancelado - FisioCareHub',
-            body: `Olá ${targetName}, informamos que o agendamento para o dia ${new Date(app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.`,
-            data: { ...app, status: 'cancelado' }
-          });
-        });
+        if (status === 'confirmado') {
+          sendAppointmentStatusEmail(
+            app.paciente.email,
+            app.paciente.nome_completo,
+            app.fisioterapeuta.nome_completo,
+            'confirmado',
+            {
+              date: formattedDate,
+              time: formattedTime,
+              service: app.servico || 'Consulta'
+            }
+          );
+        } else if (status === 'cancelado') {
+          const targetEmail = isPhysio ? app.paciente.email : app.fisioterapeuta.email;
+          const targetName = isPhysio ? app.paciente.nome_completo : app.fisioterapeuta.nome_completo;
+          
+          sendAppointmentStatusEmail(
+            targetEmail,
+            targetName,
+            isPhysio ? profile.nome_completo : app.fisioterapeuta.nome_completo,
+            'cancelado',
+            {
+              date: formattedDate,
+              time: formattedTime,
+              service: app.servico || 'Consulta'
+            }
+          );
+        }
       }
       import('sonner').then(({ toast }) => toast.success(`Status atualizado para ${status}`));
       setSelectedAppId(null);
@@ -449,12 +456,12 @@ export default function Appointments() {
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Agenda de Consultas</h1>
-          <p className="text-slate-500 text-sm font-medium">Gerencie seus horários e sessões.</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Agenda de Consultas</h1>
+          <p className="text-slate-400 text-sm font-medium">Gerencie seus horários e sessões.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
         >
           <Plus size={16} /> Agendar Sessão
         </button>
@@ -462,12 +469,12 @@ export default function Appointments() {
 
       <div className="grid gap-3">
         {appointments.length === 0 ? (
-          <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center">
-            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-slate-900/50 backdrop-blur-xl p-12 rounded-3xl border border-white/10 text-center">
+            <div className="w-16 h-16 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
               <CalendarIcon size={32} />
             </div>
-            <h3 className="text-xl font-black text-slate-900">Nenhuma consulta</h3>
-            <p className="text-slate-500 mt-1 text-sm font-medium">Suas sessões aparecerão aqui.</p>
+            <h3 className="text-xl font-black text-white">Nenhuma consulta</h3>
+            <p className="text-slate-400 mt-1 text-sm font-medium">Suas sessões aparecerão aqui.</p>
           </div>
         ) : (
           appointments.map((app) => (
@@ -475,22 +482,22 @@ export default function Appointments() {
               key={app.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center",
-                  app.status === 'confirmado' ? "bg-emerald-50 text-emerald-600" :
-                  app.status === 'pendente' ? "bg-amber-50 text-amber-600" :
-                  "bg-slate-50 text-slate-400"
+                  app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
+                  app.status === 'pendente' ? "bg-amber-500/10 text-amber-400" :
+                  "bg-slate-800 text-slate-500"
                 )}>
                   <CalendarCheck size={24} />
                 </div>
                 <div>
-                  <div className="text-base font-black text-slate-900">
+                  <div className="text-base font-black text-white">
                     {formatDate(app.data_servico)}
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <User size={12} />
                     {isPhysio ? `Paciente: ${app.paciente?.nome_completo}` : `Fisio: ${app.fisioterapeuta?.nome_completo}`}
                   </div>
@@ -500,10 +507,10 @@ export default function Appointments() {
               <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                  app.status === 'confirmado' ? "bg-emerald-100 text-emerald-700" :
-                  app.status === 'pendente' ? "bg-amber-100 text-amber-700" :
-                  app.status === 'cancelado' ? "bg-red-100 text-red-700" :
-                  "bg-slate-100 text-slate-700"
+                  app.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400" :
+                  app.status === 'pendente' ? "bg-amber-500/20 text-amber-400" :
+                  app.status === 'cancelado' ? "bg-red-500/20 text-red-400" :
+                  "bg-slate-800 text-slate-500"
                 )}>
                   {app.status === 'pendente' ? 'Pendente' : 
                    app.status === 'confirmado' ? 'Confirmado' : 
@@ -525,7 +532,7 @@ export default function Appointments() {
                             setSelectedSession(session);
                             setShowPaymentModal(true);
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
                         >
                           <Wallet size={14} />
                           Pagar Sessão
@@ -533,7 +540,7 @@ export default function Appointments() {
                       );
                     } else if (session && session.status_pagamento === 'pago_app') {
                       return (
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                           <Check size={12} />
                           Pago
                         </span>
@@ -548,7 +555,7 @@ export default function Appointments() {
                     {isPhysio && (
                       <button
                         onClick={() => updateStatus(app.id, 'confirmado')}
-                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all"
+                        className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all"
                         title="Confirmar"
                       >
                         <Check size={16} />
@@ -556,7 +563,7 @@ export default function Appointments() {
                     )}
                     <button
                       onClick={() => updateStatus(app.id, 'cancelado')}
-                      className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all"
+                      className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all"
                       title="Cancelar"
                     >
                       <XCircle size={16} />
@@ -578,24 +585,24 @@ export default function Appointments() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-6 overflow-hidden"
+              className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl p-6 overflow-hidden"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Agendar Sessão</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                <h2 className="text-xl font-black text-white tracking-tight">Agendar Sessão</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleSchedule} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
                     {isPhysio ? 'Paciente' : 'Fisioterapeuta'}
                   </label>
                   <select
@@ -604,16 +611,16 @@ export default function Appointments() {
                       setSelectedUserId(e.target.value);
                       if (e.target.value) setTargetEmail('');
                     }}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 mb-2 text-sm"
+                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 mb-2 text-sm text-white"
                   >
-                    <option value="">Selecione da lista...</option>
+                    <option value="" className="bg-slate-900">Selecione da lista...</option>
                     {availableUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.nome_completo}</option>
+                      <option key={u.id} value={u.id} className="bg-slate-900">{u.nome_completo}</option>
                     ))}
                   </select>
                   <div className="relative py-1.5">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                    <div className="relative flex justify-center text-[9px] uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Ou e-mail</span></div>
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                    <div className="relative flex justify-center text-[9px] uppercase"><span className="bg-slate-900 px-2 text-slate-500 font-bold">Ou e-mail</span></div>
                   </div>
                   <input
                     type="email"
@@ -622,74 +629,74 @@ export default function Appointments() {
                       setTargetEmail(e.target.value);
                       if (e.target.value) setSelectedUserId('');
                     }}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
                     placeholder="email@exemplo.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Serviço</label>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Serviço</label>
                   <select
                     value={service}
                     onChange={(e) => setService(e.target.value)}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm"
+                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm text-white"
                   >
-                    <option value="Consulta de Fisioterapia">Consulta de Fisioterapia</option>
-                    <option value="Avaliação Inicial">Avaliação Inicial</option>
-                    <option value="Sessão de Reabilitação">Sessão de Reabilitação</option>
-                    <option value="Pilates Clínico">Pilates Clínico</option>
-                    <option value="RPG">RPG</option>
+                    <option value="Consulta de Fisioterapia" className="bg-slate-900">Consulta de Fisioterapia</option>
+                    <option value="Avaliação Inicial" className="bg-slate-900">Avaliação Inicial</option>
+                    <option value="Sessão de Reabilitação" className="bg-slate-900">Sessão de Reabilitação</option>
+                    <option value="Pilates Clínico" className="bg-slate-900">Pilates Clínico</option>
+                    <option value="RPG" className="bg-slate-900">RPG</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Data</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Data</label>
                     <input
                       type="date"
                       required
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                      className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Hora</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Hora</label>
                     <input
                       type="time"
                       required
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                      className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
                     />
                   </div>
                 </div>
 
                 {isPhysio && (
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm">
+                      <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center text-blue-400 shadow-sm border border-white/5">
                         <CalendarIcon size={18} />
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900">Recorrente</p>
-                        <p className="text-[9px] text-slate-400 font-medium">Semanalmente</p>
+                        <p className="text-xs font-black text-white">Recorrente</p>
+                        <p className="text-[9px] text-slate-500 font-medium">Semanalmente</p>
                       </div>
                     </div>
                     <ProGuard variant="inline">
-                      <div className="w-10 h-5 bg-slate-200 rounded-full relative cursor-not-allowed opacity-50">
-                        <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" />
+                      <div className="w-10 h-5 bg-slate-800 rounded-full relative cursor-not-allowed opacity-50">
+                        <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-slate-600 rounded-full shadow-sm" />
                       </div>
                     </ProGuard>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1.5 ml-1">Observações</label>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Observações</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-20 text-sm"
+                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-20 text-sm text-white"
                     placeholder="Notas..."
                   />
                 </div>
@@ -697,7 +704,7 @@ export default function Appointments() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full h-12 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                  className="w-full h-12 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 shadow-lg shadow-blue-900/20"
                 >
                   {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Agendamento'}
                 </button>
@@ -715,19 +722,19 @@ export default function Appointments() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedAppId(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-6 text-center"
+              className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl p-6 text-center"
             >
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
                 <CalendarCheck size={32} />
               </div>
-              <h2 className="text-xl font-black mb-1.5 text-slate-900">Confirmar Agendamento?</h2>
-              <p className="text-slate-500 text-sm font-medium mb-6">
+              <h2 className="text-xl font-black mb-1.5 text-white">Confirmar Agendamento?</h2>
+              <p className="text-slate-400 text-sm font-medium mb-6">
                 Você recebeu uma solicitação de consulta. Deseja confirmar agora?
               </p>
               <div className="flex gap-3">
@@ -736,7 +743,7 @@ export default function Appointments() {
                     updateStatus(selectedAppId, 'cancelado');
                     setSelectedAppId(null);
                   }}
-                  className="flex-1 h-11 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                  className="flex-1 h-11 bg-white/5 text-slate-400 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
                 >
                   Recusar
                 </button>
@@ -745,7 +752,7 @@ export default function Appointments() {
                     updateStatus(selectedAppId, 'confirmado');
                     setSelectedAppId(null);
                   }}
-                  className="flex-1 h-11 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                  className="flex-1 h-11 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
                 >
                   Confirmar
                 </button>

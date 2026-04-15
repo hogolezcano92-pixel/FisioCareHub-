@@ -159,7 +159,7 @@ export default function Agenda() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone, endereco)
+          paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone, endereco, cidade, estado, cep, data_nascimento)
         `)
         .eq('fisio_id', user?.id);
 
@@ -189,7 +189,7 @@ export default function Agenda() {
           const patientIds = [...new Set(fallbackData.map(a => a.paciente_id))];
           const { data: profiles } = await supabase
             .from('perfis')
-            .select('id, nome_completo, email, avatar_url, telefone, endereco')
+            .select('id, nome_completo, email, avatar_url, telefone, endereco, cidade, estado, cep, data_nascimento')
             .in('id', patientIds);
           
           const profileMap = Object.fromEntries(profiles?.map(p => [p.id, p]) || []);
@@ -258,7 +258,7 @@ export default function Agenda() {
       if (patient && newApp) {
         const { data: patientProfile } = await supabase
           .from('perfis')
-          .select('email, nome_completo, telefone, endereco')
+          .select('email, nome_completo, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url')
           .eq('id', patient.id)
           .single();
 
@@ -269,11 +269,18 @@ export default function Agenda() {
             {
               appointmentId: newApp.id,
               patientName: patientProfile.nome_completo,
+              patientEmail: patientProfile.email,
               patientPhone: patientProfile.telefone,
               patientAddress: patientProfile.endereco,
+              patientCity: patientProfile.cidade,
+              patientState: patientProfile.estado,
+              patientZip: patientProfile.cep,
+              patientDOB: patientProfile.data_nascimento ? new Date(patientProfile.data_nascimento).toLocaleDateString('pt-BR') : undefined,
+              patientAvatar: patientProfile.avatar_url,
               physioName: profile.nome_completo,
               physioPhone: profile.telefone,
               physioAddress: profile.endereco,
+              physioEmail: profile.email,
               date: new Date(formData.data).toLocaleDateString('pt-BR'),
               time: formData.hora,
               service: formData.tipo || 'Consulta',
@@ -312,34 +319,32 @@ export default function Agenda() {
         const patientName = app.paciente?.nome_completo || app.paciente?.nome;
 
         if (patientEmail && profile) {
+          const { sendAppointmentStatusEmail } = await import('../services/emailService');
+          
           if (status === 'confirmado') {
-            sendAppointmentConfirmation(
+            sendAppointmentStatusEmail(
               patientEmail,
-              profile.email,
+              patientName || 'Paciente',
+              profile.nome_completo,
+              'confirmado',
               {
-                appointmentId: app.id,
-                patientName: patientName || 'Paciente',
-                patientPhone: app.paciente?.telefone,
-                patientAddress: app.paciente?.endereco,
-                physioName: profile.nome_completo,
-                physioPhone: profile.telefone,
-                physioAddress: profile.endereco,
                 date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
                 time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                service: app.tipo || app.servico || 'Consulta',
-                notes: app.observacoes
+                service: app.tipo || app.servico || 'Consulta'
               }
             );
-          } else {
-            // Cancelamento
-            import('../services/emailService').then(({ sendEmail }) => {
-              sendEmail({
-                to: patientEmail,
-                event: 'appointment',
-                subject: 'Agendamento Cancelado - FisioCareHub',
-                html: `<h1>Olá ${patientName}!</h1><p>Informamos que o agendamento para o dia ${app.data || new Date(app.data_servico).toLocaleDateString('pt-BR')} foi cancelado.</p>`,
-              });
-            });
+          } else if (status === 'cancelado') {
+            sendAppointmentStatusEmail(
+              patientEmail,
+              patientName || 'Paciente',
+              profile.nome_completo,
+              'cancelado',
+              {
+                date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
+                time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                service: app.tipo || app.servico || 'Consulta'
+              }
+            );
           }
         }
       }
@@ -364,10 +369,10 @@ export default function Agenda() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Minha Agenda</h1>
-          <p className="text-slate-500 text-xs font-medium">Controle seus agendamentos e solicitações.</p>
+          <p className="text-slate-400 text-xs font-medium">Controle seus agendamentos e solicitações.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="bg-white/5 p-1 rounded-xl flex items-center gap-1 border border-white/5">
+          <div className="bg-white/5 p-1 rounded-xl flex items-center gap-1 border border-white/10">
             <button
               onClick={() => setView('daily')}
               className={cn(
@@ -389,7 +394,7 @@ export default function Agenda() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
           >
             <Plus size={14} />
             Novo
@@ -581,16 +586,16 @@ export default function Agenda() {
                   <img 
                     src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id || selectedAppointment.nome_paciente}`}
                     alt="Avatar"
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-white/5 shadow-sm"
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-white/10 shadow-sm"
                   />
                   <div>
                     <h3 className="text-lg font-black text-white">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
-                    <p className="text-slate-500 text-xs font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
+                    <p className="text-slate-400 text-xs font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Data e Hora</p>
                     <div className="flex items-center gap-2 text-white font-black text-xs">
                       <CalendarIcon size={14} className="text-blue-400" />
@@ -601,7 +606,7 @@ export default function Agenda() {
                       {selectedAppointment.hora || new Date(selectedAppointment.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo de Consulta</p>
                     <div className="flex items-center gap-2 text-white font-black text-xs">
                       <Stethoscope size={14} className="text-blue-400" />
@@ -637,7 +642,7 @@ export default function Agenda() {
                     {selectedAppointment.status !== 'cancelado' && (
                       <button
                         onClick={() => updateStatus(selectedAppointment.id, 'cancelado')}
-                        className="flex-1 h-11 bg-red-500/10 text-red-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-2 border border-red-500/20"
+                        className="flex-1 h-11 bg-white/5 text-red-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-2 border border-white/10"
                       >
                         <XCircle size={16} />
                         Recusar
@@ -654,7 +659,7 @@ export default function Agenda() {
                         toast.error('Telefone do paciente não cadastrado.');
                       }
                     }}
-                    className="w-full h-11 bg-white/5 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/5"
+                    className="w-full h-11 bg-white/5 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/10"
                   >
                     <MessageSquare size={16} />
                     Enviar Mensagem
