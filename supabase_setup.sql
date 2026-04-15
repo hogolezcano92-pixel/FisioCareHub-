@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS public.agendamentos (
     paciente_id UUID NOT NULL, -- Can be from perfis or pacientes
     fisio_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE NOT NULL,
     data_hora TIMESTAMP WITH TIME ZONE, -- Legado
+    data DATE, -- Adicionado para compatibilidade
+    hora TIME, -- Adicionado para compatibilidade
     data_servico TIMESTAMP WITH TIME ZONE NOT NULL, -- Usado no app
     status TEXT DEFAULT 'pendente', -- 'pendente', 'confirmado', 'cancelado', 'concluido'
     tipo TEXT DEFAULT 'online', -- 'online', 'presencial'
@@ -190,8 +192,11 @@ CREATE POLICY "Usuários podem inserir o próprio perfil" ON public.perfis FOR I
 CREATE POLICY "Fisios veem seus pacientes" ON public.pacientes FOR SELECT USING (auth.uid() = fisioterapeuta_id);
 CREATE POLICY "Fisios gerenciam seus pacientes" ON public.pacientes FOR ALL USING (auth.uid() = fisioterapeuta_id);
 
--- Agendamentos: Fisios gerenciam seus agendamentos
+-- Agendamentos: Fisios gerenciam seus agendamentos, pacientes podem ver e criar os seus
 CREATE POLICY "Fisios gerenciam seus agendamentos" ON public.agendamentos FOR ALL USING (auth.uid() = fisio_id);
+CREATE POLICY "Pacientes podem ver seus agendamentos" ON public.agendamentos FOR SELECT USING (auth.uid() = paciente_id);
+CREATE POLICY "Pacientes podem criar agendamentos" ON public.agendamentos FOR INSERT WITH CHECK (auth.uid() = paciente_id);
+CREATE POLICY "Pacientes podem atualizar seus agendamentos" ON public.agendamentos FOR UPDATE USING (auth.uid() = paciente_id);
 
 -- Evoluções: Fisios gerenciam evoluções de seus pacientes
 CREATE POLICY "Fisios gerenciam evoluções" ON public.evolucoes FOR ALL USING (
