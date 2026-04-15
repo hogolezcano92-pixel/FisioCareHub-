@@ -203,14 +203,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[140] lg:hidden"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-80 z-[110] lg:hidden"
+              className="fixed inset-y-0 left-0 w-80 z-[150] lg:hidden"
             >
               {sidebarContent}
             </motion.aside>

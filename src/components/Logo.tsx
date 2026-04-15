@@ -17,22 +17,35 @@ const Logo: React.FC<LogoProps> = ({
   variant = 'dark',
   size = 'md'
 }) => {
-  const sizes = {
-    sm: 'h-8',
-    md: 'h-12',
-    lg: 'h-16',
-    xl: 'h-24'
-  };
-
-  const iconSizes = {
-    sm: 24,
-    md: 32,
-    lg: 48,
-    xl: 64
+  const sizeClasses = {
+    sm: {
+      icon: "w-8 h-8 rounded-lg",
+      text: "text-lg sm:text-xl",
+      tagline: "text-[6px] sm:text-[7px]",
+      gap: "gap-2"
+    },
+    md: {
+      icon: "w-12 h-12 sm:w-16 sm:h-16 rounded-[1.5rem]",
+      text: "text-2xl sm:text-4xl",
+      tagline: "text-[8px] sm:text-[10px]",
+      gap: "gap-4"
+    },
+    lg: {
+      icon: "w-16 h-16 sm:w-20 sm:h-20 rounded-[2rem]",
+      text: "text-3xl sm:text-5xl",
+      tagline: "text-[10px] sm:text-[12px]",
+      gap: "gap-6"
+    },
+    xl: {
+      icon: "w-20 h-20 sm:w-24 sm:h-24 rounded-[2.5rem]",
+      text: "text-4xl sm:text-6xl",
+      tagline: "text-[12px] sm:text-[14px]",
+      gap: "gap-8"
+    }
   };
 
   return (
-    <div className={cn("flex items-center gap-4 select-none group", className)}>
+    <div className={cn("flex items-center select-none group", sizeClasses[size].gap, className)}>
       {!textOnly && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -44,7 +57,10 @@ const Logo: React.FC<LogoProps> = ({
           <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full group-hover:bg-blue-400/30 transition-all duration-500" />
           
           {/* Home Care Icon: House + Professional Figure */}
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#0EA5E9] to-[#2563EB] rounded-[1.5rem] flex items-center justify-center shadow-xl overflow-hidden relative border border-white/20">
+          <div className={cn(
+            "bg-gradient-to-br from-[#0EA5E9] to-[#2563EB] flex items-center justify-center shadow-xl overflow-hidden relative border border-white/20",
+            sizeClasses[size].icon
+          )}>
             {/* Subtle Background Pattern */}
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none">
@@ -115,25 +131,28 @@ const Logo: React.FC<LogoProps> = ({
           className="flex flex-col leading-none whitespace-nowrap"
         >
           <span className={cn(
-            "font-sans font-black tracking-tighter text-2xl sm:text-4xl drop-shadow-sm",
+            "font-sans font-black tracking-tighter drop-shadow-sm",
+            sizeClasses[size].text,
             variant === 'dark' ? "text-slate-900" : "text-white"
           )}>
             FisioCareHub
           </span>
           <div className="flex flex-col mt-1">
             <div className="flex items-center gap-2">
-              <div className={cn("h-[2px] w-4 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
+              <div className={cn("h-[1px] w-3 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
               <span className={cn(
-                "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
+                "font-black uppercase tracking-[0.15em]",
+                sizeClasses[size].tagline,
                 variant === 'dark' ? "text-slate-400" : "text-slate-300"
               )}>
                 Reabilitação
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-[2px] w-4 bg-transparent" /> {/* Spacer to align with text above */}
+              <div className="h-[1px] w-3 bg-transparent" />
               <span className={cn(
-                "text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em]",
+                "font-black uppercase tracking-[0.15em]",
+                sizeClasses[size].tagline,
                 variant === 'dark' ? "text-slate-400" : "text-slate-300"
               )}>
                 & Performance
