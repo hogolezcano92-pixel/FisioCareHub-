@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
@@ -20,6 +20,11 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/dashboard';
+  const search = location.state?.from?.search || '';
+  const fullRedirect = from + search;
 
   useEffect(() => {
     if (!authLoading && user && !isAuthenticating) {
@@ -91,10 +96,14 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
+      const redirectUrl = fullRedirect !== '/dashboard' 
+        ? `${window.location.origin}${fullRedirect}`
+        : `${window.location.origin}/dashboard`;
+
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: redirectUrl
         }
       });
       if (googleError) throw googleError;
@@ -149,12 +158,14 @@ export default function Login() {
       const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
       const isApproved = profileData?.status_aprovacao === 'aprovado';
 
-      // Check for redirect in URL
+      // Check for redirect in URL or state
       const params = new URLSearchParams(window.location.search);
-      const redirectTo = params.get('redirectTo');
+      const urlRedirect = params.get('redirectTo');
       
-      if (redirectTo) {
-        navigate(redirectTo, { replace: true });
+      if (urlRedirect) {
+        navigate(urlRedirect, { replace: true });
+      } else if (fullRedirect !== '/dashboard') {
+        navigate(fullRedirect, { replace: true });
       } else if (isAdmin) {
         navigate('/admin', { replace: true });
       } else if (isPhysio && !isApproved) {
