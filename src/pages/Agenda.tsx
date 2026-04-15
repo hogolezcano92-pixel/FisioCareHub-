@@ -159,7 +159,7 @@ export default function Agenda() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone)
+          paciente:perfis!paciente_id (id, nome_completo, email, avatar_url, telefone, endereco)
         `)
         .eq('fisio_id', user?.id);
 
@@ -189,7 +189,7 @@ export default function Agenda() {
           const patientIds = [...new Set(fallbackData.map(a => a.paciente_id))];
           const { data: profiles } = await supabase
             .from('perfis')
-            .select('id, nome_completo, email, avatar_url, telefone')
+            .select('id, nome_completo, email, avatar_url, telefone, endereco')
             .in('id', patientIds);
           
           const profileMap = Object.fromEntries(profiles?.map(p => [p.id, p]) || []);
@@ -219,10 +219,16 @@ export default function Agenda() {
 
     setSubmitting(true);
     try {
+      // Combine date and time for data_servico (required in schema)
+      const [year, month, day] = formData.data.split('-').map(Number);
+      const [hours, minutes] = formData.hora.split(':').map(Number);
+      const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
+
       const { data: insertData, error } = await supabase
         .from('agendamentos')
         .insert({
           ...formData,
+          data_servico: appointmentDate,
           fisio_id: user.id
         })
         .select();
@@ -231,12 +237,28 @@ export default function Agenda() {
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
+      if (newApp && profile?.preco_sessao) {
+        // Criar registro na tabela sessoes para pagamento
+        const { error: sessionError } = await supabase
+          .from('sessoes')
+          .insert({
+            paciente_id: formData.paciente_id,
+            fisioterapeuta_id: user.id,
+            data: formData.data,
+            hora: formData.hora,
+            valor: profile.preco_sessao,
+            status_pagamento: 'pendente'
+          });
+        
+        if (sessionError) console.error('Erro ao criar sessão para pagamento:', sessionError);
+      }
+
       // Buscar e-mail do paciente para enviar confirmação
       const patient = patients.find(p => p.id === formData.paciente_id);
       if (patient && newApp) {
         const { data: patientProfile } = await supabase
           .from('perfis')
-          .select('email, nome_completo')
+          .select('email, nome_completo, telefone, endereco')
           .eq('id', patient.id)
           .single();
 
@@ -247,10 +269,15 @@ export default function Agenda() {
             {
               appointmentId: newApp.id,
               patientName: patientProfile.nome_completo,
+              patientPhone: patientProfile.telefone,
+              patientAddress: patientProfile.endereco,
               physioName: profile.nome_completo,
+              physioPhone: profile.telefone,
+              physioAddress: profile.endereco,
               date: new Date(formData.data).toLocaleDateString('pt-BR'),
               time: formData.hora,
-              service: formData.tipo || 'Consulta'
+              service: formData.tipo || 'Consulta',
+              notes: formData.observacoes
             }
           );
         }
@@ -292,10 +319,15 @@ export default function Agenda() {
               {
                 appointmentId: app.id,
                 patientName: patientName || 'Paciente',
+                patientPhone: app.paciente?.telefone,
+                patientAddress: app.paciente?.endereco,
                 physioName: profile.nome_completo,
+                physioPhone: profile.telefone,
+                physioAddress: profile.endereco,
                 date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
                 time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                service: app.tipo || app.servico || 'Consulta'
+                service: app.tipo || app.servico || 'Consulta',
+                notes: app.observacoes
               }
             );
           } else {
@@ -328,19 +360,19 @@ export default function Agenda() {
   };
 
   return (
-    <div className="space-y-6 w-full box-border overflow-wrap-break-word">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Minha Agenda</h1>
-          <p className="text-slate-500 text-sm font-medium">Controle seus agendamentos e solicitações.</p>
+          <h1 className="text-xl font-black text-white tracking-tight">Minha Agenda</h1>
+          <p className="text-slate-500 text-xs font-medium">Controle seus agendamentos e solicitações.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
+          <div className="bg-white/5 p-1 rounded-xl flex items-center gap-1 border border-white/5">
             <button
               onClick={() => setView('daily')}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] font-black transition-all",
-                view === 'daily' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                "px-2.5 py-1 rounded-lg text-[8px] font-black transition-all",
+                view === 'daily' ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-400"
               )}
             >
               Agenda Diária
@@ -348,8 +380,8 @@ export default function Agenda() {
             <button
               onClick={() => setView('all')}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] font-black transition-all",
-                view === 'all' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                "px-2.5 py-1 rounded-lg text-[8px] font-black transition-all",
+                view === 'all' ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-400"
               )}
             >
               Todas Solicitações
@@ -357,9 +389,9 @@ export default function Agenda() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl font-black text-xs hover:bg-sky-600 transition-all shadow-lg shadow-sky-100"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
           >
-            <Plus size={16} />
+            <Plus size={14} />
             Novo
           </button>
         </div>
@@ -367,37 +399,37 @@ export default function Agenda() {
 
       {/* Seletor de Data - Só aparece na visão diária */}
       {view === 'daily' && (
-        <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between w-full">
-          <button onClick={() => changeDate(-1)} className="p-2 hover:bg-slate-50 rounded-lg transition-all text-slate-400">
-            <ChevronLeft size={20} />
+        <div className="bg-slate-900/50 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-2xl flex items-center justify-between w-full">
+          <button onClick={() => changeDate(-1)} className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-500">
+            <ChevronLeft size={16} />
           </button>
           <div className="flex flex-col items-center">
-            <span className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mb-0.5">
+            <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-0.5">
               {new Date(selectedDate).toLocaleDateString('pt-BR', { weekday: 'long' })}
             </span>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-lg font-black text-slate-900 outline-none bg-transparent text-center cursor-pointer"
+              className="text-sm font-black text-white outline-none bg-transparent text-center cursor-pointer"
             />
           </div>
-          <button onClick={() => changeDate(1)} className="p-2 hover:bg-slate-50 rounded-lg transition-all text-slate-400">
-            <ChevronRight size={20} />
+          <button onClick={() => changeDate(1)} className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-500">
+            <ChevronRight size={16} />
           </button>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center gap-4 text-red-600 w-full">
-          <AlertTriangle size={24} />
+        <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-[2rem] flex items-center gap-4 text-red-400 w-full">
+          <AlertTriangle size={20} />
           <div>
-            <h3 className="font-black">Erro ao carregar agenda</h3>
-            <p className="text-sm font-medium opacity-80">{error}</p>
+            <h3 className="font-black text-sm">Erro ao carregar agenda</h3>
+            <p className="text-xs font-medium opacity-80">{error}</p>
           </div>
           <button 
             onClick={loadData}
-            className="ml-auto px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all"
+            className="ml-auto px-3 py-1.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all"
           >
             Tentar Novamente
           </button>
@@ -406,18 +438,18 @@ export default function Agenda() {
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 space-y-4 w-full">
-          <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
-          <p className="text-slate-500 font-bold animate-pulse">Carregando agenda...</p>
+          <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
+          <p className="text-slate-500 font-bold animate-pulse text-sm">Carregando agenda...</p>
         </div>
       ) : (
-        <div className="space-y-4 w-full">
+        <div className="space-y-3 w-full">
           {appointments.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center w-full">
-              <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CalendarIcon size={32} />
+            <div className="bg-slate-900 p-10 rounded-[2.5rem] border border-white/5 text-center w-full shadow-2xl">
+              <div className="w-14 h-14 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarIcon size={28} />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Nenhum atendimento</h3>
-              <p className="text-slate-500 mt-1 text-sm font-medium">
+              <h3 className="text-lg font-black text-white">Nenhum atendimento</h3>
+              <p className="text-slate-500 mt-1 text-xs font-medium">
                 {view === 'daily' ? 'Você não tem compromissos para este dia.' : 'Você não possui solicitações registradas.'}
               </p>
             </div>
@@ -431,35 +463,35 @@ export default function Agenda() {
                   setSelectedAppointment(app);
                   setShowDetailsModal(true);
                 }}
-                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-all w-full cursor-pointer group"
+                className="premium-card !p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-blue-500/30 transition-all w-full cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex flex-col items-center justify-center w-16 h-16 bg-slate-50 rounded-2xl text-slate-900 group-hover:bg-blue-50 transition-colors">
+                  <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-blue-500/10 transition-colors border border-white/5">
                     {view === 'all' ? (
                       <>
-                        <span className="text-[9px] font-black text-blue-500 uppercase">{new Date(app.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                        <span className="text-lg font-black leading-none">{new Date(app.data).getDate()}</span>
-                        <span className="text-[9px] font-bold text-slate-400 mt-0.5">{app.hora?.slice(0, 5)}</span>
+                        <span className="text-[7px] font-black text-blue-400 uppercase">{new Date(app.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                        <span className="text-sm font-black leading-none">{new Date(app.data).getDate()}</span>
+                        <span className="text-[7px] font-bold text-slate-500 mt-0.5">{app.hora?.slice(0, 5)}</span>
                       </>
                     ) : (
                       <>
-                        <Clock size={16} className="text-sky-500 mb-0.5" />
-                        <span className="text-lg font-black">{app.hora?.slice(0, 5) || '--:--'}</span>
+                        <Clock size={12} className="text-blue-400 mb-0.5" />
+                        <span className="text-sm font-black">{app.hora?.slice(0, 5) || '--:--'}</span>
                       </>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-sm font-black text-white group-hover:text-blue-400 transition-colors">
                       {app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
                     </h3>
-                    <div className="flex flex-wrap gap-3 mt-1">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                        <Stethoscope size={14} className="text-sky-500" />
+                    <div className="flex flex-wrap gap-2 mt-0.5">
+                      <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
+                        <Stethoscope size={10} className="text-blue-400" />
                         {app.tipo || app.servico}
                       </div>
                       {app.local && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                          <MapPin size={14} className="text-sky-500" />
+                        <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
+                          <MapPin size={10} className="text-blue-400" />
                           {app.local}
                         </div>
                       )}
@@ -469,10 +501,10 @@ export default function Agenda() {
 
                 <div className="flex items-center justify-between md:justify-end gap-3">
                   <span className={cn(
-                    "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
-                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-100 text-emerald-700" :
-                    app.status === 'agendado' || app.status === 'pendente' ? "bg-sky-100 text-sky-700" :
-                    "bg-red-100 text-red-700"
+                    "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
+                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-400" :
+                    app.status === 'agendado' || app.status === 'pendente' ? "bg-blue-500/10 text-blue-400" :
+                    "bg-red-500/10 text-red-400"
                   )}>
                     {app.status}
                   </span>
@@ -485,20 +517,20 @@ export default function Agenda() {
                             e.stopPropagation();
                             updateStatus(app.id, 'confirmado');
                           }}
-                          className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all"
+                          className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all"
                           title="Confirmar"
                         >
-                          <Check size={18} />
+                          <Check size={16} />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStatus(app.id, 'cancelado');
                           }}
-                          className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
+                          className="p-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all"
                           title="Recusar"
                         >
-                          <XCircle size={18} />
+                          <XCircle size={16} />
                         </button>
                       </>
                     )}
@@ -508,9 +540,9 @@ export default function Agenda() {
                         setSelectedAppointment(app);
                         setShowDetailsModal(true);
                       }}
-                      className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
+                      className="p-1.5 text-slate-600 hover:bg-white/5 rounded-lg transition-all"
                     >
-                      <MoreVertical size={18} />
+                      <MoreVertical size={16} />
                     </button>
                   </div>
                 </div>
@@ -523,61 +555,61 @@ export default function Agenda() {
       {/* Modal de Detalhes */}
       <AnimatePresence>
         {showDetailsModal && selectedAppointment && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDetailsModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl p-6 md:p-8 overflow-hidden"
+              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl p-6 overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Detalhes do Agendamento</h2>
-                <button onClick={() => setShowDetailsModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                  <X size={20} />
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-black text-white tracking-tight">Detalhes do Agendamento</h2>
+                <button onClick={() => setShowDetailsModal(false)} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="flex items-center gap-4">
                   <img 
                     src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id || selectedAppointment.nome_paciente}`}
                     alt="Avatar"
-                    className="w-16 h-16 rounded-2xl object-cover border-4 border-slate-50 shadow-sm"
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-white/5 shadow-sm"
                   />
                   <div>
-                    <h3 className="text-xl font-black text-slate-900">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
-                    <p className="text-slate-500 text-sm font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
+                    <h3 className="text-lg font-black text-white">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
+                    <p className="text-slate-500 text-xs font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Data e Hora</p>
-                    <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                      <CalendarIcon size={16} className="text-blue-600" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Data e Hora</p>
+                    <div className="flex items-center gap-2 text-white font-black text-xs">
+                      <CalendarIcon size={14} className="text-blue-400" />
                       {selectedAppointment.data || new Date(selectedAppointment.data_servico).toLocaleDateString('pt-BR')}
                     </div>
-                    <div className="flex items-center gap-2 text-slate-900 font-black text-sm mt-1.5">
-                      <Clock size={16} className="text-blue-600" />
+                    <div className="flex items-center gap-2 text-white font-black text-xs mt-1.5">
+                      <Clock size={14} className="text-blue-400" />
                       {selectedAppointment.hora || new Date(selectedAppointment.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipo de Consulta</p>
-                    <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                      <Stethoscope size={16} className="text-blue-600" />
+                  <div className="p-3.5 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo de Consulta</p>
+                    <div className="flex items-center gap-2 text-white font-black text-xs">
+                      <Stethoscope size={14} className="text-blue-400" />
                       {selectedAppointment.tipo || selectedAppointment.servico}
                     </div>
                     {selectedAppointment.local && (
-                      <div className="flex items-center gap-2 text-slate-900 font-black text-sm mt-1.5">
-                        <MapPin size={16} className="text-blue-600" />
+                      <div className="flex items-center gap-2 text-white font-black text-xs mt-1.5">
+                        <MapPin size={14} className="text-blue-400" />
                         {selectedAppointment.local}
                       </div>
                     )}
@@ -585,9 +617,9 @@ export default function Agenda() {
                 </div>
 
                 {selectedAppointment.observacoes && (
-                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5">Observações</p>
-                    <p className="text-slate-700 text-sm font-medium leading-relaxed">{selectedAppointment.observacoes}</p>
+                  <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Observações</p>
+                    <p className="text-slate-300 text-xs font-medium leading-relaxed">{selectedAppointment.observacoes}</p>
                   </div>
                 )}
 
@@ -596,18 +628,18 @@ export default function Agenda() {
                     {(selectedAppointment.status === 'agendado' || selectedAppointment.status === 'pendente') && (
                       <button
                         onClick={() => updateStatus(selectedAppointment.id, 'confirmado')}
-                        className="flex-1 h-12 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
+                        className="flex-1 h-11 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2"
                       >
-                        <Check size={18} />
+                        <Check size={16} />
                         Confirmar
                       </button>
                     )}
                     {selectedAppointment.status !== 'cancelado' && (
                       <button
                         onClick={() => updateStatus(selectedAppointment.id, 'cancelado')}
-                        className="flex-1 h-12 bg-red-50 text-red-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 h-11 bg-red-500/10 text-red-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-2 border border-red-500/20"
                       >
-                        <XCircle size={18} />
+                        <XCircle size={16} />
                         Recusar
                       </button>
                     )}
@@ -622,9 +654,9 @@ export default function Agenda() {
                         toast.error('Telefone do paciente não cadastrado.');
                       }
                     }}
-                    className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                    className="w-full h-11 bg-white/5 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/5"
                   >
-                    <MessageSquare size={18} />
+                    <MessageSquare size={16} />
                     Enviar Mensagem
                   </button>
                 </div>
@@ -637,96 +669,96 @@ export default function Agenda() {
       {/* Modal de Agendamento */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-md bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Novo Agendamento</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                  <X size={20} />
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-black text-white tracking-tight">Novo Agendamento</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
+                  <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateAppointment} className="space-y-4 overflow-y-auto pr-1">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Paciente</label>
+              <form onSubmit={handleCreateAppointment} className="space-y-3 overflow-y-auto pr-1">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Paciente</label>
                   <select
                     required
                     value={formData.paciente_id}
                     onChange={(e) => setFormData({...formData, paciente_id: e.target.value})}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm"
+                    className="input-compact"
                   >
-                    <option value="">Selecione um paciente...</option>
+                    <option value="" className="bg-slate-900">Selecione um paciente...</option>
                     {patients.map(p => (
-                      <option key={p.id} value={p.id}>{p.nome}</option>
+                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Data</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
                     <input
                       type="date"
                       required
                       value={formData.data}
                       onChange={(e) => setFormData({...formData, data: e.target.value})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm"
+                      className="input-compact"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Hora</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
                     <input
                       type="time"
                       required
                       value={formData.hora}
                       onChange={(e) => setFormData({...formData, hora: e.target.value})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm"
+                      className="input-compact"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Tipo</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo</label>
                   <select
                     value={formData.tipo}
                     onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm"
+                    className="input-compact"
                   >
-                    <option value="Presencial">Presencial</option>
-                    <option value="Online">Online</option>
-                    <option value="Domiciliar">Domiciliar</option>
+                    <option value="Presencial" className="bg-slate-900">Presencial</option>
+                    <option value="Online" className="bg-slate-900">Online</option>
+                    <option value="Domiciliar" className="bg-slate-900">Domiciliar</option>
                   </select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Local / Link</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Local / Link</label>
                   <input
                     type="text"
                     value={formData.local}
                     onChange={(e) => setFormData({...formData, local: e.target.value})}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm"
+                    className="input-compact"
                     placeholder="Ex: Clínica Central"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-1">Observações</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Observações</label>
                   <textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all h-20 resize-none text-sm"
+                    className="input-compact h-16 resize-none"
                     placeholder="Notas..."
                   />
                 </div>
@@ -734,9 +766,9 @@ export default function Agenda() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full h-12 bg-sky-500 text-white rounded-xl font-black text-sm hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full h-10 bg-[#0047AB] text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                 >
-                  {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Agendamento'}
+                  {submitting ? <Loader2 className="animate-spin" size={16} /> : 'Confirmar Agendamento'}
                 </button>
               </form>
             </motion.div>

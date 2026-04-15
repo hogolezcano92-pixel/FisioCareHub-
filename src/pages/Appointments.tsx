@@ -133,8 +133,8 @@ export default function Appointments() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (nome_completo, email),
-          fisioterapeuta:perfis!fisio_id (nome_completo, email)
+          paciente:perfis!paciente_id (nome_completo, email, telefone, endereco),
+          fisioterapeuta:perfis!fisio_id (nome_completo, email, telefone, endereco)
         `)
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
@@ -156,7 +156,7 @@ export default function Appointments() {
           
           const { data: profilesData } = await supabase
             .from('perfis')
-            .select('id, nome_completo, email')
+            .select('id, nome_completo, email, telefone, endereco')
             .in('id', allIds);
           
           const profilesMap = (profilesData || []).reduce((acc: any, p: any) => {
@@ -238,7 +238,7 @@ export default function Appointments() {
         
         const { data: targetUsers, error: targetError } = await supabase
           .from('perfis')
-          .select('id, nome_completo, email, tipo_usuario')
+          .select('id, nome_completo, email, tipo_usuario, telefone, endereco')
           .eq('email', targetEmail.trim().toLowerCase())
           .in('tipo_usuario', targetRoles);
 
@@ -269,6 +269,8 @@ export default function Appointments() {
         .insert({
           paciente_id: isPatient ? user?.id : targetUser.id,
           fisio_id: isPhysio ? user?.id : targetUser.id,
+          data: date,
+          hora: time,
           data_servico: appointmentDate,
           status: 'pendente',
           observacoes: notes,
@@ -339,10 +341,15 @@ export default function Appointments() {
         {
           appointmentId: newApp?.id || '',
           patientName: isPatient ? profile.nome_completo : targetUser.nome_completo,
+          patientPhone: isPatient ? profile.telefone : targetUser.telefone,
+          patientAddress: isPatient ? profile.endereco : targetUser.endereco,
           physioName: isPatient ? targetUser.nome_completo : profile.nome_completo,
+          physioPhone: isPatient ? targetUser.telefone : profile.telefone,
+          physioAddress: isPatient ? targetUser.endereco : profile.endereco,
           date: formattedDate,
           time: formattedTime,
-          service: service
+          service: service,
+          notes: notes
         }
       );
 
@@ -400,10 +407,15 @@ export default function Appointments() {
           {
             appointmentId: app.id,
             patientName: app.paciente.nome_completo,
+            patientPhone: app.paciente.telefone,
+            patientAddress: app.paciente.endereco,
             physioName: app.fisioterapeuta.nome_completo,
+            physioPhone: app.fisioterapeuta.telefone,
+            physioAddress: app.fisioterapeuta.endereco,
             date: formattedDate,
             time: formattedTime,
-            service: app.servico || 'Consulta'
+            service: app.servico || 'Consulta',
+            notes: app.observacoes
           }
         );
       } else if (status === 'cancelado') {
@@ -560,7 +572,7 @@ export default function Appointments() {
       {/* Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -697,7 +709,7 @@ export default function Appointments() {
       {/* Confirmation Modal for Link */}
       <AnimatePresence>
         {selectedAppId && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
