@@ -121,10 +121,15 @@ export const sendAppointmentConfirmation = async (
   details: { 
     appointmentId: string;
     patientName: string; 
+    patientPhone?: string;
+    patientAddress?: string;
     physioName: string; 
+    physioPhone?: string;
+    physioAddress?: string;
     date: string; 
     time: string;
     service: string;
+    notes?: string;
   }
 ) => {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fisiocarehub.company';
@@ -146,18 +151,64 @@ export const sendAppointmentConfirmation = async (
         </p>
         
         <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
-          <div style="margin-bottom: 12px;">
-            <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Data</span>
-            <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${details.date}</span>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+            <div>
+              <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Data</span>
+              <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${details.date}</span>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Horário</span>
+              <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${details.time}</span>
+            </div>
           </div>
+
           <div style="margin-bottom: 12px;">
-            <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Horário</span>
-            <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${details.time}</span>
-          </div>
-          <div>
             <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Serviço</span>
             <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${details.service}</span>
           </div>
+
+          ${role === 'physio' ? `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #0ea5e9; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Dados do Paciente</p>
+              <div style="margin-bottom: 8px;">
+                <span style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block;">Nome</span>
+                <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${details.patientName}</span>
+              </div>
+              ${details.patientPhone ? `
+                <div style="margin-bottom: 8px;">
+                  <span style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block;">Telefone</span>
+                  <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${details.patientPhone}</span>
+                </div>
+              ` : ''}
+              ${details.patientAddress ? `
+                <div style="margin-bottom: 8px;">
+                  <span style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block;">Endereço de Atendimento</span>
+                  <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${details.patientAddress}</span>
+                </div>
+              ` : ''}
+            </div>
+          ` : `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #0ea5e9; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Dados do Profissional</p>
+              <div style="margin-bottom: 8px;">
+                <span style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block;">Nome</span>
+                <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${details.physioName}</span>
+              </div>
+              ${details.physioPhone ? `
+                <div style="margin-bottom: 8px;">
+                  <span style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block;">Telefone de Contato</span>
+                  <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${details.physioPhone}</span>
+                </div>
+              ` : ''}
+            </div>
+          `}
+
+          ${details.notes ? `
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+              <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Observações</span>
+              <p style="color: #475569; font-size: 14px; line-height: 1.5; margin: 0; font-style: italic;">"${details.notes}"</p>
+            </div>
+          ` : ''}
         </div>
 
         ${role === 'physio' ? `
