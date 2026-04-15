@@ -63,7 +63,7 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
         </p>
 
         <div style="text-align: center;">
-          <a href="https://fisiocarehub.company/dashboard" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);">
+          <a href="${typeof window !== 'undefined' ? window.location.origin : 'https://fisiocarehub.company'}/dashboard" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);">
             Acessar Meu Painel
           </a>
         </div>
@@ -95,7 +95,7 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
         </div>
 
         <div style="text-align: center;">
-          <a href="https://fisiocarehub.company/dashboard" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);">
+          <a href="${typeof window !== 'undefined' ? window.location.origin : 'https://fisiocarehub.company'}/dashboard" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);">
             Acessar Meu Painel
           </a>
         </div>
@@ -127,7 +127,8 @@ export const sendAppointmentConfirmation = async (
     service: string;
   }
 ) => {
-  const confirmationUrl = `https://fisiocarehub.company/agendamento/confirmar?id=${details.appointmentId}`;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fisiocarehub.company';
+  const confirmationUrl = `${baseUrl}/agendamento/confirmar?id=${details.appointmentId}`;
 
   const professionalHtml = (role: 'patient' | 'physio') => `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
