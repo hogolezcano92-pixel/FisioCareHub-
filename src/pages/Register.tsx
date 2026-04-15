@@ -410,14 +410,16 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Nome Completo</label>
                 <div className="relative group">
-                  <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                    <UserCircle className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
                   <input
                     type="text"
                     name="name"
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pl-14 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     placeholder="Seu nome"
                   />
                 </div>
@@ -430,7 +432,7 @@ export default function Register() {
                   name="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="(00) 00000-0000"
                 />
               </div>
@@ -442,7 +444,7 @@ export default function Register() {
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
-                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-24 resize-none"
+                className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-24 resize-none"
                 placeholder={role === 'fisioterapeuta' ? "Conte sobre sua formação e experiência..." : "Conte um pouco sobre seu histórico de saúde..."}
               />
             </div>
@@ -456,7 +458,7 @@ export default function Register() {
                   required
                   value={formData.zipCode}
                   onChange={handleChange}
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="00000-000"
                 />
               </div>
@@ -468,7 +470,7 @@ export default function Register() {
                   required
                   value={formData.city}
                   onChange={handleChange}
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="Sua cidade"
                 />
               </div>
@@ -480,7 +482,7 @@ export default function Register() {
                   required
                   value={formData.country}
                   onChange={handleChange}
-                  className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="Seu país"
                 />
               </div>
@@ -494,7 +496,7 @@ export default function Register() {
                 required
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 placeholder="Rua, número, bairro..."
               />
             </div>
@@ -514,7 +516,7 @@ export default function Register() {
                       required={role === 'fisioterapeuta'}
                       value={formData.crefito}
                       onChange={handleChange}
-                      className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       placeholder="Ex: 12345-F"
                     />
                   </div>
@@ -526,7 +528,7 @@ export default function Register() {
                       required={role === 'fisioterapeuta'}
                       value={formData.specialty}
                       onChange={handleChange}
-                      className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       placeholder="Ex: Ortopedia, Neuro..."
                     />
                   </div>
@@ -538,7 +540,7 @@ export default function Register() {
                     name="serviceType"
                     value={formData.serviceType}
                     onChange={handleChange}
-                    className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                   >
                     <option value="domicilio" className="bg-slate-900">A Domicílio</option>
                     <option value="online" className="bg-slate-900">Online</option>
@@ -555,7 +557,7 @@ export default function Register() {
                       { label: 'CREFITO Frente', name: 'crefito_frente' },
                       { label: 'CREFITO Verso', name: 'crefito_verso' }
                     ].map((doc) => (
-                      <div key={doc.name} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2">
+                      <div key={doc.name} className="p-4 bg-white/10 border border-white/10 rounded-2xl space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{doc.label}</label>
                         <input
                           type="file"
@@ -577,7 +579,7 @@ export default function Register() {
                     name="proKey"
                     value={formData.proKey}
                     onChange={(e) => setFormData(prev => ({ ...prev, proKey: e.target.value.toUpperCase() }))}
-                    className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
                     placeholder="INSIRA SUA CHAVE PRO"
                   />
                 </div>
@@ -588,14 +590,16 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">E-mail</label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                    <Mail className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
                   <input
                     type="email"
                     name="email"
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pl-14 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -604,14 +608,16 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Senha</label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                    <Lock className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pl-14 pr-12 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     placeholder="••••••••"
                   />
                   <button
