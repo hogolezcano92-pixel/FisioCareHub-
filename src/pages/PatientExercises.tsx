@@ -51,16 +51,16 @@ export default function PatientExercises() {
   return (
     <div className="space-y-8 w-full">
       <header>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Meus Exercícios</h1>
-        <p className="text-slate-500 font-medium">Exercícios prescritos pelo seu fisioterapeuta.</p>
+        <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 tracking-tight">Meus Exercícios</h1>
+        <p className="text-slate-400 font-medium">Exercícios prescritos pelo seu fisioterapeuta.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {exercises.length === 0 ? (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center">
-            <Dumbbell size={48} className="text-slate-200 mx-auto mb-4" />
-            <h3 className="text-2xl font-black text-slate-900">Nenhum exercício prescrito</h3>
-            <p className="text-slate-500 mt-2 font-medium">Seu fisioterapeuta ainda não prescreveu exercícios para você.</p>
+          <div className="col-span-full bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-slate-800 text-center">
+            <Dumbbell size={48} className="text-slate-700 mx-auto mb-4" />
+            <h3 className="text-2xl font-black text-white">Nenhum exercício prescrito</h3>
+            <p className="text-slate-400 mt-2 font-medium">Seu fisioterapeuta ainda não prescreveu exercícios para você.</p>
           </div>
         ) : (
           exercises.map((ex) => (
@@ -68,26 +68,26 @@ export default function PatientExercises() {
               key={ex.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all"
+              className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-slate-800 shadow-sm overflow-hidden group hover:shadow-2xl hover:shadow-indigo-500/10 transition-all"
             >
               <div className="p-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center">
                     <Activity size={24} />
                   </div>
-                  <h3 className="text-xl font-black text-slate-900 leading-tight">{ex.exercise_name}</h3>
+                  <h3 className="text-xl font-black text-white leading-tight">{ex.exercise_name}</h3>
                 </div>
 
-                <p className="text-slate-600 font-medium mb-6 line-clamp-3">{ex.description}</p>
+                <p className="text-slate-400 font-medium mb-6 line-clamp-3">{ex.description}</p>
 
                 <div className="flex gap-3 mb-8">
-                  <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center">
-                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Séries</span>
-                    <span className="text-lg font-black text-slate-900">{ex.sets || '0'}</span>
+                  <div className="flex-1 bg-slate-800/50 p-3 rounded-2xl text-center">
+                    <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Séries</span>
+                    <span className="text-lg font-black text-white">{ex.sets || '0'}</span>
                   </div>
-                  <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center">
-                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reps</span>
-                    <span className="text-lg font-black text-slate-900">{ex.reps || '0'}</span>
+                  <div className="flex-1 bg-slate-800/50 p-3 rounded-2xl text-center">
+                    <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Reps</span>
+                    <span className="text-lg font-black text-white">{ex.reps || '0'}</span>
                   </div>
                 </div>
 
@@ -96,7 +96,7 @@ export default function PatientExercises() {
                     href={ex.video_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                    className="flex items-center justify-center gap-2 w-full py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
                   >
                     <Play size={18} fill="currentColor" />
                     Ver Vídeo

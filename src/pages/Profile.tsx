@@ -70,6 +70,7 @@ export default function Profile() {
     gender: '' as 'male' | 'female' | 'other' | '',
     specialty: '',
     city: '',
+    state: '',
     address: '',
     zipCode: '',
     country: '',
@@ -77,6 +78,9 @@ export default function Profile() {
     preco_sessao: 0,
     stripe_account_id: '',
     serviceType: 'ambos' as 'domicilio' | 'online' | 'ambos',
+    data_nascimento: '',
+    experiencia_profissional: '',
+    observacoes_saude: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -96,7 +100,8 @@ export default function Profile() {
           telefone: profile.telefone || '',
           gender: profile.genero || '',
           specialty: profile.especialidade || '',
-          city: profile.localizacao || '',
+          city: profile.cidade || profile.localizacao || '',
+          state: profile.estado || '',
           address: profile.endereco || '',
           zipCode: profile.cep || '',
           country: profile.pais || '',
@@ -104,6 +109,9 @@ export default function Profile() {
           preco_sessao: profile.preco_sessao || 0,
           stripe_account_id: profile.stripe_account_id || '',
           serviceType: profile.tipo_servico || 'ambos',
+          data_nascimento: profile.data_nascimento || '',
+          experiencia_profissional: profile.experiencia_profissional || '',
+          observacoes_saude: profile.observacoes_saude || '',
         });
         setLoading(false);
       } else if (!user) {
@@ -136,7 +144,8 @@ export default function Profile() {
         nome_completo: formData.name,
         bio: formData.bio,
         telefone: formData.telefone,
-        localizacao: formData.city,
+        cidade: formData.city,
+        estado: formData.state,
         endereco: formData.address,
         cep: formData.zipCode,
         pais: formData.country,
@@ -146,6 +155,9 @@ export default function Profile() {
         genero: isPhysio ? formData.gender : (userData?.genero || undefined),
         especialidade: isPhysio ? formData.specialty : (userData?.especialidade || undefined),
         tipo_servico: isPhysio ? formData.serviceType : (userData?.tipo_servico || undefined),
+        data_nascimento: formData.data_nascimento || undefined,
+        experiencia_profissional: isPhysio ? formData.experiencia_profissional : undefined,
+        observacoes_saude: !isPhysio ? formData.observacoes_saude : undefined,
       };
 
       // Clean undefined fields
@@ -312,6 +324,7 @@ export default function Profile() {
 
   const patientTabs = [
     { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'clinic', label: 'Endereço', icon: Building2 },
     { id: 'security', label: 'Segurança', icon: Lock },
     { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'payments', label: 'Pagamentos', icon: CreditCard },
@@ -354,15 +367,15 @@ export default function Profile() {
     <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4 sm:px-6 lg:px-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Minha Conta</h1>
-          <p className="text-slate-500 font-medium">Gerencie seu perfil, segurança e preferências do sistema.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight">Minha Conta</h1>
+          <p className="text-slate-400 font-medium">Gerencie seu perfil, segurança e preferências do sistema.</p>
         </div>
       </header>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Navigation Sidebar */}
         <aside className="lg:w-72 space-y-2">
-          <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm space-y-1">
+          <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-sm space-y-1">
             {currentTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -371,26 +384,26 @@ export default function Profile() {
                   "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
                   activeTab === tab.id 
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 )}
               >
-                <tab.icon size={20} className={activeTab === tab.id ? "text-white" : "text-slate-400"} />
+                <tab.icon size={20} className={activeTab === tab.id ? "text-white" : "text-slate-500"} />
                 {tab.label}
               </button>
             ))}
           </div>
 
-          <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm space-y-1">
+          <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-sm space-y-1">
             <button
               onClick={() => signOut()}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-rose-500 hover:bg-rose-50 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-rose-500 hover:bg-rose-500/10 transition-all"
             >
               <LogOut size={20} />
               Sair da Conta
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
             >
               <Trash2 size={20} />
               Excluir Conta
@@ -412,8 +425,8 @@ export default function Profile() {
                     className="space-y-8"
                   >
                     {/* Profile Header Card */}
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-blue-900/5 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-50" />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-blue-900/5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full -mr-32 -mt-32 opacity-50" />
                       
                       <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <AvatarUpload 
@@ -428,7 +441,7 @@ export default function Profile() {
                         <div className="flex-1 text-center md:text-left space-y-4">
                           <div className="space-y-1">
                             <div className="flex items-center justify-center md:justify-start gap-3">
-                              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                              <h2 className="text-3xl font-black text-white tracking-tight">
                                 {userData?.nome_completo || 'Usuário'}
                               </h2>
                               {isPro && (
@@ -438,9 +451,9 @@ export default function Profile() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-slate-500 font-medium">{userData?.email}</p>
+                            <p className="text-slate-400 font-medium">{userData?.email}</p>
                             <div className="flex justify-center md:justify-start pt-2">
-                              <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-blue-100/50">
+                              <span className="px-4 py-1.5 bg-blue-600/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-blue-500/30">
                                 {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
                               </span>
                             </div>
@@ -450,58 +463,85 @@ export default function Profile() {
                     </div>
 
                     {/* Profile Form */}
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <User className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <User className="text-blue-500" size={24} />
                         Informações Pessoais
                       </h3>
                       
                       <form onSubmit={handleUpdateProfile} className="space-y-8">
                         <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
                             <input
                               type="text"
                               name="name"
                               value={formData.name}
                               onChange={handleChange}
-                              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Telefone de Contato</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Telefone de Contato</label>
                             <input
                               type="tel"
                               name="telefone"
                               value={formData.telefone}
                               onChange={handleChange}
-                              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                               placeholder="(00) 00000-0000"
                             />
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
+                            <input
+                              type="date"
+                              name="data_nascimento"
+                              value={formData.data_nascimento}
+                              onChange={handleChange}
+                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Gênero</label>
+                            <select
+                              name="gender"
+                              value={formData.gender}
+                              onChange={handleChange}
+                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                            >
+                              <option value="" className="bg-slate-900">Selecione...</option>
+                              <option value="male" className="bg-slate-900">Masculino</option>
+                              <option value="female" className="bg-slate-900">Feminino</option>
+                              <option value="other" className="bg-slate-900">Outro</option>
+                            </select>
                           </div>
                         </div>
 
                         {isPhysio && (
                           <div className="grid md:grid-cols-2 gap-8">
                             <div className="space-y-2">
-                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CREFITO</label>
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CREFITO</label>
                               <input
                                 type="text"
                                 name="crefito"
                                 value={formData.crefito}
                                 onChange={handleChange}
-                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                                 placeholder="Ex: 12345-F"
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Especialidade Principal</label>
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Especialidade Principal</label>
                               <input
                                 type="text"
                                 name="specialty"
                                 value={formData.specialty}
                                 onChange={handleChange}
-                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                                className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                                 placeholder="Ex: Ortopedia, Neuro..."
                               />
                             </div>
@@ -509,42 +549,69 @@ export default function Profile() {
                         )}
 
                         {isPhysio && (
-                          <div className="grid md:grid-cols-2 gap-8">
+                          <>
                             <div className="space-y-2">
-                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Preço da Sessão (R$)</label>
-                              <input
-                                type="number"
-                                name="preco_sessao"
-                                value={formData.preco_sessao}
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Experiência Profissional</label>
+                              <textarea
+                                name="experiencia_profissional"
+                                value={formData.experiencia_profissional}
                                 onChange={handleChange}
-                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
-                                placeholder="0.00"
-                                step="0.01"
+                                className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
+                                placeholder="Descreva sua trajetória profissional..."
                               />
                             </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Stripe Account ID</label>
-                              <input
-                                type="text"
-                                name="stripe_account_id"
-                                value={formData.stripe_account_id}
-                                onChange={handleChange}
-                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
-                                placeholder="acct_..."
-                              />
-                              <p className="text-[10px] text-slate-400 ml-1">ID da sua conta Stripe Connect para receber pagamentos.</p>
+
+                            <div className="grid md:grid-cols-2 gap-8">
+                              <div className="space-y-2">
+                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Preço da Sessão (R$)</label>
+                                <input
+                                  type="number"
+                                  name="preco_sessao"
+                                  value={formData.preco_sessao}
+                                  onChange={handleChange}
+                                  className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                                  placeholder="0.00"
+                                  step="0.01"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Modalidade de Atendimento</label>
+                                <select
+                                  name="serviceType"
+                                  value={formData.serviceType}
+                                  onChange={handleChange}
+                                  className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                                >
+                                  <option value="domicilio" className="bg-slate-900">Domiciliar</option>
+                                  <option value="online" className="bg-slate-900">Online</option>
+                                  <option value="ambos" className="bg-slate-900">Ambos (Clínica/Domicílio/Online)</option>
+                                </select>
+                              </div>
                             </div>
+                          </>
+                        )}
+
+                        {!isPhysio && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Observações de Saúde</label>
+                            <textarea
+                              name="observacoes_saude"
+                              value={formData.observacoes_saude}
+                              onChange={handleChange}
+                              className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
+                              placeholder="Alergias, condições crônicas, cirurgias anteriores..."
+                            />
                           </div>
                         )}
 
                         <div className="space-y-2">
-                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Biografia / Resumo</label>
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{isPhysio ? 'Biografia Profissional' : 'Sobre Você'}</label>
                           <textarea
                             name="bio"
                             value={formData.bio}
                             onChange={handleChange}
-                            className="w-full h-32 p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-slate-900"
-                            placeholder={isPhysio ? "Conte sobre sua formação e áreas de atuação..." : "Conte um pouco sobre seu histórico de saúde..."}
+                            className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
+                            placeholder={isPhysio ? "Conte sobre sua formação e áreas de atuação..." : "Conte um pouco sobre você..."}
                           />
                         </div>
 
@@ -552,7 +619,7 @@ export default function Profile() {
                           <button
                             type="submit"
                             disabled={updating}
-                            className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center gap-3 disabled:opacity-50"
+                            className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center gap-3 disabled:opacity-50"
                           >
                             {updating ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
                             Salvar Alterações
@@ -571,32 +638,32 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <Lock className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <Lock className="text-blue-500" size={24} />
                         Segurança e Acesso
                       </h3>
                       
                       <div className="space-y-6">
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
                           <div className="text-center md:text-left">
-                            <p className="text-lg font-black text-slate-900">Alterar Senha</p>
-                            <p className="text-sm text-slate-500 font-medium">Enviaremos um link de redefinição para seu e-mail de cadastro.</p>
+                            <p className="text-lg font-black text-white">Alterar Senha</p>
+                            <p className="text-sm text-slate-400 font-medium">Enviaremos um link de redefinição para seu e-mail de cadastro.</p>
                           </div>
                           <button
                             onClick={handlePasswordReset}
-                            className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-sm"
+                            className="px-8 py-4 bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all shadow-sm"
                           >
                             Redefinir Senha
                           </button>
                         </div>
 
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
                           <div className="text-center md:text-left">
-                            <p className="text-lg font-black text-slate-900">Autenticação em Duas Etapas</p>
-                            <p className="text-sm text-slate-500 font-medium">Adicione uma camada extra de segurança à sua conta.</p>
+                            <p className="text-lg font-black text-white">Autenticação em Duas Etapas</p>
+                            <p className="text-sm text-slate-400 font-medium">Adicione uma camada extra de segurança à sua conta.</p>
                           </div>
-                          <span className="px-4 py-2 bg-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Em Breve</span>
+                          <span className="px-4 py-2 bg-white/5 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Em Breve</span>
                         </div>
                       </div>
                     </div>
@@ -611,9 +678,9 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <Bell className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <Bell className="text-blue-500" size={24} />
                         Preferências de Notificação
                       </h3>
                       
@@ -624,10 +691,10 @@ export default function Profile() {
                           { label: 'Novas Mensagens', desc: 'Avisos de novas mensagens no chat.' },
                           { label: 'Materiais Educativos', desc: 'Novidades na biblioteca de saúde.' }
                         ].map((item, i) => (
-                          <div key={i} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between">
+                          <div key={i} className="p-6 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-between">
                             <div>
-                              <p className="font-black text-slate-900">{item.label}</p>
-                              <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
+                              <p className="font-black text-white">{item.label}</p>
+                              <p className="text-xs text-slate-400 font-medium">{item.desc}</p>
                             </div>
                             <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer">
                               <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -647,21 +714,21 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <CreditCard className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <CreditCard className="text-blue-500" size={24} />
                         Métodos de Pagamento
                       </h3>
                       
-                      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-[3rem] space-y-4">
-                        <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto">
+                      <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-[3rem] space-y-4">
+                        <div className="w-20 h-20 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto">
                           <CreditCard size={40} />
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-black text-slate-900">Nenhum cartão cadastrado</p>
-                          <p className="text-sm text-slate-500 font-medium">Cadastre um cartão para facilitar o pagamento de consultas e materiais.</p>
+                          <p className="text-lg font-black text-white">Nenhum cartão cadastrado</p>
+                          <p className="text-sm text-slate-400 font-medium">Cadastre um cartão para facilitar o pagamento de consultas e materiais.</p>
                         </div>
-                        <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
+                        <button className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all">
                           Adicionar Cartão
                         </button>
                       </div>
@@ -677,27 +744,27 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <Eye className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <Eye className="text-blue-500" size={24} />
                         Privacidade e Dados
                       </h3>
                       
                       <div className="space-y-6">
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
-                          <p className="font-black text-slate-900">Visibilidade do Perfil</p>
-                          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-4">
+                          <p className="font-black text-white">Visibilidade do Perfil</p>
+                          <p className="text-sm text-slate-400 font-medium leading-relaxed">
                             Seu perfil é visível apenas para os fisioterapeutas com quem você agenda consultas. 
                             Seus dados de saúde são protegidos por criptografia de ponta a ponta.
                           </p>
                         </div>
                         
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center justify-between">
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex items-center justify-between">
                           <div>
-                            <p className="font-black text-slate-900">Exportar Meus Dados</p>
-                            <p className="text-xs text-slate-500 font-medium">Baixe uma cópia de todo o seu histórico em formato JSON.</p>
+                            <p className="font-black text-white">Exportar Meus Dados</p>
+                            <p className="text-xs text-slate-400 font-medium">Baixe uma cópia de todo o seu histórico em formato JSON.</p>
                           </div>
-                          <button className="p-4 bg-white text-slate-900 rounded-2xl hover:bg-slate-100 transition-all shadow-sm">
+                          <button className="p-4 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all shadow-sm">
                             <Download size={20} />
                           </button>
                         </div>
@@ -714,45 +781,77 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <Building2 className="text-blue-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <Building2 className="text-blue-500" size={24} />
                         Dados da Clínica / Consultório
                       </h3>
                       
                       <div className="grid md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">CEP</label>
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CEP</label>
                           <input
                             type="text"
                             name="zipCode"
                             value={formData.zipCode}
                             onChange={handleChange}
-                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                             placeholder="00000-000"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cidade</label>
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Cidade</label>
                           <input
                             type="text"
                             name="city"
                             value={formData.city}
                             onChange={handleChange}
-                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Estado</label>
+                          <input
+                            type="text"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                            placeholder="Ex: SP, RJ..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">País</label>
+                          <input
+                            type="text"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                           />
                         </div>
                         <div className="md:col-span-2 space-y-2">
-                          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Endereço Completo</label>
+                          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Endereço Completo</label>
                           <input
                             type="text"
                             name="address"
                             value={formData.address}
                             onChange={handleChange}
-                            className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                            className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                             placeholder="Rua, número, complemento..."
                           />
                         </div>
+                      </div>
+
+                      <div className="flex justify-end mt-8">
+                        <button
+                          onClick={handleUpdateProfile}
+                          disabled={updating}
+                          className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center gap-3 disabled:opacity-50"
+                        >
+                          {updating ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+                          Atualizar Endereço
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -766,44 +865,44 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden relative">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 opacity-50" />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-blue-900/5 overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -mr-32 -mt-32 opacity-50" />
                       
                       <div className="relative z-10 space-y-8">
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center shadow-lg shadow-amber-100">
+                          <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center shadow-lg shadow-amber-500/10">
                             <Crown size={32} fill="currentColor" />
                           </div>
                           <div>
-                            <h3 className="text-2xl font-black text-slate-900">Plano FisioCare Pro</h3>
-                            <p className="text-slate-500 font-medium">Sua assinatura atual está {isPro ? 'Ativa' : 'Inativa'}.</p>
+                            <h3 className="text-2xl font-black text-white">Plano FisioCare Pro</h3>
+                            <p className="text-slate-400 font-medium">Sua assinatura atual está {isPro ? 'Ativa' : 'Inativa'}.</p>
                           </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
-                          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Próximo Vencimento</p>
-                            <p className="text-2xl font-black text-slate-900">15 de Maio, 2026</p>
-                            <p className="text-sm text-slate-500 font-medium">Valor: R$ 149,90/mês</p>
+                          <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-4">
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Próximo Vencimento</p>
+                            <p className="text-2xl font-black text-white">15 de Maio, 2026</p>
+                            <p className="text-sm text-slate-400 font-medium">Valor: R$ 149,90/mês</p>
                           </div>
-                          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Método de Pagamento</p>
+                          <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-4">
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Método de Pagamento</p>
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-6 bg-slate-900 rounded flex items-center justify-center text-[8px] text-white font-bold">VISA</div>
-                              <p className="text-lg font-black text-slate-900">**** 4242</p>
+                              <div className="w-10 h-6 bg-white/10 rounded flex items-center justify-center text-[8px] text-white font-bold">VISA</div>
+                              <p className="text-lg font-black text-white">**** 4242</p>
                             </div>
-                            <button className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Alterar Cartão</button>
+                            <button className="text-blue-400 font-black text-xs uppercase tracking-widest hover:underline">Alterar Cartão</button>
                           </div>
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-4 pt-4">
                           <Link 
                             to="/subscription"
-                            className="flex-1 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest text-center shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
+                            className="flex-1 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest text-center shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all"
                           >
                             Gerenciar Assinatura
                           </Link>
-                          <button className="flex-1 py-5 bg-white border border-slate-200 text-rose-500 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-rose-50 transition-all">
+                          <button className="flex-1 py-5 bg-white/5 border border-white/10 text-rose-500 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-rose-500/10 transition-all">
                             Cancelar Plano
                           </button>
                         </div>
@@ -820,45 +919,45 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <DollarSign className="text-emerald-600" size={24} />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <DollarSign className="text-emerald-400" size={24} />
                         Pagamentos Recebidos
                       </h3>
                       
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
-                        <div className="p-8 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 space-y-1">
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Saldo Disponível</p>
-                          <p className="text-3xl font-black text-emerald-900">R$ 2.450,00</p>
+                        <div className="p-8 bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 space-y-1">
+                          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saldo Disponível</p>
+                          <p className="text-3xl font-black text-white">R$ 2.450,00</p>
                         </div>
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">A Receber</p>
-                          <p className="text-3xl font-black text-slate-900">R$ 890,00</p>
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A Receber</p>
+                          <p className="text-3xl font-black text-white">R$ 890,00</p>
                         </div>
-                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total do Mês</p>
-                          <p className="text-3xl font-black text-slate-900">R$ 5.120,00</p>
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total do Mês</p>
+                          <p className="text-3xl font-black text-white">R$ 5.120,00</p>
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
+                        <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
                         {[
                           { patient: 'Maria Silva', date: 'Hoje', val: 150.00 },
                           { patient: 'João Pedro', date: 'Ontem', val: 150.00 },
                           { patient: 'Ana Costa', date: '10 Abr', val: 200.00 }
                         ].map((item, i) => (
-                          <div key={i} className="p-6 bg-white border border-slate-50 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-all">
+                          <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black">
+                              <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black">
                                 {item.patient[0]}
                               </div>
                               <div>
-                                <p className="font-bold text-slate-900">{item.patient}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.date}</p>
+                                <p className="font-bold text-white">{item.patient}</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
                               </div>
                             </div>
-                            <p className="font-black text-emerald-600">+ R$ {item.val.toFixed(2)}</p>
+                            <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
                           </div>
                         ))}
                       </div>
@@ -874,7 +973,7 @@ export default function Profile() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -886,26 +985,26 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white p-8 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-red-100"
+              className="relative bg-slate-900 p-8 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-white/10"
             >
-              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle size={40} />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Tem certeza absoluta?</h3>
-              <p className="text-slate-500 mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">Tem certeza absoluta?</h3>
+              <p className="text-slate-400 mb-8">
                 Esta ação é irreversível. Todos os seus dados serão apagados para sempre.
               </p>
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleDeleteAccount}
                   disabled={updating}
-                  className="w-full py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-all flex items-center justify-center gap-2"
                 >
                   {updating ? <Loader2 className="animate-spin" /> : 'Sim, Excluir Minha Conta'}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="w-full py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                  className="w-full py-4 bg-white/5 text-slate-400 rounded-xl font-bold hover:bg-white/10 transition-all"
                 >
                   Cancelar
                 </button>
