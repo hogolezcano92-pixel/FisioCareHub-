@@ -7,35 +7,39 @@
   --font-accent: "Poppins", sans-serif;
   
   /* SaaS Health Premium Palette */
-  --color-primary: #14B8A6;
-  --color-primary-hover: #0F766E;
-  --color-bg-general: #F6FAF9;
-  --color-card: #FFFFFF;
-  --color-border-soft: #E6F2EF;
-  --color-text-main: #0F172A;
-  --color-text-muted: #64748B;
+  --color-primary: #0047AB;
+  --color-primary-hover: #003580;
+  --color-bg-general: #0B1120;
+  --color-card: #1E293B;
+  --color-border-soft: #334155;
+  --color-text-main: #FFFFFF;
+  --color-text-muted: #E1E1E1;
 
   /* Custom Palette for Home Care */
   --color-home-blue: #e0f2fe; /* light blue */
   --color-home-green: #d1fae5; /* pastel green */
   --color-home-peach: #ffedd5; /* peach */
-  --color-home-trust: #0ea5e9; /* trust blue */
+  --color-home-trust: #0047AB; /* trust blue */
 
   /* Dark Mode Overrides (Defaulting to Dark for Premium Feel) */
   --color-background: #0B1120;
-  --color-foreground: #F8FAFC;
+  --color-foreground: #FFFFFF;
 
   /* Premium Shadows */
-  --shadow-premium: 0 10px 30px -10px rgba(20, 184, 166, 0.1);
-  --shadow-premium-hover: 0 20px 40px -15px rgba(20, 184, 166, 0.2);
+  --shadow-premium: 0 4px 20px -5px rgba(0, 71, 171, 0.2);
+  --shadow-premium-hover: 0 10px 30px -10px rgba(0, 71, 171, 0.3);
 }
 
 @layer utilities {
+  .text-ice {
+    color: #E1E1E1;
+  }
+  
   .bg-medical-pattern {
     position: relative;
-    background-color: #ffffff;
+    background-color: #0B1120;
     background-image: 
-      linear-gradient(to right, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)),
+      linear-gradient(to right, rgba(11, 17, 32, 0.95), rgba(11, 17, 32, 0.95)),
       url("https://images.unsplash.com/photo-1584432810601-6a7f27a2362b?auto=format&fit=crop&q=80&w=2000");
     background-size: cover;
     background-position: center;
@@ -43,17 +47,17 @@
   }
 
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-premium;
+    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-premium;
   }
 
   .glass-card-hover {
-    @apply hover:bg-white/80 hover:shadow-premium-hover transition-all duration-300;
+    @apply hover:bg-slate-900/80 hover:shadow-premium-hover transition-all duration-300;
   }
 }
 
 @layer base {
   html {
-    font-size: 16px;
+    font-size: 14px; /* Global scale reduction ~15% */
     background-color: var(--color-background);
     color: var(--color-foreground);
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -62,7 +66,7 @@
   }
   
   body {
-    @apply text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950;
+    @apply text-white bg-slate-950;
     overflow-x: hidden;
     width: 100%;
     position: relative;
@@ -74,8 +78,12 @@
   }
 
   /* Dark Mode Secondary Text Contrast */
-  .dark .text-text-muted, .dark .text-slate-500 {
-    @apply text-slate-400;
+  .text-text-muted, .text-slate-500 {
+    color: #E1E1E1 !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-white;
   }
 
   img {
@@ -99,7 +107,8 @@
 
 @layer utilities {
   .premium-card {
-    @apply bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply bg-slate-900/50 backdrop-blur-xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500;
+    margin-bottom: 1.5rem;
   }
 
   .badge-physio {
@@ -122,6 +131,18 @@
   }
   .ping-online-dot {
     @apply relative inline-flex rounded-full h-3 w-3 bg-emerald-500;
+  }
+
+  .btn-compact {
+    @apply px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2;
+  }
+  
+  .btn-primary-compact {
+    @apply px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 bg-[#0047AB] text-white hover:bg-[#003580] shadow-md;
+  }
+
+  .input-compact {
+    @apply w-full px-4 py-2.5 bg-slate-800 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047AB]/50 transition-all;
   }
 
   .responsive-grid {
@@ -157,14 +178,22 @@
   transform-origin: top center;
 }
 
-/* Corrigindo o texto digitado e o fundo */
-input {
-  color: #1a1a1a !important;      /* Força o texto para cinza escuro/preto */
-  background-color: #ffffff !important; /* Garante o fundo branco */
+/* Corrigindo o texto digitado e o fundo para inputs globais */
+input:not(.input-compact), select:not(.input-compact), textarea:not(.input-compact) {
+  color: #1a1a1a !important;
+  background-color: #ffffff !important;
 }
 
-/* Opcional: Melhora o contraste do texto de dica (placeholder) */
+.input-compact {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 input::placeholder {
   color: #757575 !important;
-  opacity: 1; 
+  opacity: 0.7; 
+}
+
+.input-compact::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
 }
