@@ -79,6 +79,8 @@ const Subscription = lazy(() => import('./pages/Subscription'));
 const HealthLibrary = lazy(() => import('./pages/HealthLibrary'));
 const ConfirmAppointment = lazy(() => import('./pages/ConfirmAppointment'));
 const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -687,6 +689,8 @@ function AppContent() {
                   <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
                   <Route path="/agendamento/confirmar" element={<ConfirmAppointment />} />
                   <Route path="/physio/:id" element={<ProfessionalProfile />} />
+                  <Route path="/termos" element={<Terms />} />
+                  <Route path="/privacidade" element={<Privacy />} />
                 </Routes>
               </Suspense>
             </div>
