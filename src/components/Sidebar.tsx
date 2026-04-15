@@ -20,7 +20,8 @@ import {
   Smartphone,
   LayoutDashboard,
   DollarSign,
-  Settings
+  Settings,
+  Search
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -65,6 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         items: [
           { name: 'Início', path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
+            { name: 'Dashboard Fisio', path: '/dashboard/fisio', icon: LayoutDashboard },
             { name: 'Meus Pacientes', path: '/patients', icon: Users },
             { name: 'Agenda', path: '/agenda', icon: Calendar },
             { name: 'Exercícios', path: '/exercises', icon: Activity },
@@ -74,6 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Assinatura', path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
+            { name: 'Buscar Fisio', path: '/buscar-fisio', icon: Search },
             { name: 'Agenda', path: '/appointments', icon: Calendar },
             { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
             { name: 'Prontuários', path: '/records', icon: FileText },
@@ -201,14 +204,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-80 z-[70] lg:hidden"
+              className="fixed inset-y-0 left-0 w-80 z-[110] lg:hidden"
             >
               {sidebarContent}
             </motion.aside>
