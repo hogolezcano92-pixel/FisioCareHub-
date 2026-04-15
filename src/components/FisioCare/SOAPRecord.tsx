@@ -119,27 +119,27 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   };
 
   return (
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
+    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <BrainCircuit className="text-blue-600" size={32} />
-            Prontuário Inteligente (SOAP)
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
+            <BrainCircuit className="text-blue-400" size={18} />
+            Prontuário SOAP
           </h3>
-          <p className="text-slate-500 font-medium">Insira o relato bruto e deixe a IA estruturar para você.</p>
+          <p className="text-slate-400 text-[9px] font-medium">IA estruturando seu relato bruto.</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest">
-            Padrão Profissional
+        <div className="flex flex-col items-end gap-1">
+          <div className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest">
+            Profissional
           </div>
           {pacienteId && (
             <button
               onClick={handleSummarize}
               disabled={isSummarizing}
-              className="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest"
+              className="flex items-center gap-1 text-[7px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest"
             >
-              {isSummarizing ? <Loader2 className="animate-spin" size={12} /> : <FileSearch size={12} />}
-              Resumir Histórico IA
+              {isSummarizing ? <Loader2 className="animate-spin" size={7} /> : <FileSearch size={7} />}
+              Resumir Histórico
             </button>
           )}
         </div>
@@ -151,45 +151,45 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-sky-50 p-6 rounded-[2rem] border border-sky-100 space-y-3 relative overflow-hidden"
+            className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 space-y-1.5 relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 p-4">
-              <button onClick={() => setHistorySummary(null)} className="text-sky-400 hover:text-sky-600">
-                <CheckCircle2 size={20} />
+            <div className="absolute top-0 right-0 p-1.5">
+              <button onClick={() => setHistorySummary(null)} className="text-blue-400 hover:text-blue-300">
+                <CheckCircle2 size={14} />
               </button>
             </div>
-            <h4 className="text-xs font-black text-sky-600 uppercase tracking-widest flex items-center gap-2">
-              <Sparkles size={14} />
+            <h4 className="text-[8px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+              <Sparkles size={10} />
               Resumo Clínico IA
             </h4>
-            <p className="text-sm text-sky-800 font-medium leading-relaxed italic">
+            <p className="text-[10px] text-blue-100 font-medium leading-relaxed italic">
               "{historySummary}"
             </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="space-y-4">
-        <label className="block text-sm font-black text-slate-700 uppercase tracking-wider">Relato do Atendimento</label>
+      <div className="space-y-2">
+        <label className="block text-[8px] font-black text-slate-500 uppercase tracking-wider ml-1">Relato do Atendimento</label>
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
-          placeholder="Ex: Paciente relata melhora na dor lombar (EVA 3), realizou exercícios de fortalecimento de core e alongamento. Apresentou boa amplitude de movimento..."
-          className="w-full h-40 p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-blue-100 transition-all text-slate-700 font-medium resize-none"
+          placeholder="Ex: Paciente relata melhora na dor lombar..."
+          className="w-full h-24 p-3 bg-white/5 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-[11px] text-white font-medium resize-none"
         />
         <button
           onClick={handleProcess}
           disabled={isProcessing || !rawText.trim()}
-          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 disabled:opacity-50"
+          className="w-full h-9 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isProcessing ? (
             <>
-              <Loader2 className="animate-spin" size={24} />
-              Processando IA...
+              <Loader2 className="animate-spin" size={14} />
+              Processando...
             </>
           ) : (
             <>
-              <Sparkles size={24} />
+              <Sparkles size={14} />
               Estruturar com IA
             </>
           )}
@@ -202,40 +202,40 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="space-y-6 pt-6 border-t border-slate-100"
+            className="space-y-3 pt-3 border-t border-white/5"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-2">
               {[
-                { label: 'S - Subjetivo', key: 'subjective', color: 'bg-amber-50 text-amber-700 border-amber-100' },
-                { label: 'O - Objetivo', key: 'objective', color: 'bg-blue-50 text-blue-700 border-blue-100' },
-                { label: 'A - Avaliação', key: 'assessment', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-                { label: 'P - Plano', key: 'plan', color: 'bg-purple-50 text-purple-700 border-purple-100' },
+                { label: 'S - Subjetivo', key: 'subjective', color: 'bg-amber-500/10 text-amber-200 border-amber-500/20' },
+                { label: 'O - Objetivo', key: 'objective', color: 'bg-blue-500/10 text-blue-200 border-blue-500/20' },
+                { label: 'A - Avaliação', key: 'assessment', color: 'bg-emerald-500/10 text-emerald-200 border-emerald-500/20' },
+                { label: 'P - Plano', key: 'plan', color: 'bg-purple-500/10 text-purple-200 border-purple-500/20' },
               ].map((section) => (
-                <div key={section.key} className={cn("p-6 rounded-[2rem] border space-y-3", section.color)}>
-                  <h4 className="font-black text-sm uppercase tracking-widest">{section.label}</h4>
-                  <p className="text-sm font-medium leading-relaxed">
+                <div key={section.key} className={cn("p-3 rounded-xl border space-y-1", section.color)}>
+                  <h4 className="font-black text-[9px] uppercase tracking-widest">{section.label}</h4>
+                  <p className="text-[10px] font-medium leading-relaxed">
                     {(soapData as any)[section.key]}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-2">
               <button
                 onClick={() => setSoapData(null)}
-                className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
+                className="flex-1 h-10 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] hover:bg-white/10 transition-all"
               >
                 Descartar
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-3 disabled:opacity-50"
+                className="flex-[2] h-10 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isSaving ? (
-                  <Loader2 className="animate-spin" size={24} />
+                  <Loader2 className="animate-spin" size={16} />
                 ) : (
-                  <Save size={24} />
+                  <Save size={16} />
                 )}
                 {isSaving ? 'Salvando...' : 'Salvar Prontuário'}
               </button>

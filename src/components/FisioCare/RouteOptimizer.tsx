@@ -107,34 +107,34 @@ export const RouteOptimizer = () => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <Route className="text-blue-600" size={32} />
-            Otimização de Logística
+    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
+            <Route className="text-blue-400" size={18} />
+            Otimização de Rota
           </h3>
-          <p className="text-slate-500 font-medium">Economize tempo e combustível com a rota mais eficiente.</p>
+          <p className="text-slate-400 text-[9px] font-medium">Economize tempo e combustível.</p>
         </div>
         <button 
           onClick={handleOptimize}
           disabled={isOptimizing || patients.length === 0}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 disabled:opacity-50"
+          className="w-full sm:w-auto px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isOptimizing ? 'Otimizando...' : 'Otimizar Rota'}
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="animate-spin text-blue-600" size={32} />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Carregando Localizações...</p>
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader2 className="animate-spin text-blue-400" size={20} />
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px]">Carregando...</p>
           </div>
         ) : patients.length === 0 ? (
-          <div className="p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-            <MapPin className="mx-auto mb-4 text-slate-300" size={40} />
-            <p className="text-slate-500 font-medium">Nenhum atendimento confirmado para hoje.</p>
+          <div className="p-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">
+            <MapPin className="mx-auto mb-3 text-slate-600" size={24} />
+            <p className="text-slate-500 text-[10px] font-medium">Nenhum atendimento para hoje.</p>
           </div>
         ) : (
           (optimizedRoute.length > 0 ? optimizedRoute : patients).map((p, index) => (
@@ -144,36 +144,36 @@ export const RouteOptimizer = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               className={cn(
-                "p-5 rounded-[2rem] border flex items-center justify-between gap-4 group transition-all",
-                optimizedRoute.length > 0 ? "bg-blue-50 border-blue-100" : "bg-slate-50 border-slate-100"
+                "p-3 rounded-xl border flex items-center justify-between gap-3 group transition-all",
+                optimizedRoute.length > 0 ? "bg-blue-500/10 border-blue-500/20" : "bg-white/5 border-white/5"
               )}
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black shadow-sm border border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 bg-slate-800 rounded-lg flex items-center justify-center text-blue-400 font-black border border-white/5 text-[10px]">
                   {index + 1}
                 </div>
-                <div className="space-y-1">
-                  <p className="font-black text-slate-900">{p.name}</p>
-                  <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-                    <MapPin size={14} />
+                <div className="space-y-0.5">
+                  <p className="font-black text-white text-[11px]">{p.name}</p>
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[8px] font-medium line-clamp-1">
+                    <MapPin size={9} />
                     {p.address}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs font-black text-blue-600 uppercase tracking-widest">Previsão</p>
-                  <p className="text-sm font-medium text-slate-500 flex items-center gap-1 justify-end">
-                    <Clock size={14} />
-                    {15 + index * 45} min
+                  <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Previsão</p>
+                  <p className="text-[10px] font-medium text-slate-500 flex items-center gap-1 justify-end">
+                    <Clock size={10} />
+                    {15 + index * 45}m
                   </p>
                 </div>
                 <button 
                   onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.address)}`, '_blank')}
-                  className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-600 hover:text-white transition-all"
+                  className="p-2 bg-slate-800 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all"
                 >
-                  <Navigation size={20} />
+                  <Navigation size={14} />
                 </button>
               </div>
             </motion.div>
@@ -182,17 +182,17 @@ export const RouteOptimizer = () => {
       </div>
 
       {optimizedRoute.length > 0 && (
-        <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
-              <MapIcon size={24} />
+        <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/20 shrink-0">
+              <MapIcon size={16} />
             </div>
             <div>
-              <p className="font-black text-emerald-900">Rota Otimizada!</p>
-              <p className="text-sm font-medium text-emerald-700">Você economizará aproximadamente 22 minutos hoje.</p>
+              <p className="font-black text-white text-[10px]">Rota Otimizada!</p>
+              <p className="text-[9px] font-medium text-slate-400">Economia de ~22 minutos hoje.</p>
             </div>
           </div>
-          <ChevronRight className="text-emerald-400" />
+          <ChevronRight className="text-emerald-500" size={14} />
         </div>
       )}
     </div>
