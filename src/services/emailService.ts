@@ -25,17 +25,11 @@ export const sendEmail = async (payload: EmailPayload) => {
     console.log(`Disparando e-mail para ${finalPayload.to} (Evento: ${payload.event})`);
     
     // O nome da função no Supabase é 'Send-email' (case sensitive)
-    invokeFunction('Send-email', finalPayload)
-      .then(result => {
-        console.log('Resposta da Function Send-email:', result);
-      })
-      .catch(err => {
-        console.error('Erro ao chamar Function Send-email:', err);
-      });
-      
+    const result = await invokeFunction('Send-email', finalPayload);
+    console.log('Resposta da Function Send-email:', result);
     return true;
   } catch (error) {
-    console.error('Erro ao preparar envio de e-mail:', error);
+    console.error('Erro ao preparar ou enviar e-mail:', error);
     return false;
   }
 };
