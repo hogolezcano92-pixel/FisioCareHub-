@@ -45,6 +45,7 @@ import { useTranslation } from 'react-i18next';
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import SplashScreen from './components/SplashScreen';
+import Footer from './components/Footer';
 
 // Lazy Components
 const KineAI = lazy(() => import('./components/KineAI'));
@@ -690,93 +691,11 @@ function AppContent() {
               </Suspense>
             </div>
 
-            {/* Novo Rodapé (Footer) solicitado - Only show in areas where it makes sense */}
-            {(showSidebar || isAdminPage || isWaitingPage) && (
-              <footer className={cn(
-                "mt-auto border-t transition-all duration-300",
-                isAdminPage || showSidebar
-                  ? "bg-white border-slate-100 py-6" 
-                  : "bg-transparent border-white/5 py-10 text-slate-500"
-              )}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  {isAdminPage || showSidebar ? (
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-bold tracking-widest uppercase">
-                      <div className="text-slate-900">
-                        © 2026 FisioCareHub
-                      </div>
-                      
-                      <div className="flex items-center gap-3 text-slate-500">
-                        <div className="relative flex h-2 w-2">
-                          <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></div>
-                          <div className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></div>
-                        </div>
-                        <span>Sistema Online <span className="text-slate-300 font-medium ml-1">(v2.4.0)</span></span>
-                      </div>
-
-                      <div className="text-slate-400">
-                        Desenvolvido por <span className="text-primary font-black">AÍ Studio Gemini</span>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Public Footer (Simple) */
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                      <span className="font-bold text-sm">© 2026 FisioCareHub — Reabilitação & Performance</span>
-                      <div className="flex gap-8 font-bold text-sm">
-                        <a href="/termos" className="hover:text-primary transition-colors">Termos</a>
-                        <a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a>
-                        <a href="/suporte" className="hover:text-primary transition-colors">Suporte</a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </footer>
-            )}
+            {/* Footer Unificado */}
+            {!isAdminPage && location.pathname !== '/chat' && <Footer />}
           </main>
-
-          {!showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && (
-            <footer className="bg-white border-t border-border-soft py-20">
-              <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-16">
-                <div className="space-y-6">
-                  <Logo size="lg" />
-                  <p className="text-base text-text-muted leading-relaxed font-medium">
-                    Sua reabilitação no conforto de casa. Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.
-                  </p>
-                </div>
-                
-                <div className="space-y-6">
-                  <h4 className="text-xl font-black text-text-main uppercase tracking-widest">LINKS RÁPIDOS</h4>
-                  <ul className="space-y-4 text-base text-text-muted font-medium">
-                    <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre Nós</Link></li>
-                    <li><Link to="/seja-parceiro" className="hover:text-primary transition-colors">Seja um Parceiro</Link></li>
-                    <li><Link to="/triagem-ia" className="hover:text-primary transition-colors">Triagem IA</Link></li>
-                    <li><Link to="/area-paciente" className="hover:text-primary transition-colors">Área do Paciente</Link></li>
-                  </ul>
-                </div>
-
-                <div className="space-y-6">
-                  <h4 className="text-xl font-black text-text-main uppercase tracking-widest">SUPORTE TÉCNICO</h4>
-                  <p className="text-base text-text-muted font-medium leading-relaxed">
-                    Exclusivo para dúvidas sobre o aplicativo e suporte técnico. Para falar com seu fisioterapeuta, utilize a agenda no perfil dele.
-                  </p>
-                  <ul className="space-y-4 text-base text-text-muted font-medium">
-                    <li className="flex items-center gap-3"><Phone size={20} className="text-primary" /> (11) 98404-0563</li>
-                    <li className="flex items-center gap-3"><HelpCircle size={20} className="text-primary" /> suporte@fisiocarehub.com</li>
-                    <li className="flex items-center gap-3 text-emerald-600 font-black">
-                      <a href="https://wa.me/5511984040563" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:underline">
-                        <MessageCircle size={24} /> Suporte via WhatsApp
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div className="max-w-7xl mx-auto px-4 text-center text-text-muted text-sm mt-20 pt-8 border-t border-border-soft">
-                &copy; {new Date().getFullYear()} FisioCareHub. Todos os direitos reservados. <br />
-                <span className="text-xs mt-2 block">Cuidado humanizado e tecnologia para sua saúde.</span>
-              </div>
-            </footer>
-          )}
-      </div>
-    </ErrorBoundary>
+        </div>
+      </ErrorBoundary>
 
       <AnimatePresence>
         {showWhatsApp && location.pathname !== '/chat' && !isAdminPage && (
