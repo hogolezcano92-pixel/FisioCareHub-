@@ -11,9 +11,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-12-18.acacia" as any,
 });
 
+const getEnv = (key: string, fallback: string): string => {
+  const value = process.env[key];
+  if (!value || value === "undefined" || value === "null" || value === "") return fallback;
+  return value;
+};
+
+const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
+const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+
 const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  supabaseUrl,
+  supabaseServiceRoleKey
 );
 
 async function startServer() {
