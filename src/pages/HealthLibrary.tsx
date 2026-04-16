@@ -173,20 +173,23 @@ export default function HealthLibrary() {
 
   return (
     <div className="space-y-8 pb-12 relative">
-      {/* Cart Toggle Button */}
+      {/* Cart Toggle Button - Moved to Top Right to avoid overlap with Support/AI buttons */}
       <button
         onClick={() => setShowCart(true)}
-        className="fixed bottom-8 right-8 z-50 bg-sky-500 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center gap-2 group shadow-sky-900/40"
+        className="fixed top-24 right-4 md:top-28 md:right-8 z-50 bg-sky-500 text-white p-4 rounded-3xl shadow-2xl hover:scale-110 hover:bg-sky-600 transition-all flex items-center gap-3 group shadow-sky-900/40 border-2 border-white/20 backdrop-blur-md"
       >
-        <ShoppingCart size={24} />
-        {cart.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-950">
-            {cart.length}
-          </span>
-        )}
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-black text-xs uppercase tracking-widest">
-          Carrinho
-        </span>
+        <div className="relative">
+          <ShoppingCart size={24} />
+          {cart.length > 0 && (
+            <span className="absolute -top-3 -right-3 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 animate-bounce">
+              {cart.length}
+            </span>
+          )}
+        </div>
+        <div className="hidden md:flex flex-col items-start leading-none pr-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-sky-100">Meu</span>
+          <span className="text-sm font-black">Carrinho</span>
+        </div>
       </button>
 
       {/* Cart Sidebar Overlay */}
@@ -198,13 +201,13 @@ export default function HealthLibrary() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCart(false)}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[40]"
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55]"
             />
             <motion.aside
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 z-[41] shadow-2xl flex flex-col border-l border-white/10"
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 z-[60] shadow-2xl flex flex-col border-l border-white/10"
             >
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
