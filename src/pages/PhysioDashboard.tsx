@@ -14,12 +14,15 @@ import {
   ChevronRight,
   ClipboardList
 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 
 export default function PhysioDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'requests' | 'agenda'>('requests');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'requests' | 'agenda'>((searchParams.get('tab') as 'requests' | 'agenda') || 'requests');
   const [requests, setRequests] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,13 @@ export default function PhysioDashboard() {
     location: '',
     specialty: ''
   });
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as 'requests' | 'agenda';
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
 
   useEffect(() => {
     if (user) {
@@ -107,37 +117,37 @@ export default function PhysioDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[3rem] shadow-xl shadow-blue-900/5 border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl">
           <div className="space-y-1">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard do Profissional</h1>
-            <p className="text-slate-500 font-medium">Gerencie suas solicitações e agenda em um só lugar.</p>
+            <h1 className="text-3xl font-black text-white tracking-tight">Dashboard do Profissional</h1>
+            <p className="text-slate-400 font-medium">Gerencie suas solicitações e agenda em um só lugar.</p>
           </div>
           
-          <div className="flex p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex p-1.5 bg-white/5 rounded-2xl border border-white/10">
             <button 
-              onClick={() => setActiveTab('requests')}
+              onClick={() => navigate('/dashboard/fisio?tab=requests')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
-                activeTab === 'requests' ? "bg-white text-blue-600 shadow-lg shadow-blue-900/5" : "text-slate-400 hover:text-slate-600"
+                activeTab === 'requests' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-200"
               )}
             >
               <Users size={16} />
               Solicitações
               {requests.length > 0 && (
-                <span className="ml-1 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px]">
+                <span className="ml-1 w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black">
                   {requests.length}
                 </span>
               )}
             </button>
             <button 
-              onClick={() => setActiveTab('agenda')}
+              onClick={() => navigate('/dashboard/fisio?tab=agenda')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
-                activeTab === 'agenda' ? "bg-white text-blue-600 shadow-lg shadow-blue-900/5" : "text-slate-400 hover:text-slate-600"
+                activeTab === 'agenda' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-200"
               )}
             >
               <Calendar size={16} />
@@ -164,7 +174,7 @@ export default function PhysioDashboard() {
                     placeholder="Filtrar por localização..."
                     value={filter.location}
                     onChange={(e) => setFilter({...filter, location: e.target.value})}
-                    className="w-full p-4 pl-12 bg-white border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 pl-12 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px] relative">
@@ -174,7 +184,7 @@ export default function PhysioDashboard() {
                     placeholder="Filtrar por especialidade..."
                     value={filter.specialty}
                     onChange={(e) => setFilter({...filter, specialty: e.target.value})}
-                    className="w-full p-4 pl-12 bg-white border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 pl-12 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                   />
                 </div>
               </div>
@@ -187,39 +197,39 @@ export default function PhysioDashboard() {
                       key={req.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg hover:shadow-xl transition-all"
+                      className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-xl hover:shadow-2xl transition-all"
                     >
                       <div className="flex flex-col md:flex-row gap-8 items-start">
                         <img 
                           src={req.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.paciente_id}`}
                           alt="Paciente"
-                          className="w-20 h-20 rounded-2xl object-cover bg-slate-50"
+                          className="w-20 h-20 rounded-2xl object-cover bg-white/5 border border-white/10"
                         />
                         
                         <div className="flex-1 space-y-4">
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                              <h3 className="text-xl font-black text-white tracking-tight">
                                 {req.paciente?.nome_completo || 'Paciente'}
                               </h3>
                               <div className="flex items-center gap-4 mt-1">
                                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                                  <MapPin size={14} className="text-blue-600" />
+                                  <MapPin size={14} className="text-blue-400" />
                                   {req.localizacao}
                                 </span>
                                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                                  <Clock size={14} className="text-blue-600" />
+                                  <Clock size={14} className="text-blue-400" />
                                   {new Date(req.created_at).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
-                            <div className="px-4 py-2 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100">
+                            <div className="px-4 py-2 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
                               {req.especialidade || 'Geral'}
                             </div>
                           </div>
 
-                          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                            <p className="text-slate-600 font-medium leading-relaxed italic">
+                          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+                            <p className="text-slate-300 font-medium leading-relaxed italic">
                               "{req.descricao}"
                             </p>
                           </div>
@@ -234,12 +244,12 @@ export default function PhysioDashboard() {
                             </button>
                             <button 
                               onClick={() => handleRejectRequest(req.id)}
-                              className="flex-1 min-w-[140px] py-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100 flex items-center justify-center gap-2"
+                              className="flex-1 min-w-[140px] py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 flex items-center justify-center gap-2"
                             >
                               <XCircle size={18} />
                               Recusar
                             </button>
-                            <button className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all border border-slate-100">
+                            <button className="p-4 bg-white/5 text-slate-400 rounded-2xl hover:bg-white/10 transition-all border border-white/10">
                               <MessageSquare size={18} />
                             </button>
                           </div>
@@ -248,13 +258,13 @@ export default function PhysioDashboard() {
                     </motion.div>
                   ))
                 ) : (
-                  <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200 space-y-4">
-                    <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-300">
+                  <div className="text-center py-20 bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-dashed border-white/10 space-y-4">
+                    <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-500">
                       <Users size={32} />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-xl font-black text-slate-900">Nenhuma solicitação pendente</h3>
-                      <p className="text-slate-500 font-medium">Novas solicitações de pacientes aparecerão aqui.</p>
+                      <h3 className="text-xl font-black text-white">Nenhuma solicitação pendente</h3>
+                      <p className="text-slate-400 font-medium">Novas solicitações de pacientes aparecerão aqui.</p>
                     </div>
                   </div>
                 )}
@@ -266,25 +276,25 @@ export default function PhysioDashboard() {
                 appointments.map((app) => (
                   <div 
                     key={app.id}
-                    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6"
+                    className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6"
                   >
                     <div className="flex items-center gap-6">
                       <img 
                         src={app.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${app.paciente_id}`}
                         alt="Paciente"
-                        className="w-16 h-16 rounded-2xl object-cover bg-slate-50"
+                        className="w-16 h-16 rounded-2xl object-cover bg-white/5 border border-white/10"
                       />
                       <div>
-                        <h4 className="text-lg font-black text-slate-900 tracking-tight">
+                        <h4 className="text-lg font-black text-white tracking-tight">
                           {app.paciente?.nome_completo || 'Paciente'}
                         </h4>
                         <div className="flex items-center gap-4 mt-1">
                           <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Calendar size={14} className="text-blue-600" />
+                            <Calendar size={14} className="text-blue-400" />
                             {new Date(app.data).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Clock size={14} className="text-blue-600" />
+                            <Clock size={14} className="text-blue-400" />
                             {app.hora}
                           </span>
                         </div>
@@ -294,24 +304,24 @@ export default function PhysioDashboard() {
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                        app.status === 'confirmado' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                        app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                       )}>
                         {app.status}
                       </div>
-                      <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 transition-all border border-slate-100">
+                      <button className="p-3 bg-white/5 text-slate-400 rounded-xl hover:bg-white/10 transition-all border border-white/10">
                         <ChevronRight size={20} />
                       </button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200 space-y-4">
-                  <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-300">
+                <div className="text-center py-20 bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-dashed border-white/10 space-y-4">
+                  <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-500">
                     <Calendar size={32} />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-slate-900">Agenda vazia</h3>
-                    <p className="text-slate-500 font-medium">Você ainda não tem consultas agendadas.</p>
+                    <h3 className="text-xl font-black text-white">Agenda vazia</h3>
+                    <p className="text-slate-400 font-medium">Você ainda não tem consultas agendadas.</p>
                   </div>
                 </div>
               )}

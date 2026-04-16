@@ -28,7 +28,7 @@ import {
   Crown,
   Download,
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl } from '../lib/utils';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
@@ -45,7 +45,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const [activeTab, setActiveTab] = useState<Tab>(isPhysio ? 'profile_prof' : 'profile');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || (isPhysio ? 'profile_prof' : 'profile'));
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
@@ -89,6 +90,13 @@ export default function Profile() {
   };
 
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as Tab;
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -379,7 +387,7 @@ export default function Profile() {
             {currentTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
+                onClick={() => navigate(`/profile?tab=${tab.id}`)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
                   activeTab === tab.id 
