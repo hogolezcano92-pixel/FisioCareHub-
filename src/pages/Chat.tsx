@@ -379,7 +379,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative">
+    <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-16 lg:pt-0">
       {/* Background Decoration */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
         <img 
