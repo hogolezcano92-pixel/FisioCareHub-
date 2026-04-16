@@ -1,6 +1,7 @@
 {
   "short_name": "FisioCareHub",
   "name": "FisioCareHub - Reabilitação Domiciliar",
+  "description": "Plataforma para fisioterapeutas gerenciarem pacientes, avaliações e atendimentos de reabilitação domiciliar.",
   "icons": [
     {
       "src": "favicon.ico",
