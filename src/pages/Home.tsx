@@ -375,40 +375,6 @@ export default function Home() {
                 </Link>
               </motion.div>
             </div>
-              
-              <div className="flex items-center gap-4 px-6 py-4 bg-white/5 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl">
-                <div className="flex -space-x-3">
-                  {[1, 2, 3].map((i) => (
-                    <img 
-                      key={i}
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`}
-                      className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800"
-                      alt="User"
-                    />
-                  ))}
-                </div>
-                <div>
-                  <p className="text-xs font-black text-white">+2k Pacientes Felizes</p>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={10} fill="currentColor" />)}
-                  </div>
-                </div>
-              </div>
-            
-            <div className="pt-12 grid grid-cols-2 sm:grid-cols-4 gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
-                <ShieldCheck className="text-blue-500" /> CREFITO OK
-              </div>
-              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
-                <Activity className="text-blue-500" /> MONITORAMENTO
-              </div>
-              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
-                <Users className="text-blue-500" /> +500 FISIOS
-              </div>
-              <div className="flex items-center gap-2 font-black text-white text-sm tracking-tighter">
-                <Heart className="text-blue-500" /> HUMANIZADO
-              </div>
-            </div>
           </motion.div>
         </div>
 
