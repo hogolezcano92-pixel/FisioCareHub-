@@ -643,7 +643,7 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[120] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
+            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
               <Logo variant="light" size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
@@ -664,7 +664,7 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-8 md:py-12",
-              showSidebar && location.pathname !== '/chat' && "p-4 pt-20 md:p-6 lg:p-10 lg:pt-10"
+              showSidebar && location.pathname !== '/chat' && "p-4 pt-24 md:p-6 lg:p-10 lg:pt-10"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
