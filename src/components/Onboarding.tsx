@@ -12,21 +12,24 @@ const slides = [
     description: "O melhor atendimento profissional no conforto do seu lar.",
     icon: Home,
     color: "from-blue-600 to-indigo-700",
-    image: "https://images.pexels.com/photos/7176319/pexels-photo-7176319.jpeg"
+    // Imagem: Fisioterapeuta auxiliando idosa a caminhar em casa
+    image: "https://images.pexels.com/photos/6129437/pexels-photo-6129437.jpeg"
   },
   {
     title: "Profissionais Verificados",
     description: "Especialistas qualificados para garantir sua segurança e performance.",
     icon: ShieldCheck,
     color: "from-emerald-600 to-teal-700",
-    image: "https://images.pexels.com/photos/7551645/pexels-photo-7551645.jpeg"
+    // Imagem: Close profissional de atendimento/exercício de fisioterapia
+    image: "https://images.pexels.com/photos/6129207/pexels-photo-6129207.jpeg"
   },
   {
     title: "Gestão Completa",
     description: "Agende sessões, acesse materiais e acompanhe sua evolução.",
     icon: BarChart3,
     color: "from-sky-600 to-blue-700",
-    image: "https://images.pexels.com/photos/3846022/pexels-photo-3846022.jpeg"
+    // Imagem: Fisioterapeuta conversando e anotando progresso com paciente
+    image: "https://images.pexels.com/photos/6129500/pexels-photo-6129500.jpeg"
   }
 ];
 
