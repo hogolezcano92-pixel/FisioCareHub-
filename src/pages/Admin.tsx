@@ -15,7 +15,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { 
@@ -71,8 +71,9 @@ export default function Admin() {
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
@@ -117,6 +118,13 @@ export default function Admin() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
 
   // Strict Role Check to prevent "flash"
   useEffect(() => {
@@ -851,7 +859,7 @@ export default function Admin() {
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1008,7 +1016,7 @@ export default function Admin() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[40] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -1016,7 +1024,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[70] w-64 bg-[#0B1120] border-r border-white/5 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[45] w-64 bg-[#0B1120] border-r border-white/5 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
@@ -1050,7 +1058,7 @@ export default function Admin() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id);
+                  navigate(`/admin?tab=${item.id}`);
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
@@ -1357,7 +1365,7 @@ export default function Admin() {
               {/* Modal Novo Material */}
               <AnimatePresence>
                 {showMaterialModal && (
-                  <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                  <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
