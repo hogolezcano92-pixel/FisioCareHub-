@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { cn, resolveStorageUrl } from '../lib/utils';
 
 export default function FindPhysio() {
   const navigate = useNavigate();
@@ -65,16 +66,16 @@ export default function FindPhysio() {
   const specialties = Array.from(new Set(physios.map(p => p.especialidade).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-12">
         
         {/* Header & Search */}
         <div className="text-center space-y-8">
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">
-              Encontre o <span className="text-blue-600">Fisioterapeuta</span> ideal
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">
+              Encontre o <span className="text-blue-500">Fisioterapeuta</span> ideal
             </h1>
-            <p className="text-slate-500 font-medium max-w-2xl mx-auto">
+            <p className="text-slate-400 font-medium max-w-2xl mx-auto">
               Conectamos você aos melhores profissionais de reabilitação. 
               Busque por especialidade, localização ou modalidade de atendimento.
             </p>
@@ -82,7 +83,7 @@ export default function FindPhysio() {
 
           <div className="max-w-3xl mx-auto relative group">
             <div className="absolute inset-0 bg-blue-600/20 blur-3xl group-hover:bg-blue-600/30 transition-all rounded-full" />
-            <div className="relative flex flex-col md:flex-row gap-4 p-2 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100">
+            <div className="relative flex flex-col md:flex-row gap-4 p-2 bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/10">
               <div className="flex-1 flex items-center px-6 gap-3">
                 <Search className="text-slate-400" size={20} />
                 <input 
@@ -90,14 +91,14 @@ export default function FindPhysio() {
                   placeholder="Buscar por nome ou especialidade..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full py-4 bg-transparent outline-none font-bold text-slate-900 placeholder:text-slate-400"
+                  className="w-full py-4 bg-transparent outline-none font-bold text-white placeholder:text-slate-400"
                 />
               </div>
               <button 
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
                   "flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all",
-                  showFilters ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  showFilters ? "bg-blue-600 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"
                 )}
               >
                 <Filter size={18} />
@@ -114,45 +115,45 @@ export default function FindPhysio() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl"
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-xl"
             >
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Especialidade</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Especialidade</label>
                 <select 
                   value={filters.specialty}
                   onChange={(e) => setFilters({...filters, specialty: e.target.value})}
-                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="">Todas as especialidades</option>
-                  {specialties.map(s => <option key={s} value={s}>{s}</option>)}
+                  <option value="" className="bg-slate-900">Todas as especialidades</option>
+                  {specialties.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Localização</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Localização</label>
                 <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                   <input 
                     type="text" 
                     placeholder="Cidade ou bairro..."
                     value={filters.location}
                     onChange={(e) => setFilters({...filters, location: e.target.value})}
-                    className="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 !pl-10 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modalidade</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Modalidade</label>
                 <select 
                   value={filters.modality}
                   onChange={(e) => setFilters({...filters, modality: e.target.value})}
-                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="">Todas as modalidades</option>
-                  <option value="presencial">Presencial (Domicílio)</option>
-                  <option value="online">Online (Teleconsulta)</option>
-                  <option value="clinica">Clínica</option>
+                  <option value="" className="bg-slate-900">Todas as modalidades</option>
+                  <option value="presencial" className="bg-slate-900">Presencial (Domicílio)</option>
+                  <option value="online" className="bg-slate-900">Online (Teleconsulta)</option>
+                  <option value="clinica" className="bg-slate-900">Clínica</option>
                 </select>
               </div>
             </motion.div>
@@ -172,55 +173,55 @@ export default function FindPhysio() {
                 key={physio.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="group bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-lg hover:shadow-2xl hover:shadow-blue-900/10 transition-all cursor-pointer"
+                className="group bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-lg hover:shadow-2xl hover:shadow-blue-900/20 transition-all cursor-pointer"
                 onClick={() => navigate(`/physio/${physio.id}`)}
               >
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative">
                     <img 
-                      src={physio.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${physio.id}`}
+                      src={resolveStorageUrl(physio.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${physio.id}`}
                       alt={physio.nome_completo}
-                      className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-50 group-hover:border-blue-600 transition-colors"
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-white/5 group-hover:border-blue-600 transition-colors"
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white">
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-slate-900">
                       <Star size={10} fill="currentColor" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-lg font-black text-white tracking-tight group-hover:text-blue-400 transition-colors">
                       Dr. {physio.nome_completo}
                     </h3>
-                    <p className="text-blue-600 font-black text-[10px] uppercase tracking-widest">{physio.especialidade || 'Fisioterapeuta'}</p>
+                    <p className="text-blue-400 font-black text-[10px] uppercase tracking-widest">{physio.especialidade || 'Fisioterapeuta'}</p>
                     <div className="flex items-center gap-1 mt-1 text-amber-400">
                       <Star size={14} fill="currentColor" />
-                      <span className="text-xs font-black text-slate-900">4.9</span>
+                      <span className="text-xs font-black text-white">4.9</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <MapPin size={16} className="text-blue-600" />
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <MapPin size={16} className="text-blue-400" />
                     <span className="text-xs font-bold">{physio.localizacao || 'São Paulo, SP'}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500">
+                  <div className="flex items-center gap-2 text-slate-400">
                     {physio.tipo_servico === 'online' ? (
-                      <Globe size={16} className="text-blue-600" />
+                      <Globe size={16} className="text-blue-400" />
                     ) : physio.tipo_servico === 'clinica' ? (
-                      <Building2 size={16} className="text-blue-600" />
+                      <Building2 size={16} className="text-blue-400" />
                     ) : (
-                      <Home size={16} className="text-blue-600" />
+                      <Home size={16} className="text-blue-400" />
                     )}
                     <span className="text-xs font-bold capitalize">{physio.tipo_servico || 'Domiciliar'}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">A partir de</span>
-                    <span className="text-lg font-black text-slate-900">R$ {physio.preco_sessao || '---'}</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A partir de</span>
+                    <span className="text-lg font-black text-white">R$ {physio.preco_sessao || '---'}</span>
                   </div>
-                  <button className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <button className="p-3 bg-white/5 text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
                     <ChevronRight size={20} />
                   </button>
                 </div>
@@ -229,12 +230,12 @@ export default function FindPhysio() {
           </div>
         ) : (
           <div className="text-center py-20 space-y-4">
-            <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center mx-auto text-slate-400">
+            <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-500">
               <Search size={32} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-black text-slate-900">Nenhum fisioterapeuta encontrado</h3>
-              <p className="text-slate-500 font-medium">Tente ajustar seus filtros ou buscar por outro termo.</p>
+              <h3 className="text-xl font-black text-white">Nenhum fisioterapeuta encontrado</h3>
+              <p className="text-slate-400 font-medium">Tente ajustar seus filtros ou buscar por outro termo.</p>
             </div>
             <button 
               onClick={() => {
@@ -269,8 +270,4 @@ export default function FindPhysio() {
       </div>
     </div>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

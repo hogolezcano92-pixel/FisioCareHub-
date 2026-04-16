@@ -71,18 +71,18 @@ export default function ResetPassword() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 text-center"
+          className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border border-white/10 text-center"
         >
-          <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
             <CheckCircle2 size={40} />
           </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Senha Redefinida!</h2>
-          <p className="text-slate-500 mb-8">
+          <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Senha Redefinida!</h2>
+          <p className="text-slate-400 mb-8 font-medium">
             Sua senha foi atualizada com sucesso. Você será redirecionado para a tela de login em instantes.
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
           >
             Ir para Login
           </button>
@@ -96,33 +96,33 @@ export default function ResetPassword() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100"
+        className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border border-white/10"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
             <Lock size={32} />
           </div>
-          <h2 className="text-3xl font-bold text-slate-900">Nova Senha</h2>
-          <p className="text-base text-slate-500 mt-2">Digite sua nova senha de acesso.</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">Nova Senha</h2>
+          <p className="text-base text-slate-400 mt-2 font-medium">Digite sua nova senha de acesso.</p>
         </div>
 
         <form onSubmit={handleReset} className="space-y-6">
           <div>
-            <label className="block text-base font-semibold text-slate-700 mb-2">Nova Senha</label>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2">Nova Senha</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={20} />
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-base"
+                className="w-full !pl-10 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                 placeholder="Mínimo 6 caracteres"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -130,21 +130,21 @@ export default function ResetPassword() {
           </div>
 
           <div>
-            <label className="block text-base font-semibold text-slate-700 mb-2">Confirmar Nova Senha</label>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2">Confirmar Nova Senha</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={20} />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-base"
+                className="w-full !pl-10 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                 placeholder="Repita a nova senha"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -152,16 +152,16 @@ export default function ResetPassword() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-4 rounded-2xl">
+            <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 p-4 rounded-2xl border border-rose-500/20">
               <AlertCircle size={18} className="shrink-0" />
-              <p>{error}</p>
+              <p className="font-bold">{error}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" /> : 'Redefinir Senha'}
           </button>

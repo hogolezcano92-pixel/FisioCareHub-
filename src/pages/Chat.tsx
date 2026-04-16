@@ -379,7 +379,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex bg-white rounded-none border-none shadow-none overflow-hidden relative">
+    <div className="h-[calc(100vh-4rem)] flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative">
       {/* Background Decoration */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
         <img 
@@ -395,13 +395,13 @@ export default function Chat() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "w-full md:w-80 lg:w-96 border-r border-slate-100 flex flex-col bg-slate-50/50 backdrop-blur-sm z-10 transition-all",
+        "w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col bg-slate-900/50 backdrop-blur-xl z-10 transition-all",
         targetUser && "hidden md:flex"
       )}>
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-              <MessageSquare className="text-blue-600" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <MessageSquare className="text-blue-400" />
               Chats
             </h2>
             <button 
@@ -436,7 +436,7 @@ export default function Chat() {
                   toast.error("Suporte indisponível no momento.");
                 }
               }}
-              className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2 border border-blue-500/20"
             >
               <ShieldCheck size={14} />
               Suporte
@@ -444,15 +444,15 @@ export default function Chat() {
           </div>
 
           <form onSubmit={handleSearch} className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors pointer-events-none" size={18} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nome ou e-mail..."
-              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all shadow-sm"
+              className="w-full !pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all shadow-sm text-white font-bold"
             />
-            {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-blue-600" size={18} />}
+            {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-blue-400" size={18} />}
           </form>
         </div>
 
@@ -528,72 +528,72 @@ export default function Chat() {
 
       {/* Chat Area */}
       <main className={cn(
-        "flex-1 flex flex-col bg-white z-10",
-        !targetUser && "hidden md:flex items-center justify-center bg-slate-50/30"
+        "flex-1 flex flex-col bg-slate-950 z-10",
+        !targetUser && "hidden md:flex items-center justify-center bg-slate-900/20"
       )}>
         {!targetUser ? (
           <div className="text-center space-y-6 max-w-sm p-8">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl shadow-blue-200 animate-bounce">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl shadow-blue-900/40 animate-bounce">
               <MessageSquare size={48} />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-slate-900 mb-3">Sua Central de Mensagens</h2>
-              <p className="text-slate-500 font-medium leading-relaxed">
+              <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Sua Central de Mensagens</h2>
+              <p className="text-slate-400 font-medium leading-relaxed">
                 Conecte-se instantaneamente com seu {((userData?.plano === 'free' || userData?.tipo === 'paciente' || userData?.tipo_usuario === 'paciente') || (userData?.tipo === 'patient' || userData?.tipo_usuario === 'patient')) ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <Video className="text-blue-600 mb-2 mx-auto" size={20} />
-                <p className="text-[10px] font-black uppercase text-slate-400">Vídeo Chamadas</p>
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shadow-sm">
+                <Video className="text-blue-400 mb-2 mx-auto" size={20} />
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Vídeo Chamadas</p>
               </div>
-              <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <Share className="text-emerald-600 mb-2 mx-auto" size={20} />
-                <p className="text-[10px] font-black uppercase text-slate-400">Compartilhamento</p>
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shadow-sm">
+                <Share className="text-emerald-400 mb-2 mx-auto" size={20} />
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Compartilhamento</p>
               </div>
             </div>
           </div>
         ) : (
           <>
             {/* Header */}
-            <header className="px-3 py-2 md:p-6 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20 h-[60px] md:h-auto">
+            <header className="px-3 py-2 md:p-6 border-b border-white/5 flex items-center justify-between bg-slate-900/80 backdrop-blur-xl sticky top-0 z-20 h-[60px] md:h-auto">
               <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
-                <button onClick={() => setTargetUser(null)} className="md:hidden p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+                <button onClick={() => setTargetUser(null)} className="md:hidden p-1.5 text-slate-400 hover:text-blue-400 transition-colors">
                   <ArrowLeft size={20} />
                 </button>
                 <div className="relative flex-shrink-0">
                   <img 
                     src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
-                    className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-blue-50 shadow-md" 
+                    className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-white/10 shadow-md" 
                     alt={targetUser.nome_completo} 
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-5 md:h-5 bg-emerald-500 border-2 md:border-4 border-white rounded-full"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-5 md:h-5 bg-emerald-500 border-2 md:border-4 border-slate-900 rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-xs md:text-lg font-black text-slate-900 truncate pr-2 leading-tight">{targetUser.nome_completo}</h3>
+                  <h3 className="text-xs md:text-lg font-black text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[7px] md:text-[10px] text-emerald-500 font-black uppercase tracking-widest truncate">Online</span>
+                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em] truncate">Online</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-0.5 md:gap-2 flex-shrink-0">
-                <button className="p-1.5 md:p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl md:rounded-2xl transition-all">
+                <button className="p-1.5 md:p-3 text-slate-400 hover:text-blue-400 hover:bg-white/5 rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-white/5">
                   <Phone size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={() => navigate(`/telehealth?room=FisioCareHub-${[user?.id, targetUser.id].sort().join('-')}`)}
-                  className="p-1.5 md:p-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl md:rounded-2xl transition-all shadow-sm"
+                  className="p-1.5 md:p-3 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl md:rounded-2xl transition-all shadow-sm border border-blue-500/20"
                 >
                   <Video size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
-                <div className="hidden md:block w-px h-8 bg-slate-100 mx-2"></div>
+                <div className="hidden md:block w-px h-8 bg-white/10 mx-2"></div>
                 <button 
                   onClick={() => setShowUserInfo(!showUserInfo)}
                   className={cn(
-                    "p-1.5 md:p-3 rounded-xl md:rounded-2xl transition-all",
-                    showUserInfo ? "text-blue-600 bg-blue-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                    "p-1.5 md:p-3 rounded-xl md:rounded-2xl transition-all border",
+                    showUserInfo ? "text-blue-400 bg-blue-500/10 border-blue-500/20" : "text-slate-400 hover:text-white hover:bg-white/5 border-transparent hover:border-white/5"
                   )}
                 >
                   <Info size={16} className="md:w-[18px] md:h-[18px]" />
@@ -603,24 +603,24 @@ export default function Chat() {
 
             <div className="flex-1 flex overflow-hidden">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed scroll-smooth">
-                <div className="flex justify-center mb-8">
-                  <div className="px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm">
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed scroll-smooth invert opacity-50">
+                <div className="flex justify-center mb-8 invert">
+                  <div className="px-4 py-1.5 bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-sm">
                     Início da Conversa Segura
                   </div>
                 </div>
 
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <Loader2 className="animate-spin text-blue-600" size={32} />
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Carregando mensagens...</p>
+                  <div className="flex flex-col items-center justify-center py-20 space-y-4 invert">
+                    <Loader2 className="animate-spin text-blue-400" size={32} />
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Carregando mensagens...</p>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-20 space-y-4">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto">
+                  <div className="text-center py-20 space-y-4 invert">
+                    <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/20">
                       <Sparkles size={32} />
                     </div>
-                    <p className="text-sm font-bold text-slate-400">Diga um "Olá" para começar!</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Diga um "Olá" para começar!</p>
                   </div>
                 ) : (
                   messages.map((msg, idx) => {
@@ -633,10 +633,10 @@ export default function Chat() {
                       msgDate.toDateString() !== prevMsgDate.toDateString();
 
                     return (
-                      <div key={msg.id} className="space-y-6">
+                      <div key={msg.id} className="space-y-6 invert">
                         {showDateSeparator && (
                           <div className="flex justify-center my-8">
-                            <div className="px-4 py-1 bg-slate-100/50 backdrop-blur-sm border border-slate-200/50 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <div className="px-4 py-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
                               {msgDate.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}
                             </div>
                           </div>
@@ -647,15 +647,15 @@ export default function Chat() {
                           className={cn("flex flex-col group", isMe ? "items-end" : "items-start")}
                         >
                           <div className={cn(
-                            "max-w-[85%] md:max-w-[70%] px-4 py-2.5 md:px-6 md:py-4 rounded-[1.5rem] md:rounded-[2rem] text-sm shadow-sm relative transition-all min-w-[80px]",
+                            "max-w-[85%] md:max-w-[70%] px-4 py-2.5 md:px-6 md:py-4 rounded-[1.5rem] md:rounded-[2rem] text-sm shadow-xl relative transition-all min-w-[80px]",
                             isMe 
-                              ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-100" 
-                              : "bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200"
+                              ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-900/20" 
+                              : "bg-white/5 text-white rounded-tl-none border border-white/10"
                           )}>
-                            <p className="leading-relaxed font-medium mb-1 break-words">{msg.conteudo}</p>
+                            <p className="leading-relaxed font-bold mb-1 break-words">{msg.conteudo}</p>
                             
                             <div className={cn(
-                              "text-[9px] font-medium opacity-60 text-right",
+                              "text-[9px] font-black uppercase tracking-widest opacity-60 text-right",
                               isMe ? "text-blue-100" : "text-slate-500"
                             )}>
                               {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -676,11 +676,11 @@ export default function Chat() {
                     initial={{ x: '100%', opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: '100%', opacity: 0 }}
-                    className="fixed inset-y-0 right-0 w-full sm:w-80 lg:relative lg:inset-auto lg:w-96 border-l border-slate-100 bg-white p-6 overflow-y-auto z-[60] lg:z-10 shadow-2xl lg:shadow-none"
+                    className="fixed inset-y-0 right-0 w-full sm:w-80 lg:relative lg:inset-auto lg:w-96 border-l border-white/5 bg-slate-900 p-6 overflow-y-auto z-[40] lg:z-10 shadow-2xl lg:shadow-none"
                   >
                     <div className="flex justify-between items-center mb-6 lg:hidden">
-                      <h3 className="text-lg font-black text-slate-900">Detalhes do Usuário</h3>
-                      <button onClick={() => setShowUserInfo(false)} className="p-2 text-slate-400 hover:text-slate-600">
+                      <h3 className="text-lg font-black text-white tracking-tight">Detalhes do Usuário</h3>
+                      <button onClick={() => setShowUserInfo(false)} className="p-2 text-slate-500 hover:text-white">
                         <ArrowLeft size={24} />
                       </button>
                     </div>
@@ -690,83 +690,81 @@ export default function Chat() {
                         <div className="relative inline-block">
                           <img 
                             src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
-                            className="w-32 h-32 rounded-[2.5rem] object-cover mx-auto border-4 border-blue-50 shadow-2xl mb-4"
+                            className="w-32 h-32 rounded-[2.5rem] object-cover mx-auto border-4 border-white/10 shadow-2xl mb-4"
                             alt={targetUser.nome_completo}
                             referrerPolicy="no-referrer"
                           />
-                          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-white rounded-2xl flex items-center justify-center text-white">
+                          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-slate-900 rounded-2xl flex items-center justify-center text-white">
                             <CheckCheck size={16} />
                           </div>
                         </div>
-                        <h4 className="text-2xl font-black text-slate-900 leading-tight">{targetUser.nome_completo}</h4>
-                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">{targetUser.plano || targetUser.tipo || targetUser.tipo_usuario}</p>
+                        <h4 className="text-2xl font-black text-white leading-tight tracking-tight">{targetUser.nome_completo}</h4>
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mt-2">{targetUser.plano || targetUser.tipo || targetUser.tipo_usuario}</p>
                       </div>
 
                       <div className="space-y-4">
-                        <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                          <p className="text-sm font-bold text-slate-700 truncate">{targetUser.email}</p>
+                        <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">E-mail</p>
+                          <p className="text-sm font-bold text-slate-300 truncate">{targetUser.email}</p>
                         </div>
                         
                         {targetUser.telefone && (
-                          <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Telefone</p>
-                            <p className="text-sm font-bold text-slate-700">{targetUser.telefone}</p>
+                          <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Telefone</p>
+                            <p className="text-sm font-bold text-slate-300">{targetUser.telefone}</p>
                           </div>
                         )}
 
                         {((userData?.plano === 'admin' || userData?.tipo === 'admin' || userData?.tipo_usuario === 'admin')) && (
                           <>
-                            <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ID do Usuário</p>
+                            <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Usuário</p>
                               <p className="text-[10px] font-mono text-slate-500 break-all">{targetUser.id}</p>
                             </div>
                             
                             {targetUser.localizacao && (
-                              <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Localização</p>
-                                <p className="text-sm font-bold text-slate-700">
+                              <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Localização</p>
+                                <p className="text-sm font-bold text-slate-300">
                                   {targetUser.localizacao}
                                 </p>
                               </div>
                             )}
 
                             {targetUser.especialidade && (
-                              <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialidade</p>
-                                <p className="text-sm font-bold text-slate-700">{targetUser.especialidade}</p>
+                              <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Especialidade</p>
+                                <p className="text-sm font-bold text-slate-300">{targetUser.especialidade}</p>
                               </div>
                             )}
                             
                             {targetUser.crefito && (
-                              <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CREFITO</p>
-                                <p className="text-sm font-bold text-slate-700">{targetUser.crefito}</p>
+                              <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CREFITO</p>
+                                <p className="text-sm font-bold text-slate-300">{targetUser.crefito}</p>
                               </div>
                             )}
 
                             {targetUser.data_nascimento && (
-                              <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data de Nascimento</p>
-                                <p className="text-sm font-bold text-slate-700">{targetUser.data_nascimento}</p>
+                              <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data de Nascimento</p>
+                                <p className="text-sm font-bold text-slate-300">{targetUser.data_nascimento}</p>
                               </div>
                             )}
 
                             {targetUser.genero && (
-                              <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gênero</p>
-                                <p className="text-sm font-bold text-slate-700 capitalize">{targetUser.genero}</p>
+                              <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gênero</p>
+                                <p className="text-sm font-bold text-slate-300 capitalize">{targetUser.genero}</p>
                               </div>
                             )}
-
-                            {/* Subscription plan display removed */}
                           </>
                         )}
                       </div>
 
                       <button 
                         onClick={() => navigate(`/profile/${targetUser.id}`)}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100"
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
                       >
                         <User size={18} />
                         Ver Perfil Completo
@@ -778,15 +776,15 @@ export default function Chat() {
             </div>
 
             {/* Footer / Input */}
-            <footer className="p-2 md:p-6 bg-white border-t border-slate-50 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <footer className="p-2 md:p-6 bg-slate-950 border-t border-white/5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
               {(targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin') && !firebaseUser ? (
-                <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-50 rounded-3xl border border-blue-100 mx-2 md:mx-0">
-                  <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-500/5 rounded-3xl border border-blue-500/20 mx-2 md:mx-0">
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
                     <Lock className="w-4 h-4 md:w-6 md:h-6" />
                   </div>
                   <div className="text-center">
-                    <h4 className="font-bold text-slate-900 text-xs md:text-base">Conectar ao Suporte</h4>
-                    <p className="text-[10px] md:text-sm text-slate-600 mt-0.5">Para sua segurança, autentique-se para falar com a administração.</p>
+                    <h4 className="font-black text-white text-xs md:text-base tracking-tight">Conectar ao Suporte</h4>
+                    <p className="text-[10px] md:text-sm text-slate-500 mt-0.5 font-bold uppercase tracking-widest">Para sua segurança, autentique-se para falar com a administração.</p>
                   </div>
                   <button
                     onClick={async () => {
@@ -799,10 +797,10 @@ export default function Chat() {
                         toast.error("Erro ao conectar ao suporte.");
                       }
                     }}
-                    className="px-5 md:px-8 py-2 md:py-3 bg-blue-600 text-white rounded-xl md:rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2 text-sm md:text-base"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center gap-2"
                   >
-                    <LogIn className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                    Autenticar com Google
+                    <LogIn size={16} />
+                    Entrar com Google
                   </button>
                 </div>
               ) : (
@@ -820,10 +818,10 @@ export default function Chat() {
                         }
                       }}
                       placeholder="Mensagem..."
-                      className="w-full pl-5 pr-12 py-3 md:py-4 bg-slate-50 border border-slate-200 rounded-full outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 focus:bg-white transition-all font-medium text-sm md:text-base shadow-inner"
+                      className="w-full pl-5 pr-12 py-3 md:py-4 bg-white/5 border border-white/10 rounded-full outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all font-bold text-sm md:text-base shadow-inner text-white"
                     />
                     <div className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 md:gap-2">
-                      <button type="button" className="p-1 md:p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                      <button type="button" className="p-1 md:p-2 text-slate-500 hover:text-blue-400 transition-colors">
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                     </div>
@@ -831,7 +829,7 @@ export default function Chat() {
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0"
+                    className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0"
                   >
                     <Send className="w-5 h-5 md:w-7 md:h-7 translate-x-0.5 -translate-y-0.5" />
                   </button>

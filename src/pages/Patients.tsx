@@ -142,40 +142,40 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-8 w-full box-border overflow-wrap-break-word">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Meus Pacientes</h1>
-          <p className="text-slate-500 font-medium">Gerencie sua base de pacientes e prontuários.</p>
+          <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>
+          <p className="text-slate-400 font-medium text-xs">Gerencie sua base de pacientes e prontuários.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-sky-500 text-white rounded-2xl font-black hover:bg-sky-600 transition-all shadow-lg shadow-sky-100"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           Novo Paciente
         </button>
       </header>
 
       <div className="relative w-full">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
         <input
           type="text"
           placeholder="Buscar por nome ou e-mail..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all shadow-sm"
+          className="input-compact !pl-10"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
         {filteredPatients.length === 0 ? (
-          <div className="col-span-full premium-card text-center w-full py-20">
-            <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-              <User size={48} />
+          <div className="col-span-full bg-slate-900/50 backdrop-blur-xl !p-12 rounded-[2.5rem] border border-white/10 text-center w-full shadow-2xl">
+            <div className="w-16 h-16 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+              <User size={32} />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Nenhum paciente encontrado</h3>
-            <p className="text-slate-500 mt-2 font-medium">Comece cadastrando seu primeiro paciente.</p>
+            <h3 className="text-lg font-black text-white">Nenhum paciente encontrado</h3>
+            <p className="text-slate-400 mt-1 text-xs font-medium">Comece cadastrando seu primeiro paciente.</p>
           </div>
         ) : (
           filteredPatients.map((patient) => (
@@ -183,60 +183,61 @@ export default function Patients() {
               key={patient.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="premium-card group cursor-pointer"
+              onClick={() => navigate(`/patient/${patient.id}`)}
+              className="bg-slate-900/50 backdrop-blur-xl !p-5 rounded-[2rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-lg"
             >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-sky-50 dark:bg-sky-900/20 rounded-2xl flex items-center justify-center text-sky-500 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-sky-400 overflow-hidden border border-white/10 shadow-sm">
                     {patient.foto_url ? (
                       <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
                     ) : (
-                      <User size={32} />
+                      <User size={24} />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white leading-tight group-hover:text-sky-600 transition-colors">
+                    <h3 className="text-base font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
                       {patient.nome}
                     </h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="text-[8px] font-bold text-sky-400 uppercase tracking-widest">
                       {patient.diagnostico || 'Sem diagnóstico'}
                     </p>
                   </div>
                 </div>
-                <button className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
-                  <MoreVertical size={20} />
+                <button className="p-1.5 text-slate-600 hover:bg-white/5 rounded-lg transition-all">
+                  <MoreVertical size={16} />
                 </button>
               </div>
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-2 mb-4">
                 {patient.email && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <Mail size={16} className="text-slate-400" />
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                    <Mail size={12} className="text-slate-600" />
                     {patient.email}
                   </div>
                 )}
                 {patient.telefone && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <Phone size={16} className="text-slate-400" />
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                    <Phone size={12} className="text-slate-600" />
                     {patient.telefone}
                   </div>
                 )}
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  <Calendar size={16} className="text-slate-400" />
+                <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                  <Calendar size={12} className="text-slate-600" />
                   Nasc: {patient.data_nascimento ? new Date(patient.data_nascimento).toLocaleDateString('pt-BR') : 'Não informado'}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-slate-50 dark:border-slate-800">
-                <div className="flex -space-x-2">
+              <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <div className="flex -space-x-1.5">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                      <FileText size={12} />
+                    <div key={i} className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                      <FileText size={9} />
                     </div>
                   ))}
                 </div>
-                <button className="flex items-center gap-1 text-sm font-black text-sky-500 hover:gap-2 transition-all">
-                  Ver Ficha <ChevronRight size={16} />
+                <button className="flex items-center gap-1 text-[11px] font-black text-sky-400 hover:gap-2 transition-all">
+                  Ver Ficha <ChevronRight size={12} />
                 </button>
               </div>
             </motion.div>
@@ -247,99 +248,99 @@ export default function Patients() {
       {/* Modal de Cadastro */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 border-b border-slate-50 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Cadastrar Novo Paciente</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                  <X size={24} />
+              <div className="p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-lg font-black text-white tracking-tight">Cadastrar Novo Paciente</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
+                  <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreatePatient} className="p-8 space-y-6 overflow-y-auto">
-                <div className="flex justify-center mb-8">
+              <form onSubmit={handleCreatePatient} className="p-5 space-y-4 overflow-y-auto">
+                <div className="flex justify-center mb-4">
                   <div className="relative">
-                    <div className="w-24 h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-200">
-                      <Camera size={32} />
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-slate-600 border-2 border-dashed border-white/10">
+                      <Camera size={24} />
                     </div>
-                    <button type="button" className="absolute -bottom-2 -right-2 p-2 bg-sky-500 text-white rounded-xl shadow-lg">
-                      <Plus size={16} />
+                    <button type="button" className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-xl shadow-lg">
+                      <Plus size={12} />
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Nome Completo</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
                     <input
                       type="text"
                       required
                       value={formData.nome}
                       onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="input-compact"
                       placeholder="Ex: João Silva"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">E-mail</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">E-mail</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="input-compact"
                       placeholder="joao@email.com"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
                     <input
                       type="text"
                       value={formData.telefone}
                       onChange={(e) => setFormData({...formData, telefone: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="input-compact"
                       placeholder="(11) 99999-9999"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Data de Nascimento</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
                     <input
                       type="date"
                       value={formData.data_nascimento}
                       onChange={(e) => setFormData({...formData, data_nascimento: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="input-compact"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Diagnóstico Clínico</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Diagnóstico Clínico</label>
                   <input
                     type="text"
                     value={formData.diagnostico}
                     onChange={(e) => setFormData({...formData, diagnostico: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                    className="input-compact"
                     placeholder="Ex: Hérnia de disco L4-L5"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Observações Iniciais</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Observações Iniciais</label>
                   <textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all h-32 resize-none"
+                    className="input-compact h-20 resize-none"
                     placeholder="Alguma observação importante sobre o paciente..."
                   />
                 </div>
@@ -347,7 +348,7 @@ export default function Patients() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Paciente'}
                 </button>

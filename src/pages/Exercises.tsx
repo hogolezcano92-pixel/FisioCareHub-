@@ -171,12 +171,12 @@ export default function Exercises() {
     <div className="space-y-8 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Biblioteca de Exercícios</h1>
-          <p className="text-slate-500 font-medium">Crie e gerencie sua base de exercícios terapêuticos.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Biblioteca de Exercícios</h1>
+          <p className="text-slate-400 font-medium">Crie e gerencie sua base de exercícios terapêuticos.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-sky-500 text-white rounded-2xl font-black hover:bg-sky-600 transition-all shadow-lg shadow-sky-100"
+          className="flex items-center justify-center gap-2 px-6 py-4 bg-sky-500 text-white rounded-2xl font-black hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
         >
           <Plus size={20} />
           Novo Exercício
@@ -184,22 +184,22 @@ export default function Exercises() {
       </header>
 
       <div className="relative w-full">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
         <input
           type="text"
           placeholder="Buscar exercício por nome ou descrição..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all shadow-sm"
+          className="w-full !pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all shadow-sm text-white"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
         {filteredExercises.length === 0 ? (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-slate-100 text-center w-full">
-            <Dumbbell size={48} className="text-slate-200 mx-auto mb-4" />
-            <h3 className="text-2xl font-black text-slate-900">Nenhum exercício encontrado</h3>
-            <p className="text-slate-500 mt-2 font-medium">Sua biblioteca está vazia.</p>
+          <div className="col-span-full bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center w-full">
+            <Dumbbell size={48} className="text-slate-700 mx-auto mb-4" />
+            <h3 className="text-2xl font-black text-white">Nenhum exercício encontrado</h3>
+            <p className="text-slate-400 mt-2 font-medium">Sua biblioteca está vazia.</p>
           </div>
         ) : (
           filteredExercises.map((ex) => (
@@ -207,18 +207,18 @@ export default function Exercises() {
               key={ex.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all"
+              className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-sm overflow-hidden group hover:shadow-xl transition-all"
             >
-              <div className="aspect-video bg-slate-50 relative overflow-hidden">
+              <div className="aspect-video bg-white/5 relative overflow-hidden">
                 {ex.imagem_url ? (
                   <img src={ex.imagem_url} alt={ex.nome} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-200">
+                  <div className="w-full h-full flex items-center justify-center text-slate-700">
                     <Activity size={48} />
                   </div>
                 )}
                 {ex.video_url && (
-                  <div className="absolute inset-0 bg-slate-900/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-sky-500 shadow-lg">
                       <Play size={24} fill="currentColor" />
                     </div>
@@ -226,14 +226,14 @@ export default function Exercises() {
                 )}
               </div>
               <div className="p-6">
-                <h3 className="text-lg font-black text-slate-900 mb-2 line-clamp-1">{ex.nome}</h3>
-                <p className="text-sm text-slate-500 line-clamp-2 mb-4 font-medium">{ex.descricao}</p>
-                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                <h3 className="text-lg font-black text-white mb-2 line-clamp-1">{ex.nome}</h3>
+                <p className="text-sm text-slate-400 line-clamp-2 mb-4 font-medium">{ex.descricao}</p>
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex gap-2">
-                    <span className="text-[10px] font-black bg-sky-50 text-sky-600 px-2 py-1 rounded-md uppercase tracking-widest">
+                    <span className="text-[10px] font-black bg-sky-500/10 text-sky-400 px-2 py-1 rounded-md uppercase tracking-widest border border-sky-500/20">
                       {ex.series || '0'} Séries
                     </span>
-                    <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md uppercase tracking-widest">
+                    <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md uppercase tracking-widest border border-emerald-500/20">
                       {ex.repeticoes || '0'} Reps
                     </span>
                   </div>
@@ -243,12 +243,12 @@ export default function Exercises() {
                         setSelectedExercise(ex);
                         setShowPrescribeModal(true);
                       }}
-                      className="p-2 text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
+                      className="p-2 text-sky-400 hover:bg-sky-500/10 rounded-xl transition-all"
                       title="Prescrever para paciente"
                     >
                       <Send size={18} />
                     </button>
-                    <button className="text-slate-300 hover:text-red-500 transition-colors">
+                    <button className="text-slate-600 hover:text-red-500 transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -262,78 +262,78 @@ export default function Exercises() {
       {/* Modal de Cadastro */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh]">
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Novo Exercício</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={24} /></button>
+                <h2 className="text-2xl font-black text-white tracking-tight">Novo Exercício</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400"><X size={24} /></button>
               </div>
 
-              <form onSubmit={handleCreateExercise} className="space-y-6 overflow-y-auto">
+              <form onSubmit={handleCreateExercise} className="space-y-6 overflow-y-auto pr-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Nome do Exercício</label>
+                  <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Exercício</label>
                   <input
                     type="text"
                     required
                     value={formData.nome}
                     onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-white"
                     placeholder="Ex: Agachamento Livre"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Descrição / Instruções</label>
+                  <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Descrição / Instruções</label>
                   <textarea
                     value={formData.descricao}
                     onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all h-24 resize-none"
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all h-24 resize-none text-white"
                     placeholder="Como realizar o exercício corretamente..."
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Séries</label>
+                    <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Séries</label>
                     <input
                       type="text"
                       value={formData.series}
                       onChange={(e) => setFormData({...formData, series: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-white"
                       placeholder="Ex: 3"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Repetições</label>
+                    <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Repetições</label>
                     <input
                       type="text"
                       value={formData.repeticoes}
                       onChange={(e) => setFormData({...formData, repeticoes: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-white"
                       placeholder="Ex: 12 a 15"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">URL da Imagem (Opcional)</label>
+                  <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">URL da Imagem (Opcional)</label>
                   <input
                     type="url"
                     value={formData.imagem_url}
                     onChange={(e) => setFormData({...formData, imagem_url: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-white"
                     placeholder="https://..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">URL do Vídeo (YouTube/Vimeo)</label>
+                  <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">URL do Vídeo (YouTube/Vimeo)</label>
                   <input
                     type="url"
                     value={formData.video_url}
                     onChange={(e) => setFormData({...formData, video_url: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all text-white"
                     placeholder="https://youtube.com/..."
                   />
                 </div>
@@ -341,7 +341,7 @@ export default function Exercises() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Exercício'}
                 </button>
@@ -354,42 +354,42 @@ export default function Exercises() {
       {/* Modal de Prescrição */}
       <AnimatePresence>
         {showPrescribeModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPrescribeModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh]">
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Prescrever Exercício</h2>
-                  <p className="text-slate-500 text-sm font-medium">Atribuir "{selectedExercise?.nome}" a um paciente.</p>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Prescrever Exercício</h2>
+                  <p className="text-slate-400 text-sm font-medium">Atribuir "{selectedExercise?.nome}" a um paciente.</p>
                 </div>
-                <button onClick={() => setShowPrescribeModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={24} /></button>
+                <button onClick={() => setShowPrescribeModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400"><X size={24} /></button>
               </div>
 
               <form onSubmit={handlePrescribeExercise} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Selecionar Paciente</label>
+                  <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Selecionar Paciente</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <select
                       required
                       value={selectedPatientId}
                       onChange={(e) => setSelectedPatientId(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none"
+                      className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none text-white"
                     >
-                      <option value="">Selecione um paciente...</option>
+                      <option value="" className="bg-slate-900">Selecione um paciente...</option>
                       {patients.map(p => (
-                        <option key={p.id} value={p.id}>{p.nome}</option>
+                        <option key={p.id} value={p.id} className="bg-slate-900">{p.nome}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
+                <div className="bg-sky-500/10 p-6 rounded-2xl border border-sky-500/20">
                   <div className="flex items-center gap-3 mb-2">
-                    <Activity className="text-sky-500" size={20} />
-                    <span className="font-black text-slate-900">{selectedExercise?.nome}</span>
+                    <Activity className="text-sky-400" size={20} />
+                    <span className="font-black text-white">{selectedExercise?.nome}</span>
                   </div>
-                  <div className="flex gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <div className="flex gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     <span>{selectedExercise?.series || '0'} Séries</span>
                     <span>{selectedExercise?.repeticoes || '0'} Reps</span>
                   </div>
@@ -398,7 +398,7 @@ export default function Exercises() {
                 <button
                   type="submit"
                   disabled={submitting || !selectedPatientId}
-                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : (
                     <>
