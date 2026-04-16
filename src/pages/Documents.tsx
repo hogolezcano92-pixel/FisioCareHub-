@@ -587,13 +587,55 @@ export default function Documents() {
                       const windowUrl = 'about:blank';
                       const uniqueName = new Date();
                       const windowName = 'Print' + uniqueName.getTime();
-                      const printWindow = window.open(windowUrl, windowName, 'left=50000,top=50000,width=0,height=0');
+                      const printWindow = window.open(windowUrl, windowName, 'left=50000,top=50000,width=800,height=900');
                       if (printWindow && printContent) {
-                        printWindow.document.write(printContent.innerHTML);
+                        printWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>Imprimir Documento - FisioCareHub</title>
+                              <style>
+                                body { 
+                                  font-family: 'Inter', sans-serif; 
+                                  color: #000000 !important; 
+                                  background-color: #ffffff !important;
+                                  padding: 40px;
+                                  line-height: 1.6;
+                                }
+                                h1, h2, h3, h4, h5, h6 { color: #000000 !important; margin-top: 1.5em; margin-bottom: 0.5em; }
+                                p { color: #000000 !important; margin-bottom: 1em; }
+                                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                                th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; color: #000000 !important; }
+                                th { background-color: #f8fafc; font-weight: bold; }
+                                .text-center { text-align: center; }
+                                .mb-8 { margin-bottom: 32px; }
+                                .font-black { font-weight: 900; }
+                                .font-bold { font-weight: 700; }
+                                .mt-16 { margin-top: 64px; }
+                                .pt-8 { padding-top: 32px; }
+                                .border-t { border-top: 1px solid #e2e8f0; }
+                                .text-xs { font-size: 12px; }
+                                .text-slate-400 { color: #94a3b8 !important; }
+                                .uppercase { text-transform: uppercase; }
+                                .tracking-widest { letter-spacing: 0.1em; }
+                                @media print {
+                                  body { padding: 0; }
+                                  @page { margin: 2cm; }
+                                }
+                              </style>
+                            </head>
+                            <body>
+                              ${printContent.innerHTML}
+                            </body>
+                          </html>
+                        `);
                         printWindow.document.close();
-                        printWindow.focus();
-                        printWindow.print();
-                        printWindow.close();
+                        
+                        // Wait for content to load
+                        setTimeout(() => {
+                          printWindow.focus();
+                          printWindow.print();
+                          printWindow.close();
+                        }, 500);
                       }
                     }}
                     className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
@@ -618,11 +660,11 @@ export default function Documents() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-12">
-                <div id="view-content" className="bg-white p-12 border border-slate-100 shadow-2xl rounded-lg prose prose-slate max-w-none text-black">
-                  <h1 className="text-center mb-8 font-black">{viewingDoc.type}</h1>
-                  <p className="mb-8 font-bold">Paciente: {viewingDoc.patient_name}</p>
+                <div id="view-content" className="bg-white p-12 border border-slate-100 shadow-2xl rounded-lg prose prose-slate max-w-none !text-black [&_*]:!text-black [&_h1]:!text-black [&_h2]:!text-black [&_h3]:!text-black [&_p]:!text-black [&_li]:!text-black [&_td]:!text-black [&_th]:!text-black [&_strong]:!text-black">
+                  <h1 className="text-center mb-8 font-black !text-black">{viewingDoc.type}</h1>
+                  <p className="mb-8 font-bold !text-black">Paciente: {viewingDoc.patient_name}</p>
                   <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
-                  <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
+                  <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-bold uppercase tracking-widest !text-slate-400">
                     Documento gerado via FisioCareHub em {new Date(viewingDoc.created_at).toLocaleDateString()}
                   </div>
                 </div>
