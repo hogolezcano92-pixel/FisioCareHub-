@@ -34,9 +34,10 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, resolveStorageUrl } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import PhysioHighlight from '../components/PhysioHighlight';
 
 interface Professional {
   id: string;
@@ -197,7 +198,7 @@ export default function Home() {
           name: profile.nome_completo || 'Fisioterapeuta',
           spec: profile.especialidade || 'Geral',
           fullSpec: profile.especialidade || 'Fisioterapia Geral',
-          img: profile.avatar_url || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,
+          img: resolveStorageUrl(profile.avatar_url) || `https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300`,
           rating: 5.0,
           reviews: Math.floor(Math.random() * 50) + 10,
           bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
@@ -695,13 +696,13 @@ export default function Home() {
             {/* Search and Filter Bar - Compact SaaS Style */}
             <div className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors pointer-events-none" size={18} />
                 <input 
                   type="text" 
                   placeholder="Buscar por nome..."
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500"
+                  className="w-full !pl-10 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500"
                 />
               </div>
               <button 
@@ -772,6 +773,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* New Physio Highlight Section */}
+      <PhysioHighlight />
 
       {/* CTA Section - High Impact SaaS Style */}
       <section className="py-32 px-6">
