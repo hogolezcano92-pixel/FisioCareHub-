@@ -658,13 +658,13 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10 pt-28 md:pt-36",
+            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10",
             location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
             <div className={cn(
               "flex-1 w-full",
-              !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-8 md:py-12",
-              showSidebar && location.pathname !== '/chat' && "p-4 pt-24 md:p-6 lg:p-10 lg:pt-10"
+              !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
+              showSidebar && location.pathname !== '/chat' && "p-4 pt-16 md:p-6 lg:p-10 lg:pt-10"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
