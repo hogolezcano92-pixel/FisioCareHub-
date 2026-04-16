@@ -12,21 +12,21 @@ const slides = [
     description: "O melhor atendimento profissional no conforto do seu lar.",
     icon: Home,
     color: "from-blue-600 to-indigo-700",
-    image: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1580281657527-47f249e8f0b5?auto=format&fit=crop&q=80&w=1000"
   },
   {
     title: "Profissionais Verificados",
     description: "Especialistas qualificados para garantir sua segurança e performance.",
     icon: ShieldCheck,
     color: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1597764699513-3c3b2f3b9f4e?auto=format&fit=crop&q=80&w=1000"
   },
   {
     title: "Gestão Completa",
     description: "Agende sessões, acesse materiais e acompanhe sua evolução.",
     icon: BarChart3,
     color: "from-sky-600 to-blue-700",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1576678927484-cc907957088c?auto=format&fit=crop&q=80&w=1000"
   }
 ];
 
