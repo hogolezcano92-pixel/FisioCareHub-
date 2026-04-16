@@ -7,7 +7,7 @@
 import { Routes, Route, Link, useNavigate, useLocation, BrowserRouter, Navigate } from 'react-router-dom';
 import { supabase, initSupabase } from './lib/supabase';
 import { fetchConfig } from './config/api';
-import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, Component, ErrorInfo, ReactNode, useRef, lazy, Suspense, useMemo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { 
   Activity, 
@@ -239,7 +239,7 @@ function Navbar() {
     navigate('/');
   };
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', icon: HomeIcon },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || 
@@ -275,7 +275,7 @@ function Navbar() {
       { name: t('nav.login'), path: '/login', icon: User },
       { name: t('nav.register'), path: '/register', icon: Stethoscope },
     ])
-  ];
+  ], [user, profile, isApproved, t]);
 
   return (
     <nav className="bg-slate-950/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
@@ -781,9 +781,7 @@ export default function App() {
       if (!hasCompletedOnboarding) {
         setShowOnboarding(true);
       }
-      // Pequeno delay para garantir que o estado de configLoaded se propague
-      const timer = setTimeout(() => setShowSplash(false), 500);
-      return () => clearTimeout(timer);
+      setShowSplash(false);
     }
   }, [configLoaded]);
 
