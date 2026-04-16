@@ -12,7 +12,7 @@ const slides = [
     description: "O melhor atendimento profissional no conforto do seu lar.",
     icon: Home,
     color: "from-blue-600 to-indigo-700",
-    // As 3 fotos que você enviou para o slideshow automático
+    // Slideshow Card 1 (3 fotos)
     images: [
       "https://clinicarecovery.com/wp-content/uploads/2025/10/nurse-doctor-senior-care-exercise-physical-therapy-2025-01-31-17-41-35-utc.jpg",
       "https://somostufisio.com/wp-content/uploads/2025/11/2150321573-1024x683.jpg",
@@ -24,14 +24,18 @@ const slides = [
     description: "Especialistas qualificados para garantir sua segurança e performance.",
     icon: ShieldCheck,
     color: "from-emerald-600 to-teal-700",
-    // Foto de profissionais (Equipe masculina e feminina)
-    image: "https://images.pexels.com/photos/5910943/pexels-photo-5910943.jpeg"
+    // Slideshow Card 2 (2 fotos novas)
+    images: [
+      "https://wordpress-cms-ufbra-prod-assets.quero.space/uploads/2024/06/2149868922.jpg",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-ZKvC32-uX5IZquFoBvikcR3gruO98oToAqq-8N_5Y_MUNUa8XSDpbTg&s=10"
+    ]
   },
   {
     title: "Gestão Completa",
     description: "Agende sessões, acesse materiais e acompanhe sua evolução.",
     icon: BarChart3,
     color: "from-sky-600 to-blue-700",
+    // Card 3 intacto
     image: "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg"
   }
 ];
@@ -40,14 +44,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [internalIndex, setInternalIndex] = useState(0);
 
-  // Slideshow automático de 4 segundos apenas para o Card 1
+  // Controle dos Slideshows Automáticos (Card 1 e Card 2)
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (currentSlide === 0) {
+    
+    // Se o card atual tiver uma lista de imagens (Card 1 ou 2)
+    if (slides[currentSlide].images) {
       timer = setInterval(() => {
-        setInternalIndex((prev) => (prev + 1) % slides[0].images!.length);
-      }, 4000); 
+        setInternalIndex((prev) => (prev + 1) % slides[currentSlide].images!.length);
+      }, 4000); // 4 segundos
     }
+
     return () => clearInterval(timer);
   }, [currentSlide]);
 
@@ -56,7 +63,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       onComplete();
     } else {
       setCurrentSlide(prev => prev + 1);
-      setInternalIndex(0); 
+      setInternalIndex(0); // Reseta a animação ao trocar de card
     }
   };
 
@@ -70,13 +77,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           exit={{ opacity: 0 }}
           className="flex-1 flex flex-col"
         >
-          {/* Área da Imagem */}
+          {/* Top Image Section */}
           <div className="relative h-[55vh] w-full overflow-hidden">
             <AnimatePresence mode="wait">
-              {currentSlide === 0 ? (
+              {slides[currentSlide].images ? (
+                // Renderiza Slideshow para Card 1 e 2
                 <motion.img 
-                  key={`internal-${internalIndex}`}
-                  src={slides[0].images![internalIndex]}
+                  key={`internal-${currentSlide}-${internalIndex}`}
+                  src={slides[currentSlide].images![internalIndex]}
                   initial={{ opacity: 0, scale: 1.1 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -85,6 +93,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   referrerPolicy="no-referrer"
                 />
               ) : (
+                // Renderiza Imagem Única para Card 3
                 <motion.img 
                   key={`static-${currentSlide}`}
                   src={slides[currentSlide].image}
@@ -96,11 +105,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               )}
             </AnimatePresence>
 
-            {/* Overlays Visuais */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0B1120] via-transparent to-transparent" />
             <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color} mix-blend-overlay opacity-30`} />
             
-            {/* Ícone */}
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -110,7 +117,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </motion.div>
           </div>
 
-          {/* Área de Conteúdo */}
+          {/* Content Area */}
           <div className="flex-1 px-8 pt-10 pb-10 flex flex-col justify-between">
             <div className="space-y-8">
               <div className="flex gap-2">
@@ -125,19 +132,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="space-y-4">
-                <motion.h2 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className="text-4xl font-black leading-tight"
-                >
+                <motion.h2 className="text-4xl font-black leading-tight">
                   {slides[currentSlide].title}
                 </motion.h2>
-                <motion.p 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-lg text-slate-400 font-medium"
-                >
+                <motion.p className="text-lg text-slate-400 font-medium">
                   {slides[currentSlide].description}
                 </motion.p>
               </div>
