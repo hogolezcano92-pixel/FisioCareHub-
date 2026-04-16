@@ -150,19 +150,34 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-
+    // Force immediate scroll to top on any route change (path or search params)
+    // Using behavior: 'auto' to override any CSS smooth scrolling
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'auto'
     });
-  }, [pathname]);
+    
+    // Fallback for different browsers/containers
+    document.documentElement.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+    document.body.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+
+    // Disable browser's default scroll restoration to prevent interference
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, [pathname, search]);
 
   return null;
 }
@@ -613,6 +628,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
+      <ScrollToTop />
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
@@ -620,7 +636,6 @@ function AppContent() {
           {!isAdminPage && <KineAI />}
         </Suspense>
         <NotificationHandler />
-        <ScrollToTop />
         
         <Suspense fallback={null}>
           {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
