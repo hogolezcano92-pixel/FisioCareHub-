@@ -658,7 +658,7 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10",
+            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10 pt-28 md:pt-36",
             location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
             <div className={cn(
