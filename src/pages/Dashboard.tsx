@@ -85,138 +85,89 @@ export default function Dashboard() {
     }
   }, [searchParams, refreshProfile, navigate]);
 
-  const fetchStats = useCallback(async (data: any) => {
+  const fetchDashboardData = useCallback(async (data: any) => {
     if (!data) return;
+    
     setStatsLoading(true);
+    setApptsLoading(true);
+    
     try {
       const isPhysio = data.tipo_usuario === 'fisioterapeuta';
-      
-      if (isPhysio) {
-        // Use Promise.allSettled for maximum resilience
-        const results = await Promise.allSettled([
+      const roleField = data.tipo_usuario === 'paciente' ? 'paciente_id' : 'fisio_id';
+
+      // Parallelize all initial fetches
+      const [statsResults, apptsResult, triagesResult] = await Promise.allSettled([
+        // Stats
+        isPhysio ? Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
           supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
             supabase.from('agendamentos').select('id').eq('fisio_id', data.id)
           ),
           supabase.from('triagens').select('*', { count: 'exact', head: true })
-        ]);
-
-        const getCount = (res: any) => res.status === 'fulfilled' ? (res.value.count || 0) : 0;
-
-        setStats({
-          appointments: getCount(results[0]),
-          patients: getCount(results[1]),
-          records: getCount(results[2]),
-          pendingTriages: getCount(results[3])
-        });
-      } else {
-        const results = await Promise.allSettled([
+        ]) : Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
-        ]);
-
-        const getCount = (res: any) => res.status === 'fulfilled' ? (res.value.count || 0) : 0;
-
-        setStats({
-          appointments: getCount(results[0]),
-          patients: 1,
-          records: getCount(results[1]),
-          pendingTriages: getCount(results[2])
-        });
-      }
-    } catch (err) {
-      console.error("Erro ao carregar estatísticas:", err);
-      // Fallback to zeros on critical error
-      setStats({ appointments: 0, patients: 0, records: 0, pendingTriages: 0 });
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
-
-  const fetchRecentAppointments = useCallback(async (data: any) => {
-    if (!data) return;
-    setApptsLoading(true);
-    try {
-      const isPatient = data.tipo_usuario === 'paciente';
-      const roleField = isPatient ? 'paciente_id' : 'fisio_id';
-      
-      // Tenta buscar com joins explícitos
-      const { data: appts, error } = await supabase
-        .from('agendamentos')
-        .select(`
-          *,
-          paciente:perfis!paciente_id (nome_completo, email, avatar_url),
-          fisioterapeuta:perfis!fisio_id (nome_completo, email, avatar_url)
-        `)
-        .eq(roleField, data.id)
-        .order('data', { ascending: false })
-        .order('hora', { ascending: false })
-        .limit(5);
-
-      if (error) {
-        console.error("Erro ao carregar consultas recentes (join):", error);
-        // Fallback para query simples e busca manual de perfis
-        const { data: simpleAppts, error: simpleError } = await supabase
+        ]),
+        // Appointments
+        supabase
           .from('agendamentos')
-          .select('*')
+          .select(`
+            *,
+            paciente:perfis!paciente_id (nome_completo, email, avatar_url),
+            fisioterapeuta:perfis!fisio_id (nome_completo, email, avatar_url)
+          `)
           .eq(roleField, data.id)
           .order('data', { ascending: false })
-          .limit(5);
-        
-        if (simpleError) throw simpleError;
+          .order('hora', { ascending: false })
+          .limit(5),
+        // Triages
+        supabase
+          .from('triagens')
+          .select(`
+            *,
+            paciente:paciente_id (nome_completo, avatar_url, email)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      ]);
 
-        if (simpleAppts && simpleAppts.length > 0) {
-          const targetIds = isPatient 
-            ? [...new Set(simpleAppts.map(a => a.fisio_id))]
-            : [...new Set(simpleAppts.map(a => a.paciente_id))];
-          
-          const { data: profiles } = await supabase
-            .from('perfis')
-            .select('id, nome_completo, email, avatar_url')
-            .in('id', targetIds);
-          
-          const profileMap = Object.fromEntries(profiles?.map(p => [p.id, p]) || []);
-          
-          const enriched = simpleAppts.map(a => ({
-            ...a,
-            paciente: !isPatient ? profileMap[a.paciente_id] : null,
-            fisioterapeuta: isPatient ? profileMap[a.fisio_id] : null
-          }));
-          
-          setRecentAppointments(enriched);
+      // Process Stats
+      if (statsResults.status === 'fulfilled') {
+        const res = statsResults.value;
+        if (isPhysio) {
+          setStats({
+            appointments: res[0].count || 0,
+            patients: res[1].count || 0,
+            records: res[2].count || 0,
+            pendingTriages: res[3].count || 0
+          });
         } else {
-          setRecentAppointments([]);
+          setStats({
+            appointments: res[0].count || 0,
+            patients: 1,
+            records: res[1].count || 0,
+            pendingTriages: res[2].count || 0
+          });
         }
-      } else {
-        setRecentAppointments(appts || []);
       }
+
+      // Process Appointments
+      if (apptsResult.status === 'fulfilled') {
+        setRecentAppointments(apptsResult.value.data || []);
+      }
+
+      // Process Triages
+      if (triagesResult.status === 'fulfilled') {
+        setRecentTriages(triagesResult.value.data || []);
+      }
+
     } catch (err) {
-      console.error("Erro fatal ao carregar consultas recentes:", err);
-      setRecentAppointments([]);
+      console.error("Erro ao carregar dados do dashboard:", err);
     } finally {
-      setApptsLoading(true); // Mantém loading por um momento para evitar flicker
-      setTimeout(() => setApptsLoading(false), 100);
-    }
-  }, []);
-
-  const fetchRecentTriages = useCallback(async () => {
-    try {
-      const { data: triages, error } = await supabase
-        .from('triagens')
-        .select(`
-          *,
-          paciente:paciente_id (nome_completo, avatar_url, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      setRecentTriages(triages || []);
-    } catch (err) {
-      console.error("Erro ao carregar triagens recentes:", err);
-      setRecentTriages([]);
+      setStatsLoading(false);
+      setApptsLoading(false);
     }
   }, []);
 
@@ -229,7 +180,6 @@ export default function Dashboard() {
     if (!authLoading && !user) {
       navigate('/login');
     } else if (profile) {
-      // Redirect unapproved physios
       if (isPhysio && !isApproved && !isAdmin) {
         navigate('/aguardando-aprovacao', { replace: true });
         return;
@@ -237,12 +187,10 @@ export default function Dashboard() {
 
       if (lastLoadedProfileId.current !== profile.id) {
         lastLoadedProfileId.current = profile.id;
-        fetchStats(profile);
-        fetchRecentAppointments(profile);
-        fetchRecentTriages();
+        fetchDashboardData(profile);
       }
     }
-  }, [user, profile, authLoading, navigate, fetchStats, fetchRecentAppointments, fetchRecentTriages, isPhysio, isApproved, isAdmin]);
+  }, [user, profile, authLoading, navigate, fetchDashboardData, isPhysio, isApproved, isAdmin]);
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -993,8 +941,7 @@ export default function Dashboard() {
                       <SOAPIntelligentRecord 
                         pacienteId={selectedPatientId || undefined} 
                         onSave={() => {
-                          fetchStats(profile);
-                          fetchRecentAppointments(profile);
+                          fetchDashboardData(profile);
                         }}
                       />
                     </div>
