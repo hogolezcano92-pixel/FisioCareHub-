@@ -18,6 +18,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -304,29 +305,35 @@ export const ProfessionalServices = () => {
       </div>
 
       {/* Adding Option Modal Overlay */}
-      <AnimatePresence>
-        {addingOptionToId && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {addingOptionToId && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAddingOptionToId(null)}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             >
-              <div className="p-8 pb-4">
+              <div className="p-6 pb-4 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-xl font-black text-white">
                   Adicionar {addingOptionToId.type === 'pacote' ? 'Pacote' : 'Plano Recorrente'}
                 </h3>
+                <button 
+                  onClick={() => setAddingOptionToId(null)}
+                  className="p-2 text-slate-500 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto px-8 pb-8">
+              <div className="flex-1 overflow-y-auto p-6 pt-4">
                 <OptionForm 
                   type={addingOptionToId.type}
                   onSubmit={(data) => handleAddOption(addingOptionToId.id, data)}
@@ -335,33 +342,40 @@ export const ProfessionalServices = () => {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Adding Custom Service Modal */}
-      <AnimatePresence>
-        {isAddingService && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {isAddingService && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddingService(false)}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             >
-              <div className="p-8 pb-4">
+              <div className="p-6 pb-4 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-xl font-black text-white">
                   Novo Serviço Customizado
                 </h3>
+                <button 
+                  onClick={() => setIsAddingService(false)}
+                  className="p-2 text-slate-500 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto px-8 pb-8">
+              <div className="flex-1 overflow-y-auto p-6 pt-4">
                 <NewServiceForm 
                   onSubmit={handleAddService}
                   onCancel={() => setIsAddingService(false)}
@@ -369,8 +383,9 @@ export const ProfessionalServices = () => {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
@@ -607,7 +622,7 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
         />
       </div>
 
-      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900 py-4 mt-2">
+      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900/90 backdrop-blur-md py-4 mt-6 border-t border-white/5">
         <button 
           type="button" 
           onClick={onCancel}
@@ -726,7 +741,7 @@ const OptionForm = ({ type, onSubmit, onCancel }: any) => {
         </div>
       )}
 
-      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900 py-4 mt-2">
+      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900/90 backdrop-blur-md py-4 mt-6 border-t border-white/5">
         <button 
           type="button" 
           onClick={onCancel}
