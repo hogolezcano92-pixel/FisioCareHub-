@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch } from 'lucide-react';
 import { generateSOAPRecord, summarizePatientHistory } from '../../lib/groq';
@@ -27,6 +27,31 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [isSaving, setIsSaving] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [historySummary, setHistorySummary] = useState<string | null>(null);
+
+  // Patient details state
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+
+  useEffect(() => {
+    if (pacienteId) {
+      fetchPatientDetails(pacienteId);
+    } else {
+      setSelectedPatient(null);
+    }
+  }, [pacienteId]);
+
+  const fetchPatientDetails = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, avatar_url, email')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      setSelectedPatient(data);
+    } catch (err) {
+      console.error("Erro ao carregar detalhes do paciente:", err);
+    }
+  };
 
   // Patient selection states
   const [showPatientSelector, setShowPatientSelector] = useState(false);
@@ -58,9 +83,10 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
     }
   };
 
-  const handleSelectPatientAndSave = async (selectedId: string) => {
+  const handleSelectPatientAndSave = async (patient: any) => {
+    setSelectedPatient(patient);
     setShowPatientSelector(false);
-    await handleSave(selectedId);
+    await handleSave(patient.id);
   };
 
   const handleSummarize = async () => {
@@ -180,6 +206,48 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             </button>
           )}
         </div>
+      </div>
+
+      {/* Patient Context Header */}
+      <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center justify-between group transition-all">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "w-9 h-9 rounded-xl flex items-center justify-center transition-all overflow-hidden border border-white/10",
+            selectedPatient ? "bg-blue-600/20 border-blue-500/30 shadow-lg shadow-blue-900/40" : "bg-slate-800 text-slate-500"
+          )}>
+            {selectedPatient ? (
+              <img 
+                src={selectedPatient.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <User size={18} />
+            )}
+          </div>
+          <div>
+            <p className={cn(
+              "text-xs font-black leading-tight tracking-tight transition-colors",
+              selectedPatient ? "text-white" : "text-slate-500"
+            )}>
+              {selectedPatient ? selectedPatient.nome_completo : 'Vincular Paciente'}
+            </p>
+            <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black mt-0.5">
+              {selectedPatient ? 'Prontuário Identificado' : 'Obrigatório para salvar'}
+            </p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setShowPatientSelector(true)}
+          className={cn(
+            "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border shadow-sm",
+            selectedPatient 
+              ? "bg-white/5 text-slate-400 hover:bg-white/10 border-white/5" 
+              : "bg-blue-600 text-white hover:bg-blue-700 border-blue-500 shadow-blue-900/20 animate-pulse hover:animate-none"
+          )}
+        >
+          {selectedPatient ? 'Trocar' : 'Atribuir'}
+        </button>
       </div>
 
       <AnimatePresence>
@@ -332,7 +400,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                     searchResults.map((p) => (
                       <button
                         key={p.id}
-                        onClick={() => handleSelectPatientAndSave(p.id)}
+                        onClick={() => handleSelectPatientAndSave(p)}
                         className="w-full flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-blue-500/30 transition-all group lg:text-left"
                       >
                         <img
