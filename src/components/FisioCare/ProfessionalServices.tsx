@@ -558,8 +558,8 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
 
       <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Inicial (Unitário)</label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs">R$</span>
+        <div className="relative group">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-blue-400 transition-colors">R$</span>
           <input 
             type="number" 
             step="0.01"
@@ -567,7 +567,7 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
             onChange={e => setFormData({...formData, preco: e.target.value})}
             placeholder="0.00"
             required
-            className="w-full pl-10 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+            className="w-full !pl-12 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono"
           />
         </div>
       </div>
@@ -636,15 +636,18 @@ const OptionForm = ({ type, onSubmit, onCancel }: any) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Total (R$)</label>
-          <input 
-            type="number" 
-            step="0.01"
-            value={formData.preco}
-            onChange={e => setFormData({...formData, preco: e.target.value})}
-            placeholder="0.00"
-            required
-            className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all"
-          />
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-blue-400 transition-colors">R$</span>
+            <input 
+              type="number" 
+              step="0.01"
+              value={formData.preco}
+              onChange={e => setFormData({...formData, preco: e.target.value})}
+              placeholder="0.00"
+              required
+              className="w-full !pl-12 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono"
+            />
+          </div>
         </div>
 
         {type === 'pacote' ? (

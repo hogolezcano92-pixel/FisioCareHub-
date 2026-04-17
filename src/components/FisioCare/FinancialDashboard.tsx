@@ -60,8 +60,31 @@ export const FinancialDashboard = () => {
           balance: totalEarnings, 
           monthlyEarnings: monthlyEarnings,
           forecast: forecast,
-          growth: 0 // Real growth calculation would require previous month data
+          growth: 0 
         });
+
+        // Calculate real weekly data
+        const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const weekCounts = new Array(7).fill(0);
+        
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        appts?.forEach(a => {
+          const date = new Date(a.data_servico);
+          if (date >= oneWeekAgo) {
+            weekCounts[date.getDay()]++;
+          }
+        });
+
+        const maxCount = Math.max(...weekCounts, 1);
+        const transformedWeeklyData = weekDays.map((day, i) => ({
+          day,
+          count: weekCounts[i],
+          height: `h-${Math.round((weekCounts[i] / maxCount) * 100)}`
+        }));
+        
+        setWeeklyData(transformedWeeklyData);
       } catch (err) {
         console.error("Erro ao carregar dados financeiros:", err);
       } finally {
@@ -72,13 +95,7 @@ export const FinancialDashboard = () => {
     fetchFinancialData();
   }, [profile]);
 
-  const stats = [
-    { label: 'Saldo Disponível', value: `R$ ${financialStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Wallet, color: 'bg-[#0047AB] shadow-blue-900/20' },
-    { label: 'Ganhos do Mês', value: `R$ ${financialStats.monthlyEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-900/20' },
-    { label: 'Previsão de Recebimento', value: `R$ ${financialStats.forecast.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'bg-amber-600 shadow-amber-900/20' },
-  ];
-
-  const weeklyData = [
+  const [weeklyData, setWeeklyData] = useState([
     { day: 'Seg', count: 0, height: 'h-0' },
     { day: 'Ter', count: 0, height: 'h-0' },
     { day: 'Qua', count: 0, height: 'h-0' },
@@ -86,6 +103,12 @@ export const FinancialDashboard = () => {
     { day: 'Sex', count: 0, height: 'h-0' },
     { day: 'Sáb', count: 0, height: 'h-0' },
     { day: 'Dom', count: 0, height: 'h-0' },
+  ]);
+
+  const stats = [
+    { label: 'Saldo Disponível', value: `R$ ${financialStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Wallet, color: 'bg-[#0047AB] shadow-blue-900/20' },
+    { label: 'Ganhos do Mês', value: `R$ ${financialStats.monthlyEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-900/20' },
+    { label: 'Previsão de Recebimento', value: `R$ ${financialStats.forecast.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'bg-amber-600 shadow-amber-900/20' },
   ];
 
   return (
