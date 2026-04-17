@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -40,8 +40,40 @@ export default function Patients() {
     telefone: '',
     data_nascimento: '',
     diagnostico: '',
-    observacoes: ''
+    observacoes: '',
+    foto_url: ''
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `patient-avatars/${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, foto_url: publicUrl }));
+      toast.success('Imagem carregada!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Erro ao carregar imagem');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   useEffect(() => {
     if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
@@ -110,7 +142,8 @@ export default function Patients() {
         telefone: '',
         data_nascimento: '',
         diagnostico: '',
-        observacoes: ''
+        observacoes: '',
+        foto_url: ''
       });
       fetchPatients();
     } catch (err) {
@@ -121,10 +154,10 @@ export default function Patients() {
     }
   };
 
-  const filteredPatients = patients.filter(p => 
+  const filteredPatients = useMemo(() => patients.filter(p => 
     p.nome.toLowerCase().includes(search.toLowerCase()) ||
     p.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [patients, search]);
 
   if (isLoading) {
     return (
@@ -293,6 +326,35 @@ export default function Patients() {
                       placeholder="Ex: João Silva"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Foto do Paciente (Opcional)</label>
+                    <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden border border-white/10">
+                        {formData.foto_url ? (
+                          <img src={formData.foto_url} className="w-full h-full object-cover" />
+                        ) : (
+                          <Camera className="text-slate-500" size={20} />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="patient-photo"
+                        />
+                        <label
+                          htmlFor="patient-photo"
+                          className="px-4 py-2 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 cursor-pointer hover:bg-white/20 transition-all flex items-center gap-2 w-fit"
+                        >
+                          {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                          {formData.foto_url ? 'Trocar Foto' : 'Carregar Foto'}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">E-mail</label>
                     <input

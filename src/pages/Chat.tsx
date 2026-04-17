@@ -588,6 +588,13 @@ export default function Chat() {
                 >
                   <Video size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
+                <button 
+                  onClick={handleShareConversation}
+                  className="p-1.5 md:p-3 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl md:rounded-2xl transition-all shadow-sm border border-emerald-500/20"
+                  title="Compartilhar conversa"
+                >
+                  <Share size={16} className="md:w-[18px] md:h-[18px]" />
+                </button>
                 <div className="hidden md:block w-px h-8 bg-white/10 mx-2"></div>
                 <button 
                   onClick={() => setShowUserInfo(!showUserInfo)}

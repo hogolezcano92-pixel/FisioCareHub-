@@ -106,10 +106,15 @@ export default function Documents() {
         patientName,
         additionalInfo
       );
-      setGeneratedContent(content || '');
-    } catch (err) {
+      
+      if (!content || content.trim().length === 0) {
+        throw new Error("A IA não conseguiu gerar o conteúdo. Por favor, tente novamente com mais informações.");
+      }
+      
+      setGeneratedContent(content);
+    } catch (err: any) {
       console.error("Erro ao gerar com IA:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao gerar documento. Tente novamente."));
+      import('sonner').then(({ toast }) => toast.error(err.message || "Erro ao gerar documento. Tente novamente."));
     } finally {
       setGenerating(false);
     }
@@ -164,41 +169,92 @@ export default function Documents() {
 
   const exportToPDF = async (docElementId: string, filename: string) => {
     const element = document.getElementById(docElementId);
-    if (!element) return;
+    if (!element) {
+      import('sonner').then(({ toast }) => toast.error("Erro interno: Elemento do documento não encontrado."));
+      return;
+    }
 
     try {
+      // Ensure all images are loaded
+      const images = element.getElementsByTagName('img');
+      const imagePromises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      
+      await Promise.all(imagePromises);
       await document.fonts.ready;
       
+      // Small delay to ensure React rendering cycle is complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const canvas = await html2canvas(element, { 
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 800, // Force a standard document width for PDF capture
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById(docElementId);
+          if (clonedElement) {
+            clonedElement.style.height = 'auto';
+            clonedElement.style.overflow = 'visible';
+            clonedElement.style.backgroundColor = '#ffffff';
+            clonedElement.style.color = '#000000';
+            clonedElement.style.padding = '40px';
+            clonedElement.style.width = '800px';
+
+            // Scoped CSS injection to ensure child elements are captured correctly in the PDF
+            const style = clonedDoc.createElement('style');
+            style.innerHTML = `
+              #${docElementId} { background-color: white !important; color: black !important; }
+              #${docElementId} * { color: black !important; border-color: #000 !important; background-color: transparent !important; }
+              #${docElementId} h1, #${docElementId} h2, #${docElementId} h3 { color: black !important; margin-bottom: 20px; text-align: center; }
+              #${docElementId} p, #${docElementId} li { color: black !important; margin-bottom: 10px; font-size: 14px; }
+              #${docElementId} strong { color: black !important; font-weight: bold; }
+              #${docElementId} table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              #${docElementId} th, #${docElementId} td { border: 1px solid black !important; padding: 10px; text-align: left; }
+            `;
+            clonedDoc.head.appendChild(style);
+          }
+        }
       });
       
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
       const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = pdfWidth - 20;
+      const imgWidth = pdfWidth - 20; // 10mm margin on each side
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
       
       let heightLeft = imgHeight;
-      let position = 10;
+      let position = 10; // 10mm top margin
 
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      // First page
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight, undefined, 'FAST');
       heightLeft -= (pdfHeight - 20);
 
-      while (heightLeft >= 0) {
+      // Subsequent pages if height > A4
+      while (heightLeft > 0) {
         position = heightLeft - imgHeight + 10;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight, undefined, 'FAST');
         heightLeft -= (pdfHeight - 20);
       }
 
-      pdf.save(`${filename}.pdf`);
+      pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+      import('sonner').then(({ toast }) => toast.success("PDF gerado com sucesso!"));
     } catch (err) {
       console.error("Erro ao exportar PDF:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao exportar PDF. Tente novamente."));
@@ -207,12 +263,13 @@ export default function Documents() {
 
   const handleExportFromTable = async (doc: any) => {
     const tempDiv = document.createElement('div');
-    tempDiv.id = `export-temp-${doc.id}`;
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '-9999px';
+    const docId = `export-temp-${doc.id}`;
+    tempDiv.id = docId;
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-10000px';
+    tempDiv.style.top = '0';
     tempDiv.style.width = '800px';
-    tempDiv.style.padding = '40px';
+    tempDiv.style.padding = '60px';
     tempDiv.style.background = 'white';
     tempDiv.style.color = 'black';
     tempDiv.className = 'prose prose-slate max-w-none';
@@ -221,20 +278,26 @@ export default function Documents() {
     
     const root = createRoot(tempDiv);
     root.render(
-      <div style={{ padding: '20px' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>{doc.type}</h1>
-        <p style={{ marginBottom: '20px' }}><strong>Paciente:</strong> {doc.patient_name}</p>
-        <ReactMarkdown>{doc.content}</ReactMarkdown>
-        <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '12px', color: '#666' }}>
-          Documento gerado via FisioCareHub em {new Date(doc.created_at).toLocaleDateString()}
+      <div style={{ padding: '20px', backgroundColor: '#ffffff', color: '#000000', minHeight: '1000px' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#000000', fontWeight: '900', fontSize: '24px' }}>{doc.type}</h1>
+        <p style={{ marginBottom: '20px', color: '#000000', fontSize: '14px' }}><strong>Paciente:</strong> {doc.patient_name}</p>
+        <div style={{ color: '#000000', fontSize: '14px' }}>
+          <ReactMarkdown>{doc.content}</ReactMarkdown>
+        </div>
+        <div style={{ marginTop: '100px', paddingTop: '20px', borderTop: '2px solid #000', textAlign: 'center', fontSize: '12px', color: '#000' }}>
+          Documento oficial gerado via FisioCareHub em {new Date(doc.created_at).toLocaleDateString()}
         </div>
       </div>
     );
 
+    // Give more time for heavy JS based components to render
     setTimeout(async () => {
-      await exportToPDF(tempDiv.id, `${doc.type}-${doc.patient_name}`);
-      document.body.removeChild(tempDiv);
-    }, 500);
+      await exportToPDF(docId, `${doc.type}-${doc.patient_name}`);
+      // Only remove after a short delay to ensure process finished
+      setTimeout(() => {
+        document.body.removeChild(tempDiv);
+      }, 500);
+    }, 1000);
   };
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
@@ -520,15 +583,25 @@ export default function Documents() {
                       </span>
                     )}
                   </div>
-                  <div className="flex-1 bg-white rounded-2xl p-8 overflow-y-auto prose prose-slate prose-sm max-w-none shadow-inner">
-                    {generatedContent ? (
-                      <ReactMarkdown>{generatedContent}</ReactMarkdown>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-4">
-                        <FileText size={48} className="opacity-20" />
-                        <p className="text-sm font-bold uppercase tracking-widest">O conteúdo gerado aparecerá aqui.</p>
-                      </div>
-                    )}
+                  <div 
+                    className="flex-1 bg-white rounded-2xl p-8 overflow-y-auto prose prose-slate prose-sm max-w-none shadow-inner"
+                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                  >
+                    <style>{`
+                      .report-preview-container * { color: #000000 !important; }
+                      .report-preview-container h1, .report-preview-container h2, .report-preview-container h3 { color: #000000 !important; }
+                      .report-preview-container p, .report-preview-container li, .report-preview-container td, .report-preview-container th { color: #000000 !important; }
+                    `}</style>
+                    <div className="report-preview-container">
+                      {generatedContent ? (
+                        <ReactMarkdown>{generatedContent}</ReactMarkdown>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-4">
+                          <FileText size={48} className="opacity-20" />
+                          <p className="text-sm font-bold uppercase tracking-widest">O conteúdo gerado aparecerá aqui.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -659,13 +732,25 @@ export default function Documents() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12">
-                <div id="view-content" className="bg-white p-12 border border-slate-100 shadow-2xl rounded-lg prose prose-slate max-w-none !text-black [&_*]:!text-black [&_h1]:!text-black [&_h2]:!text-black [&_h3]:!text-black [&_p]:!text-black [&_li]:!text-black [&_td]:!text-black [&_th]:!text-black [&_strong]:!text-black">
-                  <h1 className="text-center mb-8 font-black !text-black">{viewingDoc.type}</h1>
-                  <p className="mb-8 font-bold !text-black">Paciente: {viewingDoc.patient_name}</p>
-                  <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
-                  <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-bold uppercase tracking-widest !text-slate-400">
-                    Documento gerado via FisioCareHub em {new Date(viewingDoc.created_at).toLocaleDateString()}
+              <div className="flex-1 overflow-y-auto p-12 bg-slate-950">
+                <div 
+                  id="view-content" 
+                  className="bg-white p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate max-w-[800px] mx-auto min-h-[1100px]"
+                  style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                >
+                  <style>{`
+                    #view-content * { color: #000000 !important; }
+                    #view-content h1, #view-content h2, #view-content h3 { color: #000000 !important; font-weight: 800; }
+                    #view-content p, #view-content li, #view-content td, #view-content th { color: #1a202c !important; }
+                  `}</style>
+                  <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{viewingDoc.type}</h1>
+                  <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
+                  <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.created_at).toLocaleDateString()}</p>
+                  <div style={{ color: '#000000' }}>
+                    <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
+                  </div>
+                  <div className="mt-16 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>
+                    Documento gerado oficialmente via FisioCareHub
                   </div>
                 </div>
               </div>

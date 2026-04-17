@@ -84,12 +84,17 @@ export default function Agenda() {
       setFisioServices(data || []);
       
       // Pre-selecionar o primeiro serviço se disponível
-      if (data && data.length > 0 && !formData.servico_fisio_id) {
-        setFormData(prev => ({ 
-          ...prev, 
-          servico_fisio_id: data[0].id,
-          servico: data[0].nome
-        }));
+      if (data && data.length > 0) {
+        setFisioServices(data);
+        if (!formData.servico_fisio_id) {
+          setFormData(prev => ({ 
+            ...prev, 
+            servico_fisio_id: data[0].id,
+            servico: data[0].nome
+          }));
+        }
+      } else {
+        setFisioServices([]);
       }
     } catch (err) {
       console.error('Erro ao buscar serviços do fisio:', err);

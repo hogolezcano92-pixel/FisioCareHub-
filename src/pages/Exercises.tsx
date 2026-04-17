@@ -239,17 +239,32 @@ export default function Exercises() {
                   </div>
                   <div className="flex gap-2">
                     <button 
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedExercise(ex);
                         setShowPrescribeModal(true);
                       }}
-                      className="p-2 text-sky-400 hover:bg-sky-500/10 rounded-xl transition-all"
-                      title="Prescrever para paciente"
+                      className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition-all flex items-center gap-1.5 shadow-lg shadow-sky-900/20"
+                      title="Atribuir a um paciente"
                     >
-                      <Send size={18} />
+                      <Send size={14} />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Atribuir</span>
                     </button>
-                    <button className="text-slate-600 hover:text-red-500 transition-colors">
-                      <Trash2 size={18} />
+                    <button 
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm('Deseja realmente excluir este exercício?')) {
+                          const { error } = await supabase.from('exercicios').delete().eq('id', ex.id);
+                          if (error) toast.error('Erro ao excluir');
+                          else {
+                            toast.success('Excluído');
+                            fetchExercises();
+                          }
+                        }
+                      }}
+                      className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
