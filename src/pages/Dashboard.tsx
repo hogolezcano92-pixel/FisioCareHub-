@@ -942,32 +942,27 @@ export default function Dashboard() {
               </div>
               
               <ProGuard variant="full">
-                <div className="grid grid-cols-1 gap-6">
-                  <div id="financial-section" className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div id="financial-section" className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group xl:col-span-1 md:col-span-2">
                     <FinancialDashboard />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
-                      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest border border-blue-500/20">
-                          <MapPin size={8} />
-                          3 Pacientes
-                        </div>
+                  <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                    <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest border border-blue-500/20">
+                        <MapPin size={8} />
+                        3 Pacientes
                       </div>
-                      <RouteOptimizer />
                     </div>
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
-                      <SOAPIntelligentRecord 
-                        pacienteId={selectedPatientId || undefined} 
-                        onSave={() => {
-                          fetchDashboardData(profile);
-                        }}
-                      />
-                    </div>
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 xl:col-span-1 md:col-span-2">
-                      <EvolutionCharts />
-                    </div>
+                    <RouteOptimizer />
+                  </div>
+                  <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+                    <SOAPIntelligentRecord 
+                      pacienteId={selectedPatientId || undefined} 
+                      onSave={() => {
+                        fetchDashboardData(profile);
+                      }}
+                    />
                   </div>
                 </div>
               </ProGuard>
