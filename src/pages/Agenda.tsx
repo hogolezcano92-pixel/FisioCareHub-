@@ -162,26 +162,21 @@ export default function Agenda() {
 
   const fetchPatients = async () => {
     try {
-      console.log('Buscando pacientes da tabela perfis...');
+      if (!user) return;
+      console.log('Buscando pacientes associados ao fisioterapeuta logado...');
       const { data, error: supabaseError } = await supabase
-        .from('perfis')
-        .select('id, nome_completo')
-        .eq('tipo_usuario', 'paciente')
-        .order('nome_completo');
+        .from('pacientes')
+        .select('id, nome, email')
+        .eq('fisioterapeuta_id', user.id)
+        .order('nome');
       
       if (supabaseError) {
-        console.error('Erro completo do Supabase ao buscar pacientes:', supabaseError);
+        console.error('Erro ao buscar pacientes associados:', supabaseError);
         throw supabaseError;
       }
       
-      // Mapear nome_completo para nome para manter compatibilidade com o restante do componente
-      const mappedData = (data || []).map(p => ({
-        id: p.id,
-        nome: p.nome_completo
-      }));
-      
-      console.log('Pacientes encontrados:', mappedData.length);
-      setPatients(mappedData);
+      console.log('Pacientes associados encontrados:', data?.length || 0);
+      setPatients(data || []);
     } catch (err) {
       console.error('Erro ao buscar pacientes para agenda:', err);
       setPatients([]);
@@ -602,7 +597,7 @@ export default function Agenda() {
       {/* Modal de Detalhes */}
       <AnimatePresence>
         {showDetailsModal && selectedAppointment && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -716,7 +711,7 @@ export default function Agenda() {
       {/* Modal de Agendamento */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

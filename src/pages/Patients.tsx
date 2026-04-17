@@ -20,7 +20,7 @@ import {
   ChevronRight,
   Camera
 } from 'lucide-react';
-import { formatDate, cn } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Patients() {
@@ -154,10 +154,20 @@ export default function Patients() {
     }
   };
 
-  const filteredPatients = useMemo(() => patients.filter(p => 
-    p.nome.toLowerCase().includes(search.toLowerCase()) ||
-    p.email?.toLowerCase().includes(search.toLowerCase())
-  ), [patients, search]);
+  const filteredPatients = useMemo(() => {
+    // Garantir que não existam duplicatas por ID caso haja inconsistência no banco ou fetch
+    const uniquePatientsMap = new Map();
+    patients.forEach(p => {
+      if (!uniquePatientsMap.has(p.id)) {
+        uniquePatientsMap.set(p.id, p);
+      }
+    });
+    
+    return Array.from(uniquePatientsMap.values()).filter(p => 
+      p.nome.toLowerCase().includes(search.toLowerCase()) ||
+      p.email?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [patients, search]);
 
   if (isLoading) {
     return (
@@ -224,7 +234,7 @@ export default function Patients() {
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-sky-400 overflow-hidden border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
                       {patient.foto_url ? (
-                        <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
+                        <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome} className="w-full h-full object-cover" />
                       ) : (
                         <User size={28} />
                       )}
@@ -290,7 +300,7 @@ export default function Patients() {
       {/* Modal de Cadastro */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -340,7 +350,7 @@ export default function Patients() {
                     <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
                       <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden border border-white/10">
                         {formData.foto_url ? (
-                          <img src={formData.foto_url} className="w-full h-full object-cover" />
+                          <img src={resolveStorageUrl(formData.foto_url)} className="w-full h-full object-cover" />
                         ) : (
                           <Camera className="text-slate-500" size={20} />
                         )}

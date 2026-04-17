@@ -301,6 +301,65 @@ export default function Chat() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !targetUser) return;
+
+    try {
+      const { toast } = await import('sonner');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `chat-files/${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars') // Using avatars bucket as it already exists
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Send the link as a message
+      const isTargetAdmin = targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
+      
+      if (isTargetAdmin) {
+        if (!firebaseUser) {
+          toast.error("Você precisa estar conectado ao suporte para enviar arquivos.");
+          return;
+        }
+        await addDoc(collection(db, 'chats'), {
+          senderId: firebaseUser.uid,
+          receiverId: targetUser.id,
+          participants: [firebaseUser.uid, targetUser.id],
+          text: `Arquivo enviado: ${file.name}\n${publicUrl}`,
+          createdAt: serverTimestamp(),
+          read: false,
+          type: 'support',
+          file_url: publicUrl,
+          file_name: file.name
+        });
+      } else {
+        await supabase
+          .from('mensagens')
+          .insert({
+            remetente_id: user.id,
+            destinatario_id: targetUser.id,
+            conteudo: `Arquivo enviado: ${file.name}\n${publicUrl}`,
+            data_envio: new Date().toISOString(),
+            lida: false
+          });
+      }
+
+      toast.success('Arquivo compartilhado!');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      const { toast } = await import('sonner');
+      toast.error('Erro ao compartilhar arquivo');
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !targetUser || !user) return;
@@ -831,6 +890,18 @@ export default function Chat() {
                       <button type="button" className="p-1 md:p-2 text-slate-500 hover:text-blue-400 transition-colors">
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
+                      <input
+                        type="file"
+                        id="chat-file-upload"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      <label 
+                        htmlFor="chat-file-upload" 
+                        className="p-1 md:p-2 text-slate-500 hover:text-blue-400 transition-colors cursor-pointer"
+                      >
+                        <Share className="w-4 h-4 md:w-5 md:h-5" />
+                      </label>
                     </div>
                   </div>
                   <button
