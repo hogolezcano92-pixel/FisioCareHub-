@@ -20,7 +20,7 @@ import {
   AlertTriangle,
   MessageSquare
 } from 'lucide-react';
-import { formatDate, cn } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
 
@@ -37,6 +37,7 @@ export default function Agenda() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [view, setView] = useState<'daily' | 'all'>('daily');
+  const [fisioServices, setFisioServices] = useState<any[]>([]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -45,7 +46,9 @@ export default function Agenda() {
     hora: '08:00',
     tipo: 'Presencial',
     local: '',
-    observacoes: ''
+    observacoes: '',
+    servico_fisio_id: '',
+    servico: '' // Guardar nome do serviço
   });
 
   useEffect(() => {
@@ -63,7 +66,35 @@ export default function Agenda() {
     }
     
     loadData();
+    fetchFisioServices();
   }, [user, selectedDate, profile, authLoading, view]);
+
+  const fetchFisioServices = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('servicos_fisio')
+        .select(`
+          *,
+          opcoes:opcoes_precos(*)
+        `)
+        .eq('fisio_id', user.id);
+      
+      if (error) throw error;
+      setFisioServices(data || []);
+      
+      // Pre-selecionar o primeiro serviço se disponível
+      if (data && data.length > 0 && !formData.servico_fisio_id) {
+        setFormData(prev => ({ 
+          ...prev, 
+          servico_fisio_id: data[0].id,
+          servico: data[0].nome
+        }));
+      }
+    } catch (err) {
+      console.error('Erro ao buscar serviços do fisio:', err);
+    }
+  };
 
   useEffect(() => {
     const checkUrlParams = async () => {
@@ -219,6 +250,11 @@ export default function Agenda() {
 
     setSubmitting(true);
     try {
+      // Get selected service price
+      const selectedService = fisioServices.find(s => s.id === formData.servico_fisio_id);
+      const unitOption = selectedService?.opcoes?.find((o: any) => o.tipo === 'unitario');
+      const currentPrice = unitOption?.preco || profile?.preco_sessao || 0;
+
       // Combine date and time for data_servico (required in schema)
       const [year, month, day] = formData.data.split('-').map(Number);
       const [hours, minutes] = formData.hora.split(':').map(Number);
@@ -229,7 +265,8 @@ export default function Agenda() {
         .insert({
           ...formData,
           data_servico: appointmentDate,
-          fisio_id: user.id
+          fisio_id: user.id,
+          valor_cobrado: currentPrice
         })
         .select();
 
@@ -237,7 +274,7 @@ export default function Agenda() {
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
-      if (newApp && profile?.preco_sessao) {
+      if (newApp) {
         // Criar registro na tabela sessoes para pagamento
         const { error: sessionError } = await supabase
           .from('sessoes')
@@ -246,7 +283,7 @@ export default function Agenda() {
             fisioterapeuta_id: user.id,
             data: formData.data,
             hora: formData.hora,
-            valor: profile.preco_sessao,
+            valor: currentPrice,
             status_pagamento: 'pendente'
           });
         
@@ -409,7 +446,7 @@ export default function Agenda() {
             <ChevronLeft size={16} />
           </button>
           <div className="flex flex-col items-center">
-            <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-0.5">
+            <span className="text-[8px] font-bold text-sky-400 uppercase tracking-widest mb-0.5">
               {new Date(selectedDate).toLocaleDateString('pt-BR', { weekday: 'long' })}
             </span>
             <input
@@ -471,32 +508,32 @@ export default function Agenda() {
                 className="premium-card !p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-blue-500/30 transition-all w-full cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-blue-500/10 transition-colors border border-white/5">
+                  <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-sky-500/10 transition-colors border border-white/5">
                     {view === 'all' ? (
                       <>
-                        <span className="text-[7px] font-black text-blue-400 uppercase">{new Date(app.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                        <span className="text-[7px] font-black text-sky-400 uppercase">{new Date(app.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
                         <span className="text-sm font-black leading-none">{new Date(app.data).getDate()}</span>
                         <span className="text-[7px] font-bold text-slate-500 mt-0.5">{app.hora?.slice(0, 5)}</span>
                       </>
                     ) : (
                       <>
-                        <Clock size={12} className="text-blue-400 mb-0.5" />
+                        <Clock size={12} className="text-sky-400 mb-0.5" />
                         <span className="text-sm font-black">{app.hora?.slice(0, 5) || '--:--'}</span>
                       </>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-white group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-sm font-black text-white group-hover:text-sky-400 transition-colors">
                       {app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
                     </h3>
                     <div className="flex flex-wrap gap-2 mt-0.5">
-                      <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
-                        <Stethoscope size={10} className="text-blue-400" />
+                      <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+                        <Stethoscope size={10} className="text-sky-400" />
                         {app.tipo || app.servico}
                       </div>
                       {app.local && (
-                        <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
-                          <MapPin size={10} className="text-blue-400" />
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+                          <MapPin size={10} className="text-sky-400" />
                           {app.local}
                         </div>
                       )}
@@ -507,9 +544,9 @@ export default function Agenda() {
                 <div className="flex items-center justify-between md:justify-end gap-3">
                   <span className={cn(
                     "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
-                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-400" :
-                    app.status === 'agendado' || app.status === 'pendente' ? "bg-blue-500/10 text-blue-400" :
-                    "bg-red-500/10 text-red-400"
+                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                    app.status === 'agendado' || app.status === 'pendente' ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
+                    "bg-red-500/10 text-red-400 border border-red-500/20"
                   )}>
                     {app.status}
                   </span>
@@ -584,7 +621,7 @@ export default function Agenda() {
               <div className="space-y-5">
                 <div className="flex items-center gap-4">
                   <img 
-                    src={selectedAppointment.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id || selectedAppointment.nome_paciente}`}
+                    src={resolveStorageUrl(selectedAppointment.paciente?.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAppointment.paciente_id || selectedAppointment.nome_paciente}`}
                     alt="Avatar"
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-white/10 shadow-sm"
                   />
@@ -598,23 +635,23 @@ export default function Agenda() {
                   <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Data e Hora</p>
                     <div className="flex items-center gap-2 text-white font-black text-xs">
-                      <CalendarIcon size={14} className="text-blue-400" />
+                      <CalendarIcon size={14} className="text-sky-400" />
                       {selectedAppointment.data || new Date(selectedAppointment.data_servico).toLocaleDateString('pt-BR')}
                     </div>
                     <div className="flex items-center gap-2 text-white font-black text-xs mt-1.5">
-                      <Clock size={14} className="text-blue-400" />
+                      <Clock size={14} className="text-sky-400" />
                       {selectedAppointment.hora || new Date(selectedAppointment.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                   <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo de Consulta</p>
                     <div className="flex items-center gap-2 text-white font-black text-xs">
-                      <Stethoscope size={14} className="text-blue-400" />
+                      <Stethoscope size={14} className="text-sky-400" />
                       {selectedAppointment.tipo || selectedAppointment.servico}
                     </div>
                     {selectedAppointment.local && (
                       <div className="flex items-center gap-2 text-white font-black text-xs mt-1.5">
-                        <MapPin size={14} className="text-blue-400" />
+                        <MapPin size={14} className="text-sky-400" />
                         {selectedAppointment.local}
                       </div>
                     )}
@@ -622,8 +659,8 @@ export default function Agenda() {
                 </div>
 
                 {selectedAppointment.observacoes && (
-                  <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Observações</p>
+                  <div className="p-3.5 bg-sky-500/10 rounded-2xl border border-sky-500/20">
+                    <p className="text-[8px] font-black text-sky-400 uppercase tracking-widest mb-1.5">Observações</p>
                     <p className="text-slate-300 text-xs font-medium leading-relaxed">{selectedAppointment.observacoes}</p>
                   </div>
                 )}
@@ -707,6 +744,28 @@ export default function Agenda() {
                     <option value="" className="bg-slate-900">Selecione um paciente...</option>
                     {patients.map(p => (
                       <option key={p.id} value={p.id} className="bg-slate-900">{p.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Serviço</label>
+                  <select
+                    required
+                    value={formData.servico_fisio_id}
+                    onChange={(e) => {
+                      const service = fisioServices.find(s => s.id === e.target.value);
+                      setFormData({
+                        ...formData, 
+                        servico_fisio_id: e.target.value,
+                        servico: service?.nome || ''
+                      });
+                    }}
+                    className="input-compact"
+                  >
+                    <option value="" className="bg-slate-900">Selecione um serviço...</option>
+                    {fisioServices.map(s => (
+                      <option key={s.id} value={s.id} className="bg-slate-900">{s.nome}</option>
                     ))}
                   </select>
                 </div>
