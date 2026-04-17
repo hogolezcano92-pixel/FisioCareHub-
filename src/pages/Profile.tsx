@@ -942,9 +942,14 @@ export default function Profile() {
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A Receber</p>
                           <p className="text-3xl font-black text-white">R$ 890,00</p>
                         </div>
-                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total do Mês</p>
-                          <p className="text-3xl font-black text-white">R$ 5.120,00</p>
+                        <div className="p-8 bg-white/5 border border-blue-500/30 bg-blue-500/5 rounded-[2.5rem] space-y-4 flex flex-col justify-center">
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Configuração</p>
+                          <button 
+                            onClick={() => navigate('/dashboard?action=services')}
+                            className="w-full py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                          >
+                            Custos e Serviços
+                          </button>
                         </div>
                       </div>
 

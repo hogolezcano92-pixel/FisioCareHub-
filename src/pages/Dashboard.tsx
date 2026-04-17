@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -29,7 +29,8 @@ import {
   MapPin,
   Thermometer,
   AlertTriangle,
-  Smartphone
+  Smartphone,
+  DollarSign
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -171,10 +172,12 @@ export default function Dashboard() {
     }
   }, []);
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const isApproved = profile?.status_aprovacao === 'aprovado';
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
-  const isAdmin = profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+  const { isPhysio, isApproved, isPro, isAdmin } = useMemo(() => ({
+    isPhysio: profile?.tipo_usuario === 'fisioterapeuta',
+    isApproved: profile?.status_aprovacao === 'aprovado',
+    isPro: profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo',
+    isAdmin: profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'
+  }), [profile, subscription, user?.email]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -189,8 +192,18 @@ export default function Dashboard() {
         lastLoadedProfileId.current = profile.id;
         fetchDashboardData(profile);
       }
+
+      // Handle navigation actions
+      const action = searchParams.get('action');
+      if (action === 'services') {
+        const element = document.getElementById('financial-section');
+        element?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('open-financial-services'));
+        }, 800);
+      }
     }
-  }, [user, profile, authLoading, navigate, fetchDashboardData, isPhysio, isApproved, isAdmin]);
+  }, [user, profile, authLoading, navigate, fetchDashboardData, isPhysio, isApproved, isAdmin, searchParams]);
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -446,6 +459,18 @@ export default function Dashboard() {
               <FileText className="mx-auto text-slate-400 group-hover:text-rose-400 transition-colors" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-rose-400 tracking-widest">Prontuários</p>
             </Link>
+            <button 
+              onClick={() => {
+                const element = document.getElementById('financial-section');
+                element?.scrollIntoView({ behavior: 'smooth' });
+                // We'll add a way to trigger the tab switch too
+                window.dispatchEvent(new CustomEvent('open-financial-services'));
+              }}
+              className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-blue-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-blue-500/20 shadow-xl shadow-blue-900/10"
+            >
+              <DollarSign className="mx-auto text-slate-400 group-hover:text-blue-400 transition-colors" size={24} />
+              <p className="text-[9px] font-black uppercase text-slate-500 group-hover:text-blue-400 tracking-widest">Financeiro</p>
+            </button>
           </motion.div>
         )}
 
@@ -918,12 +943,7 @@ export default function Dashboard() {
               
               <ProGuard variant="full">
                 <div className="grid grid-cols-1 gap-6">
-                  <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
-                    <div className="absolute top-4 right-4 z-20">
-                      <button className="p-1 bg-white/5 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
-                        <TrendingUp size={12} />
-                      </button>
-                    </div>
+                  <div id="financial-section" className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
                     <FinancialDashboard />
                   </div>
 
