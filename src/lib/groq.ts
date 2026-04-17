@@ -112,7 +112,7 @@ export async function generateSOAPRecord(rawText: string) {
       messages: [
         {
           role: "system",
-          content: "Você é um Arquiteto de Software e Consultor HealthTech Sênior especializado em Fisioterapia. Converta o relato bruto no padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano). Retorne um objeto JSON com as chaves: 'subjective', 'objective', 'assessment', 'plan'."
+          content: "Você é um Arquiteto de Software e Consultor HealthTech Sênior especializado em Fisioterapia. Converta o relato bruto no padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano). Retorne um objeto JSON onde TODAS as chaves ('subjective', 'objective', 'assessment', 'plan') DEVEM ter valores do tipo STRING. Não use objetos ou arrays aninhados."
         },
         {
           role: "user",
