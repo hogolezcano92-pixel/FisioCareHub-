@@ -145,6 +145,48 @@ export const ProfessionalServices = () => {
     }
   };
 
+  const handleAddService = async (data: { nome: string, descricao: string, preco: number }) => {
+    if (!profile) return;
+    try {
+      setLoading(true);
+      // 1. Create the service
+      const { data: sData, error: sError } = await supabase
+        .from('servicos_fisio')
+        .insert({
+          fisio_id: profile.id,
+          nome: data.nome,
+          descricao: data.descricao,
+          icone: 'Activity' // Default icon for custom services
+        })
+        .select()
+        .single();
+
+      if (sError) throw sError;
+
+      // 2. Create the default unit price
+      if (sData) {
+        const { error: oError } = await supabase
+          .from('opcoes_precos')
+          .insert({
+            servico_id: sData.id,
+            tipo: 'unitario',
+            preco: data.preco
+          });
+
+        if (oError) throw oError;
+      }
+
+      toast.success("Serviço customizado criado!");
+      setIsAddingService(false);
+      fetchServices();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao criar serviço customizado.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpdateUnitPrice = async (serviceId: string, optionId: string, newPrice: number) => {
     try {
       const { error } = await supabase
@@ -253,7 +295,7 @@ export const ProfessionalServices = () => {
       {/* Adding Option Modal Overlay */}
       <AnimatePresence>
         {addingOptionToId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -275,6 +317,36 @@ export const ProfessionalServices = () => {
                 type={addingOptionToId.type}
                 onSubmit={(data) => handleAddOption(addingOptionToId.id, data)}
                 onCancel={() => setAddingOptionToId(null)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Adding Custom Service Modal */}
+      <AnimatePresence>
+        {isAddingService && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddingService(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-slate-900 p-8 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-6"
+            >
+              <h3 className="text-xl font-black text-white">
+                Novo Serviço Customizado
+              </h3>
+              
+              <NewServiceForm 
+                onSubmit={handleAddService}
+                onCancel={() => setIsAddingService(false)}
               />
             </motion.div>
           </div>
@@ -441,6 +513,81 @@ const ServiceCard = ({ service, isExpanded, onToggle, onUpdatePrice, onAddOption
         )}
       </AnimatePresence>
     </div>
+  );
+};
+
+const NewServiceForm = ({ onSubmit, onCancel }: any) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descricao: '',
+    preco: '150.00'
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      nome: formData.nome,
+      descricao: formData.descricao,
+      preco: parseFloat(formData.preco)
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Serviço</label>
+        <input 
+          type="text" 
+          value={formData.nome}
+          onChange={e => setFormData({...formData, nome: e.target.value})}
+          placeholder="Ex: Liberação Miofascial"
+          required
+          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição</label>
+        <textarea 
+          value={formData.descricao}
+          onChange={e => setFormData({...formData, descricao: e.target.value})}
+          placeholder="Breve descrição do serviço..."
+          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all h-24 resize-none"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Inicial (Unitário)</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs">R$</span>
+          <input 
+            type="number" 
+            step="0.01"
+            value={formData.preco}
+            onChange={e => setFormData({...formData, preco: e.target.value})}
+            placeholder="0.00"
+            required
+            className="w-full pl-10 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <button 
+          type="button" 
+          onClick={onCancel}
+          className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="submit"
+          className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
+        >
+          Criar Serviço
+        </button>
+      </div>
+    </form>
   );
 };
 
