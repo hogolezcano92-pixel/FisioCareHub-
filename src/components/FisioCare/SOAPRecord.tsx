@@ -28,6 +28,41 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [historySummary, setHistorySummary] = useState<string | null>(null);
 
+  // Patient selection states
+  const [showPatientSelector, setShowPatientSelector] = useState(false);
+  const [patientSearch, setPatientSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const searchPatients = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('*')
+        .eq('tipo_usuario', 'paciente')
+        .or(`nome_completo.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(5);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar pacientes:", err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelectPatientAndSave = async (selectedId: string) => {
+    setShowPatientSelector(false);
+    await handleSave(selectedId);
+  };
+
   const handleSummarize = async () => {
     if (!pacienteId) {
       toast.error('Selecione um paciente para resumir o histórico.');
@@ -81,11 +116,13 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (forcedPatientId?: string) => {
+    const finalPacienteId = forcedPatientId || pacienteId;
+
     if (!soapData || !profile) return;
     
-    if (!pacienteId) {
-      toast.error('Selecione um paciente para salvar o prontuário.');
+    if (!finalPacienteId) {
+      setShowPatientSelector(true);
       return;
     }
 
@@ -94,7 +131,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       const { error } = await supabase
         .from('prontuarios')
         .insert({
-          paciente_id: pacienteId,
+          paciente_id: finalPacienteId,
           fisio_id: profile.id,
           data_registro: new Date().toISOString(),
           conteudo: {
@@ -228,7 +265,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                 Descartar
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 disabled={isSaving}
                 className="flex-[2] h-10 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
               >
@@ -241,6 +278,99 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               </button>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Patient Selection Modal */}
+      <AnimatePresence>
+        {showPatientSelector && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPatientSelector(false)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl space-y-6"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <User className="text-blue-400" size={32} />
+                </div>
+                <h3 className="text-xl font-black text-white">Atribuir Paciente</h3>
+                <p className="text-xs text-slate-400 font-medium">
+                  Selecione o paciente para vincular este prontuário gerado pela IA.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                  <input
+                    type="text"
+                    value={patientSearch}
+                    onChange={(e) => {
+                      setPatientSearch(e.target.value);
+                      searchPatients(e.target.value);
+                    }}
+                    placeholder="Nome ou e-mail do paciente..."
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  {searching ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="animate-spin text-blue-500" size={24} />
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleSelectPatientAndSave(p.id)}
+                        className="w-full flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-blue-500/30 transition-all group lg:text-left"
+                      >
+                        <img
+                          src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`}
+                          alt={p.nome_completo}
+                          className="w-10 h-10 rounded-lg object-cover border border-white/10"
+                        />
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                            {p.nome_completo}
+                          </p>
+                          <p className="text-[10px] text-slate-500">{p.email}</p>
+                        </div>
+                        <CheckCircle2 className="ml-auto text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" size={16} />
+                      </button>
+                    ))
+                  ) : patientSearch.length >= 2 ? (
+                    <div className="text-center py-8 space-y-2">
+                      <AlertCircle className="mx-auto text-slate-500" size={24} />
+                      <p className="text-xs text-slate-500 font-medium">Nenhum paciente encontrado.</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 space-y-2 opacity-50">
+                      <FileSearch className="mx-auto text-slate-500" size={24} />
+                      <p className="text-xs text-slate-500 font-medium italic">Digite para buscar...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowPatientSelector(false)}
+                className="w-full py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors pt-2"
+              >
+                Cancelar
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
