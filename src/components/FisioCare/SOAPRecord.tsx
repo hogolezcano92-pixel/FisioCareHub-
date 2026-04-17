@@ -319,7 +319,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                 <div key={section.key} className={cn("p-3 rounded-xl border space-y-1", section.color)}>
                   <h4 className="font-black text-[9px] uppercase tracking-widest">{section.label}</h4>
                   <p className="text-[10px] font-medium leading-relaxed">
-                    {(soapData as any)[section.key]}
+                    {typeof (soapData as any)[section.key] === 'object' 
+                      ? JSON.stringify((soapData as any)[section.key])
+                      : (soapData as any)[section.key]}
                   </p>
                 </div>
               ))}
