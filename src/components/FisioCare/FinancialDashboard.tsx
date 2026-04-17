@@ -10,6 +10,13 @@ export const FinancialDashboard = () => {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'stats' | 'services'>('stats');
+
+  useEffect(() => {
+    const handleOpenServices = () => setActiveTab('services');
+    window.addEventListener('open-financial-services', handleOpenServices);
+    return () => window.removeEventListener('open-financial-services', handleOpenServices);
+  }, []);
+
   const [financialStats, setFinancialStats] = useState({
     balance: 0,
     monthlyEarnings: 0,
@@ -134,19 +141,28 @@ export const FinancialDashboard = () => {
           </div>
 
           <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
-                  <Calendar className="text-blue-400" size={18} />
-                  Atendimentos
-                </h3>
-                <p className="text-slate-400 text-[9px] font-medium">Produtividade semanal.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
+                    <Calendar className="text-blue-400" size={18} />
+                    Atendimentos
+                  </h3>
+                  <p className="text-slate-400 text-[9px] font-medium">Produtividade semanal.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setActiveTab('services')}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all"
+                  >
+                    <Settings size={12} />
+                    Configurar Custos e Serviços
+                  </button>
+                  <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 self-start">
+                    <button className="px-2 py-0.5 bg-white/10 text-white rounded-lg font-black text-[8px] shadow-sm border border-white/5">Semana</button>
+                    <button className="px-2 py-0.5 text-slate-500 font-black text-[8px] hover:text-white transition-all">Mês</button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 self-start">
-                <button className="px-2 py-0.5 bg-white/10 text-white rounded-lg font-black text-[8px] shadow-sm border border-white/5">Semana</button>
-                <button className="px-2 py-0.5 text-slate-500 font-black text-[8px] hover:text-white transition-all">Mês</button>
-              </div>
-            </div>
 
             <div className="flex items-end justify-between gap-2 h-40 pt-4">
               {weeklyData.map((data, i) => (
