@@ -145,7 +145,7 @@ export const ProfessionalServices = () => {
     }
   };
 
-  const handleAddService = async (data: { nome: string, descricao: string, preco: number }) => {
+  const handleAddService = async (data: { nome: string, descricao: string, preco: number, duracao: number }) => {
     if (!profile) return;
     try {
       setLoading(true);
@@ -156,6 +156,7 @@ export const ProfessionalServices = () => {
           fisio_id: profile.id,
           nome: data.nome,
           descricao: data.descricao,
+          duracao: data.duracao,
           icone: 'Activity' // Default icon for custom services
         })
         .select()
@@ -520,7 +521,8 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
-    preco: '150.00'
+    preco: '150.00',
+    duracao: '60'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -528,7 +530,8 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
     onSubmit({
       nome: formData.nome,
       descricao: formData.descricao,
-      preco: parseFloat(formData.preco)
+      preco: parseFloat(formData.preco),
+      duracao: parseInt(formData.duracao)
     });
   };
 
@@ -546,6 +549,36 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço (Unitário)</label>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-blue-400 transition-colors">R$</span>
+            <input 
+              type="number" 
+              step="0.01"
+              value={formData.preco}
+              onChange={e => setFormData({...formData, preco: e.target.value})}
+              placeholder="0.00"
+              required
+              className="w-full !pl-12 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Duração (min)</label>
+          <input 
+            type="number" 
+            value={formData.duracao}
+            onChange={e => setFormData({...formData, duracao: e.target.value})}
+            placeholder="60"
+            required
+            className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição</label>
         <textarea 
@@ -554,22 +587,6 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
           placeholder="Breve descrição do serviço..."
           className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all h-24 resize-none"
         />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Inicial (Unitário)</label>
-        <div className="relative group">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-blue-400 transition-colors">R$</span>
-          <input 
-            type="number" 
-            step="0.01"
-            value={formData.preco}
-            onChange={e => setFormData({...formData, preco: e.target.value})}
-            placeholder="0.00"
-            required
-            className="w-full !pl-12 p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono"
-          />
-        </div>
       </div>
 
       <div className="flex gap-3 pt-4">

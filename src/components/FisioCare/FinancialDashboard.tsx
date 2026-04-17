@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, ArrowDownRight, Loader2, Settings, BarChart2, DollarSign } from 'lucide-react';
+import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, ArrowDownRight, Loader2, Settings, BarChart2, DollarSign, Trash2, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfessionalServices } from './ProfessionalServices';
+import { db } from '../../lib/firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { toast } from 'sonner';
 
 export const FinancialDashboard = () => {
   const { profile } = useAuth();
@@ -105,6 +108,30 @@ export const FinancialDashboard = () => {
     { day: 'Dom', count: 0, height: 'h-0' },
   ]);
 
+  const handleResetSimulatedPayments = async () => {
+    if (!profile) return;
+    
+    if (!confirm('Deseja realmente zerar todos os pagamentos simulados? Esta ação não afetará os dados reais de agendamentos.')) return;
+    
+    setLoading(true);
+    try {
+      const paymentsRef = collection(db, 'payments');
+      const snapshot = await getDocs(paymentsRef);
+      
+      const deletePromises = snapshot.docs.map(paymentDoc => deleteDoc(doc(db, 'payments', paymentDoc.id)));
+      await Promise.all(deletePromises);
+      
+      toast.success('Pagamentos simulados zerados com sucesso!');
+      // Recarregar dados
+      window.location.reload(); 
+    } catch (err) {
+      console.error('Erro ao zerar pagamentos:', err);
+      toast.error('Erro ao resetar pagamentos simulados.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
     { label: 'Saldo Disponível', value: `R$ ${financialStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Wallet, color: 'bg-[#0047AB] shadow-blue-900/20' },
     { label: 'Ganhos do Mês', value: `R$ ${financialStats.monthlyEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'bg-emerald-600 shadow-emerald-900/20' },
@@ -181,6 +208,15 @@ export const FinancialDashboard = () => {
                     Configurar Custos e Serviços
                   </button>
                   <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 self-start">
+                    <button 
+                      onClick={handleResetSimulatedPayments}
+                      className="px-2.5 py-1 text-rose-400 hover:bg-rose-500/10 rounded-lg font-black text-[8px] flex items-center gap-1 transition-all"
+                      title="Zerar pagamentos de teste"
+                    >
+                      <Trash2 size={10} />
+                      Zerar Simulados
+                    </button>
+                    <div className="w-px h-3 bg-white/10 mx-1" />
                     <button className="px-2 py-0.5 bg-white/10 text-white rounded-lg font-black text-[8px] shadow-sm border border-white/5">Semana</button>
                     <button className="px-2 py-0.5 text-slate-500 font-black text-[8px] hover:text-white transition-all">Mês</button>
                   </div>

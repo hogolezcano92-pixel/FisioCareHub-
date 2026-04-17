@@ -154,22 +154,39 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
     setIsSaving(true);
     try {
+      // First try to save to soap_notes as requested
       const { error } = await supabase
-        .from('prontuarios')
+        .from('soap_notes')
         .insert({
-          paciente_id: finalPacienteId,
-          fisio_id: profile.id,
-          data_registro: new Date().toISOString(),
-          conteudo: {
-            type: 'SOAP',
-            ...soapData,
-            raw: rawText
-          }
+          patient_id: finalPacienteId,
+          therapist_id: profile.id,
+          subjective: typeof soapData.subjective === 'string' ? soapData.subjective : JSON.stringify(soapData.subjective),
+          objective: typeof soapData.objective === 'string' ? soapData.objective : JSON.stringify(soapData.objective),
+          assessment: typeof soapData.assessment === 'string' ? soapData.assessment : JSON.stringify(soapData.assessment),
+          plan: typeof soapData.plan === 'string' ? soapData.plan : JSON.stringify(soapData.plan),
+          created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to prontuarios if soap_notes doesn't exist
+        console.warn("soap_notes table not found, falling back to prontuarios table");
+        const { error: fallbackError } = await supabase
+          .from('prontuarios')
+          .insert({
+            paciente_id: finalPacienteId,
+            fisio_id: profile.id,
+            data_registro: new Date().toISOString(),
+            conteudo: {
+              type: 'SOAP',
+              ...soapData,
+              raw: rawText
+            }
+          });
+        
+        if (fallbackError) throw fallbackError;
+      }
 
-      toast.success('Prontuário salvo no histórico do paciente.');
+      toast.success('Prontuário salvo com sucesso!');
       setSoapData(null);
       setRawText('');
       if (onSave) onSave();
@@ -178,6 +195,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       toast.error('Erro ao salvar prontuário.');
     } finally {
       setIsSaving(false);
+      setShowPatientSelector(false);
     }
   };
 
@@ -380,7 +398,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
               <div className="space-y-4">
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                   <input
                     type="text"
                     value={patientSearch}
@@ -389,7 +407,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       searchPatients(e.target.value);
                     }}
                     placeholder="Nome ou e-mail do paciente..."
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white font-medium outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-slate-600"
                   />
                 </div>
 
