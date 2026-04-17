@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch } from 'lucide-react';
+import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch, Check, Search } from 'lucide-react';
 import { generateSOAPRecord, summarizePatientHistory } from '../../lib/groq';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -41,13 +41,31 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
   const fetchPatientDetails = async (id: string) => {
     try {
-      const { data, error } = await supabase
+      // First try pacientes table
+      const { data: patient, error: pError } = await supabase
+        .from('pacientes')
+        .select('id, nome, foto_url, email')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (patient) {
+        setSelectedPatient({
+          id: patient.id,
+          nome_completo: patient.nome,
+          avatar_url: patient.foto_url,
+          email: patient.email
+        });
+        return;
+      }
+
+      // Fallback to perfis
+      const { data: profileData, error: profError } = await supabase
         .from('perfis')
         .select('id, nome_completo, avatar_url, email')
         .eq('id', id)
         .single();
-      if (error) throw error;
-      setSelectedPatient(data);
+      if (profError) throw profError;
+      setSelectedPatient(profileData);
     } catch (err) {
       console.error("Erro ao carregar detalhes do paciente:", err);
     }
@@ -60,7 +78,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [searching, setSearching] = useState(false);
 
   const searchPatients = async (query: string) => {
-    if (query.length < 2) {
+    if (query.length < 2 || !profile) {
       setSearchResults([]);
       return;
     }
@@ -68,10 +86,10 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
     setSearching(true);
     try {
       const { data, error } = await supabase
-        .from('perfis')
+        .from('pacientes')
         .select('*')
-        .eq('tipo_usuario', 'paciente')
-        .or(`nome_completo.ilike.%${query}%,email.ilike.%${query}%`)
+        .eq('fisioterapeuta_id', profile.id)
+        .or(`nome.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(5);
 
       if (error) throw error;
@@ -233,23 +251,23 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             "w-9 h-9 rounded-xl flex items-center justify-center transition-all overflow-hidden border border-white/10",
             selectedPatient ? "bg-blue-600/20 border-blue-500/30 shadow-lg shadow-blue-900/40" : "bg-slate-800 text-slate-500"
           )}>
-            {selectedPatient ? (
-              <img 
-                src={selectedPatient.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`} 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <User size={18} />
-            )}
-          </div>
-          <div>
-            <p className={cn(
-              "text-xs font-black leading-tight tracking-tight transition-colors",
-              selectedPatient ? "text-white" : "text-slate-500"
-            )}>
-              {selectedPatient ? selectedPatient.nome_completo : 'Vincular Paciente'}
-            </p>
+              {selectedPatient ? (
+                <img 
+                  src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User size={18} />
+              )}
+            </div>
+            <div>
+              <p className={cn(
+                "text-xs font-black leading-tight tracking-tight transition-colors",
+                selectedPatient ? "text-white" : "text-slate-500"
+              )}>
+                {selectedPatient ? (selectedPatient.nome_completo || selectedPatient.nome) : 'Vincular Paciente'}
+              </p>
             <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black mt-0.5">
               {selectedPatient ? 'Prontuário Identificado' : 'Obrigatório para salvar'}
             </p>
@@ -372,7 +390,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       {/* Patient Selection Modal */}
       <AnimatePresence>
         {showPatientSelector && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -398,7 +416,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
               <div className="space-y-4">
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                   <input
                     type="text"
                     value={patientSearch}
@@ -421,20 +439,20 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       <button
                         key={p.id}
                         onClick={() => handleSelectPatientAndSave(p)}
-                        className="w-full flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-blue-500/30 transition-all group lg:text-left"
+                        className="w-full flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-blue-500/30 transition-all group text-left"
                       >
                         <img
-                          src={p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`}
-                          alt={p.nome_completo}
+                          src={p.foto_url || p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`}
+                          alt={p.nome || p.nome_completo}
                           className="w-10 h-10 rounded-lg object-cover border border-white/10"
                         />
-                        <div className="text-left">
+                        <div className="text-left flex-1">
                           <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-                            {p.nome_completo}
+                            {p.nome || p.nome_completo}
                           </p>
-                          <p className="text-[10px] text-slate-500">{p.email}</p>
+                          <p className="text-[10px] text-slate-500 truncate max-w-[200px]">{p.email || 'Sem e-mail'}</p>
                         </div>
-                        <CheckCircle2 className="ml-auto text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" size={16} />
+                        <Check className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" size={16} />
                       </button>
                     ))
                   ) : patientSearch.length >= 2 ? (

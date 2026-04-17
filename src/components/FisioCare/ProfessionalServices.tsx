@@ -147,17 +147,27 @@ export const ProfessionalServices = () => {
 
   const handleAddService = async (data: { nome: string, descricao: string, preco: number, duracao: number }) => {
     if (!profile) return;
+    
+    // Basic validation
+    if (!data.nome || data.nome.trim() === '') {
+      toast.error("O nome do serviço é obrigatório.");
+      return;
+    }
+    
     try {
       setLoading(true);
+      const duracaoVal = isNaN(data.duracao) ? 60 : data.duracao;
+      const precoVal = isNaN(data.preco) ? 0 : data.preco;
+
       // 1. Create the service
       const { data: sData, error: sError } = await supabase
         .from('servicos_fisio')
         .insert({
           fisio_id: profile.id,
-          nome: data.nome,
-          descricao: data.descricao,
-          duracao: data.duracao,
-          icone: 'Activity' // Default icon for custom services
+          nome: data.nome.trim(),
+          descricao: data.descricao?.trim(),
+          duracao: duracaoVal,
+          icone: 'Activity'
         })
         .select()
         .single();
@@ -171,7 +181,7 @@ export const ProfessionalServices = () => {
           .insert({
             servico_id: sData.id,
             tipo: 'unitario',
-            preco: data.preco
+            preco: precoVal
           });
 
         if (oError) throw oError;
@@ -181,8 +191,8 @@ export const ProfessionalServices = () => {
       setIsAddingService(false);
       fetchServices();
     } catch (err) {
-      console.error(err);
-      toast.error("Erro ao criar serviço customizado.");
+      console.error("Erro ao criar serviço:", err);
+      toast.error("Erro ao criar serviço customizado. Verifique os campos.");
     } finally {
       setLoading(false);
     }
@@ -296,7 +306,7 @@ export const ProfessionalServices = () => {
       {/* Adding Option Modal Overlay */}
       <AnimatePresence>
         {addingOptionToId && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -327,7 +337,7 @@ export const ProfessionalServices = () => {
       {/* Adding Custom Service Modal */}
       <AnimatePresence>
         {isAddingService && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
