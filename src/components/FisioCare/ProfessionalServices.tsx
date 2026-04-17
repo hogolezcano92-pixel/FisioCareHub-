@@ -312,23 +312,27 @@ export const ProfessionalServices = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAddingOptionToId(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 p-8 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-6"
+              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             >
-              <h3 className="text-xl font-black text-white">
-                Adicionar {addingOptionToId.type === 'pacote' ? 'Pacote' : 'Plano Recorrente'}
-              </h3>
+              <div className="p-8 pb-4">
+                <h3 className="text-xl font-black text-white">
+                  Adicionar {addingOptionToId.type === 'pacote' ? 'Pacote' : 'Plano Recorrente'}
+                </h3>
+              </div>
               
-              <OptionForm 
-                type={addingOptionToId.type}
-                onSubmit={(data) => handleAddOption(addingOptionToId.id, data)}
-                onCancel={() => setAddingOptionToId(null)}
-              />
+              <div className="flex-1 overflow-y-auto px-8 pb-8">
+                <OptionForm 
+                  type={addingOptionToId.type}
+                  onSubmit={(data) => handleAddOption(addingOptionToId.id, data)}
+                  onCancel={() => setAddingOptionToId(null)}
+                />
+              </div>
             </motion.div>
           </div>
         )}
@@ -343,22 +347,26 @@ export const ProfessionalServices = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddingService(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 p-8 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-6"
+              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             >
-              <h3 className="text-xl font-black text-white">
-                Novo Serviço Customizado
-              </h3>
+              <div className="p-8 pb-4">
+                <h3 className="text-xl font-black text-white">
+                  Novo Serviço Customizado
+                </h3>
+              </div>
               
-              <NewServiceForm 
-                onSubmit={handleAddService}
-                onCancel={() => setIsAddingService(false)}
-              />
+              <div className="flex-1 overflow-y-auto px-8 pb-8">
+                <NewServiceForm 
+                  onSubmit={handleAddService}
+                  onCancel={() => setIsAddingService(false)}
+                />
+              </div>
             </motion.div>
           </div>
         )}
@@ -599,7 +607,7 @@ const NewServiceForm = ({ onSubmit, onCancel }: any) => {
         />
       </div>
 
-      <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900 py-4 mt-2">
         <button 
           type="button" 
           onClick={onCancel}
@@ -718,7 +726,7 @@ const OptionForm = ({ type, onSubmit, onCancel }: any) => {
         </div>
       )}
 
-      <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-6 sticky bottom-0 bg-slate-900 py-4 mt-2">
         <button 
           type="button" 
           onClick={onCancel}
