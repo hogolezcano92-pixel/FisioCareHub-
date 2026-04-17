@@ -217,61 +217,70 @@ export default function Patients() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => navigate(`/patient/${patient.id}`)}
-              className="bg-slate-900/50 backdrop-blur-xl !p-5 rounded-[2rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-lg"
+              className="bg-slate-900/50 backdrop-blur-xl !p-6 rounded-[2.5rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-xl hover:shadow-sky-900/10 flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-sky-400 overflow-hidden border border-white/10 shadow-sm">
-                    {patient.foto_url ? (
-                      <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
-                    ) : (
-                      <User size={24} />
+              <div>
+                <div className="flex items-start justify-between mb-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-sky-400 overflow-hidden border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
+                      {patient.foto_url ? (
+                        <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={28} />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
+                        {patient.nome}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                          Ativo
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2 text-slate-600 hover:bg-white/5 rounded-xl transition-all">
+                    <MoreVertical size={18} />
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Diagnóstico</p>
+                    <p className="text-xs font-bold text-slate-300 line-clamp-1">{patient.diagnostico || 'Sem diagnóstico registrado'}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-2">
+                    {patient.email && (
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                        <Mail size={12} className="text-sky-400" />
+                        <span className="truncate">{patient.email}</span>
+                      </div>
+                    )}
+                    {patient.telefone && (
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                        <Phone size={12} className="text-sky-400" />
+                        <span className="truncate">{patient.telefone}</span>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="text-base font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
-                      {patient.nome}
-                    </h3>
-                    <p className="text-[8px] font-bold text-sky-400 uppercase tracking-widest">
-                      {patient.diagnostico || 'Sem diagnóstico'}
-                    </p>
-                  </div>
-                </div>
-                <button className="p-1.5 text-slate-600 hover:bg-white/5 rounded-lg transition-all">
-                  <MoreVertical size={16} />
-                </button>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                {patient.email && (
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                    <Mail size={12} className="text-slate-600" />
-                    {patient.email}
-                  </div>
-                )}
-                {patient.telefone && (
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                    <Phone size={12} className="text-slate-600" />
-                    {patient.telefone}
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                  <Calendar size={12} className="text-slate-600" />
-                  Nasc: {patient.data_nascimento ? new Date(patient.data_nascimento).toLocaleDateString('pt-BR') : 'Não informado'}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
                 <div className="flex -space-x-1.5">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[8px] font-bold text-slate-600">
-                      <FileText size={9} />
+                    <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[7px] font-bold text-slate-500">
+                      {i}
                     </div>
                   ))}
                 </div>
-                <button className="flex items-center gap-1 text-[11px] font-black text-sky-400 hover:gap-2 transition-all">
-                  Ver Ficha <ChevronRight size={12} />
-                </button>
+                <div className="flex items-center gap-1 text-[10px] font-black text-sky-400 uppercase tracking-widest group-hover:gap-2 transition-all">
+                  Ver Prontuário
+                  <ChevronRight size={14} />
+                </div>
               </div>
             </motion.div>
           ))

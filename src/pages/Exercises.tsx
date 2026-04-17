@@ -22,7 +22,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 export default function Exercises() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [exercises, setExercises] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,21 +46,26 @@ export default function Exercises() {
   });
 
   useEffect(() => {
-    if (profile && profile.plano !== 'fisioterapeuta') {
+    if (authLoading) return;
+    
+    if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       navigate('/dashboard');
       return;
     }
     fetchExercises();
     fetchPatients();
-  }, [profile]);
+  }, [profile, authLoading]);
 
   const fetchPatients = async () => {
     try {
+      if (!user) return;
+      // Tentamos buscar da tabela pacientes que vincula físo ao paciente
       const { data, error } = await supabase
         .from('pacientes')
-        .select('id, nome')
-        .eq('fisioterapeuta_id', user?.id)
+        .select('id, nome, email')
+        .eq('fisioterapeuta_id', user.id)
         .order('nome');
+      
       if (error) throw error;
       setPatients(data || []);
     } catch (err) {
