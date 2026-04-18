@@ -20,7 +20,8 @@ import {
   Loader2,
   CheckCircle2,
   Printer,
-  Lock
+  Lock,
+  FileJson
 } from 'lucide-react';
 import { generateDocument } from '../lib/groq';
 import jsPDF from 'jspdf';
@@ -28,6 +29,8 @@ import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
 import ProGuard from '../components/ProGuard';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
+import { saveAs } from 'file-saver';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -121,30 +124,101 @@ export default function Documents() {
   };
 
   const saveDocument = async () => {
-    if (!generatedContent) return;
+    if (!generatedContent || !user || !profile) return;
 
     try {
       const { data: newDoc, error } = await supabase
         .from('documentos_gerados')
         .insert({
-          physio_id: user?.id,
-          physio_name: profile.nome_completo,
+          physio_id: user.id,
+          physio_name: profile.nome_completo || 'Fisioterapeuta',
           patient_name: patientName,
-          patient_email: patientEmail.trim().toLowerCase(),
+          patient_email: patientEmail ? patientEmail.trim().toLowerCase() : null,
           type: selectedTemplate?.name || 'Documento Geral',
           content: generatedContent,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro Supabase ao salvar:", error);
+        throw error;
+      }
 
       setDocuments([newDoc, ...documents]);
       setIsModalOpen(false);
       import('sonner').then(({ toast }) => toast.success("Documento salvo com sucesso!"));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao salvar documento:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao salvar documento."));
+      import('sonner').then(({ toast }) => toast.error(`Erro ao salvar documento: ${err.message || 'Erro desconhecido'}`));
+    }
+  };
+
+  const exportToWord = async (doc: any) => {
+    try {
+      // Basic markdown to docx conversion logic
+      // We'll split the content by double newlines for paragraphs
+      const sections = doc.content.split('\n\n');
+      
+      const children = [
+        new Paragraph({
+          text: doc.type,
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Paciente: ", bold: true }),
+            new TextRun(doc.patient_name),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Data: ", bold: true }),
+            new TextRun(new Date(doc.created_at || new Date()).toLocaleDateString()),
+          ],
+          spacing: { after: 400 },
+        }),
+        ...sections.map((section: string) => {
+          // Check for basic markdown headers
+          if (section.startsWith('# ')) {
+            return new Paragraph({ text: section.replace('# ', ''), heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 } });
+          } else if (section.startsWith('## ')) {
+            return new Paragraph({ text: section.replace('## ', ''), heading: HeadingLevel.HEADING_2, spacing: { before: 150, after: 150 } });
+          } else if (section.startsWith('### ')) {
+            return new Paragraph({ text: section.replace('### ', ''), heading: HeadingLevel.HEADING_3, spacing: { before: 100, after: 100 } });
+          }
+          
+          return new Paragraph({
+            children: [
+              new TextRun(section.replace(/\*\*|\*/g, '')), // Basic bold/italic removal for now
+            ],
+            spacing: { after: 200 },
+          });
+        }),
+        new Paragraph({
+          text: `Documento oficial gerado via FisioCareHub em ${new Date().toLocaleDateString()}`,
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 800 },
+          border: { top: { color: "000000", space: 1, style: BorderStyle.SINGLE, size: 6 } },
+        }),
+      ];
+
+      const wordDoc = new Document({
+        sections: [{
+          properties: {},
+          children: children,
+        }],
+      });
+
+      const blob = await Packer.toBlob(wordDoc);
+      saveAs(blob, `${doc.type}-${doc.patient_name}.docx`);
+      import('sonner').then(({ toast }) => toast.success("Documento Word (.docx) gerado com sucesso!"));
+    } catch (err) {
+      console.error("Erro ao exportar Word:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao exportar Documento Word."));
     }
   };
 
@@ -423,6 +497,13 @@ export default function Documents() {
                           title="Baixar PDF"
                         >
                           <Download size={18} />
+                        </button>
+                        <button 
+                          onClick={() => exportToWord(doc)}
+                          className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                          title="Baixar Word"
+                        >
+                          <FileText size={18} />
                         </button>
                         {isPhysio && (
                           <button 
@@ -722,6 +803,13 @@ export default function Documents() {
                     title="Baixar PDF"
                   >
                     <Download size={20} />
+                  </button>
+                  <button 
+                    onClick={() => exportToWord(viewingDoc)}
+                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                    title="Baixar Word"
+                  >
+                    <FileText size={20} />
                   </button>
                   <button 
                     onClick={() => setViewingDoc(null)}
