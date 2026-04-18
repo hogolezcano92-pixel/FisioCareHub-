@@ -16,11 +16,14 @@ export default defineConfig(({mode}) => {
             'vendor-supabase': ['@supabase/supabase-js'],
             'vendor-ui': ['lucide-react', 'motion', 'sonner', 'clsx', 'tailwind-merge'],
             'vendor-charts': ['recharts'],
-            'vendor-pdf': ['jspdf', 'html2canvas'],
+            'vendor-pdf': ['jspdf', 'html2canvas', 'docx', 'file-saver'],
             'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
           }
         }
       }
+    },
+    optimizeDeps: {
+      include: ['docx', 'file-saver']
     },
     define: {
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || env.SUPABASE_URL),
