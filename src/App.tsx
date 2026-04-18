@@ -84,7 +84,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 
-const Telehealth = lazy(() => import('./pages/Telehealth'));
+const Telehealth = lazy(() => import('./pages/Telehealth.tsx'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -257,10 +257,15 @@ function Navbar() {
   };
 
   const navItems = useMemo(() => [
-    { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', icon: HomeIcon },
+    { 
+      name: t('nav.home'), 
+      path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', 
+      icon: HomeIcon 
+    },
     ...(user ? [
-      ...(profile?.tipo_usuario === 'admin' || 
-          user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] : []),
+      ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
+        ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
+        : []),
       
       // Items for Physiotherapists
       ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
@@ -288,10 +293,7 @@ function Navbar() {
       ...(isApproved || profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'admin' ? [
         { name: t('nav.profile'), path: '/profile', icon: User },
       ] : []),
-    ] : [
-      { name: t('nav.login'), path: '/login', icon: User },
-      { name: t('nav.register'), path: '/register', icon: Stethoscope },
-    ])
+    ] : [])
   ], [user, profile, isApproved, t]);
 
   return (
