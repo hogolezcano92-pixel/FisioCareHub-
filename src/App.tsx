@@ -84,6 +84,8 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 
+const Telehealth = lazy(() => import('./pages/Telehealth'));
+
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
     <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -304,7 +306,7 @@ function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-            {navItems.map((item) => {
+            {navItems.filter(item => user || (item.path !== '/login' && item.path !== '/register')).map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -594,16 +596,20 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isPatientArea = user && profile?.tipo_usuario === 'paciente';
-  const isPhysioArea = user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
-  const isAdminArea = user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com');
+  const isPatientArea = useMemo(() => user && profile?.tipo_usuario === 'paciente', [user, profile]);
+  const isPhysioArea = useMemo(() => user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin', [user, profile]);
+  const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]);
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
-  const isAdminPage = location.pathname.startsWith('/admin') || location.pathname === '/preview';
+  const isAdminPage = useMemo(() => location.pathname.startsWith('/admin') || location.pathname === '/preview', [location.pathname]);
 
   const isApproved = profile?.status_aprovacao === 'aprovado';
   const isWaitingPage = location.pathname === '/aguardando-aprovacao';
-  const showSidebar = user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea);
+  
+  const showSidebar = useMemo(() => 
+    user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea),
+    [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]
+  );
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -711,6 +717,7 @@ function AppContent() {
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
                   <Route path="/fisioterapeuta" element={<FindPhysio />} />
                   <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
+                  <Route path="/telehealth" element={<ProtectedRoute><Telehealth /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </div>
