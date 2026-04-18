@@ -483,24 +483,24 @@ export default function Documents() {
                       {new Date(doc.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button 
                           onClick={() => setViewingDoc(doc)}
-                          className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Visualizar"
                         >
                           <Eye size={18} />
                         </button>
                         <button 
                           onClick={() => handleExportFromTable(doc)}
-                          className="p-2 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
+                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Baixar PDF"
                         >
                           <Download size={18} />
                         </button>
                         <button 
                           onClick={() => exportToWord(doc)}
-                          className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Baixar Word"
                         >
                           <FileText size={18} />
@@ -508,7 +508,7 @@ export default function Documents() {
                         {isPhysio && (
                           <button 
                             onClick={() => setDocToDelete(doc.id)}
-                            className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+                            className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                             title="Excluir"
                           >
                             <Trash2 size={18} />
