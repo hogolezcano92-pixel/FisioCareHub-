@@ -84,7 +84,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 
-const Telehealth = lazy(() => import('./pages/Telehealth.tsx'));
+const Telehealth = lazy(() => import('./pages/Telehealth'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
