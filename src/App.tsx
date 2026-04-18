@@ -16,6 +16,8 @@ import {
   FileText, 
   BrainCircuit, 
   LogOut, 
+  LogIn,
+  UserPlus,
   Menu, 
   X, 
   Home as HomeIcon,
@@ -308,7 +310,7 @@ function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-            {navItems.filter(item => user || (item.path !== '/login' && item.path !== '/register')).map((item) => {
+            {navItems.filter(item => !(['/login', '/register'].includes(item.path) && user)).map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -408,36 +410,66 @@ function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-slate-200 overflow-hidden"
+            className="md:hidden bg-slate-950 border-b border-white/5 overflow-hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1">
+            <div className="px-4 pt-2 pb-6 space-y-2">
               {navItems.map((item) => (
                 <Link
                   key={`${item.name}-${item.path}`}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-black transition-all",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black transition-all",
                     location.pathname === item.path 
-                      ? "bg-sky-500 text-white" 
-                      : "text-[#1A202C] hover:bg-sky-50 hover:text-sky-600"
+                      ? "bg-blue-600/10 text-white border border-blue-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                   )}
                 >
-                  <item.icon size={20} />
+                  <item.icon size={20} className={location.pathname === item.path ? "text-blue-400" : "text-slate-500"} />
                   {item.name}
                 </Link>
               ))}
-              {user && (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-base font-black text-red-600 hover:bg-red-50 transition-all"
-                >
-                  <LogOut size={20} />
-                  {t('nav.logout')}
-                </button>
+              
+              {user ? (
+                <div className="pt-4 mt-4 border-t border-white/5 space-y-2">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    <User size={20} className="text-slate-500" />
+                    {t('nav.profile')}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-rose-400 hover:bg-rose-500/10 transition-all text-left"
+                  >
+                    <LogOut size={20} />
+                    {t('nav.logout')}
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                  >
+                    <LogIn size={20} className="text-blue-400" />
+                    Entrar
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    <UserPlus size={20} />
+                    Começar Agora
+                  </Link>
+                </div>
               )}
             </div>
           </motion.div>
