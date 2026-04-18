@@ -131,6 +131,66 @@ export default function Profile() {
     }
   }, [profile, user, authLoading, navigate]);
 
+  const [earningsStats, setEarningsStats] = useState({ balance: 0, pending: 0 });
+  const [earningsList, setEarningsList] = useState<any[]>([]);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'earnings' && user) {
+      fetchEarnings();
+    }
+  }, [activeTab, user]);
+
+  const fetchEarnings = async () => {
+    if (!user) return;
+    setLoadingEarnings(true);
+    try {
+      // Fetch completed appointments for balance
+      const { data: completed } = await supabase
+        .from('agendamentos')
+        .select('*')
+        .eq('fisio_id', user.id)
+        .eq('status', 'concluido')
+        .order('data', { ascending: false });
+
+      // Fetch pending/confirmed for pending balance
+      const { data: pending } = await supabase
+        .from('agendamentos')
+        .select('valor, valor_cobrado')
+        .eq('fisio_id', user.id)
+        .in('status', ['pendente', 'confirmado']);
+
+      const totalBalance = completed?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+      const totalPending = pending?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+
+      setEarningsStats({
+        balance: totalBalance,
+        pending: totalPending
+      });
+
+      if (completed) {
+        // Fetch patient names for the list
+        const patientIds = Array.from(new Set(completed.map(a => a.paciente_id)));
+        const { data: patients } = await supabase
+          .from('perfis')
+          .select('id, nome_completo, avatar_url')
+          .in('id', patientIds);
+
+        const list = completed.map(a => ({
+          patient: patients?.find(p => p.id === a.paciente_id)?.nome_completo || 'Paciente',
+          avatar: patients?.find(p => p.id === a.paciente_id)?.avatar_url,
+          date: new Date(a.data).toLocaleDateString('pt-BR'),
+          val: Number(a.valor_cobrado || a.valor) || 0
+        }));
+        setEarningsList(list);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar ganhos:", err);
+    } finally {
+      setLoadingEarnings(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || updating) return;
@@ -936,11 +996,11 @@ export default function Profile() {
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <div className="p-8 bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 space-y-1">
                           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saldo Disponível</p>
-                          <p className="text-3xl font-black text-white">R$ 2.450,00</p>
+                          <p className="text-3xl font-black text-white">R$ {earningsStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A Receber</p>
-                          <p className="text-3xl font-black text-white">R$ 890,00</p>
+                          <p className="text-3xl font-black text-white">R$ {earningsStats.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                         <div className="p-8 bg-white/5 border border-blue-500/30 bg-blue-500/5 rounded-[2.5rem] space-y-4 flex flex-col justify-center">
                           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Configuração</p>
@@ -955,24 +1015,37 @@ export default function Profile() {
 
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
-                        {[
-                          { patient: 'Maria Silva', date: 'Hoje', val: 150.00 },
-                          { patient: 'João Pedro', date: 'Ontem', val: 150.00 },
-                          { patient: 'Ana Costa', date: '10 Abr', val: 200.00 }
-                        ].map((item, i) => (
-                          <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black">
-                                {item.patient[0]}
-                              </div>
-                              <div>
-                                <p className="font-bold text-white">{item.patient}</p>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
-                              </div>
-                            </div>
-                            <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
+                        {loadingEarnings ? (
+                          <div className="flex justify-center py-10">
+                            <Loader2 className="animate-spin text-blue-500" size={32} />
                           </div>
-                        ))}
+                        ) : earningsList.length > 0 ? (
+                          earningsList.map((item, i) => (
+                            <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black overflow-hidden">
+                                  {item.avatar ? (
+                                    <img src={item.avatar} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    item.patient[0]
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-white">{item.patient}</p>
+                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
+                                </div>
+                              </div>
+                              <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12 bg-white/5 rounded-[2rem] border border-dashed border-white/10 space-y-3">
+                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto text-slate-500">
+                              <DollarSign size={24} />
+                            </div>
+                            <p className="text-slate-400 font-medium">Nenhum pagamento recebido até o momento.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
