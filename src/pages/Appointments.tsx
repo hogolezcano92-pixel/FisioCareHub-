@@ -45,6 +45,15 @@ export default function Appointments() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('status') === 'success') {
+      import('sonner').then(({ toast }) => toast.success("Pagamento realizado com sucesso! Seu agendamento foi agendado."));
+      // Remove query params to avoid repeated toasts
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
@@ -461,7 +470,7 @@ export default function Appointments() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
         >
           <Plus size={16} /> Agendar Sessão
         </button>
@@ -470,7 +479,7 @@ export default function Appointments() {
       <div className="grid gap-3">
         {appointments.length === 0 ? (
           <div className="bg-slate-900/50 backdrop-blur-xl p-12 rounded-3xl border border-white/10 text-center">
-            <div className="w-16 h-16 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+            <div className="w-16 h-16 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
               <CalendarIcon size={32} />
             </div>
             <h3 className="text-xl font-black text-white">Nenhuma consulta</h3>
@@ -489,7 +498,7 @@ export default function Appointments() {
                   "w-12 h-12 rounded-xl flex items-center justify-center",
                   app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
                   app.status === 'pendente' ? "bg-amber-500/10 text-amber-400" :
-                  "bg-slate-800 text-slate-500"
+                  "bg-slate-800 text-slate-600"
                 )}>
                   <CalendarCheck size={24} />
                 </div>
@@ -507,10 +516,10 @@ export default function Appointments() {
               <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                  app.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400" :
-                  app.status === 'pendente' ? "bg-amber-500/20 text-amber-400" :
-                  app.status === 'cancelado' ? "bg-red-500/20 text-red-400" :
-                  "bg-slate-800 text-slate-500"
+                  app.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
+                  app.status === 'pendente' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
+                  app.status === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
+                  "bg-slate-800 text-slate-600"
                 )}>
                   {app.status === 'pendente' ? 'Pendente' : 
                    app.status === 'confirmado' ? 'Confirmado' : 
@@ -532,7 +541,7 @@ export default function Appointments() {
                             setSelectedSession(session);
                             setShowPaymentModal(true);
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                          className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
                         >
                           <Wallet size={14} />
                           Pagar Sessão
@@ -704,7 +713,7 @@ export default function Appointments() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full h-12 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 shadow-lg shadow-blue-900/20"
+                  className="w-full h-12 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 shadow-lg shadow-sky-900/20"
                 >
                   {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Agendamento'}
                 </button>
@@ -730,7 +739,7 @@ export default function Appointments() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl p-6 text-center"
             >
-              <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+              <div className="w-16 h-16 bg-sky-600/20 text-sky-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-sky-500/20">
                 <CalendarCheck size={32} />
               </div>
               <h2 className="text-xl font-black mb-1.5 text-white">Confirmar Agendamento?</h2>
@@ -752,7 +761,7 @@ export default function Appointments() {
                     updateStatus(selectedAppId, 'confirmado');
                     setSelectedAppId(null);
                   }}
-                  className="flex-1 h-11 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                  className="flex-1 h-11 bg-sky-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
                 >
                   Confirmar
                 </button>

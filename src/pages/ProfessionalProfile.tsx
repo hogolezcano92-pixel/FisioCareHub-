@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -23,6 +23,7 @@ import { cn, resolveStorageUrl } from '../lib/utils';
 
 export default function ProfessionalProfile() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { user, profile: currentUserProfile } = useAuth();
   const navigate = useNavigate();
   const [physio, setPhysio] = useState<any>(null);
@@ -37,6 +38,12 @@ export default function ProfessionalProfile() {
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [configServicos, setConfigServicos] = useState<any>(null);
+
+  useEffect(() => {
+    if (searchParams.get('status') === 'canceled') {
+      toast.error('Pagamento cancelado. Tente novamente se desejar agendar.');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchPhysio = async () => {
@@ -122,7 +129,7 @@ export default function ProfessionalProfile() {
       if (appError) throw appError;
 
       // 2. Criar Sessão para Pagamento
-      const { error: sessionError } = await supabase
+      const { data: sessionData, error: sessionError } = await supabase
         .from('sessoes')
         .insert({
           paciente_id: user.id,
@@ -131,14 +138,38 @@ export default function ProfessionalProfile() {
           hora: bookingData.hora,
           valor: bookingData.valor || 0,
           status_pagamento: 'pendente'
-        });
+        })
+        .select()
+        .single();
 
-      toast.success('Solicitação de agendamento enviada com sucesso!');
-      setShowBookingModal(false);
-      navigate('/appointments');
-    } catch (err) {
+      if (sessionError) throw sessionError;
+
+      // 3. Criar Sessão de Checkout do Stripe
+      toast.info('Redirecionando para o pagamento seguro...');
+      
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionData.id,
+          appointmentId: appData.id,
+          amount: bookingData.valor,
+          physioName: physio.nome_completo,
+          type: bookingData.tipo,
+          physioId: id
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Erro ao gerar link de pagamento');
+      }
+    } catch (err: any) {
       console.error('Erro ao agendar:', err);
-      toast.error('Erro ao realizar agendamento');
+      toast.error(err.message || 'Erro ao realizar agendamento');
     } finally {
       setBookingLoading(false);
     }
