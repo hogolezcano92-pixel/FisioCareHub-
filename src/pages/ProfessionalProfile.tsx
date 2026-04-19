@@ -104,7 +104,17 @@ export default function ProfessionalProfile() {
     setBookingLoading(true);
     try {
       // Ensure date and time formats for Supabase
-      const formattedDate = bookingData.data; // YYYY-MM-DD
+      // Normalizar data para ISO (YYYY-MM-DD)
+      let formattedDate = bookingData.data;
+      try {
+        const dateObj = new Date(bookingData.data);
+        if (!isNaN(dateObj.getTime())) {
+          formattedDate = dateObj.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Erro ao converter data:", e);
+      }
+
       const formattedTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora; // HH:mm:ss
       const sqlTimestamp = `${formattedDate} ${formattedTime}`;
 

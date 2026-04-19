@@ -244,7 +244,17 @@ export default function Agenda() {
       const currentPrice = formData.valor || 0;
 
       // Ensure date and time formats for Supabase
-      const formattedDate = formData.data; // YYYY-MM-DD
+      // Normalizar data para ISO (YYYY-MM-DD)
+      let formattedDate = formData.data;
+      try {
+        const dateObj = new Date(formData.data);
+        if (!isNaN(dateObj.getTime())) {
+          formattedDate = dateObj.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Erro ao converter data:", e);
+      }
+      
       const formattedTime = formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora; // HH:mm:ss
       const sqlTimestamp = `${formattedDate} ${formattedTime}`;
 

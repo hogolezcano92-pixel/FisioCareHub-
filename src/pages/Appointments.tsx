@@ -337,7 +337,17 @@ export default function Appointments() {
       }
 
       // Ensure date and time formats for Supabase
-      const sqlDate = date; // YYYY-MM-DD
+      // Normalizar data para YYYY-MM-DD
+      let sqlDate = date;
+      try {
+        const dateObj = new Date(date);
+        if (!isNaN(dateObj.getTime())) {
+          sqlDate = dateObj.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Erro ao converter data:", e);
+      }
+
       const sqlTime = time.length === 5 ? `${time}:00` : time; // HH:mm:ss
       const sqlTimestamp = `${sqlDate} ${sqlTime}`;
 
