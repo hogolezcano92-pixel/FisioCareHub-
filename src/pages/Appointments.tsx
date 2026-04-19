@@ -43,6 +43,77 @@ export default function Appointments() {
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [configServicos, setConfigServicos] = useState<any>(null);
+  const [currentPrice, setCurrentPrice] = useState(0);
+
+  // Fetch prices when a user (physio) is selected
+  useEffect(() => {
+    const fetchPhysioPrices = async () => {
+      if (!selectedUserId || profile?.tipo_usuario !== 'paciente') {
+        setConfigServicos(null);
+        setCurrentPrice(0);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('configuracao_servicos')
+          .select('*')
+          .eq('physio_id', selectedUserId)
+          .single();
+
+        if (error) {
+          console.log('Nenhuma configuração de preços específica encontrada para este profissional.');
+          // Fallback to profile price if exists
+          const physio = availableUsers.find(u => u.id === selectedUserId);
+          const basePrice = physio?.preco_sessao || 0;
+          setConfigServicos(null);
+          setCurrentPrice(basePrice);
+        } else {
+          setConfigServicos(data);
+          updatePrice(service, data);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar preços do fisioterapeuta:', err);
+      }
+    };
+
+    fetchPhysioPrices();
+  }, [selectedUserId, availableUsers, profile]);
+
+  // Update price when service type changes
+  const updatePrice = (serviceType: string, config: any) => {
+    if (!config) return;
+    
+    let price = 0;
+    switch (serviceType) {
+      case 'Avaliação Inicial':
+        price = config.avaliacao_inicial;
+        break;
+      case 'Consulta de Fisioterapia':
+      case 'Sessão de Reabilitação':
+        price = config.sessao_fisioterapia;
+        break;
+      case 'RPG':
+        price = config.rpg;
+        break;
+      case 'Pilates Clínico':
+        price = config.pilates;
+        break;
+      case 'Fisioterapia Domiciliar':
+        price = config.domiciliar;
+        break;
+      default:
+        price = config.sessao_fisioterapia || 0;
+    }
+    setCurrentPrice(price || 0);
+  };
+
+  useEffect(() => {
+    if (configServicos) {
+      updatePrice(service, configServicos);
+    }
+  }, [service, configServicos]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -301,14 +372,9 @@ export default function Appointments() {
 
       // 2. Criar Sessão para Pagamento se o alvo for fisioterapeuta
       if (newApp && targetUser.tipo_usuario === 'fisioterapeuta') {
-        // Buscar o preço da sessão do fisioterapeuta
-        const { data: physioProfile } = await supabase
-          .from('perfis')
-          .select('preco_sessao')
-          .eq('id', targetUser.id)
-          .single();
+        const finalPrice = currentPrice > 0 ? currentPrice : 0;
 
-        if (physioProfile?.preco_sessao) {
+        if (finalPrice > 0) {
           const { error: sessionError } = await supabase
             .from('sessoes')
             .insert({
@@ -316,7 +382,7 @@ export default function Appointments() {
               fisioterapeuta_id: isPhysio ? user?.id : targetUser.id,
               data: sqlDate,
               hora: sqlTime,
-              valor: physioProfile.preco_sessao,
+              valor: finalPrice,
               status_pagamento: 'pendente'
             });
           
@@ -652,15 +718,28 @@ export default function Appointments() {
                   <select
                     value={service}
                     onChange={(e) => setService(e.target.value)}
-                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm text-white"
+                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm text-white appearance-none"
                   >
                     <option value="Consulta de Fisioterapia" className="bg-slate-900">Consulta de Fisioterapia</option>
                     <option value="Avaliação Inicial" className="bg-slate-900">Avaliação Inicial</option>
                     <option value="Sessão de Reabilitação" className="bg-slate-900">Sessão de Reabilitação</option>
                     <option value="Pilates Clínico" className="bg-slate-900">Pilates Clínico</option>
                     <option value="RPG" className="bg-slate-900">RPG</option>
+                    <option value="Fisioterapia Domiciliar" className="bg-slate-900">Fisioterapia Domiciliar</option>
                   </select>
                 </div>
+
+                {profile?.tipo_usuario === 'paciente' && currentPrice > 0 && (
+                  <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <Wallet size={16} />
+                      <span className="text-xs font-bold uppercase tracking-widest">Valor da Sessão:</span>
+                    </div>
+                    <span className="text-lg font-black text-blue-400">
+                      R$ {currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
