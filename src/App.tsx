@@ -85,6 +85,7 @@ const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
+const FinanceServiceSettings = lazy(() => import('./pages/FinanceServiceSettings'));
 
 const Telehealth = lazy(() => import('./pages/Telehealth'));
 
@@ -378,13 +379,13 @@ function Navbar() {
                   to="/login" 
                   className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
                 >
-                  Entrar
+                  {t('nav.login')}
                 </Link>
                 <Link 
                   to="/register" 
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-50 text-white hover:text-blue-600 rounded-xl text-[13px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                 >
-                  Começar Agora
+                  {t('nav.register')}
                 </Link>
               </div>
             )}
@@ -751,6 +752,7 @@ function AppContent() {
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
                   <Route path="/fisioterapeuta" element={<FindPhysio />} />
                   <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
+                  <Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><FinanceServiceSettings /></ProtectedRoute>} />
                   <Route path="/telehealth" element={<ProtectedRoute><Telehealth /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
