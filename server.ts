@@ -72,10 +72,75 @@ async function startServer() {
         // Optionally update appointment status too if needed
         const appointmentId = session.metadata?.appointmentId;
         if (appointmentId) {
+          // 1. Update appointment status
           await supabaseAdmin
             .from('agendamentos')
             .update({ status: 'confirmado' })
             .eq('id', appointmentId);
+
+          // 2. Fetch appointment details to send notifications
+          const { data: appData } = await supabaseAdmin
+            .from('agendamentos')
+            .select(`
+              *,
+              paciente:perfis!paciente_id (nome_completo, email, telefone),
+              fisioterapeuta:perfis!fisio_id (id, nome_completo, email)
+            `)
+            .eq('id', appointmentId)
+            .single();
+
+          if (appData) {
+            const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
+            const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            // 3. Create notification for the Physiotherapist
+            await supabaseAdmin.from('notificacoes').insert({
+              user_id: appData.fisioterapeuta.id,
+              titulo: 'Novo Agendamento Confirmado',
+              mensagem: `${appData.paciente.nome_completo} realizou o pagamento e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
+              tipo: 'appointment',
+              lida: false,
+              link: '/appointments'
+            });
+
+            // 4. Send confirmation emails via Edge Function
+            // Note: We use the same payload expected by the 'Send-email' function
+            const baseUrl = process.env.APP_URL || "https://fisiocarehub.company";
+            const emailPayload = {
+              to: appData.fisioterapeuta.email,
+              subject: 'Novo Agendamento Recebido - FisioCareHub',
+              appointmentId: appointmentId,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>Novo Agendamento Confirmado!</h2>
+                  <p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p>
+                  <p><strong>Data:</strong> ${formattedDate}</p>
+                  <p><strong>Hora:</strong> ${formattedTime}</p>
+                  <p><strong>Serviço:</strong> ${appData.servico || 'Consulta'}</p>
+                  <a href="${baseUrl}/appointments" style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 8px;">Ver na Agenda</a>
+                </div>
+              `
+            };
+
+            await supabaseAdmin.functions.invoke('Send-email', { body: emailPayload });
+            
+            // Also notify patient
+            await supabaseAdmin.functions.invoke('Send-email', { 
+              body: {
+                to: appData.paciente.email,
+                subject: 'Pagamento Confirmado - FisioCareHub',
+                html: `
+                  <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Pagamento Confirmado!</h2>
+                    <p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p>
+                    <p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>
+                    <p><strong>Data:</strong> ${formattedDate}</p>
+                    <p><strong>Hora:</strong> ${formattedTime}</p>
+                  </div>
+                `
+              }
+            });
+          }
         }
       }
     }
