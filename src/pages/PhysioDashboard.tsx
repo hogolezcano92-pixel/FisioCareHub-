@@ -16,7 +16,6 @@ import {
   DollarSign,
   Package
 } from 'lucide-react';
-import { ProfessionalServices } from '../components/FisioCare/ProfessionalServices';
 import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -26,7 +25,7 @@ export default function PhysioDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'requests' | 'agenda' | 'servicos' | 'financeiro'>((searchParams.get('tab') as any) || 'requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'agenda' | 'financeiro'>((searchParams.get('tab') as any) || 'requests');
   const [requests, setRequests] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,16 +157,6 @@ export default function PhysioDashboard() {
               Minha Agenda
             </button>
             <button 
-              onClick={() => navigate('/dashboard/fisio?tab=servicos')}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
-                activeTab === 'servicos' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-200"
-              )}
-            >
-              <Package size={16} />
-              Serviços e Preços
-            </button>
-            <button 
               onClick={() => navigate('/dashboard/fisio?tab=financeiro')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
@@ -294,8 +283,6 @@ export default function PhysioDashboard() {
                 )}
               </div>
             </div>
-          ) : activeTab === 'servicos' ? (
-            <ProfessionalServices />
           ) : activeTab === 'financeiro' ? (
             <FinancialDashboard />
           ) : (

@@ -7,6 +7,7 @@ import {
   MapPin, 
   Clock, 
   CheckCircle2, 
+  XCircle,
   Calendar as CalendarIcon, 
   MessageSquare, 
   ChevronLeft,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
+import { cn, resolveStorageUrl } from '../lib/utils';
 
 export default function ProfessionalProfile() {
   const { id } = useParams();
@@ -30,10 +31,12 @@ export default function ProfessionalProfile() {
   const [bookingData, setBookingData] = useState({
     data: '',
     hora: '',
-    tipo: 'Consulta Presencial',
-    observacoes: ''
+    tipo: 'Avaliação inicial',
+    observacoes: '',
+    valor: 0
   });
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [serviceSettings, setServiceSettings] = useState<any>(null);
 
   useEffect(() => {
     const fetchPhysio = async () => {
@@ -48,6 +51,22 @@ export default function ProfessionalProfile() {
 
         if (error) throw error;
         setPhysio(data);
+
+        // Fetch session settings
+        const { data: settings } = await supabase
+          .from('configuracao_servicos')
+          .select('*')
+          .eq('physio_id', id)
+          .maybeSingle();
+        
+        setServiceSettings(settings);
+        if (settings) {
+          setBookingData(prev => ({
+            ...prev,
+            tipo: 'Avaliação inicial',
+            valor: settings.avaliacao_inicial || 0
+          }));
+        }
       } catch (err) {
         console.error('Erro ao buscar fisioterapeuta:', err);
         toast.error('Profissional não encontrado');
@@ -75,6 +94,11 @@ export default function ProfessionalProfile() {
 
     setBookingLoading(true);
     try {
+      // Combine date and time for data_servico (required in schema)
+      const [year, month, day] = bookingData.data.split('-').map(Number);
+      const [hours, minutes] = bookingData.hora.split(':').map(Number);
+      const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
+
       // 1. Criar Agendamento
       const { data: appData, error: appError } = await supabase
         .from('agendamentos')
@@ -83,8 +107,10 @@ export default function ProfessionalProfile() {
           fisio_id: id,
           data: bookingData.data,
           hora: bookingData.hora,
+          data_servico: appointmentDate,
           tipo: bookingData.tipo,
           observacoes: bookingData.observacoes,
+          valor_cobrado: bookingData.valor || 0,
           status: 'pendente'
         })
         .select()
@@ -93,20 +119,16 @@ export default function ProfessionalProfile() {
       if (appError) throw appError;
 
       // 2. Criar Sessão para Pagamento
-      if (physio.preco_sessao) {
-        const { error: sessionError } = await supabase
-          .from('sessoes')
-          .insert({
-            paciente_id: user.id,
-            fisioterapeuta_id: id,
-            data: bookingData.data,
-            hora: bookingData.hora,
-            valor: physio.preco_sessao,
-            status_pagamento: 'pendente'
-          });
-
-        if (sessionError) console.error('Erro ao criar sessão:', sessionError);
-      }
+      const { error: sessionError } = await supabase
+        .from('sessoes')
+        .insert({
+          paciente_id: user.id,
+          fisioterapeuta_id: id,
+          data: bookingData.data,
+          hora: bookingData.hora,
+          valor: bookingData.valor || 0,
+          status_pagamento: 'pendente'
+        });
 
       toast.success('Solicitação de agendamento enviada com sucesso!');
       setShowBookingModal(false);
@@ -130,7 +152,7 @@ export default function ProfessionalProfile() {
   if (!physio) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-950 pb-20">
       {/* Header / Cover */}
       <div className="h-64 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
         <button 
@@ -145,15 +167,15 @@ export default function ProfessionalProfile() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column: Profile Info */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white p-8 rounded-[3rem] shadow-xl shadow-blue-900/5 border border-slate-100">
+            <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border border-white/10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="relative">
                   <img 
-                    src={physio.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${physio.id}`}
+                    src={resolveStorageUrl(physio.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${physio.id}`}
                     alt={physio.nome_completo}
-                    className="w-40 h-40 rounded-[2.5rem] object-cover border-4 border-white shadow-2xl"
+                    className="w-40 h-40 rounded-[2.5rem] object-cover border-4 border-white/10 shadow-2xl"
                   />
-                  <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full shadow-lg border-4 border-white">
+                  <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full shadow-lg border-4 border-slate-900">
                     <CheckCircle2 size={20} />
                   </div>
                 </div>
@@ -161,19 +183,19 @@ export default function ProfessionalProfile() {
                 <div className="flex-1 space-y-4">
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dr. {physio.nome_completo}</h1>
-                      <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100">
+                      <h1 className="text-3xl font-black text-white tracking-tight">Dr. {physio.nome_completo}</h1>
+                      <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
                         <ShieldCheck size={12} />
                         Verificado
                       </div>
                     </div>
-                    <p className="text-blue-600 font-black text-xs uppercase tracking-[0.2em]">{physio.especialidade || 'Fisioterapeuta'}</p>
+                    <p className="text-blue-400 font-black text-xs uppercase tracking-[0.2em]">{physio.especialidade || 'Fisioterapeuta'}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center gap-1.5 text-amber-400">
                       <Star size={18} fill="currentColor" />
-                      <span className="text-sm font-black text-slate-900">4.9</span>
+                      <span className="text-sm font-black text-white">4.9</span>
                       <span className="text-xs text-slate-400 font-bold">(120 avaliações)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400">
@@ -184,7 +206,7 @@ export default function ProfessionalProfile() {
 
                   <div className="flex flex-wrap gap-2">
                     {['Ortopedia', 'Esportiva', 'RPG', 'Pilates'].map(tag => (
-                      <span key={tag} className="px-3 py-1 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">
+                      <span key={tag} className="px-3 py-1 bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
                         {tag}
                       </span>
                     ))}
@@ -192,9 +214,9 @@ export default function ProfessionalProfile() {
                 </div>
               </div>
 
-              <div className="mt-10 pt-10 border-t border-slate-50 space-y-4">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Sobre o Profissional</h2>
-                <p className="text-slate-600 font-medium leading-relaxed">
+              <div className="mt-10 pt-10 border-t border-white/5 space-y-4">
+                <h2 className="text-xl font-black text-white tracking-tight">Sobre o Profissional</h2>
+                <p className="text-slate-300 font-medium leading-relaxed">
                   {physio.bio || 'Fisioterapeuta dedicado a proporcionar a melhor reabilitação no conforto do seu lar. Especialista em técnicas modernas de terapia manual e exercícios funcionais.'}
                 </p>
               </div>
@@ -202,36 +224,36 @@ export default function ProfessionalProfile() {
 
             {/* Experience & Education */}
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-lg shadow-blue-900/5 space-y-4">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+              <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
+                <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
                   <Award size={24} />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Formação Acadêmica</h3>
+                <h3 className="text-lg font-black text-white tracking-tight">Formação Acadêmica</h3>
                 <ul className="space-y-3">
                   <li className="flex gap-3">
                     <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-600 font-medium">Graduação em Fisioterapia - USP</p>
+                    <p className="text-sm text-slate-300 font-medium">Graduação em Fisioterapia - USP</p>
                   </li>
                   <li className="flex gap-3">
                     <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-600 font-medium">Pós-graduação em Fisioterapia Esportiva</p>
+                    <p className="text-sm text-slate-300 font-medium">Pós-graduação em Fisioterapia Esportiva</p>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-lg shadow-blue-900/5 space-y-4">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+              <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
+                <div className="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center">
                   <Stethoscope size={24} />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Serviços Oferecidos</h3>
+                <h3 className="text-lg font-black text-white tracking-tight">Serviços Oferecidos</h3>
                 <ul className="space-y-3">
                   <li className="flex gap-3">
                     <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-600 font-medium">Atendimento Domiciliar</p>
+                    <p className="text-sm text-slate-300 font-medium">Atendimento Domiciliar</p>
                   </li>
                   <li className="flex gap-3">
                     <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-600 font-medium">Teleconsulta (Online)</p>
+                    <p className="text-sm text-slate-300 font-medium">Teleconsulta (Online)</p>
                   </li>
                 </ul>
               </div>
@@ -240,15 +262,15 @@ export default function ProfessionalProfile() {
 
           {/* Right Column: Booking Card */}
           <div className="space-y-6">
-            <div className="bg-white p-8 rounded-[3rem] shadow-2xl shadow-blue-900/10 border border-slate-100 sticky top-8">
+            <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border border-white/10 sticky top-8">
               <div className="text-center space-y-4 mb-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-100">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-500/30">
                   <Wallet size={14} />
                   Investimento
                 </div>
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-slate-400 text-lg font-bold">R$</span>
-                  <span className="text-5xl font-black text-slate-900 tracking-tighter">{physio.preco_sessao || '---'}</span>
+                  <span className="text-5xl font-black text-white tracking-tighter">{physio.preco_sessao || '---'}</span>
                   <span className="text-slate-400 text-sm font-bold">/sessão</span>
                 </div>
                 <p className="text-slate-500 text-xs font-medium">Pagamento seguro via Stripe Connect</p>
@@ -264,20 +286,20 @@ export default function ProfessionalProfile() {
                 </button>
                 <button 
                   onClick={() => navigate(`/chat?user=${physio.id}`)}
-                  className="w-full py-5 bg-slate-50 text-slate-600 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100 flex items-center justify-center gap-2"
+                  className="w-full py-5 bg-white/5 text-slate-300 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 flex items-center justify-center gap-2"
                 >
                   <MessageSquare size={20} />
                   Enviar Mensagem
                 </button>
               </div>
 
-              <div className="mt-8 pt-8 border-t border-slate-50 space-y-4">
-                <div className="flex items-center gap-3 text-slate-500">
-                  <Clock size={18} className="text-blue-600" />
+              <div className="mt-8 pt-8 border-t border-white/5 space-y-4">
+                <div className="flex items-center gap-3 text-slate-400">
+                  <Clock size={18} className="text-blue-400" />
                   <span className="text-xs font-bold">Resposta em até 2 horas</span>
                 </div>
-                <div className="flex items-center gap-3 text-slate-500">
-                  <ShieldCheck size={18} className="text-blue-600" />
+                <div className="flex items-center gap-3 text-slate-400">
+                  <ShieldCheck size={18} className="text-blue-400" />
                   <span className="text-xs font-bold">Garantia de atendimento</span>
                 </div>
               </div>
@@ -289,7 +311,7 @@ export default function ProfessionalProfile() {
       {/* Booking Modal */}
       <AnimatePresence>
         {showBookingModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -301,64 +323,82 @@ export default function ProfessionalProfile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 overflow-hidden"
+              className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden border border-white/10"
             >
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Agendar Consulta</h2>
-                <button onClick={() => setShowBookingModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                  <Loader2 size={24} className="rotate-45" />
+                <h2 className="text-2xl font-black text-white tracking-tight">Agendar Consulta</h2>
+                <button onClick={() => setShowBookingModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
+                  <XCircle size={24} />
                 </button>
               </div>
 
               <form onSubmit={handleBooking} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
                     <input 
                       type="date"
                       required
                       value={bookingData.data}
                       onChange={(e) => setBookingData({...bookingData, data: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hora</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
                     <input 
                       type="time"
                       required
                       value={bookingData.hora}
                       onChange={(e) => setBookingData({...bookingData, hora: e.target.value})}
-                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900"
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Atendimento</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão</label>
                   <select 
                     value={bookingData.tipo}
-                    onChange={(e) => setBookingData({...bookingData, tipo: e.target.value})}
-                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900 appearance-none"
+                    onChange={(e) => {
+                      const tipo = e.target.value;
+                      let valor = 0;
+                      if (serviceSettings) {
+                        switch(tipo) {
+                          case 'Avaliação inicial': valor = serviceSettings.avaliacao_inicial; break;
+                          case 'Sessão de fisioterapia': valor = serviceSettings.sessao_fisioterapia; break;
+                          case 'Reabilitação': valor = serviceSettings.reabilitacao; break;
+                          case 'RPG': valor = serviceSettings.rpg; break;
+                          case 'Pilates': valor = serviceSettings.pilates; break;
+                          case 'Fisioterapia domiciliar': valor = serviceSettings.domiciliar; break;
+                        }
+                      }
+                      setBookingData({...bookingData, tipo: tipo, valor: valor || 0});
+                    }}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                   >
-                    <option value="Consulta Presencial">Consulta Presencial (Domicílio)</option>
-                    <option value="Teleconsulta">Teleconsulta (Online)</option>
+                    <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
+                    <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
+                    <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
+                    <option value="RPG" className="bg-slate-900">RPG</option>
+                    <option value="Pilates" className="bg-slate-900">Pilates</option>
+                    <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observações</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Observações</label>
                   <textarea 
                     value={bookingData.observacoes}
                     onChange={(e) => setBookingData({...bookingData, observacoes: e.target.value})}
                     placeholder="Conte brevemente o motivo do agendamento..."
-                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-slate-900 h-32 resize-none"
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white h-32 resize-none"
                   />
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-blue-600">Total da Sessão:</span>
-                  <span className="text-lg font-black text-blue-700">R$ {physio.preco_sessao || '---'}</span>
+                <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-400">Total da Sessão:</span>
+                  <span className="text-lg font-black text-blue-400">R$ {(bookingData.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
 
                 <button 

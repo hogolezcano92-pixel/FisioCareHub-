@@ -37,18 +37,17 @@ export default function Agenda() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [view, setView] = useState<'daily' | 'all'>('daily');
-  const [fisioServices, setFisioServices] = useState<any[]>([]);
+  const [serviceSettings, setServiceSettings] = useState<any>(null);
 
   // Form State
   const [formData, setFormData] = useState({
     paciente_id: '',
     data: new Date().toISOString().split('T')[0],
     hora: '08:00',
-    tipo: 'Presencial',
+    tipo: 'Avaliação inicial',
     local: '',
     observacoes: '',
-    servico_fisio_id: '',
-    servico: '' // Guardar nome do serviço
+    valor: 0
   });
 
   useEffect(() => {
@@ -66,38 +65,30 @@ export default function Agenda() {
     }
     
     loadData();
-    fetchFisioServices();
+    fetchServiceSettings();
   }, [user, selectedDate, profile, authLoading, view]);
 
-  const fetchFisioServices = async () => {
+  const fetchServiceSettings = async () => {
     if (!user) return;
     try {
       const { data, error } = await supabase
-        .from('servicos_fisio')
-        .select(`
-          *,
-          opcoes:opcoes_precos(*)
-        `)
-        .eq('fisio_id', user.id);
+        .from('configuracao_servicos')
+        .select('*')
+        .eq('physio_id', user.id)
+        .maybeSingle();
       
-      if (error) throw error;
-      setFisioServices(data || []);
+      if (error && error.code !== 'PGRST116') throw error;
+      setServiceSettings(data);
       
-      // Pre-selecionar o primeiro serviço se disponível
-      if (data && data.length > 0) {
-        setFisioServices(data);
-        if (!formData.servico_fisio_id) {
-          setFormData(prev => ({ 
-            ...prev, 
-            servico_fisio_id: data[0].id,
-            servico: data[0].nome
-          }));
-        }
-      } else {
-        setFisioServices([]);
+      if (data && !formData.tipo) {
+        setFormData(prev => ({ 
+          ...prev, 
+          tipo: 'Avaliação inicial',
+          valor: data.avaliacao_inicial || 0
+        }));
       }
     } catch (err) {
-      console.error('Erro ao buscar serviços do fisio:', err);
+      console.error('Erro ao buscar configurações de serviços:', err);
     }
   };
 
@@ -250,10 +241,7 @@ export default function Agenda() {
 
     setSubmitting(true);
     try {
-      // Get selected service price
-      const selectedService = fisioServices.find(s => s.id === formData.servico_fisio_id);
-      const unitOption = selectedService?.opcoes?.find((o: any) => o.tipo === 'unitario');
-      const currentPrice = unitOption?.preco || profile?.preco_sessao || 0;
+      const currentPrice = formData.valor || 0;
 
       // Combine date and time for data_servico (required in schema)
       const [year, month, day] = formData.data.split('-').map(Number);
@@ -263,7 +251,12 @@ export default function Agenda() {
       const { data: insertData, error } = await supabase
         .from('agendamentos')
         .insert({
-          ...formData,
+          paciente_id: formData.paciente_id,
+          data: formData.data,
+          hora: formData.hora,
+          tipo: formData.tipo,
+          local: formData.local,
+          observacoes: formData.observacoes,
           data_servico: appointmentDate,
           fisio_id: user.id,
           valor_cobrado: currentPrice
@@ -749,25 +742,53 @@ export default function Agenda() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Serviço</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão</label>
                   <select
                     required
-                    value={formData.servico_fisio_id}
+                    value={formData.tipo}
                     onChange={(e) => {
-                      const service = fisioServices.find(s => s.id === e.target.value);
+                      const tipo = e.target.value;
+                      let valor = 0;
+                      if (serviceSettings) {
+                        switch(tipo) {
+                          case 'Avaliação inicial': valor = serviceSettings.avaliacao_inicial; break;
+                          case 'Sessão de fisioterapia': valor = serviceSettings.sessao_fisioterapia; break;
+                          case 'Reabilitação': valor = serviceSettings.reabilitacao; break;
+                          case 'RPG': valor = serviceSettings.rpg; break;
+                          case 'Pilates': valor = serviceSettings.pilates; break;
+                          case 'Fisioterapia domiciliar': valor = serviceSettings.domiciliar; break;
+                        }
+                      }
                       setFormData({
                         ...formData, 
-                        servico_fisio_id: e.target.value,
-                        servico: service?.nome || ''
+                        tipo: tipo,
+                        valor: valor || 0
                       });
                     }}
                     className="input-compact"
                   >
-                    <option value="" className="bg-slate-900">Selecione um serviço...</option>
-                    {fisioServices.map(s => (
-                      <option key={s.id} value={s.id} className="bg-slate-900">{s.nome}</option>
-                    ))}
+                    <option value="" className="bg-slate-900">Selecione o tipo...</option>
+                    <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
+                    <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
+                    <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
+                    <option value="RPG" className="bg-slate-900">RPG</option>
+                    <option value="Pilates" className="bg-slate-900">Pilates</option>
+                    <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
                   </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Valor do Atendimento</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">R$</span>
+                    <input
+                      type="number"
+                      value={formData.valor}
+                      onChange={(e) => setFormData({...formData, valor: parseFloat(e.target.value) || 0})}
+                      className="input-compact pl-8"
+                      placeholder="0,00"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -793,18 +814,6 @@ export default function Agenda() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo</label>
-                  <select
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-                    className="input-compact"
-                  >
-                    <option value="Presencial" className="bg-slate-900">Presencial</option>
-                    <option value="Online" className="bg-slate-900">Online</option>
-                    <option value="Domiciliar" className="bg-slate-900">Domiciliar</option>
-                  </select>
-                </div>
 
                 <div className="space-y-1">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Local / Link</label>
