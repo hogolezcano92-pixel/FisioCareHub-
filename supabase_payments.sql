@@ -10,10 +10,11 @@ CREATE TABLE IF NOT EXISTS public.sessoes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     paciente_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
     fisioterapeuta_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
+    agendamento_id BIGINT REFERENCES public.agendamentos(id) ON DELETE CASCADE,
     data DATE NOT NULL,
     hora TIME NOT NULL,
-    valor DECIMAL(10,2) NOT NULL,
-    status_pagamento TEXT DEFAULT 'pendente', -- 'pendente', 'pago_app', 'cancelado'
+    valor_sessao DECIMAL(10,2) NOT NULL,
+    status_pagamento TEXT DEFAULT 'pendente', -- 'pendente', 'pago_app', 'pago_manual', 'cancelado'
     stripe_payment_intent TEXT,
     status_repasse TEXT DEFAULT 'pendente', -- 'pendente', 'repassado_fisio'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL

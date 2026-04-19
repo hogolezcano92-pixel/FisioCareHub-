@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS public.perfis (
     pais TEXT DEFAULT 'Brasil',
     genero TEXT,
     tipo_servico TEXT, -- 'domicilio', 'online', 'ambos'
+    data_nascimento DATE,
+    cidade TEXT,
+    estado TEXT,
+    experiencia_profissional TEXT,
+    observacoes_saude TEXT,
     is_pro BOOLEAN DEFAULT false,
     aprovado BOOLEAN DEFAULT false,
     status_aprovacao TEXT DEFAULT 'pendente',
@@ -76,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.agendamentos (
     status TEXT DEFAULT 'pendente', -- 'pendente', 'confirmado', 'cancelado', 'concluido'
     tipo TEXT DEFAULT 'online', -- 'online', 'presencial'
     servico TEXT, -- Usado no app
+    valor NUMERIC, -- Adicionado para controle financeiro
     observacoes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -248,6 +254,34 @@ CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON public.perfis
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_updated_at();
+
+-- 8. Prontuários e Triagens: Fisios veem todos/seus, Pacientes veem os seus
+CREATE POLICY "Fisios gerenciam prontuários" ON public.prontuarios FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.pacientes WHERE id = paciente_id AND fisioterapeuta_id = auth.uid()) OR
+    auth.uid() = fisio_id
+);
+CREATE POLICY "Pacientes veem seus prontuários" ON public.prontuarios FOR SELECT USING (auth.uid() = paciente_id);
+
+CREATE POLICY "Fisios veem triagens vinculadas" ON public.triagens FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.pacientes WHERE (nome = nome_paciente OR email = email_paciente) AND fisioterapeuta_id = auth.uid())
+);
+
+-- 9. SOAP Notes (Requested Table)
+CREATE TABLE IF NOT EXISTS public.soap_notes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID NOT NULL,
+    therapist_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE NOT NULL,
+    subjective TEXT,
+    objective TEXT,
+    assessment TEXT,
+    plan TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.soap_notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Therapists manage their soap notes" ON public.soap_notes FOR ALL USING (auth.uid() = therapist_id);
+CREATE POLICY "Patients view their own soap notes" ON public.soap_notes FOR SELECT USING (auth.uid() = patient_id);
 
 -- 6. Tabelas de Acompanhamento do Paciente (Diário de Dor e Exercícios)
 CREATE TABLE IF NOT EXISTS public.diario_dor (
