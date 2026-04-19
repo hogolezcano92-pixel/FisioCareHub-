@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const isAdmin = profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const isApproved = profile?.status_aprovacao === 'aprovado' || isAdmin || profile?.tipo_usuario === 'paciente';
 
-  const sections = [
+  const sections = useMemo(() => [
     ...(isAdmin ? [
       {
         title: 'ADMINISTRAÇÃO',
@@ -85,6 +85,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ] : [])
         ]
       },
+      ...(isPhysio && isApproved ? [
+        {
+          title: 'FINANCEIRO',
+          items: [
+            { name: 'Configuração de Valores', path: '/finance/settings', icon: DollarSign },
+          ]
+        }
+      ] : []),
       ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
         {
           title: 'COMUNICAÇÃO',
@@ -101,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
-  ];
+  ], [isAdmin, isApproved, isPhysio, profile, user]);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-[#0B1120] border-r border-white/5">
