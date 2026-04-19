@@ -309,6 +309,7 @@ export default function Appointments() {
     setSubmitting(true);
     try {
       const isPatient = profile.tipo_usuario === 'paciente';
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
       let targetUser: any = null;
 
       if (selectedUserId) {
@@ -336,72 +337,63 @@ export default function Appointments() {
         return;
       }
 
-      // Ensure date and time formats for Supabase
-      // Normalizar data para YYYY-MM-DD
-      let sqlDate = date;
-      try {
-        const dateObj = new Date(date);
-        if (!isNaN(dateObj.getTime())) {
-          sqlDate = dateObj.toISOString().split('T')[0];
-        }
-      } catch (e) {
-        console.error("Erro ao converter data:", e);
-      }
-
+      // 1. Correção do Erro de Data ('Pattern mismatch')
+      // Utilizando o valor direto dos inputs sem processamento de Date do JS
+      const sqlDate = date; // YYYY-MM-DD
       const sqlTime = time.length === 5 ? `${time}:00` : time; // HH:mm:ss
-      const sqlTimestamp = `${sqlDate} ${sqlTime}`;
+      const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
-      console.log("Iniciando inserção de agendamento no Supabase...", {
-        data: sqlDate,
-        hora: sqlTime,
-        data_servico: sqlTimestamp
-      });
-      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+      console.log("Iniciando agendamento...", { sqlDate, sqlTime, sqlTimestamp });
 
+      // 2. Ajuste de Colunas no Banco (Supabase)
+      // Incluindo a coluna valor: currentPrice
       const { data: insertData, error: insertError } = await supabase
         .from('agendamentos')
         .insert({
-          paciente_id: isPatient ? user?.id : targetUser.id,
-          fisio_id: isPhysio ? user?.id : targetUser.id,
+          paciente_id: isPatient ? user.id : targetUser.id,
+          fisio_id: isPhysio ? user.id : targetUser.id,
           data: sqlDate,
           hora: sqlTime,
           data_servico: sqlTimestamp,
           status: 'pendente',
           observacoes: notes,
-          servico: service
+          servico: service,
+          valor: currentPrice
         })
         .select();
 
       if (insertError) {
-        console.error("Erro completo do Supabase ao inserir agendamento:", insertError);
+        console.error("Erro detalhado:", insertError);
         throw insertError;
       }
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
-      console.log("Agendamento criado com sucesso:", newApp);
 
-      // 2. Criar Sessão para Pagamento se o alvo for fisioterapeuta
+      // 3. Fluxo de Pagamento Seguro
       if (newApp && targetUser.tipo_usuario === 'fisioterapeuta') {
         const finalPrice = currentPrice > 0 ? currentPrice : 0;
 
         if (finalPrice > 0) {
+          // No insert da tabela sessoes, use fisioterapeuta_id, paciente_id, valor_sessao e agendamento_id
           const { data: sessionData, error: sessionError } = await supabase
             .from('sessoes')
             .insert({
-              paciente_id: isPatient ? user?.id : targetUser.id,
-              fisioterapeuta_id: isPhysio ? user?.id : targetUser.id,
+              paciente_id: isPatient ? user.id : targetUser.id,
+              fisioterapeuta_id: isPhysio ? user.id : targetUser.id,
+              agendamento_id: newApp.id,
               data: sqlDate,
               hora: sqlTime,
-              valor: finalPrice,
+              valor_sessao: finalPrice,
               status_pagamento: 'pendente'
             })
             .select()
             .single();
           
           if (sessionError) {
-            console.error('Erro ao criar sessão para pagamento:', sessionError);
+            console.error('Erro detalhado (Sessões):', sessionError);
+            throw sessionError;
           } else {
-            // Redirect to Stripe
+            // O redirecionamento para o Stripe deve ser a ação final
             import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
             
             const res = await fetch('/api/create-checkout-session', {
@@ -420,7 +412,7 @@ export default function Appointments() {
             const checkoutData = await res.json();
             if (checkoutData.url) {
               window.location.href = checkoutData.url;
-              return; // Stop here, redirecting
+              return; // Redirecionando, interrompe o fluxo aqui
             } else {
               throw new Error(checkoutData.error || 'Erro ao gerar link de pagamento');
             }
@@ -428,6 +420,7 @@ export default function Appointments() {
         }
       }
 
+      // Fluxo para casos onde não há pagamento (ex: fisio agendando para paciente ou preço zero)
       setShowModal(false);
       setTargetEmail('');
       setDate('');
@@ -435,7 +428,7 @@ export default function Appointments() {
       setNotes('');
       import('sonner').then(({ toast }) => toast.success("Agendamento solicitado com sucesso!"));
     } catch (err: any) {
-      console.error("Erro detalhado ao agendar:", err);
+      console.error("Erro geral no handleSchedule:", err);
       const errorMessage = err.message || "Erro desconhecido";
       import('sonner').then(({ toast }) => toast.error(`Erro ao agendar: ${errorMessage}`));
     } finally {

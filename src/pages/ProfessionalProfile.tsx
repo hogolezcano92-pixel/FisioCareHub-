@@ -103,45 +103,34 @@ export default function ProfessionalProfile() {
     }
     setBookingLoading(true);
     try {
-      // Ensure date and time formats for Supabase
-      // Normalizar data para ISO (YYYY-MM-DD)
-      let formattedDate = bookingData.data;
-      try {
-        const dateObj = new Date(bookingData.data);
-        if (!isNaN(dateObj.getTime())) {
-          formattedDate = dateObj.toISOString().split('T')[0];
-        }
-      } catch (e) {
-        console.error("Erro ao converter data:", e);
-      }
+      // 1. Correção do Erro de Data ('Pattern mismatch')
+      const sqlDate = bookingData.data; // YYYY-MM-DD
+      const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora; // HH:mm:ss
+      const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
-      const formattedTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora; // HH:mm:ss
-      const sqlTimestamp = `${formattedDate} ${formattedTime}`;
+      console.log('Enviando agendamento (Perfil):', { sqlDate, sqlTime, sqlTimestamp });
 
-      console.log('Enviando agendamento:', {
-        data: formattedDate,
-        hora: formattedTime,
-        data_servico: sqlTimestamp
-      });
-
-      // 1. Criar Agendamento
+      // 2. Ajuste de Colunas no Banco (Supabase)
       const { data: appData, error: appError } = await supabase
         .from('agendamentos')
         .insert({
           paciente_id: user.id,
           fisio_id: id,
-          data: formattedDate,
-          hora: formattedTime,
+          data: sqlDate,
+          hora: sqlTime,
           data_servico: sqlTimestamp,
           tipo: bookingData.tipo,
           observacoes: bookingData.observacoes,
-          valor_cobrado: bookingData.valor || 0,
+          valor: bookingData.valor || 0,
           status: 'pendente'
         })
         .select()
         .single();
 
-      if (appError) throw appError;
+      if (appError) {
+        console.error("Erro detalhado (Perfil):", appError);
+        throw appError;
+      }
 
       // 2. Criar Sessão para Pagamento
       const { data: sessionData, error: sessionError } = await supabase
@@ -149,17 +138,21 @@ export default function ProfessionalProfile() {
         .insert({
           paciente_id: user.id,
           fisioterapeuta_id: id,
-          data: formattedDate,
-          hora: formattedTime,
-          valor: bookingData.valor || 0,
+          agendamento_id: appData.id,
+          data: sqlDate,
+          hora: sqlTime,
+          valor_sessao: bookingData.valor || 0,
           status_pagamento: 'pendente'
         })
         .select()
         .single();
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error("Erro detalhado (Sessões Perfil):", sessionError);
+        throw sessionError;
+      }
 
-      // 3. Criar Sessão de Checkout do Stripe
+      // 3. Redirecionamento Final para o Stripe
       toast.info('Redirecionando para o pagamento seguro...');
       
       const res = await fetch('/api/create-checkout-session', {
@@ -175,12 +168,12 @@ export default function ProfessionalProfile() {
         }),
       });
 
-      const data = await res.json();
+      const checkoutData = await res.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
       } else {
-        throw new Error(data.error || 'Erro ao gerar link de pagamento');
+        throw new Error(checkoutData.error || 'Erro ao gerar link de pagamento');
       }
     } catch (err: any) {
       console.error('Erro ao agendar:', err);

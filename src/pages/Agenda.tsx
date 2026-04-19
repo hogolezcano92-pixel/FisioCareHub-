@@ -243,60 +243,52 @@ export default function Agenda() {
     try {
       const currentPrice = formData.valor || 0;
 
-      // Ensure date and time formats for Supabase
-      // Normalizar data para ISO (YYYY-MM-DD)
-      let formattedDate = formData.data;
-      try {
-        const dateObj = new Date(formData.data);
-        if (!isNaN(dateObj.getTime())) {
-          formattedDate = dateObj.toISOString().split('T')[0];
-        }
-      } catch (e) {
-        console.error("Erro ao converter data:", e);
-      }
-      
-      const formattedTime = formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora; // HH:mm:ss
-      const sqlTimestamp = `${formattedDate} ${formattedTime}`;
+      // 1. Correção do Erro de Data ('Pattern mismatch')
+      const sqlDate = formData.data; // YYYY-MM-DD
+      const sqlTime = formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora; // HH:mm:ss
+      const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
-      console.log('Criando agendamento (Agenda):', {
-        data: formattedDate,
-        hora: formattedTime,
-        data_servico: sqlTimestamp
-      });
+      console.log('Criando agendamento (Agenda):', { sqlDate, sqlTime, sqlTimestamp });
 
+      // 2. Ajuste de Colunas no Banco (Supabase)
       const { data: insertData, error } = await supabase
         .from('agendamentos')
         .insert({
           paciente_id: formData.paciente_id,
-          data: formattedDate,
-          hora: formattedTime,
+          fisio_id: user.id,
+          data: sqlDate,
+          hora: sqlTime,
+          data_servico: sqlTimestamp,
           tipo: formData.tipo,
           local: formData.local,
           observacoes: formData.observacoes,
-          data_servico: sqlTimestamp,
-          fisio_id: user.id,
-          valor_cobrado: currentPrice
+          status: 'confirmado', // Profissional agendando já nasce confirmado ou agendado
+          valor: currentPrice // Incluindo a coluna valor
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro detalhado (Agenda):", error);
+        throw error;
+      }
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
       if (newApp) {
-        // Criar registro na tabela sessoes para pagamento
+        // Criar registro na tabela sessoes para pagamento (status pago_manual ou pendente dependendo da lógica)
         const { error: sessionError } = await supabase
           .from('sessoes')
           .insert({
             paciente_id: formData.paciente_id,
             fisioterapeuta_id: user.id,
-            data: formData.data,
-            hora: formData.hora,
-            valor: currentPrice,
-            status_pagamento: 'pendente'
+            agendamento_id: newApp.id,
+            data: sqlDate,
+            hora: sqlTime,
+            valor_sessao: currentPrice,
+            status_pagamento: 'pago_manual' // Assumindo que o profissional recebeu por fora se ele mesmo agendou
           });
         
-        if (sessionError) console.error('Erro ao criar sessão para pagamento:', sessionError);
+        if (sessionError) console.error('Erro detalhado (Sessões Agenda):', sessionError);
       }
 
       // Buscar e-mail do paciente para enviar confirmação
