@@ -73,7 +73,7 @@ export default function Documents() {
           .from('documentos_gerados')
           .select('*')
           .eq(isPhysio ? 'physio_id' : 'patient_email', isPhysio ? user.id : user.email)
-          .order('created_at', { ascending: false });
+          .order('criado_em', { ascending: false });
 
         if (error) throw error;
         setDocuments(data || []);
@@ -177,7 +177,7 @@ export default function Documents() {
         new Paragraph({
           children: [
             new TextRun({ text: "Data: ", bold: true }),
-            new TextRun(new Date(doc.created_at || new Date()).toLocaleDateString()),
+            new TextRun(new Date(doc.criado_em || new Date()).toLocaleString('pt-BR')),
           ],
           spacing: { after: 400 },
         }),
@@ -359,7 +359,7 @@ export default function Documents() {
           <ReactMarkdown>{doc.content}</ReactMarkdown>
         </div>
         <div style={{ marginTop: '100px', paddingTop: '20px', borderTop: '2px solid #000', textAlign: 'center', fontSize: '12px', color: '#000' }}>
-          Documento oficial gerado via FisioCareHub em {new Date(doc.created_at).toLocaleString('pt-BR')}
+          Documento oficial gerado via FisioCareHub em {new Date(doc.criado_em).toLocaleString('pt-BR')}
         </div>
       </div>
     );
@@ -480,7 +480,7 @@ export default function Documents() {
                     </td>
                     <td className="px-6 py-4 text-slate-400 font-medium">{isPhysio ? doc.patient_name : (doc.physio_name || 'Fisioterapeuta')}</td>
                     <td className="px-6 py-4 text-slate-500 text-xs font-bold">
-                      {new Date(doc.created_at).toLocaleString('pt-BR')}
+                      {new Date(doc.criado_em).toLocaleString('pt-BR')}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
@@ -833,7 +833,7 @@ export default function Documents() {
                   `}</style>
                   <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{viewingDoc.type}</h1>
                   <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
-                  <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.created_at).toLocaleString('pt-BR')}</p>
+                  <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.criado_em).toLocaleString('pt-BR')}</p>
                   <div style={{ color: '#000000' }}>
                     <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
                   </div>
