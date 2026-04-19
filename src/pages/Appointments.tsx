@@ -375,7 +375,7 @@ export default function Appointments() {
         const finalPrice = currentPrice > 0 ? currentPrice : 0;
 
         if (finalPrice > 0) {
-          const { error: sessionError } = await supabase
+          const { data: sessionData, error: sessionError } = await supabase
             .from('sessoes')
             .insert({
               paciente_id: isPatient ? user?.id : targetUser.id,
@@ -384,62 +384,39 @@ export default function Appointments() {
               hora: sqlTime,
               valor: finalPrice,
               status_pagamento: 'pendente'
-            });
+            })
+            .select()
+            .single();
           
-          if (sessionError) console.error('Erro ao criar sessão para pagamento:', sessionError);
+          if (sessionError) {
+            console.error('Erro ao criar sessão para pagamento:', sessionError);
+          } else {
+            // Redirect to Stripe
+            import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
+            
+            const res = await fetch('/api/create-checkout-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: sessionData.id,
+                appointmentId: newApp.id,
+                amount: finalPrice,
+                physioName: targetUser.nome_completo,
+                type: service,
+                physioId: targetUser.id
+              }),
+            });
+
+            const checkoutData = await res.json();
+            if (checkoutData.url) {
+              window.location.href = checkoutData.url;
+              return; // Stop here, redirecting
+            } else {
+              throw new Error(checkoutData.error || 'Erro ao gerar link de pagamento');
+            }
+          }
         }
       }
-
-      // Create notification for target user
-      console.log("Tentando criar notificação para o usuário:", targetUser.id);
-      const { data: notifData, error: notifError } = await supabase
-        .from('notificacoes')
-        .insert({
-          user_id: targetUser.id,
-          titulo: 'Nova Solicitação de Agendamento',
-          mensagem: `${profile.nome_completo || 'Alguém'} solicitou uma consulta para o dia ${new Date(sqlTimestamp).toLocaleDateString('pt-BR')}.`,
-          tipo: 'appointment',
-          lida: false,
-          link: '/appointments'
-        })
-        .select();
-
-      if (notifError) {
-        console.error("Erro ao criar notificação no banco:", notifError);
-      } else {
-        console.log("Notificação criada com sucesso no banco:", notifData);
-      }
-
-      // Send email notification
-      const formattedEmailDate = new Date(sqlTimestamp).toLocaleDateString('pt-BR');
-      const formattedEmailTime = new Date(sqlTimestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-      sendAppointmentConfirmation(
-        isPatient ? profile.email : targetUser.email,
-        isPatient ? targetUser.email : profile.email,
-        {
-          appointmentId: newApp?.id || '',
-          patientName: isPatient ? profile.nome_completo : targetUser.nome_completo,
-          patientEmail: isPatient ? profile.email : targetUser.email,
-          patientPhone: isPatient ? profile.telefone : targetUser.telefone,
-          patientAddress: isPatient ? profile.endereco : targetUser.endereco,
-          patientCity: isPatient ? profile.cidade : targetUser.cidade,
-          patientState: isPatient ? profile.estado : targetUser.estado,
-          patientZip: isPatient ? profile.cep : targetUser.cep,
-          patientDOB: isPatient 
-            ? (profile.data_nascimento ? new Date(profile.data_nascimento).toLocaleDateString('pt-BR') : undefined)
-            : (targetUser.data_nascimento ? new Date(targetUser.data_nascimento).toLocaleDateString('pt-BR') : undefined),
-          patientAvatar: isPatient ? profile.avatar_url : targetUser.avatar_url,
-          physioName: isPatient ? targetUser.nome_completo : profile.nome_completo,
-          physioPhone: isPatient ? targetUser.telefone : profile.telefone,
-          physioAddress: isPatient ? targetUser.endereco : profile.endereco,
-          physioEmail: isPatient ? targetUser.email : profile.email,
-          date: formattedEmailDate,
-          time: formattedEmailTime,
-          service: service,
-          notes: notes
-        }
-      );
 
       setShowModal(false);
       setTargetEmail('');
