@@ -36,7 +36,7 @@ export default function ProfessionalProfile() {
     valor: 0
   });
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [serviceSettings, setServiceSettings] = useState<any>(null);
+  const [configServicos, setConfigServicos] = useState<any>(null);
 
   useEffect(() => {
     const fetchPhysio = async () => {
@@ -53,19 +53,22 @@ export default function ProfessionalProfile() {
         setPhysio(data);
 
         // Fetch session settings
-        const { data: settings } = await supabase
+        const { data: settings, error: settingsError } = await supabase
           .from('configuracao_servicos')
           .select('*')
           .eq('physio_id', id)
-          .maybeSingle();
+          .single();
         
-        setServiceSettings(settings);
-        if (settings) {
+        if (!settingsError) {
+          console.log('Valores de serviços carregados:', settings);
+          setConfigServicos(settings);
           setBookingData(prev => ({
             ...prev,
             tipo: 'Avaliação inicial',
             valor: settings.avaliacao_inicial || 0
           }));
+        } else {
+          console.log('Nenhuma configuração de valores encontrada para este profissional.');
         }
       } catch (err) {
         console.error('Erro ao buscar fisioterapeuta:', err);
@@ -271,8 +274,8 @@ export default function ProfessionalProfile() {
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-slate-400 text-lg font-bold">R$</span>
                   <span className="text-5xl font-black text-white tracking-tighter">
-                    {serviceSettings?.sessao_fisioterapia 
-                      ? Number(serviceSettings.sessao_fisioterapia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    {configServicos?.sessao_fisioterapia 
+                      ? Number(configServicos.sessao_fisioterapia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
                       : '---'}
                   </span>
                   <span className="text-slate-400 text-sm font-bold">/sessão</span>
@@ -367,16 +370,17 @@ export default function ProfessionalProfile() {
                     onChange={(e) => {
                       const tipo = e.target.value;
                       let valor = 0;
-                      if (serviceSettings) {
+                      if (configServicos) {
                         switch(tipo) {
-                          case 'Avaliação inicial': valor = serviceSettings.avaliacao_inicial; break;
-                          case 'Sessão de fisioterapia': valor = serviceSettings.sessao_fisioterapia; break;
-                          case 'Reabilitação': valor = serviceSettings.reabilitacao; break;
-                          case 'RPG': valor = serviceSettings.rpg; break;
-                          case 'Pilates': valor = serviceSettings.pilates; break;
-                          case 'Fisioterapia domiciliar': valor = serviceSettings.domiciliar; break;
+                          case 'Avaliação inicial': valor = configServicos.avaliacao_inicial; break;
+                          case 'Sessão de fisioterapia': valor = configServicos.sessao_fisioterapia; break;
+                          case 'Reabilitação': valor = configServicos.reabilitacao; break;
+                          case 'RPG': valor = configServicos.rpg; break;
+                          case 'Pilates': valor = configServicos.pilates; break;
+                          case 'Fisioterapia domiciliar': valor = configServicos.domiciliar; break;
                         }
                       }
+                      console.log(`Tipo selecionado: ${tipo}, Valor: R$ ${valor}`);
                       setBookingData({...bookingData, tipo: tipo, valor: valor || 0});
                     }}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
