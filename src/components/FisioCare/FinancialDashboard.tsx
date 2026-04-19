@@ -4,19 +4,13 @@ import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ProfessionalServices } from './ProfessionalServices';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export const FinancialDashboard = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'stats' | 'services'>('stats');
-
-  useEffect(() => {
-    const handleOpenServices = () => setActiveTab('services');
-    window.addEventListener('open-financial-services', handleOpenServices);
-    return () => window.removeEventListener('open-financial-services', handleOpenServices);
-  }, []);
 
   const [financialStats, setFinancialStats] = useState({
     balance: 0,
@@ -114,32 +108,7 @@ export const FinancialDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Tab Switcher */}
-      <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 w-fit">
-        <button 
-          onClick={() => setActiveTab('stats')}
-          className={cn(
-            "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-            activeTab === 'stats' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/10" : "text-slate-500 hover:text-white"
-          )}
-        >
-          <BarChart2 size={14} />
-          Estatísticas
-        </button>
-        <button 
-          onClick={() => setActiveTab('services')}
-          className={cn(
-            "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-            activeTab === 'services' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/10" : "text-slate-500 hover:text-white"
-          )}
-        >
-          <DollarSign size={14} />
-          Serviços e Preços
-        </button>
-      </div>
-
-      {activeTab === 'stats' ? (
-        <div className="space-y-5 animate-in fade-in duration-500">
+      <div className="space-y-5 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {stats.map((stat, i) => (
               <motion.div
@@ -175,7 +144,7 @@ export const FinancialDashboard = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <button 
-                    onClick={() => setActiveTab('services')}
+                    onClick={() => navigate('/finance/settings')}
                     className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all"
                   >
                     <Settings size={12} />
@@ -211,11 +180,6 @@ export const FinancialDashboard = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <ProfessionalServices />
-        </div>
-      )}
-    </div>
+      </div>
   );
 };
