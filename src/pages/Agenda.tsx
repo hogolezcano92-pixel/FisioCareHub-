@@ -243,21 +243,27 @@ export default function Agenda() {
     try {
       const currentPrice = formData.valor || 0;
 
-      // Combine date and time for data_servico (required in schema)
-      const [year, month, day] = formData.data.split('-').map(Number);
-      const [hours, minutes] = formData.hora.split(':').map(Number);
-      const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
+      // Ensure date and time formats for Supabase
+      const formattedDate = formData.data; // YYYY-MM-DD
+      const formattedTime = formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora; // HH:mm:ss
+      const sqlTimestamp = `${formattedDate} ${formattedTime}`;
+
+      console.log('Criando agendamento (Agenda):', {
+        data: formattedDate,
+        hora: formattedTime,
+        data_servico: sqlTimestamp
+      });
 
       const { data: insertData, error } = await supabase
         .from('agendamentos')
         .insert({
           paciente_id: formData.paciente_id,
-          data: formData.data,
-          hora: formData.hora,
+          data: formattedDate,
+          hora: formattedTime,
           tipo: formData.tipo,
           local: formData.local,
           observacoes: formData.observacoes,
-          data_servico: appointmentDate,
+          data_servico: sqlTimestamp,
           fisio_id: user.id,
           valor_cobrado: currentPrice
         })

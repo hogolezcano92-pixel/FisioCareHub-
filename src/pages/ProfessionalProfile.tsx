@@ -101,13 +101,18 @@ export default function ProfessionalProfile() {
       toast.error('Selecione data e hora');
       return;
     }
-
     setBookingLoading(true);
     try {
-      // Combine date and time for data_servico (required in schema)
-      const [year, month, day] = bookingData.data.split('-').map(Number);
-      const [hours, minutes] = bookingData.hora.split(':').map(Number);
-      const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
+      // Ensure date and time formats for Supabase
+      const formattedDate = bookingData.data; // YYYY-MM-DD
+      const formattedTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora; // HH:mm:ss
+      const sqlTimestamp = `${formattedDate} ${formattedTime}`;
+
+      console.log('Enviando agendamento:', {
+        data: formattedDate,
+        hora: formattedTime,
+        data_servico: sqlTimestamp
+      });
 
       // 1. Criar Agendamento
       const { data: appData, error: appError } = await supabase
@@ -115,9 +120,9 @@ export default function ProfessionalProfile() {
         .insert({
           paciente_id: user.id,
           fisio_id: id,
-          data: bookingData.data,
-          hora: bookingData.hora,
-          data_servico: appointmentDate,
+          data: formattedDate,
+          hora: formattedTime,
+          data_servico: sqlTimestamp,
           tipo: bookingData.tipo,
           observacoes: bookingData.observacoes,
           valor_cobrado: bookingData.valor || 0,
@@ -134,8 +139,8 @@ export default function ProfessionalProfile() {
         .insert({
           paciente_id: user.id,
           fisioterapeuta_id: id,
-          data: bookingData.data,
-          hora: bookingData.hora,
+          data: formattedDate,
+          hora: formattedTime,
           valor: bookingData.valor || 0,
           status_pagamento: 'pendente'
         })

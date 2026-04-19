@@ -265,12 +265,16 @@ export default function Appointments() {
         return;
       }
 
-      // Combine date and time correctly
-      const [year, month, day] = date.split('-').map(Number);
-      const [hours, minutes] = time.split(':').map(Number);
-      const appointmentDate = new Date(year, month - 1, day, hours, minutes).toISOString();
+      // Ensure date and time formats for Supabase
+      const sqlDate = date; // YYYY-MM-DD
+      const sqlTime = time.length === 5 ? `${time}:00` : time; // HH:mm:ss
+      const sqlTimestamp = `${sqlDate} ${sqlTime}`;
 
-      console.log("Iniciando inserção de agendamento no Supabase...");
+      console.log("Iniciando inserção de agendamento no Supabase...", {
+        data: sqlDate,
+        hora: sqlTime,
+        data_servico: sqlTimestamp
+      });
       const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
 
       const { data: insertData, error: insertError } = await supabase
@@ -278,9 +282,9 @@ export default function Appointments() {
         .insert({
           paciente_id: isPatient ? user?.id : targetUser.id,
           fisio_id: isPhysio ? user?.id : targetUser.id,
-          data: date,
-          hora: time,
-          data_servico: appointmentDate,
+          data: sqlDate,
+          hora: sqlTime,
+          data_servico: sqlTimestamp,
           status: 'pendente',
           observacoes: notes,
           servico: service
@@ -310,8 +314,8 @@ export default function Appointments() {
             .insert({
               paciente_id: isPatient ? user?.id : targetUser.id,
               fisioterapeuta_id: isPhysio ? user?.id : targetUser.id,
-              data: date,
-              hora: time,
+              data: sqlDate,
+              hora: sqlTime,
               valor: physioProfile.preco_sessao,
               status_pagamento: 'pendente'
             });
@@ -327,7 +331,7 @@ export default function Appointments() {
         .insert({
           user_id: targetUser.id,
           titulo: 'Nova Solicitação de Agendamento',
-          mensagem: `${profile.nome_completo || 'Alguém'} solicitou uma consulta para o dia ${new Date(appointmentDate).toLocaleDateString('pt-BR')}.`,
+          mensagem: `${profile.nome_completo || 'Alguém'} solicitou uma consulta para o dia ${new Date(sqlTimestamp).toLocaleDateString('pt-BR')}.`,
           tipo: 'appointment',
           lida: false,
           link: '/appointments'
@@ -341,8 +345,8 @@ export default function Appointments() {
       }
 
       // Send email notification
-      const formattedDate = new Date(appointmentDate).toLocaleDateString('pt-BR');
-      const formattedTime = new Date(appointmentDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const formattedEmailDate = new Date(sqlTimestamp).toLocaleDateString('pt-BR');
+      const formattedEmailTime = new Date(sqlTimestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
       sendAppointmentConfirmation(
         isPatient ? profile.email : targetUser.email,
@@ -364,8 +368,8 @@ export default function Appointments() {
           physioPhone: isPatient ? targetUser.telefone : profile.telefone,
           physioAddress: isPatient ? targetUser.endereco : profile.endereco,
           physioEmail: isPatient ? targetUser.email : profile.email,
-          date: formattedDate,
-          time: formattedTime,
+          date: formattedEmailDate,
+          time: formattedEmailTime,
           service: service,
           notes: notes
         }
