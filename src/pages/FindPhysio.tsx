@@ -36,16 +36,32 @@ export default function FindPhysio() {
   const fetchPhysios = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // Fetch profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('perfis')
         .select('*')
         .eq('tipo_usuario', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
-      const { data, error } = await query;
+      if (profilesError) throw profilesError;
 
-      if (error) throw error;
-      setPhysios(data || []);
+      // Fetch all service configurations to display "starting from" price
+      const { data: configsData, error: configsError } = await supabase
+        .from('configuracao_servicos')
+        .select('physio_id, sessao_fisioterapia');
+
+      if (configsError) throw configsError;
+
+      // Map prices to profiles
+      const physiosWithPrices = (profilesData || []).map(physio => {
+        const config = (configsData || []).find(c => c.physio_id === physio.id);
+        return {
+          ...physio,
+          preco_base: config?.sessao_fisioterapia || null
+        };
+      });
+
+      setPhysios(physiosWithPrices);
     } catch (err) {
       console.error('Erro ao buscar fisioterapeutas:', err);
       toast.error('Erro ao carregar profissionais');
@@ -218,8 +234,12 @@ export default function FindPhysio() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A partir de</span>
-                    <span className="text-lg font-black text-white">R$ {physio.preco_sessao || '---'}</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      {physio.preco_base ? 'Sessões a partir de' : 'Valor a consultar'}
+                    </span>
+                    {physio.preco_base && (
+                      <span className="text-lg font-black text-white">R$ {Number(physio.preco_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    )}
                   </div>
                   <button className="p-3 bg-white/5 text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
                     <ChevronRight size={20} />

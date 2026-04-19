@@ -270,7 +270,11 @@ export default function ProfessionalProfile() {
                 </div>
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-slate-400 text-lg font-bold">R$</span>
-                  <span className="text-5xl font-black text-white tracking-tighter">{physio.preco_sessao || '---'}</span>
+                  <span className="text-5xl font-black text-white tracking-tighter">
+                    {serviceSettings?.sessao_fisioterapia 
+                      ? Number(serviceSettings.sessao_fisioterapia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                      : '---'}
+                  </span>
                   <span className="text-slate-400 text-sm font-bold">/sessão</span>
                 </div>
                 <p className="text-slate-500 text-xs font-medium">Pagamento seguro via Stripe Connect</p>
