@@ -158,7 +158,11 @@ export default function ProfessionalProfile() {
       const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           appointment_id: appData.id,
-          amount: bookingData.valor
+          amount: bookingData.valor,
+          service_name: bookingData.tipo,
+          email: user.email,
+          user_id: user.id,
+          plan: 'service'
         }
       });
 
