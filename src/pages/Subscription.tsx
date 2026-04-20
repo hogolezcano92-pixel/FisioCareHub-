@@ -62,7 +62,8 @@ export default function Subscription() {
 
       const data = await invokeFunction('create-checkout-session', {
         user_id: profile.id,
-        email: profile.email
+        email: profile.email,
+        plan: 'pro'
       });
 
       if (data?.url) {

@@ -96,15 +96,22 @@ export default function Dashboard() {
       const isPhysio = data.tipo_usuario === 'fisioterapeuta';
       const roleField = data.tipo_usuario === 'paciente' ? 'paciente_id' : 'fisio_id';
 
+      // Fetch IDs for evolutions filter if physio
+      let agendamentoIds: string[] = [];
+      if (isPhysio) {
+        const { data: appts } = await supabase.from('agendamentos').select('id').eq('fisio_id', data.id);
+        agendamentoIds = (appts || []).map(a => a.id);
+      }
+
       // Parallelize all initial fetches
-      const [statsResults, apptsResult, triagesResult] = await Promise.allSettled([
+      const queries = [
         // Stats
         isPhysio ? Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
           supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
-          supabase.from('evolucoes').select('*', { count: 'exact', head: true }).filter('atendimento_id', 'in', 
-            supabase.from('agendamentos').select('id').eq('fisio_id', data.id)
-          ),
+          agendamentoIds.length > 0 
+            ? supabase.from('evolucoes').select('*', { count: 'exact', head: true }).in('atendimento_id', agendamentoIds)
+            : Promise.resolve({ count: 0 }),
           supabase.from('triagens').select('*', { count: 'exact', head: true })
         ]) : Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
@@ -116,8 +123,8 @@ export default function Dashboard() {
           .from('agendamentos')
           .select(`
             *,
-            paciente:perfis!paciente_id (nome_completo, email, avatar_url),
-            fisioterapeuta:perfis!fisio_id (nome_completo, email, avatar_url)
+            paciente:perfis(id, nome_completo, avatar_url),
+            fisioterapeuta:perfis(id, nome_completo, avatar_url)
           `)
           .eq(roleField, data.id)
           .order('data', { ascending: false })
@@ -132,9 +139,11 @@ export default function Dashboard() {
           `)
           .order('created_at', { ascending: false })
           .limit(5)
-      ]);
+      ];
 
       // Process Stats
+      const [statsResults, apptsResult, triagesResult] = await Promise.allSettled(queries as any[]);
+
       if (statsResults.status === 'fulfilled') {
         const res = statsResults.value;
         if (isPhysio) {
@@ -206,6 +215,8 @@ export default function Dashboard() {
   }, [user, profile, authLoading, navigate, fetchDashboardData, isPhysio, isApproved, isAdmin, searchParams]);
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     const searchPatients = async () => {
       if (patientSearch.length < 3) {
         setSearchResults([]);
@@ -245,12 +256,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (profile && isPhysio) {
-      setAiMessage(`Olá, Dr. ${profile.nome_completo.split(' ')[0]}. Notei que você tem atendimentos próximos no Morumbi. Deseja otimizar sua rota agora?`);
-    } else if (profile) {
-      setAiMessage(`Olá, ${profile.nome_completo.split(' ')[0]}. Sua Triagem IA está liberada. Vamos analisar seus sintomas?`);
-    }
-  }, [profile, isPhysio]);
+    if (!profile || !isPhysio || authLoading || !user) return;
+    
+    setAiMessage(`Olá, Dr. ${profile.nome_completo.split(' ')[0]}. Notei que você tem atendimentos próximos no Morumbi. Deseja otimizar sua rota agora?`);
+  }, [profile, isPhysio, authLoading, user]);
 
   if (authLoading) return (
     <div className="min-h-screen pt-20 bg-[#0B1120] px-4 sm:px-6 lg:px-8">
