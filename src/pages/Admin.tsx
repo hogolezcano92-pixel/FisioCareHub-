@@ -111,7 +111,10 @@ export default function Admin() {
     activePhysios: 0,
     newPatients: 0,
     pendingAppointments: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalPaidByPatients: 0,
+    totalCommission: 0,
+    totalNetPhysio: 0
   });
 
   // Ensure client-side rendering
@@ -270,12 +273,21 @@ export default function Admin() {
       if (error) throw error;
       setSessions(data || []);
 
-      // Update revenue stats from sessions
-      const sessionRevenue = (data || [])
-        .filter(s => s.status_pagamento === 'pago_app')
-        .reduce((acc, curr) => acc + Number(curr.valor), 0);
+      // Update financial stats (Rule 4)
+      // Since valor_sessao in DB is now the net amount (88%), we derive the others
+      const paidSessions = (data || []).filter(s => s.status_pagamento === 'pago_app');
       
-      setStats(prev => ({ ...prev, totalRevenue: sessionRevenue }));
+      const netPhysio = paidSessions.reduce((acc, curr) => acc + Number(curr.valor_sessao || curr.valor || 0), 0);
+      const totalPaid = netPhysio / 0.88;
+      const commission = totalPaid * 0.12;
+      
+      setStats(prev => ({ 
+        ...prev, 
+        totalRevenue: totalPaid,
+        totalPaidByPatients: totalPaid,
+        totalCommission: commission,
+        totalNetPhysio: netPhysio
+      }));
     } catch (err) {
       console.error("Erro ao buscar sessões:", err);
     }
@@ -914,8 +926,8 @@ export default function Admin() {
   const STATS_CARDS = [
     { label: 'Total de Usuários', value: stats.totalUsers.toString(), icon: Users, color: 'blue' },
     { label: 'Fisios Ativos', value: stats.activePhysios.toString(), icon: UserCheck, color: 'emerald' },
-    { label: 'Receita Total', value: `R$ ${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'indigo' },
-    { label: 'Consultas Pendentes', value: stats.pendingAppointments.toString(), icon: Calendar, color: 'rose' },
+    { label: 'Total Faturado', value: `R$ ${stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: 'indigo' },
+    { label: 'Líquido Fisio', value: `R$ ${stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity, color: 'emerald' },
   ];
 
   if (!mounted || checkingAdmin) {
@@ -1714,20 +1726,19 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Receita Total (Sessões)</p>
-                  <p className="text-3xl font-black text-white tracking-tight">R$ {stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Pago pelos Pacientes</p>
+                  <p className="text-3xl font-black text-white tracking-tight">R$ {stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-[10px] text-slate-500 font-bold mt-2 italic">Valor bruto recebido pela plataforma</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Repasses Pendentes</p>
-                  <p className="text-3xl font-black text-amber-500 tracking-tight">
-                    {sessions.filter(s => s.status_pagamento === 'pago_app' && s.status_repasse === 'pendente').length}
-                  </p>
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-emerald-500/20">
+                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Líquido Fisioterapeutas (88%)</p>
+                  <p className="text-3xl font-black text-emerald-400 tracking-tight">R$ {stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-[10px] text-emerald-500/50 font-bold mt-2 italic">Valor total que deve ser repassado</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Sessões Pagas</p>
-                  <p className="text-3xl font-black text-emerald-500 tracking-tight">
-                    {sessions.filter(s => s.status_pagamento === 'pago_app').length}
-                  </p>
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-blue-500/20">
+                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Comissão Plataforma (12%)</p>
+                  <p className="text-3xl font-black text-blue-400 tracking-tight">R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-[10px] text-blue-500/50 font-bold mt-2 italic">Receita líquida da FisioCareHub</p>
                 </div>
               </div>
 
@@ -1743,56 +1754,64 @@ export default function Admin() {
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data/Hora</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Paciente</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Fisioterapeuta</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status Pagamento</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status Repasse</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Total Pago</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão (12%)</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Líquido Fisio (88%)</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Repasse</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ação</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {sessions
                         .filter(s => s.status_pagamento === 'pago_app')
-                        .map((s) => (
-                        <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-8 py-5 text-sm font-bold text-white">
-                            {new Date(s.data).toLocaleDateString('pt-BR')} {s.hora}
-                          </td>
-                          <td className="px-8 py-5">
-                            <p className="text-sm font-bold text-white">{s.paciente?.nome_completo}</p>
-                            <p className="text-[10px] text-slate-500">{s.paciente?.email}</p>
-                          </td>
-                          <td className="px-8 py-5">
-                            <p className="text-sm font-bold text-white">{s.fisioterapeuta?.nome_completo}</p>
-                            <p className="text-[10px] text-slate-500">{s.fisioterapeuta?.email}</p>
-                          </td>
-                          <td className="px-8 py-5 text-sm font-black text-blue-400">
-                            R$ {Number(s.valor).toLocaleString()}
-                          </td>
-                          <td className="px-8 py-5">
-                            <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest">
-                              Pago no App
-                            </span>
-                          </td>
-                          <td className="px-8 py-5">
-                            <span className={cn(
-                              "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                              s.status_repasse === 'repassado_fisio' ? "bg-blue-500/10 text-blue-500" : "bg-amber-500/10 text-amber-500"
-                            )}>
-                              {s.status_repasse === 'repassado_fisio' ? 'Repassado' : 'Pendente'}
-                            </span>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            {s.status_repasse === 'pendente' && (
-                              <button 
-                                onClick={() => handleMarkAsRepassado(s.id)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
-                              >
-                                Marcar Repasse
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                        .map((s) => {
+                          const netValue = Number(s.valor_sessao || s.valor || 0);
+                          const totalValue = netValue / 0.88;
+                          const commValue = totalValue * 0.12;
+
+                          return (
+                            <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="px-8 py-5 text-sm font-bold text-white">
+                                {new Date(s.data).toLocaleDateString('pt-BR')} {s.hora}
+                              </td>
+                              <td className="px-8 py-5">
+                                <p className="text-sm font-bold text-white">{s.paciente?.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500">{s.paciente?.email}</p>
+                              </td>
+                              <td className="px-8 py-5">
+                                <p className="text-sm font-bold text-white">{s.fisioterapeuta?.nome_completo}</p>
+                                <p className="text-[10px] text-slate-500">{s.fisioterapeuta?.email}</p>
+                              </td>
+                              <td className="px-8 py-5 text-sm font-bold text-slate-400">
+                                R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-8 py-5 text-sm font-bold text-blue-400">
+                                R$ {commValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-8 py-5 text-sm font-black text-emerald-400">
+                                R$ {netValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-8 py-5">
+                                <span className={cn(
+                                  "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                  s.status_repasse === 'repassado_fisio' ? "bg-blue-500/10 text-blue-500" : "bg-amber-500/10 text-amber-500"
+                                )}>
+                                  {s.status_repasse === 'repassado_fisio' ? 'Repassado' : 'Pendente'}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5 text-right">
+                                {s.status_repasse === 'pendente' && (
+                                  <button 
+                                    onClick={() => handleMarkAsRepassado(s.id)}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                                  >
+                                    Marcar Repasse
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>

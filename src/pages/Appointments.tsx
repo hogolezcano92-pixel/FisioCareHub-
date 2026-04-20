@@ -213,8 +213,8 @@ export default function Appointments() {
         .from('agendamentos')
         .select(`
           *,
-          paciente:perfis!paciente_id (id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url),
-          fisioterapeuta:perfis!fisio_id (id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url)
+          paciente:perfis(id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url),
+          fisioterapeuta:perfis(id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url)
         `)
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
@@ -374,43 +374,29 @@ export default function Appointments() {
         const finalPrice = currentPrice > 0 ? currentPrice : 0;
 
         if (finalPrice > 0) {
-          // No insert da tabela sessoes, use fisioterapeuta_id, paciente_id, valor_sessao e agendamento_id
-          const { data: sessionData, error: sessionError } = await supabase
-            .from('sessoes')
-            .insert({
-              paciente_id: isPatient ? user.id : targetUser.id,
-              fisioterapeuta_id: isPhysio ? user.id : targetUser.id,
-              agendamento_id: newApp.id,
-              data: sqlDate,
-              hora: sqlTime,
-              valor_sessao: finalPrice,
-              status_pagamento: 'pendente'
-            })
-            .select()
-            .single();
+          // Rule 6: No financial records before confirmation. 
+          // We no longer insert into 'sessoes' here. It will be created by the webhook.
           
-          if (sessionError) {
-            console.error('Erro detalhado (Sessões):', sessionError);
-            throw sessionError;
-          } else {
-            // O redirecionamento para o Stripe deve ser a ação final
-            import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
-            
-            const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
-              body: {
-                appointment_id: newApp.id,
-                amount: finalPrice
-              }
-            });
-
-            if (invokeError) throw invokeError;
-
-            if (checkoutData?.url) {
-              window.location.href = checkoutData.url;
-              return; // Redirecionando, interrompe o fluxo aqui
-            } else {
-              throw new Error('Erro ao gerar link de pagamento');
+          import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
+          
+          const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
+            body: {
+              appointment_id: newApp.id,
+              amount: finalPrice,
+              service_name: service,
+              email: user.email,
+              user_id: user.id,
+              plan: 'service'
             }
+          });
+
+          if (invokeError) throw invokeError;
+
+          if (checkoutData?.url) {
+            window.location.href = checkoutData.url;
+            return; // Redirecionando, interrompe o fluxo aqui
+          } else {
+            throw new Error('Erro ao gerar link de pagamento');
           }
         }
       }
@@ -571,30 +557,50 @@ export default function Appointments() {
                    app.status === 'cancelado' ? 'Cancelado' : 'Concluído'}
                 </span>
 
+                {app.status === 'pendente' && !isPhysio && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
+                        const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
+                          body: {
+                            appointment_id: app.id,
+                            amount: app.valor || 0,
+                            service_name: app.servico || 'Consulta',
+                            email: user?.email,
+                            user_id: user?.id,
+                            plan: 'service'
+                          }
+                        });
+
+                        if (invokeError) throw invokeError;
+                        if (checkoutData?.url) {
+                          window.location.href = checkoutData.url;
+                        } else {
+                          throw new Error('Erro ao gerar link de pagamento');
+                        }
+                      } catch (err: any) {
+                        console.error('Erro ao processar pagamento:', err);
+                        import('sonner').then(({ toast }) => toast.error(err.message || 'Erro ao gerar pagamento'));
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
+                  >
+                    <Wallet size={14} />
+                    Pagar Agora
+                  </button>
+                )}
+
                 {app.status === 'confirmado' && !isPhysio && (
                   (() => {
                     const session = sessions.find(s => 
-                      s.paciente_id === app.paciente_id && 
-                      s.fisioterapeuta_id === app.fisio_id && 
-                      s.data === app.data_servico.split('T')[0]
+                      s.agendamento_id === app.id || 
+                      (s.paciente_id === app.paciente_id && s.fisioterapeuta_id === app.fisio_id && s.data === app.data)
                     );
                     
-                    if (session && session.status_pagamento === 'pendente') {
+                    if (session && (session.status_pagamento === 'pago_app' || session.status_pagamento === 'pago_manual')) {
                       return (
-                        <button
-                          onClick={() => {
-                            setSelectedSession(session);
-                            setShowPaymentModal(true);
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
-                        >
-                          <Wallet size={14} />
-                          Pagar Sessão
-                        </button>
-                      );
-                    } else if (session && session.status_pagamento === 'pago_app') {
-                      return (
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-500/20">
                           <Check size={12} />
                           Pago
                         </span>

@@ -132,27 +132,7 @@ export default function ProfessionalProfile() {
         throw appError;
       }
 
-      // 2. Criar Sessão para Pagamento
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('sessoes')
-        .insert({
-          paciente_id: user.id,
-          fisioterapeuta_id: id,
-          agendamento_id: appData.id,
-          data: sqlDate,
-          hora: sqlTime,
-          valor_sessao: bookingData.valor || 0,
-          status_pagamento: 'pendente'
-        })
-        .select()
-        .single();
-
-      if (sessionError) {
-        console.error("Erro detalhado (Sessões Perfil):", sessionError);
-        throw sessionError;
-      }
-
-      // 3. Redirecionamento Final para o Stripe
+      // 2. Fluxo de Pagamento Seguro (Rule 6: No financeiro before webhook)
       toast.info('Redirecionando para o pagamento seguro...');
       
       const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
