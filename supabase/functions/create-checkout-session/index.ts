@@ -10,7 +10,10 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
+
+const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0-SA8SPjo9l"
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,23 +21,16 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, email, product_id, type } = await req.json()
-    const userId = user_id
-    const userEmail = email
+    const body = await req.json()
+    const { appointment_id, amount, product_id, type, user_id, email } = body
 
-    // Optional: Verify user with Supabase Auth if token is present
+    // Setup Supabase client
     const authHeader = req.headers.get('Authorization')
     const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       global: { headers: { Authorization: authHeader || "" } },
     })
 
-    if (authHeader) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user || user.id !== userId) {
-        throw new Error("Unauthorized: Invalid user session")
-      }
-    }
-
+    // Validate Stripe Key
     if (!STRIPE_SECRET_KEY) {
       throw new Error("STRIPE_SECRET_KEY is not set")
     }
@@ -45,11 +41,47 @@ serve(async (req) => {
     })
 
     let line_items = []
-    let mode: "subscription" | "payment" = "subscription"
-    let metadata: any = { user_id: userId }
+    let mode: "subscription" | "payment" = "payment"
+    let metadata: any = { user_id: user_id || "" }
 
-    if (type === 'material' && product_id) {
-      // Fetch material details
+    // Logic for different payment types
+    if (type === 'subscription') {
+      line_items = [
+        {
+          price: FIXED_SUBSCRIPTION_PRICE_ID,
+          quantity: 1,
+        },
+      ]
+      mode = "subscription"
+      metadata.plan = "pro_fisioterapeuta"
+    } else if (appointment_id) {
+      // Dynamic appointment payment
+      const safeAmount = Number(amount)
+      if (isNaN(safeAmount) || safeAmount <= 0) {
+        throw new Error("Valor inválido para o agendamento")
+      }
+
+      // Convert to cents and ensure it's an integer
+      const unitAmount = Math.round(safeAmount * 100)
+      
+      line_items = [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: "Consulta / Atendimento",
+              description: "Pagamento de serviço de fisioterapia",
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        },
+      ]
+      mode = "payment"
+      metadata.type = 'appointment'
+      metadata.appointmentId = appointment_id
+    } else if (type === 'material' && product_id) {
+      // Material logic (legacy or existing)
       const { data: material, error: matError } = await supabase
         .from('materiais')
         .select('*')
@@ -58,6 +90,11 @@ serve(async (req) => {
       
       if (matError || !material) {
         throw new Error("Material não encontrado")
+      }
+
+      const safeMaterialPrice = Number(material.preco)
+      if (isNaN(safeMaterialPrice)) {
+        throw new Error("Preço do material inválido")
       }
 
       line_items = [
@@ -69,7 +106,7 @@ serve(async (req) => {
               description: material.descricao,
               images: material.imagem_url ? [material.imagem_url] : [],
             },
-            unit_amount: Math.round(material.preco * 100),
+            unit_amount: Math.round(safeMaterialPrice * 100),
           },
           quantity: 1,
         },
@@ -78,20 +115,10 @@ serve(async (req) => {
       metadata.type = 'material'
       metadata.product_id = product_id
     } else {
-      // Default to PRO subscription
+      // Default to PRO subscription or fallback
       line_items = [
         {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: "Assinatura PRO Fisioterapeuta",
-              description: "Acesso total aos recursos avançados do FisioCareHub",
-            },
-            unit_amount: 4999, // R$ 49,99
-            recurring: {
-              interval: "month",
-            },
-          },
+          price: FIXED_SUBSCRIPTION_PRICE_ID,
           quantity: 1,
         },
       ]
@@ -104,15 +131,10 @@ serve(async (req) => {
       payment_method_types: ["card"],
       line_items,
       mode,
-      success_url: `${APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&type=${type || 'subscription'}`,
+      success_url: `${APP_URL}/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}/subscription`,
-      customer_email: userEmail,
-      client_reference_id: userId,
-      subscription_data: mode === "subscription" ? {
-        metadata: {
-          user_id: userId,
-        },
-      } : undefined,
+      customer_email: email,
+      client_reference_id: user_id,
       metadata,
     })
 
