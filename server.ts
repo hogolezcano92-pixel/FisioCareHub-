@@ -150,45 +150,6 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Create Checkout Session
-  app.post("/api/create-checkout-session", async (req, res) => {
-    try {
-      const { sessionId, appointmentId, amount, physioName, type, physioId } = req.body;
-
-      if (!sessionId || !amount) {
-        return res.status(400).json({ error: "Missing required fields" });
-      }
-
-      const appUrl = process.env.APP_URL || "http://localhost:3000";
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'brl',
-            product_data: {
-              name: `${type || 'Sessão'} - Dr(a). ${physioName || 'Fisioterapeuta'}`,
-            },
-            unit_amount: Math.round(amount * 100),
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${appUrl}/appointments?status=success&session_id=${sessionId}`,
-        cancel_url: `${appUrl}/physio/${physioId}?status=canceled`,
-        metadata: {
-          sessionId,
-          appointmentId: appointmentId || "",
-        },
-      });
-
-      res.json({ url: session.url });
-    } catch (err: any) {
-      console.error("Error creating checkout session:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
   // Create Payment Intent
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
