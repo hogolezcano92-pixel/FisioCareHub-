@@ -1,19 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe?target=deno"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const APP_URL = Deno.env.get("APP_URL") || "http://localhost:3000"
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")
 
+const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0SA8SPjo9I"
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
-
-const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0-SA8SPjo9l"
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,49 +22,78 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json()
-    const { appointment_id, amount, product_id, type, user_id, email } = body
-
-    // Setup Supabase client
-    const authHeader = req.headers.get('Authorization')
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
-      global: { headers: { Authorization: authHeader || "" } },
-    })
-
-    // Validate Stripe Key
     if (!STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY is not set")
+      throw new Error("STRIPE_SECRET_KEY não configurada")
     }
 
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("Configuração do Supabase ausente")
+    }
+
+    const body = await req.json().catch(() => ({}))
+
+    const {
+      appointment_id,
+      amount,
+      product_id,
+      type,
+      user_id,
+      email
+    } = body
+
+    console.log("Checkout request:", body)
+
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2022-11-15",
+      apiVersion: "2023-10-16",
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    let line_items = []
-    let mode: "subscription" | "payment" = "payment"
-    let metadata: any = { user_id: user_id || "" }
+    const authHeader = req.headers.get("Authorization")
 
-    // Logic for different payment types
-    if (type === 'subscription') {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: {
+          Authorization: authHeader || "",
+        },
+      },
+    })
+
+    let line_items: any[] = []
+    let mode: "subscription" | "payment" = "payment"
+
+    const metadata: any = {
+      user_id: user_id || "",
+    }
+
+    // ----------------------
+    // ASSINATURA PRO
+    // ----------------------
+    if (type === "subscription") {
+
       line_items = [
         {
           price: FIXED_SUBSCRIPTION_PRICE_ID,
           quantity: 1,
         },
       ]
+
       mode = "subscription"
       metadata.plan = "pro_fisioterapeuta"
-    } else if (appointment_id) {
-      // Dynamic appointment payment
+    }
+
+    // ----------------------
+    // PAGAMENTO DE CONSULTA
+    // ----------------------
+    else if (appointment_id) {
+
       const safeAmount = Number(amount)
+
       if (isNaN(safeAmount) || safeAmount <= 0) {
         throw new Error("Valor inválido para o agendamento")
       }
 
-      // Convert to cents and ensure it's an integer
       const unitAmount = Math.round(safeAmount * 100)
-      
+
       line_items = [
         {
           price_data: {
@@ -77,23 +107,29 @@ serve(async (req) => {
           quantity: 1,
         },
       ]
-      mode = "payment"
-      metadata.type = 'appointment'
-      metadata.appointmentId = appointment_id
-    } else if (type === 'material' && product_id) {
-      // Material logic (legacy or existing)
-      const { data: material, error: matError } = await supabase
-        .from('materiais')
-        .select('*')
-        .eq('id', product_id)
+
+      metadata.type = "appointment"
+      metadata.appointment_id = appointment_id
+    }
+
+    // ----------------------
+    // MATERIAL DIGITAL
+    // ----------------------
+    else if (type === "material" && product_id) {
+
+      const { data: material, error } = await supabase
+        .from("materiais")
+        .select("*")
+        .eq("id", product_id)
         .single()
-      
-      if (matError || !material) {
+
+      if (error || !material) {
         throw new Error("Material não encontrado")
       }
 
-      const safeMaterialPrice = Number(material.preco)
-      if (isNaN(safeMaterialPrice)) {
+      const price = Number(material.preco)
+
+      if (isNaN(price)) {
         throw new Error("Preço do material inválido")
       }
 
@@ -106,47 +142,70 @@ serve(async (req) => {
               description: material.descricao,
               images: material.imagem_url ? [material.imagem_url] : [],
             },
-            unit_amount: Math.round(safeMaterialPrice * 100),
+            unit_amount: Math.round(price * 100),
           },
           quantity: 1,
         },
       ]
-      mode = "payment"
-      metadata.type = 'material'
+
+      metadata.type = "material"
       metadata.product_id = product_id
-    } else {
-      // Default to PRO subscription or fallback
+    }
+
+    // ----------------------
+    // FALLBACK
+    // ----------------------
+    else {
+
       line_items = [
         {
           price: FIXED_SUBSCRIPTION_PRICE_ID,
           quantity: 1,
         },
       ]
+
       mode = "subscription"
       metadata.plan = "pro_fisioterapeuta"
     }
 
-    // Create Stripe Checkout Session
+    const customerEmail = email || undefined
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items,
       mode,
-      success_url: `${APP_URL}/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_URL}/subscription`,
-      customer_email: email,
-      client_reference_id: user_id,
+      success_url: `${APP_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/dashboard?cancel=true`,
+      customer_email: customerEmail,
+      client_reference_id: user_id || undefined,
       metadata,
     })
 
+    console.log("Stripe session criada:", session.id)
+
     return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
     })
+
   } catch (error: any) {
-    console.error("Error creating checkout session:", error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    })
+
+    console.error("Stripe checkout error:", error)
+
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Erro ao criar sessão de pagamento",
+      }),
+      {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      },
+    )
   }
 })
