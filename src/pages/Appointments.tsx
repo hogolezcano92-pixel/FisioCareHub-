@@ -396,25 +396,20 @@ export default function Appointments() {
             // O redirecionamento para o Stripe deve ser a ação final
             import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
             
-            const res = await fetch('/api/create-checkout-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sessionId: sessionData.id,
-                appointmentId: newApp.id,
-                amount: finalPrice,
-                physioName: targetUser.nome_completo,
-                type: service,
-                physioId: targetUser.id
-              }),
+            const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
+              body: {
+                appointment_id: newApp.id,
+                amount: finalPrice
+              }
             });
 
-            const checkoutData = await res.json();
-            if (checkoutData.url) {
+            if (invokeError) throw invokeError;
+
+            if (checkoutData?.url) {
               window.location.href = checkoutData.url;
               return; // Redirecionando, interrompe o fluxo aqui
             } else {
-              throw new Error(checkoutData.error || 'Erro ao gerar link de pagamento');
+              throw new Error('Erro ao gerar link de pagamento');
             }
           }
         }

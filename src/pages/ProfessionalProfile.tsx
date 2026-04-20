@@ -155,25 +155,19 @@ export default function ProfessionalProfile() {
       // 3. Redirecionamento Final para o Stripe
       toast.info('Redirecionando para o pagamento seguro...');
       
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: sessionData.id,
-          appointmentId: appData.id,
-          amount: bookingData.valor,
-          physioName: physio.nome_completo,
-          type: bookingData.tipo,
-          physioId: id
-        }),
+      const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          appointment_id: appData.id,
+          amount: bookingData.valor
+        }
       });
 
-      const checkoutData = await res.json();
+      if (invokeError) throw invokeError;
 
-      if (checkoutData.url) {
+      if (checkoutData?.url) {
         window.location.href = checkoutData.url;
       } else {
-        throw new Error(checkoutData.error || 'Erro ao gerar link de pagamento');
+        throw new Error('Erro ao gerar link de pagamento');
       }
     } catch (err: any) {
       console.error('Erro ao agendar:', err);
