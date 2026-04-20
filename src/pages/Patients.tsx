@@ -125,14 +125,24 @@ export default function Patients() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('pacientes')
-        .insert({
-          ...formData,
-          fisioterapeuta_id: user.id
-        });
+      // Garantir que campos vazios sejam enviados como NULL para o Supabase,
+      // evitando erros do tipo 'invalid input syntax for type date: ""'
+      const dataToInsert = {
+        nome: formData.nome.trim(),
+        email: formData.email.trim() || null,
+        telefone: formData.telefone.trim() || null,
+        data_nascimento: formData.data_nascimento || null,
+        diagnostico: formData.diagnostico.trim() || null,
+        observacoes: formData.observacoes.trim() || null,
+        foto_url: formData.foto_url || null,
+        fisioterapeuta_id: user.id
+      };
 
-      if (error) throw error;
+      const { error: insertError } = await supabase
+        .from('pacientes')
+        .insert(dataToInsert);
+
+      if (insertError) throw insertError;
 
       toast.success('Paciente cadastrado com sucesso!');
       setShowModal(false);
@@ -185,7 +195,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word mt-8 md:mt-0">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>
@@ -315,7 +325,7 @@ export default function Patients() {
               className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-black text-white tracking-tight">Cadastrar Novo Paciente</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">CADASTRO NOVO PACIENTE</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
                   <X size={18} />
                 </button>
