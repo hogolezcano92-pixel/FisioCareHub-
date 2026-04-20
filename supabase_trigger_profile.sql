@@ -26,8 +26,14 @@ BEGIN
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'Usuário'),
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'tipo_usuario', 'paciente'),
-    COALESCE(NEW.raw_user_meta_data->>'plano', CASE WHEN NEW.raw_user_meta_data->>'tipo_usuario' = 'fisioterapeuta' THEN 'fisioterapeuta' ELSE 'free' END),
+    CASE 
+      WHEN NEW.email = 'hogolezcano92@gmail.com' THEN 'admin'
+      ELSE COALESCE(NEW.raw_user_meta_data->>'tipo_usuario', 'paciente') 
+    END,
+    CASE 
+      WHEN NEW.email = 'hogolezcano92@gmail.com' THEN 'admin'
+      ELSE COALESCE(NEW.raw_user_meta_data->>'plano', CASE WHEN NEW.raw_user_meta_data->>'tipo_usuario' = 'fisioterapeuta' THEN 'fisioterapeuta' ELSE 'free' END)
+    END,
     NEW.raw_user_meta_data->>'crefito',
     NEW.raw_user_meta_data->>'especialidade',
     NEW.raw_user_meta_data->>'telefone',
