@@ -666,6 +666,78 @@ export default function Admin() {
     }
   };
 
+  const handleFixAdminRoleConflict = async () => {
+    const adminEmail = 'hogolezcano92@gmail.com';
+    if (!window.confirm(`Deseja corrigir o conflito de papéis para ${adminEmail}? Isso garantirá que o usuário seja apenas Administrador em todos os bancos de dados.`)) return;
+
+    setLoading(true);
+    try {
+      // 1. Localizar usuário no Supabase
+      const { data: profile, error: profileError } = await supabase
+        .from('perfis')
+        .select('id')
+        .eq('email', adminEmail)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (profile) {
+        // Atualizar papel no Supabase
+        await supabase
+          .from('perfis')
+          .update({ tipo_usuario: 'admin', plano: 'admin' })
+          .eq('id', profile.id);
+        console.log("Admin role updated in Supabase.");
+      }
+
+      // 2. Limpar Firestore
+      const { deleteDoc, doc: firestoreDoc, getDocs, query, collection, where, updateDoc: firestoreUpdateDoc } = await import('firebase/firestore');
+      
+      // Coleções para limpar (onde o admin não deve estar como fisio)
+      const collectionsToClean = ['physiotherapists', 'therapists', 'fisios', 'fisioterapeutas'];
+      
+      for (const collName of collectionsToClean) {
+        try {
+          const q = query(collection(db, collName), where('email', '==', adminEmail));
+          const snapshot = await getDocs(q);
+          for (const docSnap of snapshot.docs) {
+            await deleteDoc(firestoreDoc(db, collName, docSnap.id));
+            console.log(`Deleted admin from Firestore collection: ${collName}`);
+          }
+          
+          // Tentar também deletar por ID se o ID do perfil for igual ao ID do documento
+          if (profile) {
+            await deleteDoc(firestoreDoc(db, collName, profile.id)).catch(() => {});
+          }
+        } catch (err) {
+          console.warn(`Error cleaning collection ${collName}:`, err);
+        }
+      }
+
+      // 3. Garantir role admin no users do Firestore
+      try {
+        const userQ = query(collection(db, 'users'), where('email', '==', adminEmail));
+        const userSnapshot = await getDocs(userQ);
+        for (const docSnap of userSnapshot.docs) {
+          await firestoreUpdateDoc(firestoreDoc(db, 'users', docSnap.id), { role: 'admin' });
+          console.log(`Updated admin role in Firestore users collection.`);
+        }
+      } catch (err) {
+        console.warn("Error updating users collection in Firestore:", err);
+      }
+
+      await fetchSupabaseProfiles();
+      if (refreshProfile) await refreshProfile();
+      
+      import('sonner').then(({ toast }) => toast.success("Conflito de papéis resolvido com sucesso!"));
+    } catch (err: any) {
+      console.error("Erro ao resolver conflito:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao resolver conflito: " + err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChatUser) return;
 
@@ -2421,6 +2493,12 @@ export default function Admin() {
                           className="w-full py-4 bg-white/5 text-amber-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-500/10 transition-all border border-amber-500/20"
                         >
                           Limpar Registros Órfãos
+                        </button>
+                        <button 
+                          onClick={handleFixAdminRoleConflict}
+                          className="w-full py-4 bg-blue-600/10 text-blue-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-600/20 transition-all border border-blue-500/20 shadow-lg shadow-blue-500/5"
+                        >
+                          Corrigir Conflito de Papéis (Admin Master)
                         </button>
                         <button 
                           onClick={() => import('sonner').then(({ toast }) => toast.info("Cache do sistema limpo!"))}
