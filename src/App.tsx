@@ -705,7 +705,7 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
-              showSidebar && location.pathname !== '/chat' && "p-4 pt-16 md:p-6 lg:p-10 lg:pt-10"
+              showSidebar && location.pathname !== '/chat' && "p-4 pt-24 md:p-8 md:pt-28 lg:p-10 lg:pt-10"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
