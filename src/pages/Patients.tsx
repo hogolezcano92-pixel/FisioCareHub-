@@ -185,7 +185,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word mt-8 md:mt-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>
@@ -323,13 +323,29 @@ export default function Patients() {
 
               <form onSubmit={handleCreatePatient} className="p-5 space-y-4 overflow-y-auto">
                 <div className="flex justify-center mb-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-slate-600 border-2 border-dashed border-white/10">
-                      <Camera size={24} />
-                    </div>
-                    <button type="button" className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-xl shadow-lg">
-                      <Plus size={12} />
-                    </button>
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="patient-photo-modal"
+                    />
+                    <label 
+                      htmlFor="patient-photo-modal"
+                      className="relative block cursor-pointer transition-all active:scale-95"
+                    >
+                      <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center text-slate-600 border-2 border-dashed border-white/10 overflow-hidden hover:border-sky-500/50 transition-colors">
+                        {formData.foto_url ? (
+                          <img src={resolveStorageUrl(formData.foto_url)} className="w-full h-full object-cover" />
+                        ) : (
+                          uploadingImage ? <Loader2 className="animate-spin text-sky-400" size={24} /> : <Camera size={28} />
+                        )}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 p-2 bg-blue-600 text-white rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                        {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                      </div>
+                    </label>
                   </div>
                 </div>
 
@@ -344,34 +360,6 @@ export default function Patients() {
                       className="input-compact"
                       placeholder="Ex: João Silva"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Foto do Paciente (Opcional)</label>
-                    <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden border border-white/10">
-                        {formData.foto_url ? (
-                          <img src={resolveStorageUrl(formData.foto_url)} className="w-full h-full object-cover" />
-                        ) : (
-                          <Camera className="text-slate-500" size={20} />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="patient-photo"
-                        />
-                        <label
-                          htmlFor="patient-photo"
-                          className="px-4 py-2 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 cursor-pointer hover:bg-white/20 transition-all flex items-center gap-2 w-fit"
-                        >
-                          {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                          {formData.foto_url ? 'Trocar Foto' : 'Carregar Foto'}
-                        </label>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="space-y-1">
