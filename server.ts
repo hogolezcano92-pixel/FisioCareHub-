@@ -58,89 +58,103 @@ async function startServer() {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      const sessionId = session.metadata?.sessionId;
+      const appointmentId = session.metadata?.appointmentId;
 
-      if (sessionId) {
-        console.log(`Pagamento aprovado via Checkout para sessão: ${sessionId}`);
-        const { error } = await supabaseAdmin
-          .from('sessoes')
-          .update({ status_pagamento: 'pago_app' })
-          .eq('id', sessionId);
+      if (appointmentId) {
+        console.log(`Pagamento confirmado via Checkout para agendamento: ${appointmentId}`);
         
-        if (error) console.error("Erro ao atualizar status da sessão:", error);
+        // 1. Fetch appointment details
+        const { data: appData, error: fetchErr } = await supabaseAdmin
+          .from('agendamentos')
+          .select(`
+            *,
+            paciente:perfis!paciente_id (id, nome_completo, email, telefone),
+            fisioterapeuta:perfis!fisio_id (id, nome_completo, email)
+          `)
+          .eq('id', appointmentId)
+          .single();
 
-        // Optionally update appointment status too if needed
-        const appointmentId = session.metadata?.appointmentId;
-        if (appointmentId) {
-          // 1. Update appointment status
+        if (fetchErr || !appData) {
+          console.error("Erro ao buscar agendamento no webhook:", fetchErr);
+        } else {
+          // 2. Calculations (Rules 2 & 3)
+          const totalPaid = (session.amount_total || 0) / 100;
+          const commission = totalPaid * 0.12;
+          const netAmount = totalPaid * 0.88;
+
+          // 3. Update appointment status (Rule 2)
           await supabaseAdmin
             .from('agendamentos')
             .update({ status: 'confirmado' })
             .eq('id', appointmentId);
 
-          // 2. Fetch appointment details to send notifications
-          const { data: appData } = await supabaseAdmin
-            .from('agendamentos')
-            .select(`
-              *,
-              paciente:perfis!paciente_id (nome_completo, email, telefone),
-              fisioterapeuta:perfis!fisio_id (id, nome_completo, email)
-            `)
-            .eq('id', appointmentId)
-            .single();
-
-          if (appData) {
-            const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
-            const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            // 3. Create notification for the Physiotherapist
-            await supabaseAdmin.from('notificacoes').insert({
-              user_id: appData.fisioterapeuta.id,
-              titulo: 'Novo Agendamento Confirmado',
-              mensagem: `${appData.paciente.nome_completo} realizou o pagamento e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
-              tipo: 'appointment',
-              lida: false,
-              link: '/appointments'
+          // 4. Create financial record (Rule 3 & 6)
+          // We record only the net amount in the existing 'sessoes' table
+          const { error: sessionError } = await supabaseAdmin
+            .from('sessoes')
+            .insert({
+              paciente_id: appData.paciente_id,
+              fisioterapeuta_id: appData.fisio_id,
+              agendamento_id: appointmentId,
+              data: appData.data,
+              hora: appData.hora,
+              valor_sessao: netAmount, 
+              status_pagamento: 'pago_app',
+              stripe_payment_intent: session.payment_intent as string
             });
 
-            // 4. Send confirmation emails via Edge Function
-            // Note: We use the same payload expected by the 'Send-email' function
-            const baseUrl = process.env.APP_URL || "https://fisiocarehub.company";
-            const emailPayload = {
-              to: appData.fisioterapeuta.email,
-              subject: 'Novo Agendamento Recebido - FisioCareHub',
-              appointmentId: appointmentId,
+          if (sessionError) console.error("Erro ao registrar no financeiro:", sessionError);
+
+          // 5. Notifications and Emails (Rule 5)
+          const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
+          const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          // Notification for the Physiotherapist
+          await supabaseAdmin.from('notificacoes').insert({
+            user_id: appData.fisio_id,
+            titulo: 'Novo Agendamento Confirmado',
+            mensagem: `${appData.paciente.nome_completo} realizou o pagamento e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
+            tipo: 'appointment',
+            lida: false,
+            link: '/appointments'
+          });
+
+          // Send confirmation emails via Edge Function (Only after confirmation)
+          const baseUrl = process.env.APP_URL || "https://fisiocarehub.company";
+          const emailPayload = {
+            to: appData.fisioterapeuta.email,
+            subject: 'Novo Agendamento Recebido - FisioCareHub',
+            appointmentId: appointmentId,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Novo Agendamento Confirmado!</h2>
+                <p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p>
+                <p><strong>Data:</strong> ${formattedDate}</p>
+                <p><strong>Hora:</strong> ${formattedTime}</p>
+                <p><strong>Serviço:</strong> ${appData.servico || 'Consulta'}</p>
+                <a href="${baseUrl}/appointments" style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 8px;">Ver na Agenda</a>
+              </div>
+            `
+          };
+
+          await supabaseAdmin.functions.invoke('Send-email', { body: emailPayload });
+          
+          // Also notify patient
+          await supabaseAdmin.functions.invoke('Send-email', { 
+            body: {
+              to: appData.paciente.email,
+              subject: 'Pagamento Confirmado - FisioCareHub',
               html: `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>Novo Agendamento Confirmado!</h2>
-                  <p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p>
+                  <h2>Pagamento Confirmado!</h2>
+                  <p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p>
+                  <p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>
                   <p><strong>Data:</strong> ${formattedDate}</p>
                   <p><strong>Hora:</strong> ${formattedTime}</p>
-                  <p><strong>Serviço:</strong> ${appData.servico || 'Consulta'}</p>
-                  <a href="${baseUrl}/appointments" style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 8px;">Ver na Agenda</a>
                 </div>
               `
-            };
-
-            await supabaseAdmin.functions.invoke('Send-email', { body: emailPayload });
-            
-            // Also notify patient
-            await supabaseAdmin.functions.invoke('Send-email', { 
-              body: {
-                to: appData.paciente.email,
-                subject: 'Pagamento Confirmado - FisioCareHub',
-                html: `
-                  <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Pagamento Confirmado!</h2>
-                    <p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p>
-                    <p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>
-                    <p><strong>Data:</strong> ${formattedDate}</p>
-                    <p><strong>Hora:</strong> ${formattedTime}</p>
-                  </div>
-                `
-              }
-            });
-          }
+            }
+          });
         }
       }
     }
