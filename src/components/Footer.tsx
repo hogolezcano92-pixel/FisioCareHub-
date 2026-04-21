@@ -6,7 +6,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-slate-950 border-t border-white/5 transition-colors duration-300">
+    <footer className="w-full bg-[#0B1120] border-t border-white/5 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand Column */}
@@ -66,9 +66,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:suporte@fisioapp.com" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
+                <a href="mailto:suporte@fisiocarehub.company" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
                   <Mail size={16} className="text-slate-400 group-hover:text-blue-400" />
-                  suporte@fisioapp.com
+                  suporte@fisiocarehub.company
                 </a>
               </li>
             </ul>
