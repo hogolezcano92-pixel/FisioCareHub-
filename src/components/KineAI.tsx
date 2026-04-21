@@ -127,7 +127,7 @@ export default function KineAI() {
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
+          "fixed bottom-6 right-6 z-[40] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
           isOpen ? "opacity-0 pointer-events-none" : "bg-gradient-to-br from-sky-500 to-blue-600 text-white"
         )}
       >
@@ -145,7 +145,7 @@ export default function KineAI() {
             animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
             exit={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
             className={cn(
-              "fixed bottom-6 right-6 z-[101] bg-white rounded-[2.5rem] shadow-2xl border border-sky-100 flex flex-col overflow-hidden transition-all duration-300",
+              "fixed bottom-6 right-6 z-[41] bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden transition-all duration-300",
               isExpanded ? "w-[90vw] h-[80vh] md:w-[600px] md:h-[700px]" : "w-[90vw] h-[500px] md:w-[400px] md:h-[600px]"
             )}
           >
@@ -179,7 +179,7 @@ export default function KineAI() {
             {/* Messages Area */}
             <div 
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-6 space-y-6 bg-sky-50/30"
+              className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-950/50"
             >
               {messages.map((msg) => (
                 <motion.div
@@ -195,7 +195,7 @@ export default function KineAI() {
                     "p-4 rounded-3xl text-sm leading-relaxed shadow-sm",
                     msg.role === 'user' 
                       ? "bg-sky-500 text-white rounded-tr-none" 
-                      : "bg-white text-slate-700 border border-sky-100 rounded-tl-none"
+                      : "bg-slate-800 text-white border border-white/10 rounded-tl-none"
                   )}>
                     <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-strong:text-inherit prose-p:m-0">
                       <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -215,12 +215,12 @@ export default function KineAI() {
             </div>
 
             {/* Quick Commands */}
-            <div className="px-6 py-3 bg-white border-t border-sky-50 flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="px-6 py-3 bg-slate-900 border-t border-white/5 flex gap-2 overflow-x-auto no-scrollbar">
               {quickCommands.map((cmd) => (
                 <button
                   key={cmd.label}
                   onClick={() => handleSendMessage(cmd.cmd)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full text-xs font-black hover:bg-sky-100 transition-all border border-sky-100/50 shadow-sm"
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-white/5 text-slate-300 rounded-full text-xs font-black hover:bg-white/10 transition-all border border-white/5 shadow-sm"
                 >
                   <cmd.icon size={14} />
                   {cmd.label}
@@ -229,7 +229,7 @@ export default function KineAI() {
             </div>
 
             {/* Input Area */}
-            <div className="p-6 bg-white border-t border-sky-50">
+            <div className="p-6 bg-slate-900 border-t border-white/5">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -242,7 +242,7 @@ export default function KineAI() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Pergunte qualquer coisa ou use /ajuda..."
-                  className="w-full pl-6 pr-16 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:border-sky-500 focus:bg-white transition-all outline-none"
+                  className="w-full pl-6 pr-16 py-4 bg-slate-800 border-2 border-white/5 rounded-2xl text-sm font-medium text-white placeholder:text-slate-500 focus:border-sky-500 transition-all outline-none"
                 />
                 <button
                   type="submit"
