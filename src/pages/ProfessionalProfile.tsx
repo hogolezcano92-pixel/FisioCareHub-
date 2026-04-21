@@ -242,12 +242,15 @@ export default function ProfessionalProfile() {
                     </div>
 
                     {tagsList.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {tagsList.map((tag: string) => (
-                          <span key={tag} className="px-3 py-1 bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
-                            {tag}
-                          </span>
-                        ))}
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Especialidades</span>
+                        <div className="flex flex-wrap gap-2">
+                          {tagsList.map((tag: string) => (
+                            <span key={tag} className="px-3 py-1 bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -256,7 +259,7 @@ export default function ProfessionalProfile() {
               {(physio.bio || physio.sobre) && (
                 <div className="mt-10 pt-10 border-t border-white/5 space-y-4">
                   <h2 className="text-xl font-black text-white tracking-tight">Sobre o Profissional</h2>
-                  <p className="text-slate-300 font-medium leading-relaxed">
+                  <p className="text-slate-300 font-medium leading-relaxed text-justify">
                     {physio.bio || physio.sobre}
                   </p>
                 </div>
