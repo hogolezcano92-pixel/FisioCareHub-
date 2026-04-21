@@ -181,6 +181,7 @@ export default function ProfessionalProfile() {
   // Formatting strings for labels
   const educationList = physio.formacao_academica || [];
   const tagsList = physio.tags_especialidades || [];
+  const servicesList = physio.servicos_ofertados || [];
   const showDomessticular = configServicos?.domiciliar > 0 || physio.tipo_servico === 'domicilio' || physio.tipo_servico === 'ambos';
   const showTeleconsulta = configServicos?.teleconsulta > 0 || physio.tipo_servico === 'online' || physio.tipo_servico === 'ambos';
 
@@ -284,7 +285,7 @@ export default function ProfessionalProfile() {
                 </div>
               )}
 
-              {(showDomessticular || showTeleconsulta) && (
+              {(showDomessticular || showTeleconsulta || servicesList.length > 0) && (
                 <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
                   <div className="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center">
                     <Stethoscope size={24} />
@@ -303,6 +304,12 @@ export default function ProfessionalProfile() {
                         <p className="text-sm text-slate-300 font-medium">Teleconsulta (Online)</p>
                       </li>
                     )}
+                    {servicesList.map((service: string, idx: number) => (
+                      <li key={idx} className="flex gap-3">
+                        <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-sm text-slate-300 font-medium">{service}</p>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}

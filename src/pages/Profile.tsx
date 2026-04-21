@@ -82,7 +82,46 @@ export default function Profile() {
     data_nascimento: '',
     experiencia_profissional: '',
     observacoes_saude: '',
+    formacao_academica: [] as string[],
+    servicos_ofertados: [] as string[],
   });
+
+  const [newEducation, setNewEducation] = useState('');
+  const [newService, setNewService] = useState('');
+
+  const addEducation = () => {
+    if (newEducation.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        formacao_academica: [...prev.formacao_academica, newEducation.trim()]
+      }));
+      setNewEducation('');
+    }
+  };
+
+  const removeEducation = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      formacao_academica: prev.formacao_academica.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addService = () => {
+    if (newService.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        servicos_ofertados: [...prev.servicos_ofertados, newService.trim()]
+      }));
+      setNewService('');
+    }
+  };
+
+  const removeService = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      servicos_ofertados: prev.servicos_ofertados.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -120,6 +159,8 @@ export default function Profile() {
           data_nascimento: profile.data_nascimento || '',
           experiencia_profissional: profile.experiencia_profissional || '',
           observacoes_saude: profile.observacoes_saude || '',
+          formacao_academica: profile.formacao_academica || [],
+          servicos_ofertados: profile.servicos_ofertados || [],
         });
         setLoading(false);
       } else if (!user) {
@@ -226,6 +267,8 @@ export default function Profile() {
         data_nascimento: formData.data_nascimento || undefined,
         experiencia_profissional: isPhysio ? formData.experiencia_profissional : undefined,
         observacoes_saude: !isPhysio ? formData.observacoes_saude : undefined,
+        formacao_academica: isPhysio ? formData.formacao_academica : undefined,
+        servicos_ofertados: isPhysio ? formData.servicos_ofertados : undefined,
       };
 
       // Clean undefined fields
@@ -669,6 +712,92 @@ export default function Profile() {
                               className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
                               placeholder="Alergias, condições crônicas, cirurgias anteriores..."
                             />
+                          </div>
+                        )}
+
+                        {isPhysio && (
+                          <div className="grid md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Formação Acadêmica</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={newEducation}
+                                  onChange={(e) => setNewEducation(e.target.value)}
+                                  placeholder="Ex: Graduação em Fisioterapia - USP"
+                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEducation())}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={addEducation}
+                                  className="px-6 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all font-bold"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                {formData.formacao_academica.map((item, i) => (
+                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                                      <span className="text-sm font-medium text-slate-300">{item}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeEducation(i)}
+                                      className="text-slate-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                ))}
+                                {formData.formacao_academica.length === 0 && (
+                                  <p className="text-xs text-slate-600 font-medium italic ml-1">Nenhuma formação adicionada.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Serviços Oferecidos</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={newService}
+                                  onChange={(e) => setNewService(e.target.value)}
+                                  placeholder="Ex: Reabilitação Esportiva"
+                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={addService}
+                                  className="px-6 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all font-bold"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                {formData.servicos_ofertados.map((item, i) => (
+                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                      <span className="text-sm font-medium text-slate-300">{item}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeService(i)}
+                                      className="text-slate-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                ))}
+                                {formData.servicos_ofertados.length === 0 && (
+                                  <p className="text-xs text-slate-600 font-medium italic ml-1">Nenhum serviço adicionado.</p>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         )}
 
