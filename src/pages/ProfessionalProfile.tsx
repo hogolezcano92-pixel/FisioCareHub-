@@ -50,10 +50,10 @@ export default function ProfessionalProfile() {
       if (!id) return;
       setLoading(true);
       try {
-        // SELECT specific columns as requested by the user
+        // Use '*' for resilience against missing columns while still fetching what's available
         const { data, error } = await supabase
           .from('perfis')
-          .select('id, nome_completo, especialidade, bio, tags_especialidades, formacao_academica, verificado, avatar_url, localizacao, tipo_servico')
+          .select('*')
           .eq('id', id)
           .eq('tipo_usuario', 'fisioterapeuta')
           .single();
@@ -217,7 +217,7 @@ export default function ProfessionalProfile() {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <h1 className="text-3xl font-black text-white tracking-tight">Dr. {physio.nome_completo || physio.nome}</h1>
-                        {physio.verificado && (
+                        {(physio.aprovado || physio.verificado || physio.status_aprovacao === 'aprovado') && (
                           <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
                             <ShieldCheck size={12} />
                             Verificado
