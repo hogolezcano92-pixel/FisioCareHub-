@@ -48,25 +48,31 @@ export default function ProfessionalProfile() {
   useEffect(() => {
     const fetchPhysio = async () => {
       if (!id) return;
+      setLoading(true);
       try {
+        // SELECT specific columns as requested by the user
         const { data, error } = await supabase
           .from('perfis')
-          .select('*')
+          .select('id, nome_completo, especialidade, bio, tags_especialidades, formacao_academica, verificado, avatar_url, localizacao, tipo_servico')
           .eq('id', id)
           .eq('tipo_usuario', 'fisioterapeuta')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao buscar perfil:', error);
+          throw new Error('Profissional não encontrado');
+        }
+        
         setPhysio(data);
 
-        // Fetch session settings
+        // Fetch service settings (pricing and specific availability)
         const { data: settings, error: settingsError } = await supabase
           .from('configuracao_servicos')
           .select('*')
           .eq('physio_id', id)
           .single();
         
-        if (!settingsError) {
+        if (!settingsError && settings) {
           console.log('Valores de serviços carregados:', settings);
           setConfigServicos(settings);
           setBookingData(prev => ({
@@ -77,9 +83,9 @@ export default function ProfessionalProfile() {
         } else {
           console.log('Nenhuma configuração de valores encontrada para este profissional.');
         }
-      } catch (err) {
-        console.error('Erro ao buscar fisioterapeuta:', err);
-        toast.error('Profissional não encontrado');
+      } catch (err: any) {
+        console.error('Erro ao buscar dados:', err);
+        toast.error(err.message || 'Erro ao carregar perfil');
         navigate('/');
       } finally {
         setLoading(false);
@@ -163,13 +169,20 @@ export default function ProfessionalProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="animate-spin text-blue-500" size={48} />
+        <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-xs">Carregando Perfil...</p>
       </div>
     );
   }
 
   if (!physio) return null;
+
+  // Formatting strings for labels
+  const educationList = physio.formacao_academica || [];
+  const tagsList = physio.tags_especialidades || [];
+  const showDomessticular = configServicos?.domiciliar > 0 || physio.tipo_servico === 'domicilio' || physio.tipo_servico === 'ambos';
+  const showTeleconsulta = configServicos?.teleconsulta > 0 || physio.tipo_servico === 'online' || physio.tipo_servico === 'ambos';
 
   return (
     <div className="min-h-screen bg-slate-950 pb-20">
@@ -200,83 +213,96 @@ export default function ProfessionalProfile() {
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h1 className="text-3xl font-black text-white tracking-tight">Dr. {physio.nome_completo}</h1>
-                      <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
-                        <ShieldCheck size={12} />
-                        Verificado
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h1 className="text-3xl font-black text-white tracking-tight">Dr. {physio.nome_completo || physio.nome}</h1>
+                        {physio.verificado && (
+                          <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
+                            <ShieldCheck size={12} />
+                            Verificado
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-blue-400 font-black text-xs uppercase tracking-[0.2em]">
+                        {physio.especialidade || physio.especialidade_principal || 'Fisioterapeuta'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center gap-1.5 text-amber-400">
+                        <Star size={18} fill="currentColor" />
+                        <span className="text-sm font-black text-white">4.9</span>
+                        <span className="text-xs text-slate-400 font-bold">(120 avaliações)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                        <MapPin size={18} />
+                        <span className="text-sm font-bold">{physio.localizacao || 'São Paulo, SP'}</span>
                       </div>
                     </div>
-                    <p className="text-blue-400 font-black text-xs uppercase tracking-[0.2em]">{physio.especialidade || 'Fisioterapeuta'}</p>
-                  </div>
 
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-1.5 text-amber-400">
-                      <Star size={18} fill="currentColor" />
-                      <span className="text-sm font-black text-white">4.9</span>
-                      <span className="text-xs text-slate-400 font-bold">(120 avaliações)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <MapPin size={18} />
-                      <span className="text-sm font-bold">{physio.localizacao || 'São Paulo, SP'}</span>
-                    </div>
+                    {tagsList.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {tagsList.map((tag: string) => (
+                          <span key={tag} className="px-3 py-1 bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
+              </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {['Ortopedia', 'Esportiva', 'RPG', 'Pilates'].map(tag => (
-                      <span key={tag} className="px-3 py-1 bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              {(physio.bio || physio.sobre) && (
+                <div className="mt-10 pt-10 border-t border-white/5 space-y-4">
+                  <h2 className="text-xl font-black text-white tracking-tight">Sobre o Profissional</h2>
+                  <p className="text-slate-300 font-medium leading-relaxed">
+                    {physio.bio || physio.sobre}
+                  </p>
                 </div>
-              </div>
-
-              <div className="mt-10 pt-10 border-t border-white/5 space-y-4">
-                <h2 className="text-xl font-black text-white tracking-tight">Sobre o Profissional</h2>
-                <p className="text-slate-300 font-medium leading-relaxed">
-                  {physio.bio || 'Fisioterapeuta dedicado a proporcionar a melhor reabilitação no conforto do seu lar. Especialista em técnicas modernas de terapia manual e exercícios funcionais.'}
-                </p>
-              </div>
+              )}
             </div>
 
-            {/* Experience & Education */}
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
-                <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
-                  <Award size={24} />
+              {educationList.length > 0 && (
+                <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
+                  <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
+                    <Award size={24} />
+                  </div>
+                  <h3 className="text-lg font-black text-white tracking-tight">Formação Acadêmica</h3>
+                  <ul className="space-y-3">
+                    {educationList.map((item: string, idx: number) => (
+                      <li key={idx} className="flex gap-3">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-sm text-slate-300 font-medium">{item}</p>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <h3 className="text-lg font-black text-white tracking-tight">Formação Acadêmica</h3>
-                <ul className="space-y-3">
-                  <li className="flex gap-3">
-                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-300 font-medium">Graduação em Fisioterapia - USP</p>
-                  </li>
-                  <li className="flex gap-3">
-                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-300 font-medium">Pós-graduação em Fisioterapia Esportiva</p>
-                  </li>
-                </ul>
-              </div>
+              )}
 
-              <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
-                <div className="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center">
-                  <Stethoscope size={24} />
+              {(showDomessticular || showTeleconsulta) && (
+                <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
+                  <div className="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center">
+                    <Stethoscope size={24} />
+                  </div>
+                  <h3 className="text-lg font-black text-white tracking-tight">Serviços Oferecidos</h3>
+                  <ul className="space-y-3">
+                    {showDomessticular && (
+                      <li className="flex gap-3">
+                        <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-sm text-slate-300 font-medium">Atendimento Domiciliar</p>
+                      </li>
+                    )}
+                    {showTeleconsulta && (
+                      <li className="flex gap-3">
+                        <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-sm text-slate-300 font-medium">Teleconsulta (Online)</p>
+                      </li>
+                    )}
+                  </ul>
                 </div>
-                <h3 className="text-lg font-black text-white tracking-tight">Serviços Oferecidos</h3>
-                <ul className="space-y-3">
-                  <li className="flex gap-3">
-                    <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-300 font-medium">Atendimento Domiciliar</p>
-                  </li>
-                  <li className="flex gap-3">
-                    <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm text-slate-300 font-medium">Teleconsulta (Online)</p>
-                  </li>
-                </ul>
-              </div>
+              )}
             </div>
           </div>
 
