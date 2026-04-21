@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS public.perfis (
     aprovado BOOLEAN DEFAULT false,
     status_aprovacao TEXT DEFAULT 'pendente',
     documentos TEXT[] DEFAULT '{}',
+    formacao_academica TEXT[] DEFAULT '{}',
+    servicos_ofertados TEXT[] DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
