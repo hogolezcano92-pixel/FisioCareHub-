@@ -89,6 +89,13 @@ export default function Profile() {
   const [newEducation, setNewEducation] = useState('');
   const [newService, setNewService] = useState('');
 
+  const commonServices = [
+    "Pilates", "RPG", "Drenagem Linfática", "Acupuntura", "Ventosaterapia", 
+    "Liberação Miofascial", "Osteopatia", "Quiropraxia", "Fisioterapia Esportiva",
+    "Pédiatrica", "Geriátrica", "Neurológica", "Respiratória", "Cardiologia",
+    "Dermatofuncional", "Hidroterapia", "Dry Needling", "Bandagens"
+  ];
+
   const addEducation = () => {
     if (newEducation.trim()) {
       setFormData(prev => ({
@@ -106,8 +113,25 @@ export default function Profile() {
     }));
   };
 
-  const addService = () => {
-    if (newService.trim()) {
+  const toggleService = (service: string) => {
+    setFormData(prev => {
+      const exists = prev.servicos_ofertados.includes(service);
+      if (exists) {
+        return {
+          ...prev,
+          servicos_ofertados: prev.servicos_ofertados.filter(s => s !== service)
+        };
+      } else {
+        return {
+          ...prev,
+          servicos_ofertados: [...prev.servicos_ofertados, service]
+        };
+      }
+    });
+  };
+
+  const addCustomService = () => {
+    if (newService.trim() && !formData.servicos_ofertados.includes(newService.trim())) {
       setFormData(prev => ({
         ...prev,
         servicos_ofertados: [...prev.servicos_ofertados, newService.trim()]
@@ -760,25 +784,48 @@ export default function Profile() {
 
                             <div className="space-y-4">
                               <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Serviços Oferecidos</label>
+                              
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {commonServices.map(service => {
+                                  const isSelected = formData.servicos_ofertados.includes(service);
+                                  return (
+                                    <button
+                                      key={service}
+                                      type="button"
+                                      onClick={() => toggleService(service)}
+                                      className={cn(
+                                        "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
+                                        isSelected 
+                                          ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
+                                          : "bg-white/5 border-white/10 text-slate-400 hover:border-white/30"
+                                      )}
+                                    >
+                                      {service}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
                               <div className="flex gap-2">
                                 <input
                                   type="text"
                                   value={newService}
                                   onChange={(e) => setNewService(e.target.value)}
-                                  placeholder="Ex: Reabilitação Esportiva"
+                                  placeholder="Outro serviço..."
                                   className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
-                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
+                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomService())}
                                 />
                                 <button
                                   type="button"
-                                  onClick={addService}
+                                  onClick={addCustomService}
                                   className="px-6 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all font-bold"
                                 >
                                   Add
                                 </button>
                               </div>
+
                               <div className="space-y-2">
-                                {formData.servicos_ofertados.map((item, i) => (
+                                {formData.servicos_ofertados.filter(s => !commonServices.includes(s)).map((item, i) => (
                                   <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
                                     <div className="flex items-center gap-3">
                                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
@@ -786,16 +833,13 @@ export default function Profile() {
                                     </div>
                                     <button
                                       type="button"
-                                      onClick={() => removeService(i)}
+                                      onClick={() => removeService(formData.servicos_ofertados.indexOf(item))}
                                       className="text-slate-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-all"
                                     >
                                       <Trash2 size={16} />
                                     </button>
                                   </div>
                                 ))}
-                                {formData.servicos_ofertados.length === 0 && (
-                                  <p className="text-xs text-slate-600 font-medium italic ml-1">Nenhum serviço adicionado.</p>
-                                )}
                               </div>
                             </div>
                           </div>

@@ -238,9 +238,22 @@ export default function ProfessionalProfile() {
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-400">
                         <MapPin size={18} />
-                        <span className="text-sm font-bold">{physio.localizacao || 'São Paulo, SP'}</span>
+                        <span className="text-sm font-bold">{physio.localizacao || physio.cidade || 'São Paulo, SP'}</span>
                       </div>
                     </div>
+
+                    {servicesList.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {servicesList.map((service: string) => (
+                          <span 
+                            key={service} 
+                            className="px-3 py-1 bg-transparent text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-full border border-white/10"
+                          >
+                            {service}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {tagsList.length > 0 && (
                       <div className="space-y-2">
@@ -304,12 +317,6 @@ export default function ProfessionalProfile() {
                         <p className="text-sm text-slate-300 font-medium">Teleconsulta (Online)</p>
                       </li>
                     )}
-                    {servicesList.map((service: string, idx: number) => (
-                      <li key={idx} className="flex gap-3">
-                        <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0" />
-                        <p className="text-sm text-slate-300 font-medium">{service}</p>
-                      </li>
-                    ))}
                   </ul>
                 </div>
               )}
