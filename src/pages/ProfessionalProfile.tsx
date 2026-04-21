@@ -273,9 +273,11 @@ export default function ProfessionalProfile() {
               {(physio.bio || physio.sobre) && (
                 <div className="mt-10 pt-10 border-t border-white/5 space-y-4">
                   <h2 className="text-xl font-black text-white tracking-tight">Sobre o Profissional</h2>
-                  <p className="text-slate-300 font-medium leading-relaxed text-justify">
-                    {physio.bio || physio.sobre}
-                  </p>
+                  <div className="text-slate-300 font-medium leading-[1.6] text-left space-y-4">
+                    {(physio.bio || physio.sobre).split('\n').map((para: string, idx: number) => (
+                      para.trim() ? <p key={idx}>{para}</p> : <br key={idx} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
