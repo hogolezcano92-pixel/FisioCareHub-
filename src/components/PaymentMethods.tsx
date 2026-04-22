@@ -149,15 +149,18 @@ export default function PaymentMethods({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h3 className="text-xl font-black text-white flex items-center gap-3">
           <CreditCard className="text-blue-500" size={24} />
           Métodos de Pagamento
         </h3>
         {!showAddForm && (
           <button 
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+            onClick={() => {
+              console.log('PaymentMethods: Opening card registration form');
+              setShowAddForm(true);
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
           >
             <Plus size={16} /> Adicionar Cartão
           </button>
@@ -300,8 +303,11 @@ export default function PaymentMethods({ userId }: { userId: string }) {
               </p>
             </div>
             <button 
-              onClick={() => setShowAddForm(true)}
-              className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+              onClick={() => {
+                console.log('PaymentMethods: Opening add first card form');
+                setShowAddForm(true);
+              }}
+              className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95"
             >
               Adicionar Primeiro Cartão
             </button>
