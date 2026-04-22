@@ -283,7 +283,7 @@ export default function Chat() {
         .insert({
           remetente_id: user.id,
           destinatario_id: targetUser.id,
-          conteudo: `Arquivo enviado: ${file.name}\n${publicUrl}`,
+          mensagem: `Arquivo enviado: ${file.name}\n${publicUrl}`,
           data_envio: new Date().toISOString(),
           lida: false
         });
@@ -309,7 +309,7 @@ export default function Chat() {
         .insert({
           remetente_id: user.id,
           destinatario_id: targetUser.id,
-          conteudo: text,
+          mensagem: text,
           data_envio: new Date().toISOString(),
           lida: false
         });
@@ -338,7 +338,7 @@ export default function Chat() {
     if (!messages.length || !targetUser || !user) return;
     const transcript = messages.map(m => {
       const sender = m.remetente_id === user.id ? 'Eu' : (targetUser.nome_completo);
-      return `[${formatDate(m.data_envio)}] ${sender}: ${m.conteudo}`;
+      return `[${formatDate(m.data_envio)}] ${sender}: ${m.mensagem}`;
     }).join('\n');
 
     try {
@@ -627,7 +627,7 @@ export default function Chat() {
                               ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-900/20" 
                               : "bg-white/5 text-white rounded-tl-none border border-white/10"
                           )}>
-                            <p className="leading-relaxed font-bold mb-1 break-words">{msg.conteudo}</p>
+                            <p className="leading-relaxed font-bold mb-1 break-words">{msg.mensagem}</p>
                             
                             <div className={cn(
                               "text-[9px] font-black uppercase tracking-widest opacity-60 text-right",

@@ -777,7 +777,7 @@ export default function Admin() {
         .insert({
           remetente_id: supabaseUser.id,
           destinatario_id: selectedChatUser.id,
-          conteudo: newMessage,
+          mensagem: newMessage,
           data_envio: new Date().toISOString(),
           lida: false
         });
@@ -2365,7 +2365,7 @@ export default function Admin() {
                                   : "bg-white/5 border border-white/10 text-white rounded-tl-none"
                               )}
                             >
-                              <p className="leading-relaxed font-bold tracking-tight break-words">{m.conteudo}</p>
+                              <p className="leading-relaxed font-bold tracking-tight break-words">{m.mensagem}</p>
                               <div className={cn(
                                 "text-[9px] mt-2 font-black uppercase tracking-widest opacity-50",
                                 m.remetente_id === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-slate-500"
