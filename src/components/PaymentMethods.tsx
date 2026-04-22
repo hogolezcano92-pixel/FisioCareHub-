@@ -30,6 +30,8 @@ export default function PaymentMethods({ userId }: { userId: string }) {
   useEffect(() => {
     if (userId) {
       fetchPaymentMethods();
+    } else {
+      setLoading(false);
     }
   }, [userId]);
 
@@ -165,6 +167,7 @@ export default function PaymentMethods({ userId }: { userId: string }) {
       <AnimatePresence mode="wait">
         {showAddForm ? (
           <motion.div
+            key="add-card-form"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -247,13 +250,16 @@ export default function PaymentMethods({ userId }: { userId: string }) {
             </form>
           </motion.div>
         ) : methods.length > 0 ? (
-          <div className="grid md:grid-cols-2 gap-6">
+          <motion.div 
+            key="methods-list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid md:grid-cols-2 gap-6"
+          >
             {methods.map((method) => (
-              <motion.div
+              <div
                 key={method.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
                 className="group relative bg-slate-900/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 shadow-lg hover:border-blue-500/30 transition-all"
               >
                 <div className="flex items-start justify-between">
@@ -273,11 +279,17 @@ export default function PaymentMethods({ userId }: { userId: string }) {
                     <Trash2 size={18} />
                   </button>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          <div className="p-16 text-center border-2 border-dashed border-white/10 rounded-[3rem] space-y-6">
+          <motion.div 
+            key="empty-state"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="p-16 text-center border-2 border-dashed border-white/10 rounded-[3rem] space-y-6"
+          >
             <div className="w-20 h-20 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
               <CreditCard size={40} />
             </div>
@@ -293,7 +305,7 @@ export default function PaymentMethods({ userId }: { userId: string }) {
             >
               Adicionar Primeiro Cartão
             </button>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
