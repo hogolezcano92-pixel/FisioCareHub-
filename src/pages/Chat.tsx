@@ -91,12 +91,12 @@ export default function Chat() {
       const { data: msgs } = await supabase
         .from('mensagens')
         .select('*')
-        .or(`remetente_id.eq.${user.id},destinatario_id.eq.${user.id}`)
-        .order('data_envio', { ascending: false })
+        .or(`remetente.eq.${user.id},destinatario.eq.${user.id}`)
+        .order('criado_em', { ascending: false })
         .limit(100);
 
       if (msgs) {
-        const uids = Array.from(new Set(msgs.flatMap(m => [m.remetente_id, m.destinatario_id]).filter(id => id !== user.id)));
+        const uids = Array.from(new Set(msgs.flatMap(m => [m.remetente, m.destinatario]).filter(id => id !== user.id)));
 
         if (uids.length > 0) {
           const { data: chatUsers } = await supabase
@@ -163,13 +163,13 @@ export default function Chat() {
         const { data: msgs } = await supabase
           .from('mensagens')
           .select('*')
-          .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${targetUser.id}),and(remetente_id.eq.${targetUser.id},destinatario_id.eq.${user.id})`)
-          .order('data_envio', { ascending: true });
+          .or(`and(remetente.eq.${user.id},destinatario.eq.${targetUser.id}),and(remetente.eq.${targetUser.id},destinatario.eq.${user.id})`)
+          .order('criado_em', { ascending: true });
 
         if (msgs) {
           if (lastMessageId.current && msgs.length > 0) {
             const lastMsg = msgs[msgs.length - 1];
-            if (lastMessageId.current !== lastMsg.id && lastMsg.remetente_id !== user.id) {
+            if (lastMessageId.current !== lastMsg.id && lastMsg.remetente !== user.id) {
               playSound();
             }
           }
@@ -192,8 +192,8 @@ export default function Chat() {
             const newMsg = payload.new;
             // Check if the message belongs to the current conversation
             const isRelevant = 
-              (newMsg.remetente_id === user.id && newMsg.destinatario_id === targetUser.id) ||
-              (newMsg.remetente_id === targetUser.id && newMsg.destinatario_id === user.id);
+              (newMsg.remetente === user.id && newMsg.destinatario === targetUser.id) ||
+              (newMsg.remetente === targetUser.id && newMsg.destinatario === user.id);
             
             if (isRelevant) {
               console.log('[Realtime] Message is relevant, fetching messages...');
@@ -281,10 +281,10 @@ export default function Chat() {
       await supabase
         .from('mensagens')
         .insert({
-          remetente_id: user.id,
-          destinatario_id: targetUser.id,
+          remetente: user.id,
+          destinatario: targetUser.id,
           mensagem: `Arquivo enviado: ${file.name}\n${publicUrl}`,
-          data_envio: new Date().toISOString(),
+          criado_em: new Date().toISOString(),
           lida: false
         });
 
@@ -307,10 +307,10 @@ export default function Chat() {
       const { error } = await supabase
         .from('mensagens')
         .insert({
-          remetente_id: user.id,
-          destinatario_id: targetUser.id,
+          remetente: user.id,
+          destinatario: targetUser.id,
           mensagem: text,
-          data_envio: new Date().toISOString(),
+          criado_em: new Date().toISOString(),
           lida: false
         });
 
@@ -337,8 +337,8 @@ export default function Chat() {
   const handleShareConversation = async () => {
     if (!messages.length || !targetUser || !user) return;
     const transcript = messages.map(m => {
-      const sender = m.remetente_id === user.id ? 'Eu' : (targetUser.nome_completo);
-      return `[${formatDate(m.data_envio)}] ${sender}: ${m.mensagem}`;
+      const sender = m.remetente === user.id ? 'Eu' : (targetUser.nome_completo);
+      return `[${formatDate(m.criado_em)}] ${sender}: ${m.mensagem}`;
     }).join('\n');
 
     try {
@@ -599,10 +599,10 @@ export default function Chat() {
                   </div>
                 ) : (
                   messages.map((msg, idx) => {
-                    const isMe = msg.remetente_id === user?.id;
-                    const msgDate = new Date(msg.data_envio);
+                    const isMe = msg.remetente === user?.id;
+                    const msgDate = new Date(msg.criado_em);
                     const prevMsg = idx > 0 ? messages[idx - 1] : null;
-                    const prevMsgDate = prevMsg ? new Date(prevMsg.data_envio) : null;
+                    const prevMsgDate = prevMsg ? new Date(prevMsg.criado_em) : null;
                     
                     const showDateSeparator = !prevMsgDate || 
                       msgDate.toDateString() !== prevMsgDate.toDateString();

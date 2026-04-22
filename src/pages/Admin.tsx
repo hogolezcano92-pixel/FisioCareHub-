@@ -404,8 +404,8 @@ export default function Admin() {
       const { data: msgs, error } = await supabase
         .from('mensagens')
         .select('*')
-        .or(`and(remetente_id.eq.${supabaseUser.id},destinatario_id.eq.${selectedChatUser.id}),and(remetente_id.eq.${selectedChatUser.id},destinatario_id.eq.${supabaseUser.id})`)
-        .order('data_envio', { ascending: true });
+        .or(`and(remetente.eq.${supabaseUser.id},destinatario.eq.${selectedChatUser.id}),and(remetente.eq.${selectedChatUser.id},destinatario.eq.${supabaseUser.id})`)
+        .order('criado_em', { ascending: true });
 
       if (msgs) {
         setMessages(msgs);
@@ -420,8 +420,8 @@ export default function Admin() {
         }, (payload) => {
           const newMsg = payload.new;
           const isRelevant = 
-            (newMsg.remetente_id === supabaseUser.id && newMsg.destinatario_id === selectedChatUser.id) ||
-            (newMsg.remetente_id === selectedChatUser.id && newMsg.destinatario_id === supabaseUser.id);
+            (newMsg.remetente === supabaseUser.id && newMsg.destinatario === selectedChatUser.id) ||
+            (newMsg.remetente === selectedChatUser.id && newMsg.destinatario === supabaseUser.id);
           
           if (isRelevant) {
             fetchMessages();
@@ -775,10 +775,10 @@ export default function Admin() {
       const { error } = await supabase
         .from('mensagens')
         .insert({
-          remetente_id: supabaseUser.id,
-          destinatario_id: selectedChatUser.id,
+          remetente: supabaseUser.id,
+          destinatario: selectedChatUser.id,
           mensagem: newMessage,
-          data_envio: new Date().toISOString(),
+          criado_em: new Date().toISOString(),
           lida: false
         });
 
@@ -2341,9 +2341,9 @@ export default function Admin() {
                     {/* Messages Area */}
                     <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
                       {messages.map((m, idx) => {
-                        const mDate = m.data_envio ? new Date(m.data_envio) : new Date();
+                        const mDate = m.criado_em ? new Date(m.criado_em) : new Date();
                         const prevM = idx > 0 ? messages[idx - 1] : null;
-                        const prevMDate = prevM?.data_envio ? new Date(prevM.data_envio) : null;
+                        const prevMDate = prevM?.criado_em ? new Date(prevM.criado_em) : null;
                         
                         const showDateSeparator = !prevMDate || 
                           mDate.toDateString() !== prevMDate.toDateString();
@@ -2360,7 +2360,7 @@ export default function Admin() {
                             <div 
                               className={cn(
                                 "max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-2xl relative group",
-                                m.remetente_id === supabaseUser?.id 
+                                m.remetente === supabaseUser?.id 
                                   ? "ml-auto bg-blue-600 text-white rounded-tr-none shadow-blue-900/20" 
                                   : "bg-white/5 border border-white/10 text-white rounded-tl-none"
                               )}
@@ -2368,7 +2368,7 @@ export default function Admin() {
                               <p className="leading-relaxed font-bold tracking-tight break-words">{m.mensagem}</p>
                               <div className={cn(
                                 "text-[9px] mt-2 font-black uppercase tracking-widest opacity-50",
-                                m.remetente_id === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-slate-500"
+                                m.remetente === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-slate-500"
                               )}>
                                 {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
