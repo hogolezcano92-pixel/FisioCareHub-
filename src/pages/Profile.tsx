@@ -34,6 +34,7 @@ import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
 import PaymentMethods from '../components/PaymentMethods';
+import PhysioPaymentData from '../components/PhysioPaymentData';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' // Patient tabs
@@ -1169,6 +1170,11 @@ export default function Profile() {
                             Custos e Serviços
                           </button>
                         </div>
+                      </div>
+
+                      {/* Payment Data Section */}
+                      <div className="mb-12 pt-8 border-t border-white/5">
+                        <PhysioPaymentData userId={user?.id || ''} />
                       </div>
 
                       <div className="space-y-4">
