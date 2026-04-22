@@ -633,7 +633,7 @@ function AppContent() {
 
   const isPatientArea = useMemo(() => user && profile?.tipo_usuario === 'paciente', [user, profile]);
   const isPhysioArea = useMemo(() => user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin', [user, profile]);
-  const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || profile?.plano === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]);
+  const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]);
   const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';
   const isAdminPage = useMemo(() => location.pathname.startsWith('/admin') || location.pathname === '/preview', [location.pathname]);
@@ -674,7 +674,7 @@ function AppContent() {
       
       <ErrorBoundary>
         <Suspense fallback={null}>
-          {!isAdminPage && <KineAI />}
+          {isLandingPage && <KineAI />}
         </Suspense>
         <NotificationHandler />
         
@@ -765,7 +765,7 @@ function AppContent() {
       </ErrorBoundary>
 
       <AnimatePresence>
-        {showWhatsApp && location.pathname !== '/chat' && !isAdminPage && (
+        {showWhatsApp && isLandingPage && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5, x: 50 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
