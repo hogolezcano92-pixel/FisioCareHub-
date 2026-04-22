@@ -28,12 +28,11 @@ import {
   Crown,
   Download,
 } from 'lucide-react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { cn, resolveStorageUrl } from '../lib/utils';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
-import PaymentMethods from '../components/PaymentMethods';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' // Patient tabs
@@ -46,8 +45,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
-  const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || (isPhysio ? 'profile_prof' : 'profile'));
+  const [activeTab, setActiveTab] = useState<Tab>(isPhysio ? 'profile_prof' : 'profile');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
@@ -83,84 +81,14 @@ export default function Profile() {
     data_nascimento: '',
     experiencia_profissional: '',
     observacoes_saude: '',
-    formacao_academica: [] as string[],
-    servicos_ofertados: [] as string[],
   });
-
-  const [newEducation, setNewEducation] = useState('');
-  const [newService, setNewService] = useState('');
-
-  const commonServices = [
-    "Pilates", "RPG", "Drenagem Linfática", "Acupuntura", "Ventosaterapia", 
-    "Liberação Miofascial", "Osteopatia", "Quiropraxia", "Fisioterapia Esportiva",
-    "Pédiatrica", "Geriátrica", "Neurológica", "Respiratória", "Cardiologia",
-    "Dermatofuncional", "Hidroterapia", "Dry Needling", "Bandagens"
-  ];
-
-  const addEducation = () => {
-    if (newEducation.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        formacao_academica: [...prev.formacao_academica, newEducation.trim()]
-      }));
-      setNewEducation('');
-    }
-  };
-
-  const removeEducation = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      formacao_academica: prev.formacao_academica.filter((_, i) => i !== index)
-    }));
-  };
-
-  const toggleService = (service: string) => {
-    setFormData(prev => {
-      const exists = prev.servicos_ofertados.includes(service);
-      if (exists) {
-        return {
-          ...prev,
-          servicos_ofertados: prev.servicos_ofertados.filter(s => s !== service)
-        };
-      } else {
-        return {
-          ...prev,
-          servicos_ofertados: [...prev.servicos_ofertados, service]
-        };
-      }
-    });
-  };
-
-  const addCustomService = () => {
-    if (newService.trim() && !formData.servicos_ofertados.includes(newService.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        servicos_ofertados: [...prev.servicos_ofertados, newService.trim()]
-      }));
-      setNewService('');
-    }
-  };
-
-  const removeService = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      servicos_ofertados: prev.servicos_ofertados.filter((_, i) => i !== index)
-    }));
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const isPro = profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
-
-  useEffect(() => {
-    const tab = searchParams.get('tab') as Tab;
-    if (tab && tab !== activeTab) {
-      setActiveTab(tab);
-    }
-  }, [searchParams, activeTab]);
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
   useEffect(() => {
     if (!authLoading) {
@@ -184,8 +112,6 @@ export default function Profile() {
           data_nascimento: profile.data_nascimento || '',
           experiencia_profissional: profile.experiencia_profissional || '',
           observacoes_saude: profile.observacoes_saude || '',
-          formacao_academica: profile.formacao_academica || [],
-          servicos_ofertados: profile.servicos_ofertados || [],
         });
         setLoading(false);
       } else if (!user) {
@@ -196,66 +122,6 @@ export default function Profile() {
       }
     }
   }, [profile, user, authLoading, navigate]);
-
-  const [earningsStats, setEarningsStats] = useState({ balance: 0, pending: 0 });
-  const [earningsList, setEarningsList] = useState<any[]>([]);
-  const [loadingEarnings, setLoadingEarnings] = useState(false);
-
-  useEffect(() => {
-    if (activeTab === 'earnings' && user) {
-      fetchEarnings();
-    }
-  }, [activeTab, user]);
-
-  const fetchEarnings = async () => {
-    if (!user) return;
-    setLoadingEarnings(true);
-    try {
-      // Fetch completed appointments for balance
-      const { data: completed } = await supabase
-        .from('agendamentos')
-        .select('*')
-        .eq('fisio_id', user.id)
-        .eq('status', 'concluido')
-        .order('data', { ascending: false });
-
-      // Fetch pending/confirmed for pending balance
-      const { data: pending } = await supabase
-        .from('agendamentos')
-        .select('valor, valor_cobrado')
-        .eq('fisio_id', user.id)
-        .in('status', ['pendente', 'confirmado']);
-
-      const totalBalance = completed?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
-      const totalPending = pending?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
-
-      setEarningsStats({
-        balance: totalBalance,
-        pending: totalPending
-      });
-
-      if (completed) {
-        // Fetch patient names for the list
-        const patientIds = Array.from(new Set(completed.map(a => a.paciente_id)));
-        const { data: patients } = await supabase
-          .from('perfis')
-          .select('id, nome_completo, avatar_url')
-          .in('id', patientIds);
-
-        const list = completed.map(a => ({
-          patient: patients?.find(p => p.id === a.paciente_id)?.nome_completo || 'Paciente',
-          avatar: patients?.find(p => p.id === a.paciente_id)?.avatar_url,
-          date: new Date(a.data).toLocaleDateString('pt-BR'),
-          val: Number(a.valor_cobrado || a.valor) || 0
-        }));
-        setEarningsList(list);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar ganhos:", err);
-    } finally {
-      setLoadingEarnings(false);
-    }
-  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,8 +158,6 @@ export default function Profile() {
         data_nascimento: formData.data_nascimento || undefined,
         experiencia_profissional: isPhysio ? formData.experiencia_profissional : undefined,
         observacoes_saude: !isPhysio ? formData.observacoes_saude : undefined,
-        formacao_academica: isPhysio ? formData.formacao_academica : undefined,
-        servicos_ofertados: isPhysio ? formData.servicos_ofertados : undefined,
       };
 
       // Clean undefined fields
@@ -503,7 +367,7 @@ export default function Profile() {
     <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4 sm:px-6 lg:px-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight">Minha Conta</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">Minha Conta</h1>
           <p className="text-slate-400 font-medium">Gerencie seu perfil, segurança e preferências do sistema.</p>
         </div>
       </header>
@@ -515,7 +379,7 @@ export default function Profile() {
             {currentTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => navigate(`/profile?tab=${tab.id}`)}
+                onClick={() => setActiveTab(tab.id as Tab)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
                   activeTab === tab.id 
@@ -740,112 +604,6 @@ export default function Profile() {
                           </div>
                         )}
 
-                        {isPhysio && (
-                          <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Formação Acadêmica</label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={newEducation}
-                                  onChange={(e) => setNewEducation(e.target.value)}
-                                  placeholder="Ex: Graduação em Fisioterapia - USP"
-                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
-                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEducation())}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={addEducation}
-                                  className="px-6 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all font-bold"
-                                >
-                                  Add
-                                </button>
-                              </div>
-                              <div className="space-y-2">
-                                {formData.formacao_academica.map((item, i) => (
-                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                                      <span className="text-sm font-medium text-slate-300">{item}</span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeEducation(i)}
-                                      className="text-slate-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-all"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                ))}
-                                {formData.formacao_academica.length === 0 && (
-                                  <p className="text-xs text-slate-600 font-medium italic ml-1">Nenhuma formação adicionada.</p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="space-y-4">
-                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Serviços Oferecidos</label>
-                              
-                              <div className="flex flex-wrap gap-2 mb-4">
-                                {commonServices.map(service => {
-                                  const isSelected = formData.servicos_ofertados.includes(service);
-                                  return (
-                                    <button
-                                      key={service}
-                                      type="button"
-                                      onClick={() => toggleService(service)}
-                                      className={cn(
-                                        "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
-                                        isSelected 
-                                          ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
-                                          : "bg-white/5 border-white/10 text-slate-400 hover:border-white/30"
-                                      )}
-                                    >
-                                      {service}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={newService}
-                                  onChange={(e) => setNewService(e.target.value)}
-                                  placeholder="Outro serviço..."
-                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
-                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomService())}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={addCustomService}
-                                  className="px-6 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all font-bold"
-                                >
-                                  Add
-                                </button>
-                              </div>
-
-                              <div className="space-y-2">
-                                {formData.servicos_ofertados.filter(s => !commonServices.includes(s)).map((item, i) => (
-                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                      <span className="text-sm font-medium text-slate-300">{item}</span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeService(formData.servicos_ofertados.indexOf(item))}
-                                      className="text-slate-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-all"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                         <div className="space-y-2">
                           <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{isPhysio ? 'Biografia Profissional' : 'Sobre Você'}</label>
                           <textarea
@@ -957,7 +715,23 @@ export default function Profile() {
                     className="space-y-8"
                   >
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
-                      <PaymentMethods userId={user?.id || ''} />
+                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <CreditCard className="text-blue-500" size={24} />
+                        Métodos de Pagamento
+                      </h3>
+                      
+                      <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-[3rem] space-y-4">
+                        <div className="w-20 h-20 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto">
+                          <CreditCard size={40} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-black text-white">Nenhum cartão cadastrado</p>
+                          <p className="text-sm text-slate-400 font-medium">Cadastre um cartão para facilitar o pagamento de consultas e materiais.</p>
+                        </div>
+                        <button className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all">
+                          Adicionar Cartão
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -1154,56 +928,38 @@ export default function Profile() {
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <div className="p-8 bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 space-y-1">
                           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saldo Disponível</p>
-                          <p className="text-3xl font-black text-white">R$ {earningsStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          <p className="text-3xl font-black text-white">R$ 2.450,00</p>
                         </div>
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A Receber</p>
-                          <p className="text-3xl font-black text-white">R$ {earningsStats.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          <p className="text-3xl font-black text-white">R$ 890,00</p>
                         </div>
-                        <div className="p-8 bg-white/5 border border-blue-500/30 bg-blue-500/5 rounded-[2.5rem] space-y-4 flex flex-col justify-center">
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Configuração</p>
-                          <button 
-                            onClick={() => navigate('/dashboard?action=services')}
-                            className="w-full py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
-                          >
-                            Custos e Serviços
-                          </button>
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total do Mês</p>
+                          <p className="text-3xl font-black text-white">R$ 5.120,00</p>
                         </div>
                       </div>
 
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
-                        {loadingEarnings ? (
-                          <div className="flex justify-center py-10">
-                            <Loader2 className="animate-spin text-blue-500" size={32} />
-                          </div>
-                        ) : earningsList.length > 0 ? (
-                          earningsList.map((item, i) => (
-                            <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black overflow-hidden">
-                                  {item.avatar ? (
-                                    <img src={item.avatar} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    item.patient[0]
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-white">{item.patient}</p>
-                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
-                                </div>
+                        {[
+                          { patient: 'Maria Silva', date: 'Hoje', val: 150.00 },
+                          { patient: 'João Pedro', date: 'Ontem', val: 150.00 },
+                          { patient: 'Ana Costa', date: '10 Abr', val: 200.00 }
+                        ].map((item, i) => (
+                          <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black">
+                                {item.patient[0]}
                               </div>
-                              <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
+                              <div>
+                                <p className="font-bold text-white">{item.patient}</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
+                              </div>
                             </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-12 bg-white/5 rounded-[2rem] border border-dashed border-white/10 space-y-3">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto text-slate-500">
-                              <DollarSign size={24} />
-                            </div>
-                            <p className="text-slate-400 font-medium">Nenhum pagamento recebido até o momento.</p>
+                            <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </motion.div>
