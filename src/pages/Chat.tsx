@@ -1,19 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { auth, db } from '../lib/firebase';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { 
-  collection, 
-  query as firestoreQuery, 
-  where as firestoreWhere, 
-  onSnapshot as firestoreOnSnapshot, 
-  addDoc, 
-  serverTimestamp, 
-  orderBy as firestoreOrderBy 
-} from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { 
   Send, 
   User, 
@@ -39,7 +27,6 @@ import { formatDate, cn } from '../lib/utils';
 
 export default function Chat() {
   const { user, loading: authLoading } = useAuth();
-  const [firebaseUser] = useAuthState(auth);
   const navigate = useNavigate();
   const location = useLocation();
   const [userData, setUserData] = useState<any>(null);
@@ -125,11 +112,15 @@ export default function Chat() {
     };
 
     const init = async () => {
-      if (user) {
+      // Prioritize session check as requested
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = user || session?.user;
+
+      if (currentUser) {
         const { data: profile } = await supabase
           .from('perfis')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', currentUser.id)
           .single();
         
         if (profile) setUserData(profile);
@@ -235,13 +226,22 @@ export default function Chat() {
 
       if (error) throw error;
 
-      const filteredResults = data.filter(u => 
-        u.id !== user.id && 
-        ((userData?.plano === 'admin' || userData?.tipo === 'admin' || userData?.tipo_usuario === 'admin') || 
-         (((userData?.plano === 'free' || userData?.tipo === 'paciente' || userData?.tipo_usuario === 'paciente') || (userData?.tipo === 'patient' || userData?.tipo_usuario === 'patient')) 
-           ? ((u.plano === 'fisioterapeuta' || u.tipo === 'fisioterapeuta' || u.tipo_usuario === 'fisioterapeuta') || (u.tipo === 'physiotherapist' || u.tipo_usuario === 'physiotherapist')) 
-           : ((u.plano === 'free' || u.tipo === 'paciente' || u.tipo_usuario === 'paciente') || (u.tipo === 'patient' || u.tipo_usuario === 'patient'))))
-      );
+      const isAdmin = userData?.tipo_usuario === 'admin' || userData?.email === 'hogolezcano92@gmail.com';
+      const isPatient = userData?.tipo_usuario === 'paciente';
+      const isPhysio = userData?.tipo_usuario === 'fisioterapeuta';
+
+      const filteredResults = data.filter(u => {
+        if (u.id === user.id) return false;
+        if (isAdmin) return true;
+        
+        const targetIsPhysio = u.tipo_usuario === 'fisioterapeuta';
+        const targetIsPatient = u.tipo_usuario === 'paciente';
+
+        if (isPatient) return targetIsPhysio;
+        if (isPhysio) return targetIsPatient;
+        
+        return false;
+      });
 
       setSearchResults(filteredResults);
       if (filteredResults.length === 0) {
@@ -507,7 +507,7 @@ export default function Chat() {
             <div>
               <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Sua Central de Mensagens</h2>
               <p className="text-slate-400 font-medium leading-relaxed">
-                Conecte-se instantaneamente com seu {((userData?.plano === 'free' || userData?.tipo === 'paciente' || userData?.tipo_usuario === 'paciente') || (userData?.tipo === 'patient' || userData?.tipo_usuario === 'patient')) ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
+                Conecte-se instantaneamente com seu {userData?.tipo_usuario === 'paciente' ? 'fisioterapeuta' : 'paciente'} para um acompanhamento mais próximo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -674,7 +674,7 @@ export default function Chat() {
                           </div>
                         </div>
                         <h4 className="text-2xl font-black text-white leading-tight tracking-tight">{targetUser.nome_completo}</h4>
-                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mt-2">{targetUser.plano || targetUser.tipo || targetUser.tipo_usuario}</p>
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mt-2">{targetUser.tipo_usuario}</p>
                       </div>
 
                       <div className="space-y-4">
@@ -690,7 +690,7 @@ export default function Chat() {
                           </div>
                         )}
 
-                        {((userData?.plano === 'admin' || userData?.tipo === 'admin' || userData?.tipo_usuario === 'admin')) && (
+                        {(userData?.tipo_usuario === 'admin' || userData?.email === 'hogolezcano92@gmail.com') && (
                           <>
                             <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Usuário</p>
@@ -752,7 +752,7 @@ export default function Chat() {
 
             {/* Footer / Input */}
             <footer className="p-2 md:p-6 bg-slate-950 border-t border-white/5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-              {(targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin') && !firebaseUser ? (
+              {(targetUser.tipo_usuario === 'admin' || targetUser.email === 'hogolezcano92@gmail.com') && !user ? (
                 <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-500/5 rounded-3xl border border-blue-500/20 mx-2 md:mx-0">
                   <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
                     <Lock className="w-4 h-4 md:w-6 md:h-6" />
@@ -762,20 +762,11 @@ export default function Chat() {
                     <p className="text-[10px] md:text-sm text-slate-500 mt-0.5 font-bold uppercase tracking-widest">Para sua segurança, autentique-se para falar com a administração.</p>
                   </div>
                   <button
-                    onClick={async () => {
-                      try {
-                        const provider = new GoogleAuthProvider();
-                        await signInWithPopup(auth, provider);
-                      } catch (err) {
-                        console.error("Erro no login Firebase:", err);
-                        const { toast } = await import('sonner');
-                        toast.error("Erro ao conectar ao suporte.");
-                      }
-                    }}
+                    onClick={() => navigate('/login')}
                     className="px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center gap-2"
                   >
                     <LogIn size={16} />
-                    Entrar com Google
+                    Entrar na Conta
                   </button>
                 </div>
               ) : (
