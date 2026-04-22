@@ -64,7 +64,7 @@ export default function Chat() {
         let { data: adminData } = await supabase
           .from('perfis')
           .select('*')
-          .or('plano.eq.admin,tipo.eq.admin,tipo_usuario.eq.admin')
+          .eq('tipo_usuario', 'admin')
           .limit(1)
           .single();
         
@@ -72,19 +72,13 @@ export default function Chat() {
           const { data: fallbackAdmin } = await supabase
             .from('perfis')
             .select('*')
-            .in('email', ['hogolezcano92@gmail.com'])
+            .eq('email', 'hogolezcano92@gmail.com')
             .limit(1)
             .single();
           adminData = fallbackAdmin;
         }
         
         if (adminData) {
-          // Force role to admin for chat logic if it's one of the known admin emails
-          const adminEmails = ['hogolezcano92@gmail.com'];
-          if (adminEmails.includes(adminData.email?.toLowerCase())) {
-            adminData.tipo = 'admin';
-            adminData.tipo_usuario = 'admin';
-          }
           setTargetUser(adminData);
         }
       };
@@ -172,99 +166,61 @@ export default function Chat() {
       setLoading(true);
       setTimeout(() => inputRef.current?.focus(), 500);
       
-      let unsubscribeFirestore: any;
       let subscriptionSupabase: any;
 
       const fetchMessages = async () => {
-        const isTargetAdmin = targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
-        if (isTargetAdmin) {
-          if (!firebaseUser) {
-            setLoading(false);
-            return;
+        const { data: msgs } = await supabase
+          .from('mensagens')
+          .select('*')
+          .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${targetUser.id}),and(remetente_id.eq.${targetUser.id},destinatario_id.eq.${user.id})`)
+          .order('data_envio', { ascending: true });
+
+        if (msgs) {
+          if (lastMessageId.current && msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1];
+            if (lastMessageId.current !== lastMsg.id && lastMsg.remetente_id !== user.id) {
+              playSound();
+            }
           }
-
-          const q = firestoreQuery(
-            collection(db, 'chats'),
-            firestoreWhere('participants', 'array-contains', firebaseUser.uid),
-            firestoreOrderBy('createdAt', 'asc')
-          );
-
-          unsubscribeFirestore = firestoreOnSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-              id: doc.id,
-              remetente_id: doc.data().senderId === firebaseUser.uid ? user.id : targetUser.id,
-              conteudo: doc.data().text,
-              data_envio: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : new Date().toISOString()
-            }));
-
-            if (lastMessageId.current && msgs.length > 0) {
-              const lastMsg = msgs[msgs.length - 1];
-              if (lastMessageId.current !== lastMsg.id && lastMsg.remetente_id !== user.id) {
-                playSound();
-              }
-            }
-            if (msgs.length > 0) {
-              lastMessageId.current = msgs[msgs.length - 1].id;
-            }
-            setMessages(msgs);
-            setLoading(false);
-            setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-          });
-        } else {
-          const { data: msgs } = await supabase
-            .from('mensagens')
-            .select('*')
-            .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${targetUser.id}),and(remetente_id.eq.${targetUser.id},destinatario_id.eq.${user.id})`)
-            .order('data_envio', { ascending: true });
-
-          if (msgs) {
-            if (lastMessageId.current && msgs.length > 0) {
-              const lastMsg = msgs[msgs.length - 1];
-              if (lastMessageId.current !== lastMsg.id && lastMsg.remetente_id !== user.id) {
-                playSound();
-              }
-            }
-            if (msgs.length > 0) {
-              lastMessageId.current = msgs[msgs.length - 1].id;
-            }
-            setMessages(msgs);
+          if (msgs.length > 0) {
+            lastMessageId.current = msgs[msgs.length - 1].id;
           }
-          setLoading(false);
-          setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-
-          subscriptionSupabase = supabase
-            .channel(`chat_${targetUser.id}`)
-            .on('postgres_changes', { 
-              event: 'INSERT', 
-              schema: 'public', 
-              table: 'mensagens'
-            }, (payload) => {
-              console.log('[Realtime] New message received:', payload);
-              const newMsg = payload.new;
-              // Check if the message belongs to the current conversation
-              const isRelevant = 
-                (newMsg.remetente_id === user.id && newMsg.destinatario_id === targetUser.id) ||
-                (newMsg.remetente_id === targetUser.id && newMsg.destinatario_id === user.id);
-              
-              if (isRelevant) {
-                console.log('[Realtime] Message is relevant, fetching messages...');
-                fetchMessages();
-              }
-            })
-            .subscribe((status) => {
-              console.log(`[Realtime] Chat subscription status for ${targetUser.id}:`, status);
-            });
+          setMessages(msgs);
         }
+        setLoading(false);
+        setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+        subscriptionSupabase = supabase
+          .channel(`chat_${targetUser.id}`)
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'mensagens'
+          }, (payload) => {
+            console.log('[Realtime] New message received:', payload);
+            const newMsg = payload.new;
+            // Check if the message belongs to the current conversation
+            const isRelevant = 
+              (newMsg.remetente_id === user.id && newMsg.destinatario_id === targetUser.id) ||
+              (newMsg.remetente_id === targetUser.id && newMsg.destinatario_id === user.id);
+            
+            if (isRelevant) {
+              console.log('[Realtime] Message is relevant, fetching messages...');
+              fetchMessages();
+            }
+          })
+          .subscribe((status) => {
+            console.log(`[Realtime] Chat subscription status for ${targetUser.id}:`, status);
+          });
       };
 
       fetchMessages();
 
       return () => {
-        if (unsubscribeFirestore) unsubscribeFirestore();
         if (subscriptionSupabase) supabase.removeChannel(subscriptionSupabase);
       };
     }
-  }, [user, targetUser, firebaseUser]);
+  }, [user, targetUser]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,35 +278,15 @@ export default function Chat() {
         .getPublicUrl(filePath);
 
       // Send the link as a message
-      const isTargetAdmin = targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
-      
-      if (isTargetAdmin) {
-        if (!firebaseUser) {
-          toast.error("Você precisa estar conectado ao suporte para enviar arquivos.");
-          return;
-        }
-        await addDoc(collection(db, 'chats'), {
-          senderId: firebaseUser.uid,
-          receiverId: targetUser.id,
-          participants: [firebaseUser.uid, targetUser.id],
-          text: `Arquivo enviado: ${file.name}\n${publicUrl}`,
-          createdAt: serverTimestamp(),
-          read: false,
-          type: 'support',
-          file_url: publicUrl,
-          file_name: file.name
+      await supabase
+        .from('mensagens')
+        .insert({
+          remetente_id: user.id,
+          destinatario_id: targetUser.id,
+          conteudo: `Arquivo enviado: ${file.name}\n${publicUrl}`,
+          data_envio: new Date().toISOString(),
+          lida: false
         });
-      } else {
-        await supabase
-          .from('mensagens')
-          .insert({
-            remetente_id: user.id,
-            destinatario_id: targetUser.id,
-            conteudo: `Arquivo enviado: ${file.name}\n${publicUrl}`,
-            data_envio: new Date().toISOString(),
-            lida: false
-          });
-      }
 
       toast.success('Arquivo compartilhado!');
     } catch (error) {
@@ -368,50 +304,29 @@ export default function Chat() {
     setInputText('');
 
     try {
-      const isTargetAdmin = targetUser.plano === 'admin' || targetUser.tipo === 'admin' || targetUser.tipo_usuario === 'admin';
-      if (isTargetAdmin) {
-        if (!firebaseUser) {
-          const { toast } = await import('sonner');
-          toast.error("Você precisa estar conectado ao banco de dados para falar com o suporte.");
-          return;
-        }
-
-        await addDoc(collection(db, 'chats'), {
-          senderId: firebaseUser.uid,
-          receiverId: targetUser.id, // Admin Supabase ID
-          participants: [firebaseUser.uid, targetUser.id],
-          text: text,
-          createdAt: serverTimestamp(),
-          read: false,
-          type: 'support',
-          patientSupabaseId: user.id,
-          patientFirebaseUid: firebaseUser.uid
+      const { error } = await supabase
+        .from('mensagens')
+        .insert({
+          remetente_id: user.id,
+          destinatario_id: targetUser.id,
+          conteudo: text,
+          data_envio: new Date().toISOString(),
+          lida: false
         });
-      } else {
-        const { error } = await supabase
-          .from('mensagens')
-          .insert({
-            remetente_id: user.id,
-            destinatario_id: targetUser.id,
-            conteudo: text,
-            data_envio: new Date().toISOString(),
-            lida: false
-          });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Create notification for recipient
-        await supabase
-          .from('notificacoes')
-          .insert({
-            user_id: targetUser.id,
-            titulo: 'Nova Mensagem',
-            mensagem: `${userData?.nome_completo || 'Alguém'} enviou uma mensagem para você.`,
-            tipo: 'message',
-            lida: false,
-            link: '/chat'
-          });
-      }
+      // Create notification for recipient
+      await supabase
+        .from('notificacoes')
+        .insert({
+          user_id: targetUser.id,
+          titulo: 'Nova Mensagem',
+          mensagem: `${userData?.nome_completo || 'Alguém'} enviou uma mensagem para você.`,
+          tipo: 'message',
+          lida: false,
+          link: '/chat'
+        });
     } catch (err) {
       console.error("Erro ao enviar mensagem:", err);
       const { toast } = await import('sonner');
@@ -468,7 +383,7 @@ export default function Chat() {
                 let { data: adminData } = await supabase
                   .from('perfis')
                   .select('*')
-                  .or('plano.eq.admin,tipo.eq.admin,tipo_usuario.eq.admin')
+                  .eq('tipo_usuario', 'admin')
                   .limit(1)
                   .single();
                 
@@ -476,19 +391,13 @@ export default function Chat() {
                   const { data: fallbackAdmin } = await supabase
                     .from('perfis')
                     .select('*')
-                    .in('email', ['hogolezcano92@gmail.com'])
+                    .eq('email', 'hogolezcano92@gmail.com')
                     .limit(1)
                     .single();
                   adminData = fallbackAdmin;
                 }
                 
                 if (adminData) {
-                  // Force role to admin for chat logic if it's one of the known admin emails
-                  const adminEmails = ['hogolezcano92@gmail.com'];
-                  if (adminEmails.includes(adminData.email?.toLowerCase())) {
-                    adminData.tipo = 'admin';
-                    adminData.tipo_usuario = 'admin';
-                  }
                   setTargetUser(adminData);
                 } else {
                   const { toast } = await import('sonner');

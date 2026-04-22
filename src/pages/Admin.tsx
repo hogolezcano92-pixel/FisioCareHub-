@@ -396,28 +396,46 @@ export default function Admin() {
 
   // Chat Listener
   useEffect(() => {
-    if (!isAdmin || !selectedChatUser || !firebaseUser) return;
+    if (!isAdmin || !selectedChatUser || !supabaseUser) return;
 
-    const q = query(
-      collection(db, 'chats'),
-      where('participants', 'array-contains', firebaseUser?.uid),
-      orderBy('createdAt', 'asc')
-    );
+    let subscriptionSupabase: any;
 
-    const unsubMessages = onSnapshot(q, (snapshot) => {
-      const chatMessages = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter((msg: any) => 
-          msg.participants.includes(selectedChatUser.id) || 
-          msg.patientSupabaseId === selectedChatUser.id
-        );
-      setMessages(chatMessages);
-    }, (error) => {
-      console.error("Erro ao ouvir chat:", error);
-    });
+    const fetchMessages = async () => {
+      const { data: msgs, error } = await supabase
+        .from('mensagens')
+        .select('*')
+        .or(`and(remetente_id.eq.${supabaseUser.id},destinatario_id.eq.${selectedChatUser.id}),and(remetente_id.eq.${selectedChatUser.id},destinatario_id.eq.${supabaseUser.id})`)
+        .order('data_envio', { ascending: true });
 
-    return () => unsubMessages();
-  }, [isAdmin, selectedChatUser, firebaseUser]);
+      if (msgs) {
+        setMessages(msgs);
+      }
+
+      subscriptionSupabase = supabase
+        .channel(`admin_chat_${selectedChatUser.id}`)
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'mensagens'
+        }, (payload) => {
+          const newMsg = payload.new;
+          const isRelevant = 
+            (newMsg.remetente_id === supabaseUser.id && newMsg.destinatario_id === selectedChatUser.id) ||
+            (newMsg.remetente_id === selectedChatUser.id && newMsg.destinatario_id === supabaseUser.id);
+          
+          if (isRelevant) {
+            fetchMessages();
+          }
+        })
+        .subscribe();
+    };
+
+    fetchMessages();
+
+    return () => {
+      if (subscriptionSupabase) supabase.removeChannel(subscriptionSupabase);
+    };
+  }, [isAdmin, selectedChatUser, supabaseUser]);
 
   if (!mounted || loadingSupabase || checkingAdmin) return <SplashScreen />;
 
@@ -751,35 +769,32 @@ export default function Admin() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChatUser) return;
-
-    // Find patient's Firebase UID from existing messages
-    const patientMsg = messages.find((m: any) => m.patientFirebaseUid);
-    const patientFirebaseUid = patientMsg?.patientFirebaseUid || selectedChatUser.id;
+    if (!newMessage.trim() || !selectedChatUser || !supabaseUser) return;
 
     try {
-      await addDoc(collection(db, 'chats'), {
-        senderId: firebaseUser?.uid,
-        receiverId: selectedChatUser.id,
-        participants: [firebaseUser?.uid, patientFirebaseUid, selectedChatUser.id],
-        text: newMessage,
-        createdAt: serverTimestamp(),
-        read: false,
-        type: 'support',
-        patientSupabaseId: selectedChatUser.id,
-        patientFirebaseUid: patientFirebaseUid
-      });
+      const { error } = await supabase
+        .from('mensagens')
+        .insert({
+          remetente_id: supabaseUser.id,
+          destinatario_id: selectedChatUser.id,
+          conteudo: newMessage,
+          data_envio: new Date().toISOString(),
+          lida: false
+        });
+
+      if (error) throw error;
       
       // Notify user
-      await addDoc(collection(db, 'notifications'), {
-        userId: selectedChatUser.id,
-        title: 'Nova mensagem do Suporte',
-        message: 'A administração respondeu ao seu chamado.',
-        type: 'message',
-        read: false,
-        createdAt: serverTimestamp(),
-        link: '/chat?support=true'
-      });
+      await supabase
+        .from('notificacoes')
+        .insert({
+          user_id: selectedChatUser.id,
+          titulo: 'Nova mensagem do Suporte',
+          mensagem: 'A administração respondeu ao seu chamado.',
+          tipo: 'message',
+          lida: false,
+          link: '/chat'
+        });
 
       setNewMessage('');
     } catch (err) {
@@ -2255,7 +2270,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                  {users.filter(u => u.role !== 'admin').map(u => (
+                  {supabaseProfiles.filter(u => u.tipo_usuario !== 'admin').map(u => (
                     <button
                       key={u.id}
                       onClick={() => setSelectedChatUser(u)}
@@ -2277,11 +2292,11 @@ export default function Admin() {
                           <p className="text-sm font-black truncate tracking-tight">{u.nome_completo}</p>
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
-                            (u.tipo_usuario === 'fisioterapeuta' || u.role === 'physiotherapist')
+                            u.tipo_usuario === 'fisioterapeuta'
                               ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-500/10 text-emerald-400")
                               : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400")
                           )}>
-                            {(u.tipo_usuario === 'fisioterapeuta' || u.role === 'physiotherapist') ? 'Fisio' : 'Paciente'}
+                            {u.tipo_usuario === 'fisioterapeuta' ? 'Fisio' : 'Paciente'}
                           </span>
                         </div>
                         <p className={cn(
@@ -2326,9 +2341,9 @@ export default function Admin() {
                     {/* Messages Area */}
                     <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
                       {messages.map((m, idx) => {
-                        const mDate = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
+                        const mDate = m.data_envio ? new Date(m.data_envio) : new Date();
                         const prevM = idx > 0 ? messages[idx - 1] : null;
-                        const prevMDate = prevM?.createdAt?.toDate ? prevM.createdAt.toDate() : (prevM ? new Date() : null);
+                        const prevMDate = prevM?.data_envio ? new Date(prevM.data_envio) : null;
                         
                         const showDateSeparator = !prevMDate || 
                           mDate.toDateString() !== prevMDate.toDateString();
@@ -2345,15 +2360,15 @@ export default function Admin() {
                             <div 
                               className={cn(
                                 "max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-2xl relative group",
-                                m.senderId === firebaseUser?.uid 
+                                m.remetente_id === supabaseUser?.id 
                                   ? "ml-auto bg-blue-600 text-white rounded-tr-none shadow-blue-900/20" 
                                   : "bg-white/5 border border-white/10 text-white rounded-tl-none"
                               )}
                             >
-                              <p className="leading-relaxed font-bold tracking-tight break-words">{m.text}</p>
+                              <p className="leading-relaxed font-bold tracking-tight break-words">{m.conteudo}</p>
                               <div className={cn(
                                 "text-[9px] mt-2 font-black uppercase tracking-widest opacity-50",
-                                m.senderId === firebaseUser?.uid ? "text-right text-blue-100" : "text-left text-slate-500"
+                                m.remetente_id === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-slate-500"
                               )}>
                                 {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
