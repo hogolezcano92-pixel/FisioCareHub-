@@ -35,6 +35,7 @@ import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
 import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
+import PhysioWithdrawal from '../components/PhysioWithdrawal';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' // Patient tabs
@@ -220,6 +221,15 @@ export default function Profile() {
         .eq('status', 'concluido')
         .order('data', { ascending: false });
 
+      // Fetch paid withdrawals to calculate actual available balance
+      const { data: withdrawals } = await supabase
+        .from('solicitacoes_saque')
+        .select('valor')
+        .eq('user_id', user.id)
+        .eq('status', 'pago');
+
+      const totalPaidWithdrawals = withdrawals?.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0) || 0;
+
       // Fetch pending/confirmed for pending balance
       const { data: pending } = await supabase
         .from('agendamentos')
@@ -227,11 +237,12 @@ export default function Profile() {
         .eq('fisio_id', user.id)
         .in('status', ['pendente', 'confirmado']);
 
-      const totalBalance = completed?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+      const grossBalance = completed?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+      const netBalance = grossBalance - totalPaidWithdrawals;
       const totalPending = pending?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
 
       setEarningsStats({
-        balance: totalBalance,
+        balance: Math.max(0, netBalance),
         pending: totalPending
       });
 
@@ -1170,6 +1181,15 @@ export default function Profile() {
                             Custos e Serviços
                           </button>
                         </div>
+                      </div>
+
+                      {/* Withdrawal Section */}
+                      <div className="mb-12 pt-8 border-t border-white/5">
+                        <PhysioWithdrawal 
+                          userId={user?.id || ''} 
+                          availableBalance={earningsStats.balance}
+                          onSuccess={() => fetchEarnings()} 
+                        />
                       </div>
 
                       {/* Payment Data Section */}
