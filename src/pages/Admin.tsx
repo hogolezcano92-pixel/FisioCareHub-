@@ -34,6 +34,7 @@ import {
   Eye,
   Filter,
   Download,
+  Clock,
   Activity,
   Menu,
   X,
@@ -94,6 +95,9 @@ export default function Admin() {
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState('');
   const [commissionRate, setCommissionRate] = useState(20);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
+  const [withdrawalFilter, setWithdrawalFilter] = useState<'pendente' | 'pago' | 'recusado' | 'todos'>('todos');
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -114,7 +118,8 @@ export default function Admin() {
     totalRevenue: 0,
     totalPaidByPatients: 0,
     totalCommission: 0,
-    totalNetPhysio: 0
+    totalNetPhysio: 0,
+    pendingWithdrawals: 0
   });
 
   // Ensure client-side rendering
@@ -307,6 +312,82 @@ export default function Admin() {
     }
   }, []);
 
+  const fetchWithdrawals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('solicitacoes_saque')
+        .select(`
+          *,
+          fisioterapeuta:perfis!user_id (nome_completo, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setWithdrawals(data || []);
+      
+      const pendingCount = (data || []).filter(w => w.status === 'pendente').length;
+      setStats(prev => ({ ...prev, pendingWithdrawals: pendingCount }));
+    } catch (err) {
+      console.error("Erro ao buscar solicitações de saque:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleUpdateWithdrawalStatus = async (id: string, newStatus: 'pago' | 'recusado') => {
+    try {
+      setLoading(true);
+      const updateData: any = { status: newStatus };
+      if (newStatus === 'pago') {
+        updateData.processado_em = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('solicitacoes_saque')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      import('sonner').then(({ toast }) => toast.success(`Solicitação marcada como ${newStatus}!`));
+      await fetchWithdrawals();
+    } catch (err: any) {
+      console.error("Erro ao atualizar status de saque:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status: " + err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAdminNotifications = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notificacoes_admin')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAdminNotifications(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar notificações administrativas:", err);
+    }
+  }, []);
+
+  const handleMarkNotificationAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notificacoes_admin')
+        .update({ lida: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      setAdminNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+    } catch (err) {
+      console.error("Erro ao marcar notificação como lida:", err);
+    }
+  };
+
   // Real-time Data Listeners
   useEffect(() => {
     if (!isAdmin || !firebaseUser) return;
@@ -322,6 +403,8 @@ export default function Admin() {
     fetchSupabaseProfiles();
     fetchMateriais();
     fetchSessions();
+    fetchWithdrawals();
+    fetchAdminNotifications();
 
     // Fetch System Settings
     const fetchSettings = async () => {
@@ -349,6 +432,12 @@ export default function Admin() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'library_materials' }, () => {
         fetchMateriais();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_saque' }, () => {
+        fetchWithdrawals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes_admin' }, () => {
+        fetchAdminNotifications();
       })
       .subscribe();
 
@@ -1151,6 +1240,8 @@ export default function Admin() {
               { id: 'approvals', label: 'Aprovações', icon: UserCheck },
               { id: 'users', label: 'Todos Usuários', icon: Users },
               { id: 'financial', label: 'Financeiro', icon: DollarSign },
+              { id: 'saques', label: 'Saques (PIX)', icon: CreditCard },
+              { id: 'notifications', label: 'Notificações', icon: Bell },
               { id: 'chat', label: 'Suporte Chat', icon: MessageSquare },
               { id: 'settings', label: 'Configurações', icon: Settings },
             ].map((item) => (
@@ -1250,9 +1341,16 @@ export default function Admin() {
                   className="!pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32 lg:w-64"
                 />
               </div>
-              <button className="p-2 text-slate-400 hover:text-blue-400 transition-colors relative flex-shrink-0">
+              <button 
+                onClick={() => navigate('/admin?tab=notifications')}
+                className="p-2 text-slate-400 hover:text-blue-400 transition-colors relative flex-shrink-0"
+              >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B1120]" />
+                {adminNotifications.filter(n => !n.lida).length > 0 && (
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-rose-600 text-white text-[10px] font-black rounded-full border-2 border-[#0B1120] flex items-center justify-center">
+                    {adminNotifications.filter(n => !n.lida).length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -2428,6 +2526,207 @@ export default function Admin() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'saques' && (
+            <div className="space-y-8">
+              {/* Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-amber-500/10 p-8 rounded-[2.5rem] border border-amber-500/20 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Saques Pendentes</p>
+                    <p className="text-3xl font-black text-white">{stats.pendingWithdrawals}</p>
+                  </div>
+                  <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500">
+                    <Clock size={28} />
+                  </div>
+                </div>
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Solicitado</p>
+                    <p className="text-3xl font-black text-white">
+                      R$ {withdrawals.reduce((acc, curr) => acc + Number(curr.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                    <CreditCard size={28} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                {(['todos', 'pendente', 'pago', 'recusado'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setWithdrawalFilter(f)}
+                    className={cn(
+                      "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                      withdrawalFilter === f
+                        ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
+                        : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                    )}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {/* List Table */}
+              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-white/5">
+                  <h3 className="text-xl font-black text-white tracking-tight">Solicitações de Saque</h3>
+                  <p className="text-sm text-slate-500 font-medium">Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white/5">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Profissional</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {withdrawals
+                        .filter(w => withdrawalFilter === 'todos' || w.status === withdrawalFilter)
+                        .map((w) => (
+                          <tr key={w.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-8 py-5 text-sm font-bold text-white uppercase tabular-nums">
+                              {new Date(w.created_at).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-8 py-5">
+                              <p className="text-sm font-bold text-white">{w.fisioterapeuta?.nome_completo}</p>
+                              <p className="text-[10px] text-slate-500">{w.fisioterapeuta?.email}</p>
+                            </td>
+                            <td className="px-8 py-5 text-sm font-black text-white tabular-nums">
+                              R$ {Number(w.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-8 py-5">
+                              <div className={cn(
+                                "inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                                w.status === 'pago' ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/5" :
+                                w.status === 'recusado' ? "border-rose-500/30 text-rose-400 bg-rose-500/5" :
+                                "border-amber-500/30 text-amber-500 bg-amber-500/5"
+                              )}>
+                                {w.status}
+                              </div>
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              {w.status === 'pendente' && (
+                                <div className="flex items-center justify-end gap-3">
+                                  <button
+                                    onClick={() => handleUpdateWithdrawalStatus(w.id, 'recusado')}
+                                    className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl border border-rose-500/20 transition-all shadow-lg shadow-rose-900/5"
+                                    title="Recusar"
+                                  >
+                                    <XCircle size={18} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateWithdrawalStatus(w.id, 'pago')}
+                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2"
+                                  >
+                                    <CheckCircle2 size={16} /> Marcar como Pago
+                                  </button>
+                                </div>
+                              )}
+                              {w.status !== 'pendente' && (
+                                <span className="text-[10px] font-bold text-slate-600 italic uppercase">
+                                  {w.processado_em ? `Proc. em ${new Date(w.processado_em).toLocaleDateString('pt-BR')}` : 'Finalizado'}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {withdrawals.filter(w => withdrawalFilter === 'todos' || w.status === withdrawalFilter).length === 0 && (
+                    <div className="p-20 text-center">
+                      <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-slate-600 mx-auto mb-6">
+                        <Filter size={40} strokeWidth={1} />
+                      </div>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Nenhuma solicitação encontrada para o filtro selecionado.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'notifications' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                    <Bell size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">NOTIFICAÇÕES DO SISTEMA</h3>
+                    <p className="text-sm text-slate-400 font-medium">Acompanhe eventos importantes e ações pendentes.</p>
+                  </div>
+                </div>
+                <div className="px-6 py-4 bg-white/5 rounded-[2rem] border border-white/10">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Não Lidas</p>
+                  <p className="text-2xl font-black text-rose-500">{adminNotifications.filter(n => !n.lida).length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl">
+                <div className="divide-y divide-white/5">
+                  {adminNotifications.length > 0 ? (
+                    adminNotifications.map((notification) => (
+                      <div 
+                        key={notification.id} 
+                        className={cn(
+                          "p-8 flex items-start justify-between gap-6 transition-all hover:bg-white/[0.02]",
+                          !notification.lida && "bg-blue-500/5"
+                        )}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 mt-1",
+                            notification.tipo === 'saque' ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"
+                          )}>
+                            {notification.tipo === 'saque' ? <DollarSign size={24} /> : <Bell size={24} />}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="text-lg font-black text-white">{notification.titulo}</h4>
+                              {!notification.lida && (
+                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                              )}
+                            </div>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{notification.mensagem}</p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pt-2">
+                              {new Date(notification.created_at).toLocaleDateString('pt-BR')} às {new Date(notification.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {!notification.lida && (
+                          <button
+                            onClick={() => handleMarkNotificationAsRead(notification.id)}
+                            className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/10 flex-shrink-0"
+                          >
+                            Marcar como lida
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-32 text-center">
+                      <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-slate-600 mx-auto mb-8">
+                        <Bell size={48} strokeWidth={1} />
+                      </div>
+                      <h4 className="text-xl font-black text-white mb-2">Tudo em dia!</h4>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Nenhuma notificação encontrada no momento.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
