@@ -1357,7 +1357,7 @@ export default function Admin() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
+        <div className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
