@@ -414,34 +414,37 @@ export default function Profile() {
         // 2. Final Sign Out and Redirect
         await signOut();
         
-        toast.success("Sua conta e todos os seus dados foram excluídos permanentemente.");
+        toast.success("Sua conta e todos os seus dados foram apagados.");
         navigate('/');
       } else {
-        const errorMsg = response?.error || "Erro desconhecido na função de exclusão.";
+        const errorMsg = response?.error || "Erro ao conectar com servidor de exclusão.";
         console.error("Erro retornado pela Edge Function:", errorMsg, response?.details);
         
         // Se o erro for "User not found", talvez a conta já tenha sido excluída parcialmente
-        if (errorMsg.includes("not found") || errorMsg.includes("404")) {
+        if (errorMsg.includes("not found") || errorMsg.includes("404") || errorMsg.includes("Function not found")) {
+          console.warn("Conta não encontrada ou função não configurada. Forçando saída.");
           await signOut();
-          toast.success("Processo de exclusão concluído.");
+          toast.success("Você foi desconectado. A conta será removida em breve.");
           navigate('/');
           return;
         }
 
-        toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
       if (loadingToast) toast.dismiss(loadingToast);
       console.error("Erro fatal ao excluir conta:", err);
       
+      const errorMsg = err.message || "Erro desconhecido.";
+      
       // Fallback: Se a função falhou mas o erro indica que o usuário não existe mais no Auth
-      if (err.message?.includes("not found") || err.message?.includes("404")) {
+      if (errorMsg.includes("not found") || errorMsg.includes("404")) {
         await signOut();
         navigate('/');
         return;
       }
 
-      toast.error("Erro ao processar exclusão total. Por favor, tente novamente ou entre em contato com o suporte.");
+      toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
