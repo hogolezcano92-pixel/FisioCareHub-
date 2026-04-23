@@ -396,13 +396,17 @@ export default function Profile() {
     if (!user) return;
     
     const { toast } = await import('sonner');
+    let loadingToast: string | number | undefined;
     setUpdating(true);
     
     try {
       console.log("Iniciando processo de exclusão segura para:", user.id);
+      loadingToast = toast.loading("Excluindo sua conta e dados permanentemente...");
       
       // 1. Call Edge Function for complete deletion (Auth + DB + Storage)
       const response = await invokeFunction('delete-user', { userId: user.id });
+      
+      if (loadingToast) toast.dismiss(loadingToast);
       
       if (response && !response.error) {
         console.log("Edge Function 'delete-user' executada com sucesso:", response.message);
@@ -427,6 +431,7 @@ export default function Profile() {
         toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
       }
     } catch (err: any) {
+      if (loadingToast) toast.dismiss(loadingToast);
       console.error("Erro fatal ao excluir conta:", err);
       
       // Fallback: Se a função falhou mas o erro indica que o usuário não existe mais no Auth
