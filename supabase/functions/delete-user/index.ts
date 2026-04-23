@@ -1,156 +1,183 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import Stripe from "https://esm.sh/stripe?target=deno"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
-const APP_URL = Deno.env.get("APP_URL") || "http://localhost:3000"
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0-SA8SPjo9l"
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders })
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const body = await req.json()
-    const { appointment_id, amount, product_id, type, user_id, email, plan, service_name } = body
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? ''
+    
+    if (!supabaseServiceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
+    }
 
-    // Fallback logic for types/plans
-    const finalType = type || (plan === 'pro' ? 'subscription' : (appointment_id ? 'appointment' : (plan || 'subscription')))
-    const finalEmail = email || ""
-    const finalUserId = user_id || ""
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
 
-    // Setup Supabase client
+    // Get the user's JWT from the request headers
     const authHeader = req.headers.get('Authorization')
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
-      global: { headers: { Authorization: authHeader || "" } },
-    })
-
-    // Validate Stripe Key
-    if (!STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY is not set")
+    if (!authHeader) {
+      throw new Error('No authorization header')
     }
 
-    const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2022-11-15",
-      httpClient: Stripe.createFetchHttpClient(),
-    })
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
 
-    let line_items = []
-    let mode: "subscription" | "payment" = "payment"
-    let metadata: any = { user_id: finalUserId }
-
-    // Logic for different payment types
-    if (finalType === 'subscription' || plan === 'pro') {
-      line_items = [
-        {
-          price: FIXED_SUBSCRIPTION_PRICE_ID,
-          quantity: 1,
-        },
-      ]
-      mode = "subscription"
-      metadata.plan = plan || "pro_fisioterapeuta"
-    } else if (appointment_id) {
-      // Dynamic appointment payment
-      const safeAmount = Number(amount)
-      if (isNaN(safeAmount) || safeAmount <= 0) {
-        throw new Error("Valor inválido para o agendamento")
-      }
-
-      // Convert to cents and ensure it's an integer
-      const unitAmount = Math.round(safeAmount * 100)
-      
-      line_items = [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: service_name || "Consulta / Atendimento",
-              description: "Pagamento de serviço de fisioterapia",
-            },
-            unit_amount: unitAmount,
-          },
-          quantity: 1,
-        },
-      ]
-      mode = "payment"
-      metadata.type = 'appointment'
-      metadata.appointmentId = appointment_id
-    } else if (finalType === 'material' && product_id) {
-      // Material logic (legacy or existing)
-      const { data: material, error: matError } = await supabase
-        .from('materiais')
-        .select('*')
-        .eq('id', product_id)
-        .single()
-      
-      if (matError || !material) {
-        throw new Error("Material não encontrado")
-      }
-
-      const safeMaterialPrice = Number(material.preco)
-      if (isNaN(safeMaterialPrice)) {
-        throw new Error("Preço do material inválido")
-      }
-
-      line_items = [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: material.titulo,
-              description: material.descricao,
-              images: material.imagem_url ? [material.imagem_url] : [],
-            },
-            unit_amount: Math.round(safeMaterialPrice * 100),
-          },
-          quantity: 1,
-        },
-      ]
-      mode = "payment"
-      metadata.type = 'material'
-      metadata.product_id = product_id
-    } else {
-      // Default to PRO subscription or fallback
-      line_items = [
-        {
-          price: FIXED_SUBSCRIPTION_PRICE_ID,
-          quantity: 1,
-        },
-      ]
-      mode = "subscription"
-      metadata.plan = plan || "pro_fisioterapeuta"
+    if (userError || !user) {
+      throw new Error('Invalid token or user not found')
     }
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items,
-      mode,
-      success_url: `${APP_URL}/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_URL}/subscription`,
-      customer_email: finalEmail,
-      client_reference_id: finalUserId,
-      metadata,
-    })
+    const body = await req.json().catch(() => ({}))
+    const userId = body.userId || user.id
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    console.log(`Iniciando exclusão total para o usuário: ${userId} (${user.email})`)
+
+    // 1. Delete related data from other tables
+    const tables = [
+      'sessoes', // Depends on agendamentos and perfis
+      'agendamentos', // Depends on perfis
+      'solicitacoes_saque',
+      'configuracao_servicos',
+      'notificacoes', 
+      'triagens', 
+      'prontuarios', 
+      'mensagens', 
+      'documentos_gerados',
+      'atendimentos',
+      'evolucoes',
+      'arquivos_paciente',
+      'exercicios_paciente',
+      'exercicios',
+      'assinaturas',
+      'diario_dor',
+      'checklist_exercicios',
+      'compras_materiais',
+      'pacientes',
+      'perfis'
+    ]
+    
+    const deletionResults: Record<string, any> = {}
+    
+    for (const table of tables) {
+      try {
+        console.log(`Limpando tabela: ${table}`)
+        let result;
+        
+        if (table === 'agendamentos' || table === 'prontuarios' || table === 'sessoes') {
+          console.log(`Deletando de ${table} usando vinculação de profissional/paciente`)
+          await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
+          await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
+          if (table !== 'sessoes') {
+            await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
+          }
+          deletionResults[table] = { status: 'success' }
+        } else if (table === 'solicitacoes_saque' || table === 'notificacoes' || table === 'assinaturas' || table === 'compras_materiais') {
+          console.log(`Deletando de ${table} usando vinculação user_id`)
+          const result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
+          deletionResults[table] = result.error ? { status: 'error', message: result.error.message } : { status: 'success' }
+        } else if (table === 'configuracao_servicos') {
+          console.log(`Deletando de configuracao_servicos usando vinculação physio_id`)
+          const result = await supabaseAdmin.from(table).delete().eq('physio_id', userId)
+          deletionResults[table] = result.error ? { status: 'error', message: result.error.message } : { status: 'success' }
+        } else if (table === 'mensagens') {
+          await supabaseAdmin.from(table).delete().eq('remetente', userId)
+          result = await supabaseAdmin.from(table).delete().eq('destinatario', userId)
+        } else if (table === 'triagens' || table === 'diario_dor' || table === 'checklist_exercicios') {
+          result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
+        } else if (table === 'documentos_gerados') {
+          await supabaseAdmin.from(table).delete().eq('physio_id', userId)
+          if (user.email) {
+            result = await supabaseAdmin.from(table).delete().or(`patient_email.eq.${user.email},patient_email.eq.${user.email.toLowerCase()}`)
+          }
+        } else if (table === 'notificacoes' || table === 'assinaturas' || table === 'compras_materiais') {
+          result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
+        } else if (table === 'pacientes') {
+          await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
+          if (user.email) {
+            result = await supabaseAdmin.from(table).delete().or(`email.eq.${user.email},email.eq.${user.email.toLowerCase()}`)
+          }
+        } else if (table === 'atendimentos') {
+          result = await supabaseAdmin.from(table).delete().eq('fisioterapeuta_id', userId)
+        } else if (table === 'exercicios') {
+          result = await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
+        } else if (table === 'perfis') {
+          result = await supabaseAdmin.from(table).delete().eq('id', userId)
+        } else {
+          result = await supabaseAdmin.from(table).delete().eq('paciente_id', userId)
+        }
+        
+        if (result?.error) {
+          console.warn(`Erro (não fatal) em ${table}:`, result.error.message)
+          deletionResults[table] = { status: 'error', message: result.error.message }
+        } else {
+          deletionResults[table] = { status: 'success' }
+        }
+      } catch (e) {
+        console.warn(`Exceção em ${table}:`, e.message)
+        deletionResults[table] = { status: 'exception', message: e.message }
+      }
+    }
+
+    // 1.5 Delete from Storage
+    const buckets = ['avatars', 'documents']
+    for (const bucket of buckets) {
+      try {
+        if (bucket === 'avatars') {
+          const { data: files } = await supabaseAdmin.storage.from(bucket).list('', { search: userId })
+          if (files && files.length > 0) {
+            await supabaseAdmin.storage.from(bucket).remove(files.map(f => f.name))
+          }
+        } else {
+          const folders = [userId, `fisioterapeutas/${userId}`, `documents/${userId}`]
+          for (const folder of folders) {
+            const { data: files } = await supabaseAdmin.storage.from(bucket).list(folder)
+            if (files && files.length > 0) {
+              await supabaseAdmin.storage.from(bucket).remove(files.map(f => `${folder}/${f.name}`))
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`Erro storage ${bucket}:`, e.message)
+      }
+    }
+
+    // 2. Delete from Auth
+    console.log(`Excluindo usuário do Auth: ${userId}`)
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    if (deleteError) {
+      console.error("Erro fatal ao excluir do Auth:", deleteError.message)
+      return new Response(JSON.stringify({ 
+        error: `Erro ao excluir conta de autenticação: ${deleteError.message}`,
+        details: deletionResults 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
+    }
+
+    return new Response(JSON.stringify({ 
+      message: 'Conta excluída com sucesso',
+      details: deletionResults
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error: any) {
-    console.error("Error creating checkout session:", error)
+  } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
   }
