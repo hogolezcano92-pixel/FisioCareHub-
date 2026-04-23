@@ -83,6 +83,17 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
 
       if (error) throw error;
 
+      // Notify admin
+      await supabase
+        .from('notificacoes_admin')
+        .insert({
+          tipo: 'saque',
+          titulo: 'Novo pedido de saque',
+          mensagem: `Um fisioterapeuta solicitou um saque de R$ ${availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          lida: false,
+          user_id: userId
+        });
+
       toast.success('Solicitação de saque enviada com sucesso!');
       toast.info('O pagamento será realizado manualmente após análise');
       
