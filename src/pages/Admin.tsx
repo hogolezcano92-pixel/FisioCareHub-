@@ -1302,7 +1302,7 @@ export default function Admin() {
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[#0B1120]">
         {/* Header */}
         <header className="sticky top-0 z-40 w-full bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl pt-[env(safe-area-inset-top)]">
-          <div className="w-full px-4 sm:px-10 h-20 sm:h-24 flex items-center justify-between gap-4">
+          <div className="w-full px-4 sm:px-10 pt-10 h-auto sm:h-24 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
               <button 
@@ -1357,7 +1357,7 @@ export default function Admin() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
+        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
