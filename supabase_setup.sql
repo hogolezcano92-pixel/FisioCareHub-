@@ -194,6 +194,7 @@ ALTER TABLE public.exercicios_paciente ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Perfis são legíveis por todos" ON public.perfis FOR SELECT USING (true);
 CREATE POLICY "Usuários podem editar o próprio perfil" ON public.perfis FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Usuários podem inserir o próprio perfil" ON public.perfis FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Usuários podem deletar o próprio perfil" ON public.perfis FOR DELETE USING (auth.uid() = id);
 
 -- Pacientes: Fisios veem seus pacientes
 CREATE POLICY "Fisios veem seus pacientes" ON public.pacientes FOR SELECT USING (auth.uid() = fisioterapeuta_id);
