@@ -223,7 +223,7 @@ export default function Admin() {
       status_aprovacao: p.tipo_usuario === 'paciente' ? 'aprovado' : (p.status_aprovacao || 'pendente'),
       // Rule 3: Use foto_url or avatar_url
       avatar_display: p.foto_url || p.avatar_url,
-      // Rule 2: Safe documents array
+      // Rule 2: Safe documents array (Registration documents only)
       documentos_limpos: Array.isArray(p.documentos) ? p.documentos : []
     }));
 
@@ -246,7 +246,7 @@ export default function Admin() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch profiles using the new view that includes aggregated documents
+      // Fetch profiles using the new view for administrative overview
       const { data, error } = await supabase
         .from('admin_perfis_with_documents')
         .select('*');
@@ -1122,35 +1122,29 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos Gerados</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos de Cadastro</p>
                   {(() => {
                     const docs = selectedUserDetail.documentos_limpos;
                     
                     if (docs && docs.length > 0) {
                       return (
-                        <div className="space-y-4">
-                          {docs.map((doc: any, idx: number) => (
-                            <div 
+                        <div className="grid grid-cols-1 gap-4">
+                          {docs.map((doc: string, idx: number) => (
+                            <a 
                               key={idx} 
-                              className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3"
+                              href={resolveStorageUrl(doc)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-blue-500/50 hover:bg-white/10 transition-all group"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                                    <FileText size={18} />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-black text-white uppercase tracking-wider">{doc.tipo || doc.type || 'Documento'}</p>
-                                    <p className="text-[10px] text-slate-500 font-bold">Paciente: {doc.patient_name || 'N/A'}</p>
-                                  </div>
-                                </div>
+                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <Download size={20} />
                               </div>
-                              <div className="p-4 bg-slate-950/50 rounded-xl border border-white/5 overflow-x-auto">
-                                <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap break-words leading-relaxed">
-                                  {doc.content || 'Sem conteúdo'}
-                                </pre>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-white truncate">Documento Profissional {idx + 1}</p>
+                                <p className="text-[10px] text-slate-500 font-medium truncate">{typeof doc === 'string' ? doc.split('/').pop() : 'Visualizar Arquivo'}</p>
                               </div>
-                            </div>
+                            </a>
                           ))}
                         </div>
                       );
@@ -1158,7 +1152,7 @@ export default function Admin() {
                     
                     return (
                       <div className="p-8 border-2 border-dashed border-white/10 rounded-[2rem] text-center">
-                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sem documentos</p>
+                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sem documentos de cadastro</p>
                       </div>
                     );
                   })()}
