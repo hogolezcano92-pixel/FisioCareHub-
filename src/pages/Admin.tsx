@@ -67,6 +67,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
+import AvatarUpload from '../components/AvatarUpload';
 
 export default function Admin() {
   const { user: supabaseUser, loading: loadingSupabase, signOut, profile: authProfile, refreshProfile } = useAuth();
@@ -1307,8 +1308,17 @@ export default function Admin() {
               "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
               !sidebarOpen && "lg:justify-center lg:p-2"
             )}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg shadow-blue-900/40">
-                {firebaseUser?.email?.charAt(0).toUpperCase() || 'H'}
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg shadow-blue-900/40 overflow-hidden">
+                {authProfile?.avatar_url || authProfile?.foto_url ? (
+                  <img 
+                    src={authProfile.avatar_url || authProfile.foto_url} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  firebaseUser?.email?.charAt(0).toUpperCase() || 'H'
+                )}
               </div>
               <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
                 <p className="text-sm font-black text-white truncate">Admin Master</p>
@@ -2757,40 +2767,56 @@ export default function Admin() {
               {/* Profile Settings */}
               <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
                 <h3 className="text-2xl font-black text-white tracking-tight">Meu Perfil Admin</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Nome Completo</label>
-                    <input 
-                      type="text"
-                      defaultValue={supabaseUser?.user_metadata?.full_name || 'Admin Master'}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
-                      id="admin-name"
+                
+                <div className="flex flex-col md:flex-row gap-10 items-start">
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 block text-center">Foto de Perfil</label>
+                    <AvatarUpload 
+                      userId={supabaseUser?.id || ''} 
+                      currentAvatarUrl={authProfile?.avatar_url || authProfile?.foto_url}
+                      onUploadComplete={() => refreshProfile()}
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">E-mail</label>
-                    <input 
-                      type="email"
-                      value={supabaseUser?.email || ''}
-                      disabled
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-500 font-bold outline-none cursor-not-allowed"
-                    />
+
+                  <div className="flex-1 space-y-8 w-full">
+                    <div className="grid grid-cols-1 gap-8">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Nome Completo</label>
+                        <input 
+                          type="text"
+                          defaultValue={authProfile?.nome_completo || supabaseUser?.user_metadata?.full_name || 'Admin Master'}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
+                          id="admin-name"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">E-mail</label>
+                        <input 
+                          type="email"
+                          value={supabaseUser?.email || ''}
+                          disabled
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-500 font-bold outline-none cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={async () => {
+                        const name = (document.getElementById('admin-name') as HTMLInputElement).value;
+                        const { error } = await supabase.from('perfis').update({ nome_completo: name }).eq('id', supabaseUser?.id);
+                        if (error) {
+                          import('sonner').then(({ toast }) => toast.error("Erro ao atualizar perfil."));
+                        } else {
+                          await refreshProfile();
+                          import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
+                        }
+                      }}
+                      className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
+                    >
+                      Atualizar Perfil
+                    </button>
                   </div>
                 </div>
-                <button 
-                  onClick={async () => {
-                    const name = (document.getElementById('admin-name') as HTMLInputElement).value;
-                    const { error } = await supabase.from('perfis').update({ nome_completo: name }).eq('id', supabaseUser?.id);
-                    if (error) {
-                      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar perfil."));
-                    } else {
-                      import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
-                    }
-                  }}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
-                >
-                  Atualizar Perfil
-                </button>
               </div>
 
               <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
