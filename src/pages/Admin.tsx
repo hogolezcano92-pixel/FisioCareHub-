@@ -216,15 +216,26 @@ export default function Admin() {
   };
 
   const processProfiles = useCallback((profiles: any[]) => {
-    setSupabaseProfiles(profiles);
+    // Apply normalization rules
+    const normalizedProfiles = profiles.map(p => ({
+      ...p,
+      // Rule 4: Patients are always approved
+      status_aprovacao: p.tipo_usuario === 'paciente' ? 'aprovado' : (p.status_aprovacao || 'pendente'),
+      // Rule 3: Use foto_url or avatar_url
+      avatar_display: p.foto_url || p.avatar_url,
+      // Rule 2: Safe documents array
+      documentos_limpos: Array.isArray(p.documentos) ? p.documentos : []
+    }));
+
+    setSupabaseProfiles(normalizedProfiles);
     
     // Update Stats from Supabase Profiles
-    const physios = profiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta');
-    const patients = profiles.filter((u: any) => u.tipo_usuario === 'paciente');
+    const physios = normalizedProfiles.filter((u: any) => u.tipo_usuario === 'fisioterapeuta');
+    const patients = normalizedProfiles.filter((u: any) => u.tipo_usuario === 'paciente');
     
     setStats(prev => ({
       ...prev,
-      totalUsers: profiles.length,
+      totalUsers: normalizedProfiles.length,
       activePhysios: physios.filter((p: any) => p.status_aprovacao === 'aprovado').length,
       newPatients: patients.length,
       pendingAppointments: prev.pendingAppointments // Keep existing
@@ -1058,8 +1069,8 @@ export default function Admin() {
               <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-900/20">
-                    {selectedUserDetail.avatar_url ? (
-                      <img src={selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {selectedUserDetail.foto_url || selectedUserDetail.avatar_url ? (
+                      <img src={selectedUserDetail.foto_url || selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       selectedUserDetail.nome_completo?.charAt(0)
                     )}
@@ -1113,11 +1124,9 @@ export default function Admin() {
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos Gerados</p>
                   {(() => {
-                    const docs = Array.isArray(selectedUserDetail.documentos) 
-                      ? selectedUserDetail.documentos 
-                      : [];
+                    const docs = selectedUserDetail.documentos_limpos;
                     
-                    if (docs.length > 0) {
+                    if (docs && docs.length > 0) {
                       return (
                         <div className="space-y-4">
                           {docs.map((doc: any, idx: number) => (
@@ -1440,8 +1449,8 @@ export default function Admin() {
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 font-bold text-lg overflow-hidden border border-white/10">
-                                {u.avatar_url ? (
-                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                {u.avatar_display ? (
+                                  <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
                                   u.nome_completo?.charAt(0)
                                 )}
@@ -1760,8 +1769,8 @@ export default function Admin() {
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white/10">
-                              {u.avatar_url ? (
-                                <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              {u.avatar_display ? (
+                                <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                               ) : (
                                 u.nome_completo?.charAt(0)
                               )}
@@ -1999,8 +2008,8 @@ export default function Admin() {
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
                               <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-blue-400 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
-                                {u.avatar_url ? (
-                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                {u.avatar_display ? (
+                                  <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
                                   u.nome_completo?.charAt(0)
                                 )}
@@ -2132,8 +2141,8 @@ export default function Admin() {
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
                               <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-slate-500 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
-                                {u.avatar_url ? (
-                                  <img src={u.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                {u.avatar_display ? (
+                                  <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
                                   u.nome_completo?.charAt(0)
                                 )}
@@ -2208,8 +2217,8 @@ export default function Admin() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-white/10">
-                          {profile.avatar_url ? (
-                            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          {profile.avatar_display ? (
+                            <img src={profile.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
                             profile.nome_completo?.charAt(0)
                           )}
