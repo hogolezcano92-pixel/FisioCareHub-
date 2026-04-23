@@ -247,14 +247,15 @@ export default function Admin() {
     setError(null);
     try {
       // Fetch profiles using the new view for administrative overview
+      // Explicitly selecting id to ensure it's always returned
       const { data, error } = await supabase
         .from('admin_perfis_with_documents')
-        .select('*');
+        .select('*, id');
       
       if (error) {
         console.error("Erro ao buscar perfis Supabase (view):", error);
         // Fallback retry with basic profile data
-        const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('*, id');
         if (retryError) throw retryError;
         processProfiles(retryData || []);
       } else {
@@ -717,6 +718,12 @@ export default function Admin() {
   };
 
   const handleBlockUser = async (userId: string, currentStatus: string) => {
+    if (!userId || userId === 'undefined') {
+      console.error("ID inválido para bloquear usuário:", userId);
+      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      return;
+    }
+
     try {
       const isBlocked = currentStatus === 'rejeitado' || currentStatus === 'blocked';
       const newStatus = isBlocked ? 'aprovado' : 'rejeitado';
@@ -747,6 +754,12 @@ export default function Admin() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    if (!userId || userId === 'undefined') {
+      console.error("ID inválido para exclusão:", userId);
+      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      return;
+    }
+    
     if (!window.confirm("Tem certeza que deseja excluir permanentemente este perfil? Esta ação não pode ser desfeita.")) return;
     
     try {
@@ -1173,7 +1186,7 @@ export default function Admin() {
                   <>
                     <button 
                       onClick={() => {
-                        handleApprovePhysio(selectedUserDetail.id, selectedUserDetail.id);
+                        handleApprovePhysio(selectedUserDetail?.id, selectedUserDetail?.id);
                         setSelectedUserDetail(null);
                       }}
                       className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20"
@@ -1182,7 +1195,7 @@ export default function Admin() {
                     </button>
                     <button 
                       onClick={() => {
-                        handleRejectPhysio(selectedUserDetail.id, selectedUserDetail.id);
+                        handleRejectPhysio(selectedUserDetail?.id, selectedUserDetail?.id);
                         setSelectedUserDetail(null);
                       }}
                       className="flex-1 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-sm hover:bg-rose-500/20 transition-all"
@@ -1820,14 +1833,14 @@ export default function Admin() {
                               <Eye size={16} />
                             </button>
                             <button 
-                              onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
+                              onClick={() => handleBlockUser(u?.id, u?.status_aprovacao)}
                               className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
                               title="Bloquear/Desbloquear"
                             >
                               <Lock size={16} />
                             </button>
                             <button 
-                              onClick={() => handleDeleteUser(u.id)}
+                              onClick={() => handleDeleteUser(u?.id)}
                               className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                               title="Excluir Perfil"
                             >
@@ -2049,14 +2062,14 @@ export default function Admin() {
                               {(u.status_aprovacao === 'pendente' || !u.status_aprovacao) && (
                                 <>
                                   <button 
-                                    onClick={() => handleApprovePhysio(u.id, u.id)}
+                                    onClick={() => handleApprovePhysio(u?.id, u?.id)}
                                     className="p-3 text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                     title="Aprovar"
                                   >
                                     <CheckCircle2 size={22} />
                                   </button>
                                   <button 
-                                    onClick={() => handleRejectPhysio(u.id, u.id)}
+                                    onClick={() => handleRejectPhysio(u?.id, u?.id)}
                                     className="p-3 text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                     title="Rejeitar"
                                   >
@@ -2065,7 +2078,7 @@ export default function Admin() {
                                 </>
                               )}
                               <button 
-                                onClick={() => handleDeleteUser(u.id)}
+                                onClick={() => handleDeleteUser(u?.id)}
                                 className="p-3 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Excluir"
                               >
@@ -2167,14 +2180,14 @@ export default function Admin() {
                                 <Eye size={22} />
                               </button>
                               <button 
-                                onClick={() => handleBlockUser(u.id, u.status_aprovacao)}
+                                onClick={() => handleBlockUser(u?.id, u?.status_aprovacao)}
                                 className="p-3 text-amber-400 hover:bg-amber-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Bloquear"
                               >
                                 <Lock size={22} />
                               </button>
                               <button 
-                                onClick={() => handleDeleteUser(u.id)}
+                                onClick={() => handleDeleteUser(u?.id)}
                                 className="p-3 text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Excluir"
                               >
@@ -2274,13 +2287,13 @@ export default function Admin() {
                           <Eye size={20} />
                         </button>
                         <button 
-                          onClick={() => handleApprovePhysio(profile.id, profile.id)}
+                          onClick={() => handleApprovePhysio(profile?.id, profile?.id)}
                           className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20"
                         >
                           Aprovar
                         </button>
                         <button 
-                          onClick={() => handleRejectPhysio(profile.id, profile.id)}
+                          onClick={() => handleRejectPhysio(profile?.id, profile?.id)}
                           className="flex-1 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-black hover:bg-rose-500/20 transition-all"
                         >
                           Rejeitar
