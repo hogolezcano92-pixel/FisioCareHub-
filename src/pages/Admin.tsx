@@ -579,15 +579,19 @@ export default function Admin() {
   }
 
   const handleApprovePhysio = async (profileId: string, userId: string) => {
+    if (!profileId || profileId === 'undefined') {
+      console.error("ID inválido para aprovação:", profileId);
+      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      return;
+    }
+
     try {
       console.log(`Aprovando fisioterapeuta: ${profileId}`);
       
       // Update Supabase - Update status_aprovacao
       const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
-        .update({ 
-          status_aprovacao: 'aprovado'
-        })
+        .update({ status_aprovacao: 'aprovado' })
         .eq('id', profileId)
         .select();
 
@@ -648,15 +652,19 @@ export default function Admin() {
   };
 
   const handleRejectPhysio = async (profileId: string, userId: string) => {
+    if (!profileId || profileId === 'undefined') {
+      console.error("ID inválido para rejeição:", profileId);
+      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      return;
+    }
+
     try {
       console.log(`Rejeitando fisioterapeuta: ${profileId}`);
       
       // Update Supabase
       const { data: updateData, error: supabaseError } = await supabase
         .from('perfis')
-        .update({ 
-          status_aprovacao: 'rejeitado'
-        })
+        .update({ status_aprovacao: 'rejeitado' })
         .eq('id', profileId)
         .select();
 
