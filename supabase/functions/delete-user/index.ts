@@ -49,6 +49,7 @@ serve(async (req) => {
       'sessoes', // Depends on agendamentos and perfis
       'agendamentos', // Depends on perfis
       'solicitacoes_saque',
+      'notificacoes_admin',
       'configuracao_servicos',
       'notificacoes', 
       'triagens', 
@@ -83,7 +84,7 @@ serve(async (req) => {
             await supabaseAdmin.from(table).delete().eq('fisio_id', userId)
           }
           deletionResults[table] = { status: 'success' }
-        } else if (table === 'solicitacoes_saque' || table === 'notificacoes' || table === 'assinaturas' || table === 'compras_materiais') {
+        } else if (table === 'solicitacoes_saque' || table === 'notificacoes' || table === 'notificacoes_admin' || table === 'assinaturas' || table === 'compras_materiais') {
           console.log(`Deletando de ${table} usando vinculação user_id`)
           const result = await supabaseAdmin.from(table).delete().eq('user_id', userId)
           deletionResults[table] = result.error ? { status: 'error', message: result.error.message } : { status: 'success' }
