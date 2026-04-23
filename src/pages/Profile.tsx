@@ -298,7 +298,7 @@ export default function Profile() {
         crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
         preco_sessao: isPhysio ? Number(formData.preco_sessao) : (userData?.preco_sessao || undefined),
         stripe_account_id: isPhysio ? formData.stripe_account_id : (userData?.stripe_account_id || undefined),
-        genero: isPhysio ? formData.gender : (userData?.genero || undefined),
+        genero: formData.gender || undefined,
         especialidade: isPhysio ? formData.specialty : (userData?.especialidade || undefined),
         tipo_servico: isPhysio ? formData.serviceType : (userData?.tipo_servico || undefined),
         data_nascimento: formData.data_nascimento || undefined,
@@ -313,6 +313,7 @@ export default function Profile() {
         (updateData as any)[key] === undefined && delete (updateData as any)[key]
       );
 
+      console.log("Genero enviado:", formData.gender);
       console.log("Atualizando perfil no Supabase:", updateData);
 
       const { error } = await supabase
