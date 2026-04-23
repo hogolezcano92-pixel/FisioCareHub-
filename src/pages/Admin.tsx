@@ -23,6 +23,7 @@ import {
   UserCheck, 
   UserPlus, 
   Calendar, 
+  FileText, 
   LayoutDashboard, 
   ShieldCheck, 
   Settings, 
@@ -234,27 +235,19 @@ export default function Admin() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch profiles and their latest active subscription
+      // Fetch profiles using the new view that includes aggregated documents
       const { data, error } = await supabase
-        .from('perfis')
-        .select('*, assinaturas(status, plano, data_expiracao)');
+        .from('admin_perfis_with_documents')
+        .select('*');
       
       if (error) {
-        console.error("Erro ao buscar perfis Supabase:", error);
-        // Fallback retry
+        console.error("Erro ao buscar perfis Supabase (view):", error);
+        // Fallback retry with basic profile data
         const { data: retryData, error: retryError } = await supabase.from('perfis').select('*');
         if (retryError) throw retryError;
         processProfiles(retryData || []);
       } else {
-        // Process profiles and attach subscription status
-        const profilesWithSub = data.map((p: any) => {
-          const activeSub = p.assinaturas?.find((s: any) => s.status === 'ativo');
-          return {
-            ...p,
-            is_pro: activeSub || p.is_pro // Keep is_pro as fallback or if already set
-          };
-        });
-        processProfiles(profilesWithSub || []);
+        processProfiles(data || []);
       }
     } catch (err: any) {
       console.error("Erro fatal ao buscar perfis:", err);
@@ -1118,33 +1111,37 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos e Comprovantes</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos Gerados</p>
                   {(() => {
                     const docs = Array.isArray(selectedUserDetail.documentos) 
                       ? selectedUserDetail.documentos 
-                      : (typeof selectedUserDetail.documentos === 'string' && selectedUserDetail.documentos.startsWith('[')
-                          ? JSON.parse(selectedUserDetail.documentos)
-                          : []);
+                      : [];
                     
                     if (docs.length > 0) {
                       return (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {docs.map((doc: string, idx: number) => (
-                            <a 
+                        <div className="space-y-4">
+                          {docs.map((doc: any, idx: number) => (
+                            <div 
                               key={idx} 
-                              href={resolveStorageUrl(doc)} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-blue-500/50 hover:bg-white/10 transition-all group"
+                              className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3"
                             >
-                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <Download size={20} />
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                                    <FileText size={18} />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-black text-white uppercase tracking-wider">{doc.tipo || doc.type || 'Documento'}</p>
+                                    <p className="text-[10px] text-slate-500 font-bold">Paciente: {doc.patient_name || 'N/A'}</p>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white truncate">Documento Profissional {idx + 1}</p>
-                                <p className="text-[10px] text-slate-500 font-medium truncate">{doc.split('/').pop()}</p>
+                              <div className="p-4 bg-slate-950/50 rounded-xl border border-white/5 overflow-x-auto">
+                                <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap break-words leading-relaxed">
+                                  {doc.content || 'Sem conteúdo'}
+                                </pre>
                               </div>
-                            </a>
+                            </div>
                           ))}
                         </div>
                       );
@@ -1152,7 +1149,7 @@ export default function Admin() {
                     
                     return (
                       <div className="p-8 border-2 border-dashed border-white/10 rounded-[2rem] text-center">
-                        <p className="text-sm text-slate-500 font-bold">Nenhum documento anexado.</p>
+                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sem documentos</p>
                       </div>
                     );
                   })()}
