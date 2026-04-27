@@ -14,13 +14,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
 const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3";
 
-const asaasHeaders = {
+const getAsaasHeaders = () => ({
   'Content-Type': 'application/json',
-  'access_token': ASAAS_API_KEY
-};
+  'access_token': getEnv("ASAAS_API_KEY", "")
+});
 
 async function getOrCreateAsaasCustomer(userId: string, email: string, name: string, phone?: string) {
   try {
+    const headers = getAsaasHeaders();
+    if (!headers.access_token) {
+      throw new Error("ASAAS_API_KEY is not configured.");
+    }
+
     // 1. Try to find in Supabase first
     const { data: profile } = await getSupabaseAdmin()
       .from('perfis')
@@ -30,23 +35,26 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     if (profile?.asaas_customer_id) return profile.asaas_customer_id;
 
-    const baseUrl = ASAAS_BASE_URL.trim().replace(/\/$/, "");
+    const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
 
     // 2. Search in Asaas by email
-    const searchRes = await fetch(`${baseUrl}/customers?email=${email}`, { headers: asaasHeaders });
+    console.log(`[Asaas] Searching customer by email: ${email}`);
+    const searchRes = await fetch(`${baseUrl}/customers?email=${encodeURIComponent(email)}`, { headers });
     const searchData = await searchRes.json();
 
     if (searchData.data && searchData.data.length > 0) {
       const customerId = searchData.data[0].id;
+      console.log(`[Asaas] Found existing customer: ${customerId}`);
       // Update Supabase for next time
       await getSupabaseAdmin().from('perfis').update({ asaas_customer_id: customerId }).eq('id', userId);
       return customerId;
     }
 
     // 3. Create new customer in Asaas
+    console.log(`[Asaas] Creating new customer for ${email}`);
     const createRes = await fetch(`${baseUrl}/customers`, {
       method: 'POST',
-      headers: asaasHeaders,
+      headers,
       body: JSON.stringify({
         name,
         email,
@@ -57,6 +65,7 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     const newData = await createRes.json();
     if (newData.id) {
+      console.log(`[Asaas] Customer created: ${newData.id}`);
       await getSupabaseAdmin().from('perfis').update({ asaas_customer_id: newData.id }).eq('id', userId);
       return newData.id;
     }
@@ -399,12 +408,12 @@ async function startServer() {
         paymentPayload.installmentValue = (numericAmount / numericInstallments).toFixed(2);
       }
 
-      console.log(`[Asaas] Sending payload to ${ASAAS_BASE_URL}/payments`);
+      const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
+      console.log(`[Asaas] Sending payload to ${baseUrl}/payments`);
 
-      const baseUrl = ASAAS_BASE_URL.trim().replace(/\/$/, "");
       const asaasRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
-        headers: asaasHeaders,
+        headers: getAsaasHeaders(),
         body: JSON.stringify(paymentPayload)
       });
 
@@ -426,7 +435,8 @@ async function startServer() {
 
         res.json({ 
           id: data.id,
-          url: data.invoiceUrl || data.bankSlipUrl || data.pixCode // Unified redirect URL
+          url: data.invoiceUrl || data.bankSlipUrl,
+          pixCode: data.pixCode // Optional, for UI to show if needed
         });
       } else {
         console.error("[Asaas] API Error Response:", data);
@@ -554,6 +564,10 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log("[Server] Backend logic migrated to Supabase Edge Functions.");
+    
+    if (!process.env.ASAAS_API_KEY) {
+      console.warn("[Warning] ASAAS_API_KEY is not defined in environment variables.");
+    }
   });
 }
 
