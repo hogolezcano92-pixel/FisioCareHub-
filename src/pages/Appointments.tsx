@@ -387,7 +387,7 @@ export default function Appointments() {
             },
             body: JSON.stringify({
               appointment_id: newApp.id,
-              amount: finalPrice,
+              amount: Number(finalPrice),
               description: `Agendamento: ${service}`,
               email: user.email,
               user_id: user.id,
@@ -404,9 +404,16 @@ export default function Appointments() {
           }
 
           const checkoutData = await response.json();
+          console.log('[Asaas] Checkout Response:', checkoutData);
 
           if (checkoutData?.url) {
-            window.location.href = checkoutData.url;
+            const checkoutUrl = String(checkoutData.url).trim();
+            if (checkoutUrl.startsWith('http')) {
+              window.location.href = checkoutUrl;
+            } else {
+              console.error('[Asaas] URL de checkout inválida:', checkoutUrl);
+              throw new Error('URL de pagamento malformada retornada pelo gateway.');
+            }
             return; // Redirecionando, interrompe o fluxo aqui
           } else {
             throw new Error('Erro ao gerar link de pagamento Asaas');
@@ -592,7 +599,7 @@ export default function Appointments() {
                           },
                           body: JSON.stringify({
                             appointment_id: app.id,
-                            amount: app.valor || 0,
+                            amount: Number(app.valor) || 0,
                             description: `Pagamento de Serviço: ${app.servico || 'Consulta'}`,
                             email: user?.email,
                             user_id: user?.id,
@@ -609,8 +616,16 @@ export default function Appointments() {
                         }
                         
                         const checkoutData = await response.json();
+                        console.log('[Asaas] Checkout Response:', checkoutData);
+
                         if (checkoutData?.url) {
-                          window.location.href = checkoutData.url;
+                          const checkoutUrl = String(checkoutData.url).trim();
+                          if (checkoutUrl.startsWith('http')) {
+                            window.location.href = checkoutUrl;
+                          } else {
+                            console.error('[Asaas] URL de checkout inválida:', checkoutUrl);
+                            throw new Error('URL de pagamento malformada retornada pelo gateway.');
+                          }
                         } else {
                           throw new Error('Erro ao gerar link de pagamento Asaas');
                         }

@@ -148,14 +148,14 @@ export default function ProfessionalProfile() {
         },
         body: JSON.stringify({
           appointment_id: appData.id,
-          amount: bookingData.valor,
+          amount: Number(bookingData.valor),
           description: `Consulta: ${bookingData.tipo}`,
           email: user.email,
           user_id: user.id,
           name: currentUserProfile?.nome_completo || user.email,
           phone: currentUserProfile?.telefone,
-          installmentCount: 1, // Defaulting to 1 for now, can be extended if UI allows
-          billingType: 'UNDEFINED' // Let Asaas checkout handle the choice
+          installmentCount: 1, 
+          billingType: 'UNDEFINED' 
         })
       });
 
@@ -165,9 +165,17 @@ export default function ProfessionalProfile() {
       }
 
       const checkoutData = await response.json();
+      console.log('[Asaas] Checkout Response:', checkoutData);
 
       if (checkoutData?.url) {
-        window.location.href = checkoutData.url;
+        const checkoutUrl = String(checkoutData.url).trim();
+        if (checkoutUrl.startsWith('http')) {
+          window.location.href = checkoutUrl;
+        } else {
+          console.error('[Asaas] URL de checkout inválida:', checkoutUrl);
+          throw new Error('URL de pagamento malformada retornada pelo gateway.');
+        }
+        return;
       } else {
         throw new Error('Erro ao gerar link de pagamento Asaas');
       }
