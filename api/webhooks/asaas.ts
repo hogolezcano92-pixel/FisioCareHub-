@@ -1,14 +1,15 @@
 export default function handler(req, res) {
   try {
-    console.log("🔥 ASAAS WEBHOOK RECEBIDO:");
+    console.log("🔥 ASAAS WEBHOOK");
     console.log("method:", req.method);
-    console.log("body:", JSON.stringify(req.body));
+    console.log("body:", req.body);
 
+    // NUNCA deixar quebrar resposta
     return res.status(200).send("OK");
   } catch (error) {
     console.error("Webhook error:", error);
 
-    // IMPORTANTÍSSIMO: mesmo erro devolve 200
+    // mesmo com erro, responde 200
     return res.status(200).send("OK");
   }
 }
