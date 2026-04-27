@@ -24,6 +24,7 @@ export default function FinanceServiceSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+  const [commissionRate, setCommissionRate] = useState(12);
 
   const [formData, setFormData] = useState({
     avaliacao_inicial: 0,
@@ -41,7 +42,21 @@ export default function FinanceServiceSettings() {
       return;
     }
     fetchSettings();
+    fetchCommissionRate();
   }, [user, authLoading]);
+
+  const fetchCommissionRate = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'commission_rate')
+        .single();
+      if (data) setCommissionRate(Number(data.value));
+    } catch (err) {
+      console.warn("Could not fetch commission rate", err);
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -126,6 +141,20 @@ export default function FinanceServiceSettings() {
             <p className="text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Defina os valores padrão para cada tipo de atendimento.</p>
           </div>
         </header>
+
+        {/* Informação sobre Taxa */}
+        <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-[2rem] flex items-center gap-6">
+          <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/20 shrink-0">
+            <DollarSign size={28} />
+          </div>
+          <div>
+            <h3 className="text-white font-black tracking-tight">Taxa de Serviço da Plataforma: {commissionRate}%</h3>
+            <p className="text-slate-400 text-sm font-medium">
+              Este valor é descontado automaticamente no momento do repasse. 
+              Você receberá <span className="text-blue-400 font-black">{100 - commissionRate}%</span> do valor bruto cobrado do paciente.
+            </p>
+          </div>
+        </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">

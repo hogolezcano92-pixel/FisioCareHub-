@@ -96,7 +96,7 @@ export default function Admin() {
   const [messages, setMessages] = useState<any[]>([]);
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [commissionRate, setCommissionRate] = useState(20);
+  const [commissionRate, setCommissionRate] = useState(12);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
   const [withdrawalFilter, setWithdrawalFilter] = useState<'pendente' | 'pago' | 'recusado' | 'todos'>('todos');
@@ -284,25 +284,25 @@ export default function Admin() {
       if (error) throw error;
       setSessions(data || []);
 
-      // Update financial stats (Rule 4)
-      // Since valor_sessao in DB is now the net amount (88%), we derive the others
+      // Since valor_sessao in DB is now the net amount, we derive the others using commissionRate
       const paidSessions = (data || []).filter(s => s.status_pagamento === 'pago_app');
       
-      const netPhysio = paidSessions.reduce((acc, curr) => acc + Number(curr.valor_sessao || curr.valor || 0), 0);
-      const totalPaid = netPhysio / 0.88;
-      const commission = totalPaid * 0.12;
+      const netPhysioArea = paidSessions.reduce((acc, curr) => acc + Number(curr.valor_sessao || curr.valor || 0), 0);
+      const rateFactor = (100 - commissionRate) / 100;
+      const totalPaidArea = netPhysioArea / (rateFactor || 0.88);
+      const commissionArea = totalPaidArea * (commissionRate / 100);
       
       setStats(prev => ({ 
         ...prev, 
-        totalRevenue: totalPaid,
-        totalPaidByPatients: totalPaid,
-        totalCommission: commission,
-        totalNetPhysio: netPhysio
+        totalRevenue: totalPaidArea,
+        totalPaidByPatients: totalPaidArea,
+        totalCommission: commissionArea,
+        totalNetPhysio: netPhysioArea
       }));
     } catch (err) {
       console.error("Erro ao buscar sessões:", err);
     }
-  }, []);
+  }, [commissionRate]);
 
   const fetchMateriais = useCallback(async () => {
     try {
@@ -1899,8 +1899,8 @@ export default function Admin() {
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Paciente</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Fisioterapeuta</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Total Pago</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão (12%)</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Líquido Fisio (88%)</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão ({commissionRate}%)</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Líquido Fisio ({100 - commissionRate}%)</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Repasse</th>
                         <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ação</th>
                       </tr>
@@ -1910,8 +1910,9 @@ export default function Admin() {
                         .filter(s => s.status_pagamento === 'pago_app')
                         .map((s) => {
                           const netValue = Number(s.valor_sessao || s.valor || 0);
-                          const totalValue = netValue / 0.88;
-                          const commValue = totalValue * 0.12;
+                          const currentRateFactor = (100 - commissionRate) / 100;
+                          const totalValue = netValue / (currentRateFactor || 0.88);
+                          const commValue = totalValue * (commissionRate / 100);
 
                           return (
                             <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
