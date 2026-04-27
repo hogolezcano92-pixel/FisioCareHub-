@@ -1,106 +1,133 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
+const ASAAS_BASE_URL = "https://www.asaas.com/api/v3";
+
+const headers = {
+  'Content-Type': 'application/json',
+  'access_token': ASAAS_API_KEY
+};
+
+/**
+ * Busca um cliente pelo e-mail ou cria um novo se não existir.
+ */
+async function getOrCreateCustomer(nome: string, email: string, cpf: string) {
+  console.log(`[Asaas] Buscando cliente por e-mail: ${email}`);
+  
+  // 1. Buscar cliente existente
+  const searchUrl = `${ASAAS_BASE_URL}/customers?email=${encodeURIComponent(email)}`;
+  const searchRes = await fetch(searchUrl, { headers });
+  const searchData = await searchRes.json();
+
+  if (searchData.data && searchData.data.length > 0) {
+    const existingId = searchData.data[0].id;
+    console.log(`[Asaas] Cliente encontrado: ${existingId}`);
+    return existingId;
+  }
+
+  // 2. Criar novo cliente se não encontrado
+  console.log(`[Asaas] Cliente não encontrado. Criando novo para: ${email}`);
+  const createRes = await fetch(`${ASAAS_BASE_URL}/customers`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      name: nome,
+      email: email,
+      cpfCnpj: cpf?.replace(/\D/g, '') // Garantir que apenas números sejam enviados
+    })
+  });
+
+  const createData = await createRes.json();
+  if (createData.id) {
+    console.log(`[Asaas] Novo cliente criado: ${createData.id}`);
+    return createData.id;
+  }
+  
+  const errorMsg = createData.errors?.[0]?.description || "Erro ao criar cliente no Asaas";
+  throw new Error(errorMsg);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS configuration
+  // Configuração básica de CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  const { 
-    valor, 
-    id_agendamento, 
-    customer_id, 
-    descricao,
-    // Supporting existing frontend naming as fallback
-    amount,
-    appointment_id,
-    description,
-    user_id 
-  } = req.body;
-
-  const apiKey = process.env.ASAAS_API_KEY;
-  
-  if (!apiKey) {
-    console.error("[Asaas Error] ASAAS_API_KEY variable not found in production environment.");
-    return res.status(500).json({ 
-      error: "Ocorreu um erro de configuração no servidor. A chave de API do Asaas não foi encontrada." 
-    });
+  if (!ASAAS_API_KEY) {
+    console.error("[Asaas Error] ASAAS_API_KEY não configurada.");
+    return res.status(500).json({ error: "Erro de configuração: Token do Asaas não encontrado." });
   }
 
   try {
-    const ASAAS_PROD_URL = "https://www.asaas.com/api/v3/payments";
-    
-    // dueDate today (YYYY-MM-DD)
-    const dueDate = new Date().toISOString().split('T')[0];
+    const { nome, email, cpf, valor, id_agendamento, parcelas } = req.body;
 
-    // Priority to requested fields, fallback to existing ones
-    const billingAmount = valor || amount;
-    const refId = id_agendamento || appointment_id;
-    const finalDesc = descricao || description || `Agendamento FisioCareHub - Ref: ${refId}`;
-
-    if (!billingAmount || !refId) {
-      return res.status(400).json({ error: "Dados insuficientes: valor e id_agendamento são obrigatórios." });
+    // Validação básica dos dados recebidos
+    if (!nome || !email || !valor || !id_agendamento) {
+      return res.status(400).json({ 
+        error: "Dados obrigatórios ausentes: nome, email, valor e id_agendamento são necessários." 
+      });
     }
 
-    // Note: customer_id in the body is expected to be the Asaas Customer ID as per user specification.
-    // If it's missing, we try to use the user_id if we were to resolve it, but for strictly following 
-    // the requested "Production" behavior, we expect customer_id.
-    let asaasCustomerId = customer_id;
-    
-    // If customer_id is missing but user_id is present, we might need a resolve step, 
-    // but the user's prompt suggests they are passing the customer_id directly.
-    if (!asaasCustomerId && !user_id) {
-       return res.status(400).json({ error: "customer_id ou user_id é obrigatório." });
-    }
+    // 1. Obter ou Criar o Cliente no Asaas
+    const customerId = await getOrCreateCustomer(nome, email, cpf);
 
-    const payload = {
-      customer: asaasCustomerId || user_id, // Fallback if they are using user_id as customer_id
-      billingType: 'PIX',
-      value: Number(billingAmount),
-      dueDate: dueDate,
-      description: finalDesc,
-      externalReference: String(refId),
+    // 2. Preparar payload da cobrança
+    const numParcelas = Number(parcelas) || 1;
+    const totalValue = Number(valor);
+    const dueDate = new Date().toISOString().split('T')[0]; // Vencimento para hoje (Checkout)
+
+    const paymentPayload: any = {
+      customer: customerId,
+      billingType: 'UNDEFINED', // Permite Cartão, PIX ou Boleto no checkout do Asaas
+      value: totalValue,
+      dueDate,
+      description: `FisioCareHub - Agendamento #${id_agendamento}`,
+      externalReference: String(id_agendamento),
+      postalService: false
     };
 
-    console.log(`[Asaas Production] Creating PIX payment for appointment: ${refId}`);
+    // Configuração de parcelamento se aplicável
+    if (numParcelas > 1) {
+      paymentPayload.installmentCount = numParcelas;
+      paymentPayload.installmentValue = (totalValue / numParcelas).toFixed(2);
+    }
 
-    const response = await fetch(ASAAS_PROD_URL, {
+    console.log(`[Asaas] Criando cobrança para o Agendamento: ${id_agendamento}`);
+
+    // 3. Gerar a cobrança no Asaas
+    const paymentRes = await fetch(`${ASAAS_BASE_URL}/payments`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'access_token': apiKey
-      },
-      body: JSON.stringify(payload)
+      headers,
+      body: JSON.stringify(paymentPayload)
     });
 
-    const data = await response.json();
+    const paymentData = await paymentRes.json();
 
-    if (response.ok) {
-      console.log(`[Asaas Success] Payment created successfully: ${data.id}`);
-      return res.status(200).json(data);
+    if (paymentRes.ok) {
+      console.log(`[Asaas Success] Cobrança gerada com sucesso: ${paymentData.id}`);
+      return res.status(200).json(paymentData);
     } else {
-      console.error("[Asaas API Error Response]", JSON.stringify(data));
-      // Return the error JSON from Asaas with the same status code
-      return res.status(response.status).json(data);
+      console.error("[Asaas API Error]", JSON.stringify(paymentData));
+      return res.status(paymentRes.status).json({
+        error: "Erro na API do Asaas",
+        details: paymentData.errors
+      });
     }
+
   } catch (error: any) {
-    console.error("[Asaas Internal Error]", error);
+    console.error("[Asaas Exception]", error);
     return res.status(500).json({ 
-      error: "Erro inesperado ao processar a cobrança no Asaas.",
-      details: error.message 
+      error: "Ocorreu um erro interno ao processar o pagamento.",
+      message: error.message 
     });
   }
 }
