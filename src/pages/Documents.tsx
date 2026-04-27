@@ -377,7 +377,7 @@ export default function Documents() {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
-    <ProGuard>
+    <ProGuard requiredPlan="basic">
       <div className="space-y-8 pb-20">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

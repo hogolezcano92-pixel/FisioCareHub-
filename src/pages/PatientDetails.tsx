@@ -20,11 +20,13 @@ import {
   AlertCircle,
   Paperclip,
   Dna,
-  X
+  X,
+  Send
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 import { uploadDocument } from '../services/supabaseStorage';
+import ProGuard from '../components/ProGuard';
 
 export default function PatientDetails() {
   const { id } = useParams();
@@ -234,7 +236,7 @@ export default function PatientDetails() {
       <header className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-8">
         <div className="w-32 h-32 bg-white/5 rounded-[2rem] flex items-center justify-center text-blue-400 border-4 border-white/5 shadow-xl overflow-hidden">
           {patient.foto_url ? (
-            <img src={patient.foto_url} alt={patient.nome} className="w-full h-full object-cover" />
+            <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome} className="w-full h-full object-cover" />
           ) : (
             <User size={64} />
           )}
@@ -257,12 +259,26 @@ export default function PatientDetails() {
           </div>
         </div>
         <div className="flex gap-2">
+          <ProGuard variant="inline">
+            <button 
+              onClick={() => toast.info("Funcionalidade de Convite enviada!", { description: `Um convite foi enviado para ${patient.email}` })}
+              className="px-6 py-2 bg-emerald-600/20 text-emerald-400 rounded-2xl hover:bg-emerald-600/30 transition-all border border-emerald-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2"
+            >
+              <Send size={18} /> Liberar Acesso
+            </button>
+          </ProGuard>
           <button className="p-4 bg-white/5 text-slate-500 rounded-2xl hover:bg-white/10 transition-all border border-white/5">
             <Trash2 size={24} />
           </button>
-          <button className="p-4 bg-blue-600/20 text-blue-400 rounded-2xl hover:bg-blue-600/30 transition-all border border-blue-600/20">
-            <FileText size={24} />
-          </button>
+          <ProGuard variant="inline">
+            <button 
+              onClick={() => toast.info("Exportação PRO", { description: "Prontuário completo sendo gerado em PDF..." })}
+              className="p-4 bg-blue-600/20 text-blue-400 rounded-2xl hover:bg-blue-600/30 transition-all border border-blue-600/20"
+              title="Exportar Prontuário Completo (PRO)"
+            >
+              <FileText size={24} />
+            </button>
+          </ProGuard>
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -170,7 +171,8 @@ export default function Exercises() {
   }
 
   return (
-    <div className="space-y-8 w-full box-border overflow-wrap-break-word">
+    <ProGuard>
+      <div className="space-y-8 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Biblioteca de Exercícios</h1>
@@ -277,17 +279,17 @@ export default function Exercises() {
       </div>
 
       {/* Modal de Cadastro */}
-      <AnimatePresence>
-        {showModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+      {showModal && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[85vh] border border-white/10">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-black text-white tracking-tight">Novo Exercício</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400"><X size={24} /></button>
               </div>
 
-              <form onSubmit={handleCreateExercise} className="space-y-6 overflow-y-auto pr-2">
+              <form onSubmit={handleCreateExercise} className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
                 <div className="space-y-2">
                   <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Exercício</label>
                   <input
@@ -365,15 +367,16 @@ export default function Exercises() {
               </form>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Modal de Prescrição */}
-      <AnimatePresence>
-        {showPrescribeModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPrescribeModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+      {showPrescribeModal && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPrescribeModal(false)} className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[85vh] border border-white/10">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-black text-white tracking-tight">Prescrever Exercício</h2>
@@ -391,7 +394,7 @@ export default function Exercises() {
                       required
                       value={selectedPatientId}
                       onChange={(e) => setSelectedPatientId(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none text-white"
+                      className="w-full !pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none text-white"
                     >
                       <option value="" className="bg-slate-900">Selecione um paciente...</option>
                       {patients.map(p => (
@@ -427,8 +430,10 @@ export default function Exercises() {
               </form>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
+    </ProGuard>
   );
 }

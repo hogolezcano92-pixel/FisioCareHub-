@@ -127,7 +127,7 @@ export default function FinanceServiceSettings() {
   };
 
   return (
-    <ProGuard>
+    <ProGuard requiredPlan="basic">
       <div className="space-y-8 pb-20 max-w-4xl mx-auto">
         <header className="flex items-center gap-4">
           <button 

@@ -112,11 +112,12 @@ export default function Patients() {
     e.preventDefault();
     if (!user) return;
 
-    const isPro = profile?.plano === 'admin' || subscription?.status === 'ativo';
+    const userPlan = profile?.plan_type || profile?.plano || 'basic';
+    const isPro = userPlan === 'pro' || profile?.plano === 'admin' || subscription?.status === 'ativo';
 
-    if (!isPro && patients.length >= 5) {
-      toast.error('Limite de pacientes atingido', {
-        description: 'Assine o plano PRO para cadastrar pacientes ilimitados.'
+    if (!isPro && patients.length >= 10) {
+      toast.error('Limite do Plano Basic atingido', {
+        description: 'Faça upgrade para o plano PRO para cadastrar pacientes ilimitados.'
       });
       setShowModal(false);
       navigate('/subscription');

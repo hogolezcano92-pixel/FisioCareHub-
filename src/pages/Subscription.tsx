@@ -12,13 +12,14 @@ export default function Subscription() {
   const [proKey, setProKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.plan_type === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
-  const handleUpgrade = async (method: 'payment' | 'key') => {
+  const handleUpgrade = async (method: 'payment' | 'key', planType: 'basic' | 'pro' = 'pro') => {
     setLoading(true);
     try {
       if (method === 'key') {
-        if (proKey !== 'PRO2024') {
+        const validKey = planType === 'pro' ? 'PRO2024' : 'BASIC2024';
+        if (proKey !== validKey) {
           toast.error('Chave inválida', {
             description: 'A chave inserida não é válida ou já expirou.'
           });
@@ -31,24 +32,30 @@ export default function Subscription() {
           .from('assinaturas')
           .upsert({
             user_id: profile.id,
-            plano: 'pro',
+            plano: planType,
             status: 'ativo',
-            valor: 49.99,
+            valor: planType === 'pro' ? 49.99 : 19.99,
             data_inicio: new Date().toISOString(),
             data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           });
 
         if (error) throw error;
 
-        // Also update perfis for legacy compatibility
+        // Also update perfis for compatibility
         await supabase
           .from('perfis')
-          .update({ is_pro: true })
+          .update({ 
+            is_pro: planType === 'pro',
+            plano: planType,
+            plan_type: planType
+          })
           .eq('id', profile.id);
 
         await refreshProfile();
-        toast.success('Assinatura Pro Ativada!', {
-          description: 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
+        toast.success(`Assinatura ${planType.toUpperCase()} Ativada!`, {
+          description: planType === 'pro' 
+            ? 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
+            : 'Sua assinatura básica foi ativada com sucesso.'
         });
         return;
       }
@@ -58,12 +65,16 @@ export default function Subscription() {
         throw new Error('Usuário não identificado. Por favor, faça login novamente para assinar.');
       }
 
-      console.log('Iniciando processo de assinatura para:', profile.email);
+      const amount = planType === 'pro' ? 49.99 : 19.99;
+      const serviceName = planType === 'pro' ? 'Plano Pro Fisioterapeuta' : 'Plano Basic Fisioterapeuta';
 
       const data = await invokeFunction('create-checkout-session', {
         user_id: profile.id,
         email: profile.email,
-        plan: 'pro'
+        plan: planType,
+        type: 'subscription',
+        service_name: serviceName,
+        amount: amount
       });
 
       if (data?.url) {
@@ -116,15 +127,25 @@ export default function Subscription() {
   }
 
   const proFeatures = [
-    "Pacientes Ilimitados (Plano Free: até 5)",
+    "Pacientes Ilimitados",
     "IA Completa (Análise e Sugestões)",
     "Relatórios de Evolução Detalhados",
     "Análise de Desempenho com Gráficos",
     "Exportação de Prontuários em PDF",
-    "Suporte Prioritário 24/7",
-    "Personalização de Protocolos",
+    "Liberar Acesso ao Paciente",
+    "Compartilhamento Externo",
     "Gestão de Documentos Ilimitada"
   ];
+
+  const basicFeatures = [
+    "Cadastro de Pacientes",
+    "Gestão de Documentos Próprios",
+    "Listagem de Pacientes",
+    "Histórico de Evoluções",
+    "Agendamentos Básicos"
+  ];
+
+  const currentPlan = profile?.plan_type || profile?.plano || 'basic';
 
   return (
     <div className="max-w-6xl mx-auto py-12 px-4">
@@ -137,113 +158,162 @@ export default function Subscription() {
           <Zap size={16} />
           Eleve sua Prática
         </motion.div>
-        <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 mb-6 tracking-tight">FisioCareHub <span className="text-sky-500">PRO</span></h1>
+        <h1 className="text-4xl font-black text-white mb-6 tracking-tight">Escolha o plano ideal para você</h1>
         <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
-          A ferramenta definitiva para fisioterapeutas que buscam excelência no atendimento domiciliar e online.
+          Ferramentas profissionais para fisioterapeutas que buscam excelência.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 items-center">
-        {/* Features List */}
-        <div className="space-y-8">
-          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">O que você ganha com o PRO:</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {proFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-3 bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="mt-1 w-6 h-6 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
-                  <Check size={14} />
+      <div className="grid md:grid-cols-2 gap-8 items-stretch">
+        {/* Basic Plan */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className={cn(
+            "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 flex flex-col h-full",
+            currentPlan === 'basic' && "border-sky-500/50 ring-1 ring-sky-500/50"
+          )}
+        >
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-black text-white px-4 py-1 bg-white/5 rounded-full inline-block">Plano BASIC</h3>
+              {currentPlan === 'basic' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black text-white tracking-tighter">R$ 19,99</span>
+              <span className="text-sm text-slate-500 font-bold">/mês</span>
+            </div>
+            <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
+              Ideal para quem está começando e precisa gerenciar seus pacientes e documentos de forma interna.
+            </p>
+          </div>
+
+          <div className="flex-1 space-y-3 mb-8">
+            {basicFeatures.map((feature, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-sky-500/10 text-sky-400 rounded-full flex items-center justify-center border border-sky-500/20">
+                  <Check size={12} />
                 </div>
-                <span className="text-slate-300 font-bold text-sm leading-tight">{feature}</span>
-              </motion.div>
+                <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* Pricing Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border-2 border-sky-500 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 bg-sky-500 text-white px-8 py-2 rounded-bl-3xl font-black text-sm uppercase tracking-widest">
-            Mais Popular
-          </div>
-          
-          <div className="mb-8">
-            <h3 className="text-2xl font-black text-white mb-2">Plano Profissional PRO</h3>
-            <p className="text-slate-400 font-medium">Acesso total e ilimitado</p>
-          </div>
-
-          <div className="flex items-baseline gap-2 mb-10">
-            <span className="text-5xl font-black text-white tracking-tighter">R$ 49,99</span>
-            <span className="text-xl text-slate-500 font-bold">/mês</span>
-          </div>
-
-          <div className="space-y-4">
+          {currentPlan !== 'basic' && currentPlan !== 'pro' ? (
             <button
-              onClick={() => handleUpgrade('payment')}
+              onClick={() => handleUpgrade('payment', 'basic')}
               disabled={loading}
-              className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-xl hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="animate-spin" /> : (
-                <>
-                  <CreditCard size={24} />
-                  Assinar Agora
-                </>
-              )}
+              {loading ? <Loader2 className="animate-spin" /> : 'Assinar Basic'}
             </button>
+          ) : (
+            <button disabled className="w-full py-4 bg-slate-800 text-slate-500 rounded-2xl font-black text-sm uppercase tracking-widest cursor-not-allowed">
+              {currentPlan === 'basic' ? 'Seu Plano Atual' : 'Plano Inferior'}
+            </button>
+          )}
+        </motion.div>
 
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/10"></span>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-4 bg-slate-900 text-slate-500 font-black uppercase tracking-widest">ou use uma chave</span>
-              </div>
-            </div>
-
-            {showKeyInput ? (
-              <div className="space-y-4">
-                <div className="relative">
-                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
-                  <input
-                    type="text"
-                    value={proKey}
-                    onChange={(e) => setProKey(e.target.value.toUpperCase())}
-                    placeholder="INSIRA SUA CHAVE PRO"
-                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white"
-                  />
-                </div>
-                <button
-                  onClick={() => handleUpgrade('key')}
-                  disabled={loading || !proKey}
-                  className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-lg hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {loading ? <Loader2 className="animate-spin" /> : 'Ativar com Chave'}
-                </button>
-                <button
-                  onClick={() => setShowKeyInput(false)}
-                  className="w-full py-2 text-slate-500 font-bold text-sm hover:text-slate-300"
-                >
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowKeyInput(true)}
-                className="w-full py-4 bg-white/5 border-2 border-white/10 text-white rounded-2xl font-black text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-              >
-                <Key size={20} />
-                Tenho uma Chave
-              </button>
-            )}
+        {/* Pro Plan */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className={cn(
+            "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border-2 border-sky-500 relative flex flex-col h-full shadow-2xl shadow-sky-950/20",
+            currentPlan === 'pro' && "bg-sky-500/5"
+          )}
+        >
+          <div className="absolute top-0 right-0 bg-sky-500 text-white px-6 py-1.5 rounded-bl-[1.5rem] font-black text-[10px] uppercase tracking-widest">
+            Mais Completo
           </div>
+
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-black text-white px-4 py-1 bg-sky-500/20 text-sky-400 rounded-full inline-block flex items-center gap-2">
+                <Crown size={16} /> Plano PRO
+              </h3>
+              {currentPlan === 'pro' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black text-white tracking-tighter">R$ 49,99</span>
+              <span className="text-sm text-slate-500 font-bold">/mês</span>
+            </div>
+            <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
+              Acesso total e ilimitado para profissionais que desejam digitalizar a jornada do paciente.
+            </p>
+          </div>
+
+          <div className="flex-1 space-y-3 mb-8">
+            {proFeatures.map((feature, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <Check size={12} />
+                </div>
+                <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => handleUpgrade('payment', 'pro')}
+            disabled={loading || currentPlan === 'pro'}
+            className="w-full py-4 bg-sky-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : (
+              <>
+                {currentPlan === 'pro' ? 'Assinatura Ativa' : (currentPlan === 'basic' ? 'Fazer Upgrade para PRO' : 'Assinar PRO')}
+                {!loading && currentPlan !== 'pro' && <ArrowRight size={16} />}
+              </>
+            )}
+          </button>
+        </motion.div>
+      </div>
+
+      {/* Key Input Section */}
+      <div className="mt-16 max-w-md mx-auto">
+        <div className="text-center mb-6">
+          <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">ou ative com uma chave de acesso</p>
+        </div>
+        
+        {showKeyInput ? (
+          <div className="space-y-4">
+            <div className="relative">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+              <input
+                type="text"
+                value={proKey}
+                onChange={(e) => setProKey(e.target.value.toUpperCase())}
+                placeholder="INSIRA SUA CHAVE"
+                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleUpgrade('key', 'basic')}
+                disabled={loading || !proKey}
+                className="py-3 bg-white/5 border border-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                Ativar Basic
+              </button>
+              <button
+                onClick={() => handleUpgrade('key', 'pro')}
+                disabled={loading || !proKey}
+                className="py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                Ativar Pro
+              </button>
+            </div>
+            <button onClick={() => setShowKeyInput(false)} className="w-full text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-400 transition-colors">Cancelar</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowKeyInput(true)}
+            className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+          >
+            <Key size={16} /> Tenho uma Chave de Acesso
+          </button>
+        )}
+      </div>
 
           <div className="mt-10 pt-8 border-t border-white/5 text-center">
             <div className="flex items-center justify-center gap-1 text-amber-400 mb-2">
@@ -253,8 +323,6 @@ export default function Subscription() {
               Avaliado como 5 estrelas por mais de 500 profissionais
             </p>
           </div>
-        </motion.div>
-      </div>
 
       {/* Trust Badges */}
       <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
