@@ -666,7 +666,7 @@ function AppContent() {
       
       <ErrorBoundary>
         <Suspense fallback={null}>
-          {!isAuthPage && !isAdminPage && <FloatingHelpMenu />}
+          {isLandingPage && !user && <FloatingHelpMenu />}
         </Suspense>
         <NotificationHandler />
         
