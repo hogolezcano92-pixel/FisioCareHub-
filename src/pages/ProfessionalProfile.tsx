@@ -170,14 +170,16 @@ export default function ProfessionalProfile() {
       if (checkoutData?.url) {
         const checkoutUrl = String(checkoutData.url).trim();
         if (checkoutUrl.startsWith('http')) {
+          console.log('[Asaas] Redirecting to:', checkoutUrl);
           window.location.href = checkoutUrl;
         } else {
-          console.error('[Asaas] URL de checkout inválida:', checkoutUrl);
-          throw new Error('URL de pagamento malformada retornada pelo gateway.');
+          console.error('[Asaas] URL de checkout inválida (não http):', checkoutUrl);
+          toast.error('O gateway retornou um link de pagamento inválido.');
         }
         return;
       } else {
-        throw new Error('Erro ao gerar link de pagamento Asaas');
+        console.error('[Asaas] Resposta sem URL:', checkoutData);
+        throw new Error(checkoutData.error || 'O link de pagamento não foi gerado pelo gateway.');
       }
     } catch (err: any) {
       console.error('Erro ao agendar:', err);
