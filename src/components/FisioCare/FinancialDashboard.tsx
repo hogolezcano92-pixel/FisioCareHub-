@@ -16,7 +16,8 @@ export const FinancialDashboard = () => {
     balance: 0,
     monthlyEarnings: 0,
     forecast: 0,
-    growth: 0
+    growth: 0,
+    commissionRate: 12
   });
 
   useEffect(() => {
@@ -24,38 +25,48 @@ export const FinancialDashboard = () => {
       if (!profile) return;
       setLoading(true);
       try {
-        // Real financial data based on completed appointments
-        const { data: appts, error } = await supabase
-          .from('agendamentos')
-          .select('id, status, data_servico, valor, valor_cobrado')
-          .eq('fisio_id', profile.id)
-          .eq('status', 'concluido');
-
-        if (error) throw error;
-
-        // Calculate real earnings (using valor_cobrado with fallback to valor)
-        const totalEarnings = appts?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+        // Fetch commission rate
+        const { data: settings } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'commission_rate')
+          .single();
         
-        // Filter for current month
+        const rate = settings ? Number(settings.value) : 12;
+
+        // Real financial data based on completed payments (sessoes table stores net amount)
+        const { data: payedSessions, error: sessionError } = await supabase
+          .from('sessoes')
+          .select('id, data, valor_sessao')
+          .eq('fisioterapeuta_id', profile.id)
+          .eq('status_pagamento', 'pago_app');
+
+        if (sessionError) throw sessionError;
+
+        const totalEarnings = payedSessions?.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0) || 0;
+        
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthlyAppts = appts?.filter(a => new Date(a.data_servico) >= firstDayOfMonth) || [];
-        const monthlyEarnings = monthlyAppts.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0);
+        const monthlySessions = payedSessions?.filter(s => new Date(s.data) >= firstDayOfMonth) || [];
+        const monthlyEarnings = monthlySessions.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0);
 
-        // Calculate forecast (pending or confirmed appointments)
+        // Forecast from agendamentos (confirmed but not yet in sessoes as net)
         const { data: pendingAppts } = await supabase
           .from('agendamentos')
-          .select('valor, valor_cobrado')
+          .select('valor')
           .eq('fisio_id', profile.id)
-          .in('status', ['pendente', 'confirmado']);
+          .in('status', ['confirmado']);
         
-        const forecast = pendingAppts?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+        // For forecast, we calculate what the net will be
+        const rateFactor = (100 - rate) / 100;
+        const forecast = pendingAppts?.reduce((acc, curr) => acc + (Number(curr.valor) * rateFactor || 0), 0) || 0;
 
         setFinancialStats({
           balance: totalEarnings, 
           monthlyEarnings: monthlyEarnings,
           forecast: forecast,
-          growth: 0 
+          growth: 0,
+          commissionRate: rate
         });
 
         // Calculate real weekly data
@@ -65,8 +76,8 @@ export const FinancialDashboard = () => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         
-        appts?.forEach(a => {
-          const date = new Date(a.data_servico);
+        payedSessions?.forEach(s => {
+          const date = new Date(s.data);
           if (date >= oneWeekAgo) {
             weekCounts[date.getDay()]++;
           }
