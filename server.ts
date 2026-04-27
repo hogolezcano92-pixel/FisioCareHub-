@@ -294,7 +294,13 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Asaas Webhook
+  // Asaas Webhook (New Path)
+  app.post("/api/webhooks/asaas", async (req, res) => {
+    console.log("[Asaas Webhook Received - /api/webhooks/asaas]", JSON.stringify(req.body, null, 2));
+    res.status(200).send("OK");
+  });
+
+  // Asaas Webhook (Legacy Path)
   app.post("/api/asaas/webhook", async (req, res) => {
     // Validate Asaas Token (Security Rule 8)
     const asaasToken = req.headers['asaas-access-token'];
