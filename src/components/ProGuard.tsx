@@ -8,9 +8,10 @@ interface ProGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   variant?: 'full' | 'inline';
+  requiredPlan?: 'basic' | 'pro';
 }
 
-export default function ProGuard({ children, fallback, variant = 'full' }: ProGuardProps) {
+export default function ProGuard({ children, fallback, variant = 'full', requiredPlan = 'pro' }: ProGuardProps) {
   const { profile, subscription, loading } = useAuth();
 
   if (loading) {
@@ -26,11 +27,15 @@ export default function ProGuard({ children, fallback, variant = 'full' }: ProGu
     return <>{children}</>;
   }
 
-  // Fisioterapeutas precisam ser Pro
+  // Fisioterapeutas
   if (profile?.tipo_usuario === 'fisioterapeuta') {
-    const isPro = profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+    const userPlan = profile?.plan_type || profile?.plano || 'basic';
+    const isPro = userPlan === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+    const isBasic = userPlan === 'basic' || isPro;
+
+    const hasAccess = requiredPlan === 'pro' ? isPro : isBasic;
     
-    if (isPro) {
+    if (hasAccess) {
       return <>{children}</>;
     }
 
