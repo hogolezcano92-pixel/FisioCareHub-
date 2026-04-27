@@ -18,7 +18,8 @@ import {
   MoreVertical,
   Stethoscope,
   AlertTriangle,
-  MessageSquare
+  MessageSquare,
+  HelpCircle
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
@@ -406,7 +407,18 @@ export default function Agenda() {
     <div className="space-y-5 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight">Minha Agenda</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-black text-white tracking-tight">Minha Agenda</h1>
+            <button 
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                detail: { search: 'agenda', profile: 'fisioterapeuta' } 
+              }))}
+              className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 hover:bg-blue-600/20 transition-all"
+            >
+              Precisa de ajuda?
+            </button>
+          </div>
           <p className="text-slate-400 text-xs font-medium">Controle seus agendamentos e solicitações.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -786,7 +798,18 @@ export default function Agenda() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Valor do Atendimento</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    Valor do Atendimento
+                    <button 
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                        detail: { search: 'pagamento', profile: 'fisioterapeuta' } 
+                      }))}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      <HelpCircle size={10} />
+                    </button>
+                  </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">R$</span>
                     <input

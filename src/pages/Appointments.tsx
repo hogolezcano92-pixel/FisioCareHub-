@@ -13,7 +13,8 @@ import {
   User, 
   Loader2,
   CalendarCheck,
-  Crown
+  Crown,
+  HelpCircle
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
@@ -496,7 +497,17 @@ export default function Appointments() {
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Agenda de Consultas</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-white tracking-tight">Agenda de Consultas</h1>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                detail: { search: 'agendamento' } 
+              }))}
+              className="text-[10px] font-black text-blue-400 uppercase tracking-widest bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 hover:bg-blue-600/20 transition-all"
+            >
+              Precisa de ajuda?
+            </button>
+          </div>
           <p className="text-slate-400 text-sm font-medium">Gerencie seus horários e sessões.</p>
         </div>
         <button
@@ -711,10 +722,20 @@ export default function Appointments() {
                 </div>
 
                 {profile?.tipo_usuario === 'paciente' && currentPrice > 0 && (
-                  <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
+                  <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between group">
                     <div className="flex items-center gap-2 text-blue-400">
                       <Wallet size={16} />
                       <span className="text-xs font-bold uppercase tracking-widest">Valor da Sessão:</span>
+                      <button 
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                          detail: { search: 'pagamento' } 
+                        }))}
+                        className="p-1 hover:bg-blue-600/20 rounded-lg transition-all"
+                        title="Dúvidas sobre pagamento?"
+                      >
+                        <HelpCircle size={14} />
+                      </button>
                     </div>
                     <span className="text-lg font-black text-blue-400">
                       R$ {currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

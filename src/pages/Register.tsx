@@ -641,6 +641,20 @@ export default function Register() {
               </motion.p>
             )}
 
+            {role === 'fisioterapeuta' && (
+              <div className="text-center pt-2">
+                <button 
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                    detail: { search: 'cadastro', profile: 'fisioterapeuta' } 
+                  }))}
+                  className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-400 transition-colors"
+                >
+                  Dúvidas sobre o cadastro? Fale conosco
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
