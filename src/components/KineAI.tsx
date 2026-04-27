@@ -26,8 +26,24 @@ interface Message {
   timestamp: Date;
 }
 
-export default function KineAI() {
+interface KineAIProps {
+  externalForceOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (externalForceOpen !== undefined) {
+      setIsOpen(externalForceOpen);
+    }
+  }, [externalForceOpen]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    if (onClose) onClose();
+  };
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -121,34 +137,46 @@ export default function KineAI() {
 
   return (
     <>
-      {/* Botão Flutuante */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed bottom-6 right-6 z-[40] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
-          isOpen ? "opacity-0 pointer-events-none" : "bg-gradient-to-br from-sky-500 to-blue-600 text-white"
-        )}
-      >
-        <div className="relative">
-          <Sparkles className="w-8 h-8" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
-        </div>
-      </motion.button>
+      {/* Botão Flutuante - Only show if NOT controlled externally */}
+      {!externalForceOpen && (
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            "fixed bottom-6 right-6 z-[40] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all",
+            isOpen ? "opacity-0 pointer-events-none" : "bg-gradient-to-br from-sky-500 to-blue-600 text-white"
+          )}
+        >
+          <div className="relative">
+            <Sparkles className="w-8 h-8" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
+          </div>
+        </motion.button>
+      )}
 
       {/* Janela do Chat */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
-            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-            exit={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
-            className={cn(
-              "fixed bottom-6 right-6 z-[41] bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden transition-all duration-300",
-              isExpanded ? "w-[90vw] h-[80vh] md:w-[600px] md:h-[700px]" : "w-[90vw] h-[500px] md:w-[400px] md:h-[600px]"
-            )}
-          >
+          <>
+            {/* Backdrop for KineAI */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleClose}
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-[40]"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+              exit={{ opacity: 0, y: 100, scale: 0.9, x: 50 }}
+              className={cn(
+                "fixed bottom-6 right-6 z-[41] bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden transition-all duration-300",
+                isExpanded ? "w-[90vw] h-[80vh] md:w-[600px] md:h-[700px]" : "w-[90vw] h-[500px] md:w-[400px] md:h-[600px]"
+              )}
+            >
             {/* Header */}
             <div className="bg-gradient-to-r from-sky-500 to-blue-600 p-6 flex items-center justify-between text-white">
               <div className="flex items-center gap-4">
@@ -168,7 +196,7 @@ export default function KineAI() {
                   {isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                 </button>
                 <button 
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleClose}
                   className="p-2 hover:bg-white/10 rounded-xl transition-all"
                 >
                   <X size={24} />
@@ -254,8 +282,9 @@ export default function KineAI() {
               </form>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
+        </>
+      )}
+    </AnimatePresence>
+  </>
+);
 }
