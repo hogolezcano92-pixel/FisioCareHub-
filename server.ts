@@ -406,7 +406,7 @@ async function startServer() {
         value: numericAmount,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         description: description || 'Serviço Clínico - FisioCareHub',
-        externalReference: appointment_id || user_id,
+        externalReference: appointment_id, // Mandatory vinculation with appointment
       };
 
       if (numericInstallments > 1) {
@@ -415,7 +415,7 @@ async function startServer() {
       }
 
       const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
-      console.log(`[Asaas] Sending payload to ${baseUrl}/payments`);
+      console.log(`[Asaas] Sending payload to ${baseUrl}/payments with externalReference: ${appointment_id}`);
 
       const asaasRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
@@ -431,7 +431,7 @@ async function startServer() {
         await getSupabaseAdmin().from('pagamentos').insert({
           external_id: data.id,
           user_id: user_id,
-          external_reference: appointment_id || user_id,
+          external_reference: appointment_id,
           amount: numericAmount,
           status: 'pending',
           gateway: 'asaas',
@@ -491,7 +491,8 @@ async function startServer() {
         metadata: {
           user_id,
           plan,
-          type: sessionType
+          type: sessionType,
+          appointment_id: req.body.appointment_id || ''
         },
       });
 
