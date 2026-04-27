@@ -1,9 +1,14 @@
 export default function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
+  try {
+    console.log("🔥 ASAAS WEBHOOK RECEBIDO:");
+    console.log("method:", req.method);
+    console.log("body:", JSON.stringify(req.body));
+
+    return res.status(200).send("OK");
+  } catch (error) {
+    console.error("Webhook error:", error);
+
+    // IMPORTANTÍSSIMO: mesmo erro devolve 200
+    return res.status(200).send("OK");
   }
-
-  console.log("Asaas webhook recebido:", req.body);
-
-  return res.status(200).send("OK");
 }
