@@ -13,17 +13,49 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 
 const getEnv = (key: string, fallback: string): string => {
   const value = process.env[key];
-  if (!value || value === "undefined" || value === "null" || value === "") return fallback;
-  return value;
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  if (trimmed === "undefined" || trimmed === "null" || trimmed === "") return fallback;
+  return trimmed;
 };
 
-const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
-const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+let supabaseAdminInstance: any = null;
 
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceRoleKey
-);
+const getSupabaseAdmin = () => {
+  if (!supabaseAdminInstance) {
+    const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
+    const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+    
+    if (!supabaseServiceRoleKey) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY environment variable is required for this operation.");
+    }
+
+    try {
+      supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceRoleKey);
+    } catch (err) {
+      console.error("Failed to initialize Supabase Admin:", err);
+      throw new Error("Failed to initialize Supabase client. Check your configuration.");
+    }
+  }
+  return supabaseAdminInstance;
+};
+
+async function getCommissionRate(): Promise<number> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'commission_rate')
+      .single();
+    
+    if (data && data.value) {
+      return Number(data.value);
+    }
+  } catch (err) {
+    console.warn("Could not fetch commission rate from DB, using fallback 12%", err);
+  }
+  return 12; // Fallback default
+}
 
 async function startServer() {
   const app = express();
@@ -47,7 +79,7 @@ async function startServer() {
 
       if (sessionId) {
         console.log(`Pagamento aprovado para sessão: ${sessionId}`);
-        const { error } = await supabaseAdmin
+        const { error } = await getSupabaseAdmin()
           .from('sessoes')
           .update({ status_pagamento: 'pago_app' })
           .eq('id', sessionId);
@@ -64,7 +96,7 @@ async function startServer() {
         console.log(`Pagamento confirmado via Checkout para agendamento: ${appointmentId}`);
         
         // 1. Fetch appointment details
-        const { data: appData, error: fetchErr } = await supabaseAdmin
+        const { data: appData, error: fetchErr } = await getSupabaseAdmin()
           .from('agendamentos')
           .select(`
             *,
@@ -79,18 +111,19 @@ async function startServer() {
         } else {
           // 2. Calculations (Rules 2 & 3)
           const totalPaid = (session.amount_total || 0) / 100;
-          const commission = totalPaid * 0.12;
-          const netAmount = totalPaid * 0.88;
+          const currentRate = await getCommissionRate();
+          const commission = totalPaid * (currentRate / 100);
+          const netAmount = totalPaid * ((100 - currentRate) / 100);
 
           // 3. Update appointment status (Rule 2)
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('agendamentos')
             .update({ status: 'confirmado' })
             .eq('id', appointmentId);
 
           // 4. Create financial record (Rule 3 & 6)
           // We record only the net amount in the existing 'sessoes' table
-          const { error: sessionError } = await supabaseAdmin
+          const { error: sessionError } = await getSupabaseAdmin()
             .from('sessoes')
             .insert({
               paciente_id: appData.paciente_id,
@@ -110,7 +143,7 @@ async function startServer() {
           const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
           // Notification for the Physiotherapist
-          await supabaseAdmin.from('notificacoes').insert({
+          await getSupabaseAdmin().from('notificacoes').insert({
             user_id: appData.fisio_id,
             titulo: 'Novo Agendamento Confirmado',
             mensagem: `${appData.paciente.nome_completo} realizou o pagamento e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
@@ -137,10 +170,10 @@ async function startServer() {
             `
           };
 
-          await supabaseAdmin.functions.invoke('Send-email', { body: emailPayload });
+          await getSupabaseAdmin().functions.invoke('Send-email', { body: emailPayload });
           
           // Also notify patient
-          await supabaseAdmin.functions.invoke('Send-email', { 
+          await getSupabaseAdmin().functions.invoke('Send-email', { 
             body: {
               to: appData.paciente.email,
               subject: 'Pagamento Confirmado - FisioCareHub',
@@ -182,7 +215,7 @@ async function startServer() {
       });
 
       // Update session with payment intent ID
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('sessoes')
         .update({ stripe_payment_intent: paymentIntent.id })
         .eq('id', sessionId);
