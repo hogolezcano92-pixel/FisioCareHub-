@@ -72,13 +72,27 @@ const faqs: FAQ[] = [
   }
 ];
 
-export default function FloatingHelpMenu() {
+export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: boolean }) {
   const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [showKineAI, setShowKineAI] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const handleToggleHelp = (e: any) => {
+      setShowHelpCenter(true);
+      if (e.detail?.search) {
+        setSearchTerm(e.detail.search);
+      }
+      if (e.detail?.profile) {
+        setActiveProfile(e.detail.profile);
+      }
+    };
+    window.addEventListener('toggle-help-center', handleToggleHelp);
+    return () => window.removeEventListener('toggle-help-center', handleToggleHelp);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -134,87 +148,89 @@ export default function FloatingHelpMenu() {
   return (
     <>
       {/* FAB Main Button */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 fab-container">
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.8 }}
-              className="flex flex-col items-end gap-3 mb-2"
-            >
-              {/* Option: KineAI */}
-              <motion.button
-                whileHover={{ scale: 1.05, x: -5 }}
-                onClick={openKineAI}
-                className="flex items-center gap-3 bg-slate-900 border border-white/10 p-3 pr-5 rounded-2xl shadow-xl group"
+      {!hideButton && (
+        <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 fab-container">
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                className="flex flex-col items-end gap-3 mb-2"
               >
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
-                  <Bot size={20} />
-                </div>
-                <span className="text-sm font-black text-white whitespace-nowrap">Falar com KineAI</span>
-              </motion.button>
-
-              {/* Option: Help Center */}
-              <motion.button
-                whileHover={{ scale: 1.05, x: -5 }}
-                onClick={openHelpCenter}
-                className="flex items-center gap-3 bg-slate-900 border border-white/10 p-3 pr-5 rounded-2xl shadow-xl group"
-              >
-                <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
-                  <HelpCircle size={20} />
-                </div>
-                <span className="text-sm font-black text-white whitespace-nowrap">Central de Ajuda</span>
-              </motion.button>
-              
-              {/* Option: Schedule (Conditional) */}
-              {(profile?.tipo_usuario === 'paciente' || !user) && (
+                {/* Option: KineAI */}
                 <motion.button
                   whileHover={{ scale: 1.05, x: -5 }}
-                  onClick={() => window.location.href = '/buscar-fisio'}
+                  onClick={openKineAI}
                   className="flex items-center gap-3 bg-slate-900 border border-white/10 p-3 pr-5 rounded-2xl shadow-xl group"
                 >
-                  <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
-                    <Calendar size={20} />
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                    <Bot size={20} />
                   </div>
-                  <span className="text-sm font-black text-white whitespace-nowrap">Agendar Consulta</span>
+                  <span className="text-sm font-black text-white whitespace-nowrap">Falar com KineAI</span>
                 </motion.button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={toggleFAB}
-          className={cn(
-            "h-14 flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-all duration-500",
-            "bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-xl text-white",
-            isOpen ? "w-14 px-0 bg-slate-800" : (isCompact ? "w-14 px-0" : "w-auto")
-          )}
-        >
-          <motion.div
-            animate={{ rotate: isOpen ? 45 : 0 }}
-            className="flex items-center justify-center"
-          >
-            {isOpen ? <Plus size={24} /> : <MessageCircle size={24} className="text-blue-400" />}
-          </motion.div>
-          
-          <AnimatePresence>
-            {!isOpen && !isCompact && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="overflow-hidden whitespace-nowrap text-sm font-black tracking-tight"
-              >
-                Ajuda
-              </motion.span>
+  
+                {/* Option: Help Center */}
+                <motion.button
+                  whileHover={{ scale: 1.05, x: -5 }}
+                  onClick={openHelpCenter}
+                  className="flex items-center gap-3 bg-slate-900 border border-white/10 p-3 pr-5 rounded-2xl shadow-xl group"
+                >
+                  <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                    <HelpCircle size={20} />
+                  </div>
+                  <span className="text-sm font-black text-white whitespace-nowrap">Central de Ajuda</span>
+                </motion.button>
+                
+                {/* Option: Schedule (Conditional) */}
+                {(profile?.tipo_usuario === 'paciente' || !user) && (
+                  <motion.button
+                    whileHover={{ scale: 1.05, x: -5 }}
+                    onClick={() => window.location.href = '/buscar-fisio'}
+                    className="flex items-center gap-3 bg-slate-900 border border-white/10 p-3 pr-5 rounded-2xl shadow-xl group"
+                  >
+                    <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                      <Calendar size={20} />
+                    </div>
+                    <span className="text-sm font-black text-white whitespace-nowrap">Agendar Consulta</span>
+                  </motion.button>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
-        </motion.button>
-      </div>
+  
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleFAB}
+            className={cn(
+              "h-14 flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-all duration-500",
+              "bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-xl text-white",
+              isOpen ? "w-14 px-0 bg-slate-800" : (isCompact ? "w-14 px-0" : "w-auto")
+            )}
+          >
+            <motion.div
+              animate={{ rotate: isOpen ? 45 : 0 }}
+              className="flex items-center justify-center"
+            >
+              {isOpen ? <Plus size={24} /> : <MessageCircle size={24} className="text-blue-400" />}
+            </motion.div>
+            
+            <AnimatePresence>
+              {!isOpen && !isCompact && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="overflow-hidden whitespace-nowrap text-sm font-black tracking-tight"
+                >
+                  Ajuda
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      )}
 
       {/* Help Center Drawer/Modal */}
       <AnimatePresence>

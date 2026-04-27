@@ -21,7 +21,8 @@ import {
   LayoutDashboard,
   DollarSign,
   Settings,
-  Search
+  Search,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,6 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       title: 'CONTA',
       items: [
         ...(isApproved ? [{ name: 'Minha Conta', path: '/profile', icon: User }] : []),
+        { name: 'Ajuda', path: '#help', icon: HelpCircle },
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
@@ -132,6 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isLogout = item.path === '#logout';
+                const isHelp = item.path === '#help';
 
                 return (
                   <button
@@ -139,6 +142,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     onClick={() => {
                       if (isLogout) {
                         handleLogout();
+                      } else if (isHelp) {
+                        window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                          detail: { profile: profile?.tipo_usuario } 
+                        }));
                       } else {
                         navigate(item.path);
                       }
