@@ -109,6 +109,12 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   useEffect(() => {
+    if (user && profile?.tipo_usuario) {
+      setActiveProfile(profile.tipo_usuario as 'paciente' | 'fisioterapeuta');
+    }
+  }, [user, profile]);
+
+  useEffect(() => {
     localStorage.setItem('help_preferred_profile', activeProfile);
   }, [activeProfile]);
 
@@ -205,7 +211,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
             onClick={toggleFAB}
             className={cn(
               "h-14 flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-all duration-500",
-              "bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-xl text-white",
+              "bg-blue-950/80 backdrop-blur-md border border-white/10 shadow-xl text-white",
               isOpen ? "w-14 px-0 bg-slate-800" : (isCompact ? "w-14 px-0" : "w-auto")
             )}
           >
@@ -268,33 +274,35 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-                {/* Profile Selector */}
-                <div className="bg-slate-800/50 p-2 rounded-[1.5rem] flex gap-2">
-                  <button
-                    onClick={() => setActiveProfile('paciente')}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all",
-                      activeProfile === 'paciente' 
-                        ? "bg-blue-600 text-white shadow-lg" 
-                        : "text-slate-400 hover:text-white"
-                    )}
-                  >
-                    <User size={16} />
-                    Paciente
-                  </button>
-                  <button
-                    onClick={() => setActiveProfile('fisioterapeuta')}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all",
-                      activeProfile === 'fisioterapeuta' 
-                        ? "bg-blue-600 text-white shadow-lg" 
-                        : "text-slate-400 hover:text-white"
-                    )}
-                  >
-                    <Stethoscope size={16} />
-                    Fisioterapeuta
-                  </button>
-                </div>
+                {/* Profile Selector - Only show for public/unauthenticated users */}
+                {!user && (
+                  <div className="bg-slate-800/50 p-2 rounded-[1.5rem] flex gap-2">
+                    <button
+                      onClick={() => setActiveProfile('paciente')}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all",
+                        activeProfile === 'paciente' 
+                          ? "bg-blue-600 text-white shadow-lg" 
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      <User size={16} />
+                      Paciente
+                    </button>
+                    <button
+                      onClick={() => setActiveProfile('fisioterapeuta')}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all",
+                        activeProfile === 'fisioterapeuta' 
+                          ? "bg-blue-600 text-white shadow-lg" 
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      <Stethoscope size={16} />
+                      Fisioterapeuta
+                    </button>
+                  </div>
+                )}
 
                 {/* Search */}
                 <div className="relative">
