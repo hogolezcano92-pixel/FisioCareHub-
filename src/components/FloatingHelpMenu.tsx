@@ -75,9 +75,18 @@ const faqs: FAQ[] = [
 export default function FloatingHelpMenu() {
   const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [showKineAI, setShowKineAI] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCompact(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [activeProfile, setActiveProfile] = useState<'paciente' | 'fisioterapeuta'>(() => {
     const saved = localStorage.getItem('help_preferred_profile');
     if (saved === 'paciente' || saved === 'fisioterapeuta') return saved;
@@ -176,17 +185,34 @@ export default function FloatingHelpMenu() {
         </AnimatePresence>
 
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={toggleFAB}
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300",
-            isOpen 
-              ? "bg-slate-800 text-white rotate-45" 
-              : "bg-gradient-to-br from-blue-600 to-indigo-700 text-white"
+            "h-14 flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-all duration-500",
+            "bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-xl text-white",
+            isOpen ? "w-14 px-0 bg-slate-800" : (isCompact ? "w-14 px-0" : "w-auto")
           )}
         >
-          {isOpen ? <Plus size={32} /> : <Plus size={32} />}
+          <motion.div
+            animate={{ rotate: isOpen ? 45 : 0 }}
+            className="flex items-center justify-center"
+          >
+            {isOpen ? <Plus size={24} /> : <MessageCircle size={24} className="text-blue-400" />}
+          </motion.div>
+          
+          <AnimatePresence>
+            {!isOpen && !isCompact && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="overflow-hidden whitespace-nowrap text-sm font-black tracking-tight"
+              >
+                Ajuda
+              </motion.span>
+            )}
+          </AnimatePresence>
         </motion.button>
       </div>
 
