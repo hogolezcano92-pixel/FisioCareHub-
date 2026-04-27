@@ -50,7 +50,7 @@ import SplashScreen from './components/SplashScreen';
 import Footer from './components/Footer';
 
 // Lazy Components
-const KineAI = lazy(() => import('./components/KineAI'));
+const FloatingHelpMenu = lazy(() => import('./components/FloatingHelpMenu'));
 const Onboarding = lazy(() => import('./components/Onboarding'));
 const Sidebar = lazy(() => import('./components/Sidebar'));
 const AguardandoAprovacao = lazy(() => import('./pages/AguardandoAprovacao'));
@@ -626,7 +626,6 @@ function NotificationHandler() {
 
 function AppContent() {
   const { user, profile, loading: authLoading } = useAuth();
-  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -656,13 +655,6 @@ function AppContent() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWhatsApp(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
   if (authLoading) {
     return <LoadingScreen />;
   }
@@ -674,7 +666,7 @@ function AppContent() {
       
       <ErrorBoundary>
         <Suspense fallback={null}>
-          {isLandingPage && <KineAI />}
+          {!isAuthPage && !isAdminPage && <FloatingHelpMenu />}
         </Suspense>
         <NotificationHandler />
         
@@ -763,41 +755,6 @@ function AppContent() {
           </main>
         </div>
       </ErrorBoundary>
-
-      <AnimatePresence>
-        {showWhatsApp && isLandingPage && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5, x: 50 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.5, x: 50 }}
-            className="fixed bottom-28 right-6 z-[40] group"
-          >
-            <div className="relative flex items-center">
-              {/* Label que aparece apenas no hover */}
-              <div className="absolute right-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                <div className="bg-white px-3 py-1.5 rounded-xl shadow-lg border border-emerald-100 text-emerald-600 font-bold text-xs backdrop-blur-md bg-white/90">
-                  Suporte WhatsApp
-                </div>
-              </div>
-              
-              <motion.a
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                href="https://wa.me/5511984040563"
-                target="_blank"
-                rel="noreferrer"
-                className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all relative"
-                title="Suporte via WhatsApp"
-              >
-                <MessageCircle size={28} />
-                <div className="absolute -top-1 -right-1 bg-white text-emerald-600 rounded-full p-1 shadow-sm border border-emerald-50">
-                  <Video size={12} />
-                </div>
-              </motion.a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
