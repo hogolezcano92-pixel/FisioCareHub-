@@ -30,8 +30,10 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     if (profile?.asaas_customer_id) return profile.asaas_customer_id;
 
+    const baseUrl = ASAAS_BASE_URL.trim().replace(/\/$/, "");
+
     // 2. Search in Asaas by email
-    const searchRes = await fetch(`${ASAAS_BASE_URL}/customers?email=${email}`, { headers: asaasHeaders });
+    const searchRes = await fetch(`${baseUrl}/customers?email=${email}`, { headers: asaasHeaders });
     const searchData = await searchRes.json();
 
     if (searchData.data && searchData.data.length > 0) {
@@ -42,7 +44,7 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
     }
 
     // 3. Create new customer in Asaas
-    const createRes = await fetch(`${ASAAS_BASE_URL}/customers`, {
+    const createRes = await fetch(`${baseUrl}/customers`, {
       method: 'POST',
       headers: asaasHeaders,
       body: JSON.stringify({
@@ -319,7 +321,7 @@ async function startServer() {
               .eq('id', externalReference);
 
             // Record in sessoes (financeiro)
-            await getSupabaseAdmin()
+            const { error: sessaoError } = await getSupabaseAdmin()
               .from('sessoes')
               .insert({
                 paciente_id: appData.paciente_id,
@@ -333,16 +335,15 @@ async function startServer() {
                 gateway: 'asaas'
               });
             
-            // Notify and email (similar to Stripe logic)
-            // ... (I'll keep it simple for now or copy-paste if needed)
+            if (sessaoError) console.error("[Asaas Webhook] Error inserting into sessoes:", sessaoError);
           }
 
-          // Also record in a generic payments table if needed
-          await getSupabaseAdmin()
+          // Also record in a generic pagamentos table
+          const { error: pgError } = await getSupabaseAdmin()
             .from('pagamentos')
             .upsert({
               external_id: payment.id,
-              user_id: payment.customer, // Asaas customer ID
+              user_id: appData?.paciente_id || null, 
               external_reference: externalReference,
               amount: payment.value,
               status: 'paid',
@@ -350,6 +351,8 @@ async function startServer() {
               method: payment.billingType,
               confirmed_at: new Date().toISOString()
             });
+
+          if (pgError) console.error("[Asaas Webhook] Error updating pagamentos:", pgError);
 
         } catch (err) {
           console.error("[Asaas Webhook] Error processing payment:", err);
@@ -365,8 +368,17 @@ async function startServer() {
     try {
       const { user_id, email, name, phone, amount, description, installmentCount, appointment_id, billingType } = req.body;
 
+      console.log(`[Asaas] Received request for amount: ${amount}, user: ${user_id}`);
+
       if (!user_id || !amount) {
         return res.status(400).json({ error: "Dados insuficientes para criar pagamento no Asaas." });
+      }
+
+      const numericAmount = Number(amount);
+      const numericInstallments = Number(installmentCount) || 1;
+
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ error: "Valor de pagamento inválido." });
       }
 
       // 1. Get or Create Customer
@@ -375,50 +387,54 @@ async function startServer() {
       // 2. Create Payment
       const paymentPayload: any = {
         customer: customerId,
-        billingType: billingType || 'UNDEFINED', // UNDEFINED lets user choose in Asaas or we specify
-        value: amount,
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days from now
+        billingType: billingType || 'UNDEFINED',
+        value: numericAmount,
+        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         description: description || 'Serviço Clínico - FisioCareHub',
         externalReference: appointment_id || user_id,
       };
 
-      if (installmentCount && installmentCount > 1) {
-        paymentPayload.installmentCount = installmentCount;
-        paymentPayload.installmentValue = (amount / installmentCount).toFixed(2);
+      if (numericInstallments > 1) {
+        paymentPayload.installmentCount = numericInstallments;
+        paymentPayload.installmentValue = (numericAmount / numericInstallments).toFixed(2);
       }
 
-      const response = await fetch(`${ASAAS_BASE_URL}/payments`, {
+      console.log(`[Asaas] Sending payload to ${ASAAS_BASE_URL}/payments`);
+
+      const baseUrl = ASAAS_BASE_URL.trim().replace(/\/$/, "");
+      const asaasRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
         headers: asaasHeaders,
         body: JSON.stringify(paymentPayload)
       });
 
-      const data = await response.json();
+      const data = await asaasRes.json();
 
       if (data.id) {
+        console.log(`[Asaas] Payment created successfully: ${data.id}`);
         // Record pending payment in Supabase
         await getSupabaseAdmin().from('pagamentos').insert({
           external_id: data.id,
           user_id: user_id,
           external_reference: appointment_id || user_id,
-          amount: amount,
+          amount: numericAmount,
           status: 'pending',
           gateway: 'asaas',
-          method: billingType || 'UNDEFINED'
+          method: billingType || 'UNDEFINED',
+          invoice_url: data.invoiceUrl
         });
 
         res.json({ 
           id: data.id,
-          invoiceUrl: data.invoiceUrl,
-          bankSlipUrl: data.bankSlipUrl,
-          pixCode: data.pixCode, // This might need a separate call for actual code if not returned
-          url: data.invoiceUrl // Unified redirect URL
+          url: data.invoiceUrl || data.bankSlipUrl || data.pixCode // Unified redirect URL
         });
       } else {
-        throw new Error(data.errors?.[0]?.description || "Erro ao criar cobrança no Asaas");
+        console.error("[Asaas] API Error Response:", data);
+        const errorMsg = data.errors?.[0]?.description || "Erro ao criar cobrança no Asaas";
+        res.status(400).json({ error: errorMsg });
       }
     } catch (err: any) {
-      console.error("[Asaas] Error creating payment:", err);
+      console.error("[Asaas] Fatal error creating payment:", err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -432,6 +448,9 @@ async function startServer() {
         return res.status(400).json({ error: "Dados insuficientes para criar checkout." });
       }
 
+      // Force type subscription if missing to ensure separation
+      const sessionType = type || 'subscription';
+
       console.log(`[Stripe] Creating checkout session for ${email} - Plan: ${plan}`);
 
       const session = await stripe.checkout.sessions.create({
@@ -442,9 +461,9 @@ async function startServer() {
               currency: 'brl',
               product_data: {
                 name: service_name || `Plano ${plan.toUpperCase()} - FisioCareHub`,
-                description: type === 'service' ? `Agendamento: ${service_name}` : `Assinatura mensal do plano ${plan}`,
+                description: `Assinatura mensal do plano ${plan}`,
               },
-              unit_amount: Math.round(amount * 100),
+              unit_amount: Math.round(Number(amount) * 100),
             },
             quantity: 1,
           },
@@ -456,8 +475,7 @@ async function startServer() {
         metadata: {
           user_id,
           plan,
-          type: type || 'subscription',
-          appointment_id: req.body.appointment_id || ''
+          type: sessionType
         },
       });
 
@@ -467,8 +485,6 @@ async function startServer() {
       res.status(500).json({ error: err.message });
     }
   });
-
-  app.use(express.json());
 
   // Create Payment Intent
   app.post("/api/create-payment-intent", async (req, res) => {
