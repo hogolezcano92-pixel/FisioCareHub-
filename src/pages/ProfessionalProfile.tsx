@@ -138,26 +138,38 @@ export default function ProfessionalProfile() {
         throw appError;
       }
 
-      // 2. Fluxo de Pagamento Seguro (Rule 6: No financeiro before webhook)
-      toast.info('Redirecionando para o pagamento seguro...');
+      // 2. Fluxo de Pagamento Seguro via Asaas (Rule 6)
+      toast.info('Redirecionando para o pagamento seguro (Asaas)...');
       
-      const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
+      const response = await fetch('/api/asaas/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           appointment_id: appData.id,
           amount: bookingData.valor,
-          service_name: bookingData.tipo,
+          description: `Consulta: ${bookingData.tipo}`,
           email: user.email,
           user_id: user.id,
-          plan: 'service'
-        }
+          name: currentUserProfile?.nome_completo || user.email,
+          phone: currentUserProfile?.telefone,
+          installmentCount: 1, // Defaulting to 1 for now, can be extended if UI allows
+          billingType: 'UNDEFINED' // Let Asaas checkout handle the choice
+        })
       });
 
-      if (invokeError) throw invokeError;
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Erro ao gerar link de pagamento Asaas.');
+      }
+
+      const checkoutData = await response.json();
 
       if (checkoutData?.url) {
         window.location.href = checkoutData.url;
       } else {
-        throw new Error('Erro ao gerar link de pagamento');
+        throw new Error('Erro ao gerar link de pagamento Asaas');
       }
     } catch (err: any) {
       console.error('Erro ao agendar:', err);

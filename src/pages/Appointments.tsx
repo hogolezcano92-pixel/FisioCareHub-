@@ -378,26 +378,38 @@ export default function Appointments() {
           // Rule 6: No financial records before confirmation. 
           // We no longer insert into 'sessoes' here. It will be created by the webhook.
           
-          import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
+          import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro (Asaas)...'));
           
-          const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
-            body: {
+          const response = await fetch('/api/asaas/create-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
               appointment_id: newApp.id,
               amount: finalPrice,
-              service_name: service,
+              description: `Agendamento: ${service}`,
               email: user.email,
               user_id: user.id,
-              plan: 'service'
-            }
+              name: profile?.nome_completo || user.email,
+              phone: profile?.telefone,
+              installmentCount: 1,
+              billingType: 'UNDEFINED'
+            })
           });
 
-          if (invokeError) throw invokeError;
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Erro ao comunicar com servidor de pagamentos Asaas.');
+          }
+
+          const checkoutData = await response.json();
 
           if (checkoutData?.url) {
             window.location.href = checkoutData.url;
             return; // Redirecionando, interrompe o fluxo aqui
           } else {
-            throw new Error('Erro ao gerar link de pagamento');
+            throw new Error('Erro ao gerar link de pagamento Asaas');
           }
         }
       }
@@ -572,23 +584,35 @@ export default function Appointments() {
                   <button
                     onClick={async () => {
                       try {
-                        import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro...'));
-                        const { data: checkoutData, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
-                          body: {
+                        import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro (Asaas)...'));
+                        const response = await fetch('/api/asaas/create-payment', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
                             appointment_id: app.id,
                             amount: app.valor || 0,
-                            service_name: app.servico || 'Consulta',
+                            description: `Pagamento de Serviço: ${app.servico || 'Consulta'}`,
                             email: user?.email,
                             user_id: user?.id,
-                            plan: 'service'
-                          }
+                            name: profile?.nome_completo || user?.email,
+                            phone: profile?.telefone,
+                            installmentCount: 1,
+                            billingType: 'UNDEFINED'
+                          })
                         });
 
-                        if (invokeError) throw invokeError;
+                        if (!response.ok) {
+                          const errData = await response.json();
+                          throw new Error(errData.error || 'Erro ao gerar link de pagamento Asaas.');
+                        }
+                        
+                        const checkoutData = await response.json();
                         if (checkoutData?.url) {
                           window.location.href = checkoutData.url;
                         } else {
-                          throw new Error('Erro ao gerar link de pagamento');
+                          throw new Error('Erro ao gerar link de pagamento Asaas');
                         }
                       } catch (err: any) {
                         console.error('Erro ao processar pagamento:', err);
