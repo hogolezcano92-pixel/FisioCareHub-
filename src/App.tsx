@@ -81,6 +81,7 @@ const Subscription = lazy(() => import('./pages/Subscription'));
 const HealthLibrary = lazy(() => import('./pages/HealthLibrary'));
 const ConfirmAppointment = lazy(() => import('./pages/ConfirmAppointment'));
 const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
@@ -739,6 +740,7 @@ function AppContent() {
                   <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
                   <Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} />
                   <Route path="/physio/:id" element={<ProfessionalProfile />} />
+                  <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
