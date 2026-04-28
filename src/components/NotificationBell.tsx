@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, MessageSquare, Calendar, Info, X, Check } from 'lucide-react';
+import { Bell, MessageSquare, Calendar, Info, X, Check, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';

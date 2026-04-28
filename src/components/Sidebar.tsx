@@ -22,7 +22,8 @@ import {
   DollarSign,
   Settings,
   Search,
-  HelpCircle
+  HelpCircle,
+  Info
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -108,6 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       title: 'CONTA',
       items: [
         ...(isApproved ? [{ name: 'Minha Conta', path: '/profile', icon: User }] : []),
+        { name: 'Sobre nós', path: '/sobre', icon: Info },
         { name: 'Ajuda', path: '#help', icon: HelpCircle },
         { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
       ]
