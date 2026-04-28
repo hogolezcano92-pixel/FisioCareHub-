@@ -79,21 +79,21 @@ export default function Home() {
     {
       title: "Fisioterapia Traumato-Ortopédica",
       description: "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa.",
-      image: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&q=80&w=1200",
+      image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200",
       icon: Bone,
       color: "sky"
     },
     {
       title: "Fisioterapia Neurofuncional",
       description: "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas.",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+      image: "https://images.unsplash.com/photo-1581579885975-53933d6ea909?auto=format&fit=crop&q=80&w=1200",
       icon: Brain,
       color: "emerald"
     },
     {
       title: "Fisioterapia Geriátrica",
       description: "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência.",
-      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
+      image: "https://images.unsplash.com/photo-1542884748-2b87b36c6b90?auto=format&fit=crop&q=80&w=1200",
       icon: Heart,
       color: "orange"
     },
@@ -411,9 +411,9 @@ export default function Home() {
             className="absolute inset-0"
           >
             <img 
-              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070" 
+              src="https://images.unsplash.com/photo-1581579885975-53933d6ea909?auto=format&fit=crop&q=80&w=2070" 
               className="w-full h-full object-cover"
-              alt="Physiotherapy session"
+              alt="Physiotherapy session with senior"
               referrerPolicy="no-referrer"
               loading="lazy"
             />

@@ -73,6 +73,28 @@ export default function About() {
           ))}
         </section>
 
+        {/* Impact Image Section */}
+        <motion.section 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative rounded-[2.5rem] overflow-hidden group border border-white/10"
+        >
+          <img 
+            src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=2000" 
+            alt="Fisioterapia com idoso"
+            className="w-full h-[400px] object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent flex flex-col justify-end p-12">
+            <div className="max-w-2xl">
+              <p className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
+                Mais de <span className="text-blue-500">2.000 pacientes</span> já transformaram sua qualidade de vida com a FisioCareHub.
+              </p>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Final Hero Section */}
         <motion.section 
           initial={{ opacity: 0, scale: 0.98 }}
