@@ -24,6 +24,7 @@ import {
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
+import { triggerWhatsAppNotification } from '../services/notificationService';
 
 export default function Agenda() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -276,7 +277,10 @@ export default function Agenda() {
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
       if (newApp) {
-        // Criar registro na tabela sessoes para pagamento (status pago_manual ou pendente dependendo da lógica)
+        // TRIGGER WHATSAPP NOTIFICATION
+        triggerWhatsAppNotification('created', newApp.id);
+
+        // Criar registro na tabela sessoes para pagamento
         const { error: sessionError } = await supabase
           .from('sessoes')
           .insert({
@@ -356,6 +360,11 @@ export default function Agenda() {
       if (status === 'confirmado' || status === 'cancelado') {
         const patientEmail = app.paciente?.email;
         const patientName = app.paciente?.nome_completo || app.paciente?.nome;
+
+        // Trigger WhatsApp Notification
+        if (status === 'cancelado') {
+          triggerWhatsAppNotification('canceled', id);
+        }
 
         if (patientEmail && profile) {
           const { sendAppointmentStatusEmail } = await import('../services/emailService');

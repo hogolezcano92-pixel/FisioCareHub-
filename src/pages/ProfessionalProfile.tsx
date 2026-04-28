@@ -20,6 +20,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { cn, resolveStorageUrl } from '../lib/utils';
+import { triggerWhatsAppNotification } from '../services/notificationService';
 
 export default function ProfessionalProfile() {
   const { id } = useParams();
@@ -146,6 +147,9 @@ export default function ProfessionalProfile() {
         console.error("Erro ao criar agendamento:", appError);
         throw new Error('Falha ao registrar o agendamento.');
       }
+
+      // 3. TRIGGER WHATSAPP NOTIFICATION
+      triggerWhatsAppNotification('created', newApp.id);
 
       // REDIRECIONAMENTO PARA A PÁGINA DE PAGAMENTO INTERMEDIÁRIA
       toast.success('Agendamento registrado! Redirecionando para o pagamento...');

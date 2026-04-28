@@ -19,6 +19,7 @@ import {
 import { formatDate, cn } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
 import { sendAppointmentConfirmation } from '../services/emailService';
+import { triggerWhatsAppNotification } from '../services/notificationService';
 import PaymentModal from '../components/PaymentModal';
 import { Wallet } from 'lucide-react';
 
@@ -370,6 +371,11 @@ export default function Appointments() {
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
+      // TRIGGER WHATSAPP NOTIFICATION
+      if (newApp) {
+        triggerWhatsAppNotification('created', newApp.id);
+      }
+
       // 3. Redirecionamento para a página de pagamento interna
       if (newApp && targetUser.tipo_usuario === 'fisioterapeuta' && currentPrice > 0) {
         setShowModal(false);
@@ -433,6 +439,11 @@ export default function Appointments() {
         const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
         const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const { sendAppointmentStatusEmail } = await import('../services/emailService');
+
+        // Trigger WhatsApp Notification
+        if (status === 'cancelado') {
+          triggerWhatsAppNotification('canceled', id);
+        }
 
         if (status === 'confirmado') {
           sendAppointmentStatusEmail(
