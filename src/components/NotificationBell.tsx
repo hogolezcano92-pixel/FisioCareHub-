@@ -101,8 +101,67 @@ export default function NotificationBell() {
   const getIcon = (tipo: string) => {
     switch (tipo) {
       case 'message': return <MessageSquare size={16} className="text-blue-500" />;
-      case 'appointment': return <Calendar size={16} className="text-emerald-500" />;
+      case 'appointment': 
+      case 'appointment_request': return <Calendar size={16} className="text-emerald-500" />;
       default: return <Info size={16} className="text-slate-400" />;
+    }
+  };
+
+  const handleAction = async (notification: any, approved: boolean) => {
+    const agendamento_id = notification.metadata?.agendamento_id;
+    if (!agendamento_id) return;
+
+    try {
+      // 1. Update Appointment Status
+      const finalStatus = approved ? 'confirmado' : 'recusado';
+      const { data: updatedApp, error: appError } = await supabase
+        .from('agendamentos')
+        .update({ status: finalStatus })
+        .eq('id', agendamento_id)
+        .select(`
+          *,
+          fisio:fisio_id(nome_completo, especialidade, localizacao, endereco),
+          paciente:paciente_id(nome_completo, endereco)
+        `)
+        .single();
+
+      if (appError) throw appError;
+
+      // 2. Notify Patient if approved
+      if (approved && updatedApp) {
+        const isHome = String(updatedApp.tipo).toLowerCase().includes('domiciliar') || 
+                      String(updatedApp.servico).toLowerCase().includes('domiciliar');
+        
+        let local = (updatedApp.fisio?.localizacao || updatedApp.fisio?.endereco) || 'Clínica';
+        if (isHome) local = updatedApp.paciente?.endereco || 'Seu endereço cadastrado';
+
+        await supabase.from('notificacoes').insert({
+          user_id: updatedApp.paciente_id,
+          titulo: 'Agendamento Confirmado!',
+          mensagem: `Dr(a). ${updatedApp.fisio?.nome_completo}\n${updatedApp.fisio?.especialidade}\n\nServiço: ${updatedApp.servico}\nData: ${new Date(updatedApp.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${updatedApp.hora.substring(0, 5)}\nLocal: ${local}\nStatus: Confirmado`,
+          tipo: 'appointment',
+          link: '/appointments'
+        });
+      } else if (!approved && updatedApp) {
+        // Create refund ticket
+        await supabase.from('suporte_tickets').insert({
+          usuario_id: user?.id,
+          categoria: 'financeiro',
+          assunto: 'Estorno de Agendamento Recusado',
+          descricao: `Agendamento #${agendamento_id} foi recusado pelo profissional. Necessário processar estorno para o paciente ${updatedApp.paciente_id}.`,
+          status: 'aberto'
+        });
+      }
+
+      // 3. Mark notification as read and update state
+      await markAsRead(notification.id);
+      
+      const successMsg = approved ? 'Agendamento confirmado!' : 'Agendamento recusado. Solicitando estorno...';
+      import('sonner').then(({ toast }) => toast.success(successMsg));
+
+    } catch (err) {
+      console.error("Erro ao processar ação de agendamento:", err);
+      import('sonner').then(({ toast }) => toast.error("Falha ao processar solicitação."));
     }
   };
 
@@ -205,9 +264,33 @@ export default function NotificationBell() {
                             {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">
+                        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-3 whitespace-pre-wrap">
                           {n.mensagem}
                         </p>
+
+                        {n.tipo === 'appointment_request' && !n.lida && (
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(n, true);
+                              }}
+                              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black uppercase tracking-tighter rounded-lg transition-all flex items-center justify-center gap-1"
+                            >
+                              <Check size={12} /> Confirmar
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(n, false);
+                              }}
+                              className="flex-1 py-2 bg-white/5 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all flex items-center justify-center gap-1"
+                            >
+                              <X size={12} /> Recusar
+                            </button>
+                          </div>
+                        )}
+
                         {n.link && (
                           <span 
                             className="inline-block text-[10px] font-black text-blue-400 hover:underline uppercase tracking-widest pt-1"
