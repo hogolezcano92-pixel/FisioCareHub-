@@ -182,8 +182,8 @@ export default function PaymentPage() {
             <ChevronLeft size={24} />
           </button>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Pagamento da Consulta</h1>
-            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">Finalize seu agendamento</p>
+            <h1 className="text-2xl font-black text-white tracking-tight">Finalizar agendamento</h1>
+            <p className="text-blue-500 text-sm font-bold uppercase tracking-widest">FisioCareHub</p>
           </div>
         </div>
 
@@ -197,7 +197,7 @@ export default function PaymentPage() {
           <div className="space-y-6">
             <div className="flex items-start gap-4 p-4 bg-white/5 rounded-[2rem] border border-white/5">
               <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center flex-shrink-0">
-                <Stethoscope size={24} />
+                <User size={24} />
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Fisioterapeuta</p>
@@ -206,29 +206,31 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5 space-y-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Calendar size={14} className="text-blue-400" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</span>
-                </div>
-                <p className="text-white font-black text-sm">
-                  {new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-              <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5 space-y-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock size={14} className="text-blue-400" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Horário</span>
-                </div>
-                <p className="text-white font-black text-sm">{appointment.hora.substring(0, 5)}</p>
-              </div>
-            </div>
-
             <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Serviço</p>
               <p className="text-white font-bold">{appointment.tipo}</p>
             </div>
+
+            {appointment.data && appointment.hora && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar size={14} className="text-blue-400" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</span>
+                  </div>
+                  <p className="text-white font-black text-sm">
+                    {new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+                <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock size={14} className="text-blue-400" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Horário</span>
+                  </div>
+                  <p className="text-white font-black text-sm">{appointment.hora.substring(0, 5)}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Value Section */}
@@ -243,43 +245,40 @@ export default function PaymentPage() {
                 {Number(appointment.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <p className="text-slate-500 text-xs font-medium">Você será redirecionado para o ambiente seguro do Asaas</p>
+            <p className="text-slate-500 text-xs font-medium">Você será direcionado para um ambiente seguro de pagamento da FisioCareHub.</p>
           </div>
 
           {/* Action Button */}
-          <button 
-            onClick={handleProcessPayment}
-            disabled={paymentLoading}
-            className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {paymentLoading ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <Wallet size={20} />
-                Pagar Consulta
-              </>
-            )}
-          </button>
+          <div className="space-y-3">
+            <button 
+              onClick={handleProcessPayment}
+              disabled={paymentLoading}
+              className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {paymentLoading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Wallet size={20} />
+                  Finalizar pagamento
+                </>
+              )}
+            </button>
+            <p className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              Pagamento seguro e criptografado
+            </p>
+          </div>
         </motion.div>
 
         {/* Security Info */}
-        <div className="grid grid-cols-2 gap-4 h-full">
-           <div className="flex items-start gap-3 p-4 bg-white/5 rounded-[2rem] border border-white/5">
-             <ShieldCheck size={20} className="text-blue-500 flex-shrink-0" />
-             <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-               <strong className="text-slate-200 block mb-1">Pagamento Seguro</strong>
-               Seus dados estão protegidos por criptografia de ponta a ponta.
-             </p>
-           </div>
-           <div className="flex items-start gap-3 p-4 bg-white/5 rounded-[2rem] border border-white/5">
-             <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
-             <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-               <strong className="text-slate-200 block mb-1">Informação</strong>
-               O agendamento só será confirmado após a compensação do pagamento.
+        <div className="flex flex-col gap-4">
+           <div className="flex items-center justify-center gap-3 p-6 bg-white/5 rounded-[2rem] border border-white/5 text-center">
+             <AlertCircle size={20} className="text-blue-500 flex-shrink-0" />
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+               O agendamento será confirmado automaticamente após a compensação do pagamento.
              </p>
            </div>
         </div>
