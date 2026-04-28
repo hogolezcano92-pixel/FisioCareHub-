@@ -708,52 +708,97 @@ export default function Home() {
           
           <div className="relative group">
             {professionals.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                  {professionals.slice(0, 8).map((pro, i) => (
-                    <motion.div
-                      key={pro.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.1 }}
-                      className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center"
-                    >
-                      <div className="relative mb-8">
-                        <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
-                        <img 
-                          src={pro.img} 
-                          className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
-                          alt={pro.name}
-                          loading="lazy"
-                        />
-                        <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border border-white/10 z-20">
-                          <div className="ping-online">
-                            <span className="ping-online-circle"></span>
-                            <span className="ping-online-dot"></span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 text-amber-400 mb-3">
-                        <Star size={14} fill="currentColor" />
-                        <span className="text-sm font-black text-white">{pro.rating}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
-                      </div>
-                      
-                      <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
-                      <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
-                      
-                      <Link
-                        to={`/physio/${pro.id}`}
-                        className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
+              <div className="relative">
+                {/* Navigation Buttons */}
+                <div className="absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => setProSlideIndex(prev => Math.max(0, prev - 1))}
+                    disabled={proSlideIndex === 0}
+                    className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                </div>
+                
+                <div className="absolute -right-4 lg:-right-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => setProSlideIndex(prev => Math.min(professionals.length - itemsVisible, prev + 1))}
+                    disabled={proSlideIndex >= professionals.length - itemsVisible}
+                    className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+
+                <div className="overflow-hidden">
+                  <motion.div 
+                    initial={false}
+                    animate={{ x: `-${proSlideIndex * (100 / itemsVisible)}%` }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="flex gap-8"
+                  >
+                    {professionals.map((pro) => (
+                      <div
+                        key={pro.id}
+                        className={cn(
+                          "flex-shrink-0 px-4",
+                          itemsVisible === 1 ? "w-full" : itemsVisible === 2 ? "w-1/2" : "w-1/4"
+                        )}
                       >
-                        Ver Perfil <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                      </Link>
-                    </motion.div>
+                        <motion.div
+                          className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-full"
+                        >
+                          <div className="relative mb-8">
+                            <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
+                            <img 
+                              src={pro.img} 
+                              className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
+                              alt={pro.name}
+                              loading="lazy"
+                            />
+                            <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border border-white/10 z-20">
+                              <div className="ping-online">
+                                <span className="ping-online-circle"></span>
+                                <span className="ping-online-dot"></span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 text-amber-400 mb-3">
+                            <Star size={14} fill="currentColor" />
+                            <span className="text-sm font-black text-white">{pro.rating}</span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
+                          </div>
+                          
+                          <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
+                          <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
+                          
+                          <Link
+                            to={`/physio/${pro.id}`}
+                            className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
+                          >
+                            Ver Perfil <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                          </Link>
+                        </motion.div>
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+                
+                {/* Pagination Dots */}
+                <div className="flex justify-center gap-2 mt-12">
+                  {Array.from({ length: Math.max(0, professionals.length - itemsVisible + 1) }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setProSlideIndex(i)}
+                      className={cn(
+                        "h-1.5 transition-all duration-300 rounded-full",
+                        proSlideIndex === i ? "w-8 bg-blue-600" : "w-1.5 bg-white/20 hover:bg-white/40"
+                      )}
+                    />
                   ))}
                 </div>
-              </>
+              </div>
             ) : (
               <div className="py-32 text-center bg-white/5 rounded-[4rem] border border-white/5">
                 <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 text-slate-600">
