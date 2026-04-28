@@ -125,6 +125,40 @@ export default function Admin() {
     pendingWithdrawals: 0
   });
 
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [testWhatsAppLoading, setTestWhatsAppLoading] = useState(false);
+
+  const handleTestWhatsApp = async () => {
+    if (!testPhoneNumber.trim()) {
+      import('sonner').then(({ toast }) => toast.error("Informe um número de telefone com DDD (ex: 5511999999999)"));
+      return;
+    }
+
+    setTestWhatsAppLoading(true);
+    try {
+      const response = await fetch('/api/notifications/test-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ to: testPhoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        import('sonner').then(({ toast }) => toast.success("Mensagem de teste enviada via WhatsApp!"));
+      } else {
+        import('sonner').then(({ toast }) => toast.error("Falha no envio: " + (data.error || "Erro desconhecido")));
+      }
+    } catch (err: any) {
+      console.error("Erro no teste de WhatsApp:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor."));
+    } finally {
+      setTestWhatsAppLoading(false);
+    }
+  };
+
   // Ensure client-side rendering
   useEffect(() => {
     setMounted(true);
@@ -3055,6 +3089,48 @@ export default function Admin() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <Smartphone size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">Integração WhatsApp</h3>
+                    <p className="text-sm text-slate-500 font-medium tracking-tight">Teste do sistema de notificações automáticas via Twilio.</p>
+                  </div>
+                </div>
+
+                <div className="p-8 bg-blue-600/5 rounded-[2.5rem] border border-blue-600/10 space-y-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Telefone para Teste</label>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <input 
+                        type="text" 
+                        placeholder="Ex: 5511999999999"
+                        value={testPhoneNumber}
+                        onChange={(e) => setTestPhoneNumber(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" 
+                      />
+                      <button 
+                        onClick={handleTestWhatsApp}
+                        disabled={testWhatsAppLoading}
+                        className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {testWhatsAppLoading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send size={16} />
+                        )}
+                        Enviar Teste
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold italic">
+                      Certifique-se de que o número está no formato internacional (DDI + DDD + Número) sem símbolos.
+                    </p>
                   </div>
                 </div>
               </div>
