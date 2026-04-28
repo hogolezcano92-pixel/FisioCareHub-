@@ -93,7 +93,7 @@ export default function Home() {
     {
       title: "Fisioterapia Geriátrica",
       description: "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência.",
-      image: "https://redebeneditina.org.br/rdp/wp-content/uploads/2020/11/fisioterapia.jpg",
+      image: "https://clinicaportal.com.br/wp-content/uploads/2021/02/Fisioterapia-para-idosos-como-a-pratica-ajuda-na-reabilitacao-e-autonomia-1024x683.jpg.webp",
       icon: Heart,
       color: "orange"
     },
