@@ -103,6 +103,7 @@ export default function NotificationBell() {
       case 'message': return <MessageSquare size={16} className="text-blue-500" />;
       case 'appointment': 
       case 'appointment_request': return <Calendar size={16} className="text-emerald-500" />;
+      case 'support_request': return <MessageSquare size={16} className="text-amber-500" />;
       default: return <Info size={16} className="text-slate-400" />;
     }
   };

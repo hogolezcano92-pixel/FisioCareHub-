@@ -130,7 +130,8 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
 
     setTicketLoading(true);
     try {
-      const { error } = await supabase
+      // 1. Create the ticket
+      const { data: ticketData, error: error } = await supabase
         .from('suporte_tickets')
         .insert({
           usuario_id: user.id,
@@ -138,9 +139,30 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
           assunto: subject,
           descricao: description,
           status: 'aberto'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // 2. Fetch all admins to notify them
+      const { data: admins } = await supabase
+        .from('perfis')
+        .select('id')
+        .eq('tipo_usuario', 'admin');
+
+      if (admins && admins.length > 0) {
+        const notifications = admins.map(admin => ({
+          user_id: admin.id,
+          titulo: 'Novo Ticket de Suporte',
+          mensagem: `${user.email} abriu um ticket: ${subject}`,
+          tipo: 'support_request',
+          link: '/admin', // Redireciona o admin para o painel de controle
+          metadata: { ticket_id: ticketData.id }
+        }));
+
+        await supabase.from('notificacoes').insert(notifications);
+      }
 
       toast.success('Solicitação enviada! Nossa equipe entrará em contato em breve.');
     } catch (err: any) {
