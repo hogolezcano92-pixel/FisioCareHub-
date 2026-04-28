@@ -10,15 +10,18 @@ import {
   ChevronDown, 
   User, 
   Stethoscope, 
-  Sparkles,
   Bot,
-  ExternalLink,
-  MessageSquare,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  CreditCard,
+  AlertCircle,
+  Crown
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import KineAI from './KineAI';
+import { toast } from 'sonner';
 
 interface FAQ {
   question: string;
@@ -46,7 +49,7 @@ const faqs: FAQ[] = [
   {
     category: 'paciente',
     question: 'Os pagamentos são seguros?',
-    answer: 'Sim, todos os pagamentos são processados via Stripe, garantindo total segurança dos seus dados bancários e a confirmação imediata do agendamento.'
+    answer: 'Sim, todos os pagamentos são processados via gateway seguro integrado, garantindo total segurança dos seus dados bancários e a confirmação imediata do agendamento.'
   },
   
   // Physiotherapists
@@ -58,7 +61,7 @@ const faqs: FAQ[] = [
   {
     category: 'fisioterapeuta',
     question: 'Como recebo meus pagamentos?',
-    answer: 'Os repasses são feitos automaticamente para sua conta bancária cadastrada via Stripe Connect, de acordo com o prazo de compensação da plataforma.'
+    answer: 'Os repasses das consultas são feitos de acordo com o processamento do gateway de faturamento, seguindo os prazos de compensação estabelecidos para sua conta vinculada.'
   },
   {
     category: 'fisioterapeuta',
@@ -79,6 +82,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [showKineAI, setShowKineAI] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [ticketLoading, setTicketLoading] = useState(false);
 
   useEffect(() => {
     const handleToggleHelp = (e: any) => {
@@ -117,6 +121,35 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
   useEffect(() => {
     localStorage.setItem('help_preferred_profile', activeProfile);
   }, [activeProfile]);
+
+  const handleCreateTicket = async (category: string, subject: string, description: string) => {
+    if (!user) {
+      toast.error('Você precisa estar logado para abrir um ticket.');
+      return;
+    }
+
+    setTicketLoading(true);
+    try {
+      const { error } = await supabase
+        .from('suporte_tickets')
+        .insert({
+          usuario_id: user.id,
+          categoria: category,
+          assunto: subject,
+          descricao: description,
+          status: 'aberto'
+        });
+
+      if (error) throw error;
+
+      toast.success('Solicitação enviada! Nossa equipe entrará em contato em breve.');
+    } catch (err: any) {
+      console.error('Erro ao criar ticket:', err);
+      toast.error('Erro ao enviar solicitação.');
+    } finally {
+      setTicketLoading(false);
+    }
+  };
 
   // Click outside FAB to close
   useEffect(() => {
@@ -314,6 +347,64 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-slate-800 border-2 border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-blue-600 transition-all outline-none font-bold"
                   />
+                </div>
+
+                {/* Financial Section - SEPARATED BY ROLE */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">
+                    {activeProfile === 'paciente' ? 'Financeiro e Consultas' : 'Financeiro e Assinatura'}
+                  </h3>
+                  
+                  {activeProfile === 'paciente' ? (
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
+                        <div className="flex items-center gap-3 text-white font-black text-sm">
+                          <CreditCard size={18} className="text-blue-400" />
+                          Pagamento por Consulta
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          O cancelamento de consultas e solicitações de reembolso devem ser feitos via suporte. Estornos são realizados após análise.
+                        </p>
+                        <button 
+                          onClick={() => handleCreateTicket('financeiro', 'Reembolso/Cancelamento de Consulta', 'Solicito atendimento financeiro para uma consulta.')}
+                          className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                          Solicitar via Suporte
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-4">
+                        <div className="flex items-center gap-3 text-white font-black text-sm">
+                          <Crown size={18} className="text-amber-400" />
+                          Modelo de Assinatura
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                          O cancelamento da assinatura deve ser solicitado via suporte. O cancelamento será processado pela equipe após análise.
+                        </p>
+                        <button 
+                          disabled={ticketLoading}
+                          onClick={() => handleCreateTicket('assinatura', 'Cancelamento de Assinatura', 'Desejo cancelar minha assinatura profissional.')}
+                          className="w-full py-4 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {ticketLoading ? 'Processando...' : 'Cancelar Assinatura'}
+                        </button>
+                        <div className="pt-4 border-t border-white/5 space-y-2">
+                          <p className="text-[10px] font-black text-slate-500 uppercase">Reembolso e Estorno</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            Aplicável apenas para cobranças indevidas ou erros técnicos. Solicite via categoria financeiro no suporte.
+                          </p>
+                          <button 
+                            onClick={() => handleCreateTicket('financeiro', 'Reembolso de Assinatura', 'Erro técnico/Cobrança indevida de assinatura.')}
+                            className="text-blue-400 text-[10px] font-black uppercase hover:underline"
+                          >
+                            Solicitar Reembolso
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Perguntas Populares */}
