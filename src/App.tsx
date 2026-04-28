@@ -33,7 +33,8 @@ import {
   ShieldCheck,
   Bell,
   Video,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -266,6 +267,7 @@ function Navbar() {
       path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', 
       icon: HomeIcon 
     },
+    { name: 'Sobre nós', path: '/sobre', icon: Info },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
         ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
