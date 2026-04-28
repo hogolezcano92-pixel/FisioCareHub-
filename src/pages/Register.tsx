@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import Logo from '../components/Logo';
 import { uploadPhysioDocument } from '../services/supabaseStorage';
 import { sendWelcomeEmail } from '../services/emailService';
+import { toast } from 'sonner';
 
 export default function Register() {
   const { user, loading: authLoading } = useAuth();
