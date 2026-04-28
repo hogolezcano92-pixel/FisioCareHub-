@@ -350,58 +350,129 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                 </div>
 
                 {/* Financial Section - SEPARATED BY ROLE */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-blue-500" />
                     {activeProfile === 'paciente' ? 'Financeiro e Consultas' : 'Financeiro e Assinatura'}
                   </h3>
                   
                   {activeProfile === 'paciente' ? (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-4">
+                      {/* Cancellation Section */}
+                      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
+                        <div className="flex items-center gap-3 text-white font-black text-sm">
+                          <AlertCircle size={18} className="text-amber-400" />
+                          Como funciona o cancelamento
+                        </div>
+                        <ul className="text-[11px] text-slate-400 space-y-2 leading-relaxed">
+                          <li className="flex gap-2">
+                            <ArrowRight size={10} className="mt-1 flex-shrink-0 text-blue-400" />
+                            O cancelamento de consulta deve ser solicitado via suporte.
+                          </li>
+                          <li className="flex gap-2">
+                            <ArrowRight size={10} className="mt-1 flex-shrink-0 text-blue-400" />
+                            Dependendo do prazo do agendamento, pode haver ou não direito a reembolso.
+                          </li>
+                          <li className="flex gap-2">
+                            <ArrowRight size={10} className="mt-1 flex-shrink-0 text-blue-400" />
+                            Após análise de nossa equipe, o suporte confirma o cancelamento.
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Refund Section */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <CreditCard size={18} className="text-blue-400" />
-                          Pagamento por Consulta
+                          Como solicitar reembolso
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                          O cancelamento de consultas e solicitações de reembolso devem ser feitos via suporte. Estornos são realizados após análise.
+                        <div className="space-y-2">
+                          <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                            1. Clique no botão abaixo "Solicitar Ajuda Financeira".<br/>
+                            2. A categoria será "Financeiro (Reembolso)".<br/>
+                            3. Descreva o motivo do pedido e o agendamento correspondente.<br/>
+                            4. O pedido entrará em análise e você será notificado.
+                          </p>
+                          <button 
+                            disabled={ticketLoading}
+                            onClick={() => handleCreateTicket('financeiro', 'Solicitação de Reembolso', 'Gostaria de solicitar o reembolso de uma consulta.')}
+                            className="w-full py-4 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+                          >
+                            {ticketLoading ? 'Enviando...' : 'Solicitar ajuda financeira'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Estorno Section */}
+                      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
+                        <div className="flex items-center gap-3 text-white font-black text-sm">
+                          <ArrowRight size={18} className="text-emerald-400" />
+                          Como funciona o estorno
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          Se o reembolso for aprovado, o estorno é processado automaticamente. O valor é devolvido pelo mesmo método usado (PIX, Cartão, etc). O prazo final depende do seu banco ou operadora.
                         </p>
-                        <button 
-                          onClick={() => handleCreateTicket('financeiro', 'Reembolso/Cancelamento de Consulta', 'Solicito atendimento financeiro para uma consulta.')}
-                          className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                        >
-                          Solicitar via Suporte
-                        </button>
+                      </div>
+
+                      {/* Flow Summary */}
+                      <div className="p-5 bg-blue-600/5 border border-blue-500/20 rounded-3xl">
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">Resumo do Fluxo</p>
+                        <div className="flex flex-col gap-2">
+                          {[
+                            'Solicitação via suporte',
+                            'Análise da equipe',
+                            'Aprovação ou Recusa',
+                            'Processamento do estorno',
+                            'Notificação final'
+                          ].map((step, i) => (
+                            <div key={i} className="flex items-center gap-3 text-[10px] font-bold text-slate-300">
+                              <span className="w-5 h-5 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 text-[8px]">{i + 1}</span>
+                              {step}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-4">
+                      {/* Physio Side */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-4">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <Crown size={18} className="text-amber-400" />
-                          Modelo de Assinatura
+                          Cancelamento e Reembolso
                         </div>
-                        <p className="text-[10px] text-slate-400 leading-relaxed">
-                          O cancelamento da assinatura deve ser solicitado via suporte. O cancelamento será processado pela equipe após análise.
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          Cancelamentos e reembolsos de consultas de seus pacientes são sempre iniciados pelo suporte técnico. Você será notificado para validação em casos específicos, mas a decisão final cabe ao suporte da plataforma.
                         </p>
+                        <div className="pt-4 border-t border-white/5 space-y-2">
+                          <p className="text-[10px] font-black text-slate-500 uppercase">Estornos e Repasses</p>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            Estornos processados podem impactar seus repasses pendentes. Caso sua assinatura possua fidelidade, o cancelamento direto deve ser solicitado abaixo.
+                          </p>
+                        </div>
                         <button 
                           disabled={ticketLoading}
                           onClick={() => handleCreateTicket('assinatura', 'Cancelamento de Assinatura', 'Desejo cancelar minha assinatura profissional.')}
                           className="w-full py-4 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all disabled:opacity-50"
                         >
-                          {ticketLoading ? 'Processando...' : 'Cancelar Assinatura'}
+                          {ticketLoading ? 'Processando...' : 'Solicitar Cancelamento de Assinatura'}
                         </button>
-                        <div className="pt-4 border-t border-white/5 space-y-2">
-                          <p className="text-[10px] font-black text-slate-500 uppercase">Reembolso e Estorno</p>
-                          <p className="text-[10px] text-slate-400 leading-relaxed">
-                            Aplicável apenas para cobranças indevidas ou erros técnicos. Solicite via categoria financeiro no suporte.
-                          </p>
-                          <button 
-                            onClick={() => handleCreateTicket('financeiro', 'Reembolso de Assinatura', 'Erro técnico/Cobrança indevida de assinatura.')}
-                            className="text-blue-400 text-[10px] font-black uppercase hover:underline"
-                          >
-                            Solicitar Reembolso
-                          </button>
+                      </div>
+
+                      <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
+                        <div className="flex items-center gap-3 text-white font-black text-sm">
+                          <ShieldCheck size={18} className="text-blue-400" />
+                          Regras de Assinatura
                         </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          Reembolsos de assinatura são aplicáveis apenas para erros técnicos ou cobranças indevidas comprovadas. Solicite análise via canal financeiro.
+                        </p>
+                        <button 
+                          onClick={() => handleCreateTicket('financeiro', 'Reembolso de Assinatura', 'Erro técnico/Cobrança indevida de assinatura.')}
+                          className="text-blue-400 text-[10px] font-black uppercase hover:underline"
+                        >
+                          Solicitar Ajuda Financeira
+                        </button>
                       </div>
                     </div>
                   )}
