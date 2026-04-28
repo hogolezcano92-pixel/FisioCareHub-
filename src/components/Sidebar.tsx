@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               {profile?.nome_completo || 'Usuário'}
             </p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
-              {profile?.plano || 'Paciente'}
+              {profile?.tipo_usuario === 'paciente' ? 'Paciente' : (profile?.plano || 'Profissional')}
             </p>
           </div>
         </div>
