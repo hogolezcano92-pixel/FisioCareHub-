@@ -83,16 +83,24 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
 
       if (error) throw error;
 
-      // Notify admin
-      await supabase
-        .from('notificacoes_admin')
-        .insert({
-          tipo: 'saque',
-          titulo: 'Novo pedido de saque',
-          mensagem: `Um fisioterapeuta solicitou um saque de R$ ${availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-          lida: false,
-          user_id: userId
-        });
+      // 1. Fetch all admins to notify them
+      const { data: admins } = await supabase
+        .from('perfis')
+        .select('id')
+        .eq('tipo_usuario', 'admin');
+
+      if (admins && admins.length > 0) {
+        const notifications = admins.map(admin => ({
+          user_id: admin.id,
+          titulo: 'Solicitação de Saque',
+          mensagem: `Nova solicitação de R$ ${availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+          tipo: 'withdrawal_request',
+          link: '/admin',
+          metadata: { user_id: userId }
+        }));
+
+        await supabase.from('notificacoes').insert(notifications);
+      }
 
       toast.success('Solicitação de saque enviada com sucesso!');
       toast.info('O pagamento será realizado manualmente após análise');
