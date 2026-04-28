@@ -319,9 +319,14 @@ export default function PhysioDashboard() {
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                        app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
+                        app.status === 'pago' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                        app.status === 'recusado' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                        "bg-amber-500/10 text-amber-400 border-amber-500/20"
                       )}>
-                        {app.status}
+                        {app.status === 'pendente_pagamento' ? 'Aguardando Pagamento' : 
+                         app.status === 'pago' ? 'Pago (Aguardando Confirmação)' : 
+                         app.status}
                       </div>
                       <button className="p-3 bg-white/5 text-slate-400 rounded-xl hover:bg-white/10 transition-all border border-white/10">
                         <ChevronRight size={20} />

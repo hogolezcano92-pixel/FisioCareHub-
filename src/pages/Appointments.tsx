@@ -356,7 +356,7 @@ export default function Appointments() {
           data: sqlDate,
           hora: sqlTime,
           data_servico: sqlTimestamp,
-          status: 'pendente',
+          status: 'pendente_pagamento',
           observacoes: notes,
           servico: service,
           valor: currentPrice

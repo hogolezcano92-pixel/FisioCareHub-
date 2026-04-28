@@ -137,7 +137,7 @@ export default function ProfessionalProfile() {
           tipo: bookingData.tipo,
           observacoes: bookingData.observacoes,
           valor: bookingData.valor || 0,
-          status: 'pendente'
+          status: 'pendente_pagamento'
         })
         .select()
         .single();
