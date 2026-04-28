@@ -107,7 +107,7 @@ export default function Home() {
     {
       title: "Fisioterapia Respiratória",
       description: "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar.",
-      image: "https://portalartmed-public.grupoa.education/artmed_blog/5f6796a4-fd82-4bf3-9d8c-9959e2901ad5.jpg",
+      image: "https://i0.wp.com/www.clinicadospes.com.br/wp-content/uploads/2021/08/fisioterapia-respiratoria-scaled.jpg?fit=2560%2C1707&ssl=1",
       icon: Wind,
       color: "blue"
     },
