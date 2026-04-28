@@ -370,57 +370,18 @@ export default function Appointments() {
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
-      // 3. Fluxo de Pagamento Seguro
-      if (newApp && targetUser.tipo_usuario === 'fisioterapeuta') {
-        const finalPrice = currentPrice > 0 ? currentPrice : 0;
-
-        if (finalPrice > 0) {
-          // Rule 6: No financial records before confirmation. 
-          // We no longer insert into 'sessoes' here. It will be created by the webhook.
-          
-          import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro (Asaas)...'));
-          
-          const response = await fetch('/api/asaas/create-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              appointment_id: newApp.id,
-              amount: Number(finalPrice),
-              description: `Agendamento: ${service}`,
-              email: user.email,
-              user_id: user.id,
-              name: profile?.nome_completo || user.email,
-              phone: profile?.telefone,
-              installmentCount: 1,
-              billingType: 'UNDEFINED'
-            })
-          });
-
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || 'Erro ao comunicar com servidor de pagamentos Asaas.');
-          }
-
-          const checkoutData = await response.json();
-          console.log('[Asaas] Checkout Response:', checkoutData);
-
-          if (checkoutData?.url) {
-            const checkoutUrl = String(checkoutData.url).trim();
-            if (checkoutUrl.startsWith('http')) {
-              console.log('[Asaas] Redirecting to:', checkoutUrl);
-              window.location.href = checkoutUrl;
-            } else {
-              console.error('[Asaas] URL de checkout inválida (não http):', checkoutUrl);
-              import('sonner').then(({ toast }) => toast.error('O gateway retornou um link de pagamento inválido.'));
-            }
-            return; // Redirecionando, interrompe o fluxo aqui
-          } else {
-            console.error('[Asaas] Resposta sem URL:', checkoutData);
-            throw new Error(checkoutData.error || 'O link de pagamento não foi gerado pelo gateway.');
-          }
-        }
+      // 3. Redirecionamento para a página de pagamento interna
+      if (newApp && targetUser.tipo_usuario === 'fisioterapeuta' && currentPrice > 0) {
+        setShowModal(false);
+        setTargetEmail('');
+        setDate('');
+        setTime('');
+        setNotes('');
+        import('sonner').then(({ toast }) => toast.success('Agendamento registrado! Redirecionando para o pagamento...'));
+        setTimeout(() => {
+          navigate(`/pagamento/${newApp.id}`);
+        }, 1500);
+        return;
       }
 
       // Fluxo para casos onde não há pagamento (ex: fisio agendando para paciente ou preço zero)
@@ -591,53 +552,7 @@ export default function Appointments() {
 
                 {app.status === 'pendente' && !isPhysio && (
                   <button
-                    onClick={async () => {
-                      try {
-                        import('sonner').then(({ toast }) => toast.info('Redirecionando para o pagamento seguro (Asaas)...'));
-                        const response = await fetch('/api/asaas/create-payment', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            appointment_id: app.id,
-                            amount: Number(app.valor) || 0,
-                            description: `Pagamento de Serviço: ${app.servico || 'Consulta'}`,
-                            email: user?.email,
-                            user_id: user?.id,
-                            name: profile?.nome_completo || user?.email,
-                            phone: profile?.telefone,
-                            installmentCount: 1,
-                            billingType: 'UNDEFINED'
-                          })
-                        });
-
-                        if (!response.ok) {
-                          const errData = await response.json();
-                          throw new Error(errData.error || 'Erro ao gerar link de pagamento Asaas.');
-                        }
-                        
-                        const checkoutData = await response.json();
-                        console.log('[Asaas] Checkout Response:', checkoutData);
-
-                        if (checkoutData?.url) {
-                          const checkoutUrl = String(checkoutData.url).trim();
-                          if (checkoutUrl.startsWith('http')) {
-                            console.log('[Asaas] Redirecting to:', checkoutUrl);
-                            window.location.href = checkoutUrl;
-                          } else {
-                            console.error('[Asaas] URL de checkout inválida (não http):', checkoutUrl);
-                            import('sonner').then(({ toast }) => toast.error('O gateway retornou um link de pagamento inválido.'));
-                          }
-                        } else {
-                          console.error('[Asaas] Resposta sem URL:', checkoutData);
-                          throw new Error(checkoutData.error || 'O link de pagamento não foi gerado pelo gateway.');
-                        }
-                      } catch (err: any) {
-                        console.error('Erro ao processar pagamento:', err);
-                        import('sonner').then(({ toast }) => toast.error(err.message || 'Erro ao gerar pagamento'));
-                      }
-                    }}
+                    onClick={() => navigate(`/pagamento/${app.id}`)}
                     className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
                   >
                     <Wallet size={14} />
