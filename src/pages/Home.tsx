@@ -335,11 +335,36 @@ export default function Home() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fisioterapia 4.0</span>
             </motion.div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter text-center">
-              CONECTANDO CUIDADO ESPECIALIZADO <br />
-              <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic">
-                E PROFISSIONALISMO DE ELITE
-              </span>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.9] tracking-tighter text-center max-w-6xl mx-auto">
+              <div className="overflow-hidden inline-flex flex-wrap justify-center">
+                {['Conectando', 'cuidado', 'especializado'].map((word, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    className="inline-block mr-[0.3em]"
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </div>
+              <br />
+              <div className="overflow-hidden flex flex-wrap justify-center">
+                <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic inline-flex flex-wrap justify-center">
+                  {['com', 'profissionalismo', 'de', 'alto', 'nível'].map((word, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, y: 100 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 1, delay: 0.4 + (i * 0.1), ease: [0.22, 1, 0.36, 1] }}
+                      className="inline-block mr-[0.3em]"
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                </span>
+              </div>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium opacity-80 text-center">
@@ -390,6 +415,7 @@ export default function Home() {
               className="w-full h-full object-cover"
               alt="Physiotherapy session"
               referrerPolicy="no-referrer"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/20 to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
@@ -544,6 +570,7 @@ export default function Home() {
                   className="w-full h-full object-cover"
                   alt={specialtySlides[currentSlide].title}
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
                 
@@ -699,6 +726,7 @@ export default function Home() {
                           src={pro.img} 
                           className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
                           alt={pro.name}
+                          loading="lazy"
                         />
                         <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border border-white/10 z-20">
                           <div className="ping-online">
