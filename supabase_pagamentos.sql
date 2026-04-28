@@ -31,5 +31,6 @@ CREATE POLICY "Admin vê todos os pagamentos" ON public.pagamentos
       )
     );
 
--- Adicionar asaas_customer_id na tabela perfis
+-- Adicionar campos Asaas na tabela perfis
 ALTER TABLE public.perfis ADD COLUMN IF NOT EXISTS asaas_customer_id TEXT;
+ALTER TABLE public.perfis ADD COLUMN IF NOT EXISTS cpf TEXT;
