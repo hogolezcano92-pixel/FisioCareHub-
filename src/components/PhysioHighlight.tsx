@@ -3,129 +3,79 @@ import { ShieldCheck, Activity, Users, Heart, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function PhysioHighlight() {
-  // Lista de imagens focada em diversidade, com ênfase em idosos (geriatria)
+  // Links mais diretos e estáveis do Unsplash
   const patientAvatars = [
-    "https://images.unsplash.com/photo-1551076805-e1869033e561?q=80&w=150&h=150&auto=format&fit=crop", // Senhora sorrindo
-    "https://images.unsplash.com/photo-1544120190-275d272f56cc?q=80&w=150&h=150&auto=format&fit=crop", // Senhor ativo
-    "https://images.unsplash.com/photo-1581579139922-260ef0c85863?q=80&w=150&h=150&auto=format&fit=crop", // Paciente em reabilitação
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&h=150&auto=format&fit=crop", // Homem adulto
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&h=150&auto=format&fit=crop"  // Mulher jovem
+    "https://images.unsplash.com/photo-1551076805-e1869033e561?w=200&h=200&fit=crop", 
+    "https://images.unsplash.com/photo-1544120190-275d272f56cc?w=200&h=200&fit=crop", 
+    "https://images.unsplash.com/photo-1581579139922-260ef0c85863?w=200&h=200&fit=crop", 
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop", 
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop"
   ];
 
   return (
     <section className="bg-[#0a0f1e] py-24 px-6 overflow-hidden relative">
-      {/* Efeito de brilho de fundo (Glow) */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
       
       <div className="max-w-6xl mx-auto flex flex-col items-center relative z-10">
         
-        {/* Card Principal: Prova Social (Avatar Stack) */}
+        {/* Card Principal de Prova Social */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 p-12 rounded-[4rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] flex flex-col items-center gap-8 mb-24 group hover:border-blue-500/30 transition-all duration-700"
+          className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 p-10 rounded-[3.5rem] shadow-2xl flex flex-col items-center gap-6 mb-20 group"
         >
-          {/* Avatar Stack Dinâmico */}
-          <div className="flex items-center">
-            <div className="flex -space-x-5">
+          {/* Avatar Stack - CORRIGIDO */}
+          <div className="flex items-center justify-center">
+            <div className="flex -space-x-4"> {/* Reduzi o espaço negativo para não esmagar */}
               {patientAvatars.map((url, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ x: -20, opacity: 0 }}
-                  whileInView={{ x: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                >
+                <div key={i} className="relative">
                   <img
                     src={url}
-                    alt="Paciente FisioCareHub"
-                    className="w-16 h-16 rounded-full border-[6px] border-[#0a0f1e] object-cover shadow-2xl group-hover:scale-110 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
+                    alt="Paciente"
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-full border-4 border-[#0a0f1e] object-cover flex-shrink-0 bg-slate-800"
                   />
-                </motion.div>
+                </div>
               ))}
-              {/* Círculo indicador de volume (+2k) */}
-              <motion.div 
-                initial={{ scale: 0 }}
-                whileInView={{ scale: 1 }}
-                className="w-16 h-16 rounded-full border-[6px] border-[#0a0f1e] bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-2xl relative z-10"
-              >
-                +
-              </motion.div>
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border-4 border-[#0a0f1e] bg-blue-600 flex items-center justify-center text-white font-black text-xs flex-shrink-0 z-10 shadow-lg">
+                +2k
+              </div>
             </div>
           </div>
           
-          <div className="text-center space-y-3">
-            <h3 className="text-white font-black text-3xl tracking-tighter">
-              +2.000 <span className="text-blue-400 italic">Vidas Transformadas</span>
+          <div className="text-center space-y-2">
+            <h3 className="text-white font-black text-2xl md:text-3xl tracking-tighter">
+              +2.000 <span className="text-blue-400 italic">Pacientes Felizes</span>
             </h3>
             
-            {/* Avaliação em Estrelas */}
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map((i) => (
-                <Star 
-                  key={i} 
-                  size={22} 
-                  className="fill-amber-400 text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" 
-                />
+                <Star key={i} size={18} className="fill-amber-400 text-amber-400" />
               ))}
             </div>
             
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">
               Especialistas em Reabilitação e Gerontologia
             </p>
           </div>
         </motion.div>
 
-        {/* Grid de Diferenciais (4 Colunas) */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 w-full max-w-5xl">
+        {/* Grid de Ícones (Corrigido para não quebrar no mobile) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-4xl">
           {[
-            { 
-              icon: ShieldCheck, 
-              label: "CREFITO", 
-              color: "text-amber-400", 
-              bg: "bg-amber-400/10", 
-              border: "border-amber-400/20" 
-            },
-            { 
-              icon: Activity, 
-              label: "MONITORAMENTO", 
-              color: "text-emerald-400", 
-              bg: "bg-emerald-400/10", 
-              border: "border-emerald-400/20" 
-            },
-            { 
-              icon: Users, 
-              label: "+500 FISIOS", 
-              color: "text-blue-400", 
-              bg: "bg-blue-400/10", 
-              border: "border-blue-400/20" 
-            },
-            { 
-              icon: Heart, 
-              label: "HUMANIZADO", 
-              color: "text-rose-400", 
-              bg: "bg-rose-400/10", 
-              border: "border-rose-400/20" 
-            }
+            { icon: ShieldCheck, label: "CREFITO", color: "text-amber-400", bg: "bg-amber-400/10" },
+            { icon: Activity, label: "MONITORAMENTO", color: "text-emerald-400", bg: "bg-emerald-400/10" },
+            { icon: Users, label: "+500 FISIOS", color: "text-blue-400", bg: "bg-blue-400/10" },
+            { icon: Heart, label: "HUMANIZADO", color: "text-rose-400", bg: "bg-rose-400/10" }
           ].map((item, index) => (
-            <motion.div 
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="flex flex-col items-center gap-6 group cursor-default"
-            >
-              <div className={`w-24 h-24 rounded-[2.5rem] ${item.bg} border ${item.border} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
-                <item.icon className={item.color} size={44} />
+            <div key={index} className="flex flex-col items-center gap-4">
+              <div className={`w-16 h-16 md:w-20 md:h-20 rounded-3xl ${item.bg} border border-white/5 flex items-center justify-center`}>
+                <item.icon className={item.color} size={32} />
               </div>
-              <span className={`text-white font-black text-[12px] uppercase tracking-[0.4em] group-hover:${item.color} transition-colors text-center`}>
+              <span className="text-white font-black text-[10px] uppercase tracking-widest text-center">
                 {item.label}
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
