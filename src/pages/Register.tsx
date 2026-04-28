@@ -304,10 +304,30 @@ export default function Register() {
           }
         }
 
-        const { toast } = await import('sonner');
         toast.success('Cadastro realizado com sucesso!', {
           description: 'Sua conta foi configurada. Faça login para continuar.'
         });
+
+        // 6. Notify admins if it's a physiotherapist registration
+        if (role === 'fisioterapeuta') {
+          const { data: admins } = await supabase
+            .from('perfis')
+            .select('id')
+            .eq('tipo_usuario', 'admin');
+
+          if (admins && admins.length > 0) {
+            const notifications = admins.map(admin => ({
+              user_id: admin.id,
+              titulo: 'Novo Fisioterapeuta',
+              mensagem: `O Dr(a). ${cleanName} se cadastrou e aguarda aprovação de perfil.`,
+              tipo: 'support_request',
+              link: '/admin'
+            }));
+
+            await supabase.from('notificacoes').insert(notifications);
+          }
+        }
+
         navigate('/login');
       }
     } catch (err: any) {
