@@ -98,6 +98,7 @@ export default function Admin() {
   const [newMessage, setNewMessage] = useState('');
   const [commissionRate, setCommissionRate] = useState(12);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
   const [withdrawalFilter, setWithdrawalFilter] = useState<'pendente' | 'pago' | 'recusado' | 'todos'>('todos');
   const [showMaterialModal, setShowMaterialModal] = useState(false);
@@ -380,6 +381,51 @@ export default function Admin() {
     }
   }, []);
 
+  const fetchTickets = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('suporte_tickets')
+        .select(`
+          *,
+          usuario:perfis!usuario_id (nome_completo, email, avatar_url, foto_url)
+        `)
+        .order('criado_em', { ascending: false });
+
+      if (error) throw error;
+      setTickets(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar tickets:", err);
+    }
+  }, []);
+
+  const handleUpdateTicketStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('suporte_tickets')
+        .update({ status: newStatus, atualizado_em: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+      import('sonner').then(({ toast }) => toast.success("Status do ticket atualizado!"));
+      
+      // Notify the user about the update
+      const ticket = tickets.find(t => t.id === id);
+      if (ticket) {
+        await supabase.from('notificacoes').insert({
+          user_id: ticket.usuario_id,
+          titulo: 'Atualização no seu Ticket',
+          mensagem: `O status do seu ticket "${ticket.assunto}" foi alterado para: ${newStatus}`,
+          tipo: 'support_update'
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar ticket:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar ticket."));
+    }
+  };
+
   const handleMarkNotificationAsRead = async (id: string) => {
     try {
       const { error } = await supabase
@@ -410,6 +456,7 @@ export default function Admin() {
     fetchMateriais();
     fetchSessions();
     fetchWithdrawals();
+    fetchTickets();
     fetchAdminNotifications();
 
     // Fetch System Settings
@@ -441,6 +488,9 @@ export default function Admin() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_saque' }, () => {
         fetchWithdrawals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suporte_tickets' }, () => {
+        fetchTickets();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes_admin' }, () => {
         fetchAdminNotifications();
@@ -1263,6 +1313,7 @@ export default function Admin() {
               { id: 'users', label: 'Todos Usuários', icon: Users },
               { id: 'financial', label: 'Financeiro', icon: DollarSign },
               { id: 'saques', label: 'Saques (PIX)', icon: CreditCard },
+              { id: 'tickets', label: 'Suporte (Tickets)', icon: AlertTriangle },
               { id: 'notifications', label: 'Notificações', icon: Bell },
               { id: 'chat', label: 'Suporte Chat', icon: MessageSquare },
               { id: 'settings', label: 'Configurações', icon: Settings },
@@ -2758,6 +2809,107 @@ export default function Admin() {
                       <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Nenhuma notificação encontrada no momento.</p>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'tickets' && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-black text-white tracking-tight">Suporte e Tickets</h3>
+                  <p className="text-slate-500 font-medium">Gerencie as solicitações de pacientes e fisioterapeutas.</p>
+                </div>
+                <div className="flex gap-2">
+                   <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl flex items-center gap-2">
+                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                       {tickets.filter(t => t.status === 'aberto').length} Pendentes
+                     </span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-white/5">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Ticket</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Usuário</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {tickets.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-8 py-20 text-center">
+                            <p className="text-slate-500 font-bold">Nenhum ticket encontrado.</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        tickets.map((t) => (
+                          <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-8 py-5">
+                              <p className="text-sm font-black text-white">{t.assunto}</p>
+                              <p className="text-[10px] text-slate-500 uppercase tracking-tight">{t.categoria}</p>
+                              <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{t.descricao}</p>
+                            </td>
+                            <td className="px-8 py-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-400 flex items-center justify-center text-xs font-black border border-blue-500/20">
+                                  {t.usuario?.avatar_url || t.usuario?.foto_url ? (
+                                    <img src={t.usuario.avatar_url || t.usuario.foto_url} className="w-full h-full object-cover rounded-lg" />
+                                  ) : (
+                                    t.usuario?.nome_completo?.charAt(0) || 'U'
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-white">{t.usuario?.nome_completo || 'Usuário Desconhecido'}</p>
+                                  <p className="text-[9px] text-slate-500">{t.usuario?.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-8 py-5">
+                              <select 
+                                value={t.status}
+                                onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
+                                className={cn(
+                                  "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/10 focus:outline-none focus:ring-0",
+                                  t.status === 'aberto' ? "bg-amber-500/10 text-amber-500" :
+                                  t.status === 'em_analise' ? "bg-blue-500/10 text-blue-500" :
+                                  "bg-emerald-500/10 text-emerald-500"
+                                )}
+                              >
+                                <option value="aberto">Aberto</option>
+                                <option value="em_analise">Em Análise</option>
+                                <option value="resolvido">Resolvido</option>
+                                <option value="fechado">Fechado</option>
+                              </select>
+                            </td>
+                            <td className="px-8 py-5 text-[10px] text-slate-500 font-bold">
+                              {new Date(t.criado_em).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              <button 
+                                onClick={() => {
+                                  setSelectedChatUser(t.usuario);
+                                  setActiveTab('chat');
+                                }}
+                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all"
+                                title="Conversar com Usuário"
+                              >
+                                <MessageSquare size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
