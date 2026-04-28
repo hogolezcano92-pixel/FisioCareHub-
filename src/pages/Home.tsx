@@ -335,11 +335,35 @@ export default function Home() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fisioterapia 4.0</span>
             </motion.div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter text-center">
-              CONECTANDO CUIDADO ESPECIALIZADO <br />
-              <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic">
-                E PROFISSIONALISMO DE ELITE
-              </span>
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-white leading-[1.1] sm:leading-[1] tracking-tighter text-center max-w-6xl mx-auto">
+              <div className="flex flex-wrap justify-center gap-x-[0.3em] overflow-hidden py-1">
+                {['Conectando', 'cuidado', 'especializado'].map((word, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 0.8, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    className="inline-block"
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-[0.3em] overflow-hidden py-1">
+                <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic flex flex-wrap justify-center gap-x-[0.3em]">
+                  {['com', 'profissionalismo', 'de', 'alto', 'nível'].map((word, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      transition={{ duration: 0.8, delay: 0.4 + (i * 0.1), ease: [0.22, 1, 0.36, 1] }}
+                      className="inline-block"
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                </span>
+              </div>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium opacity-80 text-center">
