@@ -3,14 +3,12 @@ import { ShieldCheck, Activity, Users, Heart, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const PATIENT_IMAGES = [
-  "https://images.unsplash.com/photo-1542884748-2b87b36c6b90?auto=format&fit=crop&q=80&w=250&h=250", // Senior woman smiling
-  "https://images.unsplash.com/photo-1581579885975-53933d6ea909?auto=format&fit=crop&q=80&w=250&h=250", // Senior man smiling
-  "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=250&h=250", // Senior citizen happy
-  "https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=250&h=250", // Elderly lady
-  "https://images.unsplash.com/photo-1466632366697-391494607718?auto=format&fit=crop&q=80&w=250&h=250", // Senior couple
-  "https://images.unsplash.com/photo-1447933631397-806ee35299b4?auto=format&fit=crop&q=80&w=250&h=250", // Senior man profile
-  "https://images.unsplash.com/photo-1621348160394-211bc0a5a60d?auto=format&fit=crop&q=80&w=250&h=250", // Senior smiling
-  "https://images.unsplash.com/photo-1522333323558-4b050686940a?auto=format&fit=crop&q=80&w=250&h=250"  // Senior woman
+  "https://static.wixstatic.com/media/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png/v1/fill/w_568,h_314,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png",
+  "https://soscardio.com.br/wp-content/uploads/2023/02/Fisioterapia-no-Hospital-SOS-Cardio.jpg",
+  "https://www.biosete.com.br/site/wp-content/uploads/2019/09/alzheimer_blog_fisio.png",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPEXy4VYcy4VbOpBGQgdZqJ06Pbgui8IJ0qLQhh9r4VA&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdNki-2MEp873H0ctTrSJmuzsLjTxjBf0QuA0CBqMQFQ&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7_-RfpQNcNcnEBvarfHPqNUzk_pY34Wpwc0T8QrC86g&s=10"
 ];
 
 export default function PhysioHighlight() {
