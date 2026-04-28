@@ -79,21 +79,21 @@ export default function Home() {
     {
       title: "Fisioterapia Traumato-Ortopédica",
       description: "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa.",
-      image: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&q=80&w=1200",
+      image: "https://tuiuti.edu.br/wp-content/uploads/2022/12/shutterstock_1177541623.jpg",
       icon: Bone,
       color: "sky"
     },
     {
       title: "Fisioterapia Neurofuncional",
       description: "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas.",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+      image: "https://clinicamotricita.com.br/motri/images/treinodemarchacomsuspensoparcialdepeso.jpg",
       icon: Brain,
       color: "emerald"
     },
     {
       title: "Fisioterapia Geriátrica",
       description: "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência.",
-      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
+      image: "https://redebeneditina.org.br/rdp/wp-content/uploads/2020/11/fisioterapia.jpg",
       icon: Heart,
       color: "orange"
     },
@@ -107,14 +107,14 @@ export default function Home() {
     {
       title: "Fisioterapia Respiratória",
       description: "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar.",
-      image: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200",
+      image: "https://portalartmed-public.grupoa.education/artmed_blog/5f6796a4-fd82-4bf3-9d8c-9959e2901ad5.jpg",
       icon: Wind,
       color: "blue"
     },
     {
       title: "Fisioterapia Esportiva",
       description: "Prevenção e tratamento de lesões para atletas com atendimento personalizado e focado no retorno rápido.",
-      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=1200",
+      image: "https://blogfisioterapia.com.br/wp-content/uploads/2023/09/Fisioterapia-esportiva.png",
       icon: Zap,
       color: "amber"
     }
