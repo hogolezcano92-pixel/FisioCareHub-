@@ -95,7 +95,7 @@ export default function ProfessionalProfile() {
     fetchPhysio();
   }, [id, navigate]);
 
-  const handleBooking = async (e: React.FormEvent) => {
+  const handleConfirmarAgendamento = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast.error('Você precisa estar logado para agendar');
@@ -107,17 +107,26 @@ export default function ProfessionalProfile() {
       toast.error('Selecione data e hora');
       return;
     }
+
     setBookingLoading(true);
     try {
-      // 1. Correção do Erro de Data ('Pattern mismatch')
-      const sqlDate = bookingData.data; // YYYY-MM-DD
-      const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora; // HH:mm:ss
+      // 1. BUSCA DE DADOS DO PACIENTE
+      const { data: patientProfile, error: profileError } = await supabase
+        .from('perfis')
+        .select('nome_completo, email, cpf')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError || !patientProfile) {
+        throw new Error('Perfil de paciente não encontrado. Verifique seus dados cadastrais.');
+      }
+
+      // 2. CRIAÇÃO DO AGENDAMENTO
+      const sqlDate = bookingData.data;
+      const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora;
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
-      console.log('Enviando agendamento (Perfil):', { sqlDate, sqlTime, sqlTimestamp });
-
-      // 2. Ajuste de Colunas no Banco (Supabase)
-      const { data: appData, error: appError } = await supabase
+      const { data: newApp, error: appError } = await supabase
         .from('agendamentos')
         .insert({
           paciente_id: user.id,
@@ -133,13 +142,26 @@ export default function ProfessionalProfile() {
         .select()
         .single();
 
-      if (appError) {
-        console.error("Erro detalhado (Perfil):", appError);
-        throw appError;
+      if (appError || !newApp) {
+        console.error("Erro ao criar agendamento:", appError);
+        throw new Error('Falha ao registrar o agendamento.');
       }
 
-      // 2. Fluxo de Pagamento Seguro via Asaas (Rule 6)
-      toast.info('Redirecionando para o pagamento seguro (Asaas)...');
+      // 3. VALIDAÇÃO
+      const nome = patientProfile.nome_completo;
+      const email = patientProfile.email;
+      const cpf = patientProfile.cpf;
+      const valor = bookingData.valor;
+      const id_agendamento = newApp.id;
+
+      if (!nome) { toast.error("Seu nome completo é necessário para o faturamento."); setBookingLoading(false); return; }
+      if (!email) { toast.error("E-mail não encontrado no seu perfil."); setBookingLoading(false); return; }
+      if (!cpf) { toast.error("Favor cadastrar seu CPF no perfil para realizar pagamentos."); setBookingLoading(false); return; }
+      if (!valor || valor <= 0) { toast.error("Valor da sessão inválido."); setBookingLoading(false); return; }
+      if (!id_agendamento) { toast.error("Falha ao identificar o agendamento gerado."); setBookingLoading(false); return; }
+
+      // 4. ENVIO PARA API ASAAS
+      toast.info('Iniciando processo de pagamento...');
       
       const response = await fetch('/api/asaas/create-payment', {
         method: 'POST',
@@ -147,43 +169,32 @@ export default function ProfessionalProfile() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          appointment_id: appData.id,
-          amount: Number(bookingData.valor),
-          description: `Consulta: ${bookingData.tipo}`,
-          email: user.email,
-          user_id: user.id,
-          name: currentUserProfile?.nome_completo || user.email,
-          phone: currentUserProfile?.telefone,
-          installmentCount: 1, 
-          billingType: 'UNDEFINED' 
+          nome,
+          email,
+          cpf,
+          valor,
+          id_agendamento,
+          parcelas: 1 
         })
       });
 
+      const paymentData = await response.json();
+
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Erro ao gerar link de pagamento Asaas.');
+        throw new Error(paymentData.error || 'Erro ao gerar cobrança no Asaas.');
       }
 
-      const checkoutData = await response.json();
-      console.log('[Asaas] Checkout Response:', checkoutData);
-
-      if (checkoutData?.url) {
-        const checkoutUrl = String(checkoutData.url).trim();
-        if (checkoutUrl.startsWith('http')) {
-          console.log('[Asaas] Redirecting to:', checkoutUrl);
-          window.location.href = checkoutUrl;
-        } else {
-          console.error('[Asaas] URL de checkout inválida (não http):', checkoutUrl);
-          toast.error('O gateway retornou um link de pagamento inválido.');
-        }
-        return;
+      // 5. REDIRECIONAMENTO PARA O CHECKOUT
+      if (paymentData.invoiceUrl) {
+        console.log('[Asaas] Redirecionando para:', paymentData.invoiceUrl);
+        window.location.href = paymentData.invoiceUrl;
       } else {
-        console.error('[Asaas] Resposta sem URL:', checkoutData);
-        throw new Error(checkoutData.error || 'O link de pagamento não foi gerado pelo gateway.');
+        throw new Error('Link de pagamento não retornado pelo gateway.');
       }
+
     } catch (err: any) {
-      console.error('Erro ao agendar:', err);
-      toast.error(err.message || 'Erro ao realizar agendamento');
+      console.error('Erro no agendamento/pagamento:', err);
+      toast.error(err.message || 'Erro ao processar sua solicitação');
     } finally {
       setBookingLoading(false);
     }
@@ -423,7 +434,7 @@ export default function ProfessionalProfile() {
                 </button>
               </div>
 
-              <form onSubmit={handleBooking} className="space-y-6">
+              <form onSubmit={handleConfirmarAgendamento} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
