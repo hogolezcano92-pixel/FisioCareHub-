@@ -707,6 +707,28 @@ async function startServer() {
     }
   });
 
+  // Test WhatsApp Route
+  app.post("/api/notifications/test-whatsapp", async (req, res) => {
+    try {
+      const { to } = req.body;
+      if (!to) {
+        return res.status(400).json({ error: "O parâmetro 'to' é obrigatório." });
+      }
+
+      console.log(`[Twilio Test] Initiating test message to: ${to}`);
+      const result = await sendWhatsAppMessage(to, "🧪 Teste: WhatsApp funcionando corretamente!");
+      
+      res.json({ 
+        success: true, 
+        message: "Mensagem de teste enviada!",
+        sid: result.sid 
+      });
+    } catch (err: any) {
+      console.error("[Twilio Test] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Edge Function get-config simulation
   app.get("/api/get-config", (req, res) => {
     res.json({
