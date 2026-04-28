@@ -19,9 +19,9 @@ export default function PhysioHighlight() {
         >
           <div className="flex -space-x-4">
             {[
-              "https://images.unsplash.com/photo-1581579885975-53933d6ea909?auto=format&fit=crop&q=80&w=150&h=150",
-              "https://images.unsplash.com/photo-1542884748-2b87b36c6b90?auto=format&fit=crop&q=80&w=150&h=150",
-              "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=150&h=150"
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150",
+              "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150",
+              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150&h=150"
             ].map((url, i) => (
               <motion.img
                 key={i}
@@ -30,7 +30,7 @@ export default function PhysioHighlight() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 src={url}
-                alt="Paciente Real"
+                alt="Paciente Feliz"
                 className="w-14 h-14 rounded-full border-4 border-[#0a0f1e] object-cover shadow-xl"
                 referrerPolicy="no-referrer"
               />
@@ -38,7 +38,7 @@ export default function PhysioHighlight() {
           </div>
           
           <div className="text-center space-y-2">
-            <p className="text-white font-black text-2xl tracking-tight">+2000 Pacientes Atendidos</p>
+            <p className="text-white font-black text-2xl tracking-tight">+2k Pacientes Felizes</p>
             <div className="flex justify-center gap-1.5">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} size={18} className="fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]" />
