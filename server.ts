@@ -4,8 +4,50 @@ import path from "path";
 import dotenv from "dotenv";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import twilio from "twilio";
 
 dotenv.config();
+
+let twilioClient: any = null;
+
+const getTwilioClient = () => {
+  if (!twilioClient) {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    if (!accountSid || !authToken) {
+      console.warn("[Twilio] Credentials missing. WhatsApp messages will be logged but not sent.");
+      return null;
+    }
+    twilioClient = twilio(accountSid, authToken);
+  }
+  return twilioClient;
+};
+
+async function sendWhatsAppMessage(to: string, message: string) {
+  const from = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886";
+  const client = getTwilioClient();
+  
+  // Format "to" to ensure it starts with whatsapp:
+  const formattedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+
+  if (!client) {
+    console.log(`[Twilio Simulation] To: ${formattedTo}, Msg: ${message}`);
+    return { sid: "SIMULATED_" + Date.now() };
+  }
+
+  try {
+    const result = await client.messages.create({
+      from,
+      to: formattedTo,
+      body: message
+    });
+    console.log(`[Twilio] Message sent: ${result.sid}`);
+    return result;
+  } catch (err) {
+    console.error("[Twilio] Error sending WhatsApp message:", err);
+    throw err;
+  }
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-12-18.acacia" as any,
@@ -239,6 +281,21 @@ async function startServer() {
             const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
             const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            // WhatsApp Notifications - Payment Approved
+            if (appData.paciente.telefone) {
+              await sendWhatsAppMessage(
+                appData.paciente.telefone,
+                `✅ *Pagamento Confirmado!* \n\nOlá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso. Sua consulta com o(a) fisioterapeuta ${appData.fisioterapeuta.nome_completo} está oficialmente agendada para ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
+              );
+            }
+
+            if (appData.fisioterapeuta.telefone) {
+              await sendWhatsAppMessage(
+                appData.fisioterapeuta.telefone,
+                `💰 *Pagamento Recebido!* \n\nNovo atendimento confirmado.\n\n👤 *Paciente:* ${appData.paciente.nome_completo}\n📅 *Data:* ${formattedDate}\n⏰ *Hora:* ${formattedTime}\n📍 *Endereço:* ${appData.endereco || 'Consultar no app'}\n\nPrepare-se para o atendimento! 🏥`
+              );
+            }
+
             await getSupabaseAdmin().from('notificacoes').insert({
               user_id: appData.fisio_id,
               titulo: 'Novo Agendamento Confirmado',
@@ -334,6 +391,37 @@ async function startServer() {
               .from('agendamentos')
               .update({ status: 'confirmado' })
               .eq('id', externalReference);
+
+            // Fetch full data for WhatsApp notification
+            const { data: fullAppData } = await getSupabaseAdmin()
+              .from('agendamentos')
+              .select(`
+                *,
+                paciente:perfis!paciente_id (nome_completo, telefone),
+                fisioterapeuta:perfis!fisio_id (nome_completo, telefone)
+              `)
+              .eq('id', externalReference)
+              .single();
+
+            if (fullAppData) {
+              const formattedDate = new Date(fullAppData.data_servico).toLocaleDateString('pt-BR');
+              const formattedTime = new Date(fullAppData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+              // WhatsApp Notifications - Asaas Payment Approved
+              if (fullAppData.paciente.telefone) {
+                await sendWhatsAppMessage(
+                  fullAppData.paciente.telefone,
+                  `✅ *Pagamento Confirmado (Asaas)!* \n\nOlá ${fullAppData.paciente.nome_completo}, seu pagamento foi recebido. Sua consulta está confirmada para ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
+                );
+              }
+
+              if (fullAppData.fisioterapeuta.telefone) {
+                await sendWhatsAppMessage(
+                  fullAppData.fisioterapeuta.telefone,
+                  `💰 *Pagamento Confirmado (Asaas)!* \n\nNovo atendimento para: ${fullAppData.paciente.nome_completo} em ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
+                );
+              }
+            }
 
             // Record in sessoes (financeiro)
             const { error: sessaoError } = await getSupabaseAdmin()
@@ -536,6 +624,87 @@ async function startServer() {
   // Minimal API Routes (No secrets used here)
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Twilio WhatsApp Send Route
+  app.post("/api/notifications/send-whatsapp", async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      if (!to || !message) {
+        return res.status(400).json({ error: "Parâmetros 'to' e 'message' são obrigatórios." });
+      }
+      const result = await sendWhatsAppMessage(to, message);
+      res.json({ success: true, sid: result.sid });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Trigger Notification Events
+  app.post("/api/notifications/trigger-event", async (req, res) => {
+    try {
+      const { event, appointment_id } = req.body;
+      
+      const { data: app, error } = await getSupabaseAdmin()
+        .from('agendamentos')
+        .select(`
+          *,
+          paciente:perfis!paciente_id (nome_completo, telefone),
+          fisioterapeuta:perfis!fisio_id (nome_completo, telefone)
+        `)
+        .eq('id', appointment_id)
+        .single();
+      
+      if (error || !app) {
+        return res.status(404).json({ error: "Agendamento não encontrado." });
+      }
+
+      const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
+      const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      switch (event) {
+        case 'created':
+          if (app.paciente.telefone) {
+            await sendWhatsAppMessage(app.paciente.telefone, `🗓️ *Solicitação de Agendamento* \n\nOlá ${app.paciente.nome_completo}, sua solicitação foi recebida e está aguardando confirmação do profissional.\n\nFisioCareHub 🏥`);
+          }
+          if (app.fisioterapeuta.telefone) {
+            await sendWhatsAppMessage(app.fisioterapeuta.telefone, `🚀 *Nova Solicitação de Agendamento!*\n\nOlá Profissional, o paciente ${app.paciente.nome_completo} solicitou um atendimento.\n\n📅 *Data:* ${formattedDate}\n⏰ *Hora:* ${formattedTime}\n📍 *Endereço:* ${app.endereco}\n\nAcesse o app para confirmar!`);
+          }
+          break;
+
+        case 'canceled':
+          if (app.paciente.telefone) {
+            await sendWhatsAppMessage(app.paciente.telefone, `❌ *Agendamento Cancelado* \n\nOlá ${app.paciente.nome_completo}, seu agendamento para o dia ${formattedDate} foi cancelado.\n\nFisioCareHub 🏥`);
+          }
+          if (app.fisioterapeuta.telefone) {
+            await sendWhatsAppMessage(app.fisioterapeuta.telefone, `❌ *Agendamento Cancelado* \n\nO atendimento de ${app.paciente.nome_completo} para o dia ${formattedDate} foi cancelado.`);
+          }
+          break;
+
+        case 'refunded':
+          if (app.paciente.telefone) {
+            await sendWhatsAppMessage(app.paciente.telefone, `💰 *Reembolso Confirmado* \n\nOlá ${app.paciente.nome_completo}, o reembolso referente ao seu agendamento cancelado foi processado com sucesso.\n\nFisioCareHub 🏥`);
+          }
+          break;
+
+        case 'reminder_24h':
+          if (app.paciente.telefone) {
+            await sendWhatsAppMessage(app.paciente.telefone, `⏰ *Lembrete de Consulta* \n\nOlá ${app.paciente.nome_completo}, passando para lembrar da sua consulta amanhã (${formattedDate}) às ${formattedTime}.\n\nAté logo! 🏥`);
+          }
+          if (app.fisioterapeuta.telefone) {
+            await sendWhatsAppMessage(app.fisioterapeuta.telefone, `⏰ *Agenda de Amanhã*\n\nResumo para amanhã:\n\n👤 *Paciente:* ${app.paciente.nome_completo}\n⏰ *Hora:* ${formattedTime}\n📍 *Local:* ${app.endereco}`);
+          }
+          break;
+
+        default:
+          return res.status(400).json({ error: "Evento inválido." });
+      }
+
+      res.json({ success: true, event });
+    } catch (err: any) {
+      console.error("[Twilio Event] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Edge Function get-config simulation
