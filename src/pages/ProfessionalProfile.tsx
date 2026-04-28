@@ -147,53 +147,14 @@ export default function ProfessionalProfile() {
         throw new Error('Falha ao registrar o agendamento.');
       }
 
-      // 3. VALIDAÇÃO
-      const nome = patientProfile.nome_completo;
-      const email = patientProfile.email;
-      const cpf = patientProfile.cpf;
-      const valor = bookingData.valor;
-      const id_agendamento = newApp.id;
-
-      if (!nome) { toast.error("Seu nome completo é necessário para o faturamento."); setBookingLoading(false); return; }
-      if (!email) { toast.error("E-mail não encontrado no seu perfil."); setBookingLoading(false); return; }
-      if (!cpf) { toast.error("Favor cadastrar seu CPF no perfil para realizar pagamentos."); setBookingLoading(false); return; }
-      if (!valor || valor <= 0) { toast.error("Valor da sessão inválido."); setBookingLoading(false); return; }
-      if (!id_agendamento) { toast.error("Falha ao identificar o agendamento gerado."); setBookingLoading(false); return; }
-
-      // 4. ENVIO PARA API ASAAS
-      toast.info('Iniciando processo de pagamento...');
-      
-      const response = await fetch('/api/asaas/create-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          nome,
-          email,
-          cpf,
-          valor,
-          id_agendamento,
-          parcelas: 1 
-        })
-      });
-
-      const paymentData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(paymentData.error || 'Erro ao gerar cobrança no Asaas.');
-      }
-
-      // 5. REDIRECIONAMENTO PARA O CHECKOUT
-      if (paymentData.invoiceUrl) {
-        console.log('[Asaas] Redirecionando para:', paymentData.invoiceUrl);
-        window.location.href = paymentData.invoiceUrl;
-      } else {
-        throw new Error('Link de pagamento não retornado pelo gateway.');
-      }
+      // REDIRECIONAMENTO PARA A PÁGINA DE PAGAMENTO INTERMEDIÁRIA
+      toast.success('Agendamento registrado! Redirecionando para o pagamento...');
+      setTimeout(() => {
+        navigate(`/pagamento/${newApp.id}`);
+      }, 1500);
 
     } catch (err: any) {
-      console.error('Erro no agendamento/pagamento:', err);
+      console.error('Erro no agendamento:', err);
       toast.error(err.message || 'Erro ao processar sua solicitação');
     } finally {
       setBookingLoading(false);
