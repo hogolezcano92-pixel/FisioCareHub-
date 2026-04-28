@@ -710,22 +710,42 @@ async function startServer() {
   // Test WhatsApp Route
   app.post("/api/notifications/test-whatsapp", async (req, res) => {
     try {
+      console.log("[Twilio Test] Received request body:", req.body);
       const { to } = req.body;
+      
       if (!to) {
-        return res.status(400).json({ error: "O parâmetro 'to' é obrigatório." });
+        return res.status(400).json({ 
+          success: false,
+          error: "O parâmetro 'to' é obrigatório. Informe o número com DDI e DDD (ex: 5511999999999)." 
+        });
       }
 
-      console.log(`[Twilio Test] Initiating test message to: ${to}`);
+      // Check if Twilio is configured
+      if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+        console.warn("[Twilio Test] Warning: Twilio credentials missing. Running in simulation mode.");
+        const result = await sendWhatsAppMessage(to, "🧪 Teste (Simulação): WhatsApp funcionando corretamente (Sem credenciais Twilio)!");
+        return res.json({ 
+          success: true, 
+          simulation: true,
+          message: "Modo Simulação: Credenciais Twilio ausentes no ambiente.",
+          sid: result.sid 
+        });
+      }
+
+      console.log(`[Twilio Test] Initiating real test message to: ${to}`);
       const result = await sendWhatsAppMessage(to, "🧪 Teste: WhatsApp funcionando corretamente!");
       
       res.json({ 
         success: true, 
-        message: "Mensagem de teste enviada!",
+        message: "Mensagem de teste enviada via Twilio!",
         sid: result.sid 
       });
     } catch (err: any) {
       console.error("[Twilio Test] Error:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ 
+        success: false,
+        error: err.message || "Erro interno ao processar envio."
+      });
     }
   });
 
