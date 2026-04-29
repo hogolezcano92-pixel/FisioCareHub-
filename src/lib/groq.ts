@@ -270,3 +270,110 @@ export async function generateTriageReport(data: any) {
     throw new Error(error.message || "Não foi possível realizar a triagem no momento.");
   }
 }
+
+export async function categorizeContent(title: string, description: string) {
+  const client = getGroqClient();
+  if (!client) return "Reabilitação";
+
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: `Você é um especialista em fisioterapia e saúde. Sua tarefa é categorizar um conteúdo educativo para uma biblioteca de saúde.
+          
+          Categorias Disponíveis:
+          - Dor Lombar
+          - Lesões Esportivas
+          - Postura
+          - Mobilidade
+          - Recuperação Pós-Cirúrgica
+          - Reabilitação
+          
+          Retorne APENAS o nome da categoria que melhor se encaixa em texto puro. Se nenhuma se encaixar perfeitamente, retorne "Reabilitação".`
+        },
+        {
+          role: "user",
+          content: `Título: ${title}\nDescrição: ${description}`
+        }
+      ],
+      model: MODEL,
+    });
+
+    return completion.choices[0]?.message?.content?.trim() || "Reabilitação";
+  } catch (error) {
+    console.error("Error categorizing content (Groq):", error);
+    return "Reabilitação";
+  }
+}
+
+export async function generateLibraryContent(theme: string, type: string, level: string) {
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
+  const prompt = `
+    Você é um especialista em fisioterapia senior e criador de conteúdo educacional.
+    Gere um conteúdo técnico-educacional completo e interativo para pacientes.
+
+    TEMA: ${theme}
+    TIPO: ${type}
+    NÍVEL: ${level}
+
+    O conteúdo deve seguir rigorosamente este formato JSON:
+    {
+      "title": "Título impactante",
+      "category": "Uma das: Dor Lombar, Lesões Esportivas, Postura, Mobilidade, Recuperação Pós-Cirúrgica, Reabilitação",
+      "description": "Uma breve introdução motivadora para o paciente (máx 200 caracteres)",
+      "clinical_objective": "O objetivo terapêutico principal deste material",
+      "sections": [
+        {
+          "type": "text",
+          "content": {
+            "title": "Explicação do Problema",
+            "body": "Texto detalhado sobre as causas e sintomas comuns."
+          }
+        },
+        {
+          "type": "step-by-step",
+          "content": {
+             "steps": ["Primeiro passo prático ou exercício", "Segundo passo...", "Dica prática do dia a dia"]
+          }
+        },
+        {
+          "type": "alert",
+          "content": {
+            "message": "Cuidados importantes e sinal vermelho para procurar ajuda."
+          }
+        }
+      ]
+    }
+
+    Garanta que os exercícios sejam descritos de forma clara para que o paciente consiga fazer sozinho com segurança.
+    IMPORTANTE: Retorne APENAS o JSON puro, sem blocos de código ou explicações.
+  `;
+
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Você é um assistente de IA que fornece apenas respostas em formato JSON válido."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: MODEL,
+      response_format: { type: "json_object" }
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("Resposta da IA vazia");
+    
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error("Error generating content (Groq):", error);
+    throw new Error(error.message || "Não foi possível gerar o conteúdo no momento.");
+  }
+}
