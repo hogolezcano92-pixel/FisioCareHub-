@@ -136,7 +136,7 @@ export default function ProfessionalProfile() {
           const initialSvc = finalServices.find(s => s.name.toLowerCase().includes('avaliação')) || finalServices[0];
           setBookingData(prev => ({
             ...prev,
-            tipo: initialSvc.name,
+            tipo: `service:${initialSvc.name}|${initialSvc.base_price}`,
             valor: Number(initialSvc.base_price) || 0
           }));
         }
@@ -199,6 +199,11 @@ export default function ProfessionalProfile() {
       const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora;
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
+      // Extract clean type name from composite value
+      const [typePrefix, restData] = (bookingData.tipo || '').split(':');
+      const [fullServiceName] = (restData || 'Serviço').split('|');
+      const finalTipoName = typePrefix === 'package' ? `Pacote: ${fullServiceName}` : fullServiceName;
+
       const { data: newApp, error: appError } = await supabase
         .from('agendamentos')
         .insert({
@@ -207,7 +212,7 @@ export default function ProfessionalProfile() {
           data: sqlDate,
           hora: sqlTime,
           data_servico: sqlTimestamp,
-          tipo: bookingData.tipo,
+          tipo: finalTipoName,
           observacoes: bookingData.observacoes,
           valor: bookingData.valor || 0,
           status: 'pendente_pagamento'
@@ -489,6 +494,26 @@ export default function ProfessionalProfile() {
                 </p>
               </div>
 
+              {activePackages.length > 0 && (
+                <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Economize</span>
+                    <span className="text-white text-xs font-bold font-black uppercase tracking-wider">Pacotes de Tratamento</span>
+                  </div>
+                  <div className="space-y-2">
+                    {activePackages.slice(0, 2).map(pkg => (
+                      <div key={pkg.id} className="flex justify-between items-center text-xs">
+                        <span className="text-slate-300 font-medium">{pkg.name} ({pkg.sessions_quantity} sessões)</span>
+                        <span className="text-white font-black">R$ {Number(pkg.total_price).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {activePackages.length > 2 && (
+                      <p className="text-blue-400 text-[10px] font-bold">+ {activePackages.length - 2} opções disponíveis no menu</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <button 
                   onClick={() => setShowBookingModal(true)}
@@ -574,39 +599,33 @@ export default function ProfessionalProfile() {
                   <select 
                     value={bookingData.tipo}
                     onChange={(e) => {
-                      const selectedName = e.target.value;
-                      let valor = 0;
+                      const value = e.target.value; // format: "type:name|price"
+                      const [prefix, rest] = value.split(':');
+                      const [name, priceStr] = rest.split('|');
+                      const valor = Number(priceStr);
                       
-                      // Check in dynamic services
-                      const svc = activeServices.find(s => s.name === selectedName);
-                      if (svc) {
-                        valor = Number(svc.base_price);
-                      } else {
-                        // Check in packages
-                        const pkg = activePackages.find(p => `Pacote: ${p.name}` === selectedName);
-                        if (pkg) {
-                          valor = Number(pkg.total_price);
-                        }
-                      }
-
-                      console.log(`Seleção: ${selectedName}, Valor: R$ ${valor}`);
-                      setBookingData({...bookingData, tipo: selectedName, valor: valor || 0});
+                      console.log(`Seleção: ${name} (${prefix}), Valor: R$ ${valor}`);
+                      setBookingData({
+                        ...bookingData, 
+                        tipo: value, 
+                        valor: valor || 0
+                      });
                     }}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                   >
-                    <optgroup label="Serviços Individuais" className="bg-slate-900">
+                    <optgroup label="Sessões Avulsas" className="bg-slate-900">
                       {activeServices.map(svc => (
-                        <option key={svc.id} value={svc.name} className="bg-slate-900">
-                          {svc.name} (R$ {Number(svc.base_price).toFixed(2)})
+                        <option key={svc.id} value={`service:${svc.name}|${svc.base_price}`} className="bg-slate-900">
+                          {svc.name} - Sessão Avulsa (R$ {Number(svc.base_price).toFixed(2)})
                         </option>
                       ))}
                     </optgroup>
                     
                     {activePackages.length > 0 && (
-                      <optgroup label="Pacotes de Tratamento" className="bg-slate-900">
+                      <optgroup label="Pacotes Recomentados (Melhor Valor)" className="bg-slate-900">
                         {activePackages.map(pkg => (
-                          <option key={pkg.id} value={`Pacote: ${pkg.name}`} className="bg-slate-900">
-                            {pkg.name} ({pkg.sessions_quantity} sessões - R$ {Number(pkg.total_price).toFixed(2)})
+                          <option key={pkg.id} value={`package:${pkg.name}|${pkg.total_price}`} className="bg-slate-900">
+                            {pkg.name} - Pacote de {pkg.sessions_quantity} sessões (R$ {Number(pkg.total_price).toFixed(2)})
                           </option>
                         ))}
                       </optgroup>
