@@ -594,43 +594,84 @@ export default function ProfessionalProfile() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão / Pacote</label>
-                  <select 
-                    value={bookingData.tipo}
-                    onChange={(e) => {
-                      const value = e.target.value; // format: "type:name|price"
-                      const [prefix, rest] = value.split(':');
-                      const [name, priceStr] = rest.split('|');
-                      const valor = Number(priceStr);
-                      
-                      console.log(`Seleção: ${name} (${prefix}), Valor: R$ ${valor}`);
-                      setBookingData({
-                        ...bookingData, 
-                        tipo: value, 
-                        valor: valor || 0
-                      });
-                    }}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
-                  >
-                    <optgroup label="Sessões Avulsas" className="bg-slate-900">
-                      {activeServices.map(svc => (
-                        <option key={svc.id} value={`service:${svc.name}|${svc.base_price}`} className="bg-slate-900">
-                          {svc.name} - Sessão Avulsa (R$ {Number(svc.base_price).toFixed(2)})
-                        </option>
-                      ))}
-                    </optgroup>
-                    
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Selecione o Serviço ou Pacote</label>
+                  
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    {/* Serviços Avulsos */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Sessões Avulsas</p>
+                      {activeServices.map(svc => {
+                        const isSelected = bookingData.tipo === `service:${svc.name}|${svc.base_price}`;
+                        return (
+                          <button
+                            key={svc.id}
+                            type="button"
+                            onClick={() => {
+                              const value = `service:${svc.name}|${svc.base_price}`;
+                              setBookingData({ ...bookingData, tipo: value, valor: Number(svc.base_price) || 0 });
+                            }}
+                            className={cn(
+                              "w-full p-4 rounded-2xl border transition-all text-left flex justify-between items-center group",
+                              isSelected 
+                                ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-900/20" 
+                                : "bg-white/5 border-white/10 hover:border-white/20"
+                            )}
+                          >
+                            <div className="flex flex-col">
+                              <span className={cn("font-bold text-sm", isSelected ? "text-white" : "text-white")}>{svc.name}</span>
+                              <span className={cn("text-[10px] font-bold uppercase", isSelected ? "text-blue-200" : "text-slate-500")}>Sessão Avulsa</span>
+                            </div>
+                            <span className={cn("font-black text-sm", isSelected ? "text-white" : "text-blue-400")}>
+                              R$ {Number(svc.base_price).toFixed(2)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Pacotes */}
                     {activePackages.length > 0 && (
-                      <optgroup label="Pacotes Recomentados (Melhor Valor)" className="bg-slate-900">
-                        {activePackages.map(pkg => (
-                          <option key={pkg.id} value={`package:${pkg.name}|${pkg.total_price}`} className="bg-slate-900">
-                            {pkg.name} - Pacote de {pkg.sessions_quantity} sessões (R$ {Number(pkg.total_price).toFixed(2)})
-                          </option>
-                        ))}
-                      </optgroup>
+                      <div className="space-y-2 pt-2">
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Pacotes de Tratamento</p>
+                        {activePackages.map(pkg => {
+                          const isSelected = bookingData.tipo === `package:${pkg.name}|${pkg.total_price}`;
+                          return (
+                            <button
+                              key={pkg.id}
+                              type="button"
+                              onClick={() => {
+                                const value = `package:${pkg.name}|${pkg.total_price}`;
+                                setBookingData({ ...bookingData, tipo: value, valor: Number(pkg.total_price) || 0 });
+                              }}
+                              className={cn(
+                                "w-full p-4 rounded-2xl border transition-all text-left flex justify-between items-center group relative overflow-hidden",
+                                isSelected 
+                                  ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-900/20" 
+                                  : "bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40"
+                              )}
+                            >
+                              <div className="flex flex-col relative z-10">
+                                <div className="flex items-center gap-2">
+                                  <span className={cn("font-bold text-sm", isSelected ? "text-white" : "text-white")}>{pkg.name}</span>
+                                  <span className={cn(
+                                    "text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase",
+                                    isSelected ? "bg-white text-emerald-600" : "bg-emerald-600 text-white"
+                                  )}>Pacote</span>
+                                </div>
+                                <span className={cn("text-[10px] font-bold uppercase", isSelected ? "text-emerald-100" : "text-emerald-500/70")}>
+                                  {pkg.sessions_quantity} sessões (R$ {(pkg.total_price/pkg.sessions_quantity).toFixed(2)}/cada)
+                                </span>
+                              </div>
+                              <span className={cn("font-black text-sm relative z-10", isSelected ? "text-white" : "text-emerald-400")}>
+                                R$ {Number(pkg.total_price).toFixed(2)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                  </select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

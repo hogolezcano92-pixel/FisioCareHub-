@@ -30,7 +30,6 @@ import { cn } from '../lib/utils';
 interface ServicePackage {
   id: string;
   name: string;
-  service_id: string; // Now refers to physiotherapist_services.id (UUID)
   sessions_quantity: number;
   total_price: number;
   discount_type: 'percent' | 'fixed' | null;
@@ -85,13 +84,6 @@ export default function FinanceServiceSettings() {
     };
     init();
   }, [user, authLoading]);
-
-  // Auto-set service_id when physioServices finishes loading and modal is open for new package
-  useEffect(() => {
-    if (showPackageModal && editingPackage && !editingPackage.id && !editingPackage.service_id && physioServices.length > 0) {
-      setEditingPackage({ ...editingPackage, service_id: physioServices[0].id });
-    }
-  }, [physioServices, showPackageModal]);
 
   const fetchPhysioServices = async () => {
     if (!user) return;
@@ -272,22 +264,6 @@ export default function FinanceServiceSettings() {
     e.preventDefault();
     if (!user || !editingPackage) return;
 
-    // Validation for UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!editingPackage.service_id || !uuidRegex.test(editingPackage.service_id)) {
-      toast.error('Selecione um serviço válido');
-      return;
-    }
-
-    // Validation for discount_type
-    const allowedDiscounts = ['percent', 'fixed', null];
-    const currentDiscount = editingPackage.discount_type;
-    
-    if (!allowedDiscounts.includes(currentDiscount as any)) {
-      toast.error('Tipo de desconto inválido');
-      return;
-    }
-
     setPackageSaving(true);
     try {
       // Clean payload: remove internal fields if they exist
@@ -295,7 +271,7 @@ export default function FinanceServiceSettings() {
       
       const payload = {
         ...cleanData,
-        discount_type: currentDiscount,
+        discount_type: editingPackage.discount_type,
         physiotherapist_id: user.id,
       };
 
@@ -575,7 +551,6 @@ export default function FinanceServiceSettings() {
                 onClick={() => {
                   setEditingPackage({
                     name: '',
-                    service_id: physioServices[0]?.id || '',
                     sessions_quantity: 10,
                     total_price: 0,
                     discount_type: null,
@@ -637,10 +612,7 @@ export default function FinanceServiceSettings() {
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-black text-white tracking-tight mb-1">{pkg.name}</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6">
-                      {physioServices.find(s => s.id === pkg.service_id)?.name || 'Serviço não encontrado'}
-                    </p>
+                    <h3 className="text-xl font-black text-white tracking-tight mb-6">{pkg.name}</h3>
 
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="bg-white/5 p-4 rounded-2xl">
@@ -707,45 +679,6 @@ export default function FinanceServiceSettings() {
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all"
                     placeholder="Ex: Reabilitação 10 sessões"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Serviço Associado</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={editingPackage.service_id}
-                      onChange={(e) => setEditingPackage({ ...editingPackage, service_id: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none pr-12"
-                    >
-                      <option value="" disabled className="bg-slate-900">Selecione um serviço</option>
-                      {physioServices && physioServices.length > 0 ? (
-                        physioServices.map(s => (
-                          <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
-                        ))
-                      ) : null}
-                    </select>
-                    {(!physioServices || physioServices.length === 0) && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 rounded-2xl">
-                         <button 
-                          type="button"
-                          onClick={fetchPhysioServices}
-                          className="flex items-center gap-2 text-emerald-400 font-bold hover:text-emerald-300 transition-all"
-                        >
-                          <Loader2 size={16} className="animate-spin" />
-                          Carregando serviços...
-                        </button>
-                      </div>
-                    )}
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Zap size={16} className="text-slate-500" />
-                    </div>
-                  </div>
-                  {(!physioServices || physioServices.length === 0) && (
-                    <p className="mt-1 text-[9px] text-rose-400 font-bold uppercase tracking-widest px-1">
-                      Nenhum serviço encontrado. Tente recarregar ou verifique se definiu preços na aba "Preços Individuais".
-                    </p>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

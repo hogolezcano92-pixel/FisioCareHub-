@@ -41,7 +41,8 @@ export default function Agenda() {
   const [view, setView] = useState<'daily' | 'all'>('daily');
   const [serviceSettings, setServiceSettings] = useState<any>(null);
   const [physioServices, setPhysioServices] = useState<any[]>([]);
-
+  const [physioPackages, setPhysioPackages] = useState<any[]>([]);
+  
   // Form State
   const [formData, setFormData] = useState({
     paciente_id: '',
@@ -94,6 +95,17 @@ export default function Agenda() {
 
       if (dynamicError) throw dynamicError;
 
+      // 3. Fetch packages
+      const { data: packagesData, error: packagesError } = await supabase
+        .from('service_packages')
+        .select('*')
+        .eq('physiotherapist_id', user.id)
+        .eq('is_active', true)
+        .order('name');
+      
+      if (packagesError) throw packagesError;
+      setPhysioPackages(packagesData || []);
+
       let finalServices: any[] = [];
       if (dynamicData && dynamicData.length > 0) {
         finalServices = dynamicData;
@@ -115,7 +127,7 @@ export default function Agenda() {
         const defaultSvc = finalServices.find(s => s.name.toLowerCase().includes('avaliação')) || finalServices[0];
         setFormData(prev => ({ 
           ...prev, 
-          tipo: defaultSvc.name,
+          tipo: `service:${defaultSvc.name}`,
           valor: Number(defaultSvc.base_price) || 0
         }));
       }
@@ -282,6 +294,13 @@ export default function Agenda() {
 
       console.log('Criando agendamento (Agenda):', { sqlDate, sqlTime, sqlTimestamp });
 
+      // Clean tipo string if it has prefix
+      const tipoParaSalvar = formData.tipo.startsWith('service:') 
+        ? formData.tipo.replace('service:', '') 
+        : formData.tipo.startsWith('package:')
+          ? `Pacote: ${formData.tipo.replace('package:', '')}`
+          : formData.tipo;
+
       // 2. Ajuste de Colunas no Banco (Supabase)
       const { data: insertData, error } = await supabase
         .from('agendamentos')
@@ -291,7 +310,7 @@ export default function Agenda() {
           data: sqlDate,
           hora: sqlTime,
           data_servico: sqlTimestamp,
-          tipo: formData.tipo,
+          tipo: tipoParaSalvar,
           local: formData.local,
           observacoes: formData.observacoes,
           status: 'confirmado', // Profissional agendando já nasce confirmado ou agendado
@@ -801,26 +820,47 @@ export default function Agenda() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão</label>
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Atendimento / Pacote</label>
                   <select
                     required
                     value={formData.tipo}
                     onChange={(e) => {
-                      const selectedSvc = physioServices.find(s => s.name === e.target.value);
+                      const value = e.target.value;
+                      const [prefix, name] = value.split(':');
+                      let valor = 0;
+                      if (prefix === 'service') {
+                        const svc = physioServices.find(s => s.name === name);
+                        valor = svc ? Number(svc.base_price) : 0;
+                      } else if (prefix === 'package') {
+                        const pkg = physioPackages.find(p => p.name === name);
+                        valor = pkg ? Number(pkg.total_price) : 0;
+                      }
+                      
                       setFormData({
                         ...formData, 
-                        tipo: e.target.value,
-                        valor: selectedSvc ? Number(selectedSvc.base_price) : 0
+                        tipo: value,
+                        valor: valor
                       });
                     }}
                     className="input-compact"
                   >
                     <option value="" className="bg-slate-900">Selecione o tipo...</option>
-                    {physioServices.map(svc => (
-                      <option key={svc.id} value={svc.name} className="bg-slate-900">
-                        {svc.name} (R$ {Number(svc.base_price).toFixed(2)})
-                      </option>
-                    ))}
+                    <optgroup label="Sessões Avulsas" className="bg-slate-900">
+                      {physioServices.map(svc => (
+                        <option key={svc.id} value={`service:${svc.name}`} className="bg-slate-900">
+                          {svc.name} (R$ {Number(svc.base_price).toFixed(2)})
+                        </option>
+                      ))}
+                    </optgroup>
+                    {physioPackages.length > 0 && (
+                      <optgroup label="Pacotes de Tratamento" className="bg-slate-900">
+                        {physioPackages.map(pkg => (
+                          <option key={pkg.id} value={`package:${pkg.name}`} className="bg-slate-900">
+                            {pkg.name} ({pkg.sessions_quantity} sessões - R$ {Number(pkg.total_price).toFixed(2)})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
