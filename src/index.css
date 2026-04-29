@@ -6,28 +6,22 @@
   --font-display: "Playfair Display", serif;
   --font-accent: "Poppins", sans-serif;
   
-  /* SaaS Health Premium Palette */
-  --color-primary: #0047AB;
-  --color-primary-hover: #003580;
-  --color-bg-general: #0B1120;
-  --color-card: #1E293B;
-  --color-border-soft: #334155;
-  --color-text-main: #FFFFFF;
-  --color-text-muted: #E1E1E1;
+  /* Dynamic Theme Variables */
+  --color-primary: var(--theme-primary, #0047AB);
+  --color-primary-hover: var(--theme-primary-hover, #003580);
+  --color-bg-general: var(--theme-bg, #0B1120);
+  --color-card: var(--theme-card, #1E293B);
+  --color-border-soft: var(--theme-border, #334155);
+  --color-text-main: var(--theme-text, #FFFFFF);
+  --color-text-muted: var(--theme-text-muted, #E1E1E1);
 
-  /* Custom Palette for Home Care */
-  --color-home-blue: #e0f2fe; /* light blue */
-  --color-home-green: #d1fae5; /* pastel green */
-  --color-home-peach: #ffedd5; /* peach */
-  --color-home-trust: #0047AB; /* trust blue */
-
-  /* Dark Mode Overrides (Defaulting to Dark for Premium Feel) */
-  --color-background: #0B1120;
-  --color-foreground: #FFFFFF;
+  /* Dark Mode Overrides */
+  --color-background: var(--theme-bg, #0B1120);
+  --color-foreground: var(--theme-text, #FFFFFF);
 
   /* Premium Shadows */
-  --shadow-premium: 0 4px 20px -5px rgba(0, 71, 171, 0.2);
-  --shadow-premium-hover: 0 10px 30px -10px rgba(0, 71, 171, 0.3);
+  --shadow-premium: 0 4px 20px -5px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.2);
+  --shadow-premium-hover: 0 10px 30px -10px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.3);
 }
 
 @layer utilities {
@@ -138,11 +132,11 @@
   }
   
   .btn-primary-compact {
-    @apply px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 bg-[#0047AB] text-white hover:bg-[#003580] shadow-md;
+    @apply px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary-hover shadow-md;
   }
 
   .input-compact {
-    @apply w-full px-4 py-2.5 bg-slate-800 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047AB]/50 transition-all;
+    @apply w-full px-4 py-2.5 bg-slate-800 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all;
   }
 
   .responsive-grid {
