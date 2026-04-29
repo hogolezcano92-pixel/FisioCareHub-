@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShieldCheck, Activity, Users, Heart, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '../lib/supabase';
 
 const PATIENT_IMAGES = [
   "https://static.wixstatic.com/media/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png/v1/fill/w_568,h_314,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png",
@@ -13,6 +14,22 @@ const PATIENT_IMAGES = [
 
 export default function PhysioHighlight() {
   const [index, setIndex] = useState(0);
+  const [totalFisios, setTotalFisios] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { count, error } = await supabase
+        .from('perfis')
+        .select('*', { count: 'exact', head: true })
+        .eq('tipo_usuario', 'fisioterapeuta')
+        .eq('status_aprovacao', 'aprovado');
+      
+      if (!error && count !== null) {
+        setTotalFisios(count);
+      }
+    };
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -116,7 +133,9 @@ export default function PhysioHighlight() {
             <div className="w-20 h-20 rounded-[2rem] bg-blue-400/10 border border-blue-400/20 flex items-center justify-center group-hover:bg-blue-400/20 group-hover:scale-110 transition-all duration-500 shadow-[0_0_30px_-10px_rgba(96,165,250,0.3)]">
               <Users className="text-blue-400" size={40} />
             </div>
-            <span className="text-white font-black text-[11px] uppercase tracking-[0.4em] group-hover:text-blue-400 transition-colors">+500 FISIOS</span>
+            <span className="text-white font-black text-[11px] uppercase tracking-[0.4em] group-hover:text-blue-400 transition-colors">
+              +{totalFisios || 0} FISIOS
+            </span>
           </motion.div>
 
           <motion.div 
