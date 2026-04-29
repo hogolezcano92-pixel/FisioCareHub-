@@ -313,7 +313,7 @@ export async function generateLibraryContent(theme: string, type: string, level:
 
   const prompt = `
     Você é um especialista em fisioterapia senior e criador de conteúdo educacional.
-    Gere um conteúdo técnico-educacional completo e interativo para pacientes.
+    Gere um conteúdo técnico-educacional completo para pacientes.
 
     TEMA: ${theme}
     TIPO: ${type}
@@ -322,33 +322,38 @@ export async function generateLibraryContent(theme: string, type: string, level:
     O conteúdo deve seguir rigorosamente este formato JSON:
     {
       "title": "Título impactante",
-      "category": "Uma das: Dor Lombar, Lesões Esportivas, Postura, Mobilidade, Recuperação Pós-Cirúrgica, Reabilitação",
-      "description": "Uma breve introdução motivadora para o paciente (máx 200 caracteres)",
-      "clinical_objective": "O objetivo terapêutico principal deste material",
-      "sections": [
-        {
-          "type": "text",
-          "content": {
-            "title": "Explicação do Problema",
-            "body": "Texto detalhado sobre as causas e sintomas comuns."
+      "topic": "Tema clínico específico (ex: UTI, Neurologia, etc)",
+      "complexity": "low ou medium ou high",
+      "content": {
+        "description": "Uma breve introdução motivadora para o paciente (máx 200 caracteres)",
+        "clinical_objective": "O objetivo terapêutico principal deste material",
+        "sections": [
+          {
+            "type": "text",
+            "content": {
+              "title": "Explicação do Problema",
+              "body": "Texto detalhado sobre as causas e sintomas comuns."
+            }
+          },
+          {
+            "type": "step-by-step",
+            "content": {
+               "steps": ["Passo 1", "Passo 2", "Passo 3"]
+            }
+          },
+          {
+            "type": "alert",
+            "content": {
+              "message": "Cuidados importantes."
+            }
           }
-        },
-        {
-          "type": "step-by-step",
-          "content": {
-             "steps": ["Primeiro passo prático ou exercício", "Segundo passo...", "Dica prática do dia a dia"]
-          }
-        },
-        {
-          "type": "alert",
-          "content": {
-            "message": "Cuidados importantes e sinal vermelho para procurar ajuda."
-          }
-        }
-      ]
+        ]
+      }
     }
 
-    Garanta que os exercícios sejam descritos de forma clara para que o paciente consiga fazer sozinho com segurança.
+    NÃO inclua preço no JSON. 
+    A complexidade deve ser baseada no nível técnico e profundidade do conteúdo.
+    
     IMPORTANTE: Retorne APENAS o JSON puro, sem blocos de código ou explicações.
   `;
 
