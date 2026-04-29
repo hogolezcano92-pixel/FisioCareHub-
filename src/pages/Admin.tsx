@@ -67,7 +67,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
-import { categorizeContent } from '../lib/geminiService';
+import { categorizeContent, generateLibraryContent } from '../lib/geminiService';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
@@ -122,6 +122,12 @@ export default function Admin() {
     sections: [] as any[]
   });
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [aiGenForm, setAiGenForm] = useState({
+    theme: '',
+    type: 'educational',
+    level: 'beginner'
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activePhysios: 0,
@@ -1084,6 +1090,43 @@ export default function Admin() {
     }
   };
 
+  const handleGenerateAIContent = async () => {
+    if (!aiGenForm.theme) {
+      import('sonner').then(({ toast }) => toast.error("Digite um tema para o conteúdo."));
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const generated = await generateLibraryContent(aiGenForm.theme, aiGenForm.type, aiGenForm.level);
+      
+      const { error } = await supabase
+        .from('library_materials')
+        .insert([{
+          title: generated.title,
+          description: generated.description,
+          category: generated.category,
+          clinical_objective: generated.clinical_objective,
+          level: aiGenForm.level,
+          type: aiGenForm.type,
+          sections: generated.sections, // Using clinical sections directly
+          is_premium: false, // Defaulting to free for auto-gen
+          cover_image: `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop` // Default placeholder
+        }]);
+
+      if (error) throw error;
+
+      import('sonner').then(({ toast }) => toast.success("Conteúdo gerado e publicado com sucesso!"));
+      setAiGenForm({ ...aiGenForm, theme: '' });
+      fetchMateriais();
+    } catch (error: any) {
+      console.error(error);
+      import('sonner').then(({ toast }) => toast.error(`Erro ao gerar: ${error.message}`));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleAddMaterial = async () => {
     const precoNum = parseFloat(newMaterial.price);
     
@@ -1665,8 +1708,74 @@ export default function Admin() {
                   className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
                 >
                   <Plus size={20} />
-                  Novo Material
+                  Novo Material (Manual)
                 </button>
+              </div>
+
+              {/* AI GENERATOR SECTION */}
+              <div className="p-8 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-[2.5rem] border border-blue-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                   <Sparkles size={120} className="text-blue-400" />
+                </div>
+                <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
+                  <div className="space-y-4 max-w-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-lg text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                      <Sparkles size={12} />
+                      IA Content Creator
+                    </div>
+                    <h3 className="text-xl font-black text-white">Geração Automática</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                      Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.
+                    </p>
+                  </div>
+
+                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1 md:col-span-3">
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tema do Conteúdo</label>
+                       <input 
+                        type="text"
+                        value={aiGenForm.theme}
+                        onChange={(e) => setAiGenForm({ ...aiGenForm, theme: e.target.value })}
+                        placeholder="Ex: Exercícios para dor ciática em casa ou Prevenção de lesões no corredor"
+                        className="w-full px-6 py-4 bg-slate-950/50 border border-white/10 rounded-2xl text-white outline-none focus:ring-2 focus:ring-blue-500/40"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tipo</label>
+                        <select 
+                          value={aiGenForm.type}
+                          onChange={(e) => setAiGenForm({...aiGenForm, type: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
+                        >
+                          <option value="educational">Educativo</option>
+                          <option value="exercise">Exercício</option>
+                          <option value="alert">Alerta/Prevenção</option>
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Nível</label>
+                        <select 
+                          value={aiGenForm.level}
+                          onChange={(e) => setAiGenForm({...aiGenForm, level: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
+                        >
+                          <option value="beginner">Iniciante</option>
+                          <option value="intermediate">Intermediário</option>
+                          <option value="advanced">Avançado</option>
+                        </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button 
+                        onClick={handleGenerateAIContent}
+                        disabled={isGenerating || !aiGenForm.theme}
+                        className="w-full h-[48px] bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50"
+                      >
+                        {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                        {isGenerating ? "Gerando..." : "Gerar"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
