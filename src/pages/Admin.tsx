@@ -1111,8 +1111,15 @@ export default function Admin() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao gerar conteúdo");
+        const errorText = await response.text();
+        let errorMsg = "Erro ao gerar conteúdo";
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          errorMsg = errorText || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       const material = await response.json();
