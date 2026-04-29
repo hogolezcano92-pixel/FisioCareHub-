@@ -27,9 +27,11 @@ import {
   Eye,
   Crown,
   Download,
+  Palette,
 } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl } from '../lib/utils';
+import { THEMES } from '../lib/themes';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
@@ -38,11 +40,11 @@ import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
 
 type Tab = 
-  | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' // Patient tabs
+  | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
   | 'profile_prof' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
 
 export default function Profile() {
-  const { user, profile, subscription, loading: authLoading, refreshProfile, signOut } = useAuth();
+  const { user, profile, subscription, theme: currentThemeId, loading: authLoading, refreshProfile, signOut, updateTheme } = useAuth();
   const { t, i18n } = useTranslation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -485,6 +487,7 @@ export default function Profile() {
     { id: 'security', label: 'Segurança', icon: Lock },
     { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'payments', label: 'Pagamentos', icon: CreditCard },
+    { id: 'theme', label: 'Tema', icon: Palette },
     { id: 'privacy', label: 'Privacidade', icon: Eye },
   ];
 
@@ -540,7 +543,7 @@ export default function Profile() {
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
                   activeTab === tab.id 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+                    ? "bg-primary text-white shadow-lg shadow-premium" 
                     : "text-slate-400 hover:bg-white/5 hover:text-white"
                 )}
               >
@@ -582,8 +585,8 @@ export default function Profile() {
                     className="space-y-8"
                   >
                     {/* Profile Header Card */}
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-blue-900/5 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full -mr-32 -mt-32 opacity-50" />
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-premium/5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -mr-32 -mt-32 opacity-50" />
                       
                       <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <AvatarUpload 
@@ -610,7 +613,7 @@ export default function Profile() {
                             </div>
                             <p className="text-slate-400 font-medium">{userData?.email}</p>
                             <div className="flex justify-center md:justify-start pt-2">
-                              <span className="px-4 py-1.5 bg-blue-600/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-blue-500/30">
+                              <span className="px-4 py-1.5 bg-primary/20 text-primary rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-primary/30">
                                 {isPhysio ? 'Fisioterapeuta' : 'Paciente'}
                               </span>
                             </div>
@@ -1014,6 +1017,77 @@ export default function Profile() {
                           <button className="p-4 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all shadow-sm">
                             <Download size={20} />
                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'theme' && (
+                  <motion.div
+                    key="theme"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-2 flex items-center gap-3">
+                        <Palette className="text-blue-500" size={24} />
+                        Personalização
+                      </h3>
+                      <p className="text-slate-400 font-medium mb-8 ml-9">Escolha o tema que melhor combina com seu estilo.</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {Object.values(THEMES).map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => updateTheme?.(t.id)}
+                            className={cn(
+                              "relative group p-6 rounded-[2.5rem] border-2 transition-all duration-500 text-left overflow-hidden",
+                              currentThemeId === t.id 
+                                ? "border-blue-500 bg-blue-500/10 shadow-xl shadow-blue-500/20" 
+                                : "border-white/5 bg-white/5 hover:border-white/20"
+                            )}
+                          >
+                            {/* Theme Preview Dot */}
+                            <div 
+                              className="w-12 h-12 rounded-2xl mb-4 shadow-lg flex items-center justify-center text-white"
+                              style={{ backgroundColor: t.primary }}
+                            >
+                              {currentThemeId === t.id && <CheckCircle size={24} />}
+                            </div>
+                            
+                            <p className={cn(
+                              "font-black text-lg tracking-tight mb-1",
+                              currentThemeId === t.id ? "text-white" : "text-slate-300"
+                            )}>
+                              {t.name}
+                            </p>
+                            
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                              {t.id === 'blue' ? 'Padrão Profissional' : t.id === 'green' ? 'Bem-estar Profundo' : 'Visual Exclusivo'}
+                            </p>
+
+                            {/* Active Indicator */}
+                            {currentThemeId === t.id && (
+                              <div className="absolute top-4 right-4 animate-pulse">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mt-12 p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10">
+                        <div className="flex gap-4">
+                          <Zap className="text-primary/70 shrink-0" size={24} />
+                          <div>
+                            <p className="font-black text-white text-sm mb-1 uppercase tracking-tight">Mudança Instantânea</p>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                              Ao selecionar um tema, as cores do sistema, botões e destaques são atualizados imediatamente em todo o aplicativo. Sua preferência é salva automaticamente.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
