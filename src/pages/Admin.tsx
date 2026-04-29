@@ -48,6 +48,7 @@ import {
   Trash2,
   Save,
   AlertTriangle,
+  AlertCircle,
   LogIn,
   LogOut,
   ArrowLeft,
@@ -61,10 +62,12 @@ import {
   Image as ImageIcon,
   Tag,
   FileText as FileIcon,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
+import { categorizeContent } from '../lib/geminiService';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
@@ -108,11 +111,17 @@ export default function Admin() {
   const [newMaterial, setNewMaterial] = useState({
     title: '',
     description: '',
+    clinical_objective: '',
+    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+    type: 'educational' as 'educational' | 'exercise' | 'alert',
     price: '',
+    is_premium: false,
     cover_image: '',
     file_url: '',
-    category: 'Exercícios e Reabilitação'
+    category: 'Sendo categorizado...',
+    sections: [] as any[]
   });
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activePhysios: 0,
@@ -1058,10 +1067,27 @@ export default function Admin() {
     }
   };
 
+  const handleAutoCategorize = async () => {
+    if (!newMaterial.title || !newMaterial.description) {
+      import('sonner').then(({ toast }) => toast.error("Preencha título e descrição primeiro."));
+      return;
+    }
+    setIsCategorizing(true);
+    try {
+      const category = await categorizeContent(newMaterial.title, newMaterial.description);
+      setNewMaterial(prev => ({ ...prev, category }));
+      import('sonner').then(({ toast }) => toast.success(`Categorizado como: ${category}`));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
+
   const handleAddMaterial = async () => {
     const precoNum = parseFloat(newMaterial.price);
     
-    if (!newMaterial.title || isNaN(precoNum)) {
+    if (!newMaterial.title || (newMaterial.is_premium && isNaN(precoNum))) {
       import('sonner').then(({ toast }) => toast.error("Preencha o título e o preço corretamente."));
       return;
     }
@@ -1084,10 +1110,17 @@ export default function Admin() {
       const { error } = await supabase
         .from('library_materials')
         .insert([{
-          ...newMaterial,
-          price: precoNum,
+          title: newMaterial.title,
+          description: newMaterial.description,
+          clinical_objective: newMaterial.clinical_objective,
+          level: newMaterial.level,
+          type: newMaterial.type,
+          price: newMaterial.is_premium ? precoNum : 0,
+          is_premium: newMaterial.is_premium,
           cover_image: finalImageUrl,
-          file_url: finalArquivoUrl
+          file_url: finalArquivoUrl,
+          category: newMaterial.category === 'Sendo categorizado...' ? 'Reabilitação' : newMaterial.category,
+          sections: newMaterial.sections
         }]);
       
       if (error) {
@@ -1102,10 +1135,15 @@ export default function Admin() {
       setNewMaterial({
         title: '',
         description: '',
+        clinical_objective: '',
+        level: 'beginner',
+        type: 'educational',
         price: '',
+        is_premium: false,
         cover_image: '',
         file_url: '',
-        category: 'Exercícios e Reabilitação'
+        category: 'Sendo categorizado...',
+        sections: []
       });
       fetchMateriais();
     } catch (err: any) {
@@ -1699,122 +1737,321 @@ export default function Admin() {
                         </button>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Título</label>
-                          <input 
-                            type="text" 
-                            value={newMaterial.title}
-                            onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
-                            placeholder="Ex: Guia de Exercícios"
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Descrição</label>
-                          <textarea 
-                            value={newMaterial.description}
-                            onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
-                            placeholder="Breve descrição do conteúdo..."
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none h-24 resize-none"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Preço (R$)</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Título</label>
                             <input 
                               type="text" 
-                              value={newMaterial.price}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9.]/g, '');
-                                setNewMaterial({...newMaterial, price: val});
-                              }}
-                              placeholder="0.00"
+                              value={newMaterial.title}
+                              onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
+                              placeholder="Ex: Guia de Exercícios para Lombar"
                               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Categoria</label>
-                            <select 
-                              value={newMaterial.category}
-                              onChange={(e) => setNewMaterial({...newMaterial, category: e.target.value})}
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
-                            >
-                              <option value="Exercícios e Reabilitação">Exercícios e Reabilitação</option>
-                              <option value="Dor Lombar">Dor Lombar</option>
-                              <option value="Lesões Esportivas">Lesões Esportivas</option>
-                              <option value="Postura">Postura</option>
-                              <option value="Mobilidade">Mobilidade</option>
-                              <option value="Recuperação Pós-Cirúrgica">Recuperação Pós-Cirúrgica</option>
-                            </select>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Descrição</label>
+                            <textarea 
+                              value={newMaterial.description}
+                              onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
+                              placeholder="Breve descrição do conteúdo..."
+                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none h-20 resize-none"
+                            />
                           </div>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Imagem de Capa</label>
-                          <div className="flex items-center gap-4">
-                            <label className="flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
-                              {imageFile ? (
-                                <div className="flex flex-col items-center gap-2">
-                                  <CheckCircle2 className="text-emerald-500" size={32} />
-                                  <span className="text-xs font-bold text-slate-400">{imageFile.name}</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                  <Upload className="text-slate-500 group-hover:text-blue-500" size={32} />
-                                  <span className="text-xs font-bold text-slate-500 group-hover:text-blue-400">Upload da Imagem</span>
-                                </div>
-                              )}
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                                className="hidden" 
-                              />
-                            </label>
-                            <div className="flex-1 space-y-2">
-                              <p className="text-[10px] font-bold text-slate-500">OU use uma URL externa:</p>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Objetivo Clínico</label>
+                            <input 
+                              type="text" 
+                              value={newMaterial.clinical_objective}
+                              onChange={(e) => setNewMaterial({...newMaterial, clinical_objective: e.target.value})}
+                              placeholder="Ex: Alívio de dor e melhora da mobilidade"
+                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Nível</label>
+                              <select 
+                                value={newMaterial.level}
+                                onChange={(e) => setNewMaterial({...newMaterial, level: e.target.value as any})}
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              >
+                                <option value="beginner">Iniciante</option>
+                                <option value="intermediate">Intermediário</option>
+                                <option value="advanced">Avançado</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tipo</label>
+                              <select 
+                                value={newMaterial.type}
+                                onChange={(e) => setNewMaterial({...newMaterial, type: e.target.value as any})}
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              >
+                                <option value="educational">Educativo</option>
+                                <option value="exercise">Exercício</option>
+                                <option value="alert">Alerta</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 items-end">
+                            <div className="space-y-1 flex-1">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex justify-between items-center pr-2">
+                                Categoria
+                                <button 
+                                  onClick={handleAutoCategorize}
+                                  disabled={isCategorizing || !newMaterial.title}
+                                  className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 normal-case tracking-normal disabled:opacity-50"
+                                >
+                                  {isCategorizing ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                                  IA
+                                </button>
+                              </label>
                               <input 
                                 type="text" 
-                                value={newMaterial.cover_image}
-                                onChange={(e) => setNewMaterial({...newMaterial, cover_image: e.target.value})}
-                                placeholder="https://..."
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
+                                value={newMaterial.category}
+                                readOnly
+                                className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-xl text-white italic outline-none text-sm"
                               />
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-4">
+                                <button
+                                  onClick={() => setNewMaterial({...newMaterial, is_premium: !newMaterial.is_premium})}
+                                  className={cn(
+                                    "w-10 h-5 rounded-full relative transition-colors",
+                                    newMaterial.is_premium ? "bg-blue-600" : "bg-slate-700"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all",
+                                    newMaterial.is_premium ? "left-5.5" : "left-0.5"
+                                  )} />
+                                </button>
+                                <span className="text-[10px] font-black uppercase text-slate-400">Premium</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {newMaterial.is_premium && (
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Preço Individual (R$)</label>
+                              <input 
+                                type="text" 
+                                value={newMaterial.price}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9.]/g, '');
+                                  setNewMaterial({...newMaterial, price: val});
+                                }}
+                                placeholder="0.00"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              />
+                            </div>
+                          )}
+
+                          {/* Section Editor */}
+                          <div className="space-y-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Seções do Conteúdo</label>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setNewMaterial({
+                                    ...newMaterial, 
+                                    sections: [...newMaterial.sections, { type: 'text', content: { title: '', body: '' } }]
+                                  })}
+                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
+                                  title="Texto"
+                                >
+                                  <FileIcon size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setNewMaterial({
+                                    ...newMaterial, 
+                                    sections: [...newMaterial.sections, { type: 'step-by-step', content: { steps: [''] } }]
+                                  })}
+                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
+                                  title="Checklist"
+                                >
+                                  <CheckCircle2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setNewMaterial({
+                                    ...newMaterial, 
+                                    sections: [...newMaterial.sections, { type: 'alert', content: { message: '' } }]
+                                  })}
+                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
+                                  title="Alerta"
+                                >
+                                  <AlertCircle size={14} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {newMaterial.sections.map((section, idx) => (
+                                <div key={idx} className="p-4 bg-white/5 rounded-2xl border border-white/5 relative group">
+                                  <button 
+                                    onClick={() => {
+                                      const newSections = [...newMaterial.sections];
+                                      newSections.splice(idx, 1);
+                                      setNewMaterial({...newMaterial, sections: newSections});
+                                    }}
+                                    className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X size={12} />
+                                  </button>
+
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Tag size={10} className="text-blue-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                      {section.type === 'text' ? 'Texto' : section.type === 'step-by-step' ? 'Passo a Passo' : 'Alerta'}
+                                    </span>
+                                  </div>
+
+                                  {section.type === 'text' && (
+                                    <div className="space-y-2">
+                                      <input 
+                                        type="text"
+                                        placeholder="Subtítulo"
+                                        value={section.content.title}
+                                        onChange={(e) => {
+                                          const news = [...newMaterial.sections];
+                                          news[idx].content.title = e.target.value;
+                                          setNewMaterial({...newMaterial, sections: news});
+                                        }}
+                                        className="w-full bg-transparent border-b border-white/10 text-xs font-bold text-white outline-none"
+                                      />
+                                      <textarea 
+                                        placeholder="Conteúdo..."
+                                        value={section.content.body}
+                                        onChange={(e) => {
+                                          const news = [...newMaterial.sections];
+                                          news[idx].content.body = e.target.value;
+                                          setNewMaterial({...newMaterial, sections: news});
+                                        }}
+                                        className="w-full bg-transparent text-[10px] text-slate-400 outline-none h-16 resize-none"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {section.type === 'step-by-step' && (
+                                    <div className="space-y-2">
+                                      {section.content.steps.map((step: string, sIdx: number) => (
+                                        <div key={sIdx} className="flex gap-2">
+                                          <span className="text-[10px] font-black text-slate-500 pt-1">{sIdx + 1}.</span>
+                                          <input 
+                                            type="text"
+                                            value={step}
+                                            onChange={(e) => {
+                                              const news = [...newMaterial.sections];
+                                              news[idx].content.steps[sIdx] = e.target.value;
+                                              setNewMaterial({...newMaterial, sections: news});
+                                            }}
+                                            className="flex-1 bg-transparent border-b border-white/5 text-[10px] text-white outline-none"
+                                          />
+                                        </div>
+                                      ))}
+                                      <button 
+                                        onClick={() => {
+                                          const news = [...newMaterial.sections];
+                                          news[idx].content.steps.push('');
+                                          setNewMaterial({...newMaterial, sections: news});
+                                        }}
+                                        className="text-[10px] text-blue-400 font-bold"
+                                      >
+                                        + Adicionar Passo
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {section.type === 'alert' && (
+                                    <textarea 
+                                      placeholder="Mensagem de alerta..."
+                                      value={section.content.message}
+                                      onChange={(e) => {
+                                        const news = [...newMaterial.sections];
+                                        news[idx].content.message = e.target.value;
+                                        setNewMaterial({...newMaterial, sections: news});
+                                      }}
+                                      className="w-full bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[10px] text-rose-200 outline-none h-12 resize-none"
+                                    />
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Material (PDF)</label>
-                          <div className="flex items-center gap-4">
-                            <label className="flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed border-white/10 rounded-2xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
-                              {materialFile ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <FileIcon className="text-emerald-500" size={24} />
-                                  <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{materialFile.name}</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center gap-1">
-                                  <Upload className="text-slate-500 group-hover:text-blue-500" size={24} />
-                                  <span className="text-[10px] font-bold text-slate-500 group-hover:text-blue-400">Upload do PDF</span>
-                                </div>
-                              )}
-                              <input 
-                                type="file" 
-                                accept=".pdf"
-                                onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
-                                className="hidden" 
-                              />
-                            </label>
-                            <div className="flex-1 space-y-2">
-                              <p className="text-[10px] font-bold text-slate-500">OU use uma URL externa:</p>
-                              <input 
-                                type="text" 
-                                value={newMaterial.file_url}
-                                onChange={(e) => setNewMaterial({...newMaterial, file_url: e.target.value})}
-                                placeholder="Link externo..."
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
-                              />
+                        <div className="space-y-4 pt-4 border-t border-white/10">
+                          <div className="space-y-1 text-slate-400 text-[10px] uppercase font-black tracking-widest pl-1">Mídia e Arquivos</div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Imagem de Capa</label>
+                            <div className="flex items-center gap-4">
+                              <label className="flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed border-white/10 rounded-2xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
+                                {imageFile ? (
+                                  <div className="flex flex-col items-center gap-1">
+                                    <CheckCircle2 className="text-emerald-500" size={24} />
+                                    <span className="text-[10px] font-bold text-slate-400">{imageFile.name}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Upload className="text-slate-500 group-hover:text-blue-500" size={24} />
+                                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-blue-400">Imagem</span>
+                                  </div>
+                                )}
+                                <input 
+                                  type="file" 
+                                  accept="image/*"
+                                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                                  className="hidden" 
+                                />
+                              </label>
+                              <div className="flex-1 space-y-2">
+                                <input 
+                                  type="text" 
+                                  value={newMaterial.cover_image}
+                                  onChange={(e) => setNewMaterial({...newMaterial, cover_image: e.target.value})}
+                                  placeholder="Ou URL externa..."
+                                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Material PDF (Opcional)</label>
+                            <div className="flex items-center gap-4">
+                              <label className="flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed border-white/10 rounded-2xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
+                                {materialFile ? (
+                                  <div className="flex flex-col items-center gap-1">
+                                    <FileIcon className="text-emerald-500" size={24} />
+                                    <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{materialFile.name}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Upload className="text-slate-500 group-hover:text-blue-500" size={24} />
+                                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-blue-400">PDF</span>
+                                  </div>
+                                )}
+                                <input 
+                                  type="file" 
+                                  accept=".pdf"
+                                  onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
+                                  className="hidden" 
+                                />
+                              </label>
+                              <div className="flex-1 space-y-2">
+                                <input 
+                                  type="text" 
+                                  value={newMaterial.file_url}
+                                  onChange={(e) => setNewMaterial({...newMaterial, file_url: e.target.value})}
+                                  placeholder="Ou URL externa..."
+                                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none text-xs"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>

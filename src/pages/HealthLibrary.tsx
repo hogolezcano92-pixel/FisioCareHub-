@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   BookOpen, 
@@ -12,21 +12,33 @@ import {
   AlertCircle,
   X,
   Trash2,
-  ArrowRight
+  ArrowRight,
+  Tag,
+  FileText as FileIcon
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
+interface LibrarySection {
+  type: 'text' | 'step-by-step' | 'alert';
+  content: any;
+}
+
 interface LibraryMaterial {
   id: string;
   title: string;
   description: string;
+  clinical_objective?: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  type: 'educational' | 'exercise' | 'alert';
   price: number;
+  is_premium: boolean;
   cover_image: string;
-  file_url: string;
+  file_url?: string;
   category: string;
+  sections: LibrarySection[];
   created_at: string;
 }
 
@@ -44,6 +56,8 @@ export default function HealthLibrary() {
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [cart, setCart] = useState<LibraryMaterial[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<LibraryMaterial | null>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const CATEGORY_DATA = [
     { name: 'Exercícios e Reabilitação', price: 35.99, image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=800' },
@@ -147,18 +161,107 @@ export default function HealthLibrary() {
     }
   };
 
-  const handleAccess = (url: string) => {
-    window.open(url, '_blank');
+  const generatePDF = async (material: LibraryMaterial) => {
+    try {
+      setIsGeneratingPDF(true);
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      let yPos = 20;
+
+      // Title
+      doc.setFontSize(22);
+      doc.setTextColor(30, 41, 59); // slate-800
+      doc.text(material.title, 20, yPos);
+      yPos += 15;
+
+      // Category & Metadata
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text(`${material.category.toUpperCase()} | Nível: ${material.level} | Tipo: ${material.type}`, 20, yPos);
+      yPos += 5;
+      doc.line(20, yPos, 190, yPos);
+      yPos += 15;
+
+      // Objective
+      if (material.clinical_objective) {
+        doc.setFontSize(12);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Objetivo Clínico:", 20, yPos);
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        const splitObjective = doc.splitTextToSize(material.clinical_objective, 170);
+        doc.text(splitObjective, 20, yPos);
+        yPos += (splitObjective.length * 6) + 10;
+      }
+
+      // Sections
+      material.sections.forEach((section) => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        if (section.type === 'text') {
+          doc.setFontSize(14);
+          doc.setTextColor(51, 65, 85);
+          doc.text(section.content.title || "Informações", 20, yPos);
+          yPos += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139);
+          const splitBody = doc.splitTextToSize(section.content.body || "", 170);
+          doc.text(splitBody, 20, yPos);
+          yPos += (splitBody.length * 6) + 12;
+        } else if (section.type === 'step-by-step') {
+          doc.setFontSize(14);
+          doc.setTextColor(51, 65, 85);
+          doc.text("Guia de Execução", 20, yPos);
+          yPos += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139);
+          section.content.steps.forEach((step: string, idx: number) => {
+            if (yPos > 270) { doc.addPage(); yPos = 20; }
+            const splitStep = doc.splitTextToSize(`${idx + 1}. ${step}`, 160);
+            doc.text(splitStep, 25, yPos);
+            yPos += (splitStep.length * 6) + 2;
+          });
+          yPos += 10;
+        } else if (section.type === 'alert') {
+          doc.setFillColor(254, 242, 242); // bg-red-50
+          doc.rect(15, yPos - 5, 180, 20, 'F');
+          doc.setFontSize(11);
+          doc.setTextColor(185, 28, 28); // text-red-700
+          doc.text("⚠️ Alerta Clínico:", 20, yPos);
+          yPos += 8;
+          doc.setFontSize(10);
+          const splitAlert = doc.splitTextToSize(section.content.message || "", 170);
+          doc.text(splitAlert, 20, yPos);
+          yPos += (splitAlert.length * 6) + 15;
+        }
+      });
+
+      doc.save(`Material_Saude_${material.title.replace(/\s+/g, '_')}.pdf`);
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erro ao gerar o PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
-  const categories = ['Todas', ...CATEGORY_DATA.map(c => c.name)];
+  const handleAccess = (material: LibraryMaterial) => {
+    setSelectedMaterial(material);
+  };
 
-  const filteredMaterials = materials.filter(m => {
+  const categories = useMemo(() => ['Todas', ...CATEGORY_DATA.map(c => c.name)], []);
+
+  const filteredMaterials = useMemo(() => materials.filter(m => {
     const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          m.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'Todas' || m.category === selectedCategory;
     return matchesSearch && matchesCategory;
-  });
+  }), [materials, searchQuery, selectedCategory]);
 
   if (loading && materials.length === 0) {
     return (
@@ -191,6 +294,147 @@ export default function HealthLibrary() {
           <span className="text-sm font-black">Carrinho</span>
         </div>
       </button>
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedMaterial && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedMaterial(null)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col"
+            >
+              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                <div>
+                  <h2 className="text-2xl font-black text-white">{selectedMaterial.title}</h2>
+                  <p className="text-xs text-sky-400 font-bold uppercase tracking-widest">{selectedMaterial.category}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => generatePDF(selectedMaterial)}
+                    disabled={isGeneratingPDF}
+                    className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {isGeneratingPDF ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                    PDF
+                  </button>
+                  <button onClick={() => setSelectedMaterial(null)} className="p-3 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 rounded-2xl transition-all">
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                {/* Visual Header */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-white/10">
+                    <img src={selectedMaterial.cover_image} className="w-full h-full object-cover" alt={selectedMaterial.title} />
+                  </div>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Objetivo Clínico</h4>
+                      <p className="text-lg font-bold text-white italic">{selectedMaterial.clinical_objective || "Melhora geral da saúde e funcionalidade."}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Nível</p>
+                        <p className="text-sm font-black text-sky-400 capitalize">{selectedMaterial.level === 'beginner' ? 'Iniciante' : selectedMaterial.level === 'intermediate' ? 'Intermediário' : 'Avançado'}</p>
+                      </div>
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Tipo</p>
+                        <p className="text-sm font-black text-sky-400 capitalize">{selectedMaterial.type === 'educational' ? 'Educativo' : selectedMaterial.type === 'exercise' ? 'Exercício' : 'Alerta'}</p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-sky-500/5 rounded-2xl border border-sky-500/10">
+                      <p className="text-xs text-slate-400 leading-relaxed">{selectedMaterial.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Sections */}
+                <div className="space-y-12">
+                  {selectedMaterial.sections.map((section, idx) => (
+                    <motion.div 
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="space-y-4"
+                    >
+                      {section.type === 'text' && (
+                        <div className="space-y-4">
+                          {section.content.title && (
+                            <h5 className="text-xl font-black text-white flex items-center gap-3">
+                              <div className="w-2 h-8 bg-sky-500 rounded-full" />
+                              {section.content.title}
+                            </h5>
+                          )}
+                          <div className="pl-5 border-l-2 border-white/5">
+                            <p className="text-slate-400 leading-relaxed whitespace-pre-wrap">{section.content.body}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {section.type === 'step-by-step' && (
+                        <div className="bg-slate-800/40 rounded-[2rem] p-8 space-y-6 border border-white/5">
+                          <h5 className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+                            <CheckCircle2 className="text-emerald-500" size={24} />
+                            Guia de Execução
+                          </h5>
+                          <div className="space-y-4">
+                            {section.content.steps.map((step: string, sIdx: number) => (
+                              <div key={sIdx} className="flex gap-4 group">
+                                <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-sky-400 font-black text-xs shrink-0 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                                  {sIdx + 1}
+                                </div>
+                                <p className="text-slate-300 font-medium pt-1 leading-snug">{step}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {section.type === 'alert' && (
+                        <div className="bg-rose-500/10 rounded-[2rem] p-8 border border-rose-500/20 flex gap-6">
+                          <div className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0">
+                            <AlertCircle size={24} />
+                          </div>
+                          <div className="space-y-1">
+                            <h5 className="font-black text-rose-500 uppercase tracking-widest text-xs">Atenção Médica</h5>
+                            <p className="text-rose-200/80 font-medium leading-relaxed">{section.content.message}</p>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedMaterial.file_url && (
+                <div className="p-8 border-t border-white/5 bg-slate-900/50">
+                  <a 
+                    href={selectedMaterial.file_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black flex items-center justify-center gap-3 transition-all border border-white/10"
+                  >
+                    <ExternalLink size={20} />
+                    Ver Material Externo Complementar
+                  </a>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Cart Sidebar Overlay */}
       <AnimatePresence>
@@ -366,11 +610,31 @@ export default function HealthLibrary() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-[10px] font-black text-sky-400 uppercase tracking-widest shadow-sm border border-white/10">
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    <span className="px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-[10px] font-black text-sky-400 uppercase tracking-widest shadow-sm border border-white/10 w-fit">
                       {material.category}
                     </span>
+                    <div className="flex gap-1">
+                      <span className={cn(
+                        "px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/10",
+                        material.level === 'beginner' ? "bg-emerald-500/80 text-white" :
+                        material.level === 'intermediate' ? "bg-amber-500/80 text-white" : "bg-rose-500/80 text-white"
+                      )}>
+                        {material.level === 'beginner' ? 'Iniciante' : material.level === 'intermediate' ? 'Interméd.' : 'Avançado'}
+                      </span>
+                      <span className="px-2 py-1 bg-blue-500/80 text-white rounded-lg text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/10">
+                        {material.type === 'educational' ? 'Educação' : material.type === 'exercise' ? 'Prática' : 'Alerta'}
+                      </span>
+                    </div>
                   </div>
+                  {material.is_premium && (
+                    <div className="absolute top-4 right-4">
+                      <div className="bg-amber-500 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1">
+                        <ShoppingCart size={10} />
+                        Premium
+                      </div>
+                    </div>
+                  )}
                   {isPurchased && (
                     <div className="absolute top-4 right-4">
                       <div className="bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
@@ -399,13 +663,13 @@ export default function HealthLibrary() {
                       </span>
                     </div>
 
-                    {isPurchased ? (
+                    {isPurchased || !material.is_premium ? (
                       <button
-                        onClick={() => handleAccess(material.file_url)}
+                        onClick={() => handleAccess(material)}
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/20"
                       >
                         <ExternalLink size={16} />
-                        Acessar
+                        Ver Conteúdo
                       </button>
                     ) : (
                       <button
