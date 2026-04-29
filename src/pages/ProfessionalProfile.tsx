@@ -44,6 +44,7 @@ export default function ProfessionalProfile() {
   const [configServicos, setConfigServicos] = useState<any>(null);
   const [activeServices, setActiveServices] = useState<any[]>([]);
   const [activePackages, setActivePackages] = useState<any[]>([]);
+  const [lowestPrice, setLowestPrice] = useState<number | null>(null);
 
   useEffect(() => {
     if (searchParams.get('status') === 'canceled') {
@@ -95,10 +96,13 @@ export default function ProfessionalProfile() {
         if (svcsError) console.error('Error fetching services:', svcsError);
 
         let finalServices: any[] = [];
+        let minPrice: number | null = null;
         
         if (!svcsError && svcs && svcs.length > 0) {
           console.log('Using dynamic services:', svcs.length);
           finalServices = svcs;
+          const prices = svcs.map(s => Number(s.base_price)).filter(p => p > 0);
+          if (prices.length > 0) minPrice = Math.min(...prices);
         } else if (settings) {
           // Fallback for legacy services if new table is empty but legacy settings exist
           console.log('Dynamic services empty, falling back to legacy settings');
@@ -113,15 +117,19 @@ export default function ProfessionalProfile() {
           ].filter(s => Number(s.base_price) > 0);
           
           finalServices = legacyServices;
+          const prices = legacyServices.map(s => Number(s.base_price));
+          if (prices.length > 0) minPrice = Math.min(...prices);
         }
 
         // Hard fallback if still empty to ensure UI is not broken
         if (finalServices.length === 0) {
           console.log('All service sources empty, using hard default');
           finalServices = [{ id: 'default', name: 'Consulta / Avaliação', base_price: 0 }];
+          minPrice = 0;
         }
 
         setActiveServices(finalServices);
+        setLowestPrice(minPrice);
         
         // Ensure booking data matches available services
         if (finalServices.length > 0) {
@@ -470,13 +478,15 @@ export default function ProfessionalProfile() {
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-slate-400 text-lg font-bold">R$</span>
                   <span className="text-5xl font-black text-white tracking-tighter">
-                    {configServicos?.sessao_fisioterapia 
-                      ? Number(configServicos.sessao_fisioterapia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    {lowestPrice !== null 
+                      ? lowestPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
                       : '---'}
                   </span>
                   <span className="text-slate-400 text-sm font-bold">/sessão</span>
                 </div>
-                <p className="text-slate-500 text-xs font-medium">Pagamento seguro via Stripe Connect</p>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                  Valores variam por tipo de serviço
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -564,41 +574,39 @@ export default function ProfessionalProfile() {
                   <select 
                     value={bookingData.tipo}
                     onChange={(e) => {
-                      const tipo = e.target.value;
+                      const selectedName = e.target.value;
                       let valor = 0;
                       
                       // Check in dynamic services
-                      const svc = activeServices.find(s => s.name === tipo);
+                      const svc = activeServices.find(s => s.name === selectedName);
                       if (svc) {
                         valor = Number(svc.base_price);
                       } else {
                         // Check in packages
-                        const pkg = activePackages.find(p => `Pacote: ${p.name}` === tipo);
+                        const pkg = activePackages.find(p => `Pacote: ${p.name}` === selectedName);
                         if (pkg) {
                           valor = Number(pkg.total_price);
                         }
                       }
 
-                      console.log(`Tipo selecionado: ${tipo}, Valor: R$ ${valor}`);
-                      setBookingData({...bookingData, tipo: tipo, valor: valor || 0});
+                      console.log(`Seleção: ${selectedName}, Valor: R$ ${valor}`);
+                      setBookingData({...bookingData, tipo: selectedName, valor: valor || 0});
                     }}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                   >
-                    {activeServices.length > 0 && (
-                      <optgroup label="Serviços Individuais" className="bg-slate-900">
-                        {activeServices.map(svc => (
-                          <option key={svc.id} value={svc.name} className="bg-slate-900">
-                            {svc.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
+                    <optgroup label="Serviços Individuais" className="bg-slate-900">
+                      {activeServices.map(svc => (
+                        <option key={svc.id} value={svc.name} className="bg-slate-900">
+                          {svc.name} (R$ {Number(svc.base_price).toFixed(2)})
+                        </option>
+                      ))}
+                    </optgroup>
                     
                     {activePackages.length > 0 && (
                       <optgroup label="Pacotes de Tratamento" className="bg-slate-900">
                         {activePackages.map(pkg => (
                           <option key={pkg.id} value={`Pacote: ${pkg.name}`} className="bg-slate-900">
-                            {pkg.name} ({pkg.sessions_quantity} sessões)
+                            {pkg.name} ({pkg.sessions_quantity} sessões - R$ {Number(pkg.total_price).toFixed(2)})
                           </option>
                         ))}
                       </optgroup>
