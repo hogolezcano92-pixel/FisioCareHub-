@@ -15,7 +15,10 @@ import {
   Stethoscope,
   Award,
   ShieldCheck,
-  Wallet
+  Wallet,
+  Package as PackageIcon,
+  Zap,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -39,6 +42,7 @@ export default function ProfessionalProfile() {
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [configServicos, setConfigServicos] = useState<any>(null);
+  const [activePackages, setActivePackages] = useState<any[]>([]);
 
   useEffect(() => {
     if (searchParams.get('status') === 'canceled') {
@@ -84,6 +88,19 @@ export default function ProfessionalProfile() {
         } else {
           console.log('Nenhuma configuração de valores encontrada para este profissional.');
         }
+
+        // Fetch active service packages
+        const { data: pkgs, error: pkgsError } = await supabase
+          .from('service_packages')
+          .select('*')
+          .eq('physiotherapist_id', id)
+          .eq('is_active', true)
+          .order('total_price', { ascending: true });
+        
+        if (!pkgsError && pkgs) {
+          setActivePackages(pkgs);
+        }
+
       } catch (err: any) {
         console.error('Erro ao buscar dados:', err);
         toast.error(err.message || 'Erro ao carregar perfil');
@@ -280,6 +297,78 @@ export default function ProfessionalProfile() {
               )}
             </div>
 
+            {/* Service Packages Section */}
+            {activePackages.length > 0 && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
+                    <PackageIcon size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight">Pacotes de Tratamento</h2>
+                    <p className="text-slate-400 text-sm font-medium">Economize optando por pacotes de sessões múltiplas.</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {activePackages.map((pkg) => (
+                    <motion.div
+                      key={pkg.id}
+                      whileHover={{ y: -5 }}
+                      className="premium-card !p-8 relative overflow-hidden group"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+                      
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-full text-[8px] font-black uppercase tracking-widest border border-primary/30">
+                          Economia Garantida
+                        </div>
+                        <Zap className="text-amber-500" size={20} />
+                      </div>
+
+                      <h3 className="text-xl font-black text-white tracking-tight mb-1">{pkg.name}</h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">
+                        {pkg.sessions_quantity} sessões de tratamento
+                      </p>
+
+                      <div className="space-y-2 mb-8">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-400 font-medium tracking-tight">Valor por sessão:</span>
+                          <span className="text-white font-black">R$ {(pkg.total_price / pkg.sessions_quantity).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        {pkg.validity_days && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-slate-400 font-medium tracking-tight">Validade:</span>
+                            <span className="text-white font-black">{pkg.validity_days} dias</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                        <div>
+                          <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Total do Pacote</p>
+                          <p className="text-2xl font-black text-white">R$ {Number(pkg.total_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setBookingData({
+                              ...bookingData,
+                              tipo: `Pacote: ${pkg.name}`,
+                              valor: Number(pkg.total_price)
+                            });
+                            setShowBookingModal(true);
+                          }}
+                          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary-hover transition-all shadow-lg shadow-premium/20"
+                        >
+                          ADQUIRIR
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-6">
               {educationList.length > 0 && (
                 <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
@@ -424,12 +513,14 @@ export default function ProfessionalProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Sessão / Pacote</label>
                   <select 
                     value={bookingData.tipo}
                     onChange={(e) => {
                       const tipo = e.target.value;
                       let valor = 0;
+                      
+                      // Check in normal services
                       if (configServicos) {
                         switch(tipo) {
                           case 'Avaliação inicial': valor = configServicos.avaliacao_inicial; break;
@@ -440,17 +531,36 @@ export default function ProfessionalProfile() {
                           case 'Fisioterapia domiciliar': valor = configServicos.domiciliar; break;
                         }
                       }
+
+                      // Check in packages
+                      const pkg = activePackages.find(p => `Pacote: ${p.name}` === tipo);
+                      if (pkg) {
+                        valor = Number(pkg.total_price);
+                      }
+
                       console.log(`Tipo selecionado: ${tipo}, Valor: R$ ${valor}`);
                       setBookingData({...bookingData, tipo: tipo, valor: valor || 0});
                     }}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                   >
-                    <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
-                    <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
-                    <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
-                    <option value="RPG" className="bg-slate-900">RPG</option>
-                    <option value="Pilates" className="bg-slate-900">Pilates</option>
-                    <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
+                    <optgroup label="Serviços Individuais" className="bg-slate-900">
+                      <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
+                      <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
+                      <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
+                      <option value="RPG" className="bg-slate-900">RPG</option>
+                      <option value="Pilates" className="bg-slate-900">Pilates</option>
+                      <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
+                    </optgroup>
+                    
+                    {activePackages.length > 0 && (
+                      <optgroup label="Pacotes de Tratamento" className="bg-slate-900">
+                        {activePackages.map(pkg => (
+                          <option key={pkg.id} value={`Pacote: ${pkg.name}`} className="bg-slate-900">
+                            {pkg.name} ({pkg.sessions_quantity} sessões)
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
