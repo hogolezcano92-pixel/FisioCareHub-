@@ -173,8 +173,11 @@ export default function FinanceServiceSettings() {
 
     setPackageSaving(true);
     try {
+      // Clean payload: remove internal fields if they exist
+      const { id, created_at, updated_at, ...cleanData } = editingPackage as any;
+      
       const payload = {
-        ...editingPackage,
+        ...cleanData,
         physiotherapist_id: user.id,
       };
 
@@ -196,9 +199,12 @@ export default function FinanceServiceSettings() {
       setShowPackageModal(false);
       setEditingPackage(null);
       fetchPackages();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving package:', err);
-      toast.error('Erro ao salvar pacote');
+      // Show specific error message to help debugging
+      const errorMsg = err.message || 'Erro ao salvar pacote';
+      const detail = err.details || '';
+      toast.error(`${errorMsg} ${detail}`);
     } finally {
       setPackageSaving(false);
     }
