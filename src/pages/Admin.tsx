@@ -67,7 +67,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
-import { categorizeContent, generateLibraryContent } from '../lib/geminiService';
+import { categorizeContent, generateLibraryContent } from '../lib/groq';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
