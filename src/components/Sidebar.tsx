@@ -117,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ], [isAdmin, isApproved, isPhysio, profile, user]);
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-bg-general border-r border-white/5">
+    <div className="flex flex-col h-full bg-background border-r border-white/5">
       {/* Logo Section */}
       <div className="p-6 border-b border-white/5">
         <Link to="/dashboard" onClick={() => setIsOpen(false)}>
