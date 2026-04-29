@@ -473,6 +473,50 @@ CREATE POLICY "Physios can manage their own packages" ON public.service_packages
 CREATE POLICY "Patients can view active packages" ON public.service_packages
     FOR SELECT USING (is_active = true);
 
+-- Tabela de Material da Biblioteca (SaaS Educacional)
+CREATE TABLE IF NOT EXISTS public.library_materials (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    clinical_objective TEXT,
+    level TEXT CHECK (level IN ('beginner', 'intermediate', 'advanced')) DEFAULT 'beginner',
+    type TEXT CHECK (type IN ('educational', 'exercise', 'alert')) DEFAULT 'educational',
+    price DECIMAL(12,2) DEFAULT 0,
+    is_premium BOOLEAN DEFAULT false,
+    cover_image TEXT,
+    file_url TEXT,
+    category TEXT NOT NULL,
+    sections JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.material_purchases (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE NOT NULL,
+    material_id UUID REFERENCES public.library_materials(id) ON DELETE CASCADE NOT NULL,
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS para library_materials
+ALTER TABLE public.library_materials ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read active materials" ON public.library_materials FOR SELECT USING (true);
+CREATE POLICY "Admins manage materials" ON public.library_materials FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.perfis WHERE id = auth.uid() AND tipo_usuario = 'admin')
+);
+
+-- RLS para material_purchases
+ALTER TABLE public.material_purchases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Patients view their own purchases" ON public.material_purchases FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Patients can insert their purchases" ON public.material_purchases FOR INSERT WITH CHECK (auth.uid() = patient_id);
+
+-- Trigger para updated_at
+CREATE TRIGGER set_updated_at_library_materials
+BEFORE UPDATE ON public.library_materials
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_updated_at();
+
 -- Trigger para updated_at para a nova tabela
 CREATE TRIGGER set_updated_at_service_packages
 BEFORE UPDATE ON public.service_packages
