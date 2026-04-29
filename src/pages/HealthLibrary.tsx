@@ -34,6 +34,9 @@ interface LibraryMaterial {
   level: 'beginner' | 'intermediate' | 'advanced';
   type: 'educational' | 'exercise' | 'alert';
   price: number;
+  price_cents?: number;
+  complexity?: 'low' | 'medium' | 'high';
+  topic?: string;
   is_premium: boolean;
   cover_image: string;
   file_url?: string;
@@ -136,26 +139,32 @@ export default function HealthLibrary() {
     try {
       setLoading(true);
       
-      // Process each item in cart
-      for (const item of cart) {
-        const { error } = await supabase
-          .from('material_purchases')
-          .insert({
-            patient_id: user.id,
-            material_id: item.id,
-            purchased_at: new Date().toISOString()
-          });
-        if (error) throw error;
+      const response = await fetch('/api/library/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          email: user.email,
+          material_ids: cart.map(item => item.id)
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao iniciar checkout");
       }
 
-      const purchasedIds = cart.map(item => item.id);
-      setPurchases(prev => new Set([...prev, ...purchasedIds]));
-      setCart([]);
-      setShowCart(false);
-      toast.success('Compra realizada com sucesso!');
-    } catch (error) {
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("URL de checkout não recebida");
+      }
+    } catch (error: any) {
       console.error('Error during checkout:', error);
-      toast.error('Erro ao processar o pagamento');
+      toast.error('Erro ao processar o pagamento: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }
