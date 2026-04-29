@@ -89,7 +89,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (finalProfile && finalProfile.email?.toLowerCase() === 'hogolezcano92@gmail.com') {
-        finalProfile = { ...finalProfile, tipo_usuario: 'admin', plano: 'pro', plan_type: 'pro' };
+        // Ensure admin role is persisted in DB if not already
+        if (finalProfile.tipo_usuario !== 'admin') {
+          supabase.from('perfis')
+            .update({ tipo_usuario: 'admin', plano: 'admin' })
+            .eq('id', userId)
+            .then(({ error: e }) => {
+              if (e) console.warn('Automatic admin promotion in DB failed:', e.message);
+            });
+        }
+        finalProfile = { ...finalProfile, tipo_usuario: 'admin', plano: 'admin', plan_type: 'pro' };
       }
 
       // Fetch subscription in parallel if profile exists
