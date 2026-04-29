@@ -40,13 +40,14 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [view, setView] = useState<'daily' | 'all'>('daily');
   const [serviceSettings, setServiceSettings] = useState<any>(null);
+  const [physioServices, setPhysioServices] = useState<any[]>([]);
 
   // Form State
   const [formData, setFormData] = useState({
     paciente_id: '',
     data: new Date().toISOString().split('T')[0],
     hora: '08:00',
-    tipo: 'Avaliação inicial',
+    tipo: '',
     local: '',
     observacoes: '',
     valor: 0
@@ -73,20 +74,49 @@ export default function Agenda() {
   const fetchServiceSettings = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      // 1. Fetch legacy settings
+      const { data: legacyData, error: legacyError } = await supabase
         .from('configuracao_servicos')
         .select('*')
         .eq('physio_id', user.id)
         .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      setServiceSettings(data);
+      if (legacyError && legacyError.code !== 'PGRST116') throw legacyError;
+      setServiceSettings(legacyData);
+
+      // 2. Fetch new dynamic services
+      const { data: dynamicData, error: dynamicError } = await supabase
+        .from('physiotherapist_services')
+        .select('*')
+        .eq('physiotherapist_id', user.id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (dynamicError) throw dynamicError;
+
+      let finalServices: any[] = [];
+      if (dynamicData && dynamicData.length > 0) {
+        finalServices = dynamicData;
+      } else if (legacyData) {
+        // Fallback mapping
+        finalServices = [
+          { id: 'av', name: 'Avaliação inicial', base_price: legacyData.avaliacao_inicial },
+          { id: 'fis', name: 'Sessão de fisioterapia', base_price: legacyData.sessao_fisioterapia },
+          { id: 'reab', name: 'Reabilitação', base_price: legacyData.reabilitacao },
+          { id: 'rpg', name: 'RPG', base_price: legacyData.rpg },
+          { id: 'pil', name: 'Pilates', base_price: legacyData.pilates },
+          { id: 'dom', name: 'Fisioterapia domiciliar', base_price: legacyData.domiciliar },
+        ].filter(s => Number(s.base_price) > 0);
+      }
+
+      setPhysioServices(finalServices);
       
-      if (data && !formData.tipo) {
+      if (finalServices.length > 0 && !formData.tipo) {
+        const defaultSvc = finalServices.find(s => s.name.toLowerCase().includes('avaliação')) || finalServices[0];
         setFormData(prev => ({ 
           ...prev, 
-          tipo: 'Avaliação inicial',
-          valor: data.avaliacao_inicial || 0
+          tipo: defaultSvc.name,
+          valor: Number(defaultSvc.base_price) || 0
         }));
       }
     } catch (err) {
@@ -776,33 +806,21 @@ export default function Agenda() {
                     required
                     value={formData.tipo}
                     onChange={(e) => {
-                      const tipo = e.target.value;
-                      let valor = 0;
-                      if (serviceSettings) {
-                        switch(tipo) {
-                          case 'Avaliação inicial': valor = serviceSettings.avaliacao_inicial; break;
-                          case 'Sessão de fisioterapia': valor = serviceSettings.sessao_fisioterapia; break;
-                          case 'Reabilitação': valor = serviceSettings.reabilitacao; break;
-                          case 'RPG': valor = serviceSettings.rpg; break;
-                          case 'Pilates': valor = serviceSettings.pilates; break;
-                          case 'Fisioterapia domiciliar': valor = serviceSettings.domiciliar; break;
-                        }
-                      }
+                      const selectedSvc = physioServices.find(s => s.name === e.target.value);
                       setFormData({
                         ...formData, 
-                        tipo: tipo,
-                        valor: valor || 0
+                        tipo: e.target.value,
+                        valor: selectedSvc ? Number(selectedSvc.base_price) : 0
                       });
                     }}
                     className="input-compact"
                   >
                     <option value="" className="bg-slate-900">Selecione o tipo...</option>
-                    <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
-                    <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
-                    <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
-                    <option value="RPG" className="bg-slate-900">RPG</option>
-                    <option value="Pilates" className="bg-slate-900">Pilates</option>
-                    <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
+                    {physioServices.map(svc => (
+                      <option key={svc.id} value={svc.name} className="bg-slate-900">
+                        {svc.name} (R$ {Number(svc.base_price).toFixed(2)})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

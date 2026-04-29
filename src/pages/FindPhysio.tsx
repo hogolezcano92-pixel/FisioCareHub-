@@ -45,19 +45,34 @@ export default function FindPhysio() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all service configurations to display "starting from" price
-      const { data: configsData, error: configsError } = await supabase
+      // Fetch service configurations (legacy)
+      const { data: configsData } = await supabase
         .from('configuracao_servicos')
         .select('physio_id, sessao_fisioterapia');
 
-      if (configsError) throw configsError;
+      // Fetch dynamic services (new) to find the lowest price
+      const { data: dynamicServices } = await supabase
+        .from('physiotherapist_services')
+        .select('physiotherapist_id, base_price')
+        .eq('is_active', true);
 
       // Map prices to profiles
       const physiosWithPrices = (profilesData || []).map(physio => {
-        const config = (configsData || []).find(c => c.physio_id === physio.id);
+        // Find legacy price
+        const configLegacy = (configsData || []).find(c => c.physio_id === physio.id);
+        const legacyPrice = configLegacy?.sessao_fisioterapia || null;
+
+        // Find lowest dynamic price
+        const physioDynamicSvcs = (dynamicServices || []).filter(s => s.physiotherapist_id === physio.id);
+        const dynamicPrices = physioDynamicSvcs.map(s => Number(s.base_price)).filter(p => p > 0);
+        const lowestDynamicPrice = dynamicPrices.length > 0 ? Math.min(...dynamicPrices) : null;
+
+        // Final price logic: prefer dynamic if available, otherwise legacy
+        const finalPrice = lowestDynamicPrice || legacyPrice;
+
         return {
           ...physio,
-          preco_base: config?.sessao_fisioterapia || null
+          preco_base: finalPrice
         };
       });
 

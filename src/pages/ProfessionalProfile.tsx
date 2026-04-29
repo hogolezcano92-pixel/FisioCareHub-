@@ -84,6 +84,7 @@ export default function ProfessionalProfile() {
         }
 
         // Fetch active services (new dynamic table)
+        console.log('Fetching services for physio:', id);
         const { data: svcs, error: svcsError } = await supabase
           .from('physiotherapist_services')
           .select('*')
@@ -91,20 +92,49 @@ export default function ProfessionalProfile() {
           .eq('is_active', true)
           .order('name', { ascending: true });
         
-        if (!svcsError && svcs) {
-          setActiveServices(svcs);
-          // Set initial booking data if services exist
-          const initialSvc = svcs.find(s => s.name === 'Avaliação Inicial') || svcs[0];
-          if (initialSvc) {
-            setBookingData(prev => ({
-              ...prev,
-              tipo: initialSvc.name,
-              valor: Number(initialSvc.base_price) || 0
-            }));
-          }
+        if (svcsError) console.error('Error fetching services:', svcsError);
+
+        let finalServices: any[] = [];
+        
+        if (!svcsError && svcs && svcs.length > 0) {
+          console.log('Using dynamic services:', svcs.length);
+          finalServices = svcs;
+        } else if (settings) {
+          // Fallback for legacy services if new table is empty but legacy settings exist
+          console.log('Dynamic services empty, falling back to legacy settings');
+          const legacyServices = [
+            { id: 'legacy_av', name: 'Avaliação inicial', base_price: settings.avaliacao_inicial },
+            { id: 'legacy_fis', name: 'Sessão de fisioterapia', base_price: settings.sessao_fisioterapia },
+            { id: 'legacy_reab', name: 'Reabilitação', base_price: settings.reabilitacao },
+            { id: 'legacy_rpg', name: 'RPG', base_price: settings.rpg },
+            { id: 'legacy_pil', name: 'Pilates', base_price: settings.pilates },
+            { id: 'legacy_dom', name: 'Fisioterapia domiciliar', base_price: settings.domiciliar },
+            { id: 'legacy_tele', name: 'Teleconsulta', base_price: settings.teleconsulta || 0 },
+          ].filter(s => Number(s.base_price) > 0);
+          
+          finalServices = legacyServices;
+        }
+
+        // Hard fallback if still empty to ensure UI is not broken
+        if (finalServices.length === 0) {
+          console.log('All service sources empty, using hard default');
+          finalServices = [{ id: 'default', name: 'Consulta / Avaliação', base_price: 0 }];
+        }
+
+        setActiveServices(finalServices);
+        
+        // Ensure booking data matches available services
+        if (finalServices.length > 0) {
+          const initialSvc = finalServices.find(s => s.name.toLowerCase().includes('avaliação')) || finalServices[0];
+          setBookingData(prev => ({
+            ...prev,
+            tipo: initialSvc.name,
+            valor: Number(initialSvc.base_price) || 0
+          }));
         }
 
         // Fetch active service packages
+        console.log('Fetching packages for physio:', id);
         const { data: pkgs, error: pkgsError } = await supabase
           .from('service_packages')
           .select('*')
@@ -112,7 +142,9 @@ export default function ProfessionalProfile() {
           .eq('is_active', true)
           .order('total_price', { ascending: true });
         
+        if (pkgsError) console.error('Error fetching packages:', pkgsError);
         if (!pkgsError && pkgs) {
+          console.log('Packages loaded:', pkgs.length);
           setActivePackages(pkgs);
         }
 
