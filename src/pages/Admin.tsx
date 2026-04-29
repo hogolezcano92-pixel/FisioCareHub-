@@ -67,7 +67,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
-import { categorizeContent, generateLibraryContent } from '../lib/groq';
+import { categorizeContent } from '../lib/groq';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
@@ -1098,24 +1098,25 @@ export default function Admin() {
 
     setIsGenerating(true);
     try {
-      const generated = await generateLibraryContent(aiGenForm.theme, aiGenForm.type, aiGenForm.level);
-      
-      const { error } = await supabase
-        .from('library_materials')
-        .insert([{
-          title: generated.title,
-          description: generated.description,
-          category: generated.category,
-          clinical_objective: generated.clinical_objective,
-          level: aiGenForm.level,
+      const response = await fetch('/api/library/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          theme: aiGenForm.theme,
           type: aiGenForm.type,
-          sections: generated.sections, // Using clinical sections directly
-          is_premium: false, // Defaulting to free for auto-gen
-          cover_image: `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop` // Default placeholder
-        }]);
+          level: aiGenForm.level
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao gerar conteúdo");
+      }
 
+      const material = await response.json();
+      
       import('sonner').then(({ toast }) => toast.success("Conteúdo gerado e publicado com sucesso!"));
       setAiGenForm({ ...aiGenForm, theme: '' });
       fetchMateriais();
