@@ -75,11 +75,23 @@ export default function FinanceServiceSettings() {
       navigate('/login');
       return;
     }
-    fetchSettings();
-    fetchCommissionRate();
-    fetchPackages();
-    fetchPhysioServices();
+    const init = async () => {
+      await Promise.all([
+        fetchSettings(),
+        fetchCommissionRate(),
+        fetchPackages()
+      ]);
+      await fetchPhysioServices();
+    };
+    init();
   }, [user, authLoading]);
+
+  // Auto-set service_id when physioServices finishes loading and modal is open for new package
+  useEffect(() => {
+    if (showPackageModal && editingPackage && !editingPackage.id && !editingPackage.service_id && physioServices.length > 0) {
+      setEditingPackage({ ...editingPackage, service_id: physioServices[0].id });
+    }
+  }, [physioServices, showPackageModal]);
 
   const fetchPhysioServices = async () => {
     if (!user) return;
@@ -116,23 +128,35 @@ export default function FinanceServiceSettings() {
           console.error('Error inserting default services:', insertErr);
           throw insertErr;
         }
-        console.log('Default services initialized:', inserted);
-        setPhysioServices(inserted || []);
+
+        // If insert worked but didn't return data, fetch again
+        if (!inserted || inserted.length === 0) {
+          const { data: retryData } = await supabase
+            .from('physiotherapist_services')
+            .select('*')
+            .eq('physiotherapist_id', user.id);
+          setPhysioServices(retryData || []);
+        } else {
+          setPhysioServices(inserted);
+        }
+        console.log('Default services initialized');
       } else {
         console.log('Services fetched successfully:', data.length, 'records');
         setPhysioServices(data);
       }
     } catch (err) {
       console.error('Final error fetching physio services:', err);
-      toast.error('Erro ao carregar lista de serviços');
+      toast.error('Erro ao carregar lista de serviços. Verifique se o banco de dados está atualizado.');
     }
   };
 
   const fetchPackages = async () => {
+    if (!user) return;
     try {
       const { data, error } = await supabase
         .from('service_packages')
         .select('*')
+        .eq('physiotherapist_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -685,28 +709,31 @@ export default function FinanceServiceSettings() {
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none pr-12"
                     >
                       <option value="" disabled className="bg-slate-900">Selecione um serviço</option>
-                      {physioServices.length > 0 ? (
+                      {physioServices && physioServices.length > 0 ? (
                         physioServices.map(s => (
                           <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
                         ))
-                      ) : (
-                        <option value="" disabled className="bg-slate-900 italic">Carregando serviços...</option>
-                      )}
+                      ) : null}
                     </select>
-                    {physioServices.length === 0 && (
-                      <button 
-                        type="button"
-                        onClick={fetchPhysioServices}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-emerald-300 transition-colors"
-                        title="Recarregar serviços"
-                      >
-                        <Zap size={16} />
-                      </button>
+                    {(!physioServices || physioServices.length === 0) && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 rounded-2xl">
+                         <button 
+                          type="button"
+                          onClick={fetchPhysioServices}
+                          className="flex items-center gap-2 text-emerald-400 font-bold hover:text-emerald-300 transition-all"
+                        >
+                          <Loader2 size={16} className="animate-spin" />
+                          Carregando serviços...
+                        </button>
+                      </div>
                     )}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Zap size={16} className="text-slate-500" />
+                    </div>
                   </div>
-                  {physioServices.length === 0 && (
+                  {(!physioServices || physioServices.length === 0) && (
                     <p className="mt-1 text-[9px] text-rose-400 font-bold uppercase tracking-widest px-1">
-                      Nenhum serviço encontrado. Tente recarregar ou salvar a aba "Preços Individuais" primeiro.
+                      Nenhum serviço encontrado. Tente recarregar ou verifique se definiu preços na aba "Preços Individuais".
                     </p>
                   )}
                 </div>
