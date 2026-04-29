@@ -112,7 +112,28 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
   return parsed;
 }
 
-const calculateLibraryPrice = (complexity: string, topic: string) => {
+const CATEGORY_PRESETS = [
+  { name: 'Exercicios e Reabilitacao', price: 35.99, image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Dor Lombar', price: 45.99, image: 'https://images.unsplash.com/photo-1591258739299-5b65d5cbb235?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Lesoes Esportivas', price: 50.00, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Postura', price: 18.99, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Mobilidade', price: 25.99, image: 'https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Recuperacao Pos-Cirurgica', price: 65.99, image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800' }
+];
+
+const calculateLibraryPrice = (complexity: string, topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  // Check for exact category matches first
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return Math.round(preset.price * 100);
+    }
+  }
+
+  // Fallback to dynamic pricing
   let base = 990;
   const comp = String(complexity || 'low').toLowerCase();
   if (comp === 'medium') base = 1990;
@@ -126,6 +147,34 @@ const calculateLibraryPrice = (complexity: string, topic: string) => {
   return base;
 };
 
+const resolveCoverImage = (topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return preset.image;
+    }
+  }
+
+  return `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop`;
+};
+
+const resolveCategory = (topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return preset.name.replace(/Reabilitacao/g, 'Reabilitação').replace(/Pos-Cirurgica/g, 'Pós-Cirúrgica');
+    }
+  }
+
+  return 'Reabilitação';
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -136,7 +185,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const aiResponse = await generateLibraryContentAI(theme, type, level);
-    const priceCents = calculateLibraryPrice(aiResponse.complexity, aiResponse.topic);
+    const priceCents = calculateLibraryPrice(aiResponse.complexity, aiResponse.topic, theme);
+    const coverImage = resolveCoverImage(aiResponse.topic, theme);
+    const category = resolveCategory(aiResponse.topic, theme);
 
     const supabase = getSupabaseAdmin();
     const { data: material, error } = await supabase
@@ -152,9 +203,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sections: aiResponse.content.sections,
         level: (level || 'beginner').toLowerCase(),
         type: (type || 'educational').toLowerCase(),
-        category: 'Reabilitação',
+        category: category,
         is_premium: priceCents > 0,
-        cover_image: `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop`
+        cover_image: coverImage
       })
       .select()
       .single();
