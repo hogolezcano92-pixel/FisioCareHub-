@@ -414,3 +414,68 @@ USING (
 INSERT INTO public.system_settings (key, value) 
 VALUES ('commission_rate', '12') 
 ON CONFLICT (key) DO NOTHING;
+
+-- Tabela de Configuração de Preços (Legado - Mantida para compatibilidade se necessário, mas preferir a nova tabela de serviços)
+CREATE TABLE IF NOT EXISTS public.configuracao_servicos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    physio_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
+    avaliacao_inicial DECIMAL(12,2) DEFAULT 0,
+    sessao_fisioterapia DECIMAL(12,2) DEFAULT 0,
+    reabilitacao DECIMAL(12,2) DEFAULT 0,
+    rpg DECIMAL(12,2) DEFAULT 0,
+    pilates DECIMAL(12,2) DEFAULT 0,
+    domiciliar DECIMAL(12,2) DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Nova Tabela de Serviços Individuais (Mais flexível)
+CREATE TABLE IF NOT EXISTS public.physiotherapist_services (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    physiotherapist_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    base_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Tabela de Pacotes de Serviço
+CREATE TABLE IF NOT EXISTS public.service_packages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    physiotherapist_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
+    service_id UUID REFERENCES public.physiotherapist_services(id) ON DELETE SET NULL,
+    name TEXT NOT NULL,
+    sessions_quantity INTEGER NOT NULL DEFAULT 1,
+    total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+    discount_type TEXT CHECK (discount_type IN ('percent', 'fixed', 'none')) DEFAULT 'none',
+    discount_value DECIMAL(12,2) DEFAULT 0,
+    validity_days INTEGER,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS para physiotherapist_services
+ALTER TABLE public.physiotherapist_services ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physios can manage their own services" ON public.physiotherapist_services
+    FOR ALL USING (auth.uid() = physiotherapist_id)
+    WITH CHECK (auth.uid() = physiotherapist_id);
+
+CREATE POLICY "Anyone can view active services" ON public.physiotherapist_services
+    FOR SELECT USING (is_active = true);
+
+-- RLS para service_packages
+ALTER TABLE public.service_packages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physios can manage their own packages" ON public.service_packages
+    FOR ALL USING (auth.uid() = physiotherapist_id)
+    WITH CHECK (auth.uid() = physiotherapist_id);
+
+CREATE POLICY "Patients can view active packages" ON public.service_packages
+    FOR SELECT USING (is_active = true);
+
+-- Trigger para updated_at para a nova tabela
+CREATE TRIGGER set_updated_at_service_packages
+BEFORE UPDATE ON public.service_packages
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_updated_at();
