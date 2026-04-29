@@ -446,7 +446,7 @@ CREATE TABLE IF NOT EXISTS public.service_packages (
     name TEXT NOT NULL,
     sessions_quantity INTEGER NOT NULL DEFAULT 1,
     total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
-    discount_type TEXT CHECK (discount_type IN ('percent', 'fixed', 'none')) DEFAULT 'none',
+    discount_type TEXT CHECK (discount_type IN ('percent', 'fixed')),
     discount_value DECIMAL(12,2) DEFAULT 0,
     validity_days INTEGER,
     is_active BOOLEAN DEFAULT true,
