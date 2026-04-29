@@ -117,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ], [isAdmin, isApproved, isPhysio, profile, user]);
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#0B1120] border-r border-white/5">
+    <div className="flex flex-col h-full bg-bg-general border-r border-white/5">
       {/* Logo Section */}
       <div className="p-6 border-b border-white/5">
         <Link to="/dashboard" onClick={() => setIsOpen(false)}>
@@ -156,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item",
                       isActive 
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
+                        ? "bg-primary text-white shadow-lg shadow-premium" 
                         : item.variant === 'danger'
                           ? "text-rose-400 hover:bg-rose-500/10 active:scale-95"
                           : "text-slate-400 hover:bg-white/5 hover:text-white active:scale-95"
@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       size={20} 
                       className={cn(
                         "transition-colors",
-                        isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-blue-400"
+                        isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-primary"
                       )} 
                     />
                     <span>{item.name}</span>
