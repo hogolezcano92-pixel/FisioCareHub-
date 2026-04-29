@@ -16,7 +16,6 @@ import {
   Award,
   ShieldCheck,
   Wallet,
-  Package as PackageIcon,
   Zap,
   Info
 } from 'lucide-react';
@@ -357,78 +356,6 @@ export default function ProfessionalProfile() {
               )}
             </div>
 
-            {/* Service Packages Section */}
-            {activePackages.length > 0 && (
-              <div className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
-                    <PackageIcon size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight">Pacotes de Tratamento</h2>
-                    <p className="text-slate-400 text-sm font-medium">Economize optando por pacotes de sessões múltiplas.</p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  {activePackages.map((pkg) => (
-                    <motion.div
-                      key={pkg.id}
-                      whileHover={{ y: -5 }}
-                      className="premium-card !p-8 relative overflow-hidden group"
-                    >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
-                      
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-full text-[8px] font-black uppercase tracking-widest border border-primary/30">
-                          Economia Garantida
-                        </div>
-                        <Zap className="text-amber-500" size={20} />
-                      </div>
-
-                      <h3 className="text-xl font-black text-white tracking-tight mb-1">{pkg.name}</h3>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">
-                        {pkg.sessions_quantity} sessões de tratamento
-                      </p>
-
-                      <div className="space-y-2 mb-8">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-400 font-medium tracking-tight">Valor por sessão:</span>
-                          <span className="text-white font-black">R$ {(pkg.total_price / pkg.sessions_quantity).toFixed(2).replace('.', ',')}</span>
-                        </div>
-                        {pkg.validity_days && (
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-400 font-medium tracking-tight">Validade:</span>
-                            <span className="text-white font-black">{pkg.validity_days} dias</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                        <div>
-                          <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Total do Pacote</p>
-                          <p className="text-2xl font-black text-white">R$ {Number(pkg.total_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setBookingData({
-                              ...bookingData,
-                              tipo: `Pacote: ${pkg.name}`,
-                              valor: Number(pkg.total_price)
-                            });
-                            setShowBookingModal(true);
-                          }}
-                          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary-hover transition-all shadow-lg shadow-premium/20"
-                        >
-                          ADQUIRIR
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="grid md:grid-cols-2 gap-6">
               {educationList.length > 0 && (
                 <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-xl space-y-4">
@@ -493,26 +420,6 @@ export default function ProfessionalProfile() {
                   Valores variam por tipo de serviço
                 </p>
               </div>
-
-              {activePackages.length > 0 && (
-                <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Economize</span>
-                    <span className="text-white text-xs font-bold font-black uppercase tracking-wider">Pacotes de Tratamento</span>
-                  </div>
-                  <div className="space-y-2">
-                    {activePackages.slice(0, 2).map(pkg => (
-                      <div key={pkg.id} className="flex justify-between items-center text-xs">
-                        <span className="text-slate-300 font-medium">{pkg.name} ({pkg.sessions_quantity} sessões)</span>
-                        <span className="text-white font-black">R$ {Number(pkg.total_price).toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {activePackages.length > 2 && (
-                      <p className="text-blue-400 text-[10px] font-bold">+ {activePackages.length - 2} opções disponíveis no menu</p>
-                    )}
-                  </div>
-                </div>
-              )}
 
               <div className="space-y-4">
                 <button 
