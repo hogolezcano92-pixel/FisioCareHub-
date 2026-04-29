@@ -1208,17 +1208,29 @@ export default function Admin() {
   const handleDeleteMaterial = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja excluir este material?")) return;
     try {
-      const { error, data } = await supabase
-        .from('library_materials')
-        .delete()
-        .eq('id', id)
-        .select();
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
       
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        import('sonner').then(({ toast }) => toast.error("Não foi possível excluir o material. Verifique se você tem permissões de administrador no banco de dados."));
+      if (!currentSession) {
+        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou. Por favor, faça login novamente."));
         return;
+      }
+
+      // Use the new secure server-side endpoint to avoid RLS/JWT issues on the frontend
+      const response = await fetch('/api/library/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id,
+          accessToken: currentSession.access_token
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Erro ao excluir material");
       }
       
       fetchMateriais();
