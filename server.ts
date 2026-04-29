@@ -33,12 +33,12 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
 
     O conteúdo deve seguir RIGOROSAMENTE este formato JSON:
     {
-      "title": "Título impactante",
-      "topic": "Tema clínico principal (ex: Cardiorrespiratório, Traumato-ortopedia, Neurologia, etc)",
+      "title": "Titulo sem acentos ou simbolos",
+      "topic": "Tema clinico sem acentos",
       "complexity": "low",
       "content": {
         "description": "Uma breve introdução motivadora para o paciente (máx 200 caracteres)",
-        "clinical_objective": "O objetivo terapêutico principal deste material",
+        "clinical_objective": "Objetivo sem acentos e sem caracteres especiais apenas letras e numeros",
         "sections": [
           {
             "type": "text",
@@ -63,17 +63,17 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
       }
     }
 
-    REGRAS OBRIGATÓRIAS:
-    1. A complexidade DEVE ser exatamente uma destas strings: low, medium, high.
-    2. O campo topic deve ser descritivo (ex: UTI, Pós-operatório, Neurologia).
-    3. NÃO inclua preço.
+    REGRAS CRITICAS DE VALIDACAO:
+    1. O campo "clinical_objective" e "title" NAO podem ter acentos, cedilhas ou símbolos (&, :, %, /, -, etc). 
+    2. Use apenas letras básicas (A-Z), números e espaços nesses campos.
+    3. A complexidade DEVE ser exatamente uma destas strings: low, medium, high.
     4. Retorne apenas o JSON.
   `;
 
   try {
     const completion = await client.chat.completions.create({
       messages: [
-        { role: "system", content: "Você é um assistente de IA que fornece apenas respostas em formato JSON válido, sem explicações adicionais." },
+        { role: "system", content: "Você é um assistente de IA que fornece apenas respostas em formato JSON válido, sem explicações adicionais. Obedeça estritamente as regras de caracteres simples." },
         { role: "user", content: prompt }
       ],
       model: "llama-3.3-70b-versatile",
@@ -85,12 +85,23 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
     
     const parsed = JSON.parse(text);
     
-    // Validação básica para evitar erros de banco
-    if (!parsed.title) parsed.title = `Guia de ${theme}`;
-    if (!parsed.topic) parsed.topic = theme;
+    // Sanitização forçada no Backend
+    if (parsed.title) parsed.title = sanitizeStrict(parsed.title);
+    if (parsed.topic) parsed.topic = sanitizeStrict(parsed.topic);
+    if (parsed.clinical_objective) parsed.clinical_objective = sanitizeStrict(parsed.clinical_objective);
+    
+    // Check nested content clinical_objective
+    if (parsed.content?.clinical_objective) {
+      parsed.content.clinical_objective = sanitizeStrict(parsed.content.clinical_objective);
+    }
+    
+    if (!parsed.title) parsed.title = `Guia de ${sanitizeStrict(theme)}`;
+    if (!parsed.topic) parsed.topic = sanitizeStrict(theme);
+    
     if (!['low', 'medium', 'high'].includes(parsed.complexity)) {
       parsed.complexity = 'low';
     }
+    
     if (!parsed.content) throw new Error("Estrutura de conteúdo inválida no JSON da IA");
 
     return parsed;
@@ -100,7 +111,37 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
   }
 }
 
-const calculateLibraryPrice = (complexity: string, topic: string) => {
+function sanitizeStrict(text: string): string {
+  if (!text) return "";
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^a-zA-Z0-9\s]/g, "") // Remove símbolos e caracteres especiais
+    .trim();
+}
+
+const CATEGORY_PRESETS = [
+  { name: 'Exercicios e Reabilitacao', price: 35.99, image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Dor Lombar', price: 45.99, image: 'https://images.unsplash.com/photo-1591258739299-5b65d5cbb235?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Lesoes Esportivas', price: 50.00, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Postura', price: 18.99, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Mobilidade', price: 25.99, image: 'https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Recuperacao Pos-Cirurgica', price: 65.99, image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800' }
+];
+
+const calculateLibraryPrice = (complexity: string, topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  // Check for exact category matches first
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return Math.round(preset.price * 100);
+    }
+  }
+
+  // Fallback to dynamic pricing
   let base = 990; // R$ 9,90
   const comp = String(complexity || 'low').toLowerCase();
   
@@ -116,6 +157,34 @@ const calculateLibraryPrice = (complexity: string, topic: string) => {
   }
 
   return base;
+};
+
+const resolveCoverImage = (topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return preset.image;
+    }
+  }
+
+  return `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop`;
+};
+
+const resolveCategory = (topic: string, theme: string) => {
+  const normalizedTheme = sanitizeStrict(theme).toLowerCase();
+  const normalizedTopic = sanitizeStrict(topic).toLowerCase();
+
+  for (const preset of CATEGORY_PRESETS) {
+    const normalizedPreset = sanitizeStrict(preset.name).toLowerCase();
+    if (normalizedTheme.includes(normalizedPreset) || normalizedTopic.includes(normalizedPreset)) {
+      return preset.name.replace(/Reabilitacao/g, 'Reabilitação').replace(/Pos-Cirurgica/g, 'Pós-Cirúrgica');
+    }
+  }
+
+  return 'Reabilitação';
 };
 
 let twilioClient: any = null;
@@ -514,7 +583,9 @@ async function startServer() {
       }
 
       const aiResponse = await generateLibraryContentAI(theme, type, level);
-      const priceCents = calculateLibraryPrice(aiResponse.complexity, aiResponse.topic);
+      const priceCents = calculateLibraryPrice(aiResponse.complexity, aiResponse.topic, theme);
+      const coverImage = resolveCoverImage(aiResponse.topic, theme);
+      const category = resolveCategory(aiResponse.topic, theme);
 
       const { data: material, error } = await getSupabaseAdmin()
         .from('library_materials')
@@ -529,9 +600,9 @@ async function startServer() {
           sections: aiResponse.content.sections,
           level: (level || 'beginner').toLowerCase(),
           type: (type || 'educational').toLowerCase(),
-          category: 'Reabilitação',
+          category: category,
           is_premium: priceCents > 0,
-          cover_image: `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop`
+          cover_image: coverImage
         })
         .select()
         .single();
