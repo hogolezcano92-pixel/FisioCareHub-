@@ -6,6 +6,7 @@ export interface ThemeConfig {
   primaryHover: string;
   bg: string;
   card: string;
+  cardHover: string;
   border: string;
   text: string;
   textMuted: string;
@@ -19,10 +20,11 @@ export const THEMES: Record<string, ThemeConfig> = {
     primary: '#0047AB',
     primaryHover: '#003580',
     bg: '#0B1120',
-    card: '#1E293B',
-    border: '#334155',
+    card: '#161F32',
+    cardHover: '#1E293B',
+    border: '#2D3748',
     text: '#FFFFFF',
-    textMuted: '#E1E1E1',
+    textMuted: '#94A3B8',
     shadowRgb: '0, 71, 171'
   },
   green: {
@@ -30,11 +32,12 @@ export const THEMES: Record<string, ThemeConfig> = {
     name: 'Verde Saúde',
     primary: '#10B981',
     primaryHover: '#059669',
-    bg: '#062016',
-    card: '#064E3B',
-    border: '#065F46',
+    bg: '#02120B',
+    card: '#062B1D',
+    cardHover: '#0A3C29',
+    border: '#0F5135',
     text: '#FFFFFF',
-    textMuted: '#D1FAE5',
+    textMuted: '#A7F3D0',
     shadowRgb: '16, 185, 129'
   },
   purple: {
@@ -42,11 +45,12 @@ export const THEMES: Record<string, ThemeConfig> = {
     name: 'Roxo Premium',
     primary: '#8B5CF6',
     primaryHover: '#7C3AED',
-    bg: '#1E1B4B',
-    card: '#312E81',
-    border: '#3730A3',
+    bg: '#0F0B1E',
+    card: '#1A1435',
+    cardHover: '#221A47',
+    border: '#2D225E',
     text: '#FFFFFF',
-    textMuted: '#E0E7FF',
+    textMuted: '#C4B5FD',
     shadowRgb: '139, 92, 246'
   }
 };
@@ -59,8 +63,12 @@ export const applyTheme = (themeId: string) => {
   root.style.setProperty('--theme-primary-hover', theme.primaryHover);
   root.style.setProperty('--theme-bg', theme.bg);
   root.style.setProperty('--theme-card', theme.card);
+  root.style.setProperty('--theme-card-hover', theme.cardHover);
   root.style.setProperty('--theme-border', theme.border);
   root.style.setProperty('--theme-text', theme.text);
   root.style.setProperty('--theme-text-muted', theme.textMuted);
   root.style.setProperty('--theme-shadow-rgb', theme.shadowRgb);
+  
+  // Also update body background directly for instant feedback on the very edge of the viewport
+  document.body.style.backgroundColor = theme.bg;
 };
