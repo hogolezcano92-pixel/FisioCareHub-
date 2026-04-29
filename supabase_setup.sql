@@ -442,7 +442,6 @@ CREATE TABLE IF NOT EXISTS public.physiotherapist_services (
 CREATE TABLE IF NOT EXISTS public.service_packages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     physiotherapist_id UUID REFERENCES public.perfis(id) ON DELETE CASCADE,
-    service_id UUID REFERENCES public.physiotherapist_services(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     sessions_quantity INTEGER NOT NULL DEFAULT 1,
     total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
