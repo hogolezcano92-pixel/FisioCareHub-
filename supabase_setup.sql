@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.perfis (
     is_pro BOOLEAN DEFAULT false,
     aprovado BOOLEAN DEFAULT false,
     status_aprovacao TEXT DEFAULT 'pendente',
+    theme TEXT DEFAULT 'blue', -- 'blue', 'green', 'purple'
     documentos TEXT[] DEFAULT '{}',
     formacao_academica TEXT[] DEFAULT '{}',
     servicos_ofertados TEXT[] DEFAULT '{}',
@@ -387,3 +388,29 @@ USING (
   bucket_id = 'documentos_fisioterapeutas' AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- 10. Configurações do Sistema
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Configurações podem ser lidas por todos autenticados" 
+ON public.system_settings FOR SELECT 
+TO authenticated 
+USING (true);
+
+CREATE POLICY "Admins podem gerenciar configurações" 
+ON public.system_settings FOR ALL 
+TO authenticated 
+USING (
+    EXISTS (SELECT 1 FROM public.perfis WHERE id = auth.uid() AND tipo_usuario = 'admin')
+);
+
+-- Inserir taxa padrão de 12% se não existir
+INSERT INTO public.system_settings (key, value) 
+VALUES ('commission_rate', '12') 
+ON CONFLICT (key) DO NOTHING;
