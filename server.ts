@@ -21,7 +21,7 @@ const getGroqClient = () => {
 
 async function generateLibraryContentAI(theme: string, type: string, level: string) {
   const client = getGroqClient();
-  if (!client) throw new Error("Configuração de IA incompleta.");
+  if (!client) throw new Error("Configuração de IA (GROQ) incompleta no servidor.");
 
   const prompt = `
     Você é um especialista em fisioterapia senior e criador de conteúdo educacional.
@@ -31,11 +31,11 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
     TIPO: ${type}
     NÍVEL: ${level}
 
-    O conteúdo deve seguir rigorosamente este formato JSON:
+    O conteúdo deve seguir RIGOROSAMENTE este formato JSON:
     {
       "title": "Título impactante",
-      "topic": "Tema clínico específico (ex: UTI, Neurologia, etc)",
-      "complexity": "low ou medium ou high",
+      "topic": "Tema clínico principal (ex: Cardiorrespiratório, Traumato-ortopedia, Neurologia, etc)",
+      "complexity": "low",
       "content": {
         "description": "Uma breve introdução motivadora para o paciente (máx 200 caracteres)",
         "clinical_objective": "O objetivo terapêutico principal deste material",
@@ -50,50 +50,68 @@ async function generateLibraryContentAI(theme: string, type: string, level: stri
           {
             "type": "step-by-step",
             "content": {
-               "steps": ["Passo 1", "Passo 2", "Passo 3"]
+               "steps": ["Descreva o passo 1 claramente", "Descreva o passo 2 claramente", "Descreva o passo 3 claramente"]
             }
           },
           {
             "type": "alert",
             "content": {
-              "message": "Cuidados importantes."
+              "message": "Cuidados importantes e sinais de alerta para procurar o profissional."
             }
           }
         ]
       }
     }
 
-    NÃO inclua preço no JSON. 
-    A complexidade deve ser baseada no nível técnico e profundidade do conteúdo.
-    
-    IMPORTANTE: Retorne APENAS o JSON puro, sem blocos de código ou explicações.
+    REGRAS OBRIGATÓRIAS:
+    1. A complexidade DEVE ser exatamente uma destas strings: low, medium, high.
+    2. O campo topic deve ser descritivo (ex: UTI, Pós-operatório, Neurologia).
+    3. NÃO inclua preço.
+    4. Retorne apenas o JSON.
   `;
 
-  const completion = await client.chat.completions.create({
-    messages: [
-      { role: "system", content: "Você é um assistente de IA que fornece apenas respostas em formato JSON válido." },
-      { role: "user", content: prompt }
-    ],
-    model: "llama-3.3-70b-versatile",
-    response_format: { type: "json_object" }
-  });
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        { role: "system", content: "Você é um assistente de IA que fornece apenas respostas em formato JSON válido, sem explicações adicionais." },
+        { role: "user", content: prompt }
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" }
+    });
 
-  const content = completion.choices[0]?.message?.content;
-  if (!content) throw new Error("Resposta da IA vazia");
-  
-  return JSON.parse(content);
+    const text = completion.choices[0]?.message?.content;
+    if (!text) throw new Error("Resposta da IA vazia");
+    
+    const parsed = JSON.parse(text);
+    
+    // Validação básica para evitar erros de banco
+    if (!parsed.title) parsed.title = `Guia de ${theme}`;
+    if (!parsed.topic) parsed.topic = theme;
+    if (!['low', 'medium', 'high'].includes(parsed.complexity)) {
+      parsed.complexity = 'low';
+    }
+    if (!parsed.content) throw new Error("Estrutura de conteúdo inválida no JSON da IA");
+
+    return parsed;
+  } catch (error) {
+    console.error("Error in generateLibraryContentAI:", error);
+    throw error;
+  }
 }
 
 const calculateLibraryPrice = (complexity: string, topic: string) => {
   let base = 990; // R$ 9,90
-  if (complexity === 'medium') base = 1990;
-  if (complexity === 'high') base = 2990;
-
-  const topicUpper = topic.toUpperCase();
-  const premiumTopics = ["UTI", "CARDIORRESPIRATÓRIO", "NEUROLÓGICO", "PÓS-OPERATÓRIO"];
+  const comp = String(complexity || 'low').toLowerCase();
   
-  const isPremiumTopic = premiumTopics.some(t => topicUpper.includes(t));
-  if (isPremiumTopic) {
+  if (comp === 'medium') base = 1990;
+  if (comp === 'high') base = 2990;
+
+  const topicUpper = String(topic || '').toUpperCase();
+  const premiumKeywords = ["UTI", "CARDIORRESPIRATÓRIO", "NEUROLÓGICO", "PÓS-OPERATÓRIO", "CARDIO", "NEURO"];
+  
+  const isPremium = premiumKeywords.some(kw => topicUpper.includes(kw));
+  if (isPremium) {
     base += 2000;
   }
 
@@ -506,13 +524,14 @@ async function startServer() {
           complexity: aiResponse.complexity,
           price_cents: priceCents,
           price: priceCents / 100, // Sync legacy price column
-          description: aiResponse.content.description,
-          clinical_objective: aiResponse.content.clinical_objective,
+          description: aiResponse.content.description || aiResponse.content.clinical_objective || "Sem descrição",
+          clinical_objective: aiResponse.content.clinical_objective || "Objetivo Clínico",
           sections: aiResponse.content.sections,
-          level: level.toLowerCase(),
-          type: type.toLowerCase(),
-          category: 'Reabilitação', // Default category
-          is_premium: priceCents > 0
+          level: (level || 'beginner').toLowerCase(),
+          type: (type || 'educational').toLowerCase(),
+          category: 'Reabilitação',
+          is_premium: priceCents > 0,
+          cover_image: `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop`
         })
         .select()
         .single();
