@@ -1208,16 +1208,24 @@ export default function Admin() {
   const handleDeleteMaterial = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja excluir este material?")) return;
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('library_materials')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
       
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        import('sonner').then(({ toast }) => toast.error("Não foi possível excluir o material. Verifique se você tem permissões de administrador no banco de dados."));
+        return;
+      }
+      
       fetchMateriais();
-      import('sonner').then(({ toast }) => toast.success("Material excluído!"));
-    } catch (err) {
+      import('sonner').then(({ toast }) => toast.success("Material excluído com sucesso!"));
+    } catch (err: any) {
       console.error("Erro ao excluir material:", err);
+      import('sonner').then(({ toast }) => toast.error(`Erro ao excluir: ${err.message || 'Erro desconhecido'}`));
     }
   };
 
