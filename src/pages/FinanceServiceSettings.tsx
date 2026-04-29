@@ -552,7 +552,7 @@ export default function FinanceServiceSettings() {
                   setEditingPackage({
                     name: '',
                     sessions_quantity: 10,
-                    total_price: 0,
+                    total_price: '' as any,
                     discount_type: null,
                     discount_value: 0,
                     validity_days: 90,
@@ -683,14 +683,15 @@ export default function FinanceServiceSettings() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Quantidade de Sessões</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Qtd. Sessões</label>
                     <input
                       required
                       type="number"
                       min="1"
-                      value={editingPackage.sessions_quantity}
-                      onChange={(e) => setEditingPackage({ ...editingPackage, sessions_quantity: parseInt(e.target.value) || 0 })}
+                      value={editingPackage.sessions_quantity || ''}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, sessions_quantity: e.target.value === '' ? '' as any : parseInt(e.target.value) })}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all"
+                      placeholder="0"
                     />
                   </div>
                   <div>
@@ -700,9 +701,10 @@ export default function FinanceServiceSettings() {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={editingPackage.total_price}
-                      onChange={(e) => setEditingPackage({ ...editingPackage, total_price: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all"
+                      value={editingPackage.total_price || ''}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, total_price: e.target.value === '' ? '' as any : parseFloat(e.target.value) })}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all border-emerald-500/30"
+                      placeholder="0,00"
                     />
                   </div>
                 </div>
