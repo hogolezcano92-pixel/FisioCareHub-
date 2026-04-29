@@ -1,22 +1,28 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Admin (or just use client if safety allows, but Admin is better for webhooks)
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''; // Use service role for webhooks
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
+
+  // 🔧 FIX: Supabase env carregado corretamente no runtime
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[Asaas Webhook] Supabase env missing');
+    return res.status(500).json({ error: 'Config error' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   const { event, payment } = req.body;
   console.log(`[Asaas Webhook] Event: ${event}`, JSON.stringify(payment, null, 2));
 
   // Only handle confirmed payments
   if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-    const agendamentoId = payment.externalReference;
+    const agendamentoId = payment?.externalReference;
 
     if (!agendamentoId) {
       console.error('[Asaas Webhook] No externalReference found');
@@ -36,49 +42,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).send('Appointment not found');
       }
 
-      // 1a. Fetch Patient
+      // 2. Fetch Patient
       const { data: paciente } = await supabase
         .from('perfis')
         .select('nome_completo, telefone, endereco')
         .eq('id', appointment.paciente_id)
         .single();
 
-      // 1b. Fetch Physio
+      // 3. Fetch Physio
       const { data: fisio } = await supabase
         .from('perfis')
         .select('nome_completo, email')
         .eq('id', appointment.fisio_id)
         .single();
 
-      // 2. Update status to 'pago'
+      // 4. Update status
       await supabase
         .from('agendamentos')
         .update({ status: 'pago' })
         .eq('id', agendamentoId);
 
-      // 3. Prepare Notification content
-      const isHomeService = String(appointment.servico).toLowerCase().includes('domiciliar') || 
-                          String(appointment.tipo).toLowerCase().includes('domiciliar');
-      
+      // 5. Prepare message
+      const isHomeService =
+        String(appointment.servico).toLowerCase().includes('domiciliar') ||
+        String(appointment.tipo).toLowerCase().includes('domiciliar');
+
       const pacName = paciente?.nome_completo || 'Paciente';
       const pacPhone = paciente?.telefone || 'Não informado';
       const pacAddress = paciente?.endereco || 'Não informado';
-      const dateStr = appointment.data ? new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+
+      const dateStr = appointment.data
+        ? new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR')
+        : 'N/A';
+
       const timeStr = appointment.hora ? appointment.hora.substring(0, 5) : 'N/A';
 
       let mensagem = `Novo agendamento pago!\n\nPaciente: ${pacName}\nTelefone: ${pacPhone}\nServiço: ${appointment.servico}\nData: ${dateStr} às ${timeStr}\nPagamento: Confirmado`;
-      
+
       if (isHomeService) {
         mensagem += `\nEndereço: ${pacAddress}`;
       }
 
-      // 4. Create Notification for Physio
+      // 6. Create notification
       const { error: notifError } = await supabase
         .from('notificacoes')
         .insert({
           user_id: appointment.fisio_id,
           titulo: 'Novo Agendamento Confirmado',
-          mensagem: mensagem,
+          mensagem,
           tipo: 'appointment_request',
           metadata: {
             agendamento_id: agendamentoId,
@@ -86,7 +97,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         });
 
-      if (notifError) console.error('[Asaas Webhook] Error creating notification:', notifError);
+      if (notifError) {
+        console.error('[Asaas Webhook] Error creating notification:', notifError);
+      }
 
       console.log(`[Asaas Webhook] Appointment ${agendamentoId} processed successfully.`);
     } catch (err) {
