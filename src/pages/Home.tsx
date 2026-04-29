@@ -171,7 +171,7 @@ export default function Home() {
         .from('perfis')
         .select('*')
         .eq('tipo_usuario', 'fisioterapeuta')
-        .in('status_aprovacao', ['aprovado', 'pendente']);
+        .eq('status_aprovacao', 'aprovado');
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {
@@ -206,68 +206,11 @@ export default function Home() {
         }));
         setProfessionals(mappedData);
       } else {
-        // Sample data for demo if DB is empty
-        const samplePros: Professional[] = [
-          {
-            id: '1',
-            name: 'Dra. Ana Silva',
-            spec: 'Ortopedia',
-            fullSpec: 'Fisioterapia Traumato-Ortopédica',
-            img: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=300&h=300',
-            rating: 5.0,
-            reviews: 42,
-            bio: 'Especialista em reabilitação de coluna e membros inferiores com mais de 10 anos de experiência.',
-            location: 'São Paulo, SP'
-          },
-          {
-            id: '2',
-            name: 'Dr. Lucas Santos',
-            spec: 'Neurofuncional',
-            fullSpec: 'Fisioterapia Neurofuncional',
-            img: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=300&h=300',
-            rating: 4.9,
-            reviews: 38,
-            bio: 'Focado na recuperação de pacientes pós-AVC e doenças degenerativas com atendimento humanizado.',
-            location: 'Rio de Janeiro, RJ'
-          },
-          {
-            id: '3',
-            name: 'Dra. Juliana Costa',
-            spec: 'Pediátrica',
-            fullSpec: 'Fisioterapia Pediátrica',
-            img: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=300&h=300',
-            rating: 5.0,
-            reviews: 25,
-            bio: 'Atendimento lúdico para crianças com atraso no desenvolvimento motor e condições congênitas.',
-            location: 'Belo Horizonte, MG'
-          },
-          {
-            id: '4',
-            name: 'Dr. Ricardo Oliveira',
-            spec: 'Esportiva',
-            fullSpec: 'Fisioterapia Esportiva',
-            img: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300',
-            rating: 4.8,
-            reviews: 56,
-            bio: 'Especialista em retorno ao esporte e prevenção de lesões para atletas amadores e profissionais.',
-            location: 'Curitiba, PR'
-          },
-          {
-            id: '5',
-            name: 'Dra. Carla Mendes',
-            spec: 'Gerontologia',
-            fullSpec: 'Fisioterapia Geriátrica',
-            img: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300&h=300',
-            rating: 5.0,
-            reviews: 31,
-            bio: 'Dedicada à manutenção da autonomia e prevenção de quedas em idosos no ambiente domiciliar.',
-            location: 'Porto Alegre, RS'
-          }
-        ];
-        setProfessionals(samplePros);
+        setProfessionals([]);
       }
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error);
+      setProfessionals([]);
     } finally {
       setLoading(false);
     }
