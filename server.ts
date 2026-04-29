@@ -574,6 +574,51 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Library Material Deletion (Secure Admin Endpoint)
+  app.post("/api/library/delete", async (req, res) => {
+    try {
+      const { id, accessToken } = req.body;
+
+      if (!id || !accessToken) {
+        return res.status(400).json({ error: "Missing material id or access token" });
+      }
+
+      // 1. Verify the user and their admin status using the access token
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (authError || !user) {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+
+      // Check if user is actually an admin in the database
+      const { data: profile } = await supabaseAdmin
+        .from('perfis')
+        .select('tipo_usuario')
+        .eq('id', user.id)
+        .single();
+
+      const isAdmin = profile?.tipo_usuario === 'admin' || user.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Forbidden: Admin privileges required" });
+      }
+
+      // 2. Perform deletion using service role (bypass RLS)
+      const { error: deleteError } = await supabaseAdmin
+        .from('library_materials')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      res.json({ success: true, message: "Material excluído com sucesso" });
+    } catch (err: any) {
+      console.error("[Library Delete] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Library Content Generation (Backend Logic)
   app.post("/api/library/generate", async (req, res) => {
     try {
