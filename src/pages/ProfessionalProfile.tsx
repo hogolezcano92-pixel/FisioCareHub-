@@ -42,6 +42,7 @@ export default function ProfessionalProfile() {
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [configServicos, setConfigServicos] = useState<any>(null);
+  const [activeServices, setActiveServices] = useState<any[]>([]);
   const [activePackages, setActivePackages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -80,13 +81,27 @@ export default function ProfessionalProfile() {
         if (!settingsError && settings) {
           console.log('Valores de serviços carregados:', settings);
           setConfigServicos(settings);
-          setBookingData(prev => ({
-            ...prev,
-            tipo: 'Avaliação inicial',
-            valor: settings.avaliacao_inicial || 0
-          }));
-        } else {
-          console.log('Nenhuma configuração de valores encontrada para este profissional.');
+        }
+
+        // Fetch active services (new dynamic table)
+        const { data: svcs, error: svcsError } = await supabase
+          .from('physiotherapist_services')
+          .select('*')
+          .eq('physiotherapist_id', id)
+          .eq('is_active', true)
+          .order('name', { ascending: true });
+        
+        if (!svcsError && svcs) {
+          setActiveServices(svcs);
+          // Set initial booking data if services exist
+          const initialSvc = svcs.find(s => s.name === 'Avaliação Inicial') || svcs[0];
+          if (initialSvc) {
+            setBookingData(prev => ({
+              ...prev,
+              tipo: initialSvc.name,
+              valor: Number(initialSvc.base_price) || 0
+            }));
+          }
         }
 
         // Fetch active service packages
@@ -520,22 +535,16 @@ export default function ProfessionalProfile() {
                       const tipo = e.target.value;
                       let valor = 0;
                       
-                      // Check in normal services
-                      if (configServicos) {
-                        switch(tipo) {
-                          case 'Avaliação inicial': valor = configServicos.avaliacao_inicial; break;
-                          case 'Sessão de fisioterapia': valor = configServicos.sessao_fisioterapia; break;
-                          case 'Reabilitação': valor = configServicos.reabilitacao; break;
-                          case 'RPG': valor = configServicos.rpg; break;
-                          case 'Pilates': valor = configServicos.pilates; break;
-                          case 'Fisioterapia domiciliar': valor = configServicos.domiciliar; break;
+                      // Check in dynamic services
+                      const svc = activeServices.find(s => s.name === tipo);
+                      if (svc) {
+                        valor = Number(svc.base_price);
+                      } else {
+                        // Check in packages
+                        const pkg = activePackages.find(p => `Pacote: ${p.name}` === tipo);
+                        if (pkg) {
+                          valor = Number(pkg.total_price);
                         }
-                      }
-
-                      // Check in packages
-                      const pkg = activePackages.find(p => `Pacote: ${p.name}` === tipo);
-                      if (pkg) {
-                        valor = Number(pkg.total_price);
                       }
 
                       console.log(`Tipo selecionado: ${tipo}, Valor: R$ ${valor}`);
@@ -543,14 +552,15 @@ export default function ProfessionalProfile() {
                     }}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                   >
-                    <optgroup label="Serviços Individuais" className="bg-slate-900">
-                      <option value="Avaliação inicial" className="bg-slate-900">Avaliação inicial</option>
-                      <option value="Sessão de fisioterapia" className="bg-slate-900">Sessão de fisioterapia</option>
-                      <option value="Reabilitação" className="bg-slate-900">Reabilitação</option>
-                      <option value="RPG" className="bg-slate-900">RPG</option>
-                      <option value="Pilates" className="bg-slate-900">Pilates</option>
-                      <option value="Fisioterapia domiciliar" className="bg-slate-900">Fisioterapia domiciliar</option>
-                    </optgroup>
+                    {activeServices.length > 0 && (
+                      <optgroup label="Serviços Individuais" className="bg-slate-900">
+                        {activeServices.map(svc => (
+                          <option key={svc.id} value={svc.name} className="bg-slate-900">
+                            {svc.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                     
                     {activePackages.length > 0 && (
                       <optgroup label="Pacotes de Tratamento" className="bg-slate-900">

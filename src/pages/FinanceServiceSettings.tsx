@@ -30,12 +30,19 @@ import { cn } from '../lib/utils';
 interface ServicePackage {
   id: string;
   name: string;
-  service_id: string;
+  service_id: string; // Now refers to physiotherapist_services.id (UUID)
   sessions_quantity: number;
   total_price: number;
   discount_type: 'percent' | 'fixed' | 'none';
   discount_value: number;
   validity_days: number | null;
+  is_active: boolean;
+}
+
+interface PhysiotherapistService {
+  id: string;
+  name: string;
+  base_price: number;
   is_active: boolean;
 }
 
@@ -48,6 +55,7 @@ export default function FinanceServiceSettings() {
   const [commissionRate, setCommissionRate] = useState(12);
   const [activeTab, setActiveTab] = useState<'individual' | 'packages'>('individual');
   const [packages, setPackages] = useState<ServicePackage[]>([]);
+  const [physioServices, setPhysioServices] = useState<PhysiotherapistService[]>([]);
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Partial<ServicePackage> | null>(null);
   const [packageSaving, setPackageSaving] = useState(false);
@@ -70,7 +78,44 @@ export default function FinanceServiceSettings() {
     fetchSettings();
     fetchCommissionRate();
     fetchPackages();
+    fetchPhysioServices();
   }, [user, authLoading]);
+
+  const fetchPhysioServices = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('physiotherapist_services')
+        .select('*')
+        .eq('physiotherapist_id', user.id);
+      
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // Initialize with default services if empty
+        const defaultServices = [
+          { name: 'Avaliação Inicial', base_price: 0 },
+          { name: 'Sessão de Fisioterapia', base_price: 0 },
+          { name: 'Reabilitação', base_price: 0 },
+          { name: 'RPG', base_price: 0 },
+          { name: 'Pilates', base_price: 0 },
+          { name: 'Fisioterapia Domiciliar', base_price: 0 },
+        ].map(s => ({ ...s, physiotherapist_id: user.id }));
+
+        const { data: inserted, error: insertErr } = await supabase
+          .from('physiotherapist_services')
+          .insert(defaultServices)
+          .select();
+        
+        if (insertErr) throw insertErr;
+        setPhysioServices(inserted || []);
+      } else {
+        setPhysioServices(data);
+      }
+    } catch (err) {
+      console.error('Error fetching physio services:', err);
+    }
+  };
 
   const fetchPackages = async () => {
     try {
@@ -152,12 +197,33 @@ export default function FinanceServiceSettings() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      // 1. Update legacy configuracao_servicos
+      const { error: configError } = await supabase
         .from('configuracao_servicos')
         .update(formData)
         .eq('physio_id', user.id);
 
-      if (error) throw error;
+      if (configError) throw configError;
+
+      // 2. Sync with new physiotherapist_services table
+      const syncPromises = [
+        { name: 'Avaliação Inicial', price: formData.avaliacao_inicial },
+        { name: 'Sessão de Fisioterapia', price: formData.sessao_fisioterapia },
+        { name: 'Reabilitação', price: formData.reabilitacao },
+        { name: 'RPG', price: formData.rpg },
+        { name: 'Pilates', price: formData.pilates },
+        { name: 'Fisioterapia Domiciliar', price: formData.domiciliar },
+      ].map(s => {
+        return supabase
+          .from('physiotherapist_services')
+          .update({ base_price: s.price })
+          .eq('physiotherapist_id', user.id)
+          .eq('name', s.name);
+      });
+
+      await Promise.all(syncPromises);
+      await fetchPhysioServices(); // Refresh list
+
       toast.success('Configurações de valores salvas com sucesso!');
     } catch (err: any) {
       console.error('Erro ao salvar configurações:', err);
@@ -170,6 +236,13 @@ export default function FinanceServiceSettings() {
   const handlePackageSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !editingPackage) return;
+
+    // Validation for UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!editingPackage.service_id || !uuidRegex.test(editingPackage.service_id)) {
+      toast.error('Selecione um serviço válido');
+      return;
+    }
 
     setPackageSaving(true);
     try {
@@ -227,15 +300,6 @@ export default function FinanceServiceSettings() {
       toast.error('Erro ao excluir pacote');
     }
   };
-
-  const SERVICES = [
-    { id: 'avaliacao_inicial', name: 'Avaliação Inicial' },
-    { id: 'sessao_fisioterapia', name: 'Sessão de Fisioterapia' },
-    { id: 'reabilitacao', name: 'Reabilitação' },
-    { id: 'rpg', name: 'RPG' },
-    { id: 'pilates', name: 'Pilates' },
-    { id: 'domiciliar', name: 'Fisioterapia Domiciliar' },
-  ];
 
   const calculateSessionValue = (pkg: Partial<ServicePackage>) => {
     if (!pkg.total_price || !pkg.sessions_quantity || pkg.sessions_quantity === 0) return 0;
@@ -466,7 +530,7 @@ export default function FinanceServiceSettings() {
                 onClick={() => {
                   setEditingPackage({
                     name: '',
-                    service_id: SERVICES[0].id,
+                    service_id: physioServices[0]?.id || '',
                     sessions_quantity: 10,
                     total_price: 0,
                     discount_type: 'none',
@@ -530,7 +594,7 @@ export default function FinanceServiceSettings() {
 
                     <h3 className="text-xl font-black text-white tracking-tight mb-1">{pkg.name}</h3>
                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6">
-                      {SERVICES.find(s => s.id === pkg.service_id)?.name}
+                      {physioServices.find(s => s.id === pkg.service_id)?.name || 'Serviço não encontrado'}
                     </p>
 
                     <div className="grid grid-cols-2 gap-4 mb-8">
@@ -603,11 +667,13 @@ export default function FinanceServiceSettings() {
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Serviço Associado</label>
                   <select
+                    required
                     value={editingPackage.service_id}
                     onChange={(e) => setEditingPackage({ ...editingPackage, service_id: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none"
                   >
-                    {SERVICES.map(s => (
+                    <option value="" disabled className="bg-slate-900">Selecione um serviço</option>
+                    {physioServices.map(s => (
                       <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
                     ))}
                   </select>
