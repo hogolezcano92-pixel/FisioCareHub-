@@ -33,7 +33,7 @@ interface ServicePackage {
   service_id: string; // Now refers to physiotherapist_services.id (UUID)
   sessions_quantity: number;
   total_price: number;
-  discount_type: 'percent' | 'fixed' | 'none';
+  discount_type: 'percent' | 'fixed' | null;
   discount_value: number;
   validity_days: number | null;
   is_active: boolean;
@@ -279,6 +279,15 @@ export default function FinanceServiceSettings() {
       return;
     }
 
+    // Validation for discount_type
+    const allowedDiscounts = ['percent', 'fixed', null];
+    const currentDiscount = editingPackage.discount_type;
+    
+    if (!allowedDiscounts.includes(currentDiscount as any)) {
+      toast.error('Tipo de desconto inválido');
+      return;
+    }
+
     setPackageSaving(true);
     try {
       // Clean payload: remove internal fields if they exist
@@ -286,6 +295,7 @@ export default function FinanceServiceSettings() {
       
       const payload = {
         ...cleanData,
+        discount_type: currentDiscount,
         physiotherapist_id: user.id,
       };
 
@@ -568,7 +578,7 @@ export default function FinanceServiceSettings() {
                     service_id: physioServices[0]?.id || '',
                     sessions_quantity: 10,
                     total_price: 0,
-                    discount_type: 'none',
+                    discount_type: null,
                     discount_value: 0,
                     validity_days: 90,
                     is_active: true
@@ -775,8 +785,8 @@ export default function FinanceServiceSettings() {
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Tipo de Desconto</label>
                     <select
-                      value={editingPackage.discount_type}
-                      onChange={(e) => setEditingPackage({ ...editingPackage, discount_type: e.target.value as any })}
+                      value={editingPackage.discount_type || 'none'}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, discount_type: e.target.value === 'none' ? null : e.target.value as any })}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none"
                     >
                       <option value="none" className="bg-slate-900">Nenhum</option>
@@ -784,7 +794,7 @@ export default function FinanceServiceSettings() {
                       <option value="fixed" className="bg-slate-900">Valor Fixo (R$)</option>
                     </select>
                   </div>
-                  {editingPackage.discount_type !== 'none' && (
+                  {editingPackage.discount_type && (
                     <div>
                       <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Valor do Desconto</label>
                       <input
