@@ -2,15 +2,18 @@ import React, { createContext, useContext, useEffect, useState, useMemo, useRef 
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { applyTheme } from '../lib/themes';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: any | null;
   subscription: any | null;
+  theme: string;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateTheme: (themeId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
   const [subscription, setSubscription] = useState<any | null>(null);
+  const [theme, setTheme] = useState<string>(() => {
+    try {
+      const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (cached) {
+        const p = JSON.parse(cached);
+        return p.theme || 'blue';
+      }
+    } catch {}
+    return 'blue';
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -107,6 +120,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateTheme = async (themeId: string) => {
+    setTheme(themeId);
+    applyTheme(themeId);
+    
+    // Update profile state to stay in sync
+    if (profile) {
+      const updatedProfile = { ...profile, theme: themeId };
+      setProfile(updatedProfile);
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(updatedProfile));
+    }
+
+    if (user) {
+      try {
+        await supabase
+          .from('perfis')
+          .update({ theme: themeId })
+          .eq('id', user.id);
+      } catch (err) {
+        console.error('Failed to persist theme:', err);
+      }
+    }
+  };
+
+  // Apply theme when theme state changes
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  // Sync theme when profile is fetched
+  useEffect(() => {
+    if (profile?.theme && profile.theme !== theme) {
+      setTheme(profile.theme);
+    }
+  }, [profile]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -167,10 +215,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     profile,
     subscription,
+    theme,
     loading,
     signOut,
-    refreshProfile
-  }), [user, session, profile, subscription, loading]);
+    refreshProfile,
+    updateTheme
+  }), [user, session, profile, subscription, theme, loading]);
 
   return (
     <AuthContext.Provider value={value}>
