@@ -45,19 +45,42 @@ export default function Appointments() {
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [activeServices, setActiveServices] = useState<any[]>([]);
+  const [activePackages, setActivePackages] = useState<any[]>([]);
   const [configServicos, setConfigServicos] = useState<any>(null);
   const [currentPrice, setCurrentPrice] = useState(0);
 
-  // Fetch prices when a user (physio) is selected
+  // Fetch prices and dynamic services when a user (physio) is selected
   useEffect(() => {
-    const fetchPhysioPrices = async () => {
-      if (!selectedUserId || profile?.tipo_usuario !== 'paciente') {
+    const fetchPhysioData = async () => {
+      if (!selectedUserId) {
+        setActiveServices([]);
+        setActivePackages([]);
         setConfigServicos(null);
         setCurrentPrice(0);
         return;
       }
 
       try {
+        // 1. Fetch Dynamic Services
+        const { data: svcs, error: svcsError } = await supabase
+          .from('physiotherapist_services')
+          .select('*')
+          .eq('physiotherapist_id', selectedUserId)
+          .eq('is_active', true);
+        
+        if (!svcsError && svcs) setActiveServices(svcs);
+
+        // 2. Fetch Packages
+        const { data: pkgs, error: pkgsError } = await supabase
+          .from('service_packages')
+          .select('*')
+          .eq('physiotherapist_id', selectedUserId)
+          .eq('is_active', true);
+        
+        if (!pkgsError && pkgs) setActivePackages(pkgs);
+
+        // 3. Fallback to legacy config (still fetching it for backward compatibility)
         const { data, error } = await supabase
           .from('configuracao_servicos')
           .select('*')
@@ -66,22 +89,20 @@ export default function Appointments() {
 
         if (error) {
           console.log('Nenhuma configuração de preços específica encontrada para este profissional.');
-          // Fallback to profile price if exists
           const physio = availableUsers.find(u => u.id === selectedUserId);
           const basePrice = physio?.preco_sessao || 0;
           setConfigServicos(null);
-          setCurrentPrice(basePrice);
+          if (svcs && svcs.length === 0) setCurrentPrice(basePrice);
         } else {
           setConfigServicos(data);
-          updatePrice(service, data);
         }
       } catch (err) {
-        console.error('Erro ao buscar preços do fisioterapeuta:', err);
+        console.error('Erro ao buscar dados do fisioterapeuta:', err);
       }
     };
 
-    fetchPhysioPrices();
-  }, [selectedUserId, availableUsers, profile]);
+    fetchPhysioData();
+  }, [selectedUserId, availableUsers]);
 
   // Update price when service type changes
   const updatePrice = (serviceType: string, config: any) => {
@@ -112,10 +133,23 @@ export default function Appointments() {
   };
 
   useEffect(() => {
-    if (configServicos) {
-      updatePrice(service, configServicos);
+    if (!service) return;
+
+    if (service.startsWith('service:')) {
+      const name = service.replace('service:', '');
+      const svc = activeServices.find(s => s.name === name);
+      if (svc) setCurrentPrice(Number(svc.base_price));
+    } else if (service.startsWith('package:')) {
+      const name = service.replace('package:', '');
+      const pkg = activePackages.find(p => p.name === name);
+      if (pkg) setCurrentPrice(Number(pkg.total_price));
+    } else {
+      // Legacy fallback
+      if (configServicos) {
+        updatePrice(service, configServicos);
+      }
     }
-  }, [service, configServicos]);
+  }, [service, activeServices, activePackages, configServicos]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -340,15 +374,20 @@ export default function Appointments() {
       }
 
       // 1. Correção do Erro de Data ('Pattern mismatch')
-      // Utilizando o valor direto dos inputs sem processamento de Date do JS
       const sqlDate = date; // YYYY-MM-DD
       const sqlTime = time.length === 5 ? `${time}:00` : time; // HH:mm:ss
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
+      // Clean Service/Package Name
+      const finalService = service.startsWith('service:') 
+        ? service.replace('service:', '') 
+        : service.startsWith('package:') 
+          ? `Pacote: ${service.replace('package:', '')}` 
+          : service;
+
       console.log("Iniciando agendamento...", { sqlDate, sqlTime, sqlTimestamp });
 
       // 2. Ajuste de Colunas no Banco (Supabase)
-      // Incluindo a coluna valor: currentPrice
       const { data: insertData, error: insertError } = await supabase
         .from('agendamentos')
         .insert({
@@ -359,7 +398,7 @@ export default function Appointments() {
           data_servico: sqlTimestamp,
           status: 'pendente_pagamento',
           observacoes: notes,
-          servico: service,
+          servico: finalService,
           valor: currentPrice
         })
         .select();
@@ -675,18 +714,43 @@ export default function Appointments() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Serviço</label>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Serviço / Pacote</label>
                   <select
                     value={service}
                     onChange={(e) => setService(e.target.value)}
+                    required
                     className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm text-white appearance-none"
                   >
-                    <option value="Consulta de Fisioterapia" className="bg-slate-900">Consulta de Fisioterapia</option>
-                    <option value="Avaliação Inicial" className="bg-slate-900">Avaliação Inicial</option>
-                    <option value="Sessão de Reabilitação" className="bg-slate-900">Sessão de Reabilitação</option>
-                    <option value="Pilates Clínico" className="bg-slate-900">Pilates Clínico</option>
-                    <option value="RPG" className="bg-slate-900">RPG</option>
-                    <option value="Fisioterapia Domiciliar" className="bg-slate-900">Fisioterapia Domiciliar</option>
+                    <option value="" className="bg-slate-900">Selecione...</option>
+                    
+                    {activeServices.length > 0 ? (
+                      <optgroup label="Sessões Avulsas" className="bg-slate-900 text-slate-400">
+                        {activeServices.map(svc => (
+                          <option key={svc.id} value={`service:${svc.name}`} className="bg-slate-900 text-white">
+                            {svc.name} - Sessão Avulsa
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : (
+                      <optgroup label="Serviços Padrão" className="bg-slate-900 text-slate-400">
+                        <option value="Consulta de Fisioterapia" className="bg-slate-900 text-white">Consulta de Fisioterapia</option>
+                        <option value="Avaliação Inicial" className="bg-slate-900 text-white">Avaliação Inicial</option>
+                        <option value="Sessão de Reabilitação" className="bg-slate-900 text-white">Sessão de Reabilitação</option>
+                        <option value="Pilates Clínico" className="bg-slate-900 text-white">Pilates Clínico</option>
+                        <option value="RPG" className="bg-slate-900 text-white">RPG</option>
+                        <option value="Fisioterapia Domiciliar" className="bg-slate-900 text-white">Fisioterapia Domiciliar</option>
+                      </optgroup>
+                    )}
+
+                    {activePackages.length > 0 && (
+                      <optgroup label="Pacotes de Tratamento" className="bg-slate-900 text-emerald-400">
+                        {activePackages.map(pkg => (
+                          <option key={pkg.id} value={`package:${pkg.name}`} className="bg-slate-900 text-white">
+                            {pkg.name} - Pacote ({pkg.sessions_quantity} sessões)
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
