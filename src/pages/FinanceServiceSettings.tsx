@@ -83,37 +83,48 @@ export default function FinanceServiceSettings() {
 
   const fetchPhysioServices = async () => {
     if (!user) return;
+    console.log('Fetching services for user:', user.id);
     try {
       const { data, error } = await supabase
         .from('physiotherapist_services')
         .select('*')
         .eq('physiotherapist_id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching services:', error);
+        throw error;
+      }
 
       if (!data || data.length === 0) {
+        console.log('No services found, initializing defaults...');
         // Initialize with default services if empty
         const defaultServices = [
-          { name: 'Avaliação Inicial', base_price: 0 },
-          { name: 'Sessão de Fisioterapia', base_price: 0 },
-          { name: 'Reabilitação', base_price: 0 },
-          { name: 'RPG', base_price: 0 },
-          { name: 'Pilates', base_price: 0 },
-          { name: 'Fisioterapia Domiciliar', base_price: 0 },
-        ].map(s => ({ ...s, physiotherapist_id: user.id }));
+          { name: 'Avaliação Inicial', base_price: formData.avaliacao_inicial || 0 },
+          { name: 'Sessão de Fisioterapia', base_price: formData.sessao_fisioterapia || 0 },
+          { name: 'Reabilitação', base_price: formData.reabilitacao || 0 },
+          { name: 'RPG', base_price: formData.rpg || 0 },
+          { name: 'Pilates', base_price: formData.pilates || 0 },
+          { name: 'Fisioterapia Domiciliar', base_price: formData.domiciliar || 0 },
+        ].map(s => ({ ...s, physiotherapist_id: user.id, is_active: true }));
 
         const { data: inserted, error: insertErr } = await supabase
           .from('physiotherapist_services')
           .insert(defaultServices)
           .select();
         
-        if (insertErr) throw insertErr;
+        if (insertErr) {
+          console.error('Error inserting default services:', insertErr);
+          throw insertErr;
+        }
+        console.log('Default services initialized:', inserted);
         setPhysioServices(inserted || []);
       } else {
+        console.log('Services fetched successfully:', data.length, 'records');
         setPhysioServices(data);
       }
     } catch (err) {
-      console.error('Error fetching physio services:', err);
+      console.error('Final error fetching physio services:', err);
+      toast.error('Erro ao carregar lista de serviços');
     }
   };
 
@@ -666,17 +677,38 @@ export default function FinanceServiceSettings() {
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Serviço Associado</label>
-                  <select
-                    required
-                    value={editingPackage.service_id}
-                    onChange={(e) => setEditingPackage({ ...editingPackage, service_id: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none"
-                  >
-                    <option value="" disabled className="bg-slate-900">Selecione um serviço</option>
-                    {physioServices.map(s => (
-                      <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      required
+                      value={editingPackage.service_id}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, service_id: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all appearance-none pr-12"
+                    >
+                      <option value="" disabled className="bg-slate-900">Selecione um serviço</option>
+                      {physioServices.length > 0 ? (
+                        physioServices.map(s => (
+                          <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
+                        ))
+                      ) : (
+                        <option value="" disabled className="bg-slate-900 italic">Carregando serviços...</option>
+                      )}
+                    </select>
+                    {physioServices.length === 0 && (
+                      <button 
+                        type="button"
+                        onClick={fetchPhysioServices}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-emerald-300 transition-colors"
+                        title="Recarregar serviços"
+                      >
+                        <Zap size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {physioServices.length === 0 && (
+                    <p className="mt-1 text-[9px] text-rose-400 font-bold uppercase tracking-widest px-1">
+                      Nenhum serviço encontrado. Tente recarregar ou salvar a aba "Preços Individuais" primeiro.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
