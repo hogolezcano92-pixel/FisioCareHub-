@@ -11,11 +11,12 @@
   --color-primary-hover: var(--theme-primary-hover, #003580);
   --color-bg-general: var(--theme-bg, #0B1120);
   --color-card: var(--theme-card, #1E293B);
+  --color-card-hover: var(--theme-card-hover, #222C3F);
   --color-border-soft: var(--theme-border, #334155);
   --color-text-main: var(--theme-text, #FFFFFF);
   --color-text-muted: var(--theme-text-muted, #E1E1E1);
 
-  /* Dark Mode Overrides */
+  /* Unified Background/Text */
   --color-background: var(--theme-bg, #0B1120);
   --color-foreground: var(--theme-text, #FFFFFF);
 
@@ -52,18 +53,20 @@
 @layer base {
   html {
     font-size: 14px; /* Global scale reduction ~15% */
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+    transition: background-color 0.5s ease, color 0.5s ease;
     overflow-x: hidden;
     width: 100%;
   }
   
   body {
-    @apply text-white bg-slate-950;
+    @apply text-foreground;
+    background-color: var(--theme-bg);
     overflow-x: hidden;
     width: 100%;
     position: relative;
+    transition: background-color 0.5s ease;
   }
 
   /* Premium Transitions */
@@ -101,7 +104,9 @@
 
 @layer utilities {
   .premium-card {
-    @apply bg-slate-900/50 backdrop-blur-xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500;
+    background-color: var(--theme-card);
+    @apply backdrop-blur-xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-xl hover:shadow-2xl;
+    transition: background-color 0.5s ease, transform 0.3s ease;
     margin-bottom: 1.5rem;
   }
 

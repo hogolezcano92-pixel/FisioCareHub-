@@ -303,7 +303,7 @@ function Navbar() {
   ], [user, profile, isApproved, t]);
 
   return (
-    <nav className="bg-slate-950/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
+    <nav className="bg-background/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
@@ -679,7 +679,7 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-slate-950/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
+            <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
               <Logo variant="light" size="sm" />
               <div className="flex items-center gap-4">
                 <NotificationBell />
@@ -694,7 +694,7 @@ function AppContent() {
           ))}
 
           <main className={cn(
-            "flex-1 w-full flex flex-col min-w-0 bg-slate-950 rounded-t-[20px] shadow-2xl relative z-10",
+            "flex-1 w-full flex flex-col min-w-0 bg-background rounded-t-[20px] shadow-2xl relative z-10",
             location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
           )}>
             <div className={cn(
