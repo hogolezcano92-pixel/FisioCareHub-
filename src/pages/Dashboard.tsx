@@ -185,7 +185,7 @@ export default function Dashboard() {
     isPhysio: profile?.tipo_usuario === 'fisioterapeuta',
     isApproved: profile?.status_aprovacao === 'aprovado',
     isPro: profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo',
-    isAdmin: profile?.plano === 'admin' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'
+    isAdmin: profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'
   }), [profile, subscription, user?.email]);
 
   useEffect(() => {
@@ -289,7 +289,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen pt-4 md:pt-8 pb-12 bg-[#0B1120] relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen pt-4 md:pt-8 pb-12 bg-background relative overflow-hidden transition-colors duration-500">
       {/* Camada de Textura e Brilho de Fundo Premium */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.1),transparent_50%)] pointer-events-none"></div>
@@ -419,7 +419,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 p-1 bg-gradient-to-r from-sky-600 via-indigo-600 to-cyan-600 rounded-2xl shadow-xl shadow-sky-900/30"
           >
-            <div className="bg-[#0B1120] rounded-[0.95rem] p-5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+            <div className="bg-card rounded-[0.95rem] p-5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-48 h-48 bg-sky-600/10 blur-[80px] -mr-24 -mt-24 rounded-full group-hover:bg-sky-600/20 transition-all duration-1000"></div>
               
               <div className="flex items-center gap-4 relative z-10">
@@ -525,7 +525,7 @@ export default function Dashboard() {
           )}
 
           {/* Quick Stats Summary (Compact) */}
-          <div className="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl text-white shadow-2xl border border-white/10 flex items-center justify-around relative overflow-hidden group">
+          <div className="bg-card backdrop-blur-xl p-5 rounded-2xl text-white shadow-2xl border border-white/10 flex items-center justify-around relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             <div className="text-center relative z-10">
               <p className="text-2xl font-black text-white">{stats.records > 0 ? '75%' : '0%'}</p>
@@ -952,11 +952,11 @@ export default function Dashboard() {
               
               <ProGuard variant="full">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  <div id="financial-section" className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group xl:col-span-1 md:col-span-2">
+                  <div id="financial-section" className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group xl:col-span-1 md:col-span-2">
                     <FinancialDashboard />
                   </div>
 
-                  <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 relative group">
+                  <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group">
                     <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest border border-blue-500/20">
                         <MapPin size={8} />
@@ -965,7 +965,7 @@ export default function Dashboard() {
                     </div>
                     <RouteOptimizer />
                   </div>
-                  <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+                  <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
                     <SOAPIntelligentRecord 
                       pacienteId={selectedPatientId || undefined} 
                       onSave={() => {
@@ -983,16 +983,16 @@ export default function Dashboard() {
         <div className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 space-y-5">
-              <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+              <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
                 <PainDiary />
               </div>
-              <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20">
+              <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
                 <ExerciseChecklist />
               </div>
             </div>
             <div className="space-y-5">
               {/* Quick Actions (2x2 Grid) */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 space-y-3.5">
+              <div className="bg-card/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 space-y-3.5">
                 <h3 className="text-base font-black text-white">Ações Rápidas</h3>
                 <div className="grid grid-cols-2 gap-2.5">
                   <Link to="/chat" className="p-3 bg-white/5 rounded-2xl hover:bg-blue-600/10 group transition-all text-center space-y-1 border border-white/5 hover:border-blue-500/20 shadow-sm">
@@ -1018,7 +1018,7 @@ export default function Dashboard() {
               </div>
 
               {/* Gamification Section */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-blue-900/20 space-y-3.5">
+              <div className="bg-card/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 space-y-3.5">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
                   <Trophy className="text-amber-500" size={18} />
                   Conquistas

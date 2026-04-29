@@ -201,7 +201,7 @@ export default function Login() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-md w-full relative z-10"
         >
-          <div className="bg-slate-900/50 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10">
+          <div className="bg-card/50 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10">
             <div className="text-center mb-10">
               <div className="flex justify-center mb-6">
                 <Logo size="md" variant="light" />
