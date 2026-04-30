@@ -25,9 +25,26 @@
   /* Premium Shadows */
   --shadow-premium: 0 4px 20px -5px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.2);
   --shadow-premium-hover: 0 10px 30px -10px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.3);
+
+  @keyframes mesh {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(10%, -10%) rotate(120deg) scale(1.2); }
+    66% { transform: translate(-10%, 10%) rotate(240deg) scale(0.8); }
+    100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+  }
 }
 
 @layer utilities {
+  .animate-mesh {
+    animation: mesh 25s infinite ease-in-out;
+  }
+  .animate-mesh-slow {
+    animation: mesh 40s infinite ease-in-out reverse;
+  }
+  .animate-mesh-slower {
+    animation: mesh 60s infinite ease-in-out;
+  }
+
   .text-ice {
     color: #E1E1E1;
   }
