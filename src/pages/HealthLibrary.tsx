@@ -20,6 +20,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import LibraryPaymentModal from '../components/LibraryPaymentModal';
 
 interface LibrarySection {
   type: 'text' | 'step-by-step' | 'alert';
@@ -61,6 +62,7 @@ export default function HealthLibrary() {
   const [showCart, setShowCart] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<LibraryMaterial | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const CATEGORY_DATA = [
     { name: 'Exercícios e Reabilitação', price: 35.99, image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=800' },
@@ -133,41 +135,9 @@ export default function HealthLibrary() {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!user || cart.length === 0) return;
-    
-    try {
-      setLoading(true);
-      
-      const response = await fetch('/api/library/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          email: user.email,
-          material_ids: cart.map(item => item.id)
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao iniciar checkout");
-      }
-
-      const { url } = await response.json();
-      if (url) {
-        window.location.href = url;
-      } else {
-        throw new Error("URL de checkout não recebida");
-      }
-    } catch (error: any) {
-      console.error('Error during checkout:', error);
-      toast.error('Erro ao processar o pagamento: ' + (error.message || 'Erro desconhecido'));
-    } finally {
-      setLoading(false);
-    }
+    setIsPaymentModalOpen(true);
   };
 
   const generatePDF = async (material: LibraryMaterial) => {
@@ -303,6 +273,19 @@ export default function HealthLibrary() {
           <span className="text-sm font-black">Carrinho</span>
         </div>
       </button>
+
+      <LibraryPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        materialIds={cart.map(item => item.id)}
+        userId={user?.id || ''}
+        email={user?.email || ''}
+        onSuccess={() => {
+          setCart([]);
+          setShowCart(false);
+          fetchData();
+        }}
+      />
 
       {/* Detail Modal */}
       <AnimatePresence>
