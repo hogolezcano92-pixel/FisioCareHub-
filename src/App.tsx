@@ -627,6 +627,55 @@ function NotificationHandler() {
 }
 
 
+function HeaderObserver() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      // Find the currently active fixed or sticky header
+      // We look for elements that are likely headers and visible
+      const headers = document.querySelectorAll('header, nav.sticky, nav.fixed');
+      let activeHeader: HTMLElement | null = null;
+      
+      // Filter for visible headers that are at the top and FIXED
+      for (const h of Array.from(headers) as HTMLElement[]) {
+        const rect = h.getBoundingClientRect();
+        const style = window.getComputedStyle(h);
+        const isFixed = style.position === 'fixed';
+        
+        if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
+          activeHeader = h;
+          break; // Usually only one fixed header at top
+        }
+      }
+
+      if (activeHeader) {
+        const height = activeHeader.offsetHeight;
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      } else {
+        document.documentElement.style.setProperty('--header-height', '0px');
+      }
+    };
+
+    // Run on mount and location change
+    updateHeaderHeight();
+    
+    // Also run on resize
+    window.addEventListener('resize', updateHeaderHeight);
+    
+    // Observer for dynamic changes (like mobile menu opening affecting header height or visibility)
+    const observer = new MutationObserver(updateHeaderHeight);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      observer.disconnect();
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
 function AppContent() {
   const { user, profile, loading: authLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -664,6 +713,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
+      <HeaderObserver />
       <ScrollToTop />
       <Toaster position="top-right" richColors closeButton />
       
@@ -677,7 +727,7 @@ function AppContent() {
           {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         </Suspense>
 
-        <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen">
+        <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
               <Logo variant="light" size="sm" />
@@ -700,7 +750,7 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
-              showSidebar && location.pathname !== '/chat' && "p-4 pt-24 md:p-8 md:pt-28 lg:p-10 lg:pt-10"
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>

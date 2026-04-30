@@ -16,6 +16,8 @@
   --color-text-main: var(--theme-text, #FFFFFF);
   --color-text-muted: var(--theme-text-muted, #E1E1E1);
 
+  --header-height: 0px;
+
   /* Unified Background/Text */
   --color-background: var(--theme-bg, #0B1120);
   --color-foreground: var(--theme-text, #FFFFFF);
@@ -150,6 +152,11 @@
   
   .container-padding {
     @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Padding Top based on Header Height */
+  .pt-header {
+    padding-top: var(--header-height);
   }
 
   /* No Scrollbar Utility */
