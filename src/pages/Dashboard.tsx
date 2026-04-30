@@ -619,15 +619,18 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-base font-black text-white tracking-tight">Buscar Pacientes</h3>
             <div className="relative w-full max-w-md">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                {searching ? <Loader2 className="animate-spin text-sky-500" size={16} /> : <Users className="text-slate-500" size={16} />}
+              <div 
+                className="absolute flex items-center pointer-events-none z-20"
+                style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+              >
+                {searching ? <Loader2 className="animate-spin text-sky-500" size={18} /> : <Users size={18} style={{ color: '#94a3b8' }} />}
               </div>
               <input
                 type="text"
                 value={patientSearch}
                 onChange={(e) => setPatientSearch(e.target.value)}
                 placeholder="Nome ou e-mail..."
-                className="input-compact !pl-10 pr-4"
+                className="input-compact pr-4 !pl-[60px]"
               />
             </div>
           </div>

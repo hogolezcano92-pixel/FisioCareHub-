@@ -212,13 +212,16 @@ export default function Patients() {
       </header>
 
       <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={16} />
+        <Search 
+          className="absolute pointer-events-none z-20" 
+          style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+        />
         <input
           type="text"
           placeholder="Buscar por nome ou e-mail..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input-compact !pl-10 pr-4"
+          className="input-compact pr-4 !pl-[60px]"
         />
       </div>
 
