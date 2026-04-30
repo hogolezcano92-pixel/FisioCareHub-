@@ -130,7 +130,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
 
     setTicketLoading(true);
     try {
-      // 1. Create the ticket
       const { data: ticketArray, error: error } = await supabase
         .from('suporte_tickets')
         .insert({
@@ -147,7 +146,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
       if (error) throw error;
       if (!ticketData) throw new Error("Falha ao criar ticket.");
 
-      // 2. Fetch all admins to notify them
       const { data: admins } = await supabase
         .from('perfis')
         .select('id')
@@ -175,7 +173,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
     }
   };
 
-  // Click outside FAB to close
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -221,7 +218,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                 exit={{ opacity: 0, y: 20, scale: 0.8 }}
                 className="flex flex-col items-end gap-3 mb-2"
               >
-                {/* Option: KineAI */}
                 <motion.button
                   whileHover={{ scale: 1.05, x: -5 }}
                   onClick={openKineAI}
@@ -233,7 +229,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   <span className="text-sm font-black text-white whitespace-nowrap">Falar com KineAI</span>
                 </motion.button>
   
-                {/* Option: Help Center */}
                 <motion.button
                   whileHover={{ scale: 1.05, x: -5 }}
                   onClick={openHelpCenter}
@@ -245,7 +240,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   <span className="text-sm font-black text-white whitespace-nowrap">Central de Ajuda</span>
                 </motion.button>
                 
-                {/* Option: Schedule (Conditional) */}
                 {(profile?.tipo_usuario === 'paciente' || !user) && (
                   <motion.button
                     whileHover={{ scale: 1.05, x: -5 }}
@@ -299,7 +293,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
       <AnimatePresence>
         {showHelpCenter && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -315,7 +308,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed right-0 top-0 bottom-0 w-full md:w-[450px] bg-slate-900 border-l border-white/10 shadow-2xl z-[120] flex flex-col pt-[env(safe-area-inset-top)]"
             >
-              {/* Header */}
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-black text-white tracking-tight">Central de Ajuda</h2>
@@ -329,7 +321,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                 </button>
               </div>
 
-              {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
                 {!user && (
                   <div className="bg-slate-800/50 p-2 rounded-[1.5rem] flex gap-2">
@@ -360,10 +351,10 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   </div>
                 )}
 
-                {/* Search - CORREÇÃO DE SOBREPOSIÇÃO AQUI */}
+                {/* Search - CORREÇÃO DEFINITIVA COM !IMPORTANT */}
                 <div className="relative">
                   <Search 
-                    className="absolute pointer-events-none z-10" 
+                    className="absolute pointer-events-none z-20" 
                     style={{ 
                       left: '16px', 
                       top: '50%', 
@@ -378,8 +369,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                     placeholder="Busque aqui sua dúvida..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ paddingLeft: '52px' }}
-                    className="w-full bg-slate-800 border-2 border-white/5 rounded-2xl pr-4 py-4 text-white placeholder:text-slate-600 focus:border-blue-600 transition-all outline-none font-bold"
+                    className="w-full bg-slate-800 border-2 border-white/5 rounded-2xl pr-4 py-4 pl-[60px] text-white placeholder:text-slate-600 focus:border-blue-600 transition-all outline-none font-bold !pl-[60px]"
                   />
                 </div>
 
