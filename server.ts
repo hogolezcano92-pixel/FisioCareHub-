@@ -464,7 +464,7 @@ async function startServer() {
             .select(`
               *,
               paciente:perfis!paciente_id (id, nome_completo, email, telefone),
-              fisioterapeuta:perfis!fisio_id (id, nome_completo, email)
+              fisioterapeuta:perfis!fisio_id (id, nome_completo, email, telefone)
             `)
             .eq('id', appointmentId)
             .single();
@@ -810,6 +810,16 @@ async function startServer() {
                   `💰 *Pagamento Confirmado (Asaas)!* \n\nNovo atendimento para: ${fullAppData.paciente.nome_completo} em ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
                 );
               }
+
+              // In-app Notification for Physio
+              await getSupabaseAdmin().from('notificacoes').insert({
+                user_id: fullAppData.fisio_id,
+                titulo: 'Novo Agendamento Confirmado (Asaas)',
+                mensagem: `${fullAppData.paciente.nome_completo} realizou o pagamento via Asaas e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
+                tipo: 'appointment',
+                lida: false,
+                link: '/appointments'
+              });
             }
 
             // Record in sessoes (financeiro)
