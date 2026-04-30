@@ -64,14 +64,18 @@ export default function PhysioDashboard() {
       if (!reqError) setRequests(reqData || []);
 
       // 2. Fetch Appointments
-      const { data: appData, error: appError } = await supabase
+      let appQuery = supabase
         .from('agendamentos')
         .select(`
           *,
           paciente:perfis!paciente_id(nome_completo, avatar_url)
         `)
-        .eq('fisio_id', user?.id)
-        .order('data', { ascending: true });
+        .eq('fisio_id', user?.id);
+
+      // Profissionais não devem ver agendamentos aguardando pagamento
+      appQuery = appQuery.neq('status', 'pendente_pagamento');
+
+      const { data: appData, error: appError } = await appQuery.order('data', { ascending: true });
 
       if (!appError) setAppointments(appData || []);
 
@@ -181,23 +185,29 @@ export default function PhysioDashboard() {
               {/* Filters for Requests */}
               <div className="flex flex-wrap gap-4">
                 <div className="flex-1 min-w-[200px] relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} />
+                  <MapPin 
+                    className="absolute pointer-events-none z-20" 
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                  />
                   <input 
                     type="text" 
                     placeholder="Filtrar por localização..."
                     value={filter.location}
                     onChange={(e) => setFilter({...filter, location: e.target.value})}
-                    className="w-full p-4 !pl-10 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600 !pl-[60px]"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px] relative">
-                  <ClipboardList className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} />
+                  <ClipboardList 
+                    className="absolute pointer-events-none z-20" 
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                  />
                   <input 
                     type="text" 
                     placeholder="Filtrar por especialidade..."
                     value={filter.specialty}
                     onChange={(e) => setFilter({...filter, specialty: e.target.value})}
-                    className="w-full p-4 !pl-10 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600 !pl-[60px]"
                   />
                 </div>
               </div>

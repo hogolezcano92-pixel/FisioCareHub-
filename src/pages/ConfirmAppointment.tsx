@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveStorageUrl } from '../lib/utils';
 
 export default function ConfirmAppointment() {
   const [searchParams] = useSearchParams();
@@ -73,6 +74,9 @@ export default function ConfirmAppointment() {
         if (appointment.status === 'confirmado') {
           setStatus('success');
           setMessage('Este agendamento já foi confirmado anteriormente.');
+        } else if (appointment.status === 'pendente_pagamento') {
+          setStatus('error');
+          setMessage('Este agendamento ainda aguarda a confirmação do pagamento pelo paciente. O profissional será notificado automaticamente assim que o pagamento for processado.');
         } else if (appointment.status === 'cancelado') {
           setStatus('error');
           setMessage('Este agendamento foi cancelado e não pode ser confirmado.');
@@ -164,7 +168,7 @@ export default function ConfirmAppointment() {
               <div className="flex items-start gap-6">
                 <div className="relative">
                   <img 
-                    src={appointmentData.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${appointmentData.paciente?.id}`} 
+                    src={resolveStorageUrl(appointmentData.paciente?.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${appointmentData.paciente?.id}`} 
                     alt={appointmentData.paciente?.nome_completo}
                     className="w-24 h-24 rounded-3xl object-cover border-4 border-white/5 shadow-lg"
                   />
@@ -304,7 +308,7 @@ export default function ConfirmAppointment() {
             <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 text-left">
               <div className="flex items-center gap-4 mb-4">
                 <img 
-                  src={appointmentData?.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${appointmentData?.paciente?.id}`} 
+                  src={resolveStorageUrl(appointmentData?.paciente?.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${appointmentData?.paciente?.id}`} 
                   alt=""
                   className="w-12 h-12 rounded-xl object-cover border border-white/10"
                 />

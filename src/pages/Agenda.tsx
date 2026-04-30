@@ -233,7 +233,10 @@ export default function Agenda() {
         query = query.eq('data', selectedDate);
       }
 
-      const { data, error: supabaseError } = await query.order('data', { ascending: false }).order('hora');
+      const { data, error: supabaseError } = await query
+        .neq('status', 'pendente_pagamento')
+        .order('data', { ascending: false })
+        .order('hora');
 
       if (supabaseError) {
         console.error('Erro completo do Supabase ao buscar agendamentos:', supabaseError);
@@ -241,7 +244,8 @@ export default function Agenda() {
         let fallbackQuery = supabase
           .from('agendamentos')
           .select('*')
-          .eq('fisio_id', user?.id);
+          .eq('fisio_id', user?.id)
+          .neq('status', 'pendente_pagamento');
         
         if (view === 'daily') {
           fallbackQuery = fallbackQuery.eq('data', selectedDate);
@@ -326,9 +330,6 @@ export default function Agenda() {
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
       if (newApp) {
-        // TRIGGER WHATSAPP NOTIFICATION
-        triggerWhatsAppNotification('created', newApp.id);
-
         // Criar registro na tabela sessoes para pagamento
         const { error: sessionError } = await supabase
           .from('sessoes')
@@ -878,12 +879,12 @@ export default function Agenda() {
                     </button>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">R$</span>
+                    <span className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontWeight: 'bold', fontSize: '10px' }}>R$</span>
                     <input
                       type="number"
                       value={formData.valor}
                       onChange={(e) => setFormData({...formData, valor: parseFloat(e.target.value) || 0})}
-                      className="input-compact pl-8"
+                      className="input-compact !pl-[60px]"
                       placeholder="0,00"
                     />
                   </div>

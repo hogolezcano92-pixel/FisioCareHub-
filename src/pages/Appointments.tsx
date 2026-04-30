@@ -245,7 +245,7 @@ export default function Appointments() {
   const fetchAppointments = async (currentProfile: any) => {
     try {
       const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
-      const { data, error } = await supabase
+      let query = supabase
         .from('agendamentos')
         .select(`
           *,
@@ -254,14 +254,26 @@ export default function Appointments() {
         `)
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
+      if (isPhysio) {
+        query = query.neq('status', 'pendente_pagamento');
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error("Erro ao buscar agendamentos com join:", error);
         
         // Fallback: fetch without join and then fetch profiles manually
-        const { data: basicData, error: basicError } = await supabase
+        let fallbackQuery = supabase
           .from('agendamentos')
           .select('*')
           .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
+
+        if (isPhysio) {
+          fallbackQuery = fallbackQuery.neq('status', 'pendente_pagamento');
+        }
+
+        const { data: basicData, error: basicError } = await fallbackQuery;
         
         if (basicError) throw basicError;
         
@@ -409,11 +421,6 @@ export default function Appointments() {
       }
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
-
-      // TRIGGER WHATSAPP NOTIFICATION
-      if (newApp) {
-        triggerWhatsAppNotification('created', newApp.id);
-      }
 
       // 3. Redirecionamento para a página de pagamento interna
       if (newApp && targetUser.tipo_usuario === 'fisioterapeuta' && currentPrice > 0) {

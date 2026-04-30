@@ -224,10 +224,7 @@ export default function ProfessionalProfile() {
         throw new Error('Falha ao registrar o agendamento.');
       }
 
-      // 3. TRIGGER WHATSAPP NOTIFICATION
-      triggerWhatsAppNotification('created', newApp.id);
-
-      // REDIRECIONAMENTO PARA A PÁGINA DE PAGAMENTO INTERMEDIÁRIA
+      // 3. REDIRECIONAMENTO PARA A PÁGINA DE PAGAMENTO INTERMEDIÁRIA
       toast.success('Agendamento registrado! Redirecionando para o pagamento...');
       setTimeout(() => {
         navigate(`/pagamento/${newApp.id}`);
