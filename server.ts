@@ -947,7 +947,7 @@ async function startServer() {
       console.log(`[Stripe] Creating checkout session for ${email} - Plan: ${plan}`);
 
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card', 'pix'],
+        payment_method_types: ['card'],
         line_items: [
           {
             price_data: {
@@ -992,6 +992,7 @@ async function startServer() {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "brl",
+        payment_method_types: ['card'],
         metadata: {
           sessionId,
         },
