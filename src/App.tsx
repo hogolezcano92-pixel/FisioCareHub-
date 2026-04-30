@@ -34,7 +34,9 @@ import {
   Bell,
   Video,
   Loader2,
-  Info
+  Info,
+  BookOpen,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -88,8 +90,8 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 const FinanceServiceSettings = lazy(() => import('./pages/FinanceServiceSettings'));
-
 const Telehealth = lazy(() => import('./pages/Telehealth'));
+const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -268,6 +270,8 @@ function Navbar() {
       icon: HomeIcon 
     },
     { name: 'Sobre nós', path: '/sobre', icon: Info },
+    { name: 'Biblioteca', path: '/biblioteca', icon: BookOpen },
+    { name: 'Encontrar Fisio', path: '/buscar-fisio', icon: Search },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
         ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
@@ -795,6 +799,8 @@ function AppContent() {
                   <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
+                  <Route path="/biblioteca" element={<HealthLibrary />} />
+                  <Route path="/biblioteca/:slug" element={<LibraryMaterialDetail />} />
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
                   <Route path="/fisioterapeuta" element={<FindPhysio />} />
                   <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
