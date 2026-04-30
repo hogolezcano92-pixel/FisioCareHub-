@@ -468,43 +468,44 @@ export default function ProfessionalProfile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden border border-white/10"
+              className="relative w-full max-w-lg bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 flex flex-col max-h-[90vh]"
             >
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-white tracking-tight">Agendar Consulta</h2>
+              <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900 z-20">
+                <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">Agendar Consulta</h2>
                 <button onClick={() => setShowBookingModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
                   <XCircle size={24} />
                 </button>
               </div>
 
-              <form onSubmit={handleConfirmarAgendamento} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                    <input 
-                      type="date"
-                      required
-                      value={bookingData.data}
-                      onChange={(e) => setBookingData({...bookingData, data: e.target.value})}
-                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
-                    />
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+                <form id="booking-form" onSubmit={handleConfirmarAgendamento} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4 items-end">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
+                      <input 
+                        type="date"
+                        required
+                        value={bookingData.data}
+                        onChange={(e) => setBookingData({...bookingData, data: e.target.value})}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
+                      <input 
+                        type="time"
+                        required
+                        value={bookingData.hora}
+                        onChange={(e) => setBookingData({...bookingData, hora: e.target.value})}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
-                    <input 
-                      type="time"
-                      required
-                      value={bookingData.hora}
-                      onChange={(e) => setBookingData({...bookingData, hora: e.target.value})}
-                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Selecione o Serviço ou Pacote</label>
-                  
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Selecione o Serviço ou Pacote</label>
+                    
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar border border-white/5 p-2 rounded-2xl bg-white/[0.02]">
                     {/* Serviços Avulsos */}
                     <div className="space-y-2">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Sessões Avulsas</p>
@@ -591,19 +592,24 @@ export default function ProfessionalProfile() {
                   />
                 </div>
 
-                <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
+                </form>
+              </div>
+
+              <div className="p-6 md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20">
+                <div className="p-4 mb-6 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
                   <span className="text-xs font-bold text-blue-400">Total da Sessão:</span>
                   <span className="text-lg font-black text-blue-400">R$ {(bookingData.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
 
                 <button 
                   type="submit"
+                  form="booking-form"
                   disabled={bookingLoading}
                   className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {bookingLoading ? <Loader2 className="animate-spin" /> : 'Confirmar Solicitação'}
                 </button>
-              </form>
+              </div>
             </motion.div>
           </div>
         )}

@@ -670,48 +670,49 @@ export default function Appointments() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 rounded-[2rem] border border-white/10 shadow-2xl p-6 overflow-hidden"
+              className="relative w-full max-w-lg bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-white tracking-tight">Agendar Sessão</h2>
+              <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900 z-20">
+                <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">Agendar Sessão</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={handleSchedule} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
-                    {isPhysio ? 'Paciente' : 'Fisioterapeuta'}
-                  </label>
-                  <select
-                    value={selectedUserId}
-                    onChange={(e) => {
-                      setSelectedUserId(e.target.value);
-                      if (e.target.value) setTargetEmail('');
-                    }}
-                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 mb-2 text-sm text-white"
-                  >
-                    <option value="" className="bg-slate-900">Selecione da lista...</option>
-                    {availableUsers.map(u => (
-                      <option key={u.id} value={u.id} className="bg-slate-900">{u.nome_completo}</option>
-                    ))}
-                  </select>
-                  <div className="relative py-1.5">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                    <div className="relative flex justify-center text-[9px] uppercase"><span className="bg-slate-900 px-2 text-slate-500 font-bold">Ou e-mail</span></div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+                <form id="schedule-form" onSubmit={handleSchedule} className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+                      {isPhysio ? 'Paciente' : 'Fisioterapeuta'}
+                    </label>
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => {
+                        setSelectedUserId(e.target.value);
+                        if (e.target.value) setTargetEmail('');
+                      }}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 mb-2 text-sm text-white"
+                    >
+                      <option value="" className="bg-slate-900">Selecione da lista...</option>
+                      {availableUsers.map(u => (
+                        <option key={u.id} value={u.id} className="bg-slate-900">{u.nome_completo}</option>
+                      ))}
+                    </select>
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                      <div className="relative flex justify-center text-[9px] uppercase"><span className="bg-slate-900 px-2 text-slate-500 font-bold">Ou e-mail</span></div>
+                    </div>
+                    <input
+                      type="email"
+                      value={targetEmail}
+                      onChange={(e) => {
+                        setTargetEmail(e.target.value);
+                        if (e.target.value) setSelectedUserId('');
+                      }}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
+                      placeholder="email@exemplo.com"
+                    />
                   </div>
-                  <input
-                    type="email"
-                    value={targetEmail}
-                    onChange={(e) => {
-                      setTargetEmail(e.target.value);
-                      if (e.target.value) setSelectedUserId('');
-                    }}
-                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Serviço / Pacote</label>
@@ -776,28 +777,28 @@ export default function Appointments() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Data</label>
-                    <input
-                      type="date"
-                      required
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
-                    />
+                  <div className="grid grid-cols-2 gap-4 items-end">
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Data</label>
+                      <input
+                        type="date"
+                        required
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Hora</label>
+                      <input
+                        type="time"
+                        required
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Hora</label>
-                    <input
-                      type="time"
-                      required
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm text-white"
-                    />
-                  </div>
-                </div>
 
                 {isPhysio && (
                   <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
@@ -828,15 +829,51 @@ export default function Appointments() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full h-12 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 shadow-lg shadow-sky-900/20"
-                >
-                  {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Agendamento'}
-                </button>
+                <div className="pt-4">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Observações</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-24 text-sm text-white"
+                    placeholder="Alguma observação importante?"
+                  />
+                </div>
               </form>
-            </motion.div>
+            </div>
+
+            <div className="p-6 md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20">
+              {profile?.tipo_usuario === 'paciente' && currentPrice > 0 && (
+                <div className="p-4 mb-6 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between group">
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <Wallet size={16} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Valor da Sessão:</span>
+                    <button 
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
+                        detail: { search: 'pagamento' } 
+                      }))}
+                      className="p-1 hover:bg-blue-600/20 rounded-lg transition-all"
+                      title="Dúvidas sobre pagamento?"
+                    >
+                      <HelpCircle size={14} />
+                    </button>
+                  </div>
+                  <span className="text-lg font-black text-blue-400">
+                    R$ {currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                form="schedule-form"
+                disabled={submitting}
+                className="w-full py-5 bg-sky-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {submitting ? <Loader2 className="animate-spin" /> : 'Confirmar Solicitação'}
+              </button>
+            </div>
+          </motion.div>
           </div>
         )}
       </AnimatePresence>
