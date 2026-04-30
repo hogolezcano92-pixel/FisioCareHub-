@@ -159,7 +159,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
           titulo: 'Novo Ticket de Suporte',
           mensagem: `${user.email} abriu um ticket: ${subject}`,
           tipo: 'support_request',
-          link: '/admin', // Redireciona o admin para o painel de controle
+          link: '/admin', 
           metadata: { ticket_id: ticketData.id }
         }));
 
@@ -331,7 +331,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-                {/* Profile Selector - Only show for public/unauthenticated users */}
                 {!user && (
                   <div className="bg-slate-800/50 p-2 rounded-[1.5rem] flex gap-2">
                     <button
@@ -361,23 +360,29 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   </div>
                 )}
 
-                {/* Search */}
+                {/* Search - CORREÇÃO DE SOBREPOSIÇÃO AQUI */}
                 <div className="relative">
                   <Search 
                     className="absolute pointer-events-none z-10" 
-                    style={{ left: '14px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                    style={{ 
+                      left: '16px', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)', 
+                      width: '20px', 
+                      height: '20px', 
+                      color: '#94a3b8' 
+                    }}
                   />
                   <input
                     type="text"
-                    placeholder="Digite sua dúvida..."
+                    placeholder="Busque aqui sua dúvida..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ paddingLeft: '44px' }}
+                    style={{ paddingLeft: '52px' }}
                     className="w-full bg-slate-800 border-2 border-white/5 rounded-2xl pr-4 py-4 text-white placeholder:text-slate-600 focus:border-blue-600 transition-all outline-none font-bold"
                   />
                 </div>
 
-                {/* Financial Section - SEPARATED BY ROLE */}
                 <div className="space-y-6">
                   <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-2">
                     <ShieldCheck size={14} className="text-blue-500" />
@@ -386,7 +391,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   
                   {activeProfile === 'paciente' ? (
                     <div className="space-y-4">
-                      {/* Cancellation Section */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <AlertCircle size={18} className="text-amber-400" />
@@ -408,7 +412,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                         </ul>
                       </div>
 
-                      {/* Refund Section */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <CreditCard size={18} className="text-blue-400" />
@@ -431,7 +434,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                         </div>
                       </div>
 
-                      {/* Estorno Section */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-3">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <ArrowRight size={18} className="text-emerald-400" />
@@ -442,7 +444,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                         </p>
                       </div>
 
-                      {/* Flow Summary */}
                       <div className="p-5 bg-blue-600/5 border border-blue-500/20 rounded-3xl">
                         <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">Resumo do Fluxo</p>
                         <div className="flex flex-col gap-2">
@@ -463,7 +464,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {/* Physio Side */}
                       <div className="bg-white/5 border border-white/10 p-5 rounded-3xl space-y-4">
                         <div className="flex items-center gap-3 text-white font-black text-sm">
                           <Crown size={18} className="text-amber-400" />
@@ -506,7 +506,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   )}
                 </div>
 
-                {/* Perguntas Populares */}
                 {!searchTerm && (
                   <div className="flex flex-wrap gap-2">
                     {activeProfile === 'paciente' ? (
@@ -525,7 +524,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   </div>
                 )}
 
-                {/* FAQ List */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Perguntas Frequentes</h3>
                   {filteredFaqs.length > 0 ? (
@@ -584,7 +582,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   )}
                 </div>
 
-                {/* Support Fallback */}
                 <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 border border-blue-500/20 p-8 rounded-[2.5rem] space-y-6">
                   <div className="space-y-2 text-center">
                     <h4 className="text-white font-black text-lg">Ainda com dúvidas?</h4>
@@ -619,7 +616,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="p-6 border-t border-white/5 text-center">
                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">FisioCareHub • Suporte Inteligente</p>
               </div>
@@ -628,7 +624,6 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
         )}
       </AnimatePresence>
 
-      {/* KineAI Component Integration */}
       {showKineAI && (
         <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
       )}
