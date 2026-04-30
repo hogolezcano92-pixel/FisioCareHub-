@@ -678,18 +678,18 @@ export default function Home() {
                     initial={false}
                     animate={{ x: `-${proSlideIndex * (100 / itemsVisible)}%` }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="flex gap-8"
+                    className="flex"
                   >
                     {professionals.map((pro) => (
                       <div
                         key={pro.id}
                         className={cn(
-                          "flex-shrink-0 px-4",
+                          "flex-shrink-0 px-4 transition-all duration-500",
                           itemsVisible === 1 ? "w-full" : itemsVisible === 2 ? "w-1/2" : "w-1/4"
                         )}
                       >
                         <motion.div
-                          className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-full"
+                          className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3.5rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-[520px] shadow-2xl"
                         >
                           <div className="relative mb-8">
                             <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />

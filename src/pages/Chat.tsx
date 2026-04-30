@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import { 
   Send, 
   User, 
@@ -48,25 +49,80 @@ export default function Chat() {
     const params = new URLSearchParams(location.search);
     if (params.get('support') === 'true' && !targetUser) {
       const fetchAdmin = async () => {
-        let { data: adminData } = await supabase
-          .from('perfis')
-          .select('*')
-          .eq('tipo_usuario', 'admin')
-          .limit(1)
-          .single();
-        
-        if (!adminData) {
-          const { data: fallbackAdmin } = await supabase
-            .from('perfis')
+        try {
+          // 1. Check direct auth for robustness as requested
+          const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+          if (authError || !authUser) {
+            console.error("[Support] Auth required:", authError);
+            toast.error("Você precisa estar logado para acessar o suporte.");
+            return;
+          }
+
+          // 2. Ensure a ticket exists in suporte_tickets (Requirement 2 & 6)
+          const { data: existingTicket, error: ticketError } = await supabase
+            .from('suporte_tickets')
             .select('*')
-            .eq('email', 'hogolezcano92@gmail.com')
+            .eq('usuario_id', authUser.id)
+            .eq('status', 'aberto')
             .limit(1)
             .single();
-          adminData = fallbackAdmin;
-        }
-        
-        if (adminData) {
-          setTargetUser(adminData);
+          
+          if (ticketError && ticketError.code !== 'PGRST116') {
+            console.error("[Support] Error checking tickets:", ticketError);
+          }
+
+          if (!existingTicket) {
+            console.log("[Support] Creating new ticket for chat session...");
+            const { error: insertError } = await supabase
+              .from('suporte_tickets')
+              .insert({
+                usuario_id: authUser.id,
+                categoria: 'tecnico',
+                assunto: 'Atendimento via Chat',
+                descricao: 'Iniciado via botão de suporte no chat.',
+                status: 'aberto'
+              });
+            
+            if (insertError) {
+              console.error("[Support] Error creating ticket:", insertError);
+              // We continue anyway to try and find an admin
+            }
+          }
+
+          // 3. Find admin to chat with
+          let { data: adminData, error: adminError } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('tipo_usuario', 'admin')
+            .limit(1)
+            .single();
+          
+          if (adminError || !adminData) {
+            console.warn("[Support] Standard admin not found, trying fallback...", adminError);
+            const { data: fallbackAdmin, error: fallbackError } = await supabase
+              .from('perfis')
+              .select('*')
+              .eq('email', 'hogolezcano92@gmail.com')
+              .limit(1)
+              .single();
+            
+            if (fallbackError) {
+               console.error("[Support] Fallback admin failed:", fallbackError);
+               toast.error(`Erro ao conectar com suporte: ${fallbackError.message}`);
+               return;
+            }
+            adminData = fallbackAdmin;
+          }
+          
+          if (adminData) {
+            setTargetUser(adminData);
+          } else {
+            console.error("[Support] No administrators available in the database.");
+            toast.error("Nenhum administrador disponível no momento.");
+          }
+        } catch (err) {
+          console.error("[Support] Fatal error in fetchAdmin:", err);
+          toast.error("Falha ao iniciar chat de suporte.");
         }
       };
       fetchAdmin();
@@ -380,28 +436,55 @@ export default function Chat() {
             </h2>
             <button 
               onClick={async () => {
-                let { data: adminData } = await supabase
-                  .from('perfis')
-                  .select('*')
-                  .eq('tipo_usuario', 'admin')
-                  .limit(1)
-                  .single();
-                
-                if (!adminData) {
-                  const { data: fallbackAdmin } = await supabase
+                try {
+                  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+                  if (authError || !authUser) {
+                    console.error("[Support] Auth fail:", authError);
+                    toast.error("Sessão inválida. Por favor, faça login novamente.");
+                    return;
+                  }
+
+                  // Ensure ticket exists (Requirement 2 & 6)
+                  const { error: ticketError } = await supabase
+                    .from('suporte_tickets')
+                    .insert({
+                      usuario_id: authUser.id,
+                      categoria: 'tecnico',
+                      assunto: 'Suporte via Chat',
+                      descricao: 'Solicitado manualmente na barra lateral de chat.',
+                      status: 'aberto'
+                    });
+                  
+                  if (ticketError) console.error("[Support] Ticket creation error:", ticketError);
+
+                  let { data: adminData, error: adminError } = await supabase
                     .from('perfis')
                     .select('*')
-                    .eq('email', 'hogolezcano92@gmail.com')
+                    .eq('tipo_usuario', 'admin')
                     .limit(1)
                     .single();
-                  adminData = fallbackAdmin;
-                }
-                
-                if (adminData) {
-                  setTargetUser(adminData);
-                } else {
-                  const { toast } = await import('sonner');
-                  toast.error("Suporte indisponível no momento.");
+                  
+                  if (!adminData) {
+                    console.warn("[Support] Main admin search failed:", adminError);
+                    const { data: fallbackAdmin, error: fallbackError } = await supabase
+                      .from('perfis')
+                      .select('*')
+                      .eq('email', 'hogolezcano92@gmail.com')
+                      .limit(1)
+                      .single();
+                    adminData = fallbackAdmin;
+                    if (fallbackError) console.error("[Support] Fallback admin search failed:", fallbackError);
+                  }
+                  
+                  if (adminData) {
+                    setTargetUser(adminData);
+                  } else {
+                    console.error("[Support] No admins found in perfis table.");
+                    toast.error(`Suporte indisponível: ${adminError?.message || 'Administradores não encontrados'}`);
+                  }
+                } catch (err) {
+                  console.error("[Support] Unexpected error:", err);
+                  toast.error("Erro interno ao abrir suporte.");
                 }
               }}
               className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2 border border-blue-500/20"

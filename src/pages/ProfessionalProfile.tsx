@@ -519,18 +519,18 @@ export default function ProfessionalProfile() {
                               setBookingData({ ...bookingData, tipo: value, valor: Number(svc.base_price) || 0 });
                             }}
                             className={cn(
-                              "w-full p-4 rounded-2xl border transition-all text-left flex justify-between items-center group",
+                              "w-full min-h-[80px] p-5 rounded-2xl border transition-all text-left flex justify-between items-center gap-4 group",
                               isSelected 
-                                ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-900/20" 
+                                ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-900/20 scale-[1.02]" 
                                 : "bg-white/5 border-white/10 hover:border-white/20"
                             )}
                           >
-                            <div className="flex flex-col">
-                              <span className={cn("font-bold text-sm", isSelected ? "text-white" : "text-white")}>{svc.name}</span>
-                              <span className={cn("text-[10px] font-bold uppercase", isSelected ? "text-blue-200" : "text-slate-500")}>Sessão Avulsa</span>
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <span className={cn("font-black text-sm md:text-base truncate", isSelected ? "text-white" : "text-white")}>{svc.name}</span>
+                              <span className={cn("text-[9px] font-black uppercase tracking-widest", isSelected ? "text-blue-100/70" : "text-slate-500")}>Sessão Avulsa</span>
                             </div>
-                            <span className={cn("font-black text-sm", isSelected ? "text-white" : "text-blue-400")}>
-                              R$ {Number(svc.base_price).toFixed(2)}
+                            <span className={cn("font-black text-base md:text-lg whitespace-nowrap", isSelected ? "text-white" : "text-blue-400")}>
+                              R$ {Number(svc.base_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
                           </button>
                         );
@@ -552,26 +552,26 @@ export default function ProfessionalProfile() {
                                 setBookingData({ ...bookingData, tipo: value, valor: Number(pkg.total_price) || 0 });
                               }}
                               className={cn(
-                                "w-full p-4 rounded-2xl border transition-all text-left flex justify-between items-center group relative overflow-hidden",
+                                "w-full min-h-[90px] p-5 rounded-2xl border transition-all text-left flex justify-between items-center gap-4 group relative overflow-hidden",
                                 isSelected 
-                                  ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-900/20" 
+                                  ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-900/20 scale-[1.02]" 
                                   : "bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40"
                               )}
                             >
-                              <div className="flex flex-col relative z-10">
-                                <div className="flex items-center gap-2">
-                                  <span className={cn("font-bold text-sm", isSelected ? "text-white" : "text-white")}>{pkg.name}</span>
+                              <div className="flex flex-col flex-1 min-w-0 relative z-10">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={cn("font-black text-sm md:text-base truncate", isSelected ? "text-white" : "text-white")}>{pkg.name}</span>
                                   <span className={cn(
-                                    "text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase",
+                                    "text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter",
                                     isSelected ? "bg-white text-emerald-600" : "bg-emerald-600 text-white"
                                   )}>Pacote</span>
                                 </div>
-                                <span className={cn("text-[10px] font-bold uppercase", isSelected ? "text-emerald-100" : "text-emerald-500/70")}>
-                                  {pkg.sessions_quantity} sessões (R$ {(pkg.total_price/pkg.sessions_quantity).toFixed(2)}/cada)
+                                <span className={cn("text-[10px] font-black uppercase tracking-wider", isSelected ? "text-emerald-100/70" : "text-emerald-500/70")}>
+                                  {pkg.sessions_quantity} sessões • R$ {(pkg.total_price/pkg.sessions_quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/cada
                                 </span>
                               </div>
-                              <span className={cn("font-black text-sm relative z-10", isSelected ? "text-white" : "text-emerald-400")}>
-                                R$ {Number(pkg.total_price).toFixed(2)}
+                              <span className={cn("font-black text-base md:text-lg relative z-10 whitespace-nowrap", isSelected ? "text-white" : "text-emerald-400")}>
+                                R$ {Number(pkg.total_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </span>
                             </button>
                           );
