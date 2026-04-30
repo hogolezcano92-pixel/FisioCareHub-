@@ -121,6 +121,10 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    document.title = "FisioCareHub - Conectando Fisioterapeutas e Pacientes";
+  }, []);
+
+  useEffect(() => {
     // Only redirect if at the root path and logged in
     if (!authLoading && user && window.location.pathname === '/') {
       navigate('/dashboard');

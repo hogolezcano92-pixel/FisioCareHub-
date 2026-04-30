@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   Search, 
@@ -74,9 +75,8 @@ export default function HealthLibrary() {
   ];
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
+    document.title = "Biblioteca de Saúde - FisioCareHub";
+    fetchData();
   }, [user]);
 
   const fetchData = async () => {
@@ -97,17 +97,21 @@ export default function HealthLibrary() {
         setMaterials(materialsData || []);
       }
 
-      // Fetch user purchases
-      const { data: purchasesData, error: purchasesError } = await supabase
-        .from('material_purchases')
-        .select('material_id')
-        .eq('patient_id', user?.id);
+      // Fetch user purchases if logged in
+      if (user) {
+        const { data: purchasesData, error: purchasesError } = await supabase
+          .from('material_purchases')
+          .select('material_id')
+          .eq('patient_id', user?.id);
 
-      if (purchasesError) {
-        console.warn('Table material_purchases might not exist yet:', purchasesError);
+        if (purchasesError) {
+          console.warn('Table material_purchases might not exist yet:', purchasesError);
+        } else {
+          const purchaseSet = new Set<string>((purchasesData || []).map(p => p.material_id));
+          setPurchases(purchaseSet);
+        }
       } else {
-        const purchaseSet = new Set<string>((purchasesData || []).map(p => p.material_id));
-        setPurchases(purchaseSet);
+        setPurchases(new Set());
       }
 
     } catch (error) {
@@ -119,6 +123,10 @@ export default function HealthLibrary() {
   };
 
   const addToCart = (material: LibraryMaterial) => {
+    if (!user) {
+      toast.error('Você precisa estar logado para comprar materiais');
+      return;
+    }
     if (purchases.has(material.id)) {
       toast.info('Você já possui este material');
       return;
@@ -136,7 +144,11 @@ export default function HealthLibrary() {
   };
 
   const handleCheckout = () => {
-    if (!user || cart.length === 0) return;
+    if (!user) {
+      toast.error('Você precisa estar logado para finalizar a compra');
+      return;
+    }
+    if (cart.length === 0) return;
     setIsPaymentModalOpen(true);
   };
 
@@ -639,9 +651,11 @@ export default function HealthLibrary() {
                 {/* Content */}
                 <div className="p-8 flex-1 flex flex-col space-y-4">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
-                      {material.title}
-                    </h3>
+                    <Link to={`/biblioteca/${material.id}`} className="block group">
+                      <h3 className="text-xl font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
+                        {material.title}
+                      </h3>
+                    </Link>
                     <p className="text-sm text-slate-400 font-medium line-clamp-2 leading-relaxed">
                       {material.description}
                     </p>
@@ -656,13 +670,13 @@ export default function HealthLibrary() {
                     </div>
 
                     {isPurchased || !material.is_premium ? (
-                      <button
-                        onClick={() => handleAccess(material)}
+                      <Link
+                        to={`/biblioteca/${material.id}`}
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/20"
                       >
                         <ExternalLink size={16} />
                         Ver Conteúdo
-                      </button>
+                      </Link>
                     ) : (
                       <button
                         onClick={() => addToCart(material)}
