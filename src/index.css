@@ -27,22 +27,26 @@
   --shadow-premium-hover: 0 10px 30px -10px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.3);
 
   @keyframes mesh {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(15%, -10%) scale(1.1); }
+    66% { transform: translate(-10%, 15%) scale(0.9); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes float-blob {
     0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    33% { transform: translate(10%, -10%) rotate(120deg) scale(1.2); }
-    66% { transform: translate(-10%, 10%) rotate(240deg) scale(0.8); }
+    33% { transform: translate(20px, -30px) rotate(120deg) scale(1.1); }
+    66% { transform: translate(-20px, 20px) rotate(240deg) scale(0.9); }
     100% { transform: translate(0, 0) rotate(360deg) scale(1); }
   }
 }
 
 @layer utilities {
-  .animate-mesh {
+  .animate-mesh-slow {
     animation: mesh 25s infinite ease-in-out;
   }
-  .animate-mesh-slow {
-    animation: mesh 40s infinite ease-in-out reverse;
-  }
-  .animate-mesh-slower {
-    animation: mesh 60s infinite ease-in-out;
+  .animate-blob-float {
+    animation: float-blob 25s infinite ease-in-out;
   }
 
   .text-ice {
