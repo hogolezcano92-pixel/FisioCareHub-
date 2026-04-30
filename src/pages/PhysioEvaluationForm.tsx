@@ -19,7 +19,7 @@ import {
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import ProGuard from '../components/ProGuard';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 interface EvaluationForm {

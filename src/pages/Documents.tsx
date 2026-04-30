@@ -24,7 +24,7 @@ import {
   FileJson
 } from 'lucide-react';
 import { generateDocument } from '../lib/groq';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
