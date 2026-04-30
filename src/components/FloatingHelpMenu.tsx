@@ -131,7 +131,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
     setTicketLoading(true);
     try {
       // 1. Create the ticket
-      const { data: ticketData, error: error } = await supabase
+      const { data: ticketArray, error: error } = await supabase
         .from('suporte_tickets')
         .insert({
           usuario_id: user.id,
@@ -140,10 +140,12 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
           descricao: description,
           status: 'aberto'
         })
-        .select()
-        .single();
+        .select();
+
+      const ticketData = ticketArray && ticketArray.length > 0 ? ticketArray[0] : null;
 
       if (error) throw error;
+      if (!ticketData) throw new Error("Falha ao criar ticket.");
 
       // 2. Fetch all admins to notify them
       const { data: admins } = await supabase
