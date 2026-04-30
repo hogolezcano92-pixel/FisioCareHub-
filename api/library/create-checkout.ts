@@ -55,15 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       quantity: 1,
     }));
 
-    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'http://localhost:3000';
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'pix'],
-      line_items: lineItems,
-      mode: 'payment',
-      customer_email: email,
-      success_url: `${appUrl}/library?success=true`,
-      cancel_url: `${appUrl}/library?canceled=true`,
+    // 3. Create PaymentIntent (Card, Apple Pay, Google Pay)
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: materials.reduce((sum, m) => sum + (m.price_cents || Math.round(m.price * 100)), 0),
+      currency: 'brl',
+      payment_method_types: ['card'],
+      receipt_email: email,
       metadata: {
         user_id,
         material_ids: material_ids.join(','),
@@ -71,7 +68,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    res.status(200).json({ url: session.url });
+    res.status(200).json({ 
+      clientSecret: paymentIntent.client_secret,
+      amount: materials.reduce((sum, m) => sum + (m.price_cents || Math.round(m.price * 100)), 0) / 100
+    });
   } catch (err: any) {
     console.error("[Library Checkout API Error]:", err);
     res.status(500).json({ error: err.message });
