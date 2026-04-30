@@ -712,12 +712,15 @@ function AddExerciseModal({ onClose, user }: { onClose: () => void, user: any })
           contexto_funcional: []
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao salvar exercício:', error);
+        throw new Error(error.message);
+      }
       toast.success('Exercício salvo com sucesso!');
       onClose();
     } catch (err: any) {
       console.error(err);
-      toast.error('Erro ao salvar exercício. Verifique a estrutura da tabela.');
+      toast.error('Erro ao salvar: ' + (err.message || 'Verifique se as colunas SQL foram criadas.'));
     } finally {
       setLoading(false);
     }
