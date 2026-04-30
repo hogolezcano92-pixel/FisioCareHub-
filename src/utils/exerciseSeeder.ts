@@ -1,3 +1,4 @@
+
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
@@ -60,14 +61,19 @@ export async function seedExerciseLibrary(fisioId: string) {
   try {
     const exercisesToInsert = BASE_EXERCISES.map(ex => ({
       ...ex,
-      fisio_id: fisioId
+      fisio_id: fisioId,
+      objetivos_secundarios: ex.objetivos_secundarios || [],
+      contexto_funcional: ex.contexto_funcional || []
     }));
 
     const { error } = await supabase
       .from('exercicios')
       .insert(exercisesToInsert);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro detalhado do banco:', error);
+      throw error;
+    }
     toast.success('Biblioteca base importada com sucesso!');
     return true;
   } catch (err) {
