@@ -193,13 +193,16 @@ export default function Exercises() {
       </header>
 
       <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} />
+        <Search 
+          className="absolute pointer-events-none z-20" 
+          style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+        />
         <input
           type="text"
           placeholder="Buscar exercício por nome ou descrição..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full !pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all shadow-sm text-white"
+          className="w-full pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all shadow-sm text-white !pl-[60px]"
         />
       </div>
 
@@ -394,12 +397,12 @@ export default function Exercises() {
                 <div className="space-y-2">
                   <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Selecionar Paciente</label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <User className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }} />
                     <select
                       required
                       value={selectedPatientId}
                       onChange={(e) => setSelectedPatientId(e.target.value)}
-                      className="w-full !pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none text-white"
+                      className="w-full pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none text-white !pl-[60px]"
                     >
                       <option value="" className="bg-slate-900">Selecione um paciente...</option>
                       {patients.map(p => (

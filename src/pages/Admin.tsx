@@ -1557,13 +1557,16 @@ export default function Admin() {
             {/* Right Section - Actions */}
             <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 min-w-0">
               <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={16} />
+                <Search 
+                  className="absolute pointer-events-none z-20" 
+                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                />
                 <input 
                   type="text" 
                   placeholder="Buscar..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="!pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32 lg:w-64"
+                  className="pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32 lg:w-64 !pl-[60px]"
                 />
               </div>
               <button 
