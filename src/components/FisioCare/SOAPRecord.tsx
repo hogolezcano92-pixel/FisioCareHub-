@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch, Check, Search } from 'lucide-react';
 import { generateSOAPRecord, summarizePatientHistory } from '../../lib/groq';
@@ -388,9 +389,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       </AnimatePresence>
 
       {/* Patient Selection Modal */}
-      <AnimatePresence>
-        {showPatientSelector && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {showPatientSelector && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -399,9 +400,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl space-y-6"
             >
               <div className="text-center space-y-2">
@@ -416,7 +417,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={20} />
                   <input
                     type="text"
                     value={patientSearch}
@@ -425,7 +426,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       searchPatients(e.target.value);
                     }}
                     placeholder="Nome ou e-mail do paciente..."
-                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white font-medium outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-slate-600"
+                    className="w-full pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white font-medium outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-slate-600 shadow-inner"
                   />
                 </div>
 
@@ -477,8 +478,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               </button>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
