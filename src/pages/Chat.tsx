@@ -59,13 +59,14 @@ export default function Chat() {
           }
 
           // 2. Ensure a ticket exists in suporte_tickets (Requirement 2 & 6)
-          const { data: existingTicket, error: ticketError } = await supabase
+          const { data: tickets, error: ticketError } = await supabase
             .from('suporte_tickets')
             .select('*')
             .eq('usuario_id', authUser.id)
             .eq('status', 'aberto')
-            .limit(1)
-            .single();
+            .limit(1);
+          
+          const existingTicket = tickets && tickets.length > 0 ? tickets[0] : null;
           
           if (ticketError && ticketError.code !== 'PGRST116') {
             console.error("[Support] Error checking tickets:", ticketError);
@@ -90,34 +91,37 @@ export default function Chat() {
           }
 
           // 3. Find admin to chat with
-          let { data: adminData, error: adminError } = await supabase
+          let { data: admins, error: adminError } = await supabase
             .from('perfis')
             .select('*')
             .eq('tipo_usuario', 'admin')
-            .limit(1)
-            .single();
+            .limit(1);
+          
+          let adminData = admins && admins.length > 0 ? admins[0] : null;
           
           if (adminError || !adminData) {
             console.warn("[Support] Standard admin not found, trying fallback...", adminError);
-            const { data: fallbackAdmin, error: fallbackError } = await supabase
+            const { data: fallbackAdmins, error: fallbackError } = await supabase
               .from('perfis')
               .select('*')
               .eq('email', 'hogolezcano92@gmail.com')
-              .limit(1)
-              .single();
+              .limit(1);
             
-            if (fallbackError) {
-               console.error("[Support] Fallback admin failed:", fallbackError);
-               toast.error(`Erro ao conectar com suporte: ${fallbackError.message}`);
+            const fallbackAdmin = fallbackAdmins && fallbackAdmins.length > 0 ? fallbackAdmins[0] : null;
+            
+            if (fallbackError || !fallbackAdmin) {
+               console.error("[Support] Support unavailable. Admin Error:", adminError, "Fallback Error:", fallbackError);
+               toast.error(`Suporte indisponível: ${fallbackError?.message || adminError?.message || 'Administradores não encontrados'}. Verifique o console para detalhes.`);
                return;
             }
             adminData = fallbackAdmin;
           }
           
           if (adminData) {
+            console.log("[Support] Connected to admin:", adminData.email);
             setTargetUser(adminData);
           } else {
-            console.error("[Support] No administrators available in the database.");
+            console.error("[Support] Total failure finding admins");
             toast.error("Nenhum administrador disponível no momento.");
           }
         } catch (err) {
@@ -457,30 +461,34 @@ export default function Chat() {
                   
                   if (ticketError) console.error("[Support] Ticket creation error:", ticketError);
 
-                  let { data: adminData, error: adminError } = await supabase
+                  // Find admin (Requirement 2 & 6)
+                  let { data: admins, error: adminError } = await supabase
                     .from('perfis')
                     .select('*')
                     .eq('tipo_usuario', 'admin')
-                    .limit(1)
-                    .single();
+                    .limit(1);
+                  
+                  let adminData = admins && admins.length > 0 ? admins[0] : null;
                   
                   if (!adminData) {
                     console.warn("[Support] Main admin search failed:", adminError);
-                    const { data: fallbackAdmin, error: fallbackError } = await supabase
+                    const { data: fallbackAdmins, error: fallbackError } = await supabase
                       .from('perfis')
                       .select('*')
                       .eq('email', 'hogolezcano92@gmail.com')
-                      .limit(1)
-                      .single();
+                      .limit(1);
+                    
+                    const fallbackAdmin = fallbackAdmins && fallbackAdmins.length > 0 ? fallbackAdmins[0] : null;
                     adminData = fallbackAdmin;
                     if (fallbackError) console.error("[Support] Fallback admin search failed:", fallbackError);
                   }
                   
                   if (adminData) {
+                    console.log("[Support] Admin found for chat:", adminData.email);
                     setTargetUser(adminData);
                   } else {
-                    console.error("[Support] No admins found in perfis table.");
-                    toast.error(`Suporte indisponível: ${adminError?.message || 'Administradores não encontrados'}`);
+                    console.error("[Support] Support contact completely failed. Detailed Errors:", adminError);
+                    toast.error(`Suporte indisponível: ${adminError?.message || 'Administradores não encontrados'}. Verifique o console para logs reais.`);
                   }
                 } catch (err) {
                   console.error("[Support] Unexpected error:", err);
