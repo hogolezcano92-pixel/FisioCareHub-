@@ -181,23 +181,23 @@ export default function PhysioDashboard() {
               {/* Filters for Requests */}
               <div className="flex flex-wrap gap-4">
                 <div className="flex-1 min-w-[200px] relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} />
                   <input 
                     type="text" 
                     placeholder="Filtrar por localização..."
                     value={filter.location}
                     onChange={(e) => setFilter({...filter, location: e.target.value})}
-                    className="w-full p-4 !pl-10 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 !pl-10 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px] relative">
-                  <ClipboardList className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                  <ClipboardList className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} />
                   <input 
                     type="text" 
                     placeholder="Filtrar por especialidade..."
                     value={filter.specialty}
                     onChange={(e) => setFilter({...filter, specialty: e.target.value})}
-                    className="w-full p-4 !pl-10 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-4 !pl-10 pr-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-600"
                   />
                 </div>
               </div>

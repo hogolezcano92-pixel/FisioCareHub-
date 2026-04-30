@@ -552,13 +552,13 @@ export default function HealthLibrary() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10" />
           <input
             type="text"
             placeholder="Buscar materiais..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all font-medium text-white shadow-sm"
+            className="w-full pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all font-medium text-white shadow-sm"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">

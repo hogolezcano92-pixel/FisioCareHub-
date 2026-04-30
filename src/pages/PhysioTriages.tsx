@@ -101,7 +101,7 @@ export default function PhysioTriages() {
         </div>
         
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={18} />
           <input 
             type="text"
             placeholder="Buscar por paciente ou região..."

@@ -266,11 +266,11 @@ export default function AppPreview() {
               </div>
 
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={16} />
                 <input 
                   type="text" 
                   placeholder="Buscar paciente..." 
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs outline-none focus:border-emerald-500/50 transition-all"
+                  className="w-full pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs outline-none focus:border-emerald-500/50 transition-all"
                 />
               </div>
             </div>

@@ -503,7 +503,7 @@ export default function Chat() {
           </div>
 
           <form onSubmit={handleSearch} className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors pointer-events-none" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors pointer-events-none z-10" size={18} />
             <input
               type="text"
               value={searchQuery}

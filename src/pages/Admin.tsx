@@ -1557,7 +1557,7 @@ export default function Admin() {
             {/* Right Section - Actions */}
             <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 min-w-0">
               <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={16} />
                 <input 
                   type="text" 
                   placeholder="Buscar..."
