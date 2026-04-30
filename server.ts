@@ -558,7 +558,32 @@ async function startServer() {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const sessionId = paymentIntent.metadata.sessionId;
 
-      if (sessionId) {
+      // Handle library purchase confirmation via PaymentIntent
+      if (paymentIntent.metadata?.type === 'library_purchase_bulk') {
+        const userId = paymentIntent.metadata.user_id;
+        const materialIdsString = paymentIntent.metadata.material_ids;
+
+        if (userId && materialIdsString) {
+          const materialIds = materialIdsString.split(',');
+          console.log(`[Webhook PI] Bulk library purchase confirmed for user ${userId} - Materials: ${materialIdsString}`);
+
+          try {
+            const purchaseRecords = materialIds.map(id => ({
+              patient_id: userId,
+              material_id: id,
+              purchased_at: new Date().toISOString()
+            }));
+
+            const { error: purchaseError } = await getSupabaseAdmin()
+              .from('material_purchases')
+              .insert(purchaseRecords);
+            
+            if (purchaseError) console.error("[Webhook PI] Error recording bulk material purchase:", purchaseError);
+          } catch (err) {
+            console.error("[Webhook PI] Crash during bulk library purchase update:", err);
+          }
+        }
+      } else if (sessionId) {
         console.log(`Pagamento aprovado para sessão: ${sessionId}`);
         const { error } = await getSupabaseAdmin()
           .from('sessoes')
@@ -661,7 +686,7 @@ async function startServer() {
     }
   });
 
-  // Library Material Checkout Session
+  // Library Material Payment Intent (Card Only)
   app.post("/api/library/create-checkout", async (req, res) => {
     try {
       const { user_id, email, material_ids } = req.body;
@@ -670,37 +695,31 @@ async function startServer() {
         return res.status(400).json({ error: "Missing user_id or material_ids" });
       }
 
-      // 1. Fetch all materials info from DB
+      // 1. Fetch materials info from DB to calculate total securely
       const { data: materials, error } = await getSupabaseAdmin()
         .from('library_materials')
-        .select('*')
+        .select('id, title, price_cents, price')
         .in('id', material_ids);
 
       if (error || !materials || materials.length === 0) {
         return res.status(404).json({ error: "Materials not found" });
       }
 
-      // 2. Create line items
-      const lineItems = materials.map(material => ({
-        price_data: {
-          currency: 'brl',
-          product_data: {
-            name: material.title,
-            description: material.topic || material.description,
-          },
-          unit_amount: material.price_cents || Math.round(material.price * 100),
-        },
-        quantity: 1,
-      }));
+      // 2. Calculate total in cents
+      const totalAmount = materials.reduce((sum, m) => {
+        return sum + (m.price_cents || Math.round(m.price * 100));
+      }, 0);
 
-      // 3. Create Stripe Session
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card', 'pix'],
-        line_items: lineItems,
-        mode: 'payment',
-        customer_email: email,
-        success_url: `${process.env.APP_URL || process.env.VITE_APP_URL || 'http://localhost:3000'}/library?success=true`,
-        cancel_url: `${process.env.APP_URL || process.env.VITE_APP_URL || 'http://localhost:3000'}/library?canceled=true`,
+      if (totalAmount <= 0) {
+        return res.status(400).json({ error: "Invalid total amount" });
+      }
+
+      // 3. Create PaymentIntent (Card, Apple Pay, Google Pay)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalAmount,
+        currency: 'brl',
+        payment_method_types: ['card'], // No PIX!
+        receipt_email: email,
         metadata: {
           user_id,
           material_ids: material_ids.join(','),
@@ -708,9 +727,12 @@ async function startServer() {
         },
       });
 
-      res.json({ url: session.url });
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        amount: totalAmount / 100
+      });
     } catch (err: any) {
-      console.error("[Library Checkout] Error:", err);
+      console.error("[Library PI] Error:", err);
       res.status(500).json({ error: err.message });
     }
   });
