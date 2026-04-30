@@ -431,7 +431,10 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Nome Completo</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
                     <UserCircle className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   </div>
                   <input
@@ -440,7 +443,7 @@ export default function Register() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full !pl-10 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
                     placeholder="Seu nome"
                   />
                 </div>
@@ -611,7 +614,10 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">E-mail</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
                     <Mail className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   </div>
                   <input
@@ -620,7 +626,7 @@ export default function Register() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full !pl-10 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -629,7 +635,10 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Senha</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
                     <Lock className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   </div>
                   <input
@@ -638,7 +647,7 @@ export default function Register() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full !pl-10 pr-12 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pr-12 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
                     placeholder="••••••••"
                   />
                   <button

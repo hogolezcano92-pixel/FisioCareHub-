@@ -101,13 +101,16 @@ export default function PhysioTriages() {
         </div>
         
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" size={18} />
+          <Search 
+            className="absolute pointer-events-none z-20" 
+            style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+          />
           <input 
             type="text"
             placeholder="Buscar por paciente ou região..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="!pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl w-full text-white placeholder:text-slate-600 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all"
+            className="pr-4 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl w-full text-white placeholder:text-slate-600 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all !pl-[60px]"
           />
         </div>
       </header>

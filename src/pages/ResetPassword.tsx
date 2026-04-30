@@ -110,13 +110,16 @@ export default function ResetPassword() {
           <div>
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2">Nova Senha</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={20} />
+              <Lock 
+                className="absolute pointer-events-none z-20" 
+                style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+              />
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full !pl-10 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                className="w-full pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white !pl-[60px]"
                 placeholder="Mínimo 6 caracteres"
               />
               <button
@@ -132,13 +135,16 @@ export default function ResetPassword() {
           <div>
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2">Confirmar Nova Senha</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={20} />
+              <Lock 
+                className="absolute pointer-events-none z-20" 
+                style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+              />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full !pl-10 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                className="w-full pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white !pl-[60px]"
                 placeholder="Repita a nova senha"
               />
               <button

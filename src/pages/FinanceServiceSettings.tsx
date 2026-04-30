@@ -400,13 +400,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">Avaliação Inicial</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.avaliacao_inicial}
                     onChange={(e) => setFormData({...formData, avaliacao_inicial: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>
@@ -421,13 +421,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">Sessão de Fisioterapia</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.sessao_fisioterapia}
                     onChange={(e) => setFormData({...formData, sessao_fisioterapia: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-blue-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-blue-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>
@@ -442,13 +442,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">Reabilitação</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.reabilitacao}
                     onChange={(e) => setFormData({...formData, reabilitacao: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-purple-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-purple-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>
@@ -463,13 +463,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">RPG</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.rpg}
                     onChange={(e) => setFormData({...formData, rpg: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-amber-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-amber-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>
@@ -484,13 +484,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">Pilates</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.pilates}
                     onChange={(e) => setFormData({...formData, pilates: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-rose-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-rose-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>
@@ -505,13 +505,13 @@ export default function FinanceServiceSettings() {
                   <h3 className="font-black text-white tracking-tight">Fisioterapia Domiciliar</h3>
                 </div>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black">R$</div>
+                  <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.domiciliar}
                     onChange={(e) => setFormData({...formData, domiciliar: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black focus:outline-none focus:border-sky-500/50 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-sky-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
                 </div>

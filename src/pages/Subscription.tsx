@@ -68,14 +68,27 @@ export default function Subscription() {
       const amount = planType === 'pro' ? 49.99 : 19.99;
       const serviceName = planType === 'pro' ? 'Plano Pro Fisioterapeuta' : 'Plano Basic Fisioterapeuta';
 
-      const data = await invokeFunction('create-checkout-session', {
-        user_id: profile.id,
-        email: profile.email,
-        plan: planType,
-        type: 'subscription',
-        service_name: serviceName,
-        amount: amount
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: profile.id,
+          email: profile.email,
+          plan: planType,
+          type: 'subscription',
+          service_name: serviceName,
+          amount: amount
+        })
       });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Erro ao comunicar com servidor de pagamentos.');
+      }
+
+      const data = await response.json();
 
       if (data?.url) {
         window.location.href = data.url;
@@ -278,13 +291,13 @@ export default function Subscription() {
         {showKeyInput ? (
           <div className="space-y-4">
             <div className="relative">
-              <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+              <Key className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }} />
               <input
                 type="text"
                 value={proKey}
                 onChange={(e) => setProKey(e.target.value.toUpperCase())}
                 placeholder="INSIRA SUA CHAVE"
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white"
+                className="w-full pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white !pl-[60px]"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
