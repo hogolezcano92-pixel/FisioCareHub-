@@ -235,35 +235,19 @@ export default function Home() {
     <div className="bg-slate-950 transition-colors duration-300 selection:bg-blue-500/30">
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
-        {/* Advanced Background with Subtle Animated Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(11,17,32,1),rgba(2,6,23,1))]" />
+        {/* Mesh Gradient Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute inset-0 bg-[#020617]" />
           
-          {/* Animated Blobs - Slower and more subtle */}
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.3, 1],
-              opacity: [0.1, 0.2, 0.1],
-              rotate: [0, 90, 0],
-              x: [0, 30, 0],
-              y: [0, -40, 0]
-            }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-[10%] -left-[5%] w-[80%] h-[80%] bg-blue-600/20 rounded-full blur-[140px]" 
-          />
-          <motion.div 
-            animate={{ 
-              scale: [1.2, 1, 1.2],
-              opacity: [0.05, 0.15, 0.05],
-              rotate: [0, -60, 0],
-              x: [0, -50, 0],
-              y: [0, 50, 0]
-            }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            className="absolute top-[30%] right-[0%] w-[70%] h-[70%] bg-sky-500/15 rounded-full blur-[160px]" 
-          />
+          {/* Animated Mesh Blobs */}
+          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] animate-mesh" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-sky-500/10 rounded-full blur-[140px] animate-mesh-slow" />
+          <div className="absolute top-[20%] right-[10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[120px] animate-mesh-slower" />
+          <div className="absolute bottom-[20%] left-[10%] w-[55%] h-[55%] bg-indigo-600/10 rounded-full blur-[130px] animate-mesh" />
           
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] mix-blend-overlay" />
+          {/* Subtle Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay" />
         </div>
 
         <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
