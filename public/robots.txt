@@ -1,4 +1,39 @@
 User-agent: *
-Allow: /
 
-Sitemap: https://fisiocarehub.company/sitemap.xml
+# Allow important public routes
+Allow: /
+Allow: /biblioteca
+Allow: /biblioteca/*
+Allow: /sobre
+Allow: /termos
+Allow: /privacidade
+Allow: /buscar-fisio
+Allow: /fisioterapeuta
+
+# Disallow private and administrative areas
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /preview
+Disallow: /chat
+Disallow: /profile
+Disallow: /aguardando-aprovacao
+Disallow: /patient/library
+Disallow: /triage
+Disallow: /triagem-ia
+Disallow: /records
+Disallow: /appointments
+Disallow: /patients/*
+Disallow: /agenda
+Disallow: /exercises
+Disallow: /subscription
+Disallow: /pagamento/*
+Disallow: /agendamento/*
+
+# Allow assets
+Allow: /assets/
+Allow: /static/
+Allow: /favicon.ico
+Allow: /manifest.json
+
+# Sitemap (If you have one, otherwise ignore)
+# Sitemap: https://fisicarehub.com.br/sitemap.xml
