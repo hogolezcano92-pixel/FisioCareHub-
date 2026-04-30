@@ -460,7 +460,7 @@ export default function HealthLibrary() {
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 z-[60] shadow-2xl flex flex-col border-l border-white/10"
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 z-[60] shadow-2xl flex flex-col border-l border-white/10 pt-header"
             >
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
