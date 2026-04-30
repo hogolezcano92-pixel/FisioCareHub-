@@ -21,7 +21,9 @@ import {
   Paperclip,
   Dna,
   X,
-  Send
+  Send,
+  Stethoscope,
+  FileSignature
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
@@ -41,6 +43,7 @@ export default function PatientDetails() {
   const [arquivos, setArquivos] = useState<any[]>([]);
   const [prescricoes, setPrescricoes] = useState<any[]>([]);
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
 
   // Modal States
   const [showEvolucaoModal, setShowEvolucaoModal] = useState(false);
@@ -122,6 +125,14 @@ export default function PatientDetails() {
         .select('*, exercicio:exercicio_id(*)')
         .eq('paciente_id', id);
       setPrescricoes(preData || []);
+
+      // Fetch Avaliações
+      const { data: avaData } = await supabase
+        .from('fichas_avaliacao')
+        .select('*')
+        .eq('paciente_id', id)
+        .order('created_at', { ascending: false });
+      setAvaliacoes(avaData || []);
 
       // Fetch Biblioteca de Exercícios
       const { data: bibData } = await supabase
@@ -286,6 +297,7 @@ export default function PatientDetails() {
       <div className="flex gap-2 p-2 bg-slate-900/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-x-auto no-scrollbar shadow-lg">
         {[
           { id: 'ficha', label: 'Ficha Clínica', icon: User },
+          { id: 'avaliacoes', label: 'Avaliações', icon: Stethoscope },
           { id: 'evolucoes', label: 'Evoluções', icon: Activity },
           { id: 'arquivos', label: 'Exames e Fotos', icon: Paperclip },
           { id: 'prescricoes', label: 'Prescrições', icon: Dna },
@@ -350,6 +362,71 @@ export default function PatientDetails() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'avaliacoes' && (
+            <motion.div
+              key="avaliacoes"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-black text-white">Fichas de Avaliação</h3>
+                <button 
+                  onClick={() => navigate(`/physio/evaluation?pacienteId=${id}`)}
+                  className="flex items-center gap-2 px-6 py-3 bg-sky-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
+                >
+                  <Plus size={20} /> Nova Avaliação
+                </button>
+              </div>
+
+              {avaliacoes.length === 0 ? (
+                <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center shadow-2xl">
+                  <Stethoscope size={48} className="text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 font-bold">Nenhuma avaliação clínica realizada ainda.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {avaliacoes.map((ava) => (
+                    <div key={ava.id} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col gap-4 hover:border-sky-500/30 transition-all group">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-sky-600/20 text-sky-400 rounded-2xl">
+                            <FileText size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Avaliação Realizada</p>
+                            <p className="text-sm font-bold text-white">{formatDate(ava.created_at)}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => navigate(`/physio/evaluation/${ava.id}`)}
+                          className="p-2 bg-white/5 text-slate-400 rounded-xl hover:bg-sky-500 hover:text-white transition-all border border-white/5"
+                        >
+                          <FileSignature size={18} />
+                        </button>
+                      </div>
+                      
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 line-clamp-1">Diagnóstico Fisio.</h4>
+                        <p className="text-xs font-medium text-slate-300 line-clamp-2">{ava.diagnostico_fisio || 'Não preenchido'}</p>
+                      </div>
+
+                      <div className="flex gap-2">
+                         <button 
+                            onClick={() => navigate(`/physio/evaluation/${ava.id}`)}
+                            className="flex-1 py-3 bg-white/5 text-sky-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5"
+                          >
+                            Ver / Editar
+                          </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 
