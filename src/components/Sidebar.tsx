@@ -5,6 +5,7 @@ import {
   Calendar, 
   FileText, 
   FileSignature, 
+  Stethoscope,
   BrainCircuit, 
   MessageSquare, 
   Bell, 
@@ -70,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ...(isPhysio && isApproved ? [
             { name: 'Meus Pacientes', path: '/patients', icon: Users },
             { name: 'Agenda', path: '/agenda', icon: Calendar },
+            { name: 'Avaliações', path: '/physio/evaluations', icon: Stethoscope },
             { name: 'Exercícios', path: '/exercises', icon: Activity },
             { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
             { name: 'Prontuários', path: '/records', icon: FileText },
