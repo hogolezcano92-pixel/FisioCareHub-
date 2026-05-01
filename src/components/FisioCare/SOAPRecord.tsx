@@ -45,14 +45,14 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       // First try pacientes table
       const { data: patient, error: pError } = await supabase
         .from('pacientes')
-        .select('id, nome, foto_url, email')
+        .select('id, nome_completo, foto_url, email')
         .eq('id', id)
         .maybeSingle();
 
       if (patient) {
         setSelectedPatient({
           id: patient.id,
-          nome_completo: patient.nome,
+          nome_completo: patient.nome_completo,
           avatar_url: patient.foto_url,
           email: patient.email
         });
@@ -90,7 +90,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
         .from('pacientes')
         .select('*')
         .eq('fisioterapeuta_id', profile.id)
-        .or(`nome.ilike.%${query}%,email.ilike.%${query}%`)
+        .or(`nome_completo.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(5);
 
       if (error) throw error;
@@ -447,12 +447,12 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       >
                         <img
                           src={p.foto_url || p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`}
-                          alt={p.nome || p.nome_completo}
+                          alt={p.nome_completo}
                           className="w-10 h-10 rounded-lg object-cover border border-white/10"
                         />
                         <div className="text-left flex-1">
                           <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-                            {p.nome || p.nome_completo}
+                            {p.nome_completo}
                           </p>
                           <p className="text-[10px] text-slate-500 truncate max-w-[200px]">{p.email || 'Sem e-mail'}</p>
                         </div>
