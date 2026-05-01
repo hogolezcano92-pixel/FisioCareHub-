@@ -68,10 +68,15 @@ export default function Subscription() {
       const amount = planType === 'pro' ? 49.99 : 19.99;
       const serviceName = planType === 'pro' ? 'Plano Pro Fisioterapeuta' : 'Plano Basic Fisioterapeuta';
 
-      const response = await fetch('/api/create-checkout-session', {
+      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
+      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'apikey': config.supabaseAnonKey,
+          'Authorization': `Bearer ${config.supabaseAnonKey}`
         },
         body: JSON.stringify({
           user_id: profile.id,
@@ -79,7 +84,8 @@ export default function Subscription() {
           plan: planType,
           type: 'subscription',
           service_name: serviceName,
-          amount: amount
+          amount: amount,
+          appointment_id: null
         })
       });
 

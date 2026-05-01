@@ -73,14 +73,14 @@ export default function PaymentPage() {
   }, [id, user, navigate]);
 
   const handleProcessPayment = async () => {
-    if (!appointment || !user) return;
+    if (!appointment || !user || !physio) return;
 
     setPaymentLoading(true);
     try {
-      // 1. Get user profile for Asaas info
+      // 1. Get user profile for necessary info
       const { data: profile, error: profileError } = await supabase
         .from('perfis')
-        .select('nome_completo, email, cpf, asaas_customer_id')
+        .select('id, nome_completo, email')
         .eq('id', user.id)
         .single();
 
@@ -88,67 +88,40 @@ export default function PaymentPage() {
         throw new Error('Perfil não encontrado. Verifique seus dados.');
       }
 
-      let customerId = profile.asaas_customer_id;
+      // 2. Direct call to Supabase Edge Function
+      const { config } = await import('../config/api');
+      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
+      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
-      // 2. Resolve Customer ID if not exists
-      if (!customerId) {
-        if (!profile.cpf) {
-          toast.error('CPF necessário para faturamento. Atualize seu perfil.');
-          navigate('/profile');
-          return;
-        }
-
-        toast.info('Validando cadastro no gateway...');
-        const resCust = await fetch('/api/asaas/create-payment', { // Using this as it has getOrCreate logic
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nome: profile.nome_completo,
-            email: profile.email,
-            cpf: profile.cpf,
-            valor: appointment.valor,
-            id_agendamento: appointment.id,
-            parcelas: 1
-          })
-        });
-        
-        const dataCust = await resCust.json();
-        if (!resCust.ok) throw new Error(dataCust.error || 'Erro ao validar cliente');
-        
-        // After this, asaas_customer_id should be updated or returned
-        customerId = dataCust.customer; 
-        
-        // Update local profile to save customerId for future
-        if (customerId) {
-          await supabase.from('perfis').update({ asaas_customer_id: customerId }).eq('id', user.id);
-        }
-      }
-
-      // 3. Call requested API /api/criar-pagamento
-      const dueDate = new Date().toISOString().split('T')[0];
-      
-      const response = await fetch('/api/criar-pagamento', {
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': config.supabaseAnonKey,
+          'Authorization': `Bearer ${config.supabaseAnonKey}`
+        },
         body: JSON.stringify({
-          customerId,
-          value: appointment.valor,
-          dueDate,
-          agendamentoId: appointment.id
+          user_id: user.id,
+          email: profile.email,
+          plan: 'appointment',
+          type: 'appointment',
+          service_name: appointment.tipo || 'Atendimento de Fisioterapia',
+          amount: Number(appointment.valor),
+          appointment_id: appointment.id
         })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao gerar cobrança.');
+        throw new Error(data.error || 'Erro ao gerar checkout.');
       }
 
-      if (data.invoiceUrl) {
+      if (data.url) {
         toast.success('Redirecionando para o pagamento seguro...');
-        window.location.href = data.invoiceUrl;
+        window.location.href = data.url;
       } else {
-        throw new Error('Link de pagamento não retornado.');
+        throw new Error('URL de checkout não retornada.');
       }
 
     } catch (err: any) {
