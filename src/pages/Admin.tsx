@@ -513,15 +513,20 @@ export default function Admin() {
       try {
         const { data, error } = await supabase
           .from('system_settings')
-          .select('*')
+          .select('value')
           .eq('key', 'commission_rate')
           .single();
         
+        if (error) {
+          console.warn("Could not fetch commission_rate from system_settings (expected if table not created):", error.message);
+          return;
+        }
+
         if (data) {
           setCommissionRate(Number(data.value));
         }
       } catch (err) {
-        console.error("Erro ao buscar configurações:", err);
+        console.warn("Exception fetching system settings:", err);
       }
     };
     fetchSettings();

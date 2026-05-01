@@ -48,6 +48,7 @@ export default function PhysioTriages() {
         .select(`
           *,
           paciente:perfis!paciente_id (
+            id,
             nome_completo,
             avatar_url
           )
@@ -55,15 +56,42 @@ export default function PhysioTriages() {
         .order('created_at', { ascending: false });
 
       if (supabaseError) {
-        console.error('Erro completo do Supabase ao buscar triagens:', supabaseError);
-        // Fallback para query simples
-        const { data: fallbackData, error: fallbackError } = await supabase
+        console.warn('Primary fetch failed for triages, trying secondary fallback...', supabaseError.message);
+        
+        // Fallback: Busca básica sem join e depois busca os perfis relacionados
+        const { data: baseData, error: baseError } = await supabase
           .from('triagens')
           .select('*')
           .order('created_at', { ascending: false });
-        
-        if (fallbackError) throw fallbackError;
-        setTriages(fallbackData || []);
+
+        if (baseError) throw baseError;
+        if (!baseData || baseData.length === 0) {
+          setTriages([]);
+          return;
+        }
+
+        const pacienteIds = [...new Set(baseData.map(t => t.paciente_id))].filter(Boolean);
+
+        if (pacienteIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('perfis')
+            .select('id, nome_completo, avatar_url')
+            .in('id', pacienteIds);
+
+          const profileMap = (profiles || []).reduce((acc: any, p) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+
+          const enriched = baseData.map(t => ({
+            ...t,
+            paciente: profileMap[t.paciente_id] || { nome_completo: 'Paciente Externo', avatar_url: null }
+          }));
+          
+          setTriages(enriched);
+        } else {
+          setTriages(baseData.map(t => ({ ...t, paciente: { nome_completo: 'Paciente Externo', avatar_url: null } })));
+        }
         return;
       }
       setTriages(data || []);

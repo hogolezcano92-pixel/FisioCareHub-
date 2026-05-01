@@ -201,17 +201,27 @@ export default function Agenda() {
       console.log('Buscando pacientes associados ao fisioterapeuta logado...');
       const { data, error: supabaseError } = await supabase
         .from('pacientes')
-        .select('id, nome_completo, email')
+        .select('id, nome, email')
         .eq('fisioterapeuta_id', user.id)
-        .order('nome_completo');
+        .order('nome');
       
       if (supabaseError) {
-        console.error('Erro ao buscar pacientes associados:', supabaseError);
+        console.error('Erro ao buscar pacientes associados (tentando fallback):', supabaseError);
+        // Fallback para caso nome_completo exista
+        const { data: retryData } = await supabase
+          .from('pacientes')
+          .select('id, nome_completo, email')
+          .eq('fisioterapeuta_id', user.id);
+        
+        if (retryData) {
+          setPatients(retryData.map(p => ({ ...p, nome: p.nome_completo })));
+          return;
+        }
         throw supabaseError;
       }
       
       console.log('Pacientes associados encontrados:', data?.length || 0);
-      setPatients(data || []);
+      setPatients(data?.map(p => ({ ...p, nome_completo: (p as any).nome_completo || (p as any).nome })) || []);
     } catch (err) {
       console.error('Erro ao buscar pacientes para agenda:', err);
       setPatients([]);

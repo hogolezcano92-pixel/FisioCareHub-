@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Crown, Check, ShieldCheck, Zap, CreditCard, Key, Loader2, ArrowRight, Star } from 'lucide-react';
 import { supabase, invokeFunction } from '../lib/supabase';
+import { config } from '../config/api';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 

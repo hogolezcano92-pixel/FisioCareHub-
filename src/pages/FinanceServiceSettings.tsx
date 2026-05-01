@@ -160,14 +160,20 @@ export default function FinanceServiceSettings() {
 
   const fetchCommissionRate = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('system_settings')
         .select('value')
         .eq('key', 'commission_rate')
         .single();
+      
+      if (error) {
+        console.warn("Commission rate fetch returned error (expected if table missing):", error.message);
+        return;
+      }
+      
       if (data) setCommissionRate(Number(data.value));
     } catch (err) {
-      console.warn("Could not fetch commission rate", err);
+      console.warn("Exception while fetching commission rate:", err);
     }
   };
 
