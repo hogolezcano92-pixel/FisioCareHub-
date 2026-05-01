@@ -97,12 +97,12 @@ export default function Records() {
           // Then try pacientes
           const { data: pacientesData } = await supabase
             .from('pacientes')
-            .select('id, nome')
+            .select('id, nome_completo')
             .in('id', uidsToResolve);
           
           if (pacientesData) {
             pacientesData.forEach(p => {
-              newNameMap[p.id] = p.nome;
+              newNameMap[p.id] = p.nome_completo;
             });
           }
 
@@ -113,9 +113,9 @@ export default function Records() {
         if (isPhysio) {
           const { data: physioPatients } = await supabase
             .from('pacientes')
-            .select('id, nome')
+            .select('id, nome_completo')
             .eq('fisioterapeuta_id', user.id)
-            .order('nome');
+            .order('nome_completo');
           
           if (physioPatients) setPatients(physioPatients);
         }
@@ -391,7 +391,7 @@ export default function Records() {
                   >
                     <option value="" className="bg-slate-900">Selecione um paciente...</option>
                     {patients.map(p => (
-                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome}</option>
+                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome_completo}</option>
                     ))}
                   </select>
                 </div>

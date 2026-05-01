@@ -124,9 +124,9 @@ export default function Exercises() {
       if (!user) return;
       const { data, error } = await supabase
         .from('pacientes')
-        .select('id, nome')
+        .select('id, nome_completo')
         .eq('fisioterapeuta_id', user.id)
-        .order('nome');
+        .order('nome_completo');
       if (error) throw error;
       setPatients(data || []);
     } catch (err) {
@@ -582,7 +582,7 @@ export default function Exercises() {
                   >
                     <option value="" className="bg-slate-900">Selecione o paciente...</option>
                     {patients.map(p => (
-                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome}</option>
+                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome_completo}</option>
                     ))}
                   </select>
                 </div>

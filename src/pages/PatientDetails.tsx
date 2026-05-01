@@ -247,13 +247,13 @@ export default function PatientDetails() {
       <header className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-8">
         <div className="w-32 h-32 bg-white/5 rounded-[2rem] flex items-center justify-center text-blue-400 border-4 border-white/5 shadow-xl overflow-hidden">
           {patient.foto_url ? (
-            <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome} className="w-full h-full object-cover" />
+            <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome_completo} className="w-full h-full object-cover" />
           ) : (
             <User size={64} />
           )}
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h1 className="text-4xl font-black text-white tracking-tight mb-2">{patient.nome}</h1>
+          <h1 className="text-4xl font-black text-white tracking-tight mb-2">{patient.nome_completo}</h1>
           <div className="flex flex-wrap justify-center md:justify-start gap-4 text-slate-400 font-medium">
             <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
               <Calendar size={16} className="text-blue-400" />

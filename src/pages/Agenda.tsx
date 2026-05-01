@@ -201,9 +201,9 @@ export default function Agenda() {
       console.log('Buscando pacientes associados ao fisioterapeuta logado...');
       const { data, error: supabaseError } = await supabase
         .from('pacientes')
-        .select('id, nome, email')
+        .select('id, nome_completo, email')
         .eq('fisioterapeuta_id', user.id)
-        .order('nome');
+        .order('nome_completo');
       
       if (supabaseError) {
         console.error('Erro ao buscar pacientes associados:', supabaseError);
@@ -596,7 +596,7 @@ export default function Agenda() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-white group-hover:text-sky-400 transition-colors">
-                      {app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente'}
+                      {app.nome_paciente || app.paciente?.nome_completo || 'Paciente'}
                     </h3>
                     <div className="flex flex-wrap gap-2 mt-0.5">
                       <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
@@ -698,7 +698,7 @@ export default function Agenda() {
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-white/10 shadow-sm"
                   />
                   <div>
-                    <h3 className="text-lg font-black text-white">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo || selectedAppointment.paciente?.nome}</h3>
+                    <h3 className="text-lg font-black text-white">{selectedAppointment.nome_paciente || selectedAppointment.paciente?.nome_completo}</h3>
                     <p className="text-slate-400 text-xs font-bold">{selectedAppointment.telefone_paciente || selectedAppointment.paciente?.telefone || selectedAppointment.paciente?.email}</p>
                   </div>
                 </div>
