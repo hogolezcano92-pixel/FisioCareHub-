@@ -24,7 +24,6 @@ import {
   FileJson
 } from 'lucide-react';
 import { generateDocument } from '../lib/groq';
-import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
@@ -298,6 +297,7 @@ export default function Documents() {
       });
       
       const imgData = canvas.toDataURL('image/png', 1.0);
+      const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'mm',

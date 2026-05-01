@@ -19,8 +19,6 @@ import {
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import ProGuard from '../components/ProGuard';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface EvaluationForm {
   paciente_id: string;
@@ -165,8 +163,12 @@ export default function PhysioEvaluationForm() {
     }
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
+  const generatePDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
     const title = `FICHA DE AVALIAÇÃO FISIOTERAPÊUTICA`;
     
     // Header
@@ -246,6 +248,10 @@ export default function PhysioEvaluationForm() {
     });
 
     doc.save(`avaliacao_${patient?.nome || 'paciente'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erro ao gerar o PDF. Verifique os módulos instalados.');
+    }
   };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-sky-500" size={48} /></div>;
