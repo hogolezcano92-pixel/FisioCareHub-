@@ -1011,7 +1011,7 @@ async function startServer() {
   // ASASS Library Purchase Specialized Route
   app.post("/api/asaas/create-library-payment", async (req, res) => {
     try {
-      const { user_id, email, name, phone, material_ids, billingType } = req.body;
+      const { user_id, email, name, phone, material_ids, billingType = "PIX" } = req.body;
 
       console.log("[Asaas Library] Received request for materials:", material_ids);
 
@@ -1050,7 +1050,7 @@ async function startServer() {
 
       const paymentData = {
         customer: customerId,
-        billingType: billingType || 'UNDEFINED',
+        billingType: billingType,
         value: Number(totalValue.toFixed(2)),
         dueDate,
         description: `Compra de material da biblioteca: ${materials.map(m => m.title).join(', ')}`,
