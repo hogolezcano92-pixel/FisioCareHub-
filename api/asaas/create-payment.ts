@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 1. EXTRAÇÃO CORRETA DO REQUEST (CORRINGINDO ERRO TS2304)
+    // 📌 1. Extração
     const { 
       name, 
       email, 
@@ -27,10 +27,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       phone, 
       cpf, 
       installments,
-      billingType = "PIX" // DEFININDO O VALOR PADRÃO CONFORME SOLICITADO
+      billingType = "PIX",
+      customerId
     } = req.body;
 
-    // 2. VALIDAÇÃO DE billingType
+    // 📌 2. Validações básicas
     const validTypes = ["PIX", "BOLETO", "CREDIT_CARD"];
     if (!validTypes.includes(billingType)) {
       return res.status(400).json({
@@ -42,6 +43,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "appointmentId é necessário." });
     }
 
+    if (!value || Number(value) <= 0) {
+      return res.status(400).json({ error: "Valor inválido." });
+    }
+
     const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
     const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3";
 
@@ -49,16 +54,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "ASAAS_API_KEY não configurada." });
     }
 
-    // Nota: Como este é um arquivo isolado, ele não tem acesso ao banco de dados Supabase da mesma forma que o server.ts
-    // No entanto, para cumprir o objetivo de "Corrigir esse erro", vamos focar na estrutura de criação de pagamento.
+    // 📌 3. Garantir CUSTOMER válido
+    let finalCustomerId = customerId;
 
-    // A lógica complexa de buscar agendamento e cliente deve ser feita conforme as necessidades do sistema,
-    // mas aqui o foco é a correção do billingType.
+    if (!finalCustomerId) {
+      if (!name || !cpf) {
+        return res.status(400).json({
+          error: "Para criar cliente automaticamente, envie name e cpf"
+        });
+      }
 
-    // Exemplo de payload simplificado para manter a compatibilidade
+      try {
+        const customerResponse = await axios.post(
+          `${ASAAS_BASE_URL}/customers`,
+          {
+            name,
+            email,
+            cpfCnpj: cpf,
+            phone
+          },
+          {
+            headers: {
+              'access_token': ASAAS_API_KEY,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        finalCustomerId = customerResponse.data.id;
+
+      } catch (customerError: any) {
+        console.error("ERRO AO CRIAR CUSTOMER:", customerError.response?.data || customerError.message);
+
+        return res.status(500).json({
+          error: "Erro ao criar cliente no Asaas",
+          details: customerError.response?.data
+        });
+      }
+    }
+
+    // 📌 4. Criar pagamento
     const paymentData: any = {
-      customer: req.body.customerId, // Espera que o cliente já tenha sido criado ou passado no body
-      billingType: billingType,
+      customer: finalCustomerId,
+      billingType,
       value: Number(value),
       dueDate: new Date().toISOString().split("T")[0],
       description: `Agendamento ${appointmentId}`,
@@ -87,8 +125,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error("Falha ao criar pagamento Asaas");
     }
 
+    // 📌 5. Resposta final
     return res.status(200).json({
       id: payment.id,
+      customerId: finalCustomerId, // 🔥 importante pra salvar no front ou banco depois
       invoiceUrl: payment.invoiceUrl,
       bankSlipUrl: payment.bankSlipUrl,
       pixQrCode: payment.pixQrCode,
@@ -97,6 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (err: any) {
     console.error("ASAAS ERROR:", err.response?.data || err.message);
+
     return res.status(500).json({
       error: err.message,
       details: err.response?.data
