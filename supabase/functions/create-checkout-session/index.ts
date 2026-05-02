@@ -24,7 +24,15 @@ serve(async (req) => {
     const body = await req.json()
     const { appointment_id, amount, product_id, material_ids, type, user_id, email, plan, service_name } = body
 
-    const finalType = type || (plan === 'pro' ? 'subscription' : (appointment_id ? 'appointment' : (material_ids ? 'material' : (plan || 'subscription'))))
+    // ✅ CORREÇÃO: detectar material automaticamente
+    const isMaterialPurchase = material_ids || product_id;
+
+    const finalType = isMaterialPurchase
+      ? "material"
+      : (type || (plan === 'pro'
+          ? 'subscription'
+          : (appointment_id ? 'appointment' : 'subscription')))
+
     const finalEmail = email || ""
     const finalUserId = user_id || ""
 
@@ -47,6 +55,7 @@ serve(async (req) => {
     let metadata: any = { user_id: finalUserId }
 
     if (finalType === 'subscription' || plan === 'pro') {
+
       line_items = [
         {
           price: FIXED_SUBSCRIPTION_PRICE_ID,
@@ -78,13 +87,16 @@ serve(async (req) => {
           quantity: 1,
         },
       ]
+
       mode = "payment"
       metadata.type = 'appointment'
       metadata.appointmentId = appointment_id
 
-    } else if ((['material', 'library'].includes(finalType) || ['material', 'library'].includes(type)) && (product_id || material_ids)) {
+    // ✅ CORREÇÃO: fluxo de material garantido
+    } else if (material_ids || product_id) {
 
       const ids = material_ids || [product_id]
+
       const { data: materials, error: matError } = await supabase
         .from('library_materials')
         .select('*')
@@ -98,23 +110,23 @@ serve(async (req) => {
         const materialId = item.id;
         const materialTitle = item.title;
 
-        console.info(`[Stripe Debug] Processing materialId: ${materialId}`);
+        console.info(`[Stripe Debug] Processing materialId: ${materialId}`)
 
-        let priceFromDb = item.price;
+        let priceFromDb = item.price
 
-        console.info(`[Stripe Debug] Price from DB: ${priceFromDb}`);
+        console.info(`[Stripe Debug] Price from DB: ${priceFromDb}`)
 
-        // ✅ CORREÇÃO SEGURA
-        let normalizedPrice = 0;
+        // ✅ NORMALIZAÇÃO SEGURA
+        let normalizedPrice = 0
 
         if (typeof priceFromDb === "string") {
           normalizedPrice = Number(
             priceFromDb
               .replace(/[^\d,.-]/g, "")
               .replace(",", ".")
-          );
+          )
         } else {
-          normalizedPrice = Number(priceFromDb);
+          normalizedPrice = Number(priceFromDb)
         }
 
         if (!normalizedPrice || isNaN(normalizedPrice) || normalizedPrice <= 0) {
@@ -123,13 +135,13 @@ serve(async (req) => {
             materialTitle,
             original: priceFromDb,
             normalizedPrice
-          });
-          throw new Error(`Preço inválido no banco para: ${materialTitle}`);
+          })
+          throw new Error(`Preço inválido no banco para: ${materialTitle}`)
         }
 
-        const amount = Math.round(normalizedPrice * 100);
+        const amount = Math.round(normalizedPrice * 100)
 
-        console.info(`[Stripe Debug] Final amount (cents) for ${materialTitle}: ${amount}`);
+        console.info(`[Stripe Debug] Final amount (cents) for ${materialTitle}: ${amount}`)
 
         if (!Number.isInteger(amount) || amount < 1) {
           console.error("ERRO AMOUNT:", {
@@ -137,11 +149,11 @@ serve(async (req) => {
             materialTitle,
             normalizedPrice,
             amount
-          });
-          throw new Error(`Amount inválido para: ${materialTitle}`);
+          })
+          throw new Error(`Amount inválido para: ${materialTitle}`)
         }
 
-        const finalAmount = Math.max(amount, 50);
+        const finalAmount = Math.max(amount, 50)
 
         return {
           price_data: {
