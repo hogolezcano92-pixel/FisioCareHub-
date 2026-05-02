@@ -707,26 +707,49 @@ async function startServer() {
     res.status(200).send("OK");
   });
 
-  // Asaas Webhook (Legacy Path)
+  // Asaas Webhook (Detailed Handler)
   app.post("/api/asaas/webhook", async (req, res) => {
-    // Validate Asaas Token (Security Rule 8)
-    const asaasToken = req.headers['asaas-access-token'];
-    const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN || process.env.ASAAS_API_KEY; 
-    
-    if (expectedToken && asaasToken !== expectedToken) {
-      console.warn("[Asaas Webhook] Invalid token received");
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { event, payment } = req.body;
-    console.log(`[Asaas Webhook] Event Received: ${event}`, payment.id);
-
-    if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-      const externalReference = payment.externalReference;
+    try {
+      console.log(`[Asaas Webhook] Received ${req.body?.event} event`);
       
-      if (externalReference) {
+      // Validate configuration
+      const asaasApiKey = process.env.ASAAS_API_KEY;
+      const asaasWebhookToken = process.env.ASAAS_WEBHOOK_TOKEN;
+      
+      if (!asaasApiKey && !asaasWebhookToken) {
+        console.error("[Asaas Webhook] CRITICAL: Neither ASAAS_API_KEY nor ASAAS_WEBHOOK_TOKEN found in environment.");
+        // Return 200 to acknowledge but log error internally to avoid Asaas retries on config fail
+        return res.status(200).json({ error: "Config error", received: true });
+      }
+
+      // Validate Asaas Token (Security Rule 8)
+      const asaasToken = req.headers['asaas-access-token'];
+      const expectedToken = asaasWebhookToken || asaasApiKey; 
+      
+      if (expectedToken && asaasToken !== expectedToken) {
+        console.warn("[Asaas Webhook] Invalid token received");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { event, payment } = req.body;
+
+      // Ignore trivial events to avoid noise and potential 500s on incomplete data
+      if (event === 'PAYMENT_CREATED') {
+        console.log(`[Asaas Webhook] Ignoring ${event} for payment ${payment?.id}`);
+        return res.status(200).json({ received: true, ignored: true });
+      }
+
+      // Process confirmation events
+      if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED' || event === 'RECEIVED') {
+        const externalReference = payment.externalReference;
+        
+        if (!externalReference) {
+          console.warn(`[Asaas Webhook] No externalReference found in ${event} event for ${payment.id}`);
+          return res.status(200).json({ received: true, error: "Missing externalReference" });
+        }
+
         try {
-          console.log(`[Asaas Webhook] Payment confirmed for externalReference: ${externalReference}`);
+          console.log(`[Asaas Webhook] Processing ${event} for externalReference: ${externalReference}`);
           
           // Check if it's a library purchase (usually starts with "lib_")
           if (externalReference.startsWith('lib_') || externalReference.includes(',') || externalReference.includes('|')) {
@@ -895,13 +918,22 @@ async function startServer() {
       const futureDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
       const dueDate = futureDate.toISOString().split('T')[0];
 
+      // Ensure billingType is valid (PIX, BOLETO, CREDIT_CARD)
+      let finalBillingType = 'UNDEFINED';
+      if (billingType && typeof billingType === 'string') {
+        const bt = billingType.toUpperCase();
+        if (['PIX', 'BOLETO', 'CREDIT_CARD', 'UNDEFINED'].includes(bt)) {
+          finalBillingType = bt;
+        }
+      }
+
       const paymentData = {
         customer: customerId,
-        billingType: billingType || 'UNDEFINED',
+        billingType: finalBillingType,
         value: Number(finalValue.toFixed(2)),
         dueDate: dueDate,
-        description: `Consulta Fisioterapia: ${appointment.tipo || 'Geral'}`,
-        externalReference: appointmentId,
+        description: `Agendamento FisioCareHub - ${appointment.tipo || 'Fisioterapia'}`,
+        externalReference: String(appointmentId),
         postalService: false
       };
 
