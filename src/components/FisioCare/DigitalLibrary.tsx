@@ -57,26 +57,17 @@ export const DigitalLibrary = () => {
 
     setBuyingId(material.id);
     try {
-      const { config } = await import('../../config/api');
-      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
-      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
-
-      const response = await fetch(url, {
+      const response = await fetch('/api/asaas/create-library-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': config.supabaseAnonKey,
-          'Authorization': `Bearer ${config.supabaseAnonKey}`
         },
         body: JSON.stringify({
           user_id: profile.id,
           email: profile.email,
-          product_id: material.id,
-          type: 'material',
-          plan: 'material',
-          service_name: material.titulo,
-          amount: material.preco,
-          appointment_id: null
+          name: profile.nome_completo,
+          material_ids: [material.id],
+          billingType: 'UNDEFINED'
         })
       });
 
@@ -84,10 +75,11 @@ export const DigitalLibrary = () => {
       if (!response.ok) throw new Error(data.error || 'Erro ao criar checkout');
       
       if (data?.url) {
+        toast.success("Redirecionando para o pagamento...");
         window.location.href = data.url;
       }
     } catch (err: any) {
-      console.error("Erro ao iniciar compra:", err);
+      console.error("Erro ao iniciar compra (Asaas):", err);
       toast.error("Erro ao processar compra. Tente novamente.");
     } finally {
       setBuyingId(null);
