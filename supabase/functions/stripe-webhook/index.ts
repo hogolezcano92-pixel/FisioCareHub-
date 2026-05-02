@@ -79,23 +79,32 @@ serve(async (req) => {
 
         console.log(`[Stripe Webhook] Processando pagamento para usuário: ${user_id}`)
         
-        // Se for compra de material
-        if (session.metadata?.type === 'material') {
+        // Se for compra de material (Biblioteca)
+        if (session.metadata?.type === 'material' || session.metadata?.type === 'library_purchase' || session.metadata?.type === 'library_purchase_bulk') {
+          const materialIdsString = session.metadata.material_ids || session.metadata.product_id;
+          if (!materialIdsString) {
+             console.warn(`[Stripe Webhook] No material IDs found in metadata`);
+             return new Response(JSON.stringify({ received: true }), { status: 200 });
+          }
+
+          const materialIds = materialIdsString.split(',').filter(Boolean);
+          
+          const purchaseRecords = materialIds.map((id: string) => ({
+            patient_id: user_id,
+            material_id: id,
+            purchased_at: new Date().toISOString()
+          }));
+
           const { error: purchaseError } = await supabase
-            .from('compras_materiais')
-            .insert({
-              user_id: user_id,
-              material_id: session.metadata.product_id,
-              valor: session.amount_total / 100,
-              status: 'pago'
-            })
+            .from('material_purchases') // New table
+            .insert(purchaseRecords);
           
           if (purchaseError) {
-            console.error(`[Stripe Webhook] Erro ao registrar compra de material:`, purchaseError)
+            console.error(`[Stripe Webhook] Erro ao registrar compra de material:`, purchaseError);
           } else {
-            console.log(`[Stripe Webhook] Sucesso: Material ${session.metadata.product_id} comprado por ${user_id}`)
+            console.log(`[Stripe Webhook] Sucesso: Materiais ${materialIdsString} adquiridos por ${user_id}`);
           }
-          return new Response(JSON.stringify({ received: true }), { status: 200 })
+          return new Response(JSON.stringify({ received: true }), { status: 200 });
         }
 
         // 1. Atualizar a tabela perfis
