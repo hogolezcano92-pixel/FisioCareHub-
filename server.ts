@@ -891,11 +891,15 @@ async function startServer() {
       const customerId = await getOrCreateAsaasCustomer(finalUserId, finalEmail, finalName, finalPhone);
 
       // 2. Create Payment
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+      const dueDate = futureDate.toISOString().split('T')[0];
+
       const paymentData = {
         customer: customerId,
         billingType: billingType || 'UNDEFINED',
         value: Number(finalValue.toFixed(2)),
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        dueDate: dueDate,
         description: `Consulta Fisioterapia: ${appointment.tipo || 'Geral'}`,
         externalReference: appointmentId,
         postalService: false
@@ -923,12 +927,14 @@ async function startServer() {
           status: 'pending',
           gateway: 'asaas',
           method: billingType || 'UNDEFINED',
-          invoice_url: data.invoiceUrl
+          invoice_url: data.invoiceUrl || data.bankSlipUrl
         }, { onConflict: 'external_id' });
 
         res.json({ 
           id: data.id,
-          url: data.invoiceUrl || data.bankSlipUrl
+          invoiceUrl: data.invoiceUrl,
+          bankSlipUrl: data.bankSlipUrl,
+          url: data.invoiceUrl || data.bankSlipUrl // Keep url for compatibility
         });
       } else {
         console.error("[Asaas] API Error Response:", data);
@@ -1019,6 +1025,8 @@ async function startServer() {
 
         res.json({ 
           id: data.id,
+          invoiceUrl: data.invoiceUrl,
+          bankSlipUrl: data.bankSlipUrl,
           url: data.invoiceUrl || data.bankSlipUrl,
           value: totalValue
         });
