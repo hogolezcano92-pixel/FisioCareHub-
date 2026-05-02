@@ -30,6 +30,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'asaas'>('stripe');
+  const [asaasMethod, setAsaasMethod] = useState<'PIX' | 'BOLETO'>('PIX');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,7 +146,7 @@ export default function PaymentPage() {
           appointmentId: appointment.id,
           phone: profile.telefone,
           user_id: user.id, // kept for internal tracking if needed
-          billingType: 'UNDEFINED'
+          billingType: asaasMethod
         };
 
         console.log("Dados enviados para Asaas:", payload);
@@ -293,10 +294,40 @@ export default function PaymentPage() {
                 )}
               >
                 <Zap size={24} className="text-yellow-400" />
-                <span className="text-xs font-black uppercase tracking-widest">PIX / Boleto</span>
+                <span className="text-xs font-black uppercase tracking-widest text-center">PIX / Boleto</span>
                 <span className="text-[8px] font-bold opacity-60">(Asaas)</span>
               </button>
             </div>
+
+            {paymentMethod === 'asaas' && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-white/5 rounded-2xl p-2 flex gap-2 border border-white/5"
+              >
+                <button
+                  type="button"
+                  onClick={() => setAsaasMethod('PIX')}
+                  className={cn(
+                    "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    asaasMethod === 'PIX' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                  )}
+                >
+                  Pagar com PIX
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAsaasMethod('BOLETO')}
+                  className={cn(
+                    "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    asaasMethod === 'BOLETO' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                  )}
+                >
+                  Pagar com Boleto
+                </button>
+              </motion.div>
+            )}
+            
             <p className="text-slate-500 text-center text-[10px] font-medium italic">Ambiente seguro e processamento imediato.</p>
           </div>
 
