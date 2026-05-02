@@ -115,8 +115,8 @@ export const DigitalLibrary = () => {
             >
               <div className="relative h-28 overflow-hidden">
                 <img 
-                  src={product.imagem_url || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400'} 
-                  alt={product.titulo}
+                  src={product.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400'} 
+                  alt={product.title}
                   className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700"
                   referrerPolicy="no-referrer"
                 />
@@ -140,10 +140,10 @@ export const DigitalLibrary = () => {
                     <span className="text-[9px] font-black text-white">4.9</span>
                   </div>
                   <h4 className="text-xs font-black text-white tracking-tight leading-tight group-hover:text-blue-400 transition-colors">
-                    {product.titulo}
+                    {product.title}
                   </h4>
                   <p className="text-[10px] text-slate-400 font-medium line-clamp-2">
-                    {product.descricao}
+                    {product.description}
                   </p>
                 </div>
 
@@ -152,7 +152,7 @@ export const DigitalLibrary = () => {
                     <>
                       <div className="space-y-0.5">
                         <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Preço</p>
-                        <p className="text-sm font-black text-white">R$ {product.preco?.toLocaleString()}</p>
+                        <p className="text-sm font-black text-white">R$ {product.price?.toLocaleString()}</p>
                       </div>
                       <button 
                         onClick={() => handleBuy(product)}
