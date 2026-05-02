@@ -269,8 +269,22 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
     const searchData = searchRes.data;
 
     if (searchData.data && searchData.data.length > 0) {
-      const customerId = searchData.data[0].id;
+      const customer = searchData.data[0];
+      const customerId = customer.id;
       console.log(`[Asaas] Found existing customer: ${customerId}`);
+      
+      // If we have a CPF but the existing customer doesn't, or if we just want to ensure it's synced
+      if (cpf && !customer.cpfCnpj) {
+        console.log(`[Asaas] Updating existing customer ${customerId} with CPF`);
+        try {
+          await axios.post(`${baseUrl}/customers/${customerId}`, {
+            cpfCnpj: cpf.replace(/\D/g, '')
+          }, { headers });
+        } catch (updateErr) {
+          console.warn("[Asaas] Failed to update customer CPF, continuing anyway:", updateErr);
+        }
+      }
+
       // Update Supabase for next time
       await getSupabaseAdmin().from('perfis').update({ asaas_customer_id: customerId }).eq('id', userId);
       return customerId;
@@ -747,38 +761,56 @@ async function startServer() {
 
       // Process confirmation events
       if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED' || event === 'RECEIVED') {
+        const paymentId = payment.id;
         const externalReference = payment.externalReference;
         
-        if (!externalReference) {
-          console.warn(`[Asaas Webhook] No externalReference found in ${event} event for ${payment.id}`);
-          return res.status(200).json({ received: true, error: "Missing externalReference" });
-        }
+        console.log(`[Asaas Webhook] Processing ${event} for payment: ${paymentId}`);
 
         try {
-          console.log(`[Asaas Webhook] Processing ${event} for externalReference: ${externalReference}`);
-          
-          // Check if it's a library purchase (usually starts with "lib_")
-          if (externalReference.startsWith('lib_') || externalReference.includes(',') || externalReference.includes('|')) {
-            const [userId, idsPart] = externalReference.includes('|') ? externalReference.split('|') : [null, externalReference];
-            const finalMaterialIds = (idsPart || '').replace('lib_', '').split(',').filter(Boolean);
+          // 1. Look up the payment in our database to find user and materials
+          const { data: savedPayment } = await getSupabaseAdmin()
+            .from('pagamentos')
+            .select('*')
+            .eq('external_id', paymentId)
+            .maybeSingle();
 
-            if (userId && finalMaterialIds.length > 0) {
-              const purchaseRecords = finalMaterialIds.map(id => ({
-                patient_id: userId,
-                material_id: id,
-                purchased_at: new Date().toISOString()
-              }));
+          if (savedPayment) {
+            const userId = savedPayment.user_id;
+            const ref = savedPayment.external_reference || '';
 
-              await getSupabaseAdmin()
-                .from('material_purchases')
-                .insert(purchaseRecords);
-              
-              console.log(`[Asaas Webhook] Recorded library purchase for user ${userId}`);
-            }
-          } else {
-            // It's an appointment (agendamento)
-            const appointmentId = externalReference;
-            console.log(`[Asaas Webhook] Confirming appointment: ${appointmentId}`);
+            // CASE A: Library Purchase
+            if (ref.startsWith('library|') || ref.startsWith('lib:')) {
+               let materialIds: string[] = [];
+               
+               if (ref.startsWith('lib:')) {
+                 materialIds = ref.replace('lib:', '').split(',').filter(Boolean);
+               } else if (ref.startsWith('library|')) {
+                 // Try to recover materials from a potential 4th part if we add it,
+                 // or just use what we have. 
+                 // Actually, let's look at how we saved it.
+                 // In the refined version I'll use "lib:id1,id2..."
+                 materialIds = ref.split('|')[2]?.split(',').filter(Boolean) || [];
+               }
+
+               if (userId && materialIds.length > 0) {
+                 console.log(`[Asaas Webhook] Awarding materials to user ${userId}: ${materialIds.join(',')}`);
+                 const purchaseRecords = materialIds.map(id => ({
+                   patient_id: userId,
+                   material_id: id,
+                   purchased_at: new Date().toISOString()
+                 }));
+
+                 await getSupabaseAdmin()
+                   .from('material_purchases')
+                   .insert(purchaseRecords);
+                 
+                 console.log(`[Asaas Webhook] Successfully recorded library purchase.`);
+               }
+            } else if (!ref.startsWith('library|') && !ref.startsWith('lib:')) {
+               // CASE B: Appointment (Agendamento)
+               const appointmentId = ref; // Old logic used externalReference directly
+               
+               // ... rest of appointment logic ...
 
             const { data: appData, error: fetchErr } = await getSupabaseAdmin()
               .from('agendamentos')
@@ -848,8 +880,9 @@ async function startServer() {
               });
             }
           }
+        }
 
-          // Also record in a generic pagamentos table
+        // Also record in a generic pagamentos table
           await getSupabaseAdmin()
             .from('pagamentos')
             .upsert({
@@ -1011,7 +1044,7 @@ async function startServer() {
   // ASASS Library Purchase Specialized Route
   app.post("/api/asaas/create-library-payment", async (req, res) => {
     try {
-      const { user_id, email, name, phone, material_ids, billingType = "PIX" } = req.body;
+      const { user_id, email, name, phone, material_ids, billingType = "PIX", cpf } = req.body;
 
       console.log("[Asaas Library] Received request for materials:", material_ids);
 
@@ -1042,19 +1075,42 @@ async function startServer() {
       }
 
       // 2. Get or Create Asaas Customer
-      const customerId = await getOrCreateAsaasCustomer(user_id, email, name || email.split('@')[0], phone);
+      let userName = name;
+      let userPhone = phone;
+
+      if (!userName || !userPhone) {
+        try {
+          const { data: profile } = await getSupabaseAdmin()
+            .from('perfis')
+            .select('nome_completo, telefone')
+            .eq('id', user_id)
+            .single();
+          
+          if (profile) {
+            userName = userName || profile.nome_completo;
+            userPhone = userPhone || profile.telefone;
+          }
+        } catch (e) {
+          console.warn("[Asaas Library] Failed to fetch profile info:", e);
+        }
+      }
+
+      const customerId = await getOrCreateAsaasCustomer(user_id, email, userName || email.split('@')[0], userPhone, cpf);
 
       // 3. Create Payment Payload as per spec
       const dueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const externalReference = `${user_id}|${material_ids.join(',')}`;
+      
+      // Store material IDs in externalReference to recover in webhook
+      // We use lib:prefix to identify and fit as many as possible
+      const externalReference = `lib:${material_ids.join(',')}`.substring(0, 100);
 
       const paymentData = {
         customer: customerId,
         billingType: billingType,
         value: Number(totalValue.toFixed(2)),
         dueDate,
-        description: `Compra de material da biblioteca: ${materials.map(m => m.title).join(', ')}`,
-        externalReference: externalReference,
+        description: `Biblioteca: ${materials.map(m => m.title).join(', ').substring(0, 50)}...`,
+        externalReference: externalReference.substring(0, 100),
         postalService: false
       };
 
@@ -1062,13 +1118,11 @@ async function startServer() {
       console.log("Biblioteca pagamento payload:", paymentData);
 
       const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
-      const asaasRes = await fetch(`${baseUrl}/payments`, {
-        method: 'POST',
-        headers: getAsaasHeaders(),
-        body: JSON.stringify(paymentData)
+      const asaasRes = await axios.post(`${baseUrl}/payments`, paymentData, {
+        headers: getAsaasHeaders()
       });
 
-      const data = await asaasRes.json();
+      const data = asaasRes.data;
 
       if (data.id) {
         console.log(`[Asaas Library] Payment created: ${data.id}`);
@@ -1087,7 +1141,7 @@ async function startServer() {
         res.json({ 
           id: data.id,
           invoiceUrl: data.invoiceUrl,
-          bankSlipUrl: data.bankSlipUrl,
+          bankSlipUrl: data.bankSlipUrl || data.invoiceUrl,
           url: data.invoiceUrl || data.bankSlipUrl,
           value: totalValue
         });
@@ -1098,8 +1152,8 @@ async function startServer() {
       }
 
     } catch (err: any) {
-      console.error("[Asaas Library] Fatal Error:", err);
-      res.status(500).json({ error: err.message });
+      console.error("[Asaas Library] Fatal Error:", err.response?.data || err.message);
+      res.status(500).json({ error: err.response?.data?.errors?.[0]?.description || err.message });
     }
   });
 
