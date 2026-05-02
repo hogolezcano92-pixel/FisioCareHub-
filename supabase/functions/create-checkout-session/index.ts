@@ -85,7 +85,7 @@ serve(async (req) => {
       mode = "payment"
       metadata.type = 'appointment'
       metadata.appointmentId = appointment_id
-    } else if ((finalType === 'material' || type === 'material') && (product_id || material_ids)) {
+    } else if ((['material', 'library'].includes(finalType) || ['material', 'library'].includes(type)) && (product_id || material_ids)) {
       // Material logic
       const ids = material_ids || [product_id]
       const { data: materials, error: matError } = await supabase
