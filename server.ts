@@ -845,34 +845,63 @@ async function startServer() {
   // ASASS Appointment Payment Route
   app.post("/api/asaas/create-payment", async (req, res) => {
     try {
-      const { user_id, email, name, phone, amount, description, appointment_id, billingType } = req.body;
+      const { name, email, value, appointmentId, user_id, billingType } = req.body;
 
-      console.log(`[Asaas] Received request for amount: ${amount}, user: ${user_id}`);
+      console.log(`[Asaas] Received request for appointmentId: ${appointmentId}`);
 
-      if (!user_id || !amount || !appointment_id) {
-        return res.status(400).json({ error: "Dados insuficientes para criar pagamento no Asaas." });
+      if (!appointmentId) {
+        return res.status(400).json({ error: "id_agendamento é necessário." });
       }
 
-      const numericAmount = Number(amount);
-      if (isNaN(numericAmount) || numericAmount <= 0) {
+      // SECURITY: Fetch data from Supabase instead of trusting frontend
+      const { data: appointment, error: appError } = await getSupabaseAdmin()
+        .from('agendamentos')
+        .select('*, paciente:perfis!paciente_id(id, nome_completo, email, telefone)')
+        .eq('id', appointmentId)
+        .single();
+
+      if (appError || !appointment) {
+        console.error("[Asaas] Appointment not found:", appointmentId, appError);
+        return res.status(404).json({ error: "Agendamento não encontrado." });
+      }
+
+      // Use data from DB
+      const finalName = appointment.paciente?.nome_completo || name;
+      const finalEmail = appointment.paciente?.email || email;
+      const finalPhone = appointment.paciente?.telefone || req.body.phone;
+      const finalUserId = appointment.paciente_id || user_id;
+      
+      // Ensure value is a valid number
+      let finalValue = Number(appointment.valor || value);
+      if (typeof value === 'string') {
+        finalValue = parseFloat(value.replace(',', '.'));
+      }
+      
+      if (isNaN(finalValue) || finalValue <= 0) {
         return res.status(400).json({ error: "Valor de pagamento inválido." });
       }
 
+      if (!finalName || !finalEmail) {
+        return res.status(400).json({ 
+          error: "Dados obrigatórios ausentes: nome, email, valor e id_agendamento são necessários." 
+        });
+      }
+
       // 1. Get or Create Customer
-      const customerId = await getOrCreateAsaasCustomer(user_id, email, name || email.split('@')[0], phone);
+      const customerId = await getOrCreateAsaasCustomer(finalUserId, finalEmail, finalName, finalPhone);
 
       // 2. Create Payment
       const paymentData = {
         customer: customerId,
         billingType: billingType || 'UNDEFINED',
-        value: numericAmount,
+        value: Number(finalValue.toFixed(2)),
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        description: description || 'Serviço Clínico - FisioCareHub',
-        externalReference: appointment_id, // Mandatory vinculation with appointment
+        description: `Consulta Fisioterapia: ${appointment.tipo || 'Geral'}`,
+        externalReference: appointmentId,
         postalService: false
       };
 
-      console.log("Appointment payment payload (Asaas):", JSON.stringify(paymentData, null, 2));
+      console.log("Asaas Appointment Payment Payload:", JSON.stringify(paymentData, null, 2));
 
       const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
       const asaasRes = await fetch(`${baseUrl}/payments`, {
@@ -888,9 +917,9 @@ async function startServer() {
         // Record pending payment in Supabase
         await getSupabaseAdmin().from('pagamentos').upsert({
           external_id: data.id,
-          user_id: user_id,
-          external_reference: appointment_id,
-          amount: numericAmount,
+          user_id: finalUserId,
+          external_reference: appointmentId,
+          amount: finalValue,
           status: 'pending',
           gateway: 'asaas',
           method: billingType || 'UNDEFINED',
