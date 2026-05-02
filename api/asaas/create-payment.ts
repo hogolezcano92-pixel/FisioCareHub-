@@ -96,9 +96,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = new Date();
     const dueDate = now.toISOString().split('T')[0]; // Vencimento para hoje (Checkout)
 
+    // Ensure billingType is valid (PIX, BOLETO, CREDIT_CARD, UNDEFINED)
+    let finalBillingType = String(billingType || 'UNDEFINED').toUpperCase();
+    if (!['PIX', 'BOLETO', 'CREDIT_CARD', 'UNDEFINED'].includes(finalBillingType)) {
+      finalBillingType = 'UNDEFINED';
+    }
+
     const paymentPayload: any = {
       customer: customerId,
-      billingType: 'UNDEFINED', // Permite Cartão, PIX ou Boleto no checkout do Asaas
+      billingType: finalBillingType,
       value: Number(totalValue.toFixed(2)),
       dueDate,
       description: `FisioCareHub - Agendamento #${appointmentId}`,
