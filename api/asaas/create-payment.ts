@@ -68,30 +68,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { nome, email, cpf, valor, id_agendamento, parcelas } = req.body;
+    // Destructure new standardized names from req.body
+    const { name, email, value, appointmentId, cpf, parcelas } = req.body;
+
+    // Log the received payload for debugging as requested
+    console.log("Dados recebidos no backend para Asaas:", { name, email, value, appointmentId });
 
     // Validação básica dos dados recebidos
-    if (!nome || !email || !valor || !id_agendamento) {
+    if (!name || !email || !value || !appointmentId) {
       return res.status(400).json({ 
         error: "Dados obrigatórios ausentes: nome, email, valor e id_agendamento são necessários." 
       });
     }
 
     // 1. Obter ou Criar o Cliente no Asaas
-    const customerId = await getOrCreateCustomer(nome, email, cpf);
+    const customerId = await getOrCreateCustomer(name, email, cpf);
 
     // 2. Preparar payload da cobrança
     const numParcelas = Number(parcelas) || 1;
-    const totalValue = Number(valor);
+    
+    // Ensure value is a valid number, handling potential string with comma
+    let totalValue = Number(value);
+    if (typeof value === 'string') {
+      totalValue = parseFloat(value.replace(',', '.'));
+    }
+
     const dueDate = new Date().toISOString().split('T')[0]; // Vencimento para hoje (Checkout)
 
     const paymentPayload: any = {
       customer: customerId,
       billingType: 'UNDEFINED', // Permite Cartão, PIX ou Boleto no checkout do Asaas
-      value: totalValue,
+      value: Number(totalValue.toFixed(2)),
       dueDate,
-      description: `FisioCareHub - Agendamento #${id_agendamento}`,
-      externalReference: String(id_agendamento),
+      description: `FisioCareHub - Agendamento #${appointmentId}`,
+      externalReference: String(appointmentId),
       postalService: false
     };
 
@@ -101,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       paymentPayload.installmentValue = (totalValue / numParcelas).toFixed(2);
     }
 
-    console.log(`[Asaas] Criando cobrança para o Agendamento: ${id_agendamento}`);
+    console.log(`[Asaas] Criando cobrança para o Agendamento: ${appointmentId}`);
 
     // 3. Gerar a cobrança no Asaas
     const paymentRes = await fetch(`${ASAAS_BASE_URL}/payments`, {
