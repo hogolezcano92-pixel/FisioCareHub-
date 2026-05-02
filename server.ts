@@ -6,6 +6,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import twilio from "twilio";
 import Groq from "groq-sdk";
+import axios from "axios";
 
 dotenv.config();
 
@@ -240,12 +241,16 @@ const getAsaasHeaders = () => ({
   'access_token': getEnv("ASAAS_API_KEY", "")
 });
 
-async function getOrCreateAsaasCustomer(userId: string, email: string, name: string, phone?: string) {
+async function getOrCreateAsaasCustomer(userId: string, email: string, name: string, phone?: string, cpf?: string) {
   try {
-    const headers = getAsaasHeaders();
-    if (!headers.access_token) {
+    const asaasApiKey = getEnv("ASAAS_API_KEY", "");
+    if (!asaasApiKey) {
       throw new Error("ASAAS_API_KEY is not configured.");
     }
+    const headers = {
+      'Content-Type': 'application/json',
+      'access_token': asaasApiKey
+    };
 
     // 1. Try to find in Supabase first
     const { data: profile } = await getSupabaseAdmin()
@@ -260,8 +265,8 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     // 2. Search in Asaas by email
     console.log(`[Asaas] Searching customer by email: ${email}`);
-    const searchRes = await fetch(`${baseUrl}/customers?email=${encodeURIComponent(email)}`, { headers });
-    const searchData = await searchRes.json();
+    const searchRes = await axios.get(`${baseUrl}/customers?email=${encodeURIComponent(email)}`, { headers });
+    const searchData = searchRes.data;
 
     if (searchData.data && searchData.data.length > 0) {
       const customerId = searchData.data[0].id;
@@ -273,27 +278,28 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     // 3. Create new customer in Asaas
     console.log(`[Asaas] Creating new customer for ${email}`);
-    const createRes = await fetch(`${baseUrl}/customers`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name,
-        email,
-        phone: phone || '',
-        externalReference: userId
-      })
-    });
+    const payload: any = {
+      name,
+      email,
+      phone: phone || '',
+      externalReference: userId
+    };
+    if (cpf) {
+      payload.cpfCnpj = cpf.replace(/\D/g, '');
+    }
 
-    const newData = await createRes.json();
+    const createRes = await axios.post(`${baseUrl}/customers`, payload, { headers });
+    const newData = createRes.data;
+
     if (newData.id) {
       console.log(`[Asaas] Customer created: ${newData.id}`);
       await getSupabaseAdmin().from('perfis').update({ asaas_customer_id: newData.id }).eq('id', userId);
       return newData.id;
     }
     
-    throw new Error(newData.errors?.[0]?.description || "Erro ao criar cliente no Asaas");
-  } catch (err) {
-    console.error("[Asaas] Error in getOrCreateAsaasCustomer:", err);
+    throw new Error("Erro ao criar cliente no Asaas");
+  } catch (err: any) {
+    console.error("[Asaas] Error in getOrCreateAsaasCustomer:", err.response?.data || err.message);
     throw err;
   }
 }
@@ -860,15 +866,18 @@ async function startServer() {
           console.error("[Asaas Webhook] Error processing payment:", err);
         }
       }
+    } catch (err: any) {
+      console.error("[Asaas Webhook Master Error]", err);
+      return res.status(200).json({ received: true, error: "Internal processing error" });
     }
-
-    res.status(200).json({ received: true });
   });
 
   // ASASS Appointment Payment Route
   app.post("/api/asaas/create-payment", async (req, res) => {
+    console.log("BODY REBIDO ASAAS:", JSON.stringify(req.body, null, 2));
+    
     try {
-      const { name, email, value, appointmentId, user_id, billingType } = req.body;
+      const { name, email, value, appointmentId, user_id, billingType, phone, cpf, installments } = req.body;
 
       console.log(`[Asaas] Received request for appointmentId: ${appointmentId}`);
 
@@ -891,8 +900,9 @@ async function startServer() {
       // Use data from DB
       const finalName = appointment.paciente?.nome_completo || name;
       const finalEmail = appointment.paciente?.email || email;
-      const finalPhone = appointment.paciente?.telefone || req.body.phone;
+      const finalPhone = appointment.paciente?.telefone || phone;
       const finalUserId = appointment.paciente_id || user_id;
+      const finalCPF = cpf?.replace(/\D/g, '') || '';
       
       // Ensure value is a valid number
       let finalValue = Number(appointment.valor || value);
@@ -906,76 +916,95 @@ async function startServer() {
 
       if (!finalName || !finalEmail) {
         return res.status(400).json({ 
-          error: "Dados obrigatórios ausentes: nome, email, valor e id_agendamento são necessários." 
+          error: "Dados obrigatórios ausentes: nome, email e id_agendamento são necessários." 
         });
       }
 
       // 1. Get or Create Customer
-      const customerId = await getOrCreateAsaasCustomer(finalUserId, finalEmail, finalName, finalPhone);
+      const customerId = await getOrCreateAsaasCustomer(finalUserId, finalEmail, finalName, finalPhone, finalCPF);
 
-      // 2. Create Payment
+      // 2. Prepare Payment Data
       const now = new Date();
-      const futureDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-      const dueDate = futureDate.toISOString().split('T')[0];
+      const dueDate = now.toISOString().split('T')[0];
 
       // Ensure billingType is valid (PIX, BOLETO, CREDIT_CARD)
-      let finalBillingType = 'UNDEFINED';
-      if (billingType && typeof billingType === 'string') {
-        const bt = billingType.toUpperCase();
-        if (['PIX', 'BOLETO', 'CREDIT_CARD', 'UNDEFINED'].includes(bt)) {
-          finalBillingType = bt;
-        }
+      let finalBillingType = String(billingType || 'PIX').toUpperCase();
+      if (!['PIX', 'BOLETO', 'CREDIT_CARD'].includes(finalBillingType)) {
+        finalBillingType = 'PIX';
       }
 
-      const paymentData = {
+      const paymentData: any = {
         customer: customerId,
         billingType: finalBillingType,
         value: Number(finalValue.toFixed(2)),
         dueDate: dueDate,
-        description: `Agendamento FisioCareHub - ${appointment.tipo || 'Fisioterapia'}`,
+        description: `Agendamento ${appointmentId}`,
         externalReference: String(appointmentId),
         postalService: false
       };
 
+      // Add Credit Card installments if applicable
+      if (finalBillingType === "CREDIT_CARD" && installments && Number(installments) > 1) {
+        const insCount = Number(installments);
+        paymentData.installmentCount = insCount;
+        paymentData.installmentValue = Number((finalValue / insCount).toFixed(2));
+      }
+
       console.log("Asaas Appointment Payment Payload:", JSON.stringify(paymentData, null, 2));
 
       const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
-      const asaasRes = await fetch(`${baseUrl}/payments`, {
-        method: 'POST',
-        headers: getAsaasHeaders(),
-        body: JSON.stringify(paymentData)
+      const asaasApiKey = getEnv("ASAAS_API_KEY", "");
+
+      if (!asaasApiKey) {
+        throw new Error("ASAAS_API_KEY não configurada no servidor.");
+      }
+
+      const response = await axios.post(
+        `${baseUrl}/payments`,
+        paymentData,
+        {
+          headers: {
+            'access_token': asaasApiKey,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const payment = response.data;
+
+      if (!payment || !payment.id) {
+        throw new Error("Falha ao criar pagamento Asaas: resposta inválida");
+      }
+
+      console.log(`[Asaas] Payment created successfully: ${payment.id}`);
+      
+      // Record pending payment in Supabase
+      await getSupabaseAdmin().from('pagamentos').upsert({
+        external_id: payment.id,
+        user_id: finalUserId,
+        external_reference: appointmentId,
+        amount: finalValue,
+        status: 'pending',
+        gateway: 'asaas',
+        method: finalBillingType,
+        invoice_url: payment.invoiceUrl || payment.bankSlipUrl
+      }, { onConflict: 'external_id' });
+
+      return res.status(200).json({
+        id: payment.id,
+        invoiceUrl: payment.invoiceUrl,
+        bankSlipUrl: payment.bankSlipUrl,
+        pixQrCode: payment.pixQrCode,
+        pixCopyPaste: payment.pixCopyPaste,
+        url: payment.invoiceUrl || payment.bankSlipUrl // Keep url for compatibility
       });
 
-      const data = await asaasRes.json();
-
-      if (data.id) {
-        console.log(`[Asaas] Payment created successfully: ${data.id}`);
-        // Record pending payment in Supabase
-        await getSupabaseAdmin().from('pagamentos').upsert({
-          external_id: data.id,
-          user_id: finalUserId,
-          external_reference: appointmentId,
-          amount: finalValue,
-          status: 'pending',
-          gateway: 'asaas',
-          method: billingType || 'UNDEFINED',
-          invoice_url: data.invoiceUrl || data.bankSlipUrl
-        }, { onConflict: 'external_id' });
-
-        res.json({ 
-          id: data.id,
-          invoiceUrl: data.invoiceUrl,
-          bankSlipUrl: data.bankSlipUrl,
-          url: data.invoiceUrl || data.bankSlipUrl // Keep url for compatibility
-        });
-      } else {
-        console.error("[Asaas] API Error Response:", data);
-        const errorMsg = data.errors?.[0]?.description || "Erro ao criar cobrança no Asaas";
-        res.status(400).json({ error: errorMsg });
-      }
     } catch (err: any) {
-      console.error("[Asaas] Fatal error creating payment:", err);
-      res.status(500).json({ error: err.message });
+      console.error("ASAAS ERROR:", err.response?.data || err.message);
+      return res.status(500).json({
+        error: err.message,
+        details: err.response?.data
+      });
     }
   });
 
