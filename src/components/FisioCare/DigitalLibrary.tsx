@@ -74,9 +74,13 @@ export const DigitalLibrary = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Erro ao criar checkout');
       
-      if (data?.url) {
+      const redirectUrl = data?.invoiceUrl || data?.url || data?.bankSlipUrl;
+
+      if (redirectUrl) {
         toast.success("Redirecionando para o pagamento...");
-        window.location.href = data.url;
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error('URL de pagamento não retornada');
       }
     } catch (err: any) {
       console.error("Erro ao iniciar compra (Asaas):", err);
