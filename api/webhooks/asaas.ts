@@ -1,125 +1,73 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+// Initialize Supabase Admin (or just use client if safety allows, but Admin is better for webhooks)
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''; // Use service role for webhooks
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-    // 🔒 protege body quebrado
-    const { event, payment } = req.body || {};
+  const { event, payment } = req.body;
+  console.log(`[Asaas Webhook] Event: ${event}`, payment?.id);
 
-    if (!event || !payment) {
-      console.error('[Asaas Webhook] Invalid payload');
-      return res.status(400).send('Invalid payload');
-    }
+  // Ignore events that don't indicate success to avoid noise/500s
+  if (event === 'PAYMENT_CREATED') {
+    return res.status(200).json({ received: true, ignored: true });
+  }
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('[Asaas Webhook] Supabase env missing');
-      return res.status(500).json({ error: 'Config error' });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    console.log(`[Asaas Webhook] Event: ${event}`, JSON.stringify(payment, null, 2));
-
-    if (event !== 'PAYMENT_RECEIVED' && event !== 'PAYMENT_CONFIRMED') {
-      return res.status(200).send('Ignored event');
-    }
-
-    const agendamentoId = payment?.externalReference;
+  // Handle confirmed payments
+  if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED' || event === 'RECEIVED') {
+    const agendamentoId = payment.externalReference;
 
     if (!agendamentoId) {
-      console.error('[Asaas Webhook] Missing externalReference');
-      return res.status(400).send('Missing externalReference');
+      console.warn('[Asaas Webhook] No externalReference found');
+      return res.status(200).json({ received: true, error: 'Missing externalReference' });
     }
 
-    // 🔒 safe query (evita crash)
-    const { data: appointment, error: appError } = await supabase
-      .from('agendamentos')
-      .select('*')
-      .eq('id', agendamentoId)
-      .maybeSingle();
+    try {
+      // 1. Fetch Appointment 
+      const { data: appointment, error: appError } = await supabase
+        .from('agendamentos')
+        .select('*, fisio:perfis!fisio_id(*), paciente:perfis!paciente_id(*)')
+        .eq('id', agendamentoId)
+        .single();
 
-    if (appError || !appointment) {
-      console.error('[Asaas Webhook] Appointment not found:', agendamentoId);
-      return res.status(404).send('Appointment not found');
+      if (appError || !appointment) {
+        console.warn('[Asaas Webhook] Appointment not found:', agendamentoId);
+        return res.status(200).json({ received: true, error: 'Appointment not found' });
+      }
+
+      // 2. Update status to 'pago'
+      await supabase
+        .from('agendamentos')
+        .update({ status: 'pago' })
+        .eq('id', agendamentoId);
+
+      // Record payment
+      await supabase
+        .from('pagamentos')
+        .upsert({
+          external_id: payment.id,
+          user_id: appointment.paciente_id,
+          external_reference: agendamentoId,
+          amount: payment.value,
+          status: 'paid',
+          gateway: 'asaas',
+          method: payment.billingType,
+          confirmed_at: new Date().toISOString()
+        }, { onConflict: 'external_id' });
+
+      console.log(`[Asaas Webhook] Appointment ${agendamentoId} processed successfully.`);
+    } catch (err) {
+      console.error('[Asaas Webhook] Internal Error:', err);
+      // Still return 200 but we logged the error
+      return res.status(200).json({ received: true, error: 'Internal Error' });
     }
-
-    const { data: paciente } = await supabase
-      .from('perfis')
-      .select('nome_completo, telefone, endereco')
-      .eq('id', appointment.paciente_id)
-      .maybeSingle();
-
-    const { data: fisio } = await supabase
-      .from('perfis')
-      .select('nome_completo, email')
-      .eq('id', appointment.fisio_id)
-      .maybeSingle();
-
-    await supabase
-      .from('agendamentos')
-      .update({ status: 'pago' })
-      .eq('id', agendamentoId);
-
-    // 🔒 proteção contra null
-    const servico = appointment.servico || '';
-    const tipo = appointment.tipo || '';
-
-    const isHomeService =
-      servico.toLowerCase().includes('domiciliar') ||
-      tipo.toLowerCase().includes('domiciliar');
-
-    const pacName = paciente?.nome_completo || 'Paciente';
-    const pacPhone = paciente?.telefone || 'Não informado';
-    const pacAddress = paciente?.endereco || 'Não informado';
-
-    const dateStr = appointment.data
-      ? new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR')
-      : 'N/A';
-
-    const timeStr = appointment.hora ? appointment.hora.substring(0, 5) : 'N/A';
-
-    let mensagem =
-      `Novo agendamento pago!\n\n` +
-      `Paciente: ${pacName}\n` +
-      `Telefone: ${pacPhone}\n` +
-      `Serviço: ${servico}\n` +
-      `Data: ${dateStr} às ${timeStr}\n` +
-      `Pagamento: Confirmado`;
-
-    if (isHomeService) {
-      mensagem += `\nEndereço: ${pacAddress}`;
-    }
-
-    const { error: notifError } = await supabase
-      .from('notificacoes')
-      .insert({
-        user_id: appointment.fisio_id,
-        titulo: 'Novo Agendamento Confirmado',
-        mensagem,
-        tipo: 'appointment_request',
-        metadata: {
-          agendamento_id: agendamentoId,
-          actionable: true
-        }
-      });
-
-    if (notifError) {
-      console.error('[Asaas Webhook] Error creating notification:', notifError);
-    }
-
-    console.log(`[Asaas Webhook] Appointment ${agendamentoId} processed successfully.`);
-
-    return res.status(200).send('OK');
-
-  } catch (err) {
-    console.error('[Asaas Webhook] Fatal error:', err);
-    return res.status(500).send('Internal Server Error');
   }
+
+  return res.status(200).json({ received: true });
 }
