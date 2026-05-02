@@ -138,19 +138,22 @@ export default function PaymentPage() {
 
       } else {
         // Asaas Logic (Server API)
+        const payload = {
+          name: profile.nome_completo,
+          email: profile.email,
+          value: Number(appointment.valor),
+          appointmentId: appointment.id,
+          phone: profile.telefone,
+          user_id: user.id, // kept for internal tracking if needed
+          billingType: 'UNDEFINED'
+        };
+
+        console.log("Dados enviados para Asaas:", payload);
+
         const response = await fetch('/api/asaas/create-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: user.id,
-            email: profile.email,
-            name: profile.nome_completo,
-            phone: profile.telefone,
-            amount: Number(appointment.valor),
-            description: `Atendimento de Fisioterapia: ${appointment.tipo}`,
-            appointment_id: appointment.id,
-            billingType: 'UNDEFINED' // Allow all (PIX, Boleto, Card) in Asaas
-          })
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
