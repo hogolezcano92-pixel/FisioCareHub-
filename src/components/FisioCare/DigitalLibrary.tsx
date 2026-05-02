@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BookOpen, Download, Star, ChevronRight, ShoppingCart, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import LibraryPaymentModal from '../LibraryPaymentModal';
 
 export const DigitalLibrary = () => {
   const { profile } = useAuth();
   const [materiais, setMateriais] = useState<any[]>([]);
   const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,8 +21,8 @@ export const DigitalLibrary = () => {
       
       try {
         const [materiaisRes, purchasesRes] = await Promise.all([
-          supabase.from('materiais').select('*').order('created_at', { ascending: false }),
-          supabase.from('compras_materiais').select('material_id').eq('user_id', profile.id)
+          supabase.from('library_materials').select('*').order('created_at', { ascending: false }),
+          supabase.from('material_purchases').select('material_id').eq('patient_id', profile.id)
         ]);
         
         if (materiaisRes.error) throw materiaisRes.error;
@@ -47,47 +49,16 @@ export const DigitalLibrary = () => {
 
     // Se já comprou, apenas abre o link
     if (purchasedIds.includes(material.id)) {
-      if (material.arquivo_url) {
-        window.open(material.arquivo_url, '_blank');
+      if (material.file_url || material.arquivo_url) {
+        window.open(material.file_url || material.arquivo_url, '_blank');
       } else {
         toast.info("Este material não possui um link de download disponível.");
       }
       return;
     }
 
-    setBuyingId(material.id);
-    try {
-      const response = await fetch('/api/asaas/create-library-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: profile.id,
-          email: profile.email,
-          name: profile.nome_completo,
-          material_ids: [material.id],
-          billingType: 'UNDEFINED'
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Erro ao criar checkout');
-      
-      const redirectUrl = data?.invoiceUrl || data?.url || data?.bankSlipUrl;
-
-      if (redirectUrl) {
-        toast.success("Redirecionando para o pagamento...");
-        window.location.href = redirectUrl;
-      } else {
-        throw new Error('URL de pagamento não retornada');
-      }
-    } catch (err: any) {
-      console.error("Erro ao iniciar compra (Asaas):", err);
-      toast.error("Erro ao processar compra. Tente novamente.");
-    } finally {
-      setBuyingId(null);
-    }
+    setSelectedMaterialId(material.id);
+    setIsPaymentModalOpen(true);
   };
 
   if (loading) {
@@ -101,6 +72,25 @@ export const DigitalLibrary = () => {
 
   return (
     <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl space-y-4">
+      <LibraryPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        materialIds={selectedMaterialId ? [selectedMaterialId] : []}
+        userId={profile?.id || ''}
+        email={profile?.email || ''}
+        onSuccess={() => {
+          setIsPaymentModalOpen(false);
+          // Refresh data
+          const fetchData = async () => {
+             const purchasesRes = await supabase.from('material_purchases').select('material_id').eq('patient_id', profile.id);
+             if (purchasesRes.data) {
+                setPurchasedIds(purchasesRes.data.map(p => p.material_id));
+             }
+          };
+          fetchData();
+        }}
+      />
+
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
@@ -166,10 +156,9 @@ export const DigitalLibrary = () => {
                       </div>
                       <button 
                         onClick={() => handleBuy(product)}
-                        disabled={buyingId === product.id}
-                        className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50 group/btn"
+                        className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all group/btn"
                       >
-                        {buyingId === product.id ? <Loader2 className="animate-spin" size={14} /> : <ShoppingCart size={14} className="group-hover/btn:scale-110 transition-transform" />}
+                        <ShoppingCart size={14} className="group-hover/btn:scale-110 transition-transform" />
                       </button>
                     </>
                   ) : (
