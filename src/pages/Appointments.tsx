@@ -598,16 +598,17 @@ export default function Appointments() {
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                   app.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
-                  app.status === 'pendente' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
+                  app.status === 'pendente' || app.status === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
                   app.status === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
                   "bg-slate-800 text-slate-600"
                 )}>
                   {app.status === 'pendente' ? 'Pendente' : 
+                   app.status === 'pendente_pagamento' ? 'Aguardando Pagamento' :
                    app.status === 'confirmado' ? 'Confirmado' : 
                    app.status === 'cancelado' ? 'Cancelado' : 'Concluído'}
                 </span>
 
-                {app.status === 'pendente' && !isPhysio && (
+                {(app.status === 'pendente' || app.status === 'pendente_pagamento') && !isPhysio && (
                   <button
                     onClick={() => navigate(`/pagamento/${app.id}`)}
                     className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"

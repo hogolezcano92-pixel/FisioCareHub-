@@ -13,10 +13,13 @@ import {
   ChevronLeft,
   ShieldCheck,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+
+import { cn } from '../lib/utils';
 
 export default function PaymentPage() {
   const { id } = useParams();
@@ -26,6 +29,7 @@ export default function PaymentPage() {
   const [physio, setPhysio] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'asaas'>('stripe');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,7 +84,7 @@ export default function PaymentPage() {
       // 1. Get user profile for necessary info
       const { data: profile, error: profileError } = await supabase
         .from('perfis')
-        .select('id, nome_completo, email')
+        .select('id, nome_completo, email, telefone')
         .eq('id', user.id)
         .single();
 
@@ -88,40 +92,76 @@ export default function PaymentPage() {
         throw new Error('Perfil não encontrado. Verifique seus dados.');
       }
 
-      // 2. Direct call to Supabase Edge Function
-      const { config } = await import('../config/api');
-      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
-      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
+      if (paymentMethod === 'stripe') {
+        // Stripe Logic (Edge Function)
+        const { config } = await import('../config/api');
+        const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
+        const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': config.supabaseAnonKey,
-          'Authorization': `Bearer ${config.supabaseAnonKey}`
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          email: profile.email,
-          plan: 'appointment',
-          type: 'appointment',
-          service_name: appointment.tipo || 'Atendimento de Fisioterapia',
-          amount: Number(appointment.valor),
-          appointment_id: appointment.id
-        })
-      });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.supabaseAnonKey,
+            'Authorization': `Bearer ${config.supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            email: profile.email,
+            plan: 'appointment',
+            type: 'appointment',
+            service_name: appointment.tipo || 'Atendimento de Fisioterapia',
+            amount: Number(appointment.valor),
+            appointment_id: appointment.id
+          })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Erro ao gerar checkout Stripe.');
+        
+        if (data.url) {
+          // Record pending payment for Stripe
+          await supabase.from('pagamentos').upsert({
+            external_id: data.id || data.session_id,
+            user_id: user.id,
+            external_reference: appointment.id,
+            amount: Number(appointment.valor),
+            status: 'pending',
+            gateway: 'stripe',
+            method: 'credit_card'
+          }, { onConflict: 'external_id' });
+          
+          window.location.href = data.url;
+        } else {
+          throw new Error('URL de checkout Stripe não retornada.');
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao gerar checkout.');
-      }
-
-      if (data.url) {
-        toast.success('Redirecionando para o pagamento seguro...');
-        window.location.href = data.url;
       } else {
-        throw new Error('URL de checkout não retornada.');
+        // Asaas Logic (Server API)
+        const response = await fetch('/api/asaas/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            email: profile.email,
+            name: profile.nome_completo,
+            phone: profile.telefone,
+            amount: Number(appointment.valor),
+            description: `Atendimento de Fisioterapia: ${appointment.tipo}`,
+            appointment_id: appointment.id,
+            billingType: 'UNDEFINED' // Allow all (PIX, Boleto, Card) in Asaas
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Erro ao gerar pagamento Asaas.');
+
+        if (data.url) {
+          toast.success('Redirecionando para o pagamento via Asaas...');
+          window.location.href = data.url;
+        } else {
+          throw new Error('URL de pagamento Asaas não retornada.');
+        }
       }
 
     } catch (err: any) {
@@ -218,7 +258,41 @@ export default function PaymentPage() {
                 {Number(appointment.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <p className="text-slate-500 text-xs font-medium">Você será direcionado para um ambiente seguro de pagamento da FisioCareHub.</p>
+          </div>
+
+          {/* Payment Method Selection */}
+          <div className="space-y-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Escolha a forma de pagamento</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button 
+                onClick={() => setPaymentMethod('stripe')}
+                className={cn(
+                  "p-4 rounded-[1.5rem] border transition-all flex flex-col items-center gap-2",
+                  paymentMethod === 'stripe' 
+                    ? "bg-blue-600/10 border-blue-500/50 text-blue-400" 
+                    : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+                )}
+              >
+                <CreditCard size={24} />
+                <span className="text-xs font-black uppercase tracking-widest">Cartão de Crédito</span>
+                <span className="text-[8px] font-bold opacity-60">(Stripe)</span>
+              </button>
+
+              <button 
+                onClick={() => setPaymentMethod('asaas')}
+                className={cn(
+                  "p-4 rounded-[1.5rem] border transition-all flex flex-col items-center gap-2",
+                  paymentMethod === 'asaas' 
+                    ? "bg-blue-600/10 border-blue-500/50 text-blue-400" 
+                    : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+                )}
+              >
+                <Zap size={24} className="text-yellow-400" />
+                <span className="text-xs font-black uppercase tracking-widest">PIX / Boleto</span>
+                <span className="text-[8px] font-bold opacity-60">(Asaas)</span>
+              </button>
+            </div>
+            <p className="text-slate-500 text-center text-[10px] font-medium italic">Ambiente seguro e processamento imediato.</p>
           </div>
 
           {/* Action Button */}
