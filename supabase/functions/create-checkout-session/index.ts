@@ -98,22 +98,46 @@ serve(async (req) => {
       }
 
       line_items = materials.map(item => {
-        // Stripe expects integers in cents. Price can be in price_cents or price (decimal).
-        const rawPrice = Number(item.price_cents) || (Number(item.price) * 100);
-        const unitAmount = Math.max(Math.round(rawPrice), 50); // Ensure at least 50 cents (Stripe minimum)
+        const materialId = item.id;
+        const materialTitle = item.title;
+        console.info(`[Stripe Debug] Processing materialId: ${materialId}`);
+        
+        // 3. Validação e Busca do Valor
+        let priceFromDb = item.price;
+        console.info(`[Stripe Debug] Price from DB: ${priceFromDb}`);
+
+        // Corrigir automaticamente casos como "49,90" -> 49.90
+        let normalizedPrice = 0;
+        if (typeof priceFromDb === 'string') {
+          normalizedPrice = parseFloat(priceFromDb.replace(',', '.'));
+        } else {
+          normalizedPrice = Number(priceFromDb);
+        }
+
+        // 4. Conversão obrigatória para centavos
+        const amount = Math.round(normalizedPrice * 100);
+        console.info(`[Stripe Debug] Final amount (cents) for ${materialTitle}: ${amount}`);
+
+        // Validar que amount é inteiro e > 0
+        if (!Number.isInteger(amount) || amount < 1) {
+          throw new Error(`Preço inválido para o material: ${materialTitle} (${amount})`);
+        }
+
+        // Stripe minimum check (usually 50 cents for BRL)
+        const finalAmount = Math.max(amount, 50);
 
         return {
           price_data: {
             currency: "brl",
             product_data: {
-              name: item.title,
-              description: item.description,
+              name: materialTitle,
+              description: item.description || "Material de Saúde",
               images: item.cover_image ? [item.cover_image] : [],
             },
-            unit_amount: unitAmount,
+            unit_amount: finalAmount,
           },
           quantity: 1,
-        };
+        }
       })
       
       mode = "payment"
