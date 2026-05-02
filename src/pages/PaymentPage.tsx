@@ -159,9 +159,11 @@ export default function PaymentPage() {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Erro ao gerar pagamento Asaas.');
 
-        if (data.url) {
+        const redirectUrl = data.invoiceUrl || data.url || data.bankSlipUrl;
+
+        if (redirectUrl) {
           toast.success('Redirecionando para o pagamento via Asaas...');
-          window.location.href = data.url;
+          window.location.href = redirectUrl;
         } else {
           throw new Error('URL de pagamento Asaas não retornada.');
         }
