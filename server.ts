@@ -547,6 +547,18 @@ async function startServer() {
                 html: `<h3>Pagamento Confirmado!</h3><p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p><p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
               }
             });
+
+            // 6. Record in pagamentos table
+            await getSupabaseAdmin().from('pagamentos').upsert({
+              external_id: session.id,
+              user_id: appData.paciente_id,
+              external_reference: appointmentId,
+              amount: totalPaid,
+              status: 'paid',
+              gateway: 'stripe',
+              method: 'credit_card',
+              confirmed_at: new Date().toISOString()
+            });
           }
         } catch (err) {
           console.error("[Webhook] Crash during appointment update:", err);
@@ -717,18 +729,11 @@ async function startServer() {
           console.log(`[Asaas Webhook] Payment confirmed for externalReference: ${externalReference}`);
           
           // Check if it's a library purchase (usually starts with "lib_")
-          if (externalReference.startsWith('lib_') || externalReference.includes(',')) {
-            const materialIds = externalReference.startsWith('lib_') 
-              ? [externalReference.replace('lib_', '')] 
-              : externalReference.split(',');
-            
-            // Note: In a real scenario, we'd find the user_id from the metadata or a pending table
-            // For now, if we can't find it, we'll log it. 
-            // Better to use externalReference that includes userId: "user_uuid|mat1,mat2"
+          if (externalReference.startsWith('lib_') || externalReference.includes(',') || externalReference.includes('|')) {
             const [userId, idsPart] = externalReference.includes('|') ? externalReference.split('|') : [null, externalReference];
-            const finalMaterialIds = idsPart.replace('lib_', '').split(',');
+            const finalMaterialIds = (idsPart || '').replace('lib_', '').split(',').filter(Boolean);
 
-            if (userId) {
+            if (userId && finalMaterialIds.length > 0) {
               const purchaseRecords = finalMaterialIds.map(id => ({
                 patient_id: userId,
                 material_id: id,
@@ -742,8 +747,77 @@ async function startServer() {
               console.log(`[Asaas Webhook] Recorded library purchase for user ${userId}`);
             }
           } else {
-            // ... (rest of appointment logic remains same)
-            // (I'll keep it simple for now)
+            // It's an appointment (agendamento)
+            const appointmentId = externalReference;
+            console.log(`[Asaas Webhook] Confirming appointment: ${appointmentId}`);
+
+            const { data: appData, error: fetchErr } = await getSupabaseAdmin()
+              .from('agendamentos')
+              .select(`
+                *,
+                paciente:perfis!paciente_id (id, nome_completo, email, telefone),
+                fisioterapeuta:perfis!fisio_id (id, nome_completo, email, telefone)
+              `)
+              .eq('id', appointmentId)
+              .single();
+
+            if (fetchErr || !appData) {
+              console.error("[Asaas Webhook] Error fetching appointment:", fetchErr);
+            } else if (appData.status !== 'confirmado') {
+              // 1. Calculations
+              const totalPaid = Number(payment.value);
+              const currentRate = await getCommissionRate();
+              const commission = totalPaid * (currentRate / 100);
+              const netAmount = totalPaid * ((100 - currentRate) / 100);
+
+              // 2. Update appointment status
+              await getSupabaseAdmin()
+                .from('agendamentos')
+                .update({ status: 'confirmado' })
+                .eq('id', appointmentId);
+
+              // 3. Create financial record
+              await getSupabaseAdmin()
+                .from('sessoes')
+                .insert({
+                  paciente_id: appData.paciente_id,
+                  fisioterapeuta_id: appData.fisio_id,
+                  agendamento_id: appointmentId,
+                  data: appData.data,
+                  hora: appData.hora,
+                  valor_sessao: netAmount, 
+                  status_pagamento: 'pago_app',
+                  external_id: payment.id,
+                  gateway: 'asaas'
+                });
+
+              // 4. Notifications
+              const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
+              const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+              if (appData.paciente.telefone) {
+                await sendWhatsAppMessage(
+                  appData.paciente.telefone,
+                  `✅ *Pagamento Confirmado (Asaas)!* \n\nOlá ${appData.paciente.nome_completo}, seu pagamento via Pix/Boleto foi recebido. Sua consulta está confirmada para ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
+                );
+              }
+
+              if (appData.fisioterapeuta.telefone) {
+                await sendWhatsAppMessage(
+                  appData.fisioterapeuta.telefone,
+                  `💰 *Pagamento Confirmado (Asaas)!* \n\nNovo atendimento para: ${appData.paciente.nome_completo} em ${formattedDate} às ${formattedTime}.\n\nFisioCareHub 🏥`
+                );
+              }
+
+              await getSupabaseAdmin().from('notificacoes').insert({
+                user_id: appData.fisio_id,
+                titulo: 'Novo Agendamento Confirmado (Asaas)',
+                mensagem: `${appData.paciente.nome_completo} realizou o pagamento via Asaas e confirmou o agendamento para o dia ${formattedDate} às ${formattedTime}.`,
+                tipo: 'appointment',
+                lida: false,
+                link: '/appointments'
+              });
+            }
           }
 
           // Also record in a generic pagamentos table
@@ -766,6 +840,76 @@ async function startServer() {
     }
 
     res.status(200).json({ received: true });
+  });
+
+  // ASASS Appointment Payment Route
+  app.post("/api/asaas/create-payment", async (req, res) => {
+    try {
+      const { user_id, email, name, phone, amount, description, appointment_id, billingType } = req.body;
+
+      console.log(`[Asaas] Received request for amount: ${amount}, user: ${user_id}`);
+
+      if (!user_id || !amount || !appointment_id) {
+        return res.status(400).json({ error: "Dados insuficientes para criar pagamento no Asaas." });
+      }
+
+      const numericAmount = Number(amount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ error: "Valor de pagamento inválido." });
+      }
+
+      // 1. Get or Create Customer
+      const customerId = await getOrCreateAsaasCustomer(user_id, email, name || email.split('@')[0], phone);
+
+      // 2. Create Payment
+      const paymentData = {
+        customer: customerId,
+        billingType: billingType || 'UNDEFINED',
+        value: numericAmount,
+        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        description: description || 'Serviço Clínico - FisioCareHub',
+        externalReference: appointment_id, // Mandatory vinculation with appointment
+        postalService: false
+      };
+
+      console.log("Appointment payment payload (Asaas):", JSON.stringify(paymentData, null, 2));
+
+      const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
+      const asaasRes = await fetch(`${baseUrl}/payments`, {
+        method: 'POST',
+        headers: getAsaasHeaders(),
+        body: JSON.stringify(paymentData)
+      });
+
+      const data = await asaasRes.json();
+
+      if (data.id) {
+        console.log(`[Asaas] Payment created successfully: ${data.id}`);
+        // Record pending payment in Supabase
+        await getSupabaseAdmin().from('pagamentos').upsert({
+          external_id: data.id,
+          user_id: user_id,
+          external_reference: appointment_id,
+          amount: numericAmount,
+          status: 'pending',
+          gateway: 'asaas',
+          method: billingType || 'UNDEFINED',
+          invoice_url: data.invoiceUrl
+        }, { onConflict: 'external_id' });
+
+        res.json({ 
+          id: data.id,
+          url: data.invoiceUrl || data.bankSlipUrl
+        });
+      } else {
+        console.error("[Asaas] API Error Response:", data);
+        const errorMsg = data.errors?.[0]?.description || "Erro ao criar cobrança no Asaas";
+        res.status(400).json({ error: errorMsg });
+      }
+    } catch (err: any) {
+      console.error("[Asaas] Fatal error creating payment:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ASASS Library Purchase Specialized Route
