@@ -1063,12 +1063,26 @@ async function startServer() {
       }
 
       const totalValue = materials.reduce((sum, m) => {
-        // Enforce parsing just in case it comes as a string with commas
-        const priceValue = m.price_cents ? (m.price_cents / 100) : m.price;
-        const valStr = String(priceValue).replace(',', '.');
-        const val = parseFloat(valStr);
-        return sum + (isNaN(val) ? 0 : val);
+        // Debug logs as requested
+        console.log(`[Asaas Library Debug] materialId: ${m.id}`);
+        
+        let priceValue = 0;
+        // Use price_cents if available, otherwise price
+        const dbPrice = m.price_cents ? (m.price_cents / 100) : m.price;
+        console.log(`[Asaas Library Debug] price vindo do banco: ${dbPrice}`);
+
+        // Corrigir automaticamente casos como "49,90" -> 49.90
+        if (typeof dbPrice === 'string') {
+          priceValue = parseFloat(dbPrice.replace(',', '.'));
+        } else {
+          priceValue = Number(dbPrice);
+        }
+
+        const validPrice = isNaN(priceValue) ? 0 : priceValue;
+        return sum + validPrice;
       }, 0);
+
+      console.log(`[Asaas Library Debug] amount final: ${totalValue}`);
 
       if (totalValue <= 0) {
         return res.status(400).json({ error: "Valor total inválido (R$ 0)." });
