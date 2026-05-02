@@ -93,7 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       totalValue = parseFloat(value.replace(',', '.'));
     }
 
-    const dueDate = new Date().toISOString().split('T')[0]; // Vencimento para hoje (Checkout)
+    const now = new Date();
+    const dueDate = now.toISOString().split('T')[0]; // Vencimento para hoje (Checkout)
 
     const paymentPayload: any = {
       customer: customerId,
@@ -124,7 +125,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (paymentRes.ok) {
       console.log(`[Asaas Success] Cobrança gerada com sucesso: ${paymentData.id}`);
-      return res.status(200).json(paymentData);
+      return res.status(200).json({
+        id: paymentData.id,
+        invoiceUrl: paymentData.invoiceUrl,
+        bankSlipUrl: paymentData.bankSlipUrl,
+        url: paymentData.invoiceUrl || paymentData.bankSlipUrl
+      });
     } else {
       console.error("[Asaas API Error]", JSON.stringify(paymentData));
       return res.status(paymentRes.status).json({
