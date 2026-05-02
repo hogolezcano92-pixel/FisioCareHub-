@@ -30,7 +30,9 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'asaas'>('stripe');
-  const [asaasMethod, setAsaasMethod] = useState<'PIX' | 'BOLETO'>('PIX');
+  const [asaasMethod, setAsaasMethod] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
+  const [installments, setInstallments] = useState(1);
+  const [cpf, setCpf] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -146,7 +148,9 @@ export default function PaymentPage() {
           appointmentId: appointment.id,
           phone: profile.telefone,
           user_id: user.id, // kept for internal tracking if needed
-          billingType: asaasMethod
+          billingType: asaasMethod,
+          cpf: cpf,
+          installments: asaasMethod === 'CREDIT_CARD' ? installments : 1
         };
 
         console.log("Dados enviados para Asaas:", payload);
@@ -158,9 +162,12 @@ export default function PaymentPage() {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Erro ao gerar pagamento Asaas.');
+        if (!response.ok) {
+          const detail = data.details?.[0]?.description || data.error;
+          throw new Error(detail || 'Erro ao gerar pagamento Asaas.');
+        }
 
-        const redirectUrl = data.invoiceUrl || data.url || data.bankSlipUrl;
+        const redirectUrl = data.invoiceUrl || data.bankSlipUrl || data.url;
 
         if (redirectUrl) {
           toast.success('Redirecionando para o pagamento via Asaas...');
@@ -300,32 +307,85 @@ export default function PaymentPage() {
             </div>
 
             {paymentMethod === 'asaas' && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="bg-white/5 rounded-2xl p-2 flex gap-2 border border-white/5"
-              >
-                <button
-                  type="button"
-                  onClick={() => setAsaasMethod('PIX')}
-                  className={cn(
-                    "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                    asaasMethod === 'PIX' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
-                  )}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                    CPF (Necessário para Asaas)
+                  </label>
+                  <input
+                    type="text"
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                    placeholder="000.000.000-00"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all font-bold"
+                  />
+                </div>
+
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="bg-white/5 rounded-2xl p-2 flex flex-wrap gap-2 border border-white/5"
                 >
-                  Pagar com PIX
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAsaasMethod('BOLETO')}
-                  className={cn(
-                    "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                    asaasMethod === 'BOLETO' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Pagar com Boleto
-                </button>
-              </motion.div>
+                  <button
+                    type="button"
+                    onClick={() => setAsaasMethod('PIX')}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                      asaasMethod === 'PIX' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                    )}
+                  >
+                    PIX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAsaasMethod('BOLETO')}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                      asaasMethod === 'BOLETO' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                    )}
+                  >
+                    Boleto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAsaasMethod('CREDIT_CARD')}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                      asaasMethod === 'CREDIT_CARD' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                    )}
+                  >
+                    Cartão
+                  </button>
+                </motion.div>
+
+                {asaasMethod === 'CREDIT_CARD' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3"
+                  >
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                      Parcelamento (Asaas)
+                    </label>
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                      {[1, 2, 3, 4, 5, 6, 10, 12].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setInstallments(n)}
+                          className={cn(
+                            "flex-shrink-0 w-10 h-10 rounded-xl text-xs font-black transition-all border",
+                            installments === n 
+                              ? "bg-blue-600 border-blue-500 text-white" 
+                              : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300"
+                          )}
+                        >
+                          {n}x
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             )}
             
             <p className="text-slate-500 text-center text-[10px] font-medium italic">Ambiente seguro e processamento imediato.</p>
