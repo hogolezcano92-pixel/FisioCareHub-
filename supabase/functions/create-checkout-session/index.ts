@@ -97,18 +97,24 @@ serve(async (req) => {
         throw new Error("Materiais não encontrados")
       }
 
-      line_items = materials.map(item => ({
-        price_data: {
-          currency: "brl",
-          product_data: {
-            name: item.title,
-            description: item.description,
-            images: item.cover_image ? [item.cover_image] : [],
+      line_items = materials.map(item => {
+        // Stripe expects integers in cents. Price can be in price_cents or price (decimal).
+        const rawPrice = Number(item.price_cents) || (Number(item.price) * 100);
+        const unitAmount = Math.max(Math.round(rawPrice), 50); // Ensure at least 50 cents (Stripe minimum)
+
+        return {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: item.title,
+              description: item.description,
+              images: item.cover_image ? [item.cover_image] : [],
+            },
+            unit_amount: unitAmount,
           },
-          unit_amount: Math.round((Number(item.price_cents) || (Number(item.price) * 100))),
-        },
-        quantity: 1,
-      }))
+          quantity: 1,
+        };
+      })
       
       mode = "payment"
       metadata.type = material_ids ? 'library_purchase_bulk' : 'library_purchase'
