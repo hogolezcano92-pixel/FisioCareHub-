@@ -97,26 +97,16 @@ export default function LibraryPaymentModal({
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const { config } = await import('../config/api');
-      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
-      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
-
-      const response = await fetch(url, {
+      const response = await fetch('/api/asaas/create-library-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': config.supabaseAnonKey,
-          'Authorization': `Bearer ${config.supabaseAnonKey}`
         },
         body: JSON.stringify({
           user_id: userId,
           email: email,
           material_ids: materialIds,
-          type: 'material',
-          plan: 'material',
-          service_name: 'Materiais da Biblioteca de Saúde',
-          amount: 0, // Function calculates from DB
-          appointment_id: null
+          billingType: 'UNDEFINED' // Allow all types in Asaas
         })
       });
 
@@ -124,14 +114,14 @@ export default function LibraryPaymentModal({
       if (!response.ok) throw new Error(data.error || 'Erro ao criar checkout');
 
       if (data.url) {
-        toast.success('Redirecionando para o pagamento seguro...');
+        toast.success('Redirecionando para o pagamento via Asaas...');
         window.location.href = data.url;
       } else {
-        throw new Error('URL de checkout não retornada');
+        throw new Error('URL de pagamento não retornada');
       }
     } catch (err: any) {
-      console.error('Erro no checkout biblioteca:', err);
-      toast.error(err.message || 'Erro ao processar checkout');
+      console.error('Erro no checkout biblioteca (Asaas):', err);
+      toast.error(err.message || 'Erro ao processar pagamento com Asaas');
     } finally {
       setLoading(false);
     }
