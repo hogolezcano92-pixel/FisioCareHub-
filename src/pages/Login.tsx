@@ -3,8 +3,9 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
+import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 
 import SplashScreen from '../components/SplashScreen';
 import { AnimatePresence } from 'motion/react';
@@ -19,6 +20,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -114,13 +117,49 @@ export default function Login() {
     }
   };
 
+  useEffect(() => {
+    isBiometricsSupported().then(setIsBiometricSupported);
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    if (!email) {
+      setError('Por favor, digite seu e-mail para usar o login biométrico.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await loginWithBiometrics(email.trim().toLowerCase());
+      // On success, the helper will redirect or use the magic link
+    } catch (err: any) {
+      console.error("Erro no login biométrico:", err);
+      setError(err.message || 'Erro ao entrar com biometria.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterBiometrics = async () => {
+    try {
+      await registerBiometrics();
+      const { toast } = await import('sonner');
+      toast.success('Biometria ativada com sucesso!');
+      setShowBiometricPrompt(false);
+    } catch (err: any) {
+      console.error("Erro ao registrar biometria:", err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Erro ao ativar biometria.');
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setIsAuthenticating(true);
     setError('');
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
@@ -141,11 +180,24 @@ export default function Login() {
         return;
       }
 
+      // Check if user has biometrics registered
+      const { count } = await supabase
+        .from('webauthn_credentials')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', data.user?.id);
+
       // Force profile refresh to get the latest role
       await refreshProfile();
       
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
+
+      if (isBiometricSupported && count === 0) {
+        // Show prompt to register biometrics
+        setIsAuthenticating(false);
+        setShowBiometricPrompt(true);
+        return;
+      }
       
       // Get profile to check role and approval status
       const { data: profileData } = await supabase
@@ -185,6 +237,53 @@ export default function Login() {
   return (
     <>
       <AnimatePresence>
+        {showBiometricPrompt && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+              onClick={() => setShowBiometricPrompt(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] shadow-2xl text-center"
+            >
+              <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Fingerprint className="text-blue-500" size={40} />
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">Ativar Biometria?</h3>
+              <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                Use o Face ID, Touch ID ou o bloqueio de tela do seu dispositivo para entrar de forma rápida e segura.
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleRegisterBiometrics}
+                  className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 transition-all active:scale-95"
+                >
+                  Ativar Agora
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBiometricPrompt(false);
+                    // Continue to dashboard after dismissing
+                    navigate('/dashboard', { replace: true });
+                  }}
+                  className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-bold text-sm hover:bg-white/10 transition-all"
+                >
+                  Lembrar mais tarde
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isAuthenticating && <SplashScreen />}
       </AnimatePresence>
       
@@ -214,7 +313,10 @@ export default function Login() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">E-mail</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
                     <Mail className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   </div>
                   <input
@@ -222,7 +324,7 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full !pl-10 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -231,7 +333,10 @@ export default function Login() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Senha</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
                     <Lock className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   </div>
                   <input
@@ -239,7 +344,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full !pl-10 pr-12 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full pr-12 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
                     placeholder="••••••••"
                   />
                   <button
@@ -269,6 +374,18 @@ export default function Login() {
               >
                 {loading ? <Loader2 className="animate-spin" /> : 'Entrar na Conta'}
               </button>
+
+              {isBiometricSupported && (
+                <button
+                  type="button"
+                  onClick={handleBiometricLogin}
+                  disabled={loading}
+                  className="w-full py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  <Fingerprint size={20} className="text-blue-400" />
+                  Entrar com Face ID / Biometria
+                </button>
+              )}
 
               <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
