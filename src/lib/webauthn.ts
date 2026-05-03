@@ -1,11 +1,17 @@
-// Static imports are transformed by Vite at build time.
-// @simplewebauthn/browser is safe to import as it doesn't perform actions upon import.
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from './supabase';
+
+/**
+ * Helper to ensure we only load the browser library on the client side.
+ */
+async function loadSwa() {
+  if (typeof window === 'undefined') return null;
+  return await import('@simplewebauthn/browser');
+}
 
 export async function registerBiometrics() {
   try {
-    if (typeof window === 'undefined') throw new Error('Biometria só pode ser registrada no navegador.');
+    const swa = await loadSwa();
+    if (!swa) throw new Error('Biometria só pode ser registrada no navegador.');
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Usuário não autenticado');
@@ -24,8 +30,8 @@ export async function registerBiometrics() {
     
     const options = await optionsRes.json();
 
-    // 2. Start WebAuthn ceremony
-    const registrationResponse = await startRegistration({ optionsJSON: options });
+    // 2. Start WebAuthn ceremony (v10+ handles optionsJSON)
+    const registrationResponse = await swa.startRegistration({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/register', {
@@ -54,7 +60,8 @@ export async function registerBiometrics() {
 
 export async function loginWithBiometrics(email: string) {
   try {
-    if (typeof window === 'undefined') throw new Error('Biometria só pode ser utilizada no navegador.');
+    const swa = await loadSwa();
+    if (!swa) throw new Error('Biometria só pode ser utilizada no navegador.');
 
     // 1. Get options from server
     const optionsRes = await fetch('/api/auth/webauthn/login-options', {
@@ -70,8 +77,8 @@ export async function loginWithBiometrics(email: string) {
 
     const options = await optionsRes.json();
 
-    // 2. Start authentication ceremony
-    const authResponse = await startAuthentication({ optionsJSON: options });
+    // 2. Start authentication ceremony (v10+ handles optionsJSON)
+    const authResponse = await swa.startAuthentication({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/verify-login', {
