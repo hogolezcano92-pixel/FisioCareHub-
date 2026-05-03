@@ -1,15 +1,17 @@
 import { supabase } from './supabase';
 
-async function getSimpleWebAuthn() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
+/**
+ * Helper to ensure we only load the browser library on the client side.
+ */
+async function loadSwa() {
+  if (typeof window === 'undefined') return null;
+  // This dynamic import is processed by Vite and works in the browser.
   return await import('@simplewebauthn/browser');
 }
 
 export async function registerBiometrics() {
   try {
-    const swa = await getSimpleWebAuthn();
+    const swa = await loadSwa();
     if (!swa) throw new Error('Biometria só pode ser registrada no navegador.');
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -30,7 +32,9 @@ export async function registerBiometrics() {
     const options = await optionsRes.json();
 
     // 2. Start WebAuthn ceremony
-    const registrationResponse = await swa.startRegistration({ optionsJSON: options });
+    // Destructure the function from the dynamic import
+    const { startRegistration } = swa;
+    const registrationResponse = await startRegistration({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/register', {
@@ -59,7 +63,7 @@ export async function registerBiometrics() {
 
 export async function loginWithBiometrics(email: string) {
   try {
-    const swa = await getSimpleWebAuthn();
+    const swa = await loadSwa();
     if (!swa) throw new Error('Biometria só pode ser utilizada no navegador.');
 
     // 1. Get options from server
@@ -77,7 +81,9 @@ export async function loginWithBiometrics(email: string) {
     const options = await optionsRes.json();
 
     // 2. Start authentication ceremony
-    const authResponse = await swa.startAuthentication({ optionsJSON: options });
+    // Destructure the function from the dynamic import
+    const { startAuthentication } = swa;
+    const authResponse = await startAuthentication({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/verify-login', {
@@ -94,7 +100,6 @@ export async function loginWithBiometrics(email: string) {
     const verificationResult = await verifyRes.json();
 
     if (verificationResult.verified && verificationResult.magicLink) {
-      // Use the magic link to log in via Supabase
       window.location.href = verificationResult.magicLink;
     }
 
