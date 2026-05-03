@@ -7,6 +7,15 @@ import { createClient } from "@supabase/supabase-js";
 import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
+import { 
+  generateRegistrationOptions, 
+  verifyRegistrationResponse, 
+  generateAuthenticationOptions, 
+  verifyAuthenticationResponse,
+  type VerifiedRegistrationResponse,
+  type VerifiedAuthenticationResponse
+} from '@simplewebauthn/server';
+import { isoBase64URL } from '@simplewebauthn/server/helpers';
 
 dotenv.config();
 
@@ -630,6 +639,200 @@ async function startServer() {
   });
 
   app.use(express.json());
+
+  // --- WebAuthn (Biometric Auth) Implementation ---
+  const challenges = new Map<string, string>();
+  const RP_ID = process.env.RP_ID || (process.env.VITE_APP_URL ? new URL(process.env.VITE_APP_URL).hostname : 'localhost');
+  const RP_NAME = 'FisioCareHub Biometrics';
+
+  app.get("/api/auth/webauthn/registration-options", async (req, res) => {
+    try {
+      const accessToken = req.headers.authorization?.split(' ')[1];
+      if (!accessToken) return res.status(401).json({ error: "Unauthorized" });
+
+      const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(accessToken);
+      if (authError || !user) return res.status(401).json({ error: "Invalid session" });
+
+      const { data: credentials } = await getSupabaseAdmin()
+        .from('webauthn_credentials')
+        .select('credential_id, transports')
+        .eq('user_id', user.id);
+
+      const options = await generateRegistrationOptions({
+        rpName: RP_NAME,
+        rpID: RP_ID,
+        userID: user.id,
+        userName: user.email || user.id,
+        attestationType: 'none',
+        excludeCredentials: (credentials || []).map(c => ({
+          id: c.credential_id,
+          type: 'public-key',
+          transports: c.transports ? JSON.parse(c.transports) : undefined,
+        })),
+        authenticatorSelection: {
+          residentKey: 'preferred',
+          userVerification: 'preferred',
+          authenticatorAttachment: 'platform', // Enforce FaceID/TouchID/Fingerprint
+        },
+      });
+
+      challenges.set(user.id, options.challenge);
+      res.json(options);
+    } catch (err: any) {
+      console.error("[WebAuthn Registration Options] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/webauthn/register", async (req, res) => {
+    try {
+      const accessToken = req.headers.authorization?.split(' ')[1];
+      const { body } = req;
+      if (!accessToken) return res.status(401).json({ error: "Unauthorized" });
+
+      const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(accessToken);
+      if (authError || !user) return res.status(401).json({ error: "Invalid session" });
+
+      const expectedChallenge = challenges.get(user.id);
+      if (!expectedChallenge) return res.status(400).json({ error: "Challenge not found" });
+
+      const verification = await verifyRegistrationResponse({
+        response: body,
+        expectedChallenge,
+        expectedOrigin: process.env.VITE_APP_URL || `http://${RP_ID}:3000`,
+        expectedRPID: RP_ID,
+      });
+
+      if (verification.verified && verification.registrationInfo) {
+        const { credentialID, credentialPublicKey, counter } = verification.registrationInfo as any;
+
+        const { error: dbError } = await getSupabaseAdmin()
+          .from('webauthn_credentials')
+          .insert({
+            user_id: user.id,
+            credential_id: isoBase64URL.fromBuffer(credentialID),
+            public_key: isoBase64URL.fromBuffer(credentialPublicKey),
+            counter,
+            transports: JSON.stringify(body.response.transports || []),
+          });
+
+        if (dbError) throw dbError;
+        challenges.delete(user.id);
+        res.json({ verified: true });
+      } else {
+        res.status(400).json({ error: "Verification failed" });
+      }
+    } catch (err: any) {
+      console.error("[WebAuthn Register] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/webauthn/login-options", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email required" });
+
+      // Find user in perfis (since auth.users isn't directly queryable by email easily without admin)
+      const { data: profile } = await getSupabaseAdmin()
+        .from('perfis')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!profile) return res.status(404).json({ error: "User not found" });
+
+      const { data: credentials } = await getSupabaseAdmin()
+        .from('webauthn_credentials')
+        .select('credential_id, transports')
+        .eq('user_id', profile.id);
+
+      if (!credentials || credentials.length === 0) {
+        return res.status(400).json({ error: "No biometric credentials registered" });
+      }
+
+      const options = await generateAuthenticationOptions({
+        rpID: RP_ID,
+        allowCredentials: credentials.map(c => ({
+          id: c.credential_id,
+          type: 'public-key',
+          transports: c.transports ? JSON.parse(c.transports) : undefined,
+        })),
+        userVerification: 'preferred',
+      });
+
+      challenges.set(email, options.challenge);
+      res.json(options);
+    } catch (err: any) {
+      console.error("[WebAuthn Login Options] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/webauthn/verify-login", async (req, res) => {
+    try {
+      const { body, email } = req.body;
+      if (!email || !body) return res.status(400).json({ error: "Missing data" });
+
+      const expectedChallenge = challenges.get(email);
+      if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired" });
+
+      // Find user
+      const { data: profile } = await getSupabaseAdmin()
+        .from('perfis')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+
+      const { data: credential } = await getSupabaseAdmin()
+        .from('webauthn_credentials')
+        .select('*')
+        .eq('credential_id', body.id)
+        .eq('user_id', profile.id)
+        .single();
+
+      if (!credential) return res.status(400).json({ error: "Credential not found" });
+
+      const verification = await verifyAuthenticationResponse({
+        response: body,
+        expectedChallenge,
+        expectedOrigin: process.env.VITE_APP_URL || `http://${RP_ID}:3000`,
+        expectedRPID: RP_ID,
+        authenticator: {
+          credentialID: isoBase64URL.toBuffer(credential.credential_id),
+          credentialPublicKey: isoBase64URL.toBuffer(credential.public_key),
+          counter: Number(credential.counter),
+        },
+      } as any);
+
+      if (verification.verified && verification.authenticationInfo) {
+        // Update counter
+        await getSupabaseAdmin()
+          .from('webauthn_credentials')
+          .update({ counter: (verification.authenticationInfo as any).newCounter })
+          .eq('id', credential.id);
+
+        challenges.delete(email);
+
+        // Generate a magic link / OTP for Supabase login
+        // This allows the client to sign in without a password
+        const { data: linkData, error: linkError } = await getSupabaseAdmin().auth.admin.generateLink({
+          type: 'magiclink',
+          email: profile.email,
+          options: { redirectTo: `${process.env.VITE_APP_URL || ''}/dashboard` }
+        });
+
+        if (linkError) throw linkError;
+
+        res.json({ verified: true, magicLink: linkData.properties.action_link });
+      } else {
+        res.status(400).json({ error: "Authentication failed" });
+      }
+    } catch (err: any) {
+      console.error("[WebAuthn Verify Login] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // Library Material Deletion (Secure Admin Endpoint)
   app.post("/api/library/delete", async (req, res) => {
