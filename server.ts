@@ -642,7 +642,10 @@ async function startServer() {
 
   // --- WebAuthn (Biometric Auth) Implementation ---
   const challenges = new Map<string, string>();
-  const RP_ID = process.env.RP_ID || (process.env.VITE_APP_URL ? new URL(process.env.VITE_APP_URL).hostname : 'localhost');
+  
+  // Get base URL for origin and hostname for rpID
+  const APP_URL = process.env.VITE_APP_URL || `http://localhost:3000`;
+  const RP_ID = new URL(APP_URL).hostname;
   const RP_NAME = 'FisioCareHub Biometrics';
 
   app.get("/api/auth/webauthn/registration-options", async (req, res) => {
@@ -661,7 +664,7 @@ async function startServer() {
       const options = await generateRegistrationOptions({
         rpName: RP_NAME,
         rpID: RP_ID,
-        userID: user.id,
+        userID: user.id, // String is handled by simplewebauthn
         userName: user.email || user.id,
         attestationType: 'none',
         excludeCredentials: (credentials || []).map(c => ({
@@ -672,10 +675,11 @@ async function startServer() {
         authenticatorSelection: {
           residentKey: 'preferred',
           userVerification: 'preferred',
-          authenticatorAttachment: 'platform', // Enforce FaceID/TouchID/Fingerprint
+          authenticatorAttachment: 'platform',
         },
       });
 
+      // Save challenge (it is already base64url string in the return of options)
       challenges.set(user.id, options.challenge);
       res.json(options);
     } catch (err: any) {
@@ -699,7 +703,7 @@ async function startServer() {
       const verification = await verifyRegistrationResponse({
         response: body,
         expectedChallenge,
-        expectedOrigin: process.env.VITE_APP_URL || `http://${RP_ID}:3000`,
+        expectedOrigin: APP_URL,
         expectedRPID: RP_ID,
       });
 
@@ -733,7 +737,6 @@ async function startServer() {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: "Email required" });
 
-      // Find user in perfis (since auth.users isn't directly queryable by email easily without admin)
       const { data: profile } = await getSupabaseAdmin()
         .from('perfis')
         .select('id')
@@ -777,7 +780,6 @@ async function startServer() {
       const expectedChallenge = challenges.get(email);
       if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired" });
 
-      // Find user
       const { data: profile } = await getSupabaseAdmin()
         .from('perfis')
         .select('id, email')
@@ -796,7 +798,7 @@ async function startServer() {
       const verification = await verifyAuthenticationResponse({
         response: body,
         expectedChallenge,
-        expectedOrigin: process.env.VITE_APP_URL || `http://${RP_ID}:3000`,
+        expectedOrigin: APP_URL,
         expectedRPID: RP_ID,
         authenticator: {
           credentialID: isoBase64URL.toBuffer(credential.credential_id),
@@ -806,7 +808,6 @@ async function startServer() {
       } as any);
 
       if (verification.verified && verification.authenticationInfo) {
-        // Update counter
         await getSupabaseAdmin()
           .from('webauthn_credentials')
           .update({ counter: (verification.authenticationInfo as any).newCounter })
@@ -814,16 +815,13 @@ async function startServer() {
 
         challenges.delete(email);
 
-        // Generate a magic link / OTP for Supabase login
-        // This allows the client to sign in without a password
         const { data: linkData, error: linkError } = await getSupabaseAdmin().auth.admin.generateLink({
           type: 'magiclink',
           email: profile.email,
-          options: { redirectTo: `${process.env.VITE_APP_URL || ''}/dashboard` }
+          options: { redirectTo: `${APP_URL}/dashboard` }
         });
 
         if (linkError) throw linkError;
-
         res.json({ verified: true, magicLink: linkData.properties.action_link });
       } else {
         res.status(400).json({ error: "Authentication failed" });
