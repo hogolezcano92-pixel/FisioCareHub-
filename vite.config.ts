@@ -1,22 +1,13 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv } from 'vite';
-import { fileURLToPath } from 'url';
 import path from 'path';
+import {defineConfig, loadEnv} from 'vite';
 
-// Simulação do __dirname para módulos ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export default defineConfig(({ mode }) => {
+export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
-  
   return {
-    // Definimos a base como '/' para garantir que o Vercel ache os arquivos
-    base: '/',
     plugins: [react(), tailwindcss()],
     build: {
-      outDir: 'dist', // Garante que a saída seja na pasta dist
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
@@ -27,12 +18,13 @@ export default defineConfig(({ mode }) => {
             'vendor-charts': ['recharts'],
             'vendor-pdf': ['jspdf', 'jspdf-autotable', 'html2canvas', 'docx', 'file-saver'],
             'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
+            'vendor-auth': ['@simplewebauthn/browser'],
           }
         }
       }
     },
     optimizeDeps: {
-      include: ['docx', 'file-saver', 'jspdf-autotable']
+      include: ['docx', 'file-saver', 'jspdf-autotable', '@simplewebauthn/browser']
     },
     define: {
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || env.SUPABASE_URL),
@@ -42,11 +34,12 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // Alterado para apontar para 'src', que é o padrão mais seguro
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(__dirname, '.'),
       },
     },
     server: {
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
