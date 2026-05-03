@@ -1,8 +1,17 @@
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from './supabase';
+
+async function getSimpleWebAuthn() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return await import('@simplewebauthn/browser');
+}
 
 export async function registerBiometrics() {
   try {
+    const swa = await getSimpleWebAuthn();
+    if (!swa) throw new Error('Biometria só pode ser registrada no navegador.');
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Usuário não autenticado');
 
@@ -21,7 +30,7 @@ export async function registerBiometrics() {
     const options = await optionsRes.json();
 
     // 2. Start WebAuthn ceremony
-    const registrationResponse = await startRegistration({ optionsJSON: options });
+    const registrationResponse = await swa.startRegistration({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/register', {
@@ -50,6 +59,9 @@ export async function registerBiometrics() {
 
 export async function loginWithBiometrics(email: string) {
   try {
+    const swa = await getSimpleWebAuthn();
+    if (!swa) throw new Error('Biometria só pode ser utilizada no navegador.');
+
     // 1. Get options from server
     const optionsRes = await fetch('/api/auth/webauthn/login-options', {
       method: 'POST',
@@ -65,7 +77,7 @@ export async function loginWithBiometrics(email: string) {
     const options = await optionsRes.json();
 
     // 2. Start authentication ceremony
-    const authResponse = await startAuthentication({ optionsJSON: options });
+    const authResponse = await swa.startAuthentication({ optionsJSON: options });
 
     // 3. Verify on server
     const verifyRes = await fetch('/api/auth/webauthn/verify-login', {
@@ -83,9 +95,6 @@ export async function loginWithBiometrics(email: string) {
 
     if (verificationResult.verified && verificationResult.magicLink) {
       // Use the magic link to log in via Supabase
-      // In a real app, we might want to exchange this magic link for a session directly or redirect
-      // Since we are in SPA, we can just use the token from the magic link URL if it contains one, 
-      // or just redirect the window.
       window.location.href = verificationResult.magicLink;
     }
 
@@ -100,8 +109,10 @@ export async function loginWithBiometrics(email: string) {
 }
 
 export async function isBiometricsSupported() {
+  if (typeof window === 'undefined') return false;
+  
   return (
-    window.PublicKeyCredential &&
+    !!window.PublicKeyCredential &&
     typeof window.PublicKeyCredential === 'function' &&
     await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
   );
