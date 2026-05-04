@@ -35,95 +35,71 @@ interface KineAIProps {
   onClose?: () => void;
 }
 
-// Componente Visual do Novo Ícone da KineAI (Quantum Core)
+// Componente Visual do Novo Ícone da KineAI (Quantum Orb Core)
 const KineIcon = ({ size = "md", active = false }: { size?: "sm" | "md" | "lg", active?: boolean }) => {
   const dimensions = {
-    sm: "w-8 h-8",
-    md: "w-14 h-14",
-    lg: "w-20 h-20"
-  }[size];
-
-  const iconSize = {
-    sm: 16,
-    md: 28,
-    lg: 40
+    sm: "w-10 h-10",
+    md: "w-16 h-16",
+    lg: "w-24 h-24"
   }[size];
 
   return (
     <div className={cn("relative flex items-center justify-center", dimensions)}>
-      {/* Camada de Aura Quantum (Glow) */}
+      {/* Aura Externa Dinâmica */}
       <motion.div
         animate={{
-          scale: active ? [1, 1.3, 1] : [1, 1.1, 1],
-          opacity: active ? [0.4, 0.7, 0.4] : [0.2, 0.4, 0.2],
+          scale: active ? [1, 1.4, 1] : [1, 1.1, 1],
+          opacity: active ? [0.6, 0.3, 0.6] : [0.2, 0.4, 0.2],
         }}
-        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-        className="absolute inset-0 bg-cyan-400/30 rounded-full blur-2xl"
+        transition={{ repeat: Infinity, duration: active ? 1.5 : 4, ease: "easeInOut" }}
+        className="absolute inset-0 bg-gradient-to-tr from-cyan-500/40 via-blue-500/40 to-purple-500/40 rounded-full blur-3xl"
       />
       
-      {/* Halo de Energia Violeta */}
-      <motion.div
-        animate={{
-          rotate: [0, 180, 360],
-          scale: active ? [1.1, 1.2, 1.1] : [1, 1.05, 1],
-        }}
-        transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-        className="absolute inset-[-4px] border border-violet-500/20 rounded-full blur-[2px]"
-      />
-
-      {/* Anéis Orbitais de Dados */}
+      {/* Anéis de Energia Quantum */}
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-        className={cn(
-          "absolute inset-0 border-2 border-dashed border-cyan-500/40 rounded-full",
-          size === "sm" ? "border-1" : "border-2"
-        )}
+        transition={{ repeat: Infinity, duration: active ? 4 : 10, ease: "linear" }}
+        className="absolute inset-0 border border-white/10 rounded-full border-dashed"
       />
-
       <motion.div
         animate={{ rotate: -360 }}
-        transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-        className="absolute inset-2 border border-white/10 rounded-full"
+        transition={{ repeat: Infinity, duration: active ? 6 : 15, ease: "linear" }}
+        className="absolute inset-2 border border-cyan-500/20 rounded-full"
       />
 
-      {/* Núcleo Central Cristalino */}
-      <div className="relative w-full h-full bg-slate-900/40 backdrop-blur-3xl rounded-3xl flex items-center justify-center shadow-2xl border border-white/20 overflow-hidden ring-1 ring-white/10">
-        {/* Gradiente Interno Animado */}
+      {/* O Orb Central Cristalino */}
+      <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center border border-white/20 shadow-[0_0_40px_rgba(34,211,238,0.4)] bg-[#05070A]">
+        {/* Camadas de Fluidos Coloridos */}
         <motion.div 
           animate={{
-            background: [
-              "radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)",
-              "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)",
-              "radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)",
-            ]
+            rotate: [0, 180, 360],
+            scale: active ? [1, 1.3, 1] : 1
           }}
-          transition={{ repeat: Infinity, duration: 5 }}
-          className="absolute inset-0" 
+          transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+          className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-600 to-purple-600 opacity-80 blur-lg" 
         />
         
+        {/* Núcleo de Luz Intenso */}
         <motion.div
           animate={{
-            y: [0, -3, 0],
-            scale: active ? [1, 1.1, 1] : 1
+            scale: active ? [1, 1.5, 1] : [1, 1.1, 1],
+            opacity: [0.7, 1, 0.7]
           }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          className="relative z-10"
-        >
-          <BrainCircuit size={iconSize} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-        </motion.div>
-        
-        {/* Specular highlights */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+          transition={{ repeat: Infinity, duration: active ? 0.8 : 2.5, ease: "easeInOut" }}
+          className="relative z-10 w-1/3 h-1/3 bg-white rounded-full blur-[4px] shadow-[0_0_20px_#fff]"
+        />
+
+        {/* Reflexos de Vidro */}
+        <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-white/10 to-white/30 pointer-events-none" />
       </div>
 
-      {/* Partículas de Pulso */}
+      {/* Onda de Pulso Ativa */}
       {active && (
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 2, opacity: [0, 0.5, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute inset-0 border-2 border-cyan-400/30 rounded-3xl"
+          animate={{ scale: 2.2, opacity: [0, 0.4, 0] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="absolute inset-0 border border-cyan-400/50 rounded-full"
         />
       )}
     </div>
@@ -362,26 +338,36 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     transition={{ delay: 0.05 }}
                     key={msg.id}
                     className={cn(
-                      "flex flex-col gap-2 group",
-                      msg.role === 'user' ? "items-end" : "items-start"
+                      "flex gap-3 group",
+                      msg.role === 'user' ? "flex-row-reverse items-end" : "flex-row items-start"
                     )}
                   >
+                    {msg.role === 'model' && (
+                      <div className="flex-shrink-0 mt-1">
+                        <KineIcon size="sm" active={false} />
+                      </div>
+                    )}
                     <div className={cn(
-                      "max-w-[88%] p-5 rounded-[2rem] text-[15px] leading-relaxed transition-all duration-300",
-                      msg.role === 'user' 
-                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none shadow-xl shadow-blue-900/20" 
-                        : "bg-white/[0.03] backdrop-blur-xl text-slate-100 border border-white/10 rounded-bl-none shadow-sm hover:bg-white/[0.05]"
+                      "flex flex-col gap-1",
+                      msg.role === 'user' ? "items-end" : "items-start"
                     )}>
                       <div className={cn(
-                        "prose prose-sm max-w-none prose-p:leading-relaxed prose-p:m-0 text-inherit",
-                        msg.role === 'model' ? "prose-strong:text-cyan-400" : "prose-strong:text-white"
+                        "max-w-[88%] p-5 rounded-[2rem] text-[15px] leading-relaxed transition-all duration-300",
+                        msg.role === 'user' 
+                          ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none shadow-xl shadow-blue-900/20" 
+                          : "bg-white/[0.03] backdrop-blur-xl text-slate-100 border border-white/10 rounded-bl-none shadow-sm hover:bg-white/[0.05]"
                       )}>
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        <div className={cn(
+                          "prose prose-sm max-w-none prose-p:leading-relaxed prose-p:m-0 text-inherit",
+                          msg.role === 'model' ? "prose-strong:text-cyan-400" : "prose-strong:text-white"
+                        )}>
+                          <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-1 transition-opacity opacity-0 group-hover:opacity-100">
+                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-1 transition-opacity opacity-0 group-hover:opacity-100">
-                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
                   </motion.div>
                 ))}
                 
@@ -389,11 +375,9 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                   <motion.div 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-4"
+                    className="flex items-start gap-3"
                   >
-                    <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
-                      <BrainCircuit className="w-5 h-5 text-cyan-400/80" />
-                    </div>
+                    <KineIcon size="sm" active={true} />
                     <div className="flex gap-2 p-4 px-6 bg-white/[0.03] backdrop-blur-md rounded-[1.5rem] rounded-tl-none border border-white/10 shadow-inner">
                       <motion.div animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                       <motion.div animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
@@ -425,7 +409,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     e.preventDefault();
                     handleSendMessage();
                   }}
-                  className="flex items-center gap-4 bg-white/[0.03] border border-white/10 rounded-[2rem] p-2 pr-2.5 shadow-2xl focus-within:border-cyan-500/40 focus-within:bg-white/[0.05] transition-all group"
+                  className="flex items-center gap-6 bg-white/[0.03] border border-white/10 rounded-[2rem] p-2.5 pr-3 shadow-2xl focus-within:border-cyan-500/40 focus-within:bg-white/[0.05] transition-all group"
                 >
                   <button
                     type="button"
@@ -445,13 +429,13 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="Pergunte sobre sua reabilitação..."
-                    className="flex-1 py-1 bg-transparent text-[15px] font-medium text-white placeholder:text-white/20 outline-none"
+                    className="flex-1 py-1 bg-transparent text-[15px] font-medium text-white placeholder:text-white/20 outline-none px-2"
                   />
                   
                   <button
                     type="submit"
                     disabled={!inputText.trim() || loading}
-                    className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-cyan-500 text-[#0A0D14] rounded-[1.25rem] hover:bg-cyan-400 disabled:opacity-20 disabled:grayscale transition-all shadow-lg hover:shadow-cyan-500/30 group-active:scale-95"
+                    className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-cyan-500 text-[#0A0D14] rounded-[1.25rem] hover:bg-cyan-400 disabled:opacity-20 disabled:grayscale transition-all shadow-lg hover:shadow-cyan-500/30 group-active:scale-95 ml-2"
                   >
                     <Send size={20} className="translate-x-0.5" />
                   </button>
