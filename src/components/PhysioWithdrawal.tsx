@@ -9,7 +9,8 @@ import {
   Loader2,
   AlertCircle,
   History,
-  TrendingUp
+  TrendingUp,
+  UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,10 +32,32 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState<WithdrawalRequest[]>([]);
   const [pendingRequest, setPendingRequest] = useState<WithdrawalRequest | null>(null);
+  const [hasCpf, setHasCpf] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchWithdrawalHistory();
+    checkCpfAndFetchHistory();
   }, [userId]);
+
+  const checkCpfAndFetchHistory = async () => {
+    try {
+      setLoading(true);
+      
+      // Check for CPF
+      const { data: profile } = await supabase
+        .from('perfis')
+        .select('cpf_cnpj')
+        .eq('id', userId)
+        .single();
+      
+      setHasCpf(!!profile?.cpf_cnpj);
+
+      await fetchWithdrawalHistory();
+    } catch (err) {
+      console.error('Erro ao verificar perfil:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchWithdrawalHistory = async () => {
     try {
@@ -68,6 +91,11 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
 
     if (pendingRequest) {
       toast.error('Você já possui uma solicitação de saque em análise.');
+      return;
+    }
+
+    if (!hasCpf) {
+      toast.error('Você precisa cadastrar seu CPF no perfil para solicitar saques.');
       return;
     }
 
@@ -158,6 +186,26 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
           </button>
         </div>
       </div>
+
+      {!hasCpf && (
+        <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] flex items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center">
+              <UserCheck size={24} />
+            </div>
+            <div>
+              <p className="font-black text-rose-400 text-sm uppercase tracking-tight">CPF Obrigatório</p>
+              <p className="text-xs text-slate-400 font-medium max-w-md">Para realizar saques, é necessário que seu CPF esteja cadastrado em seu perfil por motivos de segurança e tributação.</p>
+            </div>
+          </div>
+          <a 
+            href="/profile?tab=profile_prof" 
+            className="px-6 py-3 bg-rose-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-900/20"
+          >
+            Completar Perfil
+          </a>
+        </div>
+      )}
 
       {pendingRequest && (
         <div className="p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
