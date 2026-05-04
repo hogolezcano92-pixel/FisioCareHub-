@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch, Check, Search } from 'lucide-react';
+import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch, Check, Search, Mic, MicOff, Waves } from 'lucide-react';
 import { generateSOAPRecord, summarizePatientHistory } from '../../lib/groq';
+import { kineAIService } from '../../services/kineAI';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
@@ -22,10 +23,21 @@ interface SOAPIntelligentRecordProps {
   onSave?: () => void;
 }
 
+// Extend Window interface for SpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRecordProps) => {
   const { profile } = useAuth();
   const [rawText, setRawText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
   const [soapData, setSoapData] = useState<SOAPData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -81,6 +93,72 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [patientSearch, setPatientSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'pt-BR';
+
+      recognitionInstance.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setRawText(transcript);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        toast.error('Erro na captura de voz. Tente novamente.');
+      };
+
+      recognitionInstance.onend = () => {
+        setIsRecording(false);
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognition?.stop();
+      // Wait a bit for the last result to be set before processing
+      setTimeout(() => {
+        processVoiceToSOAP();
+      }, 500);
+    } else {
+      if (!recognition) {
+        toast.error('Seu navegador não suporta reconhecimento de voz.');
+        return;
+      }
+      setRawText('');
+      recognition.start();
+      setIsRecording(true);
+      toast.info('Gravando áudio...');
+    }
+  };
+
+  const processVoiceToSOAP = async () => {
+    if (!rawText.trim()) return;
+    
+    setIsVoiceProcessing(true);
+    try {
+      const result = await kineAIService.processClinicalVoice(rawText);
+      setSoapData(result);
+      toast.success('Prontuário estruturado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao estruturar prontuário. Tente novamente.');
+    } finally {
+      setIsVoiceProcessing(false);
+    }
+  };
 
   const searchPatients = async (query: string) => {
     if (query.length < 2 || !profile) {
@@ -246,22 +324,94 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           </h3>
           <p className="text-slate-400 text-[9px] font-medium">IA estruturando seu relato bruto.</p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest">
-            Profissional
-          </div>
-          {pacienteId && (
+        <div className="flex items-center gap-2">
+          {!isReadOnly && (
             <button
-              onClick={handleSummarize}
-              disabled={isSummarizing}
-              className="flex items-center gap-1 text-[7px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest"
+              onClick={toggleRecording}
+              className={cn(
+                "relative group flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-lg",
+                isRecording 
+                  ? "bg-rose-500 text-white shadow-rose-900/40 ring-4 ring-rose-500/20" 
+                  : "bg-blue-600 text-white shadow-blue-900/40 hover:bg-blue-700"
+              )}
             >
-              {isSummarizing ? <Loader2 className="animate-spin" size={7} /> : <FileSearch size={7} />}
-              Resumir Histórico
+              {isRecording && (
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="absolute inset-0 bg-rose-500 rounded-xl"
+                />
+              )}
+              {isRecording ? <MicOff size={20} className="relative z-10" /> : <Mic size={20} className="relative z-10" />}
             </button>
           )}
+          <div className="flex flex-col items-end gap-1">
+            <div className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest">
+              Profissional
+            </div>
+            {pacienteId && (
+              <button
+                onClick={handleSummarize}
+                disabled={isSummarizing}
+                className="flex items-center gap-1 text-[7px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest"
+              >
+                {isSummarizing ? <Loader2 className="animate-spin" size={7} /> : <FileSearch size={7} />}
+                Resumir Histórico
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Voice Processing Visualizer */}
+      <AnimatePresence>
+        {isRecording && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="p-3 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20 rounded-xl flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1 items-center">
+                {[...Array(4)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ height: [8, 16, 8] }}
+                    transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
+                    className="w-1 bg-cyan-400 rounded-full"
+                  />
+                ))}
+              </div>
+              <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Gravando Áudio em Tempo Real...</span>
+            </div>
+            <button 
+              onClick={toggleRecording}
+              className="px-3 py-1 bg-rose-500 text-white rounded-lg text-[8px] font-black uppercase tracking-tighter shadow-md"
+            >
+              Parar e Processar
+            </button>
+          </motion.div>
+        )}
+
+        {isVoiceProcessing && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="p-4 bg-slate-900/90 backdrop-blur-md border border-blue-500/30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center"
+          >
+            <div className="relative">
+              <Loader2 className="animate-spin text-blue-500" size={32} />
+              <Waves className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-400/50" size={16} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-white">KineAI está estruturando seu prontuário...</h4>
+              <p className="text-[10px] text-slate-400 font-medium italic">Analisando relato clínico para gerar modelo SOAP</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Patient Context Header */}
       <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center justify-between group transition-all">
