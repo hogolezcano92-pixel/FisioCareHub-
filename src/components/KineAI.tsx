@@ -36,70 +36,58 @@ interface KineAIProps {
 }
 
 // Componente Visual do Novo Ícone da KineAI (Quantum Orb Core)
-const KineIcon = ({ size = "md", active = false }: { size?: "sm" | "md" | "lg", active?: boolean }) => {
+export const KineIcon = ({ size = "md", active = false, className }: { size?: "xs" | "sm" | "md" | "lg", active?: boolean, className?: string }) => {
   const dimensions = {
+    xs: "w-7 h-7",
     sm: "w-10 h-10",
-    md: "w-16 h-16",
-    lg: "w-24 h-24"
+    md: "w-14 h-14",
+    lg: "w-20 h-20"
   }[size];
 
   return (
-    <div className={cn("relative flex items-center justify-center", dimensions)}>
-      {/* Aura Externa Dinâmica */}
+    <div className={cn("relative flex items-center justify-center shrink-0", dimensions, className)}>
+      {/* Camada de Brilho Sutil (Glow) */}
       <motion.div
         animate={{
-          scale: active ? [1, 1.4, 1] : [1, 1.1, 1],
-          opacity: active ? [0.6, 0.3, 0.6] : [0.2, 0.4, 0.2],
+          scale: active ? [1, 1.2, 1] : [1, 1.05, 1],
+          opacity: active ? [0.4, 0.6, 0.4] : [0.1, 0.2, 0.1],
         }}
-        transition={{ repeat: Infinity, duration: active ? 1.5 : 4, ease: "easeInOut" }}
-        className="absolute inset-0 bg-gradient-to-tr from-cyan-500/40 via-blue-500/40 to-purple-500/40 rounded-full blur-3xl"
+        transition={{ repeat: Infinity, duration: active ? 2 : 5, ease: "easeInOut" }}
+        className="absolute inset-0 bg-cyan-400/30 rounded-full blur-xl"
       />
       
-      {/* Anéis de Energia Quantum */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: active ? 4 : 10, ease: "linear" }}
-        className="absolute inset-0 border border-white/10 rounded-full border-dashed"
-      />
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ repeat: Infinity, duration: active ? 6 : 15, ease: "linear" }}
-        className="absolute inset-2 border border-cyan-500/20 rounded-full"
-      />
-
-      {/* O Orb Central Cristalino */}
-      <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center border border-white/20 shadow-[0_0_40px_rgba(34,211,238,0.4)] bg-[#05070A]">
-        {/* Camadas de Fluidos Coloridos */}
+      {/* Orb Central Premium */}
+      <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center border border-white/20 bg-slate-900 shadow-inner">
+        {/* Gradiente Rotativo Suave */}
         <motion.div 
           animate={{
-            rotate: [0, 180, 360],
-            scale: active ? [1, 1.3, 1] : 1
+            rotate: [0, 360],
           }}
-          transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-          className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-600 to-purple-600 opacity-80 blur-lg" 
+          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+          className="absolute inset-0 bg-gradient-to-tr from-blue-600 via-cyan-500 to-purple-600 opacity-60 blend-screen" 
         />
         
-        {/* Núcleo de Luz Intenso */}
+        {/* Núcleo de Inteligência (Core) */}
         <motion.div
           animate={{
-            scale: active ? [1, 1.5, 1] : [1, 1.1, 1],
-            opacity: [0.7, 1, 0.7]
+            scale: active ? [0.8, 1.1, 0.8] : [0.9, 1, 0.9],
+            opacity: [0.8, 1, 0.8]
           }}
-          transition={{ repeat: Infinity, duration: active ? 0.8 : 2.5, ease: "easeInOut" }}
-          className="relative z-10 w-1/3 h-1/3 bg-white rounded-full blur-[4px] shadow-[0_0_20px_#fff]"
+          transition={{ repeat: Infinity, duration: active ? 1 : 3, ease: "easeInOut" }}
+          className="relative z-10 w-2/5 h-2/5 bg-white rounded-full blur-[2px] shadow-[0_0_15px_#fff]"
         />
 
-        {/* Reflexos de Vidro */}
-        <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-white/10 to-white/30 pointer-events-none" />
+        {/* Efeito de Reflexo de Vidro */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
       </div>
 
-      {/* Onda de Pulso Ativa */}
+      {/* Onda de Pulso (Apenas se Ativo) */}
       {active && (
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 2.2, opacity: [0, 0.4, 0] }}
+          animate={{ scale: 1.8, opacity: [0, 0.3, 0] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
-          className="absolute inset-0 border border-cyan-400/50 rounded-full"
+          className="absolute inset-0 border border-cyan-400/40 rounded-full"
         />
       )}
     </div>
