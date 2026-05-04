@@ -78,6 +78,7 @@ const PatientExercises = lazy(() => import('./pages/PatientExercises'));
 const PhysioTriages = lazy(() => import('./pages/PhysioTriages'));
 const PhysioEvaluationsList = lazy(() => import('./pages/PhysioEvaluationsList'));
 const PhysioEvaluationForm = lazy(() => import('./pages/PhysioEvaluationForm'));
+const DailyJournal = lazy(() => import('./pages/DailyJournal'));
 const AppPreview = lazy(() => import('./pages/AppPreview'));
 const About = lazy(() => import('./pages/About'));
 const Partner = lazy(() => import('./pages/Partner'));
@@ -292,6 +293,7 @@ function Navbar() {
 
       // Items for Patients
       ...(profile?.tipo_usuario === 'paciente' ? [
+        { name: 'Diário de Dor', path: '/diario', icon: Activity },
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
@@ -773,6 +775,7 @@ function AppContent() {
                   
                   {/* Protected Routes */}
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
                   <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
