@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Sparkles,
   Bot,
+  BrainCircuit,
   CheckCheck,
   Lock,
   LogIn,
@@ -448,7 +449,7 @@ export default function Chat() {
               }}
               className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2 border border-blue-500/20"
             >
-              <Bot size={14} />
+              <BrainCircuit size={14} />
               Suporte IA
             </button>
           </div>
