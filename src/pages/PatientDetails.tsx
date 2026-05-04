@@ -44,6 +44,7 @@ export default function PatientDetails() {
   const [prescricoes, setPrescricoes] = useState<any[]>([]);
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
+  const [dailyJournals, setDailyJournals] = useState<any[]>([]);
 
   // Modal States
   const [showEvolucaoModal, setShowEvolucaoModal] = useState(false);
@@ -133,6 +134,14 @@ export default function PatientDetails() {
         .eq('paciente_id', id)
         .order('created_at', { ascending: false });
       setAvaliacoes(avaData || []);
+
+      // Fetch Daily Journals
+      const { data: journalData } = await supabase
+        .from('registros_paciente')
+        .select('*')
+        .eq('paciente_id', id)
+        .order('data_registro', { ascending: false });
+      setDailyJournals(journalData || []);
 
       // Fetch Biblioteca de Exercícios
       const { data: bibData } = await supabase
@@ -299,6 +308,7 @@ export default function PatientDetails() {
           { id: 'ficha', label: 'Ficha Clínica', icon: User },
           { id: 'avaliacoes', label: 'Avaliações', icon: Stethoscope },
           { id: 'evolucoes', label: 'Evoluções', icon: Activity },
+          { id: 'diario', label: 'Diário de Dor', icon: Activity },
           { id: 'arquivos', label: 'Exames e Fotos', icon: Paperclip },
           { id: 'prescricoes', label: 'Prescrições', icon: Dna },
         ].map((tab) => (
@@ -492,6 +502,99 @@ export default function PatientDetails() {
                             <p className="text-blue-400 font-bold leading-relaxed">{ev.plano}</p>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'diario' && (
+            <motion.div
+              key="diario"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <h3 className="text-2xl font-black text-white">Diário de Dor e Adesão</h3>
+              
+              {dailyJournals.length === 0 ? (
+                <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center shadow-2xl">
+                  <Activity size={48} className="text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 font-bold">O paciente ainda não registrou nada no diário.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {dailyJournals.map((journal) => (
+                    <div 
+                      key={journal.id} 
+                      className={cn(
+                        "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border shadow-2xl transition-all relative overflow-hidden group",
+                        journal.visualizado_por_fisio ? "border-white/5" : "border-blue-500/30 ring-2 ring-blue-500/10"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg transition-colors",
+                            journal.nivel_dor > 7 ? "bg-rose-500 text-white" : journal.nivel_dor > 4 ? "bg-yellow-500 text-slate-950" : "bg-emerald-500 text-white"
+                          )}>
+                            {journal.nivel_dor}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nível de Dor</p>
+                            <p className="text-sm font-bold text-white">{new Date(journal.data_registro).toLocaleDateString('pt-BR')}</p>
+                          </div>
+                        </div>
+                        {!journal.visualizado_por_fisio && (
+                          <button 
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from('registros_paciente')
+                                .update({ 
+                                  visualizado_por_fisio: true, 
+                                  visualizado_em: new Date().toISOString() 
+                                })
+                                .eq('id', journal.id);
+                              if (!error) fetchPatientData();
+                            }}
+                            className="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                            title="Marcar como Visualizado"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Adesão Prescrita</p>
+                           <span className="text-sm font-black text-emerald-400">
+                             {journal.concluidos_count}/{journal.total_exercicios}
+                           </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                           <div 
+                             className="h-full bg-emerald-500" 
+                             style={{ width: `${(journal.concluidos_count / (journal.total_exercicios || 1)) * 100}%` }} 
+                           />
+                        </div>
+
+                        {journal.notas && (
+                          <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Notas do Dia</p>
+                            <p className="text-xs font-medium text-slate-300 italic">"{journal.notas}"</p>
+                          </div>
+                        )}
+                        
+                        {journal.visualizado_por_fisio && (
+                           <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest flex items-center gap-1">
+                              <CheckCircle2 size={10} />
+                              Visualizado em {new Date(journal.visualizado_em).toLocaleDateString()}
+                           </p>
+                        )}
                       </div>
                     </div>
                   ))}

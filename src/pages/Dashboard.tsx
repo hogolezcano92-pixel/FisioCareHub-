@@ -894,8 +894,18 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          <button className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10">Treino de Hoje</button>
-                          <button className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10">Relatar Dor</button>
+                          <button 
+                            onClick={() => navigate('/diario')}
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
+                          >
+                            Treino de Hoje
+                          </button>
+                          <button 
+                            onClick={() => navigate('/diario')}
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
+                          >
+                            Relatar Dor
+                          </button>
                         </>
                       )}
                     </div>
