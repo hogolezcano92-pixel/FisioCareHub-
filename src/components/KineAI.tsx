@@ -264,20 +264,28 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[45]"
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, y: 100, scale: 0.95, x: 20 }}
-              animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-              exit={{ opacity: 0, y: 100, scale: 0.95, x: 20 }}
-              className={cn(
-                "fixed bottom-6 right-6 z-[50] flex flex-col overflow-hidden",
-                "bg-[#0A0D14]/80 backdrop-blur-[32px] border border-white/10 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.7)] transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)",
-                isExpanded ? "w-[96vw] h-[88vh] md:w-[700px] md:h-[800px]" : "w-[92vw] h-[650px] md:w-[440px] md:h-[700px]"
-              )}
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[45]"
             >
-              {/* Modern Glass Header */}
+              {/* Subtle background energy glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            </motion.div>
+            
+            <div className="fixed inset-0 flex items-center justify-center z-[50] pointer-events-none p-4 pb-12">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className={cn(
+                  "pointer-events-auto flex flex-col overflow-hidden",
+                  "bg-[#0A0D14]/85 backdrop-blur-[40px] border border-white/10 rounded-[2.5rem]",
+                  "shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.1)]",
+                  "w-full max-w-[420px] transition-all duration-500",
+                  isExpanded ? "md:max-w-[700px] h-[85vh]" : "h-[70vh] max-h-[650px]"
+                )}
+              >
+                {/* Modern Glass Header */}
               <div className="relative p-7 border-b border-white/5">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-cyan-500/5 to-transparent pointer-events-none" />
                 
@@ -436,8 +444,9 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                 </div>
               </div>
             </motion.div>
-          </>
-        )}
+          </div>
+        </>
+      )}
       </AnimatePresence>
     </>
   );
