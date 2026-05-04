@@ -18,6 +18,7 @@ import {
   Info,
   ArrowLeft,
   Sparkles,
+  Bot,
   CheckCheck,
   Lock,
   LogIn,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDate, cn } from '../lib/utils';
+import KineAI from '../components/KineAI';
 
 export default function Chat() {
   const { user, loading: authLoading } = useAuth();
@@ -40,6 +42,7 @@ export default function Chat() {
   const [searching, setSearching] = useState(false);
   const [recentChats, setRecentChats] = useState<any[]>([]);
   const [showUserInfo, setShowUserInfo] = useState(false);
+  const [showKineAI, setShowKineAI] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -439,66 +442,14 @@ export default function Chat() {
               Chats
             </h2>
             <button 
-              onClick={async () => {
-                try {
-                  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-                  if (authError || !authUser) {
-                    console.error("[Support] Auth fail:", authError);
-                    toast.error("Sessão inválida. Por favor, faça login novamente.");
-                    return;
-                  }
-
-                  // Ensure ticket exists (Requirement 2 & 6)
-                  const { error: ticketError } = await supabase
-                    .from('suporte_tickets')
-                    .insert({
-                      usuario_id: authUser.id,
-                      categoria: 'tecnico',
-                      assunto: 'Suporte via Chat',
-                      descricao: 'Solicitado manualmente na barra lateral de chat.',
-                      status: 'aberto'
-                    });
-                  
-                  if (ticketError) console.error("[Support] Ticket creation error:", ticketError);
-
-                  // Find admin (Requirement 2 & 6)
-                  let { data: admins, error: adminError } = await supabase
-                    .from('perfis')
-                    .select('*')
-                    .eq('tipo_usuario', 'admin')
-                    .limit(1);
-                  
-                  let adminData = admins && admins.length > 0 ? admins[0] : null;
-                  
-                  if (!adminData) {
-                    console.warn("[Support] Main admin search failed:", adminError);
-                    const { data: fallbackAdmins, error: fallbackError } = await supabase
-                      .from('perfis')
-                      .select('*')
-                      .eq('email', 'hogolezcano92@gmail.com')
-                      .limit(1);
-                    
-                    const fallbackAdmin = fallbackAdmins && fallbackAdmins.length > 0 ? fallbackAdmins[0] : null;
-                    adminData = fallbackAdmin;
-                    if (fallbackError) console.error("[Support] Fallback admin search failed:", fallbackError);
-                  }
-                  
-                  if (adminData) {
-                    console.log("[Support] Admin found for chat:", adminData.email);
-                    setTargetUser(adminData);
-                  } else {
-                    console.error("[Support] Support contact completely failed. Detailed Errors:", adminError);
-                    toast.error(`Suporte indisponível: ${adminError?.message || 'Administradores não encontrados'}. Verifique o console para logs reais.`);
-                  }
-                } catch (err) {
-                  console.error("[Support] Unexpected error:", err);
-                  toast.error("Erro interno ao abrir suporte.");
-                }
+              onClick={() => {
+                // Dispatch event to open KineAI
+                setShowKineAI(true);
               }}
               className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2 border border-blue-500/20"
             >
-              <ShieldCheck size={14} />
-              Suporte
+              <Bot size={14} />
+              Suporte IA
             </button>
           </div>
 
@@ -636,7 +587,9 @@ export default function Chat() {
                   <h3 className="text-xs md:text-lg font-black text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em] truncate">Online</span>
+                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em] truncate">
+                      {targetUser.tipo_usuario === 'admin' ? 'Especialista Humano • Online' : 'Online'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -911,6 +864,7 @@ export default function Chat() {
           </>
         )}
       </main>
+      <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
     </div>
   );
 }
