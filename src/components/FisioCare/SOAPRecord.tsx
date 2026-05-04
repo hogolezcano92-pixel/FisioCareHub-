@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
+import { generateIntegrityHash } from '../../lib/security';
+
 interface SOAPData {
   subjective: string;
   objective: string;
@@ -28,6 +30,8 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [isSaving, setIsSaving] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [historySummary, setHistorySummary] = useState<string | null>(null);
+  const [savedHash, setSavedHash] = useState<string | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Patient details state
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
@@ -173,6 +177,17 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
     setIsSaving(true);
     try {
+      const now = new Date().toISOString();
+      const contentStr = JSON.stringify(soapData);
+      
+      // Generate integrity hash for legal security
+      const integrityHash = await generateIntegrityHash(
+        finalPacienteId,
+        profile.id,
+        now,
+        contentStr
+      );
+
       // First try to save to soap_notes as requested
       const { error } = await supabase
         .from('soap_notes')
@@ -183,7 +198,8 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           objective: typeof soapData.objective === 'string' ? soapData.objective : JSON.stringify(soapData.objective),
           assessment: typeof soapData.assessment === 'string' ? soapData.assessment : JSON.stringify(soapData.assessment),
           plan: typeof soapData.plan === 'string' ? soapData.plan : JSON.stringify(soapData.plan),
-          created_at: new Date().toISOString()
+          created_at: now,
+          integrity_hash: integrityHash
         });
 
       if (error) {
@@ -194,20 +210,22 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           .insert({
             paciente_id: finalPacienteId,
             fisio_id: profile.id,
-            data_registro: new Date().toISOString(),
+            data_registro: now,
             conteudo: {
               type: 'SOAP',
               ...soapData,
               raw: rawText
-            }
+            },
+            integrity_hash: integrityHash
           });
         
         if (fallbackError) throw fallbackError;
       }
 
-      toast.success('Prontuário salvo com sucesso!');
-      setSoapData(null);
-      setRawText('');
+      toast.success('Prontuário salvo com segurança jurídica!');
+      setSavedHash(integrityHash);
+      setIsReadOnly(true);
+      
       if (onSave) onSave();
     } catch (error) {
       console.error(error);
@@ -316,26 +334,32 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
+          disabled={isReadOnly}
           placeholder="Ex: Paciente relata melhora na dor lombar..."
-          className="w-full h-24 p-3 bg-white/5 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-[11px] text-white font-medium resize-none"
-        />
-        <button
-          onClick={handleProcess}
-          disabled={isProcessing || !rawText.trim()}
-          className="w-full h-9 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="animate-spin" size={14} />
-              Processando...
-            </>
-          ) : (
-            <>
-              <Sparkles size={14} />
-              Estruturar com IA
-            </>
+          className={cn(
+            "w-full h-24 p-3 bg-white/5 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-[11px] text-white font-medium resize-none",
+            isReadOnly && "opacity-50 cursor-not-allowed"
           )}
-        </button>
+        />
+        {!isReadOnly && (
+          <button
+            onClick={handleProcess}
+            disabled={isProcessing || !rawText.trim()}
+            className="w-full h-9 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="animate-spin" size={14} />
+                Processando...
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                Estruturar com IA
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <AnimatePresence>
@@ -364,26 +388,51 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               ))}
             </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSoapData(null)}
-                className="flex-1 h-10 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] hover:bg-white/10 transition-all"
-              >
-                Descartar
-              </button>
-              <button
-                onClick={() => handleSave()}
-                disabled={isSaving}
-                className="flex-[2] h-10 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <Loader2 className="animate-spin" size={16} />
-                ) : (
-                  <Save size={16} />
-                )}
-                {isSaving ? 'Salvando...' : 'Salvar Prontuário'}
-              </button>
-            </div>
+            {isReadOnly ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="text-emerald-500" size={12} />
+                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Documento Assinado Digitalmente</span>
+                  </div>
+                  <p className="text-[8px] text-emerald-500/60 font-mono break-all leading-tight">
+                    INTEGRITY_HASH: {savedHash}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSoapData(null);
+                    setRawText('');
+                    setIsReadOnly(false);
+                    setSavedHash(null);
+                  }}
+                  className="w-full h-10 bg-white/5 text-blue-400 rounded-xl font-black text-[10px] hover:bg-white/10 transition-all uppercase tracking-widest"
+                >
+                  Criar Nova Evolução
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSoapData(null)}
+                  className="flex-1 h-10 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] hover:bg-white/10 transition-all"
+                >
+                  Descartar
+                </button>
+                <button
+                  onClick={() => handleSave()}
+                  disabled={isSaving}
+                  className="flex-[2] h-10 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  {isSaving ? 'Salvando...' : 'Salvar Prontuário'}
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
