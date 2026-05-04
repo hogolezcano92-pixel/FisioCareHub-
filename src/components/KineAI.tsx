@@ -405,35 +405,35 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     e.preventDefault();
                     handleSendMessage();
                   }}
-                  className="flex items-center gap-6 bg-white/[0.03] border border-white/10 rounded-[2rem] p-2.5 pr-3 shadow-2xl focus-within:border-cyan-500/40 focus-within:bg-white/[0.05] transition-all group"
+                  className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-1.5 h-[62px] shadow-2xl focus-within:border-cyan-500/40 focus-within:bg-white/[0.05] transition-all group box-border w-full"
                 >
                   <button
                     type="button"
                     onClick={toggleRecording}
                     className={cn(
-                      "w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-[1.25rem] transition-all",
+                      "w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
                       isRecording 
                         ? "bg-rose-500/90 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]" 
                         : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
                     )}
                   >
-                    {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                    {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
                   </button>
                   
                   <input
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Pergunte sobre sua reabilitação..."
-                    className="flex-1 py-1 bg-transparent text-[15px] font-medium text-white placeholder:text-white/20 outline-none px-2"
+                    placeholder="Pergunte sobre sua saúde..."
+                    className="flex-1 min-w-0 bg-transparent text-[14px] font-medium text-white placeholder:text-white/20 outline-none px-1"
                   />
                   
                   <button
                     type="submit"
                     disabled={!inputText.trim() || loading}
-                    className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-cyan-500 text-[#0A0D14] rounded-[1.25rem] hover:bg-cyan-400 disabled:opacity-20 disabled:grayscale transition-all shadow-lg hover:shadow-cyan-500/30 group-active:scale-95 ml-2"
+                    className="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-cyan-500 text-[#0A0D14] rounded-full hover:bg-cyan-400 disabled:opacity-20 disabled:grayscale transition-all shadow-lg hover:shadow-cyan-500/30 group-active:scale-95"
                   >
-                    <Send size={20} className="translate-x-0.5" />
+                    <Send size={18} className="translate-x-0.5" />
                   </button>
                 </form>
                 
