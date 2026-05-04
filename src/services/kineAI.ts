@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import { supabase } from "../lib/supabase";
 
 const apiKey = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GROQ_API_KEY : undefined);
 
@@ -13,15 +14,33 @@ export const kineAIService = {
     return result.response;
   },
 
+  async getAvailablePhysios() {
+    try {
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('nome_completo, especialidade')
+        .eq('tipo_usuario', 'fisioterapeuta')
+        .eq('status_aprovacao', 'aprovado')
+        .limit(15);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("Erro ao buscar fisioterapeutas para KineAI:", error);
+      return [];
+    }
+  },
+
   async processSupportQuery(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
     if (!apiKey || apiKey === "MISSING_API_KEY") {
       const msg = "Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.";
       return { response: msg, intent: 'support' };
     }
 
+    const lowerMsg = message.toLowerCase();
+    
     // Intent detection for human handoff
     const handoffKeywords = ['atendente', 'humano', 'falar com pessoa', 'suporte humano', 'especialista', 'pessoa real', 'hugo'];
-    const lowerMsg = message.toLowerCase();
     const needsHandoff = handoffKeywords.some(keyword => lowerMsg.includes(keyword));
 
     if (needsHandoff) {
@@ -29,6 +48,31 @@ export const kineAIService = {
         response: "Entendo perfeitamente. Estou te encaminhando agora para um de nossos especialistas humanos. Só um momento enquanto preparo sua conexão com o suporte do FisioCareHub... 👨‍💻",
         intent: 'handoff'
       };
+    }
+
+    // Check if user is asking for physiotherapists
+    const physioKeywords = ['fisioterapeuta', 'fisio', 'profissional', 'quem pode me atender', 'especialistas disponíveis', 'médico'];
+    const isAskingForPhysio = physioKeywords.some(keyword => lowerMsg.includes(keyword));
+    
+    let physioContext = "";
+    if (isAskingForPhysio) {
+      const availablePhysios = await this.getAvailablePhysios();
+      if (availablePhysios.length > 0) {
+        physioContext = `
+          FISIOTERAPEUTAS DISPONÍVEIS AGORA (DADOS REAIS DO SISTEMA):
+          ${availablePhysios.map(p => `- Dr(a). ${p.nome_completo} (${p.especialidade || 'Fisioterapeuta Geral'})`).join('\n')}
+          
+          REGRAS CRÍTICAS:
+          1. Use APENAS os nomes acima se for indicar alguém.
+          2. NUNCA invente nomes de profissionais.
+          3. Se o usuário perguntar por alguém que não está na lista, diga que não encontrou esse profissional específico.
+        `;
+      } else {
+        physioContext = `
+          STATUS DO SISTEMA: No momento não há fisioterapeutas cadastrados ou aprovados no sistema.
+          REGRA: Informe ao usuário que não há profissionais disponíveis no momento. NÃO INVENTE NOMES.
+        `;
+      }
     }
 
     try {
@@ -50,6 +94,10 @@ export const kineAIService = {
         - Use emojis moderadamente para um tom amigável.
         - Se o usuário parecer frustrado ou pedir para falar com um humano, use o intent de handoff.
         - Se a dúvida for sobre pagamentos, confirme que aceitamos cartões e PIX.
+
+        ${physioContext}
+
+        IMPORTANTE: Você é PROIBIDA de inventar nomes de fisioterapeutas ou especialistas. Se não houver dados reais disponíveis no seu contexto acima, informe que não há profissionais disponíveis ou direcione o usuário para a página de busca.
       `;
 
       const response = await groq.chat.completions.create({
