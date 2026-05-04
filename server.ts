@@ -643,10 +643,14 @@ async function startServer() {
   // --- WebAuthn (Biometric Auth) Implementation ---
   const challenges = new Map<string, string>();
   
-  // Get base URL for origin and hostname for rpID
-  const APP_URL = process.env.VITE_APP_URL || `http://localhost:3000`;
-  const RP_ID = new URL(APP_URL).hostname;
-  const RP_NAME = 'FisioCareHub Biometrics';
+  // Helper to get WebAuthn config dynamically from request
+  const getWebAuthnConfig = (req: express.Request) => {
+    const host = req.get('host') || 'localhost:3000';
+    const rpID = host.split(':')[0];
+    const protocol = (req.headers['x-forwarded-proto'] as string) || (host.includes('localhost') ? 'http' : 'https');
+    const origin = `${protocol}://${host}`;
+    return { rpID, origin, rpName: 'FisioCareHub Biometrics' };
+  };
 
   app.get("/api/auth/webauthn/registration-options", async (req, res) => {
     try {
@@ -661,10 +665,12 @@ async function startServer() {
         .select('credential_id, transports')
         .eq('user_id', user.id);
 
+      const { rpID, rpName } = getWebAuthnConfig(req);
+
       const options = await generateRegistrationOptions({
-        rpName: RP_NAME,
-        rpID: RP_ID,
-        userID: user.id, // String is handled by simplewebauthn
+        rpName,
+        rpID,
+        userID: Buffer.from(user.id), // Ensure it's a Uint8Array
         userName: user.email || user.id,
         attestationType: 'none',
         excludeCredentials: (credentials || []).map(c => ({
@@ -679,7 +685,6 @@ async function startServer() {
         },
       });
 
-      // Save challenge (it is already base64url string in the return of options)
       challenges.set(user.id, options.challenge);
       res.json(options);
     } catch (err: any) {
@@ -700,11 +705,13 @@ async function startServer() {
       const expectedChallenge = challenges.get(user.id);
       if (!expectedChallenge) return res.status(400).json({ error: "Challenge not found" });
 
+      const { rpID, origin } = getWebAuthnConfig(req);
+
       const verification = await verifyRegistrationResponse({
         response: body,
         expectedChallenge,
-        expectedOrigin: APP_URL,
-        expectedRPID: RP_ID,
+        expectedOrigin: [origin, origin.replace(/\/$/, '')],
+        expectedRPID: rpID,
       });
 
       if (verification.verified && verification.registrationInfo) {
@@ -754,8 +761,10 @@ async function startServer() {
         return res.status(400).json({ error: "No biometric credentials registered" });
       }
 
+      const { rpID } = getWebAuthnConfig(req);
+
       const options = await generateAuthenticationOptions({
-        rpID: RP_ID,
+        rpID,
         allowCredentials: credentials.map(c => ({
           id: c.credential_id,
           type: 'public-key',
@@ -795,11 +804,13 @@ async function startServer() {
 
       if (!credential) return res.status(400).json({ error: "Credential not found" });
 
+      const { rpID, origin } = getWebAuthnConfig(req);
+
       const verification = await verifyAuthenticationResponse({
         response: body,
         expectedChallenge,
-        expectedOrigin: APP_URL,
-        expectedRPID: RP_ID,
+        expectedOrigin: [origin, origin.replace(/\/$/, '')],
+        expectedRPID: rpID,
         authenticator: {
           credentialID: isoBase64URL.toBuffer(credential.credential_id),
           credentialPublicKey: isoBase64URL.toBuffer(credential.public_key),
@@ -818,7 +829,7 @@ async function startServer() {
         const { data: linkData, error: linkError } = await getSupabaseAdmin().auth.admin.generateLink({
           type: 'magiclink',
           email: profile.email,
-          options: { redirectTo: `${APP_URL}/dashboard` }
+          options: { redirectTo: `${origin}/dashboard` }
         });
 
         if (linkError) throw linkError;
