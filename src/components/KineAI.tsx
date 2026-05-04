@@ -35,6 +35,76 @@ interface KineAIProps {
   onClose?: () => void;
 }
 
+// Componente Visual do Novo Ícone da KineAI (Quantum Core)
+const KineIcon = ({ size = "md", active = false }: { size?: "sm" | "md" | "lg", active?: boolean }) => {
+  const dimensions = {
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16"
+  }[size];
+
+  const iconSize = {
+    sm: 16,
+    md: 24,
+    lg: 32
+  }[size];
+
+  return (
+    <div className={cn("relative flex items-center justify-center", dimensions)}>
+      {/* Camada de Brilho de Fundo (Glow) */}
+      <motion.div
+        animate={{
+          scale: active ? [1, 1.2, 1] : [1, 1.1, 1],
+          opacity: active ? [0.5, 0.8, 0.5] : [0.3, 0.5, 0.3],
+        }}
+        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+        className="absolute inset-0 bg-cyan-400 rounded-full blur-xl"
+      />
+
+      {/* Anel Externo Rotativo */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+        className={cn(
+          "absolute inset-0 border-2 border-dashed border-cyan-500/30 rounded-full",
+          size === "sm" ? "border-1" : "border-2"
+        )}
+      />
+
+      {/* Anel Interno Contrário */}
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+        className="absolute inset-2 border border-white/20 rounded-full shadow-[0_0_15px_rgba(0,255,255,0.2)]"
+      />
+
+      {/* Núcleo Central (Core) */}
+      <div className="relative w-full h-full bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-400 rounded-2xl flex items-center justify-center shadow-lg border border-white/30 overflow-hidden">
+        <motion.div
+          animate={{
+            y: [0, -2, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        >
+          <BrainCircuit size={iconSize} className="text-white drop-shadow-md" />
+        </motion.div>
+        
+        {/* Efeito de Vidro no Core */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none" />
+      </div>
+
+      {/* Faíscas de Energia */}
+      {active && (
+        <motion.div
+          animate={{ scale: [1, 1.5], opacity: [1, 0] }}
+          transition={{ repeat: Infinity, duration: 1 }}
+          className="absolute inset-0 border-2 border-cyan-400 rounded-2xl"
+        />
+      )}
+    </div>
+  );
+};
+
 export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -183,23 +253,16 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
       {/* Botão Flutuante */}
       {!externalForceOpen && (
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05, y: -5 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
           className={cn(
-            "fixed bottom-6 right-6 z-[40] w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all",
-            "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 text-white",
+            "fixed bottom-6 right-6 z-[40] transition-all",
             isOpen ? "opacity-0 scale-0 pointer-events-none" : "opacity-100 scale-100"
           )}
         >
-          <div className="relative">
-            <Bot className="w-8 h-8" />
-            <motion.div 
-               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-               transition={{ repeat: Infinity, duration: 2 }}
-               className="absolute -inset-2 bg-white/20 rounded-full -z-10" 
-            />
-          </div>
+          <KineIcon size="lg" active={false} />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 z-50 shadow-lg shadow-emerald-900/40" />
         </motion.button>
       )}
 
@@ -235,16 +298,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="relative group">
-                      <motion.div 
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ repeat: Infinity, duration: 3 }}
-                        className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/30 shadow-inner group-hover:bg-white/20 transition-colors"
-                      >
-                        <Bot className="w-8 h-8 text-white" />
-                      </motion.div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-slate-900 animate-pulse" />
-                      {/* CSS Energy Rings */}
-                      <div className="absolute inset-0 rounded-2xl ring-2 ring-white/10 animate-ping opacity-20 pointer-events-none" />
+                      <KineIcon size="md" active={loading} />
                     </div>
                     <div>
                       <h3 className="font-black text-xl text-white tracking-tight">KineAI</h3>
@@ -309,8 +363,13 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     animate={{ opacity: 1 }}
                     className="flex items-center gap-3"
                   >
-                    <div className="w-10 h-10 bg-slate-800/40 rounded-xl flex items-center justify-center border border-white/5">
-                      <Bot className="w-5 h-5 text-cyan-400" />
+                    <div className="w-10 h-10 bg-slate-800/40 rounded-xl flex items-center justify-center border border-white/5 overflow-hidden">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+                        className="absolute inset-0 border border-cyan-500/20 rounded-full scale-150"
+                      />
+                      <BrainCircuit className="w-5 h-5 text-cyan-400" />
                     </div>
                     <div className="flex gap-1.5 p-3 px-4 bg-slate-800/40 rounded-2xl rounded-tl-none border border-white/5">
                       <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
