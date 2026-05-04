@@ -55,5 +55,41 @@ export const kineAIService = {
       console.error("Erro na KineAI (Groq):", error);
       return "Ops! Estou passando por uma manutenção rápida. Tente novamente em instantes! 🛠️";
     }
+  },
+
+  async processClinicalVoice(transcription: string) {
+    if (!apiKey || apiKey === "MISSING_API_KEY") {
+      throw new Error("Chave de API não configurada.");
+    }
+
+    try {
+      const model = "llama-3.3-70b-versatile";
+      
+      const systemInstruction = `
+        Atue como um fisioterapeuta sênior. 
+        Analise este relato de voz e extraia as informações para os campos: Subjetivo, Objetivo, Avaliação e Plano (SOAP).
+        Retorne estritamente um JSON com as chaves: subjective, objective, assessment e plan.
+        Os valores devem ser strings detalhadas baseadas no relato. Se alguma parte não for mencionada, tente inferir ou deixe vazio se não houver dados.
+        Mantenha a terminologia técnica adequada da fisioterapia.
+      `;
+
+      const response = await groq.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: `Relato de voz: "${transcription}"` }
+        ],
+        temperature: 0.3,
+        response_format: { type: "json_object" }
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("Resposta vazia da IA");
+      
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Erro ao processar voz clínica:", error);
+      throw error;
+    }
   }
 };
