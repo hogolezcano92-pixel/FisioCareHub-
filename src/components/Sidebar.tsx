@@ -79,6 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Assinatura', path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
+            { name: 'Diário de Dor', path: '/diario', icon: Activity },
             { name: 'Buscar Fisio', path: '/buscar-fisio', icon: Search },
             { name: 'Agenda', path: '/appointments', icon: Calendar },
             { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
