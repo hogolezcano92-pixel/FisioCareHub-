@@ -31,6 +31,36 @@ export const kineAIService = {
     }
   },
 
+  async findUserByData(identifier: string) {
+    try {
+      // Basic check to see what kind of data it is
+      let query = supabase.from('perfis').select('nome_completo, tipo_usuario, status_aprovacao, plano');
+      
+      const cleanData = identifier.trim();
+      
+      if (cleanData.includes('@')) {
+        query = query.eq('email', cleanData);
+      } else if (cleanData.length >= 11 && /^\d+$/.test(cleanData.replace(/\D/g, ""))) {
+        // Simple CPF or Phone check
+        const digits = cleanData.replace(/\D/g, "");
+        if (digits.length === 11) {
+          query = query.or(`cpf.eq.${digits},telefone.eq.${digits}`);
+        } else {
+          query = query.eq('telefone', digits);
+        }
+      } else {
+        return null;
+      }
+
+      const { data, error } = await query.single();
+      if (error) return null;
+      return data;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por dado:", error);
+      return null;
+    }
+  },
+
   async processSupportQuery(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
     if (!apiKey || apiKey === "MISSING_API_KEY") {
       const msg = "Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.";
@@ -54,24 +84,52 @@ export const kineAIService = {
     const physioKeywords = ['fisioterapeuta', 'fisio', 'profissional', 'quem pode me atender', 'especialistas disponíveis', 'médico'];
     const isAskingForPhysio = physioKeywords.some(keyword => lowerMsg.includes(keyword));
     
-    let physioContext = "";
+    let context = "";
+    
     if (isAskingForPhysio) {
       const availablePhysios = await this.getAvailablePhysios();
       if (availablePhysios.length > 0) {
-        physioContext = `
+        context += `
           FISIOTERAPEUTAS DISPONÍVEIS AGORA (DADOS REAIS DO SISTEMA):
           ${availablePhysios.map(p => `- Dr(a). ${p.nome_completo} (${p.especialidade || 'Fisioterapeuta Geral'})`).join('\n')}
           
           REGRAS CRÍTICAS:
           1. Use APENAS os nomes acima se for indicar alguém.
           2. NUNCA invente nomes de profissionais.
-          3. Se o usuário perguntar por alguém que não está na lista, diga que não encontrou esse profissional específico.
         `;
       } else {
-        physioContext = `
+        context += `
           STATUS DO SISTEMA: No momento não há fisioterapeutas cadastrados ou aprovados no sistema.
           REGRA: Informe ao usuário que não há profissionais disponíveis no momento. NÃO INVENTE NOMES.
         `;
+      }
+    }
+
+    // Intelligent Data Collection Check
+    // Look for patterns like email or numerical sequences in the message
+    const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const phoneCpfMatch = message.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/) || message.match(/\d{10,11}/);
+    
+    if (emailMatch || phoneCpfMatch) {
+      const identifier = (emailMatch ? emailMatch[0] : phoneCpfMatch ? phoneCpfMatch[0] : "");
+      if (identifier) {
+        const foundUser = await this.findUserByData(identifier);
+        if (foundUser) {
+          context += `
+            DADOS ENCONTRADOS DO USUÁRIO (CONSULTA REAL):
+            - Nome: ${foundUser.nome_completo}
+            - Tipo: ${foundUser.tipo_usuario}
+            - Status: ${foundUser.status_aprovacao}
+            - Plano: ${foundUser.plano || 'Sem plano ativo'}
+            
+            REGRA: Use esses dados para personalizar a resposta. Informe que encontrou o registro dele com sucesso.
+          `;
+        } else {
+          context += `
+            STATUS DA CONSULTA: Não foi encontrado nenhum usuário com o dado "${identifier}".
+            REGRA: Peça para o usuário conferir a informação ou oferecer suporte para criar uma conta.
+          `;
+        }
       }
     }
 
@@ -84,20 +142,21 @@ export const kineAIService = {
         
         Frase de impacto: "Cuidado especializado, onde você estiver".
 
-        Sobre o FisioCareHub:
-        - FisioCareHub é uma plataforma de fisioterapia domiciliar e online.
-        - Pagamentos são seguros e processados via Stripe e Asaas.
-        - Oferecemos Triagem IA, prontuários eletrônicos e chat direto.
-        
-        Instruções de Suporte:
+        SOBRE COLETA DE DADOS (LGPD):
+        - Se precisar consultar algo específico do usuário (status da conta, pagamentos, etc), peça educadamente o e-mail cadastrado ou CPF.
+        - EXPLIQUE sempre o motivo: "Para que eu possa verificar sua conta no sistema, você poderia me informar seu e-mail ou CPF?"
+        - Garanta que os dados são usados apenas para a consulta imediata.
+
+        REGRAS DE CONSTITUIÇÃO DE RESPOSTA:
         - Seja extremamente empática, profissional e ágil.
-        - Use emojis moderadamente para um tom amigável.
-        - Se o usuário parecer frustrado ou pedir para falar com um humano, use o intent de handoff.
-        - Se a dúvida for sobre pagamentos, confirme que aceitamos cartões e PIX.
+        - Use emojis moderadamente.
+        - Se houver dados reais no contexto abaixo, PRIORIZE-OS. NUNCA invente dados.
+        - Se não souber algo, direcione para o suporte humano (Handoff).
 
-        ${physioContext}
+        CONTEXTO ATUALIZADO (DADOS REAIS):
+        ${context}
 
-        IMPORTANTE: Você é PROIBIDA de inventar nomes de fisioterapeutas ou especialistas. Se não houver dados reais disponíveis no seu contexto acima, informe que não há profissionais disponíveis ou direcione o usuário para a página de busca.
+        IMPORTANTE: Você é PROIBIDA de inventar nomes de fisioterapeutas, status de usuários ou qualquer informação factual. Se o dado não estiver no contexto, você não o conhece.
       `;
 
       const response = await groq.chat.completions.create({
