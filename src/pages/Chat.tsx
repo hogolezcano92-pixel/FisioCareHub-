@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDate, cn } from '../lib/utils';
-import KineAI from '../components/KineAI';
+import KineAI, { KineIcon } from '../components/KineAI';
 
 export default function Chat() {
   const { user, loading: authLoading } = useAuth();
@@ -447,9 +447,9 @@ export default function Chat() {
                 // Dispatch event to open KineAI
                 setShowKineAI(true);
               }}
-              className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2 border border-blue-500/20"
+              className="px-3 py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-3 border border-white/5 shadow-sm group"
             >
-              <BrainCircuit size={14} />
+              <KineIcon size="xs" />
               Suporte IA
             </button>
           </div>
