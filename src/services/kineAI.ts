@@ -69,16 +69,9 @@ export const kineAIService = {
 
     const lowerMsg = message.toLowerCase();
     
-    // Intent detection for human handoff
-    const handoffKeywords = ['atendente', 'humano', 'falar com pessoa', 'suporte humano', 'especialista', 'pessoa real', 'hugo'];
-    const needsHandoff = handoffKeywords.some(keyword => lowerMsg.includes(keyword));
-
-    if (needsHandoff) {
-      return {
-        response: "Entendo perfeitamente. Estou te encaminhando agora para um de nossos especialistas humanos. Só um momento enquanto preparo sua conexão com o suporte do FisioCareHub... 👨‍💻",
-        intent: 'handoff'
-      };
-    }
+    // Explicit handoff detection (only if user REALLY wants a human)
+    const explicitHandoffKeywords = ['falar com atendente', 'quero falar com humano', 'falar com pessoa', 'suporte humano', 'preciso de atendente'];
+    const isExplicitHandoff = explicitHandoffKeywords.some(keyword => lowerMsg.includes(keyword));
 
     // Check if user is asking for physiotherapists
     const physioKeywords = ['fisioterapeuta', 'fisio', 'profissional', 'quem pode me atender', 'especialistas disponíveis', 'médico'];
@@ -100,13 +93,12 @@ export const kineAIService = {
       } else {
         context += `
           STATUS DO SISTEMA: No momento não há fisioterapeutas cadastrados ou aprovados no sistema.
-          REGRA: Informe ao usuário que não há profissionais disponíveis no momento. NÃO INVENTE NOMES.
+          REGRA: Informe ao usuário que não há profissionais disponíveis no momento. NÃO INVENTE NOMES. Ofereça transferir para o suporte se ele quiser deixar um recado.
         `;
       }
     }
 
     // Intelligent Data Collection Check
-    // Look for patterns like email or numerical sequences in the message
     const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
     const phoneCpfMatch = message.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/) || message.match(/\d{10,11}/);
     
@@ -122,12 +114,12 @@ export const kineAIService = {
             - Status: ${foundUser.status_aprovacao}
             - Plano: ${foundUser.plano || 'Sem plano ativo'}
             
-            REGRA: Use esses dados para personalizar a resposta. Informe que encontrou o registro dele com sucesso.
+            REGRA: Use esses dados para resolver a dúvida ANTES de oferecer suporte humano. Tente ser o mais resolutivo possível com essas informações.
           `;
         } else {
           context += `
             STATUS DA CONSULTA: Não foi encontrado nenhum usuário com o dado "${identifier}".
-            REGRA: Peça para o usuário conferir a informação ou oferecer suporte para criar uma conta.
+            REGRA: Informe que não encontrou os dados e peça para o usuário conferir as informações ou falar com suporte humano para verificação manual.
           `;
         }
       }
@@ -137,26 +129,29 @@ export const kineAIService = {
       const model = "llama-3.3-70b-versatile";
       
       const systemInstruction = `
-        Você é a KineAI, a super assistente inteligente e agente de suporte proativo do FisioCareHub.
-        Seu objetivo é ajudar usuários (pacientes e fisioterapeutas) com dúvidas sobre o aplicativo, agendamentos, pagamentos via Stripe/Asaas, e uso da plataforma.
-        
+        Você é a KineAI, a assistente oficial e proativa do FisioCareHub.
+        Seu objetivo principal é RESOLVER as solicitações do usuário usando dados REAIS do sistema ANTES de qualquer encaminhamento humano.
+
         Frase de impacto: "Cuidado especializado, onde você estiver".
 
-        SOBRE COLETA DE DADOS (LGPD):
-        - Se precisar consultar algo específico do usuário (status da conta, pagamentos, etc), peça educadamente o e-mail cadastrado ou CPF.
-        - EXPLIQUE sempre o motivo: "Para que eu possa verificar sua conta no sistema, você poderia me informar seu e-mail ou CPF?"
-        - Garanta que os dados são usados apenas para a consulta imediata.
+        DIRETRIZES DE ATENDIMENTO:
+        1. COLETA DE DADOS: Se precisar consultar algo específico, peça o e-mail ou CPF educadamente e explique o motivo (ex: "Para verificar seu status no sistema...").
+        2. CONSULTA: Use os dados do CONTEXTO abaixo (que vêm de buscas reais no banco) para responder.
+        3. RESOLUÇÃO: Responda diretamente com a informação encontrada. Nunca pule essa etapa.
+        4. HANDOFF (Humano): Só encaminhe para um atendente se:
+           - O usuário pedir explicitamente (ex: "falar com atendente").
+           - Após a consulta, os dados não serem suficientes para resolver.
+           - O usuário demonstrar frustração persistente.
 
         REGRAS DE CONSTITUIÇÃO DE RESPOSTA:
-        - Seja extremamente empática, profissional e ágil.
-        - Use emojis moderadamente.
-        - Se houver dados reais no contexto abaixo, PRIORIZE-OS. NUNCA invente dados.
-        - Se não souber algo, direcione para o suporte humano (Handoff).
+        - Seja empática, profissional e ágil.
+        - Se decidir que precisa transferir, confirme ao usuário: "Vou te conectar com um atendente agora para resolvermos isso juntos." e inclua o termo [HANDOFF_REQUIRED] discretamente ao final da resposta se necessário para disparar a lógica do sistema.
+        - Se os dados estiverem no contexto, PRIORIZE-OS. NUNCA invente dados fictícios.
 
         CONTEXTO ATUALIZADO (DADOS REAIS):
         ${context}
 
-        IMPORTANTE: Você é PROIBIDA de inventar nomes de fisioterapeutas, status de usuários ou qualquer informação factual. Se o dado não estiver no contexto, você não o conhece.
+        IMPORTANTE: Você é PROIBIDA de inventar nomes de fisioterapeutas ou status. Se o dado não estiver no contexto, você não o conhece.
       `;
 
       const response = await groq.chat.completions.create({
@@ -172,11 +167,11 @@ export const kineAIService = {
       const aiResponse = response.choices[0]?.message?.content || "Desculpe, tive um problema para processar sua mensagem. Posso tentar novamente?";
       
       const aiLower = aiResponse.toLowerCase();
-      const secondaryHandoff = aiLower.includes("humano") || aiLower.includes("atendente") || aiLower.includes("especialista");
+      const needsHandoff = isExplicitHandoff || aiLower.includes("[handoff_required]") || aiLower.includes("vou te conectar com um atendente");
 
       return {
-        response: aiResponse,
-        intent: secondaryHandoff ? 'handoff' : 'support'
+        response: aiResponse.replace("[HANDOFF_REQUIRED]", ""),
+        intent: needsHandoff ? 'handoff' : 'support'
       };
     } catch (error) {
       console.error("Erro na KineAI Support:", error);
