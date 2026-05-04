@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { User, Stethoscope, Mail, Lock, UserCircle, Loader2, Eye, EyeOff, CreditCard } from 'lucide-react';
+import { cn, formatCPF, validateCPF } from '../lib/utils';
 import Logo from '../components/Logo';
 import { uploadPhysioDocument } from '../services/supabaseStorage';
 import { sendWelcomeEmail } from '../services/emailService';
@@ -35,6 +35,7 @@ export default function Register() {
     email: '',
     password: '',
     telefone: '',
+    cpf: '',
     bio: '',
     zipCode: '',
     city: '',
@@ -53,6 +54,10 @@ export default function Register() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'cpf') {
+      setFormData(prev => ({ ...prev, [name]: formatCPF(value) }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -118,6 +123,12 @@ export default function Register() {
       return;
     }
 
+    if (formData.cpf && !validateCPF(formData.cpf)) {
+      setError("CPF inválido. Por favor, verifique os dígitos.");
+      setLoading(false);
+      return;
+    }
+
     if (role === 'fisioterapeuta') {
       if (!formData.crefito.trim()) {
         setError("O CREFITO é obrigatório para fisioterapeutas.");
@@ -159,6 +170,7 @@ export default function Register() {
           data: {
             nome_completo: cleanName,
             telefone: formData.telefone,
+            cpf_cnpj: formData.cpf.replace(/\D/g, ''),
             role: role,
             tipo_usuario: role, // Mantido para compatibilidade
             status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
@@ -266,6 +278,7 @@ export default function Register() {
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
+          cpf_cnpj: formData.cpf.replace(/\D/g, ''),
           telefone: formData.telefone,
           bio: formData.bio,
           documentos: uploadedDocUrls,
@@ -459,6 +472,26 @@ export default function Register() {
                   className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="(00) 00000-0000"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">CPF</label>
+                <div className="relative group">
+                  <div 
+                    className="absolute flex items-center justify-center pointer-events-none z-20"
+                    style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
+                  >
+                    <CreditCard className="text-slate-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    name="cpf"
+                    value={formData.cpf}
+                    onChange={handleChange}
+                    className="w-full pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all !pl-[60px]"
+                    placeholder="000.000.000-00"
+                  />
+                </div>
               </div>
             </div>
 

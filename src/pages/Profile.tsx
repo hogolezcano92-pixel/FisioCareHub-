@@ -30,7 +30,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { cn, resolveStorageUrl } from '../lib/utils';
+import { cn, resolveStorageUrl, formatCPF, validateCPF } from '../lib/utils';
 import { THEMES } from '../lib/themes';
 import { uploadDocument } from '../services/supabaseStorage';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
@@ -80,6 +80,7 @@ export default function Profile() {
     address: '',
     zipCode: '',
     country: '',
+    cpf: '',
     crefito: '',
     preco_sessao: 0,
     stripe_account_id: '',
@@ -154,6 +155,10 @@ export default function Profile() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'cpf') {
+      setFormData(prev => ({ ...prev, [name]: formatCPF(value) }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -181,6 +186,7 @@ export default function Profile() {
           address: profile.endereco || '',
           zipCode: profile.cep || '',
           country: profile.pais || '',
+          cpf: profile.cpf_cnpj ? formatCPF(profile.cpf_cnpj) : '',
           crefito: profile.crefito || '',
           preco_sessao: profile.preco_sessao || 0,
           stripe_account_id: profile.stripe_account_id || '',
@@ -288,6 +294,13 @@ export default function Profile() {
         }
       }
 
+      if (formData.cpf && !validateCPF(formData.cpf)) {
+        const { toast } = await import('sonner');
+        toast.error("CPF inválido. Por favor, verifique os dígitos.");
+        setUpdating(false);
+        return;
+      }
+
       const updateData = {
         nome_completo: formData.name,
         bio: formData.bio,
@@ -297,6 +310,7 @@ export default function Profile() {
         endereco: formData.address,
         cep: formData.zipCode,
         pais: formData.country,
+        cpf_cnpj: formData.cpf.replace(/\D/g, ''),
         crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
         preco_sessao: isPhysio ? Number(formData.preco_sessao) : (userData?.preco_sessao || undefined),
         stripe_account_id: isPhysio ? formData.stripe_account_id : (userData?.stripe_account_id || undefined),
@@ -655,6 +669,17 @@ export default function Profile() {
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CPF</label>
+                            <input
+                              type="text"
+                              name="cpf"
+                              value={formData.cpf}
+                              onChange={handleChange}
+                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                              placeholder="000.000.000-00"
+                            />
+                          </div>
                           <div className="space-y-2">
                             <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
                             <input
