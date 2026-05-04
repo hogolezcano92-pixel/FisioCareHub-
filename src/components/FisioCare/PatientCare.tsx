@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { CheckCircle2, Circle, Clock, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -23,48 +24,62 @@ export const PainDiary = () => {
   const handleSave = async () => {
     if (intensity !== null && profile) {
       setIsSaving(true);
+      console.log('Salvando diário de dor:', { intensity, paciente_id: profile.id });
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('diario_dor')
           .insert({
             paciente_id: profile.id,
             intensidade: intensity,
             data_registro: new Date().toISOString()
-          });
+          })
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro detalhado do Supabase ao salvar diário de dor:', error);
+          throw error;
+        }
+        
+        console.log('Diário de dor salvo com sucesso:', data);
         toast.success('Diário de dor atualizado!');
         setIntensity(null);
-      } catch (err) {
-        console.error(err);
-        toast.error('Erro ao salvar no diário.');
+      } catch (err: any) {
+        console.error('Erro ao salvar no diário:', err);
+        toast.error('Erro ao salvar no diário: ' + (err.message || 'Erro desconhecido'));
       } finally {
         setIsSaving(false);
       }
+    } else {
+      console.warn('Não foi possível salvar: intensidade ou perfil ausente', { intensity, profileId: profile?.id });
     }
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8">
-      <div className="space-y-2">
-        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Como está sua dor agora?</h3>
-        <p className="text-slate-500 text-base font-medium">Sua percepção ajuda a ajustar seu tratamento em tempo real.</p>
+    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight">Como está sua dor agora?</h3>
+          <p className="text-slate-400 text-[9px] font-medium">Sua percepção ajuda no tratamento.</p>
+        </div>
+        <Link to="/diario" className="text-[8px] font-black text-blue-400 uppercase tracking-widest hover:underline">
+          Ver Diário Completo
+        </Link>
       </div>
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-5 gap-1">
         {Array.from({ length: 10 }).map((_, i) => (
           <button
             key={i}
             onClick={() => setIntensity(i + 1)}
             className={cn(
-              "flex flex-col items-center gap-3 p-4 rounded-[2rem] border-2 transition-all group",
+              "flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all group",
               intensity === i + 1 
-                ? "border-blue-600 bg-blue-600 text-white scale-110 shadow-xl shadow-blue-200" 
-                : "border-white bg-white/50 hover:border-blue-200 text-slate-400 hover:text-blue-400"
+                ? "border-[#0047AB] bg-[#0047AB] text-white shadow-lg shadow-blue-900/20" 
+                : "border-white/5 bg-white/5 hover:border-white/10 text-slate-500 hover:text-white"
             )}
           >
-            <span className="text-3xl group-hover:scale-110 transition-transform">{emojis[i]}</span>
-            <span className="font-black text-sm">{i + 1}</span>
+            <span className="text-lg group-hover:scale-110 transition-transform">{emojis[i]}</span>
+            <span className="font-black text-[9px]">{i + 1}</span>
           </button>
         ))}
       </div>
@@ -73,16 +88,16 @@ export const PainDiary = () => {
         onClick={handleSave}
         disabled={intensity === null || isSaving}
         className={cn(
-          "w-full py-6 rounded-[2rem] font-black text-xl transition-all flex items-center justify-center gap-3",
+          "w-full h-10 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2",
           intensity !== null 
-            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-2xl shadow-blue-200 scale-[1.02] active:scale-95" 
-            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+            ? "bg-[#0047AB] text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95" 
+            : "bg-white/5 text-slate-600 cursor-not-allowed"
         )}
       >
         {isSaving ? (
-          <Loader2 className="animate-spin" size={24} />
+          <Loader2 className="animate-spin" size={18} />
         ) : (
-          <CheckCircle2 size={24} />
+          <CheckCircle2 size={18} />
         )}
         {isSaving ? 'Salvando...' : 'Registrar no Diário'}
       </button>
@@ -149,35 +164,41 @@ export const ExerciseChecklist = () => {
   };
 
   const toggleComplete = async (id: string) => {
-    if (!profile) return;
+    if (!profile) {
+      console.warn('Não foi possível atualizar exercício: perfil ausente');
+      return;
+    }
     
     const exercise = exercises.find(ex => ex.id === id);
     if (!exercise) return;
 
     const newCompleted = !exercise.completed;
+    console.log('Atualizando exercício:', { id, newCompleted, paciente_id: profile.id });
     
     try {
       if (newCompleted) {
-        await supabase.from('checklist_exercicios').insert({
+        const { error } = await supabase.from('checklist_exercicios').insert({
           paciente_id: profile.id,
           exercicio_id: id,
           concluido: true,
           data_conclusao: new Date().toISOString()
         });
+        if (error) throw error;
       } else {
         const today = new Date().toISOString().split('T')[0];
-        await supabase.from('checklist_exercicios')
+        const { error } = await supabase.from('checklist_exercicios')
           .delete()
           .eq('paciente_id', profile.id)
           .eq('exercicio_id', id)
           .gte('data_conclusao', today + 'T00:00:00Z');
+        if (error) throw error;
       }
       
       setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex));
       toast.success(newCompleted ? 'Exercício concluído!' : 'Exercício desmarcado');
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao atualizar exercício.');
+    } catch (err: any) {
+      console.error('Erro ao atualizar exercício:', err);
+      toast.error('Erro ao atualizar exercício: ' + (err.message || 'Erro desconhecido'));
     }
   };
 
@@ -188,57 +209,57 @@ export const ExerciseChecklist = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-2.5 w-full">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">Checklist de Exercícios</h3>
-          <p className="text-slate-500 text-sm font-medium">Complete sua rotina diária para uma recuperação mais rápida.</p>
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight">Checklist de Exercícios</h3>
+          <p className="text-slate-400 text-[9px] font-medium">Complete sua rotina diária.</p>
         </div>
-        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-black text-sm">
-          {exercises.filter(e => e.completed).length}/{exercises.length}
-        </div>
+        <Link to="/diario" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:underline">
+          Ver Diário Completo
+        </Link>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {exercises.map((ex) => (
           <div 
             key={ex.id}
             className={cn(
-              "p-5 rounded-3xl border transition-all flex items-center justify-between gap-4",
-              ex.completed ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"
+              "p-3 rounded-xl border transition-all flex items-center justify-between gap-3",
+              ex.completed ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/5"
             )}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2.5">
               <button onClick={() => toggleComplete(ex.id)}>
                 {ex.completed ? (
-                  <CheckCircle2 className="text-emerald-500" size={28} />
+                  <CheckCircle2 className="text-emerald-500" size={20} />
                 ) : (
-                  <Circle className="text-slate-300" size={28} />
+                  <Circle className="text-slate-600" size={20} />
                 )}
               </button>
-              <div className="space-y-1">
-                <p className={cn("font-black text-slate-900", ex.completed && "line-through opacity-50")}>{ex.title}</p>
-                <p className="text-xs text-slate-500 font-medium">{ex.description}</p>
+              <div className="space-y-0.5">
+                <p className={cn("font-black text-xs text-white", ex.completed && "line-through opacity-50")}>{ex.title}</p>
+                <p className="text-[9px] text-slate-400 font-medium">{ex.description}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {activeTimer === ex.id ? (
-                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100">
-                  <span className="font-black text-blue-600 tabular-nums">{formatTime(timeLeft)}</span>
+                <div className="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded-lg shadow-sm border border-white/5">
+                  <span className="font-black text-[10px] text-blue-400 tabular-nums">{formatTime(timeLeft)}</span>
                   <button onClick={() => setIsRunning(!isRunning)}>
-                    {isRunning ? <Pause size={18} className="text-slate-400" /> : <Play size={18} className="text-blue-600" />}
+                    {isRunning ? <Pause size={12} className="text-slate-500" /> : <Play size={12} className="text-blue-400" />}
                   </button>
                   <button onClick={() => setTimeLeft(ex.duration)}>
-                    <RotateCcw size={18} className="text-slate-400" />
+                    <RotateCcw size={12} className="text-slate-500" />
                   </button>
                 </div>
               ) : (
                 <button 
                   onClick={() => startTimer(ex)}
-                  className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 hover:bg-blue-50 transition-all"
+                  className="p-1.5 bg-slate-800 text-blue-400 rounded-lg shadow-sm border border-white/5 hover:bg-slate-700 transition-all"
                 >
-                  <Clock size={20} />
+                  <Clock size={14} />
                 </button>
               )}
             </div>
