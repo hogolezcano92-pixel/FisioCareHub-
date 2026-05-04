@@ -9,51 +9,74 @@ const groq = new Groq({
 
 export const kineAIService = {
   async chat(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
+    const result = await this.processSupportQuery(message, history);
+    return result.response;
+  },
+
+  async processSupportQuery(message: string, history: { role: 'user' | 'assistant', content: string }[] = []) {
     if (!apiKey || apiKey === "MISSING_API_KEY") {
-      return "Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.";
+      const msg = "Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto com o prefixo VITE_.";
+      return { response: msg, intent: 'support' };
     }
+
+    // Intent detection for human handoff
+    const handoffKeywords = ['atendente', 'humano', 'falar com pessoa', 'suporte humano', 'especialista', 'pessoa real', 'hugo'];
+    const lowerMsg = message.toLowerCase();
+    const needsHandoff = handoffKeywords.some(keyword => lowerMsg.includes(keyword));
+
+    if (needsHandoff) {
+      return {
+        response: "Entendo perfeitamente. Estou te encaminhando agora para um de nossos especialistas humanos. Só um momento enquanto preparo sua conexão com o suporte do FisioCareHub... 👨‍💻",
+        intent: 'handoff'
+      };
+    }
+
     try {
       const model = "llama-3.3-70b-versatile";
       
       const systemInstruction = `
-        Você é a KineAI, a super assistente inteligente do FisioCareHub.
-        Seu objetivo é ajudar usuários (pacientes e fisioterapeutas) com dúvidas sobre o aplicativo, serviços de fisioterapia e saúde em geral.
+        Você é a KineAI, a super assistente inteligente e agente de suporte proativo do FisioCareHub.
+        Seu objetivo é ajudar usuários (pacientes e fisioterapeutas) com dúvidas sobre o aplicativo, agendamentos, pagamentos via Stripe/Asaas, e uso da plataforma.
+        
+        Frase de impacto: "Cuidado especializado, onde você estiver".
 
         Sobre o FisioCareHub:
-        - É uma plataforma de fisioterapia domiciliar e online.
-        - Oferece Triagem IA para análise preliminar de sintomas.
-        - Permite agendamentos, prontuários digitais e chat direto entre profissionais e pacientes.
-        - Fisioterapeutas podem gerenciar sua agenda, pacientes e documentos.
-
-        Personalidade:
-        - Empática, profissional, ágil e prestativa.
-        - Use emojis para tornar a conversa amigável.
-        - Se a dúvida for médica complexa, sempre recomende consultar um fisioterapeuta na plataforma.
-
-        Comandos Automatizados que você pode sugerir:
-        - /triagem: Iniciar uma nova triagem de sintomas.
-        - /perfil: Ir para as configurações de perfil.
-        - /agenda: Ver meus agendamentos.
-        - /ajuda: Listar o que posso fazer.
+        - FisioCareHub é uma plataforma de fisioterapia domiciliar e online.
+        - Pagamentos são seguros e processados via Stripe e Asaas.
+        - Oferecemos Triagem IA, prontuários eletrônicos e chat direto.
+        
+        Instruções de Suporte:
+        - Seja extremamente empática, profissional e ágil.
+        - Use emojis moderadamente para um tom amigável.
+        - Se o usuário parecer frustrado ou pedir para falar com um humano, use o intent de handoff.
+        - Se a dúvida for sobre pagamentos, confirme que aceitamos cartões e PIX.
       `;
 
       const response = await groq.chat.completions.create({
         model,
         messages: [
           { role: 'system', content: systemInstruction },
-          ...history.map(h => ({ role: h.role, content: h.content })),
+          ...(history || []).map(h => ({ role: h.role, content: h.content })),
           { role: 'user', content: message }
         ],
-        temperature: 0.7,
-        max_tokens: 1024,
-        top_p: 1,
-        stream: false,
+        temperature: 0.5,
       });
 
-      return response.choices[0]?.message?.content || "Desculpe, tive um problema para processar sua mensagem. Como posso ajudar de outra forma?";
+      const aiResponse = response.choices[0]?.message?.content || "Desculpe, tive um problema para processar sua mensagem. Posso tentar novamente?";
+      
+      const aiLower = aiResponse.toLowerCase();
+      const secondaryHandoff = aiLower.includes("humano") || aiLower.includes("atendente") || aiLower.includes("especialista");
+
+      return {
+        response: aiResponse,
+        intent: secondaryHandoff ? 'handoff' : 'support'
+      };
     } catch (error) {
-      console.error("Erro na KineAI (Groq):", error);
-      return "Ops! Estou passando por uma manutenção rápida. Tente novamente em instantes! 🛠️";
+      console.error("Erro na KineAI Support:", error);
+      return {
+        response: "Ops! Estou passando por uma manutenção rápida. Tente novamente em instantes! 🛠️",
+        intent: 'support'
+      };
     }
   },
 
