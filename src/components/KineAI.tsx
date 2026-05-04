@@ -20,8 +20,9 @@ import {
 import { kineAIService } from '../services/kineAI';
 import { cn } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -153,6 +154,8 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -215,11 +218,19 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
 
       // Handle Handoff
       if (intent === 'handoff') {
-        toast.info("Transferindo para suporte humano...");
-        setTimeout(() => {
-          navigate('/chat?support=true');
-          handleClose();
-        }, 2000);
+        if (user) {
+          toast.info("Transferindo para um atendente humano...");
+          setTimeout(() => {
+            navigate('/chat?support=true');
+            handleClose();
+          }, 1500);
+        } else {
+          toast.info("Para falar com um atendente, você precisa entrar na sua conta.");
+          setTimeout(() => {
+            navigate('/login', { state: { from: { pathname: '/chat', search: '?support=true' } } });
+            handleClose();
+          }, 2000);
+        }
       }
 
     } catch (error) {
