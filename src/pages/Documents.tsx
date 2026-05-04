@@ -40,6 +40,7 @@ const FAVORITE_TEMPLATES = [
 
 export default function Documents() {
   const { user, profile, loading: authLoading } = useAuth();
+  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,6 +52,45 @@ export default function Documents() {
   const [generatedContent, setGeneratedContent] = useState('');
   const [viewingDoc, setViewingDoc] = useState<any>(null);
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
+  const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [patientRecords, setPatientRecords] = useState<any[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !isPhysio) return;
+    
+    // Fetch patients for evolution report
+    const fetchPatients = async () => {
+      const { data } = await supabase.from('pacientes').select('id, nome_completo');
+      if (data) setPatients(data);
+    };
+    fetchPatients();
+  }, [authLoading, isPhysio]);
+
+  useEffect(() => {
+    if (selectedPatientId) {
+      fetchPatientRecords(selectedPatientId);
+    }
+  }, [selectedPatientId]);
+
+  const fetchPatientRecords = async (pid: string) => {
+    setLoadingRecords(true);
+    try {
+      const { data } = await supabase
+        .from('soap_notes')
+        .select('*')
+        .eq('patient_id', pid)
+        .order('created_at', { ascending: false });
+      
+      setPatientRecords(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -67,7 +107,6 @@ export default function Documents() {
       }
 
       try {
-        const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
         const { data, error } = await supabase
           .from('documentos_gerados')
           .select('*')
@@ -374,7 +413,95 @@ export default function Documents() {
     }, 1000);
   };
 
-  const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const generateEvolutionReportPDF = async (record: any) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      const patient = patients.find(p => p.id === record.patient_id);
+      
+      // Add Logo
+      try {
+        doc.addImage('/logo512.png', 'PNG', 20, 10, 20, 20);
+      } catch (e) {
+        console.warn("Logo not found for PDF");
+      }
+
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(0, 102, 204);
+      doc.text("RELATÓRIO DE EVOLUÇÃO CLÍNICA", 50, 25);
+      
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`ID_DOC: ${record.id}`, 160, 15);
+      doc.setTextColor(100);
+      doc.text(`Gerado em: ${new Date().toLocaleString()}`, 160, 20);
+
+      // Header Info Table
+      autoTable(doc, {
+        startY: 40,
+        head: [['INFORMAÇÕES DO ATENDIMENTO', '']],
+        body: [
+          ['Paciente', patient?.nome_completo || 'N/A'],
+          ['Data do Registro', new Date(record.created_at).toLocaleString('pt-BR')],
+          ['Profissional Responsável', profile?.nome_completo || 'N/A'],
+          ['CREFITO', profile?.crefito || 'Não informado']
+        ],
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 2 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 100 } },
+        margin: { left: 20 }
+      });
+
+      // SOAP Content
+      const currentY = (doc as any).lastAutoTable.finalY + 10;
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['ESTRUTURA S.O.A.P.', 'CONTEÚDO DETALHADO']],
+        body: [
+          ['SUBJETIVO', record.subjective],
+          ['OBJETIVO', record.objective],
+          ['AVALIAÇÃO', record.assessment],
+          ['PLANO', record.plan]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [0, 71, 171] },
+        styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 }, 1: { cellWidth: 110 } },
+        margin: { left: 20 }
+      });
+
+      // Footer with Hash
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(0);
+      doc.text("__________________________________________", 105, finalY + 15, { align: 'center' });
+      doc.text(`${profile?.nome_completo || 'Fisioterapeuta'}`, 105, finalY + 22, { align: 'center' });
+      doc.text(`CREFITO: ${profile?.crefito || '____________'}`, 105, finalY + 27, { align: 'center' });
+
+      // Legal Integrity Footer
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.setFillColor(245, 245, 245);
+      doc.rect(0, pageHeight - 30, 210, 30, 'F');
+      
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.setFont("courier", "normal");
+      doc.text("VERIFICAÇÃO DE INTEGRIDADE JURÍDICA", 20, pageHeight - 20);
+      doc.text(`HASH SHA-256: ${record.integrity_hash || 'DOCUMENTO_NÃO_HASHADO'}`, 20, pageHeight - 15);
+      doc.text("Este documento possui validade jurídica e integridade garantida por hash criptográfico.", 20, pageHeight - 10);
+      
+      doc.save(`evolucao_${patient?.nome_completo || 'registro'}.pdf`);
+      import('sonner').then(({ toast }) => toast.success("Relatório de evolução gerado com sucesso!"));
+    } catch (err) {
+      console.error(err);
+      import('sonner').then(({ toast }) => toast.error("Erro ao gerar relatório PDF."));
+    }
+  };
 
   return (
     <ProGuard requiredPlan="basic">
@@ -389,12 +516,20 @@ export default function Documents() {
           </p>
         </div>
         {isPhysio && (
-          <button 
-            onClick={() => handleCreateNew()}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
-          >
-            <Plus size={20} /> CRIAR NOVO DOCUMENTO
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsEvolutionModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-white/5 text-blue-400 border border-blue-500/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              <FileSearch size={20} /> RELATÓRIO DE EVOLUÇÃO
+            </button>
+            <button 
+              onClick={() => handleCreateNew()}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
+            >
+              <Plus size={20} /> CRIAR NOVO DOCUMENTO
+            </button>
+          </div>
         )}
       </header>
 
@@ -565,7 +700,108 @@ export default function Documents() {
         )}
       </AnimatePresence>
 
-      {/* Create/Edit Modal */}
+      {/* Evolution Report Modal */}
+      <AnimatePresence>
+        {isEvolutionModalOpen && (
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEvolutionModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-slate-900 w-full max-w-2xl max-h-[80vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-lg">
+                    <FileSearch size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white tracking-tight">Relatório de Evolução</h2>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Selecione um paciente e o registro para exportar com hash</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsEvolutionModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Selecionar Paciente</label>
+                  <select 
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                    value={selectedPatientId || ''}
+                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                  >
+                    <option value="" className="bg-slate-900">Selecione um paciente...</option>
+                    {patients.map(p => (
+                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome_completo}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedPatientId && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Evoluções Encontradas (SOAP)</label>
+                      {loadingRecords && <Loader2 className="animate-spin text-slate-500" size={14} />}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      {patientRecords.length === 0 && !loadingRecords ? (
+                        <div className="p-10 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+                          <p className="text-slate-500 font-medium">Nenhum registro SOAP encontrado para este paciente.</p>
+                        </div>
+                      ) : (
+                        patientRecords.map(record => (
+                          <div 
+                            key={record.id}
+                            className="bg-white/5 border border-white/10 p-5 rounded-3xl flex items-center justify-between group hover:bg-white/10 transition-all"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-black text-white">{new Date(record.created_at).toLocaleDateString('pt-BR')}</span>
+                                {record.integrity_hash && (
+                                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-full border border-emerald-500/20">Hash Ativo</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-400 font-medium line-clamp-1 max-w-[300px]">
+                                {record.subjective ? `S: ${record.subjective.substring(0, 50)}...` : 'Sem conteúdo estruturado'}
+                              </p>
+                            </div>
+                            <button 
+                              onClick={() => generateEvolutionReportPDF(record)}
+                              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2"
+                            >
+                              <Download size={14} /> EXPORTAR
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-white/5 bg-white/5 flex justify-end">
+                <button 
+                  onClick={() => setIsEvolutionModalOpen(false)}
+                  className="px-6 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-white/5 rounded-xl transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
