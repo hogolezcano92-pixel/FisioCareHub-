@@ -57,23 +57,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       {
         title: t('nav.admin'),
         items: [
-          { name: 'Dashboard Admin', path: '/admin', icon: LayoutDashboard },
-          { name: 'Gerenciar Usuários', path: '/admin?tab=users', icon: Users },
-          { name: 'Biblioteca', path: '/admin?tab=library', icon: BookOpen },
-          { name: 'Pagamentos', path: '/admin?tab=payments', icon: DollarSign },
-          { name: 'Configurações', path: '/admin?tab=settings', icon: Settings },
-          { name: 'Prévia do App', path: '/preview', icon: Smartphone }
+          { name: t('nav.admin_dashboard'), path: '/admin', icon: LayoutDashboard },
+          { name: t('nav.manage_users'), path: '/admin?tab=users', icon: Users },
+          { name: t('nav.library'), path: '/admin?tab=library', icon: BookOpen },
+          { name: t('nav.payments'), path: '/admin?tab=payments', icon: DollarSign },
+          { name: t('nav.settings'), path: '/admin?tab=settings', icon: Settings },
+          { name: t('nav.app_preview'), path: '/preview', icon: Smartphone }
         ]
       }
     ] : [
       {
-        title: 'ATENDIMENTO',
+        title: t('nav.care'),
         items: [
           { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
-            { name: 'Meus Pacientes', path: '/patients', icon: Users },
+            { name: t('nav.my_patients'), path: '/patients', icon: Users },
             { name: t('nav.agenda'), path: '/agenda', icon: Calendar },
-            { name: 'Avaliações', path: '/physio/evaluations', icon: Stethoscope },
+            { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
             { name: t('nav.records'), path: '/records', icon: FileText },
@@ -94,28 +94,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       },
       ...(isPhysio && isApproved ? [
         {
-          title: 'FINANCEIRO',
+          title: t('nav.finance'),
           items: [
-            { name: 'Configuração de Valores', path: '/finance/settings', icon: DollarSign },
+            { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign },
           ]
         }
       ] : []),
       ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
         {
-          title: 'COMUNICAÇÃO',
+          title: t('nav.communication'),
           items: [
-            { name: 'Chat', path: '/chat', icon: MessageSquare },
-            { name: 'Suporte', path: '/chat?support=true', icon: ShieldCheck },
+            { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
+            { name: t('nav.support'), path: '/chat?support=true', icon: ShieldCheck },
           ]
         }
       ] : [])
     ]),
     {
-      title: 'CONTA',
+      title: t('nav.account'),
       items: [
         ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
         { name: t('nav.about'), path: '/sobre', icon: Info },
-        { name: 'Ajuda', path: '#help', icon: HelpCircle },
+        { name: t('nav.help'), path: '#help', icon: HelpCircle },
         { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
@@ -202,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               {profile?.nome_completo || 'Usuário'}
             </p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
-              {profile?.tipo_usuario === 'paciente' ? 'Paciente' : (profile?.plano || 'Profissional')}
+              {profile?.tipo_usuario === 'paciente' ? (profile?.idioma === 'en' ? 'Patient' : profile?.idioma === 'es' ? 'Paciente' : 'Paciente') : (profile?.plano === 'admin' ? 'Admin' : (profile?.idioma === 'en' ? 'Professional' : profile?.idioma === 'es' ? 'Profesional' : 'Profissional'))}
             </p>
           </div>
         </div>
