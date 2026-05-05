@@ -38,6 +38,8 @@ import { cn, resolveStorageUrl } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import PhysioHighlight from '../components/PhysioHighlight';
+import { AnimatedBackground } from '../components/AnimatedBackground';
+import FloatingHelpMenu from '../components/FloatingHelpMenu';
 
 interface Professional {
   id: string;
@@ -232,26 +234,13 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-slate-950 transition-colors duration-300 selection:bg-blue-500/30">
+    <div className="bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
+      <AnimatedBackground />
+
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
-        {/* Mesh Gradient Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute inset-0 bg-[#020617]" />
-          
-          {/* Animated Mesh Blobs */}
-          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] animate-mesh" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-sky-500/10 rounded-full blur-[140px] animate-mesh-slow" />
-          <div className="absolute top-[20%] right-[10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[120px] animate-mesh-slower" />
-          <div className="absolute bottom-[20%] left-[10%] w-[55%] h-[55%] bg-indigo-600/10 rounded-full blur-[130px] animate-mesh" />
-          
-          {/* Subtle Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay" />
-        </div>
-
         <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
-          <motion.div
+          <motion.div 
             initial="hidden"
             animate="visible"
             variants={{
@@ -278,11 +267,11 @@ export default function Home() {
                 <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Cuidado Domiciliar Premium</span>
               </div>
               <div className="w-px h-4 bg-white/10 mx-1" />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fisioterapia Especializada</span>
+              <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Fisioterapia Especializada</span>
             </motion.div>
             
             <div className="space-y-6">
-              <h1 className="text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-white leading-[0.95] tracking-tighter">
+              <h1 className="text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-gray-100 leading-[0.95] tracking-tighter">
                 <motion.span 
                   variants={{
                     hidden: { opacity: 0, y: 30 },
@@ -317,7 +306,7 @@ export default function Home() {
                   hidden: { opacity: 0, y: 20 },
                   visible: { opacity: 1, y: 0 }
                 }}
-                className="text-lg md:text-2xl text-slate-400 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
+                className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
               >
                 Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.
               </motion.p>
@@ -695,13 +684,16 @@ export default function Home() {
             {/* Search and Filter Bar - Compact SaaS Style */}
             <div className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors pointer-events-none" size={18} />
+                <Search 
+                  className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-500" 
+                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                />
                 <input 
                   type="text" 
                   placeholder="Buscar por nome..."
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
-                  className="w-full !pl-10 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500"
+                  className="w-full pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500 !pl-[60px]"
                 />
               </div>
               <button 
@@ -784,7 +776,7 @@ export default function Home() {
                             to={`/physio/${pro.id}`}
                             className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
                           >
-                            Ver Perfil <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                            {t('home.view_profile')} <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                           </Link>
                         </motion.div>
                       </div>
@@ -862,6 +854,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <FloatingHelpMenu />
     </div>
   );
 }
