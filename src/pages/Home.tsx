@@ -226,15 +226,6 @@ export default function Home() {
     setProSlideIndex((prev) => (prev - 1 + (professionals.length - itemsVisible + 1)) % (professionals.length - itemsVisible + 1));
   };
 
-  if (authLoading) {
-    return <div className="h-screen bg-[#0B0F19]" />;
-  }
-
-  if (user && window.location.pathname === '/') {
-    navigate('/dashboard');
-    return null;
-  }
-
   return (
     <div className="bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
       <AnimatedBackground />
