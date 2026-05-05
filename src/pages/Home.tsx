@@ -33,7 +33,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, resolveStorageUrl } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
