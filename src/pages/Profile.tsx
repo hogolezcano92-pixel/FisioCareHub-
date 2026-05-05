@@ -44,7 +44,7 @@ type Tab =
   | 'profile_prof' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
 
 export default function Profile() {
-  const { user, profile, subscription, theme: currentThemeId, loading: authLoading, refreshProfile, signOut, updateTheme } = useAuth();
+  const { user, profile, subscription, theme: currentThemeId, language: currentLang, loading: authLoading, refreshProfile, signOut, updateTheme, updateLanguage } = useAuth();
   const { t, i18n } = useTranslation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -63,9 +63,11 @@ export default function Profile() {
     { code: 'es', name: t('settings.spanish'), flag: '🇪🇸' },
   ];
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    import('sonner').then(({ toast }) => toast.success(t('settings.language_description')));
+  const changeLanguage = async (lng: string) => {
+    if (updateLanguage) {
+      await updateLanguage(lng);
+      import('sonner').then(({ toast }) => toast.success(t('common.language_changed')));
+    }
   };
 
   // Form fields
@@ -641,13 +643,13 @@ export default function Profile() {
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
                       <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
                         <User className="text-blue-500" size={24} />
-                        Informações Pessoais
+                        {t('profile.personal_info')}
                       </h3>
                       
                       <form onSubmit={handleUpdateProfile} className="space-y-8">
                         <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_name')}</label>
                             <input
                               type="text"
                               name="name"
@@ -657,7 +659,7 @@ export default function Profile() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Telefone de Contato</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_phone')}</label>
                             <input
                               type="tel"
                               name="telefone"
@@ -671,7 +673,7 @@ export default function Profile() {
 
                         <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CPF</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_cpf')}</label>
                             <input
                               type="text"
                               name="cpf"
@@ -682,7 +684,7 @@ export default function Profile() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_birth')}</label>
                             <input
                               type="date"
                               name="data_nascimento"
@@ -692,17 +694,17 @@ export default function Profile() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Gênero</label>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_gender')}</label>
                             <select
                               name="gender"
                               value={formData.gender}
                               onChange={handleChange}
                               className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
                             >
-                              <option value="" className="bg-slate-900">Selecione...</option>
-                              <option value="male" className="bg-slate-900">Masculino</option>
-                              <option value="female" className="bg-slate-900">Feminino</option>
-                              <option value="other" className="bg-slate-900">Outro</option>
+                              <option value="" className="bg-slate-900">{t('profile.gender_select')}</option>
+                              <option value="male" className="bg-slate-900">{t('profile.gender_male')}</option>
+                              <option value="female" className="bg-slate-900">{t('profile.gender_female')}</option>
+                              <option value="other" className="bg-slate-900">{t('profile.gender_other')}</option>
                             </select>
                           </div>
                         </div>
@@ -1243,7 +1245,7 @@ export default function Profile() {
                           className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center gap-3 disabled:opacity-50"
                         >
                           {updating ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
-                          Atualizar Endereço
+                          {t('profile.update_address')}
                         </button>
                       </div>
                     </div>
@@ -1293,10 +1295,10 @@ export default function Profile() {
                             to="/subscription"
                             className="flex-1 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest text-center shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all"
                           >
-                            Gerenciar Assinatura
+                            {t('subscription.manage')}
                           </Link>
                           <button className="flex-1 py-5 bg-white/5 border border-white/10 text-rose-500 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-rose-500/10 transition-all">
-                            Cancelar Plano
+                            {t('subscription.cancel_plan')}
                           </button>
                         </div>
                       </div>
