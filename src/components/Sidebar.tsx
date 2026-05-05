@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Home, 
   Calendar, 
@@ -37,6 +38,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
@@ -53,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const sections = useMemo(() => [
     ...(isAdmin ? [
       {
-        title: 'ADMINISTRAÇÃO',
+        title: t('nav.admin'),
         items: [
           { name: 'Dashboard Admin', path: '/admin', icon: LayoutDashboard },
           { name: 'Gerenciar Usuários', path: '/admin?tab=users', icon: Users },
@@ -67,26 +69,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       {
         title: 'ATENDIMENTO',
         items: [
-          { name: 'Início', path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
+          { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
             { name: 'Meus Pacientes', path: '/patients', icon: Users },
-            { name: 'Agenda', path: '/agenda', icon: Calendar },
+            { name: t('nav.agenda'), path: '/agenda', icon: Calendar },
             { name: 'Avaliações', path: '/physio/evaluations', icon: Stethoscope },
-            { name: 'Exercícios', path: '/exercises', icon: Activity },
-            { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
-            { name: 'Prontuários', path: '/records', icon: FileText },
-            { name: 'Documentos', path: '/documents', icon: FileSignature },
-            { name: 'Assinatura', path: '/subscription', icon: Crown },
+            { name: t('nav.exercises'), path: '/exercises', icon: Activity },
+            { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
+            { name: t('nav.records'), path: '/records', icon: FileText },
+            { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+            { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
-            { name: 'Diário de Dor', path: '/diario', icon: Activity },
-            { name: 'Buscar Fisio', path: '/buscar-fisio', icon: Search },
-            { name: 'Agenda', path: '/appointments', icon: Calendar },
-            { name: 'Treinos', path: '/treinos', icon: Activity },
-            { name: 'Prontuários', path: '/records', icon: FileText },
-            { name: 'Documentos', path: '/documents', icon: FileSignature },
-            { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
-            { name: 'Biblioteca de Saúde', path: '/patient/library', icon: BookOpen },
+            { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
+            { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
+            { name: t('nav.agenda'), path: '/appointments', icon: Calendar },
+            { name: t('nav.workouts'), path: '/treinos', icon: Activity },
+            { name: t('nav.records'), path: '/records', icon: FileText },
+            { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+            { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
+            { name: t('nav.library'), path: '/patient/library', icon: BookOpen },
           ] : [])
         ]
       },
@@ -111,13 +113,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     {
       title: 'CONTA',
       items: [
-        ...(isApproved ? [{ name: 'Minha Conta', path: '/profile', icon: User }] : []),
-        { name: 'Sobre nós', path: '/sobre', icon: Info },
+        ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
+        { name: t('nav.about'), path: '/sobre', icon: Info },
         { name: 'Ajuda', path: '#help', icon: HelpCircle },
-        { name: 'Sair', path: '#logout', icon: LogOut, variant: 'danger' },
+        { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
-  ], [isAdmin, isApproved, isPhysio, profile, user]);
+  ], [isAdmin, isApproved, isPhysio, profile, user, t]);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-background border-r border-white/5">
