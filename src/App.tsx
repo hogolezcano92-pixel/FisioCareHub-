@@ -272,9 +272,9 @@ function Navbar() {
       path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', 
       icon: HomeIcon 
     },
-    { name: 'Sobre nós', path: '/sobre', icon: Info },
-    { name: 'Biblioteca', path: '/biblioteca', icon: BookOpen },
-    { name: 'Encontrar Fisio', path: '/buscar-fisio', icon: Search },
+    { name: t('nav.about'), path: '/sobre', icon: Info },
+    { name: t('nav.library'), path: '/biblioteca', icon: BookOpen },
+    { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
         ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
@@ -285,16 +285,16 @@ function Navbar() {
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
-        { name: 'Triagens', path: '/physio/triages', icon: BrainCircuit },
+        { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
-        { name: 'Assinatura', path: '/subscription', icon: Crown },
+        { name: t('nav.subscription'), path: '/subscription', icon: Crown },
       ] : []),
 
       // Items for Patients
       ...(profile?.tipo_usuario === 'paciente' ? [
-        { name: 'Diário de Dor', path: '/diario', icon: Activity },
-        { name: 'Treinos', path: '/treinos', icon: Activity },
+        { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
+        { name: t('nav.workouts'), path: '/treinos', icon: Activity },
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
