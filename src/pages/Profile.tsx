@@ -359,7 +359,7 @@ export default function Profile() {
       if (refreshProfile) await refreshProfile();
 
       const { toast } = await import('sonner');
-      toast.success("Perfil atualizado com sucesso!");
+      import('sonner').then(({ toast }) => toast.success(t('profile.update_success')));
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
       const { toast } = await import('sonner');
@@ -499,7 +499,7 @@ export default function Profile() {
 
   const patientTabs = [
     { id: 'profile', label: t('nav.profile'), icon: User },
-    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2 },
+    { id: 'clinic', label: t('clinic.patient_data'), icon: Building2 },
     { id: 'security', label: t('security.title'), icon: Lock },
     { id: 'notifications', label: t('notifications.title'), icon: Bell },
     { id: 'payments', label: t('payments.title'), icon: CreditCard },
@@ -544,7 +544,7 @@ export default function Profile() {
     <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4 sm:px-6 lg:px-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight">Minha Conta</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight">{t('profile.title')}</h1>
           <p className="text-slate-400 font-medium">Gerencie seu perfil, segurança e preferências do sistema.</p>
         </div>
       </header>
@@ -1030,7 +1030,7 @@ export default function Profile() {
                       
                       <div className="space-y-6">
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-4">
-                          <p className="font-black text-white">Visibilidade do Perfil</p>
+                          <p className="font-black text-white">{t('profile.visibility')}</p>
                           <p className="text-sm text-slate-400 font-medium leading-relaxed">
                             Seu perfil é visível apenas para os fisioterapeutas com quem você agenda consultas. 
                             Seus dados de saúde são protegidos por criptografia de ponta a ponta.
@@ -1179,7 +1179,7 @@ export default function Profile() {
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
                       <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
                         <Building2 className="text-blue-500" size={24} />
-                        Dados da Clínica / Consultório
+                        {isPhysio ? t('clinic.clinic_data') : t('clinic.patient_data')}
                       </h3>
                       
                       <div className="grid md:grid-cols-2 gap-8">
@@ -1427,7 +1427,7 @@ export default function Profile() {
                   disabled={updating}
                   className="w-full py-4 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-all flex items-center justify-center gap-2"
                 >
-                  {updating ? <Loader2 className="animate-spin" /> : 'Sim, Excluir Minha Conta'}
+                  {updating ? <Loader2 className="animate-spin" /> : t('profile.delete_confirm')}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
