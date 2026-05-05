@@ -10,19 +10,27 @@ i18n
   .init({
     fallbackLng: 'pt',
     supportedLngs: ['pt', 'en', 'es'],
+
     debug: false,
+
+    ns: ['translation'],
+    defaultNS: 'translation',
+
     detection: {
       order: ['querystring', 'localStorage', 'navigator'],
       caches: ['localStorage']
     },
+
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
+
     interpolation: {
       escapeValue: false
     },
+
     react: {
-      useSuspense: false
+      useSuspense: true   // 🔥 ESSA LINHA É A CHAVE DO BUG
     }
   });
 
