@@ -28,32 +28,18 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const PROFILE_CACHE_KEY = 'fch_profile_cache';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
-  const [profile, setProfile] = useState<any | null>(() => {
-    try {
-      const cached = localStorage.getItem(PROFILE_CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
-
+  // CORREÇÃO: Iniciamos como null. Não usamos cache aqui para evitar o "perfil fantasma[span_3](start_span)"[span_3](end_span)
+  const [profile, setProfile] = useState<any | null>(null);
   const [subscription, setSubscription] = useState<any | null>(null);
 
-  const [theme, setTheme] = useState<string>(() => {
-    try {
-      const cached = localStorage.getItem(PROFILE_CACHE_KEY);
-      return cached ? JSON.parse(cached)?.theme || 'blue' : 'blue';
-    } catch {
-      return 'blue';
-    }
-  });
+  // CORREÇÃO: Iniciamos com um tema padrão neutro[span_4](start_span)[span_4](end_span)
+  const [theme, setTheme] = useState<string>('blue');
 
   const [language, setLanguage] = useState<string>(() => {
     return localStorage.getItem('i18nextLng') || 'pt';
@@ -63,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   const navigate = useNavigate();
-
   const lastFetchedUserId = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string, userMetadata?: any) => {
@@ -85,8 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           plano: 'free',
           created_at: new Date().toISOString()
         };
-
-        supabase.from('perfis').insert(finalProfile);
+        await supabase.from('perfis').insert(finalProfile);
       }
 
       const { data: subData } = await supabase
@@ -97,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(finalProfile));
-
       return { profile: finalProfile, subscription: subData };
     } catch {
       return { profile: null, subscription: null };
@@ -106,9 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (!user) return;
-    const { profile: p, subscription: s } =
-      await fetchProfile(user.id, user.user_metadata);
-
+    const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata);
     setProfile(p);
     setSubscription(s);
   };
@@ -116,16 +97,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateTheme = async (themeId: string) => {
     setTheme(themeId);
     applyTheme(themeId);
+    // Persistir tema se houver perfil
+    if (user) {
+      await supabase.from('perfis').update({ theme: themeId }).eq('id', user.id);
+    }
   };
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
+  // Sincroniza tema e idioma APENAS quando o perfil real carregar[span_5](start_span)[span_5](end_span)
   useEffect(() => {
-    if (profile?.idioma && profile.idioma !== language) {
-      setLanguage(profile.idioma);
-      i18n.changeLanguage(profile.idioma);
+    if (profile) {
+      if (profile.theme) {
+        setTheme(profile.theme);
+        applyTheme(profile.theme);
+      }
+      if (profile.idioma && profile.idioma !== language) {
+        setLanguage(profile.idioma);
+        i18n.changeLanguage(profile.idioma);
+      }
     }
   }, [profile]);
 
@@ -136,31 +128,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.auth.onAuthStateChange(async (_, currentSession) => {
         if (!mounted) return;
 
-        setSession(currentSession);
         const currentUser = currentSession?.user ?? null;
+        setSession(currentSession);
         setUser(currentUser);
 
         if (!currentUser) {
           setProfile(null);
           setSubscription(null);
+          localStorage.removeItem(PROFILE_CACHE_KEY);
           setLoading(false);
           setReady(true);
           return;
         }
 
-        if (lastFetchedUserId.current !== currentUser.id) {
-          const { profile: p, subscription: s } =
-            await fetchProfile(currentUser.id, currentUser.user_metadata);
+        // Busca o perfil real antes de liberar o loading/ready[span_6](start_span)[span_6](end_span)
+        const { profile: p, subscription: s } = await fetchProfile(currentUser.id, currentUser.user_metadata);
 
-          if (!mounted) return;
-
+        if (mounted) {
           setProfile(p);
           setSubscription(s);
-          lastFetchedUserId.current = currentUser.id;
+          setLoading(false);
+          setReady(true);
         }
-
-        setLoading(false);
-        setReady(true);
       });
 
     return () => {
@@ -171,12 +160,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-
     setUser(null);
     setSession(null);
     setProfile(null);
     setSubscription(null);
-
     localStorage.removeItem(PROFILE_CACHE_KEY);
     navigate('/');
   };
@@ -189,27 +176,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      user,
-      session,
-      profile,
-      subscription,
-      theme,
-      language,
-      loading,
-      ready,
-      signOut,
-      refreshProfile,
-      updateTheme,
-      updateLanguage
+      user, session, profile, subscription, theme, language, loading, ready,
+      signOut, refreshProfile, updateTheme, updateLanguage
     }),
     [user, session, profile, subscription, theme, language, loading, ready]
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
