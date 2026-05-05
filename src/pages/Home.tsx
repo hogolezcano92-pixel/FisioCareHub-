@@ -279,7 +279,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  {t('home.hero.title1')}
+                  {t('home.hero.title1', 'Sua reabilitação no')}
                 </motion.span>
                 <motion.span 
                   variants={{
@@ -288,7 +288,7 @@ export default function Home() {
                   }}
                   className="block bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic"
                 >
-                  Bem-estar
+                  {t('home.hero.highlight', 'Bem-estar')}
                 </motion.span>
                 <motion.span 
                   variants={{
@@ -297,7 +297,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  {t('home.hero.title2')}
+                  {t('home.hero.title2', 'conforto de casa')}
                 </motion.span>
               </h1>
               
@@ -308,7 +308,7 @@ export default function Home() {
                 }}
                 className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
               >
-                {t('home.hero.subtitle')}
+                {t('home.hero.subtitle', 'Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.')}
               </motion.p>
             </div>
             
@@ -330,7 +330,7 @@ export default function Home() {
                   className="relative z-10 inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-all duration-300"
                 >
                   <Search size={22} className="group-hover:scale-110 transition-transform" /> 
-                  Encontrar Fisioterapeuta
+                  {t('nav.find_physio', 'Encontrar Fisioterapeuta')}
                 </motion.div>
                 <div className="absolute inset-0 bg-blue-400/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
@@ -345,7 +345,7 @@ export default function Home() {
                   whileTap={{ scale: 0.98 }}
                   className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-[2rem] font-black text-lg hover:border-white/40 transition-all duration-300"
                 >
-                  <Stethoscope size={22} /> Sou Fisioterapeuta
+                  <Stethoscope size={22} /> {t('common.i_am_physio', 'Sou Fisioterapeuta')}
                 </motion.div>
               </Link>
             </motion.div>
@@ -359,16 +359,16 @@ export default function Home() {
               className="flex flex-wrap justify-center lg:justify-start gap-8 pt-10 border-t border-white/10"
             >
               <div className="space-y-1">
-                <p className="text-2xl font-black text-white">500+</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Especialistas</p>
+                <p className="text-2xl font-black text-white">{t('home.stats.specialists_count', '500+')}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('home.stats.specialists_label', 'Especialistas')}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl font-black text-white">10k+</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Atendimentos</p>
+                <p className="text-2xl font-black text-white">{t('home.stats.appointments_count', '10k+')}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('home.stats.appointments_label', 'Atendimentos')}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl font-black text-white">4.9/5</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Avaliação Média</p>
+                <p className="text-2xl font-black text-white">{t('home.stats.rating_value', '4.9/5')}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('home.stats.rating_label', 'Avaliação Média')}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -481,12 +481,12 @@ export default function Home() {
             <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-400 mb-8 group-hover:scale-110 transition-transform">
               <Heart size={32} />
             </div>
-            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">Recupere sua saúde com conforto e segurança.</h3>
+            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">{t('home.benefits.patient_title', 'Recupere sua saúde com conforto e segurança.')}</h3>
             <ul className="space-y-4">
               {[
-                { text: "Encontre especialistas verificados", icon: UserCheck },
-                { text: "Atendimento domiciliar premium", icon: HomeIcon },
-                { text: "Acompanhamento de evolução", icon: Activity }
+                { text: t('home.benefits.patient_item1', "Encontre especialistas verificados"), icon: UserCheck },
+                { text: t('home.benefits.patient_item2', "Atendimento domiciliar premium"), icon: HomeIcon },
+                { text: t('home.benefits.patient_item3', "Acompanhamento de evolução"), icon: Activity }
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-400 font-medium">
                   <item.icon size={20} className="text-blue-500" />
@@ -506,12 +506,12 @@ export default function Home() {
             <div className="w-16 h-16 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-400 mb-8 group-hover:scale-110 transition-transform">
               <Stethoscope size={32} />
             </div>
-            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">Impulsione sua carreira e simplifique sua rotina.</h3>
+            <h3 className="text-3xl font-black text-white mb-6 tracking-tight">{t('home.benefits.physio_title', 'Impulsione sua carreira e simplifique sua rotina.')}</h3>
             <ul className="space-y-4">
               {[
-                { text: "Novos pacientes na sua região", icon: Users },
-                { text: "Agenda e prontuários digitais", icon: FileText },
-                { text: "Pagamentos garantidos", icon: ShieldCheck }
+                { text: t('home.benefits.physio_item1', "Novos pacientes na sua região"), icon: Users },
+                { text: t('home.benefits.physio_item2', "Agenda e prontuários digitais"), icon: FileText },
+                { text: t('home.benefits.physio_item3', "Pagamentos garantidos"), icon: ShieldCheck }
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3 text-slate-400 font-medium">
                   <item.icon size={20} className="text-indigo-500" />
@@ -624,22 +624,22 @@ export default function Home() {
             {[
               {
                 step: '01',
-                title: 'Solicitação Inteligente / Cadastro Rápido',
-                desc: 'Pacientes solicitam atendimento personalizado enquanto fisioterapeutas se cadastram em nossa rede de elite.',
+                title: t('home.steps.step1.title', 'Solicitação Inteligente / Cadastro Rápido'),
+                desc: t('home.steps.step1.desc', 'Pacientes solicitam atendimento personalizado enquanto fisioterapeutas se cadastram em nossa rede de elite.'),
                 icon: ClipboardCheck,
                 gradient: 'from-blue-500/20 to-sky-500/20'
               },
               {
                 step: '02',
-                title: 'Curadoria de Elite / Aceite de Atendimento',
-                desc: 'Nossa IA sugere os melhores profissionais para cada caso, e o fisioterapeuta aceita o atendimento com um clique.',
+                title: t('home.steps.step2.title', 'Curadoria de Elite / Aceite de Atendimento'),
+                desc: t('home.steps.step2.desc', 'Nossa IA sugere os melhores profissionais para cada caso, e o fisioterapeuta aceita o atendimento com um clique.'),
                 icon: UserCheck,
                 gradient: 'from-indigo-500/20 to-purple-500/20'
               },
               {
                 step: '03',
-                title: 'Cuidado e Gestão Unificados',
-                desc: 'O atendimento acontece com excelência enquanto o profissional utiliza nossas ferramentas de gestão integradas.',
+                title: t('home.steps.step3.title', 'Cuidado e Gestão Unificados'),
+                desc: t('home.steps.step3.desc', 'O atendimento acontece com excelência enquanto o profissional utiliza nossas ferramentas de gestão integradas.'),
                 icon: HomeIcon,
                 gradient: 'from-emerald-500/20 to-teal-500/20'
               }
@@ -677,8 +677,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Nossa Rede</p>
-              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">Especialistas <span className="text-blue-500 italic">Verificados</span></h3>
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
+              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">{t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic">{t('home.network_title_part2', 'Verificados')}</span></h3>
             </div>
             
             {/* Search and Filter Bar - Compact SaaS Style */}
@@ -690,7 +690,7 @@ export default function Home() {
                 />
                 <input 
                   type="text" 
-                  placeholder="Buscar por nome..."
+                  placeholder={t('home.search_placeholder', 'Buscar por nome...')}
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
                   className="w-full pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500 !pl-[60px]"
@@ -700,7 +700,7 @@ export default function Home() {
                 onClick={() => navigate('/buscar-fisio')}
                 className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20"
               >
-                Ver Todos
+                {t('home.view_all', 'Ver Todos')}
               </button>
             </div>
           </div>
