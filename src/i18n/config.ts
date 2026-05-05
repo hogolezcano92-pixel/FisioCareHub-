@@ -30,8 +30,11 @@ i18n
     },
 
     react: {
-      useSuspense: true   // 🔥 ESSA LINHA É A CHAVE DO BUG
-    }
+      useSuspense: false
+    },
+
+    returnNull: false,
+    returnEmptyString: false
   });
 
 export default i18n;
