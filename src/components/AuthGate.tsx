@@ -13,8 +13,15 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   React.useEffect(() => {
     const checkI18n = () => {
-      // Check if initialized AND has the current language translation loaded
-      if (i18n.isInitialized && i18n.hasResourceBundle(i18n.language, 'translation')) {
+      // Check if initialized AND has the current language translation loaded (or fallback)
+      const currentLang = i18n.language;
+      const isReady = i18n.isInitialized && (
+        i18n.hasResourceBundle(currentLang, 'translation') || 
+        i18n.hasResourceBundle(currentLang.split('-')[0], 'translation') ||
+        i18n.hasResourceBundle('pt', 'translation')
+      );
+      
+      if (isReady) {
         setI18nReady(true);
         return true;
       }
