@@ -730,9 +730,7 @@ function AppContent() {
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
-        <Suspense fallback={null}>
-          {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
-        </Suspense>
+        {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         <NotificationHandler />
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
