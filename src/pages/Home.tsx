@@ -279,7 +279,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  {t('home.hero.title1', 'Sua reabilitação no')}
+                  {t('home.hero.title1', 'Saúde e')}
                 </motion.span>
                 <motion.span 
                   variants={{
@@ -297,7 +297,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  {t('home.hero.title2', 'conforto de casa')}
+                  {t('home.hero.title2', 'no seu lar.')}
                 </motion.span>
               </h1>
               
@@ -308,7 +308,7 @@ export default function Home() {
                 }}
                 className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
               >
-                {t('home.hero.subtitle', 'Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades.')}
+                {t('home.hero.subtitle', 'Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.')}
               </motion.p>
             </div>
             
