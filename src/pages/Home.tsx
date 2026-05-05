@@ -234,7 +234,7 @@ export default function Home() {
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
         <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
           <motion.div 
-            initial={false}
+            initial="hidden"
             animate="visible"
             variants={{
               hidden: { opacity: 0 },
