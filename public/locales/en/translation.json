@@ -67,6 +67,46 @@
     "process_label": "Intelligent Process",
     "process_title_part1": "Your Journey to",
     "process_title_part2": "Recovery",
+    "specialties": {
+      "ortho": {
+        "title": "Traumato-Orthopedic Physiotherapy",
+        "description": "Specialized treatment for fractures, spinal pain, and post-operative recovery, all in the comfort of your home."
+      },
+      "neuro": {
+        "title": "Neurofunctional Physiotherapy",
+        "description": "Home rehabilitation focused on stroke, Parkinson's, and other complex neurological conditions."
+      },
+      "geriatric": {
+        "title": "Geriatric Physiotherapy",
+        "description": "Care dedicated to seniors in the home environment, focusing on mobility, balance, and independence."
+      },
+      "pediatric": {
+        "title": "Pediatric Physiotherapy",
+        "description": "Playful and specialized care for childhood motor development, without the stress of clinics."
+      },
+      "respiratory": {
+        "title": "Respiratory Physiotherapy",
+        "description": "Improvement of lung capacity and treatment of conditions like COPD and asthma, with all the safety of your home."
+      },
+      "sports": {
+        "title": "Sports Physiotherapy",
+        "description": "Prevention and treatment of injuries for athletes with personalized care focused on rapid return."
+      }
+    },
+    "steps": {
+      "step1": {
+        "title": "Intelligent Request / Fast Registration",
+        "desc": "Patients request personalized care while physiotherapists join our elite network."
+      },
+      "step2": {
+        "title": "Elite Curation / Care Acceptance",
+        "desc": "Our AI suggests the best professionals for each case, and the physiotherapist accepts the care with one click."
+      },
+      "step3": {
+        "title": "Unified Care and Management",
+        "desc": "Care happens with excellence while the professional uses our integrated management tools."
+      }
+    },
     "network_label": "Our Network",
     "network_title_part1": "Verified",
     "network_title_part2": "Specialists",
