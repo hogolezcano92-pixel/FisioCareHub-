@@ -59,7 +59,19 @@
       "title2": "conforto de casa",
       "subtitle": "Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades."
     },
-    "view_profile": "Ver Perfil"
+    "view_profile": "Ver Perfil",
+    "specialties_label": "Especialidades Médicas",
+    "specialties_title_part1": "Excelência em",
+    "specialties_title_part2": "Diversas Áreas",
+    "process_label": "Processo Inteligente",
+    "process_title_part1": "Sua Jornada de",
+    "process_title_part2": "Recuperação",
+    "cta": {
+      "label": "Pronto para a Mudança?",
+      "title_part1": "VAMOS COMEÇAR SUA",
+      "title_part2": "NOVA JORNADA?",
+      "subtitle": "Agende uma avaliação inicial hoje mesmo e descubra como a fisioterapia domiciliar pode transformar seu bem-estar."
+    }
   },
   "settings": {
     "title": "Configurações",
