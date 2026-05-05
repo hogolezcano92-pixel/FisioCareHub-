@@ -127,13 +127,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Only redirect if at the root path and logged in
-    if (!authLoading && user && window.location.pathname === '/') {
-      navigate('/dashboard');
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
     const slideInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % specialtySlides.length);
     }, 5000);
@@ -232,6 +225,15 @@ export default function Home() {
     if (professionals.length === 0) return;
     setProSlideIndex((prev) => (prev - 1 + (professionals.length - itemsVisible + 1)) % (professionals.length - itemsVisible + 1));
   };
+
+  if (authLoading) {
+    return <div className="h-screen bg-[#0B0F19]" />;
+  }
+
+  if (user && window.location.pathname === '/') {
+    navigate('/dashboard');
+    return null;
+  }
 
   return (
     <div className="bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
