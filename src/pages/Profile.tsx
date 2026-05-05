@@ -496,21 +496,22 @@ export default function Profile() {
   };
 
   const patientTabs = [
-    { id: 'profile', label: 'Perfil', icon: User },
-    { id: 'clinic', label: 'Endereço', icon: Building2 },
-    { id: 'security', label: 'Segurança', icon: Lock },
-    { id: 'notifications', label: 'Notificações', icon: Bell },
-    { id: 'payments', label: 'Pagamentos', icon: CreditCard },
-    { id: 'theme', label: 'Tema', icon: Palette },
-    { id: 'privacy', label: 'Privacidade', icon: Eye },
+    { id: 'profile', label: t('nav.profile'), icon: User },
+    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2 },
+    { id: 'security', label: t('security.title'), icon: Lock },
+    { id: 'notifications', label: t('notifications.title'), icon: Bell },
+    { id: 'payments', label: t('payments.title'), icon: CreditCard },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe },
+    { id: 'privacy', label: t('privacy.title'), icon: Eye },
   ];
 
   const physioTabs = [
-    { id: 'profile_prof', label: 'Perfil Profissional', icon: User },
-    { id: 'clinic', label: 'Dados da Clínica', icon: Building2 },
-    { id: 'subscription', label: 'Assinatura PRO', icon: Crown },
-    { id: 'earnings', label: 'Pagamentos Recebidos', icon: DollarSign },
-    { id: 'security', label: 'Segurança', icon: Lock },
+    { id: 'profile_prof', label: t('nav.profile'), icon: User },
+    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2 },
+    { id: 'subscription', label: t('nav.subscription'), icon: Crown },
+    { id: 'earnings', label: t('payments.received'), icon: DollarSign },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe },
+    { id: 'security', label: t('security.title'), icon: Lock },
   ];
 
   const currentTabs = isPhysio ? physioTabs : patientTabs;
@@ -1056,10 +1057,56 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
+                    {/* Language Selection Section */}
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      <h3 className="text-xl font-black text-white mb-2 flex items-center gap-3">
+                        <Globe className="text-blue-500" size={24} />
+                        {t('settings.language')}
+                      </h3>
+                      <p className="text-slate-400 font-medium mb-8 ml-9">{t('settings.language_description')}</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {languages.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => changeLanguage(lang.code)}
+                            className={cn(
+                              "relative group p-6 rounded-[2.5rem] border-2 transition-all duration-500 text-left overflow-hidden",
+                              i18n.language.startsWith(lang.code)
+                                ? "border-blue-500 bg-blue-500/10 shadow-xl shadow-blue-500/20" 
+                                : "border-white/5 bg-white/5 hover:border-white/20"
+                            )}
+                          >
+                            <div className="flex items-center gap-4">
+                              <span className="text-3xl">{lang.flag}</span>
+                              <div>
+                                <p className={cn(
+                                  "font-black text-lg tracking-tight",
+                                  i18n.language.startsWith(lang.code) ? "text-white" : "text-slate-300"
+                                )}>
+                                  {lang.name}
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                  {lang.code === 'pt' ? 'Português' : lang.code === 'en' ? 'English' : 'Español'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {i18n.language.startsWith(lang.code) && (
+                              <div className="absolute top-4 right-4">
+                                <CheckCircle className="text-blue-500" size={20} />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Theme Selection Section */}
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
                       <h3 className="text-xl font-black text-white mb-2 flex items-center gap-3">
                         <Palette className="text-blue-500" size={24} />
-                        Personalização
+                        Personalização de Tema
                       </h3>
                       <p className="text-slate-400 font-medium mb-8 ml-9">Escolha o tema que melhor combina com seu estilo.</p>
                       
