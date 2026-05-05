@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  useRef
+} from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import i18n from '../i18n/config';
@@ -13,6 +20,7 @@ interface AuthContextType {
   theme: string;
   language: string;
   loading: boolean;
+  ready: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateTheme: (themeId: string) => Promise<void>;
@@ -21,14 +29,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Cache key for local profile storage
 const PROFILE_CACHE_KEY = 'fch_profile_cache';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+
   const [profile, setProfile] = useState<any | null>(() => {
-    // Optimistic loading from cache
     try {
       const cached = localStorage.getItem(PROFILE_CACHE_KEY);
       return cached ? JSON.parse(cached) : null;
@@ -36,138 +43,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   });
+
   const [subscription, setSubscription] = useState<any | null>(null);
+
   const [theme, setTheme] = useState<string>(() => {
     try {
       const cached = localStorage.getItem(PROFILE_CACHE_KEY);
-      if (cached) {
-        const p = JSON.parse(cached);
-        return p.theme || 'blue';
-      }
-    } catch {}
-    return 'blue';
+      return cached ? JSON.parse(cached)?.theme || 'blue' : 'blue';
+    } catch {
+      return 'blue';
+    }
   });
+
   const [language, setLanguage] = useState<string>(() => {
     return localStorage.getItem('i18nextLng') || 'pt';
   });
+
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
+
   const navigate = useNavigate();
 
   const lastFetchedUserId = useRef<string | null>(null);
-  const isInitialMount = useRef(true);
 
   const fetchProfile = async (userId: string, userMetadata?: any) => {
-    if (lastFetchedUserId.current === userId && profile && !isInitialMount.current) {
-      return { profile, subscription };
-    }
-    
     try {
-      // Use maybeSingle to avoid errors if profile doesn't exist yet
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('perfis')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
-      
+
       let finalProfile = data;
 
-      if (!finalProfile && !error) {
-        // Create default profile if missing (e.g. first login)
-        const pendingRole = localStorage.getItem('pending_role');
-        const finalRole = userMetadata?.role || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
-        
+      if (!finalProfile) {
         finalProfile = {
           id: userId,
-          nome_completo: userMetadata?.nome_completo || userMetadata?.full_name || 'Usuário',
+          nome_completo: userMetadata?.nome_completo || 'Usuário',
           email: userMetadata?.email || '',
-          avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-          tipo_usuario: finalRole,
-          plano: finalRole === 'fisioterapeuta' ? 'basic' : 'free',
-          plan_type: finalRole === 'fisioterapeuta' ? 'basic' : null,
-          status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente',
+          tipo_usuario: 'paciente',
+          plano: 'free',
           created_at: new Date().toISOString()
         };
 
-        // Try to insert, but don't block if it fails
-        supabase.from('perfis').insert(finalProfile).then(({ error: e }) => {
-          if (e) console.warn('Silent profile creation failed:', e.message);
-        });
+        supabase.from('perfis').insert(finalProfile);
       }
 
-      if (finalProfile && finalProfile.email?.toLowerCase() === 'hogolezcano92@gmail.com') {
-        // Ensure admin role is persisted in DB if not already
-        if (finalProfile.tipo_usuario !== 'admin') {
-          supabase.from('perfis')
-            .update({ tipo_usuario: 'admin', plano: 'admin' })
-            .eq('id', userId)
-            .then(({ error: e }) => {
-              if (e) console.warn('Automatic admin promotion in DB failed:', e.message);
-            });
-        }
-        finalProfile = { ...finalProfile, tipo_usuario: 'admin', plano: 'admin', plan_type: 'pro' };
-      }
+      const { data: subData } = await supabase
+        .from('assinaturas')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'ativo')
+        .maybeSingle();
 
-      // Fetch subscription in parallel if profile exists
-      const subPromise = finalProfile 
-        ? supabase.from('assinaturas').select('*').eq('user_id', userId).eq('status', 'ativo').maybeSingle()
-        : Promise.resolve({ data: null });
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(finalProfile));
 
-      const { data: subData } = await subPromise;
-      
-      // Update cache
-      if (finalProfile) {
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(finalProfile));
-      }
-
-      lastFetchedUserId.current = userId;
       return { profile: finalProfile, subscription: subData };
-    } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
+    } catch {
       return { profile: null, subscription: null };
     }
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata);
-      setProfile(p);
-      setSubscription(s);
-    }
+    if (!user) return;
+    const { profile: p, subscription: s } =
+      await fetchProfile(user.id, user.user_metadata);
+
+    setProfile(p);
+    setSubscription(s);
   };
 
   const updateTheme = async (themeId: string) => {
     setTheme(themeId);
     applyTheme(themeId);
-    
-    // Update profile state to stay in sync
-    if (profile) {
-      const updatedProfile = { ...profile, theme: themeId };
-      setProfile(updatedProfile);
-      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(updatedProfile));
-    }
-
-    if (user) {
-      try {
-        await supabase
-          .from('perfis')
-          .update({ theme: themeId })
-          .eq('id', user.id);
-      } catch (err) {
-        console.error('Failed to persist theme:', err);
-      }
-    }
   };
 
-  // Apply theme when theme state changes
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  // Sync theme when profile is fetched
   useEffect(() => {
-    if (profile?.theme && profile.theme !== theme) {
-      setTheme(profile.theme);
-    }
     if (profile?.idioma && profile.idioma !== language) {
       setLanguage(profile.idioma);
       i18n.changeLanguage(profile.idioma);
@@ -177,94 +132,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (!mounted) return;
+    const { data: { subscription: authSub } } =
+      supabase.auth.onAuthStateChange(async (_, currentSession) => {
+        if (!mounted) return;
 
-      setSession(currentSession);
-      const currentUser = currentSession?.user ?? null;
-      setUser(currentUser);
-      
-      if (currentUser) {
-        if (lastFetchedUserId.current !== currentUser.id) {
-          const { profile: p, subscription: s } = await fetchProfile(currentUser.id, currentUser.user_metadata);
-          if (mounted) {
-            setProfile(p);
-            setSubscription(s);
-            setLoading(false);
-            isInitialMount.current = false;
-          }
-        } else {
+        setSession(currentSession);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+
+        if (!currentUser) {
+          setProfile(null);
+          setSubscription(null);
           setLoading(false);
+          setReady(true);
+          return;
         }
-      } else {
-        setProfile(null);
-        setSubscription(null);
-        lastFetchedUserId.current = null;
-        localStorage.removeItem(PROFILE_CACHE_KEY);
-        setLoading(false);
-      }
-    });
 
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && loading) setLoading(false);
-    }, 4000);
+        if (lastFetchedUserId.current !== currentUser.id) {
+          const { profile: p, subscription: s } =
+            await fetchProfile(currentUser.id, currentUser.user_metadata);
+
+          if (!mounted) return;
+
+          setProfile(p);
+          setSubscription(s);
+          lastFetchedUserId.current = currentUser.id;
+        }
+
+        setLoading(false);
+        setReady(true);
+      });
 
     return () => {
       mounted = false;
       authSub.unsubscribe();
-      clearTimeout(safetyTimeout);
     };
   }, []);
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-      setSubscription(null);
-      localStorage.removeItem(PROFILE_CACHE_KEY);
-      navigate('/');
-    }
+    await supabase.auth.signOut();
+
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setSubscription(null);
+
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+    navigate('/');
   };
 
   const updateLanguage = async (lang: string) => {
     setLanguage(lang);
     i18n.changeLanguage(lang);
     localStorage.setItem('i18nextLng', lang);
-
-    if (profile) {
-      const updatedProfile = { ...profile, idioma: lang };
-      setProfile(updatedProfile);
-      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(updatedProfile));
-    }
-
-    if (user) {
-      try {
-        await supabase
-          .from('perfis')
-          .update({ idioma: lang })
-          .eq('id', user.id);
-      } catch (err) {
-        console.error('Failed to persist language:', err);
-      }
-    }
   };
 
-  const value = useMemo(() => ({
-    user,
-    session,
-    profile,
-    subscription,
-    theme,
-    language,
-    loading,
-    signOut,
-    refreshProfile,
-    updateTheme,
-    updateLanguage
-  }), [user, session, profile, subscription, theme, language, loading]);
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      profile,
+      subscription,
+      theme,
+      language,
+      loading,
+      ready,
+      signOut,
+      refreshProfile,
+      updateTheme,
+      updateLanguage
+    }),
+    [user, session, profile, subscription, theme, language, loading, ready]
+  );
 
   return (
     <AuthContext.Provider value={value}>
@@ -274,9 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }
