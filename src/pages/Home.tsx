@@ -53,6 +53,8 @@ interface Professional {
   location: string;
 }
 
+const NOISE_SVG = "data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
+
 export default function Home() {
   const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
@@ -829,7 +831,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto relative group">
           <div className="absolute inset-0 bg-blue-600 rounded-[4rem] blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity" />
           <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-24 text-center text-white overflow-hidden shadow-2xl">
-            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
+            <div 
+              className="absolute top-0 left-0 w-full h-full opacity-10 mix-blend-overlay" 
+              style={{ backgroundImage: `url("${NOISE_SVG}")` }}
+            />
             <div className="relative z-10 space-y-10 max-w-4xl mx-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
