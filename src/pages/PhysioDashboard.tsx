@@ -20,6 +20,7 @@ import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import FloatingHelpMenu from '../components/FloatingHelpMenu';
 
 export default function PhysioDashboard() {
   const { user } = useAuth();
@@ -359,6 +360,7 @@ export default function PhysioDashboard() {
           )}
         </div>
       </div>
+      <FloatingHelpMenu />
     </div>
   );
 }

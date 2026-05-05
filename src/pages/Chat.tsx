@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -30,6 +31,7 @@ import { formatDate, cn } from '../lib/utils';
 import KineAI, { KineIcon } from '../components/KineAI';
 
 export default function Chat() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -416,6 +418,10 @@ export default function Chat() {
     } catch (err) { console.error(err); }
   };
 
+  const isChattingWithSupport = targetUser?.tipo_usuario === 'admin' || 
+                                targetUser?.email === 'hogolezcano92@gmail.com' ||
+                                new URLSearchParams(location.search).get('support') === 'true';
+
   return (
     <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-16 lg:pt-0">
       {/* Background Decoration */}
@@ -442,16 +448,18 @@ export default function Chat() {
               <MessageSquare className="text-blue-400" />
               Chats
             </h2>
-            <button 
-              onClick={() => {
-                // Dispatch event to open KineAI
-                setShowKineAI(true);
-              }}
-              className="px-3 py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-3 border border-white/5 shadow-sm group"
-            >
-              <KineIcon size="xs" />
-              Suporte IA
-            </button>
+            {!isChattingWithSupport && (
+              <button 
+                onClick={() => {
+                  // Dispatch event to open KineAI
+                  setShowKineAI(true);
+                }}
+                className="px-3 py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-3 border border-white/5 shadow-sm group"
+              >
+                <KineIcon size="xs" />
+                Suporte IA
+              </button>
+            )}
           </div>
 
           <form onSubmit={handleSearch} className="relative group">
@@ -790,7 +798,7 @@ export default function Chat() {
                         className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
                       >
                         <User size={18} />
-                        Ver Perfil Completo
+                        {t('profile.view_full')}
                       </button>
                     </div>
                   </motion.aside>
@@ -865,7 +873,9 @@ export default function Chat() {
           </>
         )}
       </main>
-      <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
+      {!isChattingWithSupport && (
+        <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
+      )}
     </div>
   );
 }

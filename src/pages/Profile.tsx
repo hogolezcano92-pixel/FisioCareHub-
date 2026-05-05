@@ -38,6 +38,7 @@ import AvatarUpload from '../components/AvatarUpload';
 import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
+import FloatingHelpMenu from '../components/FloatingHelpMenu';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
@@ -1440,6 +1441,7 @@ export default function Profile() {
           </div>
         )}
       </AnimatePresence>
+      <FloatingHelpMenu />
     </div>
   );
 }

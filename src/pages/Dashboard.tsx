@@ -45,6 +45,7 @@ import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { DigitalLibrary } from '../components/FisioCare/DigitalLibrary';
 import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
 import { Skeleton, CardSkeleton, ListSkeleton } from '../components/Skeleton';
+import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ProBanner from '../components/ProBanner';
 import ProGuard from '../components/ProGuard';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
@@ -1077,6 +1078,7 @@ export default function Dashboard() {
           </button>
         </div>
       )}
+      <FloatingHelpMenu />
     </div>
   </div>
   );
