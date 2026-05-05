@@ -101,7 +101,7 @@ export default function PatientExercises() {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
-        <p className="text-slate-500 font-bold animate-pulse">Carregando plano de exercícios...</p>
+        <p className="text-slate-500 font-bold animate-pulse">Carregando plano de treinos...</p>
       </div>
     );
   }
@@ -112,7 +112,7 @@ export default function PatientExercises() {
         <div>
           <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
             <Activity className="text-sky-500" size={36} />
-            Meu Plano de Exercícios
+            Meu Plano de Treinos
           </h1>
           <p className="text-slate-400 font-medium">Siga as orientações do seu fisioterapeuta para uma melhor recuperação.</p>
         </div>

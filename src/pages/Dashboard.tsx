@@ -539,7 +539,7 @@ export default function Dashboard() {
             <div className="w-px h-8 bg-white/10 relative z-10" />
             <div className="text-center relative z-10">
               <p className="text-2xl font-black text-white">{stats.records > 0 ? '12' : '0'}</p>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Exercícios</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Treinos</p>
             </div>
           </div>
         </div>
@@ -895,7 +895,7 @@ export default function Dashboard() {
                       ) : (
                         <>
                           <button 
-                            onClick={() => navigate('/diario')}
+                            onClick={() => navigate('/treinos')}
                             className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
                           >
                             Treino de Hoje
@@ -1012,7 +1012,7 @@ export default function Dashboard() {
                     <MessageSquare className="mx-auto text-slate-500 group-hover:text-blue-400 transition-colors" size={20} />
                     <p className="text-[8px] font-black uppercase text-slate-500 group-hover:text-blue-400">Chat</p>
                   </Link>
-                  <Link to="/exercises" className="p-3 bg-white/5 rounded-2xl hover:bg-emerald-600/10 group transition-all text-center space-y-1 border border-white/5 hover:border-emerald-500/20 shadow-sm">
+                  <Link to="/treinos" className="p-3 bg-white/5 rounded-2xl hover:bg-emerald-600/10 group transition-all text-center space-y-1 border border-white/5 hover:border-emerald-500/20 shadow-sm">
                     <Activity className="mx-auto text-slate-500 group-hover:text-emerald-400 transition-colors" size={20} />
                     <p className="text-[8px] font-black uppercase text-slate-500 group-hover:text-emerald-400">Treinos</p>
                   </Link>

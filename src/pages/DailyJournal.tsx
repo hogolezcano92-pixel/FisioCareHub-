@@ -340,7 +340,7 @@ export default function DailyJournal() {
                <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black text-white flex items-center gap-3">
                      <ClipboardList className="text-sky-500" size={24} />
-                     Checklist de Exercícios
+                     Checklist de Treinos
                   </h2>
                   <div className="flex items-center gap-2">
                      <div className="h-2 w-32 bg-white/5 rounded-full overflow-hidden">
