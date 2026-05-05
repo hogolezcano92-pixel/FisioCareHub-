@@ -66,6 +66,51 @@
     "process_label": "Processo Inteligente",
     "process_title_part1": "Sua Jornada de",
     "process_title_part2": "Recuperação",
+    "specialties": {
+      "ortho": {
+        "title": "Fisioterapia Traumato-Ortopédica",
+        "description": "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa."
+      },
+      "neuro": {
+        "title": "Fisioterapia Neurofuncional",
+        "description": "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas."
+      },
+      "geriatric": {
+        "title": "Fisioterapia Geriátrica",
+        "description": "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência."
+      },
+      "pediatric": {
+        "title": "Fisioterapia Pediátrica",
+        "description": "Atendimento lúdico e especializado para o desenvolvimento motor infantil, sem o estresse de clínicas."
+      },
+      "respiratory": {
+        "title": "Fisioterapia Respiratória",
+        "description": "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar."
+      },
+      "sports": {
+        "title": "Fisioterapia Esportiva",
+        "description": "Prevenção e tratamento de lesões para atletas com atendimento personalizado e focado no retorno rápido."
+      }
+    },
+    "steps": {
+      "step1": {
+        "title": "Solicitação Inteligente / Cadastro Rápido",
+        "desc": "Pacientes solicitam atendimento personalizado enquanto fisioterapeutas se cadastram em nossa rede de elite."
+      },
+      "step2": {
+        "title": "Curadoria de Elite / Aceite de Atendimento",
+        "desc": "Nossa IA sugere os melhores profissionais para cada caso, e o fisioterapeuta aceita o atendimento com um clique."
+      },
+      "step3": {
+        "title": "Cuidado e Gestão Unificados",
+        "desc": "O atendimento acontece com excelência enquanto o profissional utiliza nossas ferramentas de gestão integradas."
+      }
+    },
+    "network_label": "Nossa Rede",
+    "network_title_part1": "Especialistas",
+    "network_title_part2": "Verificados",
+    "search_placeholder": "Buscar por nome...",
+    "view_all": "Ver Todos",
     "cta": {
       "label": "Pronto para a Mudança?",
       "title_part1": "VAMOS COMEÇAR SUA",
