@@ -110,7 +110,8 @@
     "manage": "Gerenciar Assinatura"
   },
   "clinic": {
-    "clinic_data": "Dados da Clínica"
+    "clinic_data": "Dados da Clínica / Consultório",
+    "patient_data": "Dados do Paciente ou Endereço"
   },
   "security": {
     "title": "Segurança"
