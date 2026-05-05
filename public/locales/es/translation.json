@@ -14,6 +14,7 @@
     "next": "Siguiente",
     "finish": "Finalizar",
     "applied": "Aplicado",
+    "profile": "Perfil",
     "language_changed": "Idioma cambiado a Español",
     "all_app_applied": "El idioma se aplicará en toda la aplicación"
   },
@@ -27,7 +28,7 @@
     "chat": "Chat",
     "records": "Historias Clínicas",
     "triage": "Triaje IA",
-    "profile": "Perfil",
+    "profile": "Mi cuenta",
     "login": "Entrar",
     "register": "Registrarse",
     "logout": "Salir",
@@ -57,7 +58,8 @@
       "title1": "Su rehabilitación en la",
       "title2": "comodidad de su hogar",
       "subtitle": "Transformando la fisioterapia a través de la tecnología y el cuidado humanizado para todas las edades."
-    }
+    },
+    "view_profile": "Ver Perfil"
   },
   "settings": {
     "title": "Configuraciones",
@@ -69,18 +71,39 @@
     "preferences": "Preferencias"
   },
   "profile": {
+    "title": "Mi cuenta",
+    "delete_confirm": "Sí, Eliminar Mi Cuenta",
     "save_changes": "Guardar Cambios",
     "update_address": "Actualizar Dirección",
     "personal_info": "Información Personal",
+    "update_success": "¡Perfil actualizado con éxito!",
+    "delete_success": "¡Perfil eliminado con éxito!",
+    "view_full": "Ver Perfil Completo",
+    "visibility": "Visibilidad del Perfil",
+    "photo": "Foto de Perfil",
     "form_name": "Nombre Completo",
     "form_phone": "Teléfono de Contacto",
     "form_cpf": "CPF / Identificación",
-    "form_birth": "Fecha de Nacimiento",
+    "form_birth": "Fecha de Nascimento",
     "form_gender": "Género",
     "gender_select": "Seleccione...",
     "gender_male": "Masculino",
     "gender_female": "Femenino",
     "gender_other": "Otro"
+  },
+  "register": {
+    "submit": "Crear Mi Cuenta"
+  },
+  "footer": {
+    "navigation": "Navegación",
+    "dashboard": "Tablero",
+    "account": "Mi Cuenta",
+    "legal": "Legal",
+    "terms": "Términos de Uso",
+    "privacy": "Política de Privacidad",
+    "contact": "Contacto",
+    "support": "Soporte",
+    "rights": "Todos los derechos reservados."
   },
   "subscription": {
     "cancel_plan": "Cancelar Plan",
@@ -101,5 +124,12 @@
   },
   "privacy": {
     "title": "Privacidad"
+  },
+  "admin": {
+    "profile_title": "Mi Perfil de Admin",
+    "profile_approved": "¡Perfil Aprobado!",
+    "profile_rejected": "Perfil Rechazado",
+    "update_profile": "Actualizar Perfil",
+    "delete_profile": "Eliminar Perfil"
   }
 }
