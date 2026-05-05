@@ -50,6 +50,7 @@ import { useTranslation } from 'react-i18next';
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import SplashScreen from './components/SplashScreen';
+import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
 
 // Lazy Components
@@ -719,10 +720,6 @@ function AppContent() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  if (authLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
       <HeaderObserver />
@@ -760,8 +757,8 @@ function AppContent() {
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/home" element={<Home />} />
+                  <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
+                  <Route path="/home" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
@@ -899,9 +896,11 @@ export default function App() {
         <div className="block">
           <BrowserRouter>
             <AuthProvider>
-              <Suspense fallback={<SplashScreen />}>
-                <AppContent />
-              </Suspense>
+              <AuthGate>
+                <Suspense fallback={<SplashScreen />}>
+                  <AppContent />
+                </Suspense>
+              </AuthGate>
             </AuthProvider>
           </BrowserRouter>
         </div>
