@@ -56,6 +56,7 @@
   "home": {
     "hero": {
       "title1": "Su rehabilitación en la",
+      "highlight": "Bienestar",
       "title2": "comodidad de su hogar",
       "subtitle": "Transformando la fisioterapia a través de la tecnología y el cuidado humanizado para todas las edades."
     },
@@ -106,6 +107,7 @@
     "submit": "Crear Mi Cuenta"
   },
   "footer": {
+    "description": "Conectando fisioterapeutas y pacientes con tecnología y cuidado.",
     "navigation": "Navegación",
     "dashboard": "Tablero",
     "account": "Mi Cuenta",
