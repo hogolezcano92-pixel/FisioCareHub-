@@ -212,11 +212,11 @@ export const ExerciseChecklist = () => {
     <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-2.5 w-full">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <h3 className="text-sm font-black text-white tracking-tight">Checklist de Exercícios</h3>
+          <h3 className="text-sm font-black text-white tracking-tight">Checklist de Treinos</h3>
           <p className="text-slate-400 text-[9px] font-medium">Complete sua rotina diária.</p>
         </div>
-        <Link to="/diario" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:underline">
-          Ver Diário Completo
+        <Link to="/treinos" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:underline">
+          Ver Treinos Completos
         </Link>
       </div>
 
