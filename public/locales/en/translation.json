@@ -59,7 +59,13 @@
       "title2": "comfort of home",
       "subtitle": "Transforming physiotherapy through technology and humanized care for all ages."
     },
-    "view_profile": "View Profile"
+    "view_profile": "View Profile",
+    "specialties_label": "Medical Specialties",
+    "specialties_title_part1": "Excellence in",
+    "specialties_title_part2": "Various Areas",
+    "process_label": "Intelligent Process",
+    "process_title_part1": "Your Journey to",
+    "process_title_part2": "Recovery"
   },
   "settings": {
     "title": "Settings",
