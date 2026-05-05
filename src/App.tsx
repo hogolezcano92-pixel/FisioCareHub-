@@ -38,7 +38,7 @@ import {
   BookOpen,
   Search
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/utils';
 import { Toaster, toast } from 'sonner';
 
