@@ -111,7 +111,7 @@
   },
   "clinic": {
     "clinic_data": "Datos de la Clínica",
-    "patient_data": "Datos del Paciente o Dirección"
+    "patient_data": "Datos del Paciente"
   },
   "security": {
     "title": "Seguridad"
