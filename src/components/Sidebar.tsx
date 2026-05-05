@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Diário de Dor', path: '/diario', icon: Activity },
             { name: 'Buscar Fisio', path: '/buscar-fisio', icon: Search },
             { name: 'Agenda', path: '/appointments', icon: Calendar },
-            { name: 'Exercícios', path: '/patient/exercises', icon: Activity },
+            { name: 'Treinos', path: '/treinos', icon: Activity },
             { name: 'Prontuários', path: '/records', icon: FileText },
             { name: 'Documentos', path: '/documents', icon: FileSignature },
             { name: 'Triagem IA', path: '/triage', icon: BrainCircuit },
