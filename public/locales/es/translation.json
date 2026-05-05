@@ -65,7 +65,12 @@
     "specialties_title_part2": "Diversas Áreas",
     "process_label": "Proceso Inteligente",
     "process_title_part1": "Su Jornada de",
-    "process_title_part2": "Recuperación"
+    "process_title_part2": "Recuperación",
+    "network_label": "Nuestra Red",
+    "network_title_part1": "Especialistas",
+    "network_title_part2": "Verificados",
+    "search_placeholder": "Buscar por nombre...",
+    "view_all": "Ver Todos"
   },
   "settings": {
     "title": "Configuraciones",
