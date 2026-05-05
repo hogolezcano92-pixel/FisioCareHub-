@@ -59,7 +59,13 @@
       "title2": "comodidad de su hogar",
       "subtitle": "Transformando la fisioterapia a través de la tecnología y el cuidado humanizado para todas las edades."
     },
-    "view_profile": "Ver Perfil"
+    "view_profile": "Ver Perfil",
+    "specialties_label": "Especialidades Médicas",
+    "specialties_title_part1": "Excelencia en",
+    "specialties_title_part2": "Diversas Áreas",
+    "process_label": "Proceso Inteligente",
+    "process_title_part1": "Su Jornada de",
+    "process_title_part2": "Recuperación"
   },
   "settings": {
     "title": "Configuraciones",
