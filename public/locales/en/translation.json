@@ -110,7 +110,8 @@
     "manage": "Manage Subscription"
   },
   "clinic": {
-    "clinic_data": "Clinic Data"
+    "clinic_data": "Clinic Data",
+    "patient_data": "Patient Data or Address"
   },
   "security": {
     "title": "Security"
