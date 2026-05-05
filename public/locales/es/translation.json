@@ -67,6 +67,46 @@
     "process_label": "Proceso Inteligente",
     "process_title_part1": "Su Jornada de",
     "process_title_part2": "Recuperación",
+    "specialties": {
+      "ortho": {
+        "title": "Fisioterapia Traumato-Ortopédica",
+        "description": "Tratamiento especializado para fracturas, dolores de columna y recuperación postoperatoria, todo en la comodidad de su hogar."
+      },
+      "neuro": {
+        "title": "Fisioterapia Neurofuncional",
+        "description": "Rehabilitación a domicilio enfocada en pacientes post-ACV, Parkinson y otras condiciones neurológicas complejas."
+      },
+      "geriatric": {
+        "title": "Fisioterapia Geriátrica",
+        "description": "Cuidado dedicado a la tercera edad en el entorno domiciliario, enfocándose en movilidad, equilibrio e independencia."
+      },
+      "pediatric": {
+        "title": "Fisioterapia Pediátrica",
+        "description": "Atención lúdica y especializada para el desarrollo motor infantil, sin el estrés de las clínicas."
+      },
+      "respiratory": {
+        "title": "Fisioterapia Respiratoria",
+        "description": "Mejora de la capacidad pulmonar y tratamiento de condiciones como EPOC y asma, con toda la seguridad de su hogar."
+      },
+      "sports": {
+        "title": "Fisioterapia Deportiva",
+        "description": "Prevención y tratamiento de lesiones para atletas con atención personalizada y enfocada en el retorno rápido."
+      }
+    },
+    "steps": {
+      "step1": {
+        "title": "Solicitud Inteligente / Registro Rápido",
+        "desc": "Los pacientes solicitan atención personalizada mientras que los fisioterapeutas se registran en nuestra red de élite."
+      },
+      "step2": {
+        "title": "Curaduría de Élite / Aceptación de Atención",
+        "desc": "Nuestra IA sugiere los mejores profesionales para cada caso, y el fisioterapeuta acepta la atención con un clic."
+      },
+      "step3": {
+        "title": "Cuidado y Gestión Unificados",
+        "desc": "La atención ocurre con excelencia mientras el profesional utiliza nuestras herramientas de gestión integradas."
+      }
+    },
     "network_label": "Nuestra Red",
     "network_title_part1": "Especialistas",
     "network_title_part2": "Verificados",
