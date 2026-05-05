@@ -294,6 +294,7 @@ function Navbar() {
       // Items for Patients
       ...(profile?.tipo_usuario === 'paciente' ? [
         { name: 'Diário de Dor', path: '/diario', icon: Activity },
+        { name: 'Treinos', path: '/treinos', icon: Activity },
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
@@ -787,6 +788,7 @@ function AppContent() {
                   <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Agenda /></ProtectedRoute>} />
                   <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Exercises /></ProtectedRoute>} />
                   <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
+                  <Route path="/treinos" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
                   <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
                   <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationsList /></ProtectedRoute>} />
                   <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationForm /></ProtectedRoute>} />
