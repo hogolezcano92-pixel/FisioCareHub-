@@ -110,7 +110,8 @@
     "manage": "Gestionar Suscripción"
   },
   "clinic": {
-    "clinic_data": "Datos de la Clínica"
+    "clinic_data": "Datos de la Clínica",
+    "patient_data": "Datos del Paciente o Dirección"
   },
   "security": {
     "title": "Seguridad"
