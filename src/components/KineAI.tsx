@@ -95,6 +95,8 @@ export const KineIcon = ({ size = "md", active = false, className }: { size?: "x
   );
 };
 
+const NOISE_SVG = "data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
+
 export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -279,7 +281,10 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
             >
               {/* Subtle background energy glow */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+              <div 
+                className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                style={{ backgroundImage: `url("${NOISE_SVG}")` }}
+              />
             </motion.div>
             
             <div className="fixed inset-0 flex items-center justify-center z-[50] pointer-events-none p-4 pb-12">
