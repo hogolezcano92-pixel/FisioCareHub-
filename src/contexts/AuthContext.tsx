@@ -33,14 +33,9 @@ const PROFILE_CACHE_KEY = 'fch_profile_cache';
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-
-  // CORREÇÃO: Iniciamos como null. Não usamos cache aqui para evitar o "perfil fantasma[span_3](start_span)"[span_3](end_span)
   const [profile, setProfile] = useState<any | null>(null);
   const [subscription, setSubscription] = useState<any | null>(null);
-
-  // CORREÇÃO: Iniciamos com um tema padrão neutro[span_4](start_span)[span_4](end_span)
   const [theme, setTheme] = useState<string>('blue');
-
   const [language, setLanguage] = useState<string>(() => {
     return localStorage.getItem('i18nextLng') || 'pt';
   });
@@ -49,15 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   const navigate = useNavigate();
-  const lastFetchedUserId = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string, userMetadata?: any) => {
     try {
       const { data } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+       .from('perfis')
+       .select('*')
+       .eq('id', userId)
+       .maybeSingle();
 
       let finalProfile = data;
 
@@ -74,11 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const { data: subData } = await supabase
-        .from('assinaturas')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'ativo')
-        .maybeSingle();
+       .from('assinaturas')
+       .select('*')
+       .eq('user_id', userId)
+       .eq('status', 'ativo')
+       .maybeSingle();
 
       localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(finalProfile));
       return { profile: finalProfile, subscription: subData };
@@ -97,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateTheme = async (themeId: string) => {
     setTheme(themeId);
     applyTheme(themeId);
-    // Persistir tema se houver perfil
     if (user) {
       await supabase.from('perfis').update({ theme: themeId }).eq('id', user.id);
     }
@@ -107,20 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applyTheme(theme);
   }, [theme]);
 
-  // Sincroniza tema e idioma APENAS quando o perfil real carregar[span_5](start_span)[span_5](end_span)
-  useEffect(() => {
-    if (profile) {
-      if (profile.theme) {
-        setTheme(profile.theme);
-        applyTheme(profile.theme);
-      }
-      if (profile.idioma && profile.idioma !== language) {
-        setLanguage(profile.idioma);
-        i18n.changeLanguage(profile.idioma);
-      }
-    }
-  }, [profile]);
-
   useEffect(() => {
     let mounted = true;
 
@@ -128,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.auth.onAuthStateChange(async (_, currentSession) => {
         if (!mounted) return;
 
-        const currentUser = currentSession?.user ?? null;
+        const currentUser = currentSession?.user?? null;
         setSession(currentSession);
         setUser(currentUser);
 
@@ -141,15 +120,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Busca o perfil real antes de liberar o loading/ready[span_6](start_span)[span_6](end_span)
         const { profile: p, subscription: s } = await fetchProfile(currentUser.id, currentUser.user_metadata);
 
-        if (mounted) {
-          setProfile(p);
-          setSubscription(s);
-          setLoading(false);
-          setReady(true);
+        if (!mounted) return;
+
+        // CORREÇÃO: aplica tema e idioma ANTES de liberar o app
+        if (p?.theme && p.theme!== theme) {
+          setTheme(p.theme);
         }
+        if (p?.idioma && p.idioma!== i18n.language) {
+          await i18n.changeLanguage(p.idioma);
+          setLanguage(p.idioma);
+          localStorage.setItem('i18nextLng', p.idioma);
+        }
+
+        setProfile(p);
+        setSubscription(s);
+        setLoading(false);
+        setReady(true);
       });
 
     return () => {
@@ -170,8 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateLanguage = async (lang: string) => {
     setLanguage(lang);
-    i18n.changeLanguage(lang);
+    await i18n.changeLanguage(lang);
     localStorage.setItem('i18nextLng', lang);
+    if (user) {
+      await supabase.from('perfis').update({ idioma: lang }).eq('id', user.id);
+    }
   };
 
   const value = useMemo(
@@ -182,7 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [user, session, profile, subscription, theme, language, loading, ready]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // CORREÇÃO: só renderiza filhos depois de ready
+  return <AuthContext.Provider value={value}>{ready? children : null}</AuthContext.Provider>;
 }
 
 export function useAuth() {
