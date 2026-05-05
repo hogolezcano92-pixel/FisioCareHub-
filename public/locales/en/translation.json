@@ -14,6 +14,7 @@
     "next": "Next",
     "finish": "Finish",
     "applied": "Applied",
+    "profile": "Profile",
     "language_changed": "Language changed to English",
     "all_app_applied": "The language will be applied across the entire app"
   },
@@ -27,7 +28,7 @@
     "chat": "Chat",
     "records": "Medical Records",
     "triage": "AI Triage",
-    "profile": "Profile",
+    "profile": "My account",
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
@@ -57,7 +58,8 @@
       "title1": "Your rehabilitation in the",
       "title2": "comfort of home",
       "subtitle": "Transforming physiotherapy through technology and humanized care for all ages."
-    }
+    },
+    "view_profile": "View Profile"
   },
   "settings": {
     "title": "Settings",
@@ -69,9 +71,16 @@
     "preferences": "Preferences"
   },
   "profile": {
+    "title": "My account",
+    "delete_confirm": "Yes, Delete My Account",
     "save_changes": "Save Changes",
     "update_address": "Update Address",
     "personal_info": "Personal Information",
+    "update_success": "Profile updated successfully!",
+    "delete_success": "Profile deleted successfully!",
+    "view_full": "View Full Profile",
+    "visibility": "Profile Visibility",
+    "photo": "Profile Photo",
     "form_name": "Full Name",
     "form_phone": "Contact Phone",
     "form_cpf": "Tax ID / CPF",
@@ -81,6 +90,20 @@
     "gender_male": "Male",
     "gender_female": "Female",
     "gender_other": "Other"
+  },
+  "register": {
+    "submit": "Create My Account"
+  },
+  "footer": {
+    "navigation": "Navigation",
+    "dashboard": "Dashboard",
+    "account": "My Account",
+    "legal": "Legal",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy",
+    "contact": "Contact",
+    "support": "Support",
+    "rights": "All rights reserved."
   },
   "subscription": {
     "cancel_plan": "Cancel Plan",
@@ -101,5 +124,12 @@
   },
   "privacy": {
     "title": "Privacy"
+  },
+  "admin": {
+    "profile_title": "My Admin Profile",
+    "profile_approved": "Profile Approved!",
+    "profile_rejected": "Profile Rejected",
+    "update_profile": "Update Profile",
+    "delete_profile": "Delete Profile"
   }
 }
