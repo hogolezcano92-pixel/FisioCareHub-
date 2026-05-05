@@ -9,13 +9,39 @@ interface AuthGateProps {
 
 export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   const { loading, user, profile } = useAuth();
-  const [i18nReady, setI18nReady] = React.useState(i18n.isInitialized);
+  const [i18nReady, setI18nReady] = React.useState(false);
 
   React.useEffect(() => {
-    if (!i18n.isInitialized) {
-      const handleInitialized = () => setI18nReady(true);
-      i18n.on('initialized', handleInitialized);
-      return () => i18n.off('initialized', handleInitialized);
+    const checkI18n = () => {
+      // Check if initialized AND has the current language translation loaded
+      if (i18n.isInitialized && i18n.hasResourceBundle(i18n.language, 'translation')) {
+        setI18nReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (!checkI18n()) {
+      const handleReady = () => {
+        if (i18n.hasResourceBundle(i18n.language, 'translation')) {
+          setI18nReady(true);
+        }
+      };
+
+      i18n.on('initialized', handleReady);
+      i18n.on('loaded', handleReady);
+      
+      const interval = setInterval(() => {
+        if (checkI18n()) {
+          clearInterval(interval);
+        }
+      }, 50);
+
+      return () => {
+        i18n.off('initialized', handleReady);
+        i18n.off('loaded', handleReady);
+        clearInterval(interval);
+      };
     }
   }, []);
 
