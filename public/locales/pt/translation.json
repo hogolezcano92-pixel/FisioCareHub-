@@ -1,0 +1,105 @@
+{
+  "common": {
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "actions": "Ações",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "finish": "Finalizar",
+    "applied": "Aplicado",
+    "language_changed": "Idioma alterado para Português",
+    "all_app_applied": "O idioma será aplicado em todo o aplicativo"
+  },
+  "nav": {
+    "home": "Início",
+    "appointments": "Agenda",
+    "agenda": "Agenda",
+    "patients": "Pacientes",
+    "exercises": "Exercícios",
+    "documents": "Documentos",
+    "chat": "Chat",
+    "records": "Prontuários",
+    "triage": "Triagem IA",
+    "profile": "Perfil",
+    "login": "Entrar",
+    "register": "Cadastrar",
+    "logout": "Sair",
+    "admin": "Painel Admin",
+    "subscription": "Assinatura",
+    "about": "Sobre nós",
+    "library": "Biblioteca",
+    "find_physio": "Buscar Fisio",
+    "triages": "Triagens",
+    "pain_diary": "Diário de Dor",
+    "workouts": "Treinos",
+    "care": "Atendimento",
+    "finance": "Financeiro",
+    "communication": "Comunicação",
+    "account": "Conta",
+    "admin_dashboard": "Dashboard Admin",
+    "manage_users": "Gerenciar Usuários",
+    "app_preview": "Prévia do App",
+    "my_patients": "Meus Pacientes",
+    "evaluations": "Avaliações",
+    "finance_settings": "Configuração de Valores",
+    "support": "Suporte",
+    "help": "Ajuda"
+  },
+  "home": {
+    "hero": {
+      "title1": "Sua reabilitação no",
+      "title2": "conforto de casa",
+      "subtitle": "Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades."
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "language_description": "Escolha o idioma do sistema",
+    "portuguese": "Português",
+    "english": "Inglês",
+    "spanish": "Espanhol",
+    "preferences": "Preferências"
+  },
+  "profile": {
+    "save_changes": "Salvar Alterações",
+    "update_address": "Atualizar Endereço",
+    "personal_info": "Informações Pessoais",
+    "form_name": "Nome Completo",
+    "form_phone": "Telefone de Contato",
+    "form_cpf": "CPF",
+    "form_birth": "Data de Nascimento",
+    "form_gender": "Gênero",
+    "gender_select": "Selecione...",
+    "gender_male": "Masculino",
+    "gender_female": "Feminino",
+    "gender_other": "Outro"
+  },
+  "subscription": {
+    "cancel_plan": "Cancelar Plano",
+    "manage": "Gerenciar Assinatura"
+  },
+  "clinic": {
+    "clinic_data": "Dados da Clínica"
+  },
+  "security": {
+    "title": "Segurança"
+  },
+  "notifications": {
+    "title": "Notificações"
+  },
+  "payments": {
+    "title": "Pagamentos",
+    "received": "Pagamentos Recebidos"
+  },
+  "privacy": {
+    "title": "Privacidade"
+  }
+}
