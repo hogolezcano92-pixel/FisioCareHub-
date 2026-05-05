@@ -234,7 +234,7 @@ export default function Home() {
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
         <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
           <motion.div 
-            initial="hidden"
+            initial={false}
             animate="visible"
             variants={{
               hidden: { opacity: 0 },
@@ -607,7 +607,6 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
           <motion.div 
-            initial={{ opacity: 1 }}
             className="text-center mb-24 space-y-4"
           >
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
@@ -673,7 +672,6 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <motion.div 
-              initial={{ opacity: 1 }}
               className="space-y-4"
             >
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
@@ -684,9 +682,6 @@ export default function Home() {
             
             {/* Search and Filter Bar - Compact SaaS Style */}
             <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
               className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3"
             >
               <div className="relative flex-1 group">
