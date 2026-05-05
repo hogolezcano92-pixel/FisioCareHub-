@@ -297,7 +297,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  {t('home.hero.title2', 'no seu lar.')}
+                  {t('home.hero.title2', 'no seu lar')}
                 </motion.span>
               </h1>
               
@@ -613,12 +613,17 @@ export default function Home() {
       {/* How it Works Section - Bento Grid Style */}
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24 space-y-4">
-            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-24 space-y-4"
+          >
+            <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
               {t('home.process_title_part1', 'Sua Jornada de')} <span className="text-blue-500 italic">{t('home.process_title_part2', 'Recuperação')}</span>
             </h3>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -676,15 +681,25 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-            <div className="space-y-4">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
                 {t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic">{t('home.network_title_part2', 'Verificados')}</span>
               </h3>
-            </div>
+            </motion.div>
             
             {/* Search and Filter Bar - Compact SaaS Style */}
-            <div className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3">
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3"
+            >
               <div className="relative flex-1 group">
                 <Search 
                   className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-500" 
@@ -704,7 +719,7 @@ export default function Home() {
               >
                 {t('home.view_all', 'Ver Todos')}
               </button>
-            </div>
+            </motion.div>
           </div>
           
           <div className="relative group">
