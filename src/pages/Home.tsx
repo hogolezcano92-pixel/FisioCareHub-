@@ -279,7 +279,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  Saúde e
+                  {t('home.hero.title1')}
                 </motion.span>
                 <motion.span 
                   variants={{
@@ -297,7 +297,7 @@ export default function Home() {
                   }}
                   className="block"
                 >
-                  no seu lar.
+                  {t('home.hero.title2')}
                 </motion.span>
               </h1>
               
@@ -308,7 +308,7 @@ export default function Home() {
                 }}
                 className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
               >
-                Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.
+                {t('home.hero.subtitle')}
               </motion.p>
             </div>
             
@@ -528,10 +528,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">Especialidades Médicas</p>
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.specialties_label', 'Especialidades Médicas')}</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
-                Excelência em <br />
-                <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent italic">Diversas Áreas</span>
+                {t('home.specialties_title_part1', 'Excelência em')} <br />
+                <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent italic">{t('home.specialties_title_part2', 'Diversas Áreas')}</span>
               </h3>
             </div>
             <div className="flex gap-4">
@@ -614,9 +614,9 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-24 space-y-4">
-            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">Processo Inteligente</p>
+            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
-              Sua Jornada de <span className="text-blue-500 italic">Recuperação</span>
+              {t('home.process_title_part1', 'Sua Jornada de')} <span className="text-blue-500 italic">{t('home.process_title_part2', 'Recuperação')}</span>
             </h3>
           </div>
 
@@ -827,27 +827,27 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="inline-block px-6 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.4em]"
               >
-                Pronto para a Mudança?
+                {t('home.cta.label', 'Pronto para a Mudança?')}
               </motion.div>
               <h2 className="text-4xl md:text-7xl font-display font-black tracking-tighter leading-none">
-                VAMOS COMEÇAR SUA <br />
-                <span className="italic opacity-80">NOVA JORNADA?</span>
+                {t('home.cta.title_part1', 'VAMOS COMEÇAR SUA')} <br />
+                <span className="italic opacity-80">{t('home.cta.title_part2', 'NOVA JORNADA?')}</span>
               </h2>
               <p className="text-xl md:text-2xl text-blue-50 font-medium opacity-90 max-w-2xl mx-auto">
-                Agende uma avaliação inicial hoje mesmo e descubra como a fisioterapia domiciliar pode transformar seu bem-estar.
+                {t('home.cta.subtitle', 'Agende uma avaliação inicial hoje mesmo e descubra como a fisioterapia domiciliar pode transformar seu bem-estar.')}
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
                 <Link
                   to="/register"
                   className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-xl shadow-white/10 active:scale-95"
                 >
-                  Cadastrar Agora
+                  {t('nav.register')}
                 </Link>
                 <Link
                   to="/login"
                   className="px-10 py-5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl font-black text-base hover:bg-white/20 transition-all active:scale-95"
                 >
-                  Fazer Login
+                  {t('nav.login')}
                 </Link>
               </div>
             </div>
