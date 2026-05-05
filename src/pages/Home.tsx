@@ -79,43 +79,43 @@ export default function Home() {
 
   const specialtySlides = [
     {
-      title: "Fisioterapia Traumato-Ortopédica",
-      description: "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa.",
+      title: t('home.specialties.ortho.title', "Fisioterapia Traumato-Ortopédica"),
+      description: t('home.specialties.ortho.description', "Tratamento especializado para fraturas, dores na coluna e recuperação pós-operatória, tudo no conforto da sua casa."),
       image: "https://tuiuti.edu.br/wp-content/uploads/2022/12/shutterstock_1177541623.jpg",
       icon: Bone,
       color: "sky"
     },
     {
-      title: "Fisioterapia Neurofuncional",
-      description: "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas.",
+      title: t('home.specialties.neuro.title', "Fisioterapia Neurofuncional"),
+      description: t('home.specialties.neuro.description', "Reabilitação domiciliar focada em pacientes pós-AVC, Parkinson e outras condições neurológicas complexas."),
       image: "https://clinicamotricita.com.br/motri/images/treinodemarchacomsuspensoparcialdepeso.jpg",
       icon: Brain,
       color: "emerald"
     },
     {
-      title: "Fisioterapia Geriátrica",
-      description: "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência.",
+      title: t('home.specialties.geriatric.title', "Fisioterapia Geriátrica"),
+      description: t('home.specialties.geriatric.description', "Cuidado dedicado à terceira idade no ambiente domiciliar, focando em mobilidade, equilíbrio e independência."),
       image: "https://clinicaportal.com.br/wp-content/uploads/2021/02/Fisioterapia-para-idosos-como-a-pratica-ajuda-na-reabilitacao-e-autonomia-1024x683.jpg.webp",
       icon: Heart,
       color: "orange"
     },
     {
-      title: "Fisioterapia Pediátrica",
-      description: "Atendimento lúdico e especializado para o desenvolvimento motor infantil, sem o estresse de clínicas.",
+      title: t('home.specialties.pediatric.title', "Fisioterapia Pediátrica"),
+      description: t('home.specialties.pediatric.description', "Atendimento lúdico e especializado para o desenvolvimento motor infantil, sem o estresse de clínicas."),
       image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1200",
       icon: Baby,
       color: "indigo"
     },
     {
-      title: "Fisioterapia Respiratória",
-      description: "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar.",
+      title: t('home.specialties.respiratory.title', "Fisioterapia Respiratória"),
+      description: t('home.specialties.respiratory.description', "Melhora da capacidade pulmonar e tratamento de condições como DPOC e asma, com toda a segurança do seu lar."),
       image: "https://i0.wp.com/www.clinicadospes.com.br/wp-content/uploads/2021/08/fisioterapia-respiratoria-scaled.jpg?fit=2560%2C1707&ssl=1",
       icon: Wind,
       color: "blue"
     },
     {
-      title: "Fisioterapia Esportiva",
-      description: "Prevenção e tratamento de lesões para atletas com atendimento personalizado e focado no retorno rápido.",
+      title: t('home.specialties.sports.title', "Fisioterapia Esportiva"),
+      description: t('home.specialties.sports.description', "Prevenção e tratamento de lesões para atletas com atendimento personalizado e focado no retorno rápido."),
       image: "https://blogfisioterapia.com.br/wp-content/uploads/2023/09/Fisioterapia-esportiva.png",
       icon: Zap,
       color: "amber"
@@ -678,7 +678,9 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <div className="space-y-4">
               <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
-              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">{t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic">{t('home.network_title_part2', 'Verificados')}</span></h3>
+              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
+                {t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic">{t('home.network_title_part2', 'Verificados')}</span>
+              </h3>
             </div>
             
             {/* Search and Filter Bar - Compact SaaS Style */}
