@@ -14,6 +14,7 @@
     "next": "Próximo",
     "finish": "Finalizar",
     "applied": "Aplicado",
+    "profile": "Perfil",
     "language_changed": "Idioma alterado para Português",
     "all_app_applied": "O idioma será aplicado em todo o aplicativo"
   },
@@ -27,7 +28,7 @@
     "chat": "Chat",
     "records": "Prontuários",
     "triage": "Triagem IA",
-    "profile": "Perfil",
+    "profile": "Minha conta",
     "login": "Entrar",
     "register": "Cadastrar",
     "logout": "Sair",
@@ -57,7 +58,8 @@
       "title1": "Sua reabilitação no",
       "title2": "conforto de casa",
       "subtitle": "Transformando a fisioterapia através da tecnologia e do cuidado humanizado para todas as idades."
-    }
+    },
+    "view_profile": "Ver Perfil"
   },
   "settings": {
     "title": "Configurações",
@@ -69,9 +71,16 @@
     "preferences": "Preferências"
   },
   "profile": {
+    "title": "Minha conta",
+    "delete_confirm": "Sim, Excluir Minha Conta",
     "save_changes": "Salvar Alterações",
     "update_address": "Atualizar Endereço",
     "personal_info": "Informações Pessoais",
+    "update_success": "Perfil atualizado com sucesso!",
+    "delete_success": "Perfil excluído com sucesso!",
+    "view_full": "Ver Perfil Completo",
+    "visibility": "Visibilidade do Perfil",
+    "photo": "Foto de Perfil",
     "form_name": "Nome Completo",
     "form_phone": "Telefone de Contato",
     "form_cpf": "CPF",
@@ -81,6 +90,20 @@
     "gender_male": "Masculino",
     "gender_female": "Feminino",
     "gender_other": "Outro"
+  },
+  "register": {
+    "submit": "Criar Minha Conta"
+  },
+  "footer": {
+    "navigation": "Navegação",
+    "dashboard": "Dashboard",
+    "account": "Minha Conta",
+    "legal": "Legal",
+    "terms": "Termos de Uso",
+    "privacy": "Política de Privacidade",
+    "contact": "Contato",
+    "support": "Suporte",
+    "rights": "Todos os direitos reservados."
   },
   "subscription": {
     "cancel_plan": "Cancelar Plano",
@@ -101,5 +124,12 @@
   },
   "privacy": {
     "title": "Privacidade"
+  },
+  "admin": {
+    "profile_title": "Meu Perfil Admin",
+    "profile_approved": "Perfil Aprovado!",
+    "profile_rejected": "Perfil Rejeitado",
+    "update_profile": "Atualizar Perfil",
+    "delete_profile": "Excluir Perfil"
   }
 }
