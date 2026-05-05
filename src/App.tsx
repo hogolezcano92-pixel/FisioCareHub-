@@ -53,7 +53,6 @@ import SplashScreen from './components/SplashScreen';
 import Footer from './components/Footer';
 
 // Lazy Components
-const FloatingHelpMenu = lazy(() => import('./components/FloatingHelpMenu'));
 const Onboarding = lazy(() => import('./components/Onboarding'));
 const Sidebar = lazy(() => import('./components/Sidebar'));
 const AguardandoAprovacao = lazy(() => import('./pages/AguardandoAprovacao'));
@@ -728,13 +727,9 @@ function AppContent() {
       
       <ErrorBoundary>
         <Suspense fallback={null}>
-          <FloatingHelpMenu hideButton={!isLandingPage || !!user} />
-        </Suspense>
-        <NotificationHandler />
-        
-        <Suspense fallback={null}>
           {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         </Suspense>
+        <NotificationHandler />
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
