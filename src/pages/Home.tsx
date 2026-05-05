@@ -607,9 +607,7 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 1 }}
             className="text-center mb-24 space-y-4"
           >
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
@@ -675,9 +673,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 1 }}
               className="space-y-4"
             >
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
