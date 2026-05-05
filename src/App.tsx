@@ -95,12 +95,15 @@ const FinanceServiceSettings = lazy(() => import('./pages/FinanceServiceSettings
 const Telehealth = lazy(() => import('./pages/Telehealth'));
 const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
 
-const PageLoader = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-    <Loader2 className="w-12 h-12 text-primary animate-spin" />
-    <p className="text-text-muted font-bold uppercase tracking-widest text-xs animate-pulse">Carregando...</p>
-  </div>
-);
+const PageLoader = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <Loader2 className="w-12 h-12 text-primary animate-spin" />
+      <p className="text-text-muted font-bold uppercase tracking-widest text-xs animate-pulse">{t('common.loading', 'Carregando...')}</p>
+    </div>
+  );
+};
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -194,10 +197,11 @@ function ScrollToTop() {
 }
 
 function LoadingScreen() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-bg-general flex flex-col items-center justify-center space-y-4 transition-colors duration-300">
       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-text-muted font-bold uppercase tracking-widest text-xs">Carregando Sistema...</p>
+      <p className="text-text-muted font-bold uppercase tracking-widest text-xs">{t('common.loading_system', 'Carregando Sistema...')}</p>
     </div>
   );
 }
@@ -390,13 +394,13 @@ function Navbar() {
                   to="/login" 
                   className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
                 >
-                  {t('nav.login')}
+                  {t('nav.login', 'Entrar')}
                 </Link>
                 <Link 
                   to="/register" 
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-50 text-white hover:text-blue-600 rounded-xl text-[13px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                 >
-                  {t('nav.register')}
+                  {t('nav.register', 'Cadastrar')}
                 </Link>
               </div>
             )}
