@@ -65,7 +65,12 @@
     "specialties_title_part2": "Various Areas",
     "process_label": "Intelligent Process",
     "process_title_part1": "Your Journey to",
-    "process_title_part2": "Recovery"
+    "process_title_part2": "Recovery",
+    "network_label": "Our Network",
+    "network_title_part1": "Verified",
+    "network_title_part2": "Specialists",
+    "search_placeholder": "Search by name...",
+    "view_all": "View All"
   },
   "settings": {
     "title": "Settings",
