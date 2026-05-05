@@ -1,17 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Activity, 
-  Stethoscope, 
-  Shield, 
+import {
+  Activity,
+  Stethoscope,
+  Shield,
   ShieldCheck,
-  Clock, 
-  ArrowRight, 
-  CheckCircle2, 
-  Star, 
-  Users, 
-  Heart, 
+  Clock,
+  ArrowRight,
+  CheckCircle2,
+  Star,
+  Users,
+  Heart,
   Sparkles,
   Play,
   Calendar,
@@ -134,23 +134,23 @@ export default function Home() {
   }, [specialtySlides.length]);
 
   const specialties = [
-    'Todos', 
-    'Gerontologia', 
-    'Neurofuncional', 
-    'Traumato-Ortopédica', 
-    'Respiratória', 
-    'Saúde da Mulher', 
-    'Pediátrica', 
-    'Cardiovascular', 
-    'Dermatofuncional', 
-    'Esportiva', 
+    'Todos',
+    'Gerontologia',
+    'Neurofuncional',
+    'Traumato-Ortopédica',
+    'Respiratória',
+    'Saúde da Mulher',
+    'Pediátrica',
+    'Cardiovascular',
+    'Dermatofuncional',
+    'Esportiva',
     'Oncologia'
   ];
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchProfessionals();
-    }, 300); // Debounce de 300ms
+    }, 300);
     return () => clearTimeout(timer);
   }, [nameQuery, locationQuery, specialtyFilter]);
 
@@ -167,23 +167,20 @@ export default function Home() {
     try {
       setLoading(true);
       let query = supabase
-        .from('perfis')
-        .select('*')
-        .eq('tipo_usuario', 'fisioterapeuta')
-        .eq('status_aprovacao', 'aprovado');
+       .from('perfis')
+       .select('*')
+       .eq('tipo_usuario', 'fisioterapeuta')
+       .eq('status_aprovacao', 'aprovado');
 
-      // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {
         query = query.or(`nome_completo.ilike.%${nameQuery}%,email.ilike.%${nameQuery}%`);
       }
 
-      // Filtro por Localização (ilike para ignorar case)
       if (locationQuery) {
         query = query.ilike('localizacao', `%${locationQuery}%`);
       }
 
-      // Filtro por Especialidade
-      if (specialtyFilter && specialtyFilter !== 'Todos') {
+      if (specialtyFilter && specialtyFilter!== 'Todos') {
         query = query.eq('especialidade', specialtyFilter);
       }
 
@@ -215,7 +212,6 @@ export default function Home() {
     }
   };
 
-
   const nextProSlide = () => {
     if (professionals.length === 0) return;
     setProSlideIndex((prev) => (prev + 1) % (professionals.length - itemsVisible + 1));
@@ -230,10 +226,9 @@ export default function Home() {
     <div className="bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
       <AnimatedBackground />
 
-      {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
         <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={{
@@ -248,7 +243,7 @@ export default function Home() {
             }}
             className="space-y-12 max-w-5xl mx-auto lg:mx-0 text-center lg:text-left"
           >
-            <motion.div 
+            <motion.div
               variants={{
                 hidden: { opacity: 0, scale: 0.8, y: 20 },
                 visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
@@ -262,10 +257,10 @@ export default function Home() {
               <div className="w-px h-4 bg-white/10 mx-1" />
               <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Fisioterapia Especializada</span>
             </motion.div>
-            
+
             <div className="space-y-6">
               <h1 className="text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-gray-100 leading-[0.95] tracking-tighter">
-                <motion.span 
+                <motion.span
                   variants={{
                     hidden: { opacity: 0, y: 30 },
                     visible: { opacity: 1, y: 0 }
@@ -274,7 +269,7 @@ export default function Home() {
                 >
                   {t('home.hero.title1', 'Saúde e')}
                 </motion.span>
-                <motion.span 
+                <motion.span
                   variants={{
                     hidden: { opacity: 0, y: 30 },
                     visible: { opacity: 1, y: 0 }
@@ -283,7 +278,7 @@ export default function Home() {
                 >
                   {t('home.hero.highlight', 'Bem-estar')}
                 </motion.span>
-                <motion.span 
+                <motion.span
                   variants={{
                     hidden: { opacity: 0, y: 30 },
                     visible: { opacity: 1, y: 0 }
@@ -293,8 +288,8 @@ export default function Home() {
                   {t('home.hero.title2', 'no seu lar')}
                 </motion.span>
               </h1>
-              
-              <motion.p 
+
+              <motion.p
                 variants={{
                   hidden: { opacity: 0, y: 20 },
                   visible: { opacity: 1, y: 0 }
@@ -304,8 +299,8 @@ export default function Home() {
                 {t('home.hero.subtitle', 'Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.')}
               </motion.p>
             </div>
-            
-            <motion.div 
+
+            <motion.div
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0 }
@@ -313,8 +308,8 @@ export default function Home() {
               className="flex flex-col sm:flex-row items-center gap-6 pt-6"
             >
               <Link
-                to={user ? "/buscar-fisio" : "/register"}
-                onClick={() => !user && localStorage.setItem('pending_role', 'paciente')}
+                to={user? "/buscar-fisio" : "/register"}
+                onClick={() =>!user && localStorage.setItem('pending_role', 'paciente')}
                 className="group relative w-full sm:w-auto"
               >
                 <motion.div
@@ -322,7 +317,7 @@ export default function Home() {
                   whileTap={{ scale: 0.98 }}
                   className="relative z-10 inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-all duration-300"
                 >
-                  <Search size={22} className="group-hover:scale-110 transition-transform" /> 
+                  <Search size={22} className="group-hover:scale-110 transition-transform" />
                   {t('nav.find_physio', 'Encontrar Fisioterapeuta')}
                 </motion.div>
                 <div className="absolute inset-0 bg-blue-400/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -334,7 +329,7 @@ export default function Home() {
                 className="group w-full sm:w-auto"
               >
                 <motion.div
-                  whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(255,255,0.05)" }}
                   whileTap={{ scale: 0.98 }}
                   className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-[2rem] font-black text-lg hover:border-white/40 transition-all duration-300"
                 >
@@ -343,8 +338,7 @@ export default function Home() {
               </Link>
             </motion.div>
 
-            {/* Social Proof / Stats */}
-            <motion.div 
+            <motion.div
               variants={{
                 hidden: { opacity: 0 },
                 visible: { opacity: 1 }
@@ -368,15 +362,14 @@ export default function Home() {
         </div>
 
         <div className="flex-1 relative min-h-[50vh] lg:min-h-full">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
-            {/* Using an abstract architectural medical background instead of humans */}
-            <img 
-              src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2070" 
+            <img
+              src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2070"
               className="w-full h-full object-cover"
               alt="Medical background"
               referrerPolicy="no-referrer"
@@ -384,28 +377,26 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-            
-            {/* Subtle floating tech elements */}
+
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                <motion.div
-                 animate={{ 
+                 animate={{
                    y: [0, -30, 0],
-                   opacity: [0.2, 0.5, 0.2] 
+                   opacity: [0.2, 0.5, 0.2]
                  }}
                  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
                  className="absolute top-1/4 right-1/4 w-32 h-32 border border-blue-500/20 rounded-full"
                />
                <motion.div
-                 animate={{ 
+                 animate={{
                    y: [20, -10, 20],
-                   opacity: [0.1, 0.3, 0.1] 
+                   opacity: [0.1, 0.3, 0.1]
                  }}
                  transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
                  className="absolute bottom-1/3 right-1/3 w-48 h-48 border border-sky-500/10 rounded-full"
                />
             </div>
 
-            {/* Floating Glass UI Element */}
             <motion.div
               animate={{ y: [0, -20, 0] }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
@@ -422,11 +413,11 @@ export default function Home() {
               </div>
               <div className="space-y-3">
                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: "92%" }}
                     transition={{ duration: 2.5, delay: 1 }}
-                    className="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+                    className="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                   />
                 </div>
                 <div className="flex justify-between items-center">
@@ -437,7 +428,6 @@ export default function Home() {
             </motion.div>
           </motion.div>
 
-          {/* Floating Feature Card */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -461,10 +451,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Mirrored Benefits Section */}
       <section className="py-32 px-6 lg:px-20 relative z-20 -mt-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Patient Card */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -489,7 +477,6 @@ export default function Home() {
             </ul>
           </motion.div>
 
-          {/* Physio Card */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -516,7 +503,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Specialties Slider Section - Modern & Professional */}
       <section className="py-32 px-6 lg:px-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
@@ -528,13 +514,13 @@ export default function Home() {
               </h3>
             </div>
             <div className="flex gap-4">
-              <button 
+              <button
                 onClick={() => setCurrentSlide((prev) => (prev - 1 + specialtySlides.length) % specialtySlides.length)}
                 className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 transition-all"
               >
                 <ChevronLeft size={24} />
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentSlide((prev) => (prev + 1) % specialtySlides.length)}
                 className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20"
               >
@@ -553,15 +539,15 @@ export default function Home() {
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute inset-0"
               >
-                <img 
-                  src={specialtySlides[currentSlide].image} 
+                <img
+                  src={specialtySlides[currentSlide].image}
                   className="w-full h-full object-cover"
                   alt={specialtySlides[currentSlide].title}
                   referrerPolicy="no-referrer"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-                
+
                 <div className="absolute bottom-0 left-0 right-0 p-10 md:p-20 text-white">
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -587,7 +573,7 @@ export default function Home() {
                       {specialtySlides[currentSlide].title}
                     </h4>
                   </motion.div>
-                  
+
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -603,13 +589,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it Works Section - Bento Grid Style */}
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="text-center mb-24 space-y-4"
           >
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
@@ -670,14 +655,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Professionals Section - Dynamic Grid */}
       <section className="py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
               className="space-y-4"
             >
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
@@ -685,28 +669,27 @@ export default function Home() {
                 {t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic">{t('home.network_title_part2', 'Verificados')}</span>
               </h3>
             </motion.div>
-            
-            {/* Search and Filter Bar - Compact SaaS Style */}
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
               className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3"
             >
               <div className="relative flex-1 group">
-                <Search 
-                  className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-500" 
+                <Search
+                  className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-500"
                   style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
                 />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder={t('home.search_placeholder', 'Buscar por nome...')}
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
-                  className="w-full pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500 !pl-[60px]"
+                  className="w-full pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500!pl-[60px]"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => navigate('/buscar-fisio')}
                 className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20"
               >
@@ -714,13 +697,12 @@ export default function Home() {
               </button>
             </motion.div>
           </div>
-          
+
           <div className="relative group">
-            {professionals.length > 0 ? (
+            {professionals.length > 0? (
               <div className="relative">
-                {/* Navigation Buttons */}
                 <div className="absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={() => setProSlideIndex(prev => Math.max(0, prev - 1))}
                     disabled={proSlideIndex === 0}
                     className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -728,9 +710,9 @@ export default function Home() {
                     <ChevronLeft size={24} />
                   </button>
                 </div>
-                
+
                 <div className="absolute -right-4 lg:-right-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={() => setProSlideIndex(prev => Math.min(professionals.length - itemsVisible, prev + 1))}
                     disabled={proSlideIndex >= professionals.length - itemsVisible}
                     className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -740,7 +722,7 @@ export default function Home() {
                 </div>
 
                 <div className="overflow-hidden">
-                  <motion.div 
+                  <motion.div
                     initial={false}
                     animate={{ x: `-${proSlideIndex * (100 / itemsVisible)}%` }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -751,7 +733,7 @@ export default function Home() {
                         key={pro.id}
                         className={cn(
                           "flex-shrink-0 px-4 transition-all duration-500",
-                          itemsVisible === 1 ? "w-full" : itemsVisible === 2 ? "w-1/2" : "w-1/4"
+                          itemsVisible === 1? "w-full" : itemsVisible === 2? "w-1/2" : "w-1/4"
                         )}
                       >
                         <motion.div
@@ -759,29 +741,29 @@ export default function Home() {
                         >
                           <div className="relative mb-8">
                             <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
-                            <img 
-                              src={pro.img} 
+                            <img
+                              src={pro.img}
                               className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
                               alt={pro.name}
                               loading="lazy"
                             />
-                            <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border border-white/10 z-20">
+                            <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2.5 shadow-2xl border-white/10 z-20">
                               <div className="ping-online">
                                 <span className="ping-online-circle"></span>
                                 <span className="ping-online-dot"></span>
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-1.5 text-amber-400 mb-3">
                             <Star size={14} fill="currentColor" />
                             <span className="text-sm font-black text-white">{pro.rating}</span>
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
                           </div>
-                          
+
                           <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
                           <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
-                          
+
                           <Link
                             to={`/physio/${pro.id}`}
                             className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
@@ -793,8 +775,7 @@ export default function Home() {
                     ))}
                   </motion.div>
                 </div>
-                
-                {/* Pagination Dots */}
+
                 <div className="flex justify-center gap-2 mt-12">
                   {Array.from({ length: Math.max(0, professionals.length - itemsVisible + 1) }).map((_, i) => (
                     <button
@@ -802,7 +783,7 @@ export default function Home() {
                       onClick={() => setProSlideIndex(i)}
                       className={cn(
                         "h-1.5 transition-all duration-300 rounded-full",
-                        proSlideIndex === i ? "w-8 bg-blue-600" : "w-1.5 bg-white/20 hover:bg-white/40"
+                        proSlideIndex === i? "w-8 bg-blue-600" : "w-1.5 bg-white/20 hover:bg-white/40"
                       )}
                     />
                   ))}
@@ -821,10 +802,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* New Physio Highlight Section */}
       <PhysioHighlight />
 
-      {/* CTA Section - High Impact SaaS Style */}
       <section className="py-32 px-6">
         <div className="max-w-7xl mx-auto relative group">
           <div className="absolute inset-0 bg-blue-600 rounded-[4rem] blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity" />
