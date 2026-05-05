@@ -19,7 +19,14 @@ const resources = {
         login: 'Entrar',
         register: 'Cadastrar',
         logout: 'Sair',
-        admin: 'Painel Admin'
+        admin: 'Painel Admin',
+        subscription: 'Assinatura',
+        about: 'Sobre nós',
+        library: 'Biblioteca',
+        find_physio: 'Buscar Fisio',
+        triages: 'Triagens',
+        pain_diary: 'Diário de Dor',
+        workouts: 'Treinos'
       },
       home: {
         hero: {
@@ -34,7 +41,24 @@ const resources = {
         language_description: 'Escolha o idioma do sistema',
         portuguese: 'Português',
         english: 'Inglês',
-        spanish: 'Espanhol'
+        spanish: 'Espanhol',
+        preferences: 'Preferências'
+      },
+      clinic: {
+        clinic_data: 'Dados da Clínica'
+      },
+      security: {
+        title: 'Segurança'
+      },
+      notifications: {
+        title: 'Notificações'
+      },
+      payments: {
+        title: 'Pagamentos',
+        received: 'Pagamentos Recebidos'
+      },
+      privacy: {
+        title: 'Privacidade'
       }
     }
   },
@@ -54,7 +78,14 @@ const resources = {
         login: 'Login',
         register: 'Register',
         logout: 'Logout',
-        admin: 'Admin Panel'
+        admin: 'Admin Panel',
+        subscription: 'Subscription',
+        about: 'About Us',
+        library: 'Library',
+        find_physio: 'Find Physio',
+        triages: 'Triages',
+        pain_diary: 'Pain Diary',
+        workouts: 'Workouts'
       },
       home: {
         hero: {
@@ -69,7 +100,24 @@ const resources = {
         language_description: 'Choose the system language',
         portuguese: 'Portuguese',
         english: 'English',
-        spanish: 'Spanish'
+        spanish: 'Spanish',
+        preferences: 'Preferences'
+      },
+      clinic: {
+        clinic_data: 'Clinic Data'
+      },
+      security: {
+        title: 'Security'
+      },
+      notifications: {
+        title: 'Notifications'
+      },
+      payments: {
+        title: 'Payments',
+        received: 'Received Payments'
+      },
+      privacy: {
+        title: 'Privacy'
       }
     }
   },
@@ -89,7 +137,14 @@ const resources = {
         login: 'Entrar',
         register: 'Registrarse',
         logout: 'Salir',
-        admin: 'Panel Admin'
+        admin: 'Panel Admin',
+        subscription: 'Suscripción',
+        about: 'Sobre nosotros',
+        library: 'Biblioteca',
+        find_physio: 'Buscar Fisio',
+        triages: 'Triajes',
+        pain_diary: 'Diario de Dolor',
+        workouts: 'Entrenamientos'
       },
       home: {
         hero: {
@@ -104,7 +159,24 @@ const resources = {
         language_description: 'Elija el idioma del sistema',
         portuguese: 'Portugués',
         english: 'Inglés',
-        spanish: 'Español'
+        spanish: 'Español',
+        preferences: 'Preferencias'
+      },
+      clinic: {
+        clinic_data: 'Datos de la Clínica'
+      },
+      security: {
+        title: 'Seguridad'
+      },
+      notifications: {
+        title: 'Notificaciones'
+      },
+      payments: {
+        title: 'Pagos',
+        received: 'Pagos Recibidos'
+      },
+      privacy: {
+        title: 'Privacidad'
       }
     }
   }
