@@ -56,6 +56,7 @@
   "home": {
     "hero": {
       "title1": "Your rehabilitation in the",
+      "highlight": "Well-being",
       "title2": "comfort of home",
       "subtitle": "Transforming physiotherapy through technology and humanized care for all ages."
     },
@@ -106,6 +107,7 @@
     "submit": "Create My Account"
   },
   "footer": {
+    "description": "Connecting physiotherapists and patients with technology and care.",
     "navigation": "Navigation",
     "dashboard": "Dashboard",
     "account": "My Account",
