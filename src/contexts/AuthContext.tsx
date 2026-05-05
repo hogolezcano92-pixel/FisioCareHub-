@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import i18n from '../i18n/config';
 import { useNavigate } from 'react-router-dom';
 import { applyTheme } from '../lib/themes';
 
@@ -10,10 +11,12 @@ interface AuthContextType {
   profile: any | null;
   subscription: any | null;
   theme: string;
+  language: string;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateTheme: (themeId: string) => Promise<void>;
+  updateLanguage: (lang: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
     return 'blue';
+  });
+  const [language, setLanguage] = useState<string>(() => {
+    return localStorage.getItem('i18nextLng') || 'pt';
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -162,6 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (profile?.theme && profile.theme !== theme) {
       setTheme(profile.theme);
     }
+    if (profile?.idioma && profile.idioma !== language) {
+      setLanguage(profile.idioma);
+      i18n.changeLanguage(profile.idioma);
+    }
   }, [profile]);
 
   useEffect(() => {
@@ -219,17 +229,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateLanguage = async (lang: string) => {
+    setLanguage(lang);
+    i18n.changeLanguage(lang);
+    localStorage.setItem('i18nextLng', lang);
+
+    if (profile) {
+      const updatedProfile = { ...profile, idioma: lang };
+      setProfile(updatedProfile);
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(updatedProfile));
+    }
+
+    if (user) {
+      try {
+        await supabase
+          .from('perfis')
+          .update({ idioma: lang })
+          .eq('id', user.id);
+      } catch (err) {
+        console.error('Failed to persist language:', err);
+      }
+    }
+  };
+
   const value = useMemo(() => ({
     user,
     session,
     profile,
     subscription,
     theme,
+    language,
     loading,
     signOut,
     refreshProfile,
-    updateTheme
-  }), [user, session, profile, subscription, theme, loading]);
+    updateTheme,
+    updateLanguage
+  }), [user, session, profile, subscription, theme, language, loading]);
 
   return (
     <AuthContext.Provider value={value}>
