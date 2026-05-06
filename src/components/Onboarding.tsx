@@ -191,6 +191,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <AnimatePresence>
           {activeIndex !== 2 && (
             <motion.button 
+              layout
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -449,6 +450,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
           {options.map((option) => (
             <motion.button
               key={option.id}
+              layout
               initial={false}
               animate={selectedType === option.id ? { scale: 1 } : { scale: 0.98 }}
               whileHover={{ scale: 1.01 }}
