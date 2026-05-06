@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200",
+    image: "https://www.unicep.edu.br/post/beneficios-da-fisioterapia-quais-sao-os-principais-e-como-ela-age-no-corpo-saiba-mais",
     themeColor: "#3B82F6"
   },
   {
@@ -47,7 +47,7 @@ const commonSlides = [
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/FaNjbPBVS9lgUMr7E",
     themeColor: "#8B5CF6"
   },
 ];
@@ -58,7 +58,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
-    image: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/Et7lQNwmYampcu8aS",
     themeColor: "#3B82F6"
   },
   {
@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/fq2Hd6tjuXqWTXb26",
     themeColor: "#3B82F6"
   },
   {
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/kAQRufuOVMmHpQEXe",
     themeColor: "#3B82F6"
   }
 ];
@@ -85,7 +85,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/UQ63xsUwq8IjCHzjI",
     themeColor: "#8B5CF6"
   },
   {
@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/aG9TPAtamsc8UdafK",
     themeColor: "#8B5CF6"
   },
   {
@@ -101,7 +101,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+    image: "https://share.google/fq2Hd6tjuXqWTXb26",
     themeColor: "#8B5CF6"
   }
 ];
@@ -266,7 +266,7 @@ function ContentSlide({ slide }: { slide: any }) {
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.7) 0%, rgba(11, 28, 44, 0.9) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
         }}
       />
       
@@ -279,7 +279,7 @@ function ContentSlide({ slide }: { slide: any }) {
       />
 
       {/* Backdrop Blur to enhance text legibility */}
-      <div className="absolute inset-0 z-0 backdrop-blur-[4px]" />
+      <div className="absolute inset-0 z-0 backdrop-blur-[2px]" />
 
       {/* Content Container */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
@@ -364,12 +364,12 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.7) 0%, rgba(11, 28, 44, 0.9) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
         }}
       />
       
       {/* Backdrop Blur */}
-      <div className="absolute inset-0 z-0 backdrop-blur-[4px]" />
+      <div className="absolute inset-0 z-0 backdrop-blur-[2px]" />
 
       {/* Dynamic Option Background */}
       <div className="absolute inset-0 z-0">
