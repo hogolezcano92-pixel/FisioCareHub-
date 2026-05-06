@@ -83,19 +83,30 @@ export default function Patients() {
     if (user) {
       fetchPatients();
     }
+    
+    // Check for create=true param to auto-open modal
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setShowModal(true);
+    }
   }, [user, profile]);
 
   const fetchPatients = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('DEBUG: Buscando pacientes para o fisioterapeuta:', user?.id);
       const { data, error: supabaseError } = await supabase
         .from('pacientes')
         .select('*')
         .eq('fisioterapeuta_id', user?.id)
-        .order('nome');
+        .order('nome_completo');
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.error('DEBUG: Erro detalhado do Supabase ao buscar:', supabaseError);
+        throw supabaseError;
+      }
+      console.log('DEBUG: Pacientes encontrados:', data?.length);
       setPatients(data || []);
     } catch (err: any) {
       console.error('Erro ao buscar pacientes:', err);
@@ -126,24 +137,38 @@ export default function Patients() {
 
     setSubmitting(true);
     try {
+      // Diagnóstico inicial solicitado pelo usuário
+      console.log('DEBUG: Iniciando cadastro de paciente');
+      console.log('DEBUG: Usuário autenticado:', user);
+      
+      if (!user?.id) {
+        throw new Error('Usuário não identificado para o cadastro.');
+      }
+
       // Garantir que campos vazios sejam enviados como NULL para o Supabase,
       // evitando erros do tipo 'invalid input syntax for type date: ""'
       const dataToInsert = {
-        nome: formData.nome.trim(),
-        email: formData.email.trim() || null,
-        telefone: formData.telefone.trim() || null,
+        nome_completo: formData.nome.trim(),
         data_nascimento: formData.data_nascimento || null,
-        diagnostico: formData.diagnostico.trim() || null,
         observacoes: formData.observacoes.trim() || null,
-        foto_url: formData.foto_url || null,
         fisioterapeuta_id: user.id
+        // Removidos email, telefone, diagnostico e foto_url baseado na lista do usuário
+        // Caso essas colunas existam, elas podem ser reativadas, mas o foco é no erro de insert
       };
 
-      const { error: insertError } = await supabase
-        .from('pacientes')
-        .insert(dataToInsert);
+      console.log('DEBUG: Payload enviado para pacientes:', dataToInsert);
 
-      if (insertError) throw insertError;
+      const { error: insertError, data: resultData } = await supabase
+        .from('pacientes')
+        .insert([dataToInsert])
+        .select();
+
+      if (insertError) {
+        console.error('DEBUG: Erro COMPLETO do Supabase no INSERT:', insertError);
+        throw insertError;
+      }
+
+      console.log('DEBUG: Resultado do insert:', resultData);
 
       toast.success('Paciente cadastrado com sucesso!');
       setShowModal(false);
@@ -175,7 +200,7 @@ export default function Patients() {
     });
     
     return Array.from(uniquePatientsMap.values()).filter(p => 
-      p.nome.toLowerCase().includes(search.toLowerCase()) ||
+      p.nome_completo.toLowerCase().includes(search.toLowerCase()) ||
       p.email?.toLowerCase().includes(search.toLowerCase())
     );
   }, [patients, search]);
@@ -248,14 +273,14 @@ export default function Patients() {
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-sky-400 overflow-hidden border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
                       {patient.foto_url ? (
-                        <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome} className="w-full h-full object-cover" />
+                        <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome_completo} className="w-full h-full object-cover" />
                       ) : (
                         <User size={28} />
                       )}
                     </div>
                     <div>
                       <h3 className="text-lg font-black text-white leading-tight group-hover:text-sky-400 transition-colors">
-                        {patient.nome}
+                        {patient.nome_completo}
                       </h3>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
