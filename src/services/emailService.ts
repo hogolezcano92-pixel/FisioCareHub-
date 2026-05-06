@@ -52,16 +52,33 @@ export const generateEmailHTML = ({
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .header {
-            padding: 40px 30px;
+            padding: 0;
             text-align: center;
             border-bottom: 1px solid #f1f5f9;
         }
+        .header-container {
+            padding: 40px 30px;
+            background: #0f172a; /* Fallback */
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
         .header h1 {
-            color: #2563eb;
             margin: 0;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
-            letter-spacing: -0.025em;
+            color: #3B82F6; /* Fallback for Outlook */
+        }
+        /* Gradient text for modern clients */
+        @supports (-webkit-background-clip: text) {
+            .gradient-text {
+                background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+        .header-subtitle {
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 14px;
         }
         .content {
             padding: 40px 30px;
@@ -115,7 +132,10 @@ export const generateEmailHTML = ({
             <!-- Header -->
             <tr>
                 <td class="header">
-                    <h1>FisioCareHub</h1>
+                    <div class="header-container">
+                        <h1 class="gradient-text">FisioCareHub</h1>
+                        <p class="header-subtitle">Plataforma de Gestão em Fisioterapia</p>
+                    </div>
                 </td>
             </tr>
             
