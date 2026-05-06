@@ -9,6 +9,7 @@ import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
 import { generateEmailHTML } from './src/services/emailService.ts';
+import { formatDateBR, formatHourBR } from './src/utils/date.ts';
 import { 
   generateRegistrationOptions, 
   verifyRegistrationResponse, 
@@ -540,8 +541,8 @@ async function startServer() {
             if (sessionError) console.error("Erro ao registrar no financeiro:", sessionError);
 
             // 5. Notifications
-            const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
-            const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const formattedDate = formatDateBR(appData.data_servico);
+            const formattedTime = formatHourBR(appData.data_servico);
 
             // WhatsApp Notifications - Payment Approved
             if (appData.paciente.telefone) {
@@ -1075,8 +1076,8 @@ async function startServer() {
                 });
 
               // 4. Notifications
-              const formattedDate = new Date(appData.data_servico).toLocaleDateString('pt-BR');
-              const formattedTime = new Date(appData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+              const formattedDate = formatDateBR(appData.data_servico);
+              const formattedTime = formatHourBR(appData.data_servico);
 
               if (appData.paciente.telefone) {
                 await sendWhatsAppMessage(
@@ -1431,8 +1432,8 @@ async function startServer() {
         return res.status(404).json({ error: "Agendamento não encontrado." });
       }
 
-      const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
-      const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const formattedDate = formatDateBR(app.data_servico);
+      const formattedTime = formatHourBR(app.data_servico);
 
       switch (event) {
         case 'created':
@@ -1607,7 +1608,7 @@ async function startServer() {
                                         
                                         <p style="margin: 10px 0; font-size: 12px; color: #94A3B8;">FisioCareHub © ${new Date().getFullYear()} - Todos os direitos reservados</p>
                                         <p style="margin: 10px 0; font-size: 12px; color: #94A3B8; font-style: italic;">Esta é uma mensagem automática, por favor não responda.</p>
-                                        <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                                        <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${formatDateBR(new Date())}</p>
                                     </td>
                                 </tr>
                             </table>
