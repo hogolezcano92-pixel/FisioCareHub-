@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "https://www.unicep.edu.br/post/beneficios-da-fisioterapia-quais-sao-os-principais-e-como-ela-age-no-corpo-saiba-mais",
+    image: "https://images.pexels.com/photos/4506105/pexels-photo-4506105.jpeg",
     themeColor: "#3B82F6"
   },
   {
@@ -47,7 +47,7 @@ const commonSlides = [
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://share.google/FaNjbPBVS9lgUMr7E",
+    image: "https://images.pexels.com/photos/5793918/pexels-photo-5793918.jpeg",
     themeColor: "#8B5CF6"
   },
 ];
@@ -58,7 +58,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
-    image: "https://share.google/Et7lQNwmYampcu8aS",
+    image: "https://images.pexels.com/photos/20860619/pexels-photo-20860619.jpeg",
     themeColor: "#3B82F6"
   },
   {
@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "https://share.google/fq2Hd6tjuXqWTXb26",
+    image: "https://images.pexels.com/photos/4498606/pexels-photo-4498606.jpeg",
     themeColor: "#3B82F6"
   },
   {
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "https://share.google/kAQRufuOVMmHpQEXe",
+    image: "https://images.pexels.com/photos/20860583/pexels-photo-20860583.jpeg",
     themeColor: "#3B82F6"
   }
 ];
@@ -85,7 +85,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
-    image: "https://share.google/UQ63xsUwq8IjCHzjI",
+    image: "https://images.pexels.com/photos/8376233/pexels-photo-8376233.jpeg",
     themeColor: "#8B5CF6"
   },
   {
@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://share.google/aG9TPAtamsc8UdafK",
+    image: "https://images.pexels.com/photos/5793905/pexels-photo-5793905.jpeg",
     themeColor: "#8B5CF6"
   },
   {
@@ -101,7 +101,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
-    image: "https://share.google/fq2Hd6tjuXqWTXb26",
+    image: "https://images.pexels.com/photos/3825539/pexels-photo-3825539.jpeg",
     themeColor: "#8B5CF6"
   }
 ];
