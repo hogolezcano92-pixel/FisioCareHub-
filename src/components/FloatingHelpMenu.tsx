@@ -67,11 +67,6 @@ const faqs: FAQ[] = [
     category: 'fisioterapeuta',
     question: 'Como adicionar exercícios para meus pacientes?',
     answer: 'No perfil do paciente, acesse a aba "Exercícios" e selecione "Atribuir Novo Plano". Você pode escolher da nossa biblioteca ou criar um personalizado.'
-  },
-  {
-    category: 'fisioterapeuta',
-    question: 'O que é o KineAI para profissionais?',
-    answer: 'A KineAI auxilia na análise de triagens, sugestão de CID e otimização de prontuários, servindo como uma ferramenta de apoio à decisão clínica.'
   }
 ];
 

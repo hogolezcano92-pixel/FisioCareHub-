@@ -110,15 +110,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         }
       ] : [])
     ]),
-    {
-      title: t('nav.account'),
-      items: [
-        ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
-        { name: t('nav.about'), path: '/sobre', icon: Info },
-        { name: t('nav.help'), path: '#help', icon: HelpCircle },
-        { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
-      ]
-    }
+        {
+          title: t('nav.account'),
+          items: [
+            ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
+            { name: t('nav.guide'), path: '/guia', icon: BookOpen },
+            { name: t('nav.about'), path: '/sobre', icon: Info },
+            { name: t('nav.help'), path: '#help', icon: HelpCircle },
+            { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
+          ]
+        }
   ], [isAdmin, isApproved, isPhysio, profile, user, t]);
 
   const sidebarContent = (
