@@ -52,7 +52,7 @@ import Logo from './components/Logo';
 import SplashScreen from './components/SplashScreen';
 import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
-import { LGPDModal } from './components/LGPDModal';
+import LGPDModal from './components/LGPDModal';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
