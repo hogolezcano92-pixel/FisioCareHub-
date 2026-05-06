@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1584982329699-091583638bb3?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200",
     themeColor: "#8B5CF6"
   },
   {
@@ -127,14 +127,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     secondImg.src = commonSlides[1].image;
     
     const decisionImg = new Image();
-    decisionImg.src = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200";
+    decisionImg.src = "https://images.unsplash.com/photo-1533332467554-47f9c26284f6?auto=format&fit=crop&q=80&w=1200";
   }, []);
 
   const allSlides = [
     ...commonSlides,
     { 
       type: 'decision',
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200"
+      image: "https://images.unsplash.com/photo-1533332467554-47f9c26284f6?auto=format&fit=crop&q=80&w=1200"
     },
     ...(userType === 'paciente' ? patientSlides : (userType === 'fisioterapeuta' ? physioSlides : [])),
   ];
@@ -270,6 +270,26 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
   const color = slide.themeColor || '#3B82F6';
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: any = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.7, ease: "easeOut" }
+    }
+  };
+
   return (
     <div 
       className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]"
@@ -303,16 +323,19 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
           <AnimatePresence mode="wait">
             {isActive && (
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
               >
-                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                <motion.div 
+                  variants={itemVariants}
+                  className="flex items-center gap-3 mb-6 sm:mb-8"
+                >
                   <div 
                     style={{ 
                       backgroundColor: `${color}30`, 
                       color: 'white', 
-                      borderColor: `${color}50`,
+                      borderColor: `${color}30`,
                       textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                     className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
@@ -331,12 +354,10 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
                     </span>
                     <div style={{ backgroundColor: color }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full shadow-lg" />
                   </div>
-                </div>
+                </motion.div>
 
                 <motion.h1 
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                  variants={itemVariants}
                   className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
                   style={{ textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
                 >
@@ -344,9 +365,7 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
                 </motion.h1>
 
                 <motion.p 
-                  initial={{ opacity: 0, y: 25 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
+                  variants={itemVariants}
                   className="text-base sm:text-xl text-slate-100 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-4 pl-4 sm:pl-6 bg-black/5 py-2 rounded-r-lg border-white/20"
                   style={{ 
                     borderColor: `${color}`, 
@@ -388,11 +407,31 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: any = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
     <div 
       className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden"
       style={{
-        backgroundImage: `url(${slide.image})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.7)), url(${slide.image})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -405,7 +444,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         }}
       />
       
-      <div className="absolute inset-0 z-0 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
@@ -413,7 +452,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
             <motion.img 
               key={selectedType}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.15 }}
+              animate={{ opacity: 0.25 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1 }}
               src={selectedType === 'paciente' ? options[0].image : options[1].image} 
@@ -424,28 +463,42 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         </AnimatePresence>
       </div>
 
-      <div className="relative z-10 w-full max-w-lg">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-10 sm:mb-16"
-        >
-          <div className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl">
+      <motion.div 
+        className="relative z-10 w-full max-w-lg"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        <div className="text-center mb-10 sm:mb-16">
+          <motion.div 
+            variants={itemVariants}
+            className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
+          >
             <Users size={32} className="text-white sm:w-10 sm:h-10" />
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight">Como você quer usar o FisioCareHub?</h2>
-          <p className="text-[#A1A1AA] text-base sm:text-lg font-medium max-w-sm mx-auto">Escolha o seu perfil para personalizarmos sua jornada.</p>
-        </motion.div>
+          </motion.div>
+          <motion.h2 
+            variants={itemVariants}
+            className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
+            style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+          >
+            Como você quer usar o FisioCareHub?
+          </motion.h2>
+          <motion.p 
+            variants={itemVariants}
+            className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
+          >
+            Escolha o seu perfil para personalizarmos sua jornada.
+          </motion.p>
+        </div>
 
         <div className="grid gap-4 sm:gap-6 w-full">
           {options.map((option, idx) => (
             <motion.button
               key={option.id}
               layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 + (idx * 0.1), ease: "easeOut" }}
+              variants={itemVariants}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => onSelect(option.id as UserType)}
@@ -509,7 +562,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
             </motion.button>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
