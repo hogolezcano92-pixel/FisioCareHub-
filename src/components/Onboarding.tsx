@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1584982329699-091583638bb3?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.pexels.com/photos/5793905/pexels-photo-5793905.jpeg",
     themeColor: "#8B5CF6"
   },
   {
@@ -266,7 +266,7 @@ function ContentSlide({ slide }: { slide: any }) {
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.3) 0%, rgba(11, 28, 44, 0.6) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
         }}
       />
       
@@ -364,7 +364,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.3) 0%, rgba(11, 28, 44, 0.6) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
         }}
       />
       
