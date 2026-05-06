@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.pexels.com/photos/5793905/pexels-photo-5793905.jpeg",
+    image: "https://images.unsplash.com/photo-1584982329699-091583638bb3?auto=format&fit=crop&q=80&w=1200",
     themeColor: "#8B5CF6"
   },
   {
@@ -113,6 +113,22 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     return saved as UserType;
   });
   const swiperRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Preload first slide image as priority
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = commonSlides[0].image;
+    document.head.appendChild(link);
+
+    // Preload other critical images
+    const secondImg = new Image();
+    secondImg.src = commonSlides[1].image;
+    
+    const decisionImg = new Image();
+    decisionImg.src = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200";
+  }, []);
 
   const allSlides = [
     ...commonSlides,
@@ -254,32 +270,35 @@ function ContentSlide({ slide }: { slide: any }) {
 
   return (
     <div 
-      className="relative w-full h-full flex flex-col overflow-hidden"
+      className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]"
       style={{
-        backgroundImage: `url(${slide.image})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.4)), url(${slide.image})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Premium Dark Overlay */}
+      {/* Premium Dark Overlay - Enhanced for better contrast */}
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.8) 100%)'
         }}
       />
       
+      {/* Additional subtle dark overlay for text legibility */}
+      <div className="absolute inset-0 z-0 bg-black/20" />
+      
       {/* Color Tint Overlay for Premium Look */}
       <div 
-        className="absolute inset-0 z-0 opacity-10"
+        className="absolute inset-0 z-0 opacity-20"
         style={{ 
-          background: `linear-gradient(135deg, ${color}30 0%, #8B5CF630 100%)` 
+          background: `linear-gradient(135deg, ${color}40 0%, #8B5CF640 100%)` 
         }} 
       />
 
       {/* Backdrop Blur to enhance text legibility */}
-      <div className="absolute inset-0 z-0 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
       {/* Content Container */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
@@ -291,16 +310,27 @@ function ContentSlide({ slide }: { slide: any }) {
             className="flex items-center gap-3 mb-6 sm:mb-8"
           >
             <div 
-              style={{ backgroundColor: `${color}20`, color: color, borderColor: `${color}30` }}
+              style={{ 
+                backgroundColor: `${color}30`, 
+                color: 'white', 
+                borderColor: `${color}50`,
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}
               className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
             >
               <slide.icon size={24} className="sm:w-7 sm:h-7" />
             </div>
             <div className="flex flex-col">
-              <span style={{ color: color }} className="font-black uppercase tracking-[0.35em] text-[10px]">
+              <span 
+                style={{ 
+                  color: 'white',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.4)'
+                }} 
+                className="font-black uppercase tracking-[0.35em] text-[11px]"
+              >
                 {slide.subtitle}
               </span>
-              <div style={{ backgroundColor: `${color}30` }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full" />
+              <div style={{ backgroundColor: color }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full shadow-lg" />
             </div>
           </motion.div>
 
@@ -309,6 +339,7 @@ function ContentSlide({ slide }: { slide: any }) {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
             className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
+            style={{ textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
           >
             {slide.title}
           </motion.h1>
@@ -317,8 +348,13 @@ function ContentSlide({ slide }: { slide: any }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="text-base sm:text-xl text-[#A1A1AA] leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-2 pl-4 sm:pl-6"
-            style={{ borderColor: `${color}40`, overflowWrap: 'break-word', wordWrap: 'break-word' }}
+            className="text-base sm:text-xl text-slate-100 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-4 pl-4 sm:pl-6 bg-black/5 py-2 rounded-r-lg border-white/20"
+            style={{ 
+              borderColor: `${color}`, 
+              overflowWrap: 'break-word', 
+              wordWrap: 'break-word',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}
           >
             {slide.description}
           </motion.p>
@@ -364,7 +400,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.7) 100%)'
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.3) 0%, rgba(11, 28, 44, 0.6) 100%)'
         }}
       />
       
