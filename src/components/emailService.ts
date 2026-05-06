@@ -19,159 +19,63 @@ export const generateEmailHTML = ({
   const dataExtenso = data_hora_formatada || new Date().toLocaleString('pt-BR');
 
   return `
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Notificação FisioCareHub</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-        .wrapper {
-            width: 100%;
-            table-layout: fixed;
-            background-color: #f8fafc;
-            padding-bottom: 40px;
-            padding-top: 40px;
-        }
-        .main {
-            background-color: #ffffff;
-            margin: 0 auto;
-            width: 100%;
-            max-width: 600px;
-            border-spacing: 0;
-            color: #374151;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .header {
-            padding: 0;
-            text-align: center;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .header-container {
-            padding: 40px 30px;
-            background: #EFF6FF; /* Fallback */
-            background: linear-gradient(135deg, #EFF6FF 0%, #EEF2FF 100%);
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 32px;
-            font-weight: 800;
-            color: #2563EB; /* Fallback for Outlook */
-        }
-        /* Gradient text for modern clients */
-        @supports (-webkit-background-clip: text) {
-            .gradient-text {
-                background: linear-gradient(90deg, #2563EB 0%, #7C3AED 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-            }
-        }
-        .header-subtitle {
-            margin-top: 10px;
-            color: #374151;
-            font-size: 14px;
-        }
-        .content {
-            padding: 40px 30px;
-            line-height: 1.6;
-        }
-        .greeting {
-            font-size: 18px;
-            margin-bottom: 24px;
-            color: #111827;
-        }
-        .message-box {
-            font-size: 16px;
-            color: #4b5563;
-        }
-        .system-info {
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 1px solid #f1f5f9;
-        }
-        .system-info p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #64748b;
-        }
-        .data-hora {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #94a3b8;
-            font-style: italic;
-        }
-        .footer {
-            padding: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.5;
-            background-color: #f9fafb;
-        }
-        .footer p {
-            margin: 5px 0;
-        }
-        @media screen and (max-width: 600px) {
-            .main {
-                width: 95% !important;
-            }
-        }
-    </style>
 </head>
-<body>
-    <center class="wrapper">
-        <table class="main" width="100%">
-            <!-- Header -->
-            <tr>
-                <td class="header">
-                    <div class="header-container">
-                        <h1 class="gradient-text">FisioCareHub</h1>
-                        <p class="header-subtitle">Plataforma de Gestão em Fisioterapia</p>
-                    </div>
-                </td>
-            </tr>
-            
-            <!-- Content -->
-            <tr>
-                <td class="content">
-                    <p class="greeting">Olá, <strong>${nome_do_usuario}</strong>.</p>
-                    <p>Obrigado por usar o FisioCareHub.</p>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F8FAFC;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <!-- Main Card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 30px; border-bottom: 1px solid #F1F5F9;">
+                            <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #2563EB;">FisioCareHub</h1>
+                            <p style="margin: 10px 0 0 0; color: #475569; font-size: 14px;">Plataforma de Gestão em Fisioterapia</p>
+                        </td>
+                    </tr>
                     
-                    <div class="message-box">
-                        ${mensagem_principal_da_notificacao}
-                    </div>
- 
-                    <!-- System Info Block -->
-                    <div class="system-info">
-                        <p><strong>FisioCareHub – Plataforma de Gestão em Fisioterapia</strong></p>
-                        <p>Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #2563eb; text-decoration: none;">suporte@fisiocarehub.company</a></p>
-                        <p>Website: <a href="https://fisiocarehub.company" style="color: #2563eb; text-decoration: none;">fisiocarehub.company</a></p>
-                        
-                        <div class="data-hora">
-                            Data da notificação: ${dataExtenso}
-                        </div>
-                    </div>
-                </td>
-            </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px; color: #334155; line-height: 1.6;">
+                            <p style="font-size: 18px; margin: 0 0 24px 0; color: #1E293B;">Olá, <strong>${nome_do_usuario}</strong></p>
+                            
+                            <div style="font-size: 16px; color: #475569;">
+                                ${mensagem_principal_da_notificacao}
+                            </div>
+                        </td>
+                    </tr>
 
-            <!-- Footer -->
-            <tr>
-                <td class="footer">
-                    <p>FisioCareHub © ${ano} – Todos os direitos reservados.</p>
-                    <p>Esta é uma mensagem automática do sistema. Por favor, não responda este e-mail.</p>
-                </td>
-            </tr>
-        </table>
-    </center>
+                    <!-- Footer / Branding Block -->
+                    <tr>
+                        <td style="background-color: #1E293B; padding: 40px 30px; text-align: center;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="color: #CBD5E1; font-size: 14px; line-height: 1.5;">
+                                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #FFFFFF;">Informações de Contato</p>
+                                        <p style="margin: 5px 0;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">suporte@fisiocarehub.company</a></p>
+                                        <p style="margin: 5px 0;">Website: <a href="https://fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">fisiocarehub.company</a></p>
+                                        <p style="margin: 5px 0; color: #FFFFFF; font-weight: bold;">São Paulo - Brasil | Latin America</p>
+                                        
+                                        <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
+                                        
+                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8;">FisioCareHub © ${ano} - Todos os direitos reservados</p>
+                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8; font-style: italic;">Esta é uma mensagem automática, por favor não responda.</p>
+                                        <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${dataExtenso}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
   `;
