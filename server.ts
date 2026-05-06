@@ -1564,9 +1564,9 @@ async function startServer() {
 <html lang="pt-BR">
 <body style="font-family: sans-serif; background-color: #f8fafc; padding: 40px;">
   <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-    <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #0f172a, #1e1b4b);">
-      <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #3B82F6;">FisioCareHub</h1>
-      <p style="margin-top: 10px; color: rgba(255, 255, 255, 0.75); font-size: 14px;">Plataforma de Gestão em Fisioterapia</p>
+    <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #EFF6FF, #EEF2FF);">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #2563EB;">FisioCareHub</h1>
+      <p style="margin-top: 10px; color: #374151; font-size: 14px;">Plataforma de Gestão em Fisioterapia</p>
     </div>
     <div style="padding: 40px;">
       <p style="font-size: 18px; color: #111827; margin-top: 0;">Olá, <strong>${profile.nome_completo || "Usuário Teste"}</strong></p>
@@ -1575,13 +1575,13 @@ async function startServer() {
       </div>
       <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 14px; color: #64748b;">
         <p style="margin: 5px 0;"><strong>FisioCareHub</strong> – Plataforma de Gestão em Fisioterapia</p>
-        <p style="margin: 5px 0;">Suporte: suporte@fisiocarehub.com</p>
-        <p style="margin: 5px 0;">Website: www.fisiocarehub.com</p>
+        <p style="margin: 5px 0;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #2563eb; text-decoration: none;">suporte@fisiocarehub.company</a></p>
+        <p style="margin: 5px 0;">Website: <a href="https://fisiocarehub.company" style="color: #2563eb; text-decoration: none;">fisiocarehub.company</a></p>
         <p style="margin: 15px 0 0 0; font-size: 12px; color: #94a3b8; font-style: italic;">
           Gerado em: ${new Date().toLocaleString('pt-BR')}
         </p>
       </div>
-      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #94a3b8;">
+      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #64748b; background-color: #f9fafb; padding: 20px; border-radius: 0 0 16px 16px;">
         <p>FisioCareHub &copy; ${new Date().getFullYear()} – Todos os direitos reservados</p>
         <p>Mensagem automática, não responder</p>
       </div>
