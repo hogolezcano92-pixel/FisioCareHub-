@@ -8,7 +8,7 @@ import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
-import { generateEmailHTML } from './src/services/emailService';
+import { generateEmailHTML } from './src/services/emailService.ts';
 import { 
   generateRegistrationOptions, 
   verifyRegistrationResponse, 
@@ -240,9 +240,16 @@ async function sendWhatsAppMessage(to: string, message: string) {
   }
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-12-18.acacia" as any,
-});
+let stripeInstance: Stripe | null = null;
+const getStripe = () => {
+  if (!stripeInstance) {
+    const key = process.env.STRIPE_SECRET_KEY || "";
+    stripeInstance = new Stripe(key, {
+      apiVersion: "2024-12-18.acacia" as any,
+    });
+  }
+  return stripeInstance;
+};
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
 const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3";
@@ -387,6 +394,7 @@ async function startServer() {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
     try {
+      const stripe = getStripe();
       event = stripe.webhooks.constructEvent(req.body, sig as string, webhookSecret);
     } catch (err: any) {
       console.error(`Webhook Error: ${err.message}`);
@@ -1500,6 +1508,11 @@ async function startServer() {
       }
       
       const token = authHeader.split(' ')[1];
+      if (!token) {
+        console.warn("[Admin API] Malformed token");
+        return res.status(401).json({ error: "Invalid token format" });
+      }
+
       let adminClient;
       try {
         adminClient = getSupabaseAdmin();
@@ -1508,15 +1521,17 @@ async function startServer() {
         return res.status(500).json({ error: "Server configuration error (Supabase Admin)" });
       }
 
+      console.log("[Admin API] Fetching user for token...");
       const { data: userData, error: authError } = await adminClient.auth.getUser(token);
       const user = userData?.user;
       
       if (authError || !user) {
-        console.error("[Admin API] Invalid session:", authError);
+        console.error("[Admin API] Invalid session or user fetch error:", authError);
         return res.status(401).json({ error: "Invalid session" });
       }
 
       // Check if user is admin
+      console.log(`[Admin API] Validating role for user: ${user.email}`);
       const { data: profile, error: profileError } = await adminClient
         .from('perfis')
         .select('tipo_usuario, email, nome_completo')
@@ -1539,12 +1554,36 @@ async function startServer() {
         return res.status(500).json({ error: "Resend API Key not configured" });
       }
 
+      console.log("[Admin API] Initializing Resend...");
       const resend = new Resend(resendApiKey);
 
-      const testHtml = generateEmailHTML({
-        nome_do_usuario: profile.nome_completo || "Usuário Teste",
-        mensagem_principal_da_notificacao: "Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook."
-      });
+      console.log("[Admin API] Generating template...");
+      // We use a simplified version of the production template for the test
+      const testHtml = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<body style="font-family: sans-serif; background-color: #f8fafc; padding: 40px;">
+  <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <h1 style="color: #2563eb; margin-top: 0;">FisioCareHub</h1>
+    <p style="font-size: 18px; color: #111827;">Olá, <strong>${profile.nome_completo || "Usuário Teste"}</strong></p>
+    <div style="color: #4b5563; line-height: 1.6; margin-bottom: 30px;">
+      Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook.
+    </div>
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 14px; color: #64748b;">
+      <p style="margin: 5px 0;"><strong>FisioCareHub</strong> – Plataforma de Gestão em Fisioterapia</p>
+      <p style="margin: 5px 0;">Suporte: suporte@fisiocarehub.com</p>
+      <p style="margin: 5px 0;">Website: www.fisiocarehub.com</p>
+      <p style="margin: 15px 0 0 0; font-size: 12px; color: #94a3b8; font-style: italic;">
+        Gerado em: ${new Date().toLocaleString('pt-BR')}
+      </p>
+    </div>
+    <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #94a3b8;">
+      <p>FisioCareHub &copy; ${new Date().getFullYear()} – Todos os direitos reservados</p>
+      <p>Mensagem automática, não responder</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
       console.log(`[Admin API] Sending test email to ${profile.email}`);
       const { data, error: sendError } = await resend.emails.send({
@@ -1560,7 +1599,7 @@ async function startServer() {
       }
 
       console.log(`[Resend Test] Email sent successfully. Message ID: ${data?.id}`);
-      res.json({ success: true, messageId: data?.id });
+      res.json({ success: true, messageId: data?.id, message: "E-mail de teste enviado com sucesso!" });
     } catch (err: any) {
       console.error("[Resend Test] Uncaught error:", err);
       res.status(500).json({ error: err.message || "Erro interno desconhecido" });
