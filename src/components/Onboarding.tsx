@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Home, ShieldCheck, BarChart3, ArrowRight } from 'lucide-react';
+import { ChevronRight, Home, ShieldCheck, LineChart, ArrowRight } from 'lucide-react';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -8,25 +8,25 @@ interface OnboardingProps {
 
 const slides = [
   {
-    title: "Organize atendimentos de fisioterapia domiciliar",
-    description: "Gestão completa de pacientes, prontuários e evolução em um só lugar.",
+    title: "O Cuidado que vai até Você",
+    description: "Conectamos fisioterapeutas de elite a pacientes que buscam excelência no conforto do lar.",
     icon: Home,
     color: "from-blue-600 to-indigo-700",
     image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000"
   },
   {
-    title: "Acompanhe a evolução dos seus pacientes",
-    description: "Visualize o progresso através de gráficos e métricas inteligentes.",
-    icon: BarChart3,
+    title: "Gestão Inteligente, Prontuário Seguro",
+    description: "Organize sua agenda, evoluções e documentos clínicos com segurança de nível bancário.",
+    icon: ShieldCheck,
     color: "from-emerald-600 to-teal-700",
     image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1000"
   },
   {
-    title: "Tudo pronto!",
-    description: "Toque abaixo para iniciar sua jornada no FisioCareHub.",
-    icon: ArrowRight,
+    title: "Sua Evolução em Tempo Real",
+    description: "Acompanhe cada passo da sua jornada de cura com gráficos de progresso claros.",
+    icon: LineChart,
     color: "from-sky-600 to-blue-700",
-    image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000"
   }
 ];
 
