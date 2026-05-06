@@ -33,23 +33,23 @@ const faqs: FAQ[] = [
   // Patients
   {
     category: 'paciente',
-    question: 'Como agendar uma consulta?',
-    answer: 'Para agendar uma consulta, você pode navegar até "Buscar Fisio", escolher o profissional desejado e selecionar um horário disponível na agenda dele.'
+    question: 'Como acessar minha sala de teleconsulta?',
+    answer: 'No horário agendado, acesse "Minha Agenda" ou "Agendamentos" e clique no botão "Entrar na Sala" disponível no card da sua consulta. Certifique-se de permitir o acesso à câmera e microfone.'
   },
   {
     category: 'paciente',
-    question: 'Como funciona a Teleconsulta?',
-    answer: 'A teleconsulta é realizada diretamente pela nossa plataforma. No horário agendado, acesse "Minhas Consultas" e clique em "Entrar na Sala" para iniciar a vídeo chamada.'
+    question: 'Problemas com câmera ou microfone?',
+    answer: 'Verifique se as permissões do navegador estão ativadas para o site. Tente recarregar a página ou limpar o cache se o problema persistir.'
   },
   {
     category: 'paciente',
-    question: 'Como realizo a triagem inteligente?',
-    answer: 'Acesse o menu "Triagem IA" no seu painel. Nossa inteligência artificial fará algumas perguntas para entender seu caso e sugerir os melhores especialistas.'
+    question: 'Como solicitar o cancelamento de uma sessão?',
+    answer: 'Você pode solicitar o cancelamento enviando uma mensagem via suporte técnico ou diretamente no chat com o profissional. Note que cancelamentos tardios podem estar sujeitos a taxas conforme a política do profissional.'
   },
   {
     category: 'paciente',
-    question: 'Os pagamentos são seguros?',
-    answer: 'Sim, todos os pagamentos são processados via gateway seguro integrado, garantindo total segurança dos seus dados bancários e a confirmação imediata do agendamento.'
+    question: 'Pagamento não confirmado, o que fazer?',
+    answer: 'Pagamentos via PIX costumam ser instantâneos. Caso tenha feito o pagamento e ele não apareça como confirmado em 30 minutos, envie o comprovante para nosso suporte técnico.'
   },
   
   // Physiotherapists
@@ -313,7 +313,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
               {/* Header */}
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-tight">Central de Ajuda</h2>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Ajuda / Suporte</h2>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Como podemos ajudar?</p>
                 </div>
                 <button 
