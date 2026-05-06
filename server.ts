@@ -7,6 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
+import { Resend } from 'resend';
+import { generateEmailHTML } from './src/services/emailService';
 import { 
   generateRegistrationOptions, 
   verifyRegistrationResponse, 
@@ -1485,6 +1487,57 @@ async function startServer() {
         success: false,
         error: err.message || "Erro interno ao processar envio."
       });
+    }
+  });
+
+  app.post("/api/admin/test-template-email", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
+      
+      const token = authHeader.split(' ')[1];
+      const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(token);
+      
+      if (authError || !user) return res.status(401).json({ error: "Invalid session" });
+
+      // Check if user is admin
+      const { data: profile } = await getSupabaseAdmin()
+        .from('perfis')
+        .select('tipo_usuario, email, nome_completo')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.tipo_usuario !== 'admin') {
+        return res.status(403).json({ error: "Access denied. Admins only." });
+      }
+
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (!resendApiKey) return res.status(500).json({ error: "Resend API Key not configured" });
+
+      const resend = new Resend(resendApiKey);
+
+      const testHtml = generateEmailHTML({
+        nome_do_usuario: profile.nome_completo || "Usuário Teste",
+        mensagem_principal_da_notificacao: "Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook."
+      });
+
+      const { data, error } = await resend.emails.send({
+        from: process.env.RESEND_FROM || 'FisioCareHub <onboarding@resend.dev>',
+        to: [profile.email],
+        subject: 'Teste de Template - FisioCareHub',
+        html: testHtml,
+      });
+
+      if (error) {
+        console.error("[Resend] Error sending test email:", error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      console.log(`[Resend Test] Email sent to ${profile.email}`);
+      res.json({ success: true, messageId: data?.id });
+    } catch (err: any) {
+      console.error("[Resend Test] Uncaught error:", err);
+      res.status(500).json({ error: err.message });
     }
   });
 
