@@ -1,6 +1,26 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Home, ShieldCheck, LineChart, ArrowRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ChevronRight, 
+  Home, 
+  ShieldCheck, 
+  Heart, 
+  Lock, 
+  LineChart, 
+  Rocket, 
+  ArrowRight,
+  CheckCircle2,
+  TrendingUp,
+  Activity,
+  UserCheck
+} from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination, EffectFade } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -8,129 +28,209 @@ interface OnboardingProps {
 
 const slides = [
   {
-    title: "O Cuidado que vai até Você",
-    description: "Conectamos fisioterapeutas de elite a pacientes que buscam excelência no conforto do lar.",
+    title: "FisioCareHub",
+    subtitle: "Boas-vindas",
+    description: "O ecossistema inteligente que conecta fisioterapeutas de elite e pacientes que buscam reabilitação de alta performance.",
     icon: Home,
-    color: "from-blue-600 to-indigo-700",
-    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000"
+    color: "from-[#0f172a] to-[#1e293b]",
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200",
+    theme: "dark"
   },
   {
-    title: "Gestão Inteligente, Prontuário Seguro",
-    description: "Organize sua agenda, evoluções e documentos clínicos com segurança de nível bancário.",
-    icon: ShieldCheck,
-    color: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1000"
+    title: "Gestão Profissional de Elite",
+    subtitle: "Para Fisioterapeutas",
+    items: ["Organização de agenda", "Automatização de faturamento", "Posicionamento premium"],
+    icon: UserCheck,
+    color: "from-[#0f172a] to-[#2dd4bf]",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200",
   },
   {
-    title: "Sua Evolução em Tempo Real",
-    description: "Acompanhe cada passo da sua jornada de cura com gráficos de progresso claros.",
+    title: "Reabilitação com Propósito",
+    subtitle: "Para Pacientes",
+    items: ["Atendimento humanizado", "Visualização de progresso", "Histórico seguro"],
+    icon: Heart,
+    color: "from-[#2dd4bf] to-[#0f172a]",
+    image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
+  },
+  {
+    title: "Tecnologia & Segurança",
+    subtitle: "Destaque",
+    description: "Segurança SHA-256 (Prontuários Invioláveis) e Ecossistema (Agendamento + Marketplace + Gestão Financeira).",
+    icon: Lock,
+    displayItems: [
+      { label: "Criptografia SHA-256", icon: ShieldCheck },
+      { label: "Ecossistema Integrado", icon: Activity }
+    ],
+    color: "from-slate-800 to-[#0f172a]",
+    image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1200",
+  },
+  {
+    title: "Métricas Avançadas",
+    subtitle: "Visual",
+    description: "O app gera gráficos de evolução detalhados do \"Início\" até a \"Alta Clínica\", garantindo transparência total.",
     icon: LineChart,
-    color: "from-sky-600 to-blue-700",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000"
+    color: "from-blue-600 to-[#2dd4bf]",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+  },
+  {
+    title: "Missão & Resultados",
+    subtitle: "Transformação",
+    stats: [
+      { label: "Satisfação", value: "94%" },
+      { label: "Produtividade", value: "+40%" }
+    ],
+    description: "Democratizar o acesso à fisioterapia especializada, transformando o lar no melhor ambiente de cura.",
+    icon: Rocket,
+    color: "from-[#2dd4bf] to-[#0f172a]",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
   }
 ];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const swiperRef = useRef<any>(null);
 
-  const nextSlide = () => {
-    if (currentSlide === slides.length - 1) {
+  const handleNext = () => {
+    if (activeIndex === slides.length - 1) {
       onComplete();
     } else {
-      setCurrentSlide(prev => prev + 1);
+      swiperRef.current?.slideNext();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9998] bg-[#0B1120] flex flex-col overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentSlide}
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 flex flex-col"
+    <div className="fixed inset-0 z-[9999] bg-[#0f172a] flex flex-col font-sans">
+      <Swiper
+        modules={[Pagination, EffectFade]}
+        effect="fade"
+        pagination={{ clickable: true }}
+        onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+        onSwiper={(swiper) => (swiperRef.current = swiper)}
+        className="w-full h-full"
+      >
+        {slides.map((slide, index) => (
+          <SwiperSlide key={index}>
+            <div className="relative w-full h-full flex flex-col">
+              {/* Background Image */}
+              <div className="absolute inset-0 z-0">
+                <img 
+                  src={slide.image} 
+                  alt="" 
+                  className="w-full h-full object-cover opacity-30 mix-blend-overlay"
+                  referrerPolicy="no-referrer"
+                />
+                <div className={`absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/50 to-[#0f172a]`} />
+              </div>
+
+              {/* Content Container */}
+              <div className="relative z-10 flex-1 flex flex-col justify-center px-8 sm:px-12 pt-20">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5 }}
+                    className="max-w-xl"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-2xl bg-[#2dd4bf]/20 text-[#2dd4bf] border border-[#2dd4bf]/30">
+                        <slide.icon size={28} />
+                      </div>
+                      <span className="text-[#2dd4bf] font-black uppercase tracking-[0.3em] text-[10px]">
+                        {slide.subtitle}
+                      </span>
+                    </div>
+
+                    <h1 className="text-4xl sm:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
+                      {slide.title}
+                    </h1>
+
+                    {slide.description && (
+                      <p className="text-lg sm:text-xl text-slate-300 leading-relaxed font-medium mb-8">
+                        {slide.description}
+                      </p>
+                    )}
+
+                    {slide.items && (
+                      <div className="grid gap-4 mb-8">
+                        {slide.items.map((item, i) => (
+                          <div key={i} className="flex items-center gap-3 backdrop-blur-sm bg-white/5 p-4 rounded-xl border border-white/10">
+                            <CheckCircle2 className="text-[#2dd4bf]" size={20} />
+                            <span className="text-white font-bold">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {slide.displayItems && (
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        {slide.displayItems.map((item, i) => (
+                          <div key={i} className="flex flex-col gap-3 backdrop-blur-sm bg-white/5 p-4 rounded-xl border border-white/10 text-center items-center">
+                            <item.icon className="text-[#2dd4bf]" size={24} />
+                            <span className="text-white font-bold text-sm leading-tight">{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {slide.stats && (
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        {slide.stats.map((stat, i) => (
+                          <div key={i} className="flex flex-col gap-1 backdrop-blur-sm bg-white/5 p-4 rounded-xl border border-white/10">
+                            <span className="text-3xl font-black text-[#2dd4bf]">{stat.value}</span>
+                            <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{stat.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+
+      {/* Floating Controls */}
+      <div className="absolute bottom-10 left-0 right-0 z-20 px-8 flex items-center justify-between pointer-events-none">
+        <button 
+          onClick={onComplete}
+          className="pointer-events-auto text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors"
         >
-          {/* Top Image Section */}
-          <div className="relative h-[50vh] w-full overflow-hidden">
-            <motion.img 
-              initial={{ scale: 1.2 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 1.5 }}
-              src={slides[currentSlide].image} 
-              alt="" 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0B1120] via-transparent to-transparent" />
-            
-            {/* Floating Icon */}
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className={`absolute bottom-8 left-8 w-16 h-16 bg-gradient-to-br ${slides[currentSlide].color} rounded-2xl flex items-center justify-center text-white shadow-2xl border border-white/20`}
-            >
-              {React.createElement(slides[currentSlide].icon, { size: 32 })}
-            </motion.div>
-          </div>
+          Pular
+        </button>
 
-          {/* Content Section */}
-          <div className="flex-1 px-8 pt-12 pb-8 flex flex-col justify-between">
-            <div className="space-y-6">
-              <div className="flex gap-2">
-                {slides.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      idx === currentSlide ? "w-8 bg-blue-500" : "w-2 bg-white/10"
-                    }`}
-                  />
-                ))}
-              </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleNext}
+          className="pointer-events-auto flex items-center gap-3 px-8 py-5 bg-[#2dd4bf] text-[#0f172a] rounded-2xl font-black text-lg shadow-2xl hover:bg-white transition-all group"
+        >
+          {activeIndex === slides.length - 1 ? "Começar" : "Próximo"}
+          {activeIndex === slides.length - 1 ? <Rocket size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> : <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />}
+        </motion.button>
+      </div>
 
-              <div className="space-y-4">
-                <motion.h2 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-4xl font-black text-white tracking-tight leading-tight"
-                >
-                  {slides[currentSlide].title}
-                </motion.h2>
-                <motion.p 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-lg text-slate-400 font-medium leading-relaxed"
-                >
-                  {slides[currentSlide].description}
-                </motion.p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-6">
-              <button 
-                onClick={onComplete}
-                className="text-slate-500 font-black uppercase tracking-widest text-xs hover:text-white transition-colors"
-              >
-                Pular
-              </button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={nextSlide}
-                className={`flex items-center gap-3 px-8 py-5 bg-gradient-to-r ${slides[currentSlide].color} text-white rounded-2xl font-black text-lg shadow-2xl transition-all`}
-              >
-                {currentSlide === slides.length - 1 ? "Começar" : "Próximo"}
-                {currentSlide === slides.length - 1 ? <ArrowRight size={24} /> : <ChevronRight size={24} />}
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      {/* Pagination Style Overrides */}
+      <style>{`
+        .swiper-pagination-bullet {
+          background: #2dd4bf !important;
+          opacity: 0.2;
+          width: 8px;
+          height: 8px;
+          transition: all 0.3s ease;
+        }
+        .swiper-pagination-bullet-active {
+          opacity: 1;
+          width: 24px;
+          border-radius: 4px;
+        }
+        .swiper-pagination {
+          bottom: 120px !important;
+          text-align: left !important;
+          padding-left: 32px !important;
+        }
+      `}</style>
     </div>
   );
 }
