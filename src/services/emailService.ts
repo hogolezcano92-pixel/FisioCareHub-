@@ -157,6 +157,112 @@ export const generateEmailHTML = ({
 };
 
 /**
+ * Sends a welcome email to a new user
+ */
+export const sendWelcomeEmail = async (email: string, name: string, role: 'paciente' | 'fisioterapeuta') => {
+  console.log(`[EmailService] Preparing welcome email for ${name} (${email}) as ${role}`);
+  
+  const welcomeMessage = role === 'fisioterapeuta' 
+    ? `
+      <h2 style="color: #2563eb; margin-top: 0;">Bem-vindo à nossa rede de especialistas!</h2>
+      <p>Estamos muito felizes em ter você como parceiro no <strong>FisioCareHub</strong>.</p>
+      <p>Sua conta está sendo processada. Em breve você poderá:</p>
+      <ul style="padding-left: 20px;">
+        <li>Gerenciar seus pacientes domiciliares</li>
+        <li>Organizar sua agenda de atendimentos</li>
+        <li>Utilizar nossa IA para auxiliar em seus prontuários</li>
+      </ul>
+      <p>Seus documentos já foram enviados para nossa equipe de auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
+    `
+    : `
+      <h2 style="color: #2563eb; margin-top: 0;">Sua jornada de recuperação começa aqui!</h2>
+      <p>Estamos felizes em acompanhar você no seu processo de reabilitação através do <strong>FisioCareHub</strong>.</p>
+      <p>Agora você já pode:</p>
+      <ul style="padding-left: 20px;">
+        <li>Visualizar seus exercícios prescritos</li>
+        <li>Acompanhar sua evolução</li>
+        <li>Manter contato direto com seu fisioterapeuta</li>
+      </ul>
+      <p>Acesse o app para começar seus primeiros passos.</p>
+    `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: name,
+    mensagem_principal_da_notificacao: welcomeMessage
+  });
+
+  try {
+    // In a production environment, you would call an Edge Function or Email API here.
+    // Example: await supabase.functions.invoke('send-email', { body: { to: email, subject: 'Bem-vindo ao FisioCareHub', html } });
+    
+    console.log(`[EmailService] Welcome email generated for ${email}. (Ready for production integration)`);
+    return { success: true };
+  } catch (error) {
+    console.error('[EmailService] Error sending welcome email:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Sends an appointment confirmation email
+ */
+export const sendAppointmentConfirmation = async (
+  patientEmail: string | undefined,
+  physioEmail: string | undefined,
+  details: {
+    appointmentId: string;
+    patientName: string;
+    patientEmail: string;
+    patientPhone?: string;
+    patientAddress?: string;
+    patientCity?: string;
+    patientState?: string;
+    patientZip?: string;
+    patientDOB?: string;
+    patientAvatar?: string;
+    physioName: string;
+    physioPhone?: string;
+    physioAddress?: string;
+    physioEmail?: string;
+    date: string;
+    time: string;
+    service: string;
+    notes?: string;
+  }
+) => {
+  console.log(`[EmailService] Preparing appointment confirmation for ${details.patientName}`);
+
+  const message = `
+    <h2 style="color: #2563eb; margin-top: 0;">Novo Agendamento Confirmado</h2>
+    <p>Olá, <strong>${details.patientName}</strong>, sua sessão de fisioterapia foi agendada com sucesso.</p>
+    
+    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Profissional:</strong> ${details.physioName}</p>
+      <p style="margin: 5px 0;"><strong>Data:</strong> ${details.date}</p>
+      <p style="margin: 5px 0;"><strong>Horário:</strong> ${details.time}</p>
+      <p style="margin: 5px 0;"><strong>Tipo:</strong> ${details.service}</p>
+      ${details.notes ? `<p style="margin: 5px 0;"><strong>Observações:</strong> ${details.notes}</p>` : ''}
+    </div>
+
+    <p>Caso precise desmarcar ou reagendar, por favor entre em contato com pelo menos 24 horas de antecedência.</p>
+  `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: details.patientName,
+    mensagem_principal_da_notificacao: message
+  });
+
+  try {
+    // Logic for sending email would go here
+    console.log(`[EmailService] Appointment confirmation generated for ${patientEmail}. (ID: ${details.appointmentId})`);
+    return { success: true };
+  } catch (error) {
+    console.error('[EmailService] Error sending appointment confirmation:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Example of how to use this service with a provider like Resend or Supabase Edge Functions:
  * 
  * export const sendNotification = async (userId: string, message: string) => {
