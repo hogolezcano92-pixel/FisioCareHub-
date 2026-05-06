@@ -594,7 +594,7 @@ export default function Home() {
       {/* How it Works Section - Bento Grid Style */}
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24 space-y-4">
+          <div className="text-center mb-24 space-y-4 relative z-30">
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">Processo Inteligente</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
               Sua Jornada de <span className="text-blue-500 italic font-black">Recuperação</span>
@@ -656,7 +656,7 @@ export default function Home() {
       {/* Professionals Section - Dynamic Grid */}
       <section className="py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8 relative z-30">
             <div className="space-y-4">
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">Nossa Rede</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
@@ -664,16 +664,12 @@ export default function Home() {
               </h3>
             </div>
             
-            {/* Search and Filter Bar - Compact SaaS Style */}
             <div className="flex-1 max-w-2xl flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 group">
-                <Search 
-                  className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-500" 
-                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
-                />
+                <Search className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }} />
                 <input 
                   type="text" 
-                  placeholder={t('home.search_placeholder', 'Buscar por nome...')}
+                  placeholder="Buscar por nome..."
                   value={nameQuery}
                   onChange={(e) => setNameQuery(e.target.value)}
                   className="w-full pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-white placeholder:text-slate-500 !pl-[60px]"
@@ -683,7 +679,7 @@ export default function Home() {
                 onClick={() => navigate('/buscar-fisio')}
                 className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 min-w-fit"
               >
-                {t('home.view_all', 'Ver Todos')}
+                Ver Todos
               </button>
             </div>
           </div>
