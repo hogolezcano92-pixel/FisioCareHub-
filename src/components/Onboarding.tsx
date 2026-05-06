@@ -82,7 +82,7 @@ const slides = [
     description: "Democratizar o acesso à fisioterapia especializada, transformando o lar no melhor ambiente de cura.",
     icon: Rocket,
     color: "from-[#2dd4bf] to-[#0f172a]",
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=1200",
   }
 ];
 
@@ -113,13 +113,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <div className="relative w-full h-full flex flex-col">
               {/* Background Image */}
               <div className="absolute inset-0 z-0">
-                <img 
-                  src={slide.image} 
-                  alt="" 
-                  className="w-full h-full object-cover opacity-30 mix-blend-overlay"
-                  referrerPolicy="no-referrer"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/50 to-[#0f172a]`} />
+                <AnimatePresence mode="wait">
+                  <motion.img 
+                    key={index}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 0.3, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                    src={slide.image} 
+                    alt="" 
+                    className="w-full h-full object-cover mix-blend-overlay blur-3xl scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                </AnimatePresence>
+                <div className={`absolute inset-0 bg-gradient-to-b from-[#0f172a]/20 via-[#0f172a]/60 to-[#0f172a]`} />
               </div>
 
               {/* Content Container */}
