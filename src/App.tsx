@@ -52,6 +52,7 @@ import Logo from './components/Logo';
 import SplashScreen from './components/SplashScreen';
 import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
+import { LGPDModal } from './components/LGPDModal';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -725,6 +726,7 @@ function AppContent() {
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
       <HeaderObserver />
       <ScrollToTop />
+      <LGPDModal />
       <Toaster position="top-right" richColors closeButton />
       
       <ErrorBoundary>
