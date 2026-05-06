@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 
 const PATIENT_IMAGES = [
-  "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1590611380053-da6447011f45?w=400&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1584432851702-3f753580560c?w=400&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1624727828489-a1e03b79bba8?w=400&h=400&fit=crop"
+  "https://static.wixstatic.com/media/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png/v1/fill/w_568,h_314,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png",
+  "https://soscardio.com.br/wp-content/uploads/2023/02/Fisioterapia-no-Hospital-SOS-Cardio.jpg",
+  "https://www.biosete.com.br/site/wp-content/uploads/2019/09/alzheimer_blog_fisio.png",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPEXy4VYcy4VbOpBGQgdZqJ06Pbgui8IJ0qLQhh9r4VA&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdNki-2MEp873H0ctTrSJmuzsLjTxjBf0QuA0CBqMQFQ&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7_-RfpQNcNcnEBvarfHPqNUzk_pY34Wpwc0T8QrC86g&s=10"
 ];
 
 export default function PhysioHighlight() {
