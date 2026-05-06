@@ -1586,16 +1586,47 @@ async function startServer() {
 </html>`;
 
       console.log(`[Admin API] Sending test email to ${profile.email}`);
-      const { data, error: sendError } = await resend.emails.send({
-        from: process.env.RESEND_FROM || 'FisioCareHub <onboarding@resend.dev>',
-        to: [profile.email],
-        subject: 'Teste de Template - FisioCareHub',
-        html: testHtml,
-      });
+      
+      const primaryFrom = process.env.RESEND_FROM || 'FisioCareHub <no-reply@fisiocarehub.company>';
+      const fallbackFrom = 'FisioCareHub <onboarding@resend.dev>';
+
+      let sendResult;
+      try {
+        console.log(`[Admin API] Resend Attempt 1 with: ${primaryFrom}`);
+        sendResult = await resend.emails.send({
+          from: primaryFrom,
+          to: [profile.email],
+          subject: 'Teste de Template - FisioCareHub',
+          html: testHtml,
+        });
+
+        if (sendResult.error) {
+          const errMsg = sendResult.error.message.toLowerCase();
+          const isDomainError = errMsg.includes('domain') || errMsg.includes('verified') || errMsg.includes('from') || errMsg.includes('identity');
+          
+          if (isDomainError) {
+            console.warn(`[Admin API] Resend Fallback to onboarding@resend.dev due to: ${sendResult.error.message}`);
+            sendResult = await resend.emails.send({
+              from: fallbackFrom,
+              to: [profile.email],
+              subject: 'Teste de Template - FisioCareHub (Fallback)',
+              html: testHtml,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[Admin API] Resend call failed:", err);
+        throw err;
+      }
+
+      const { data, error: sendError } = sendResult;
 
       if (sendError) {
-        console.error("[Resend] Error sending test email:", sendError);
-        return res.status(500).json({ error: sendError.message });
+        console.error("[Resend] Error sending test email after all attempts:", sendError);
+        return res.status(500).json({ 
+          error: sendError.message,
+          details: sendError
+        });
       }
 
       console.log(`[Resend Test] Email sent successfully. Message ID: ${data?.id}`);
