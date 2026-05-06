@@ -160,85 +160,79 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     }
   };
 
+  const showButton = activeIndex !== 2 || userType;
+  const isLastSlide = activeIndex === allSlides.length - 1;
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] flex flex-col font-sans overflow-hidden select-none">
-      <Swiper
-        modules={[Pagination, EffectFade]}
-        effect="fade"
-        fadeEffect={{ crossFade: true }}
-        pagination={{ 
-          clickable: activeIndex !== 2,
-          dynamicBullets: true
-        }}
-        onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-        onSwiper={(swiper) => (swiperRef.current = swiper)}
-        className="w-full h-full"
-        allowTouchMove={activeIndex !== 2}
-      >
-        {allSlides.map((slide: any, index) => (
-          <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0B1C2C]">
-            {slide.type === 'decision' ? (
-              <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
-            ) : (
-              <ContentSlide slide={slide} />
-            )}
-          </SwiperSlide>
-        ))}
-      </Swiper>
-
-      {/* Floating Controls */}
-      <div className="absolute bottom-8 left-0 right-0 z-[100] px-6 sm:px-8 flex items-center justify-between pointer-events-none">
-        <AnimatePresence>
-          {activeIndex !== 2 && (
-            <motion.button 
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onComplete}
-              className="pointer-events-auto text-[#A1A1AA] font-bold uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors p-4"
-            >
-              Pular
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {(activeIndex !== 2 || userType) && (
-            <motion.button
-              key={`${activeIndex}-${userType}`}
-              layout
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ 
-                duration: 0.5, 
-                delay: activeIndex === 2 ? 0.2 : 0.5, // Shorter delay for decision screen choice to feel responsive
-                ease: "easeOut"
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleNext}
-              className={cn(
-                "pointer-events-auto flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-lg transition-all group shadow-2xl overflow-hidden relative",
-                userType === 'fisioterapeuta' 
-                  ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-purple-500/20" 
-                  : "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-blue-500/20"
+    <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
+      <div className="relative flex-1">
+        <Swiper
+          modules={[Pagination, EffectFade]}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          pagination={{ 
+            clickable: activeIndex !== 2,
+            dynamicBullets: true
+          }}
+          onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+          onSwiper={(swiper) => (swiperRef.current = swiper)}
+          className="w-full h-full"
+          allowTouchMove={activeIndex !== 2}
+        >
+          {allSlides.map((slide: any, index) => (
+            <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0B1C2C]">
+              {slide.type === 'decision' ? (
+                <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
+              ) : (
+                <ContentSlide slide={slide} isActive={activeIndex === index} />
               )}
-            >
-              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative z-10">
-                {activeIndex === allSlides.length - 1 ? "Começar" : "Próximo"}
-              </span>
-              <div className="relative z-10">
-                {activeIndex === allSlides.length - 1 ? (
-                  <Rocket size={22} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                ) : (
-                  <ChevronRight size={22} className="group-hover:translate-x-1 transition-transform" />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+
+      {/* Fixed Controls Container - Eliminates jumps */}
+      <div className="absolute bottom-0 left-0 w-full z-[110] px-6 pb-12 sm:px-8 pointer-events-none">
+        <div className="max-w-xl mx-auto flex items-center justify-between w-full">
+          {/* Skip Button */}
+          <div className="pointer-events-auto">
+            {activeIndex !== 2 && (
+              <button 
+                onClick={onComplete}
+                className="text-[#A1A1AA] font-bold uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors p-4"
+              >
+                Pular
+              </button>
+            )}
+          </div>
+
+          {/* Next Button */}
+          <div className="pointer-events-auto">
+            {showButton && (
+              <button
+                onClick={handleNext}
+                className={cn(
+                  "flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-lg transition-all active:scale-[0.98] group shadow-2xl relative",
+                  userType === 'fisioterapeuta' 
+                    ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-purple-500/20" 
+                    : "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-blue-500/20"
                 )}
-              </div>
-            </motion.button>
-          )}
-        </AnimatePresence>
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="relative z-10">
+                  {isLastSlide ? "Começar" : "Próximo"}
+                </span>
+                <div className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">
+                  {isLastSlide ? (
+                    <Rocket size={22} className="group-hover:-translate-y-1 transition-transform" />
+                  ) : (
+                    <ChevronRight size={22} />
+                  )}
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <style>{`
@@ -256,7 +250,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           background: #8B5CF6 !important;
         }
         .swiper-pagination {
-          bottom: 115px !important;
+          bottom: 125px !important;
           text-align: left !important;
           padding-left: 24px !important;
         }
@@ -273,7 +267,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   );
 }
 
-function ContentSlide({ slide }: { slide: any }) {
+function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
   const color = slide.themeColor || '#3B82F6';
 
   return (
@@ -286,7 +280,6 @@ function ContentSlide({ slide }: { slide: any }) {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Premium Dark Overlay - Enhanced for better contrast */}
       <div 
         className="absolute inset-0 z-0"
         style={{
@@ -294,10 +287,8 @@ function ContentSlide({ slide }: { slide: any }) {
         }}
       />
       
-      {/* Additional subtle dark overlay for text legibility */}
       <div className="absolute inset-0 z-0 bg-black/20" />
       
-      {/* Color Tint Overlay for Premium Look */}
       <div 
         className="absolute inset-0 z-0 opacity-20"
         style={{ 
@@ -305,67 +296,70 @@ function ContentSlide({ slide }: { slide: any }) {
         }} 
       />
 
-      {/* Backdrop Blur to enhance text legibility */}
       <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
-      {/* Content Container */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
         <div className="max-w-xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
-            className="flex items-center gap-3 mb-6 sm:mb-8"
-          >
-            <div 
-              style={{ 
-                backgroundColor: `${color}30`, 
-                color: 'white', 
-                borderColor: `${color}50`,
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-              }}
-              className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
-            >
-              <slide.icon size={24} className="sm:w-7 sm:h-7" />
-            </div>
-            <div className="flex flex-col">
-              <span 
-                style={{ 
-                  color: 'white',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.4)'
-                }} 
-                className="font-black uppercase tracking-[0.35em] text-[11px]"
+          <AnimatePresence mode="wait">
+            {isActive && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
               >
-                {slide.subtitle}
-              </span>
-              <div style={{ backgroundColor: color }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full shadow-lg" />
-            </div>
-          </motion.div>
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <div 
+                    style={{ 
+                      backgroundColor: `${color}30`, 
+                      color: 'white', 
+                      borderColor: `${color}50`,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                    className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
+                  >
+                    <slide.icon size={24} className="sm:w-7 sm:h-7" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span 
+                      style={{ 
+                        color: 'white',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.4)'
+                      }} 
+                      className="font-black uppercase tracking-[0.35em] text-[11px]"
+                    >
+                      {slide.subtitle}
+                    </span>
+                    <div style={{ backgroundColor: color }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full shadow-lg" />
+                  </div>
+                </div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
-            className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
-            style={{ textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
-          >
-            {slide.title}
-          </motion.h1>
+                <motion.h1 
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                  className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
+                  style={{ textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
+                >
+                  {slide.title}
+                </motion.h1>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.35, ease: "easeOut" }}
-            className="text-base sm:text-xl text-slate-100 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-4 pl-4 sm:pl-6 bg-black/5 py-2 rounded-r-lg border-white/20"
-            style={{ 
-              borderColor: `${color}`, 
-              overflowWrap: 'break-word', 
-              wordWrap: 'break-word',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}
-          >
-            {slide.description}
-          </motion.p>
+                <motion.p 
+                  initial={{ opacity: 0, y: 25 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
+                  className="text-base sm:text-xl text-slate-100 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-4 pl-4 sm:pl-6 bg-black/5 py-2 rounded-r-lg border-white/20"
+                  style={{ 
+                    borderColor: `${color}`, 
+                    overflowWrap: 'break-word', 
+                    wordWrap: 'break-word',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  {slide.description}
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
@@ -404,7 +398,6 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Premium Dark Overlay */}
       <div 
         className="absolute inset-0 z-0"
         style={{
@@ -412,10 +405,8 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         }}
       />
       
-      {/* Backdrop Blur */}
       <div className="absolute inset-0 z-0 backdrop-blur-[2px]" />
 
-      {/* Dynamic Option Background */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
           {selectedType && (
@@ -437,6 +428,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center mb-10 sm:mb-16"
         >
           <div className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl">
@@ -447,12 +439,13 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         </motion.div>
 
         <div className="grid gap-4 sm:gap-6 w-full">
-          {options.map((option) => (
+          {options.map((option, idx) => (
             <motion.button
               key={option.id}
               layout
-              initial={false}
-              animate={selectedType === option.id ? { scale: 1 } : { scale: 0.98 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 + (idx * 0.1), ease: "easeOut" }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => onSelect(option.id as UserType)}
@@ -464,7 +457,6 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
               )}
               style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)', boxSizing: 'border-box' }}
             >
-              {/* Highlight Badge - Positioned fixed within card boundaries */}
               <div 
                 style={{ 
                   backgroundColor: selectedType === option.id ? `${option.color}40` : 'rgba(255,255,255,0.05)',
@@ -521,5 +513,6 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     </div>
   );
 }
+
 
 
