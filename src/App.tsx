@@ -76,6 +76,7 @@ const Agenda = lazy(() => import('./pages/Agenda'));
 const Exercises = lazy(() => import('./pages/Exercises'));
 const PatientExercises = lazy(() => import('./pages/PatientExercises'));
 const PhysioTriages = lazy(() => import('./pages/PhysioTriages'));
+const Guide = lazy(() => import('./pages/Guide'));
 const PhysioEvaluationsList = lazy(() => import('./pages/PhysioEvaluationsList'));
 const PhysioEvaluationForm = lazy(() => import('./pages/PhysioEvaluationForm'));
 const DailyJournal = lazy(() => import('./pages/DailyJournal'));
@@ -784,6 +785,7 @@ function AppContent() {
                   <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
                   <Route path="/treinos" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
                   <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
+                  <Route path="/guia" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
                   <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationsList /></ProtectedRoute>} />
                   <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationForm /></ProtectedRoute>} />
                   <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationForm /></ProtectedRoute>} />
