@@ -730,7 +730,7 @@ export default function Home() {
                             <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
                             <img 
                               src={pro.img} 
-                              className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 grayscale group-hover/card:grayscale-0 transition-all duration-500"
+                              className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 transition-all duration-500"
                               alt={pro.name}
                               loading="lazy"
                             />
