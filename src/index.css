@@ -90,6 +90,11 @@
     width: 100%;
     position: relative;
     transition: background-color 0.5s ease;
+    box-sizing: border-box;
+  }
+
+  *, ::before, ::after {
+    box-sizing: border-box;
   }
 
   /* Premium Transitions */
