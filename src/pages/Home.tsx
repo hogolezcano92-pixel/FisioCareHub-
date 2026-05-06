@@ -541,9 +541,9 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-24 space-y-4">
-            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">Processo Inteligente</p>
+            <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
-              Sua Jornada de <span className="text-blue-500 italic">Recuperação</span>
+              {t('home.process_title_part1', 'Sua Jornada de')} <span className="text-blue-500 italic font-black">{t('home.process_title_part2', 'Recuperação')}</span>
             </h3>
           </div>
 
@@ -600,9 +600,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Nossa Rede</p>
+              <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
-                Especialistas <span className="text-blue-500 italic">Verificados</span>
+                {t('home.network_title_part1', 'Especialistas')} <span className="text-blue-500 italic font-black">{t('home.network_title_part2', 'Verificados')}</span>
               </h3>
             </div>
             
