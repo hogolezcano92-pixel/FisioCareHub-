@@ -205,10 +205,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <AnimatePresence>
           {(activeIndex !== 2 || userType) && (
             <motion.button
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              key={`${activeIndex}-${userType}`}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              whileTap={{ scale: 0.95 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: activeIndex === 2 ? 0.2 : 0.5, // Shorter delay for decision screen choice to feel responsive
+                ease: "easeOut"
+              }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleNext}
               className={cn(
                 "pointer-events-auto flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-lg transition-all group shadow-2xl overflow-hidden relative",
@@ -304,9 +310,9 @@ function ContentSlide({ slide }: { slide: any }) {
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
         <div className="max-w-xl">
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
             className="flex items-center gap-3 mb-6 sm:mb-8"
           >
             <div 
@@ -337,7 +343,7 @@ function ContentSlide({ slide }: { slide: any }) {
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
             className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
             style={{ textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
           >
@@ -345,9 +351,9 @@ function ContentSlide({ slide }: { slide: any }) {
           </motion.h1>
 
           <motion.p 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.7, delay: 0.35, ease: "easeOut" }}
             className="text-base sm:text-xl text-slate-100 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-4 pl-4 sm:pl-6 bg-black/5 py-2 rounded-r-lg border-white/20"
             style={{ 
               borderColor: `${color}`, 
