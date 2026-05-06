@@ -165,7 +165,15 @@ export default function Admin() {
         }
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        data = { error: `Server returned ${response.status}: ${text.substring(0, 100)}...` };
+      }
 
       if (response.ok) {
         import('sonner').then(({ toast }) => toast.success("E-mail de teste enviado com sucesso!"));
