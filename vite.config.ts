@@ -9,18 +9,6 @@ export default defineConfig(({mode}) => {
     plugins: [react(), tailwindcss()],
     build: {
       chunkSizeWarningLimit: 1500,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-            'vendor-ui': ['lucide-react', 'motion', 'sonner', 'clsx', 'tailwind-merge'],
-            'vendor-charts': ['recharts'],
-            'vendor-pdf': ['jspdf', 'jspdf-autotable', 'html2canvas', 'docx', 'file-saver'],
-            'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
-          }
-        }
-      }
     },
     optimizeDeps: {
       include: ['docx', 'file-saver', 'jspdf-autotable', '@simplewebauthn/browser']
