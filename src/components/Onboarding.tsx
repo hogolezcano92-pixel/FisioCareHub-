@@ -12,21 +12,21 @@ const slides = [
     description: "Gestão completa de pacientes, prontuários e evolução em um só lugar.",
     icon: Home,
     color: "from-blue-600 to-indigo-700",
-    image: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000"
   },
   {
     title: "Acompanhe a evolução dos seus pacientes",
     description: "Visualize o progresso através de gráficos e métricas inteligentes.",
     icon: BarChart3,
     color: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1000"
   },
   {
     title: "Tudo pronto!",
     description: "Toque abaixo para iniciar sua jornada no FisioCareHub.",
     icon: ArrowRight,
     color: "from-sky-600 to-blue-700",
-    image: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&q=80&w=1000"
+    image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"
   }
 ];
 
