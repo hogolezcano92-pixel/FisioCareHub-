@@ -81,7 +81,7 @@ const slides = [
     description: "Democratizando o acesso à fisioterapia especializada, transformando cada lar no ambiente ideal de cura.",
     icon: Rocket,
     color: "from-[#0f172a] via-[#4c1d95] to-[#0f172a]",
-    image: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695ce6952?auto=format&fit=crop&q=80&w=1200",
   }
 ];
 
@@ -115,77 +115,104 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               
               {/* Background Layer - Isolated per Slide */}
               <div className="absolute inset-0 z-0">
-                <img 
+                <motion.img 
+                  key={`bg-${index}`}
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 0.15, scale: 1 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
                   src={slide.image} 
                   alt="" 
-                  className="w-full h-full object-cover opacity-20 blur-2xl scale-110"
+                  className="w-full h-full object-cover blur-2xl scale-110"
                   referrerPolicy="no-referrer"
                 />
-                {/* Opaque Gradient to prevent ghosting */}
-                <div className={`absolute inset-0 bg-gradient-to-b from-[#0f172a]/80 via-[#0f172a]/95 to-[#0f172a]`} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a]/70 via-[#0f172a]/90 to-[#0f172a]" />
               </div>
 
               {/* Content Container */}
               <div className="relative z-10 flex-1 flex flex-col justify-center px-8 sm:px-12 pt-16">
-                <motion.div
-                  key={`content-${index}`}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                  className="max-w-xl"
-                >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-lg">
+                <div className="max-w-xl">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="flex items-center gap-3 mb-6"
+                  >
+                    <div className="p-3 rounded-2xl bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/20 shadow-lg">
                       <slide.icon size={26} />
                     </div>
-                    <span className="text-purple-400 font-bold uppercase tracking-[0.25em] text-[10px]">
+                    <span className="text-[#2dd4bf] font-bold uppercase tracking-[0.25em] text-[10px]">
                       {slide.subtitle}
                     </span>
-                  </div>
+                  </motion.div>
 
-                  <h1 className="text-4xl sm:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight drop-shadow-sm">
+                  <motion.h1 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="text-4xl sm:text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight"
+                  >
                     {slide.title}
-                  </h1>
+                  </motion.h1>
 
                   {slide.description && (
-                    <p className="text-lg text-slate-300 leading-relaxed font-medium mb-10 max-w-md">
+                    <motion.p 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                      className="text-lg text-slate-300 leading-relaxed font-medium mb-10 max-w-md"
+                    >
                       {slide.description}
-                    </p>
+                    </motion.p>
                   )}
 
                   {slide.items && (
-                    <div className="grid gap-3 mb-10">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="grid gap-3 mb-10"
+                    >
                       {slide.items.map((item, i) => (
                         <div key={i} className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-md">
                           <CheckCircle2 className="text-[#2dd4bf]" size={18} />
                           <span className="text-white text-sm font-semibold">{item}</span>
                         </div>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
 
                   {slide.displayItems && (
-                    <div className="grid grid-cols-2 gap-4 mb-10">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="grid grid-cols-2 gap-4 mb-10"
+                    >
                       {slide.displayItems.map((item, i) => (
                         <div key={i} className="flex flex-col gap-3 bg-white/5 p-5 rounded-2xl border border-white/10 text-center items-center backdrop-blur-md">
-                          <item.icon className="text-purple-400" size={24} />
+                          <item.icon className="text-[#2dd4bf]" size={24} />
                           <span className="text-white font-bold text-xs leading-tight">{item.label}</span>
                         </div>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
 
                   {slide.stats && (
-                    <div className="grid grid-cols-2 gap-4 mb-10">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="grid grid-cols-2 gap-4 mb-10"
+                    >
                       {slide.stats.map((stat, i) => (
                         <div key={i} className="flex flex-col gap-1 bg-white/5 p-5 rounded-2xl border border-white/10 backdrop-blur-md">
                           <span className="text-3xl font-black text-[#2dd4bf]">{stat.value}</span>
                           <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
                         </div>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
-                </motion.div>
+                </div>
               </div>
             </div>
           </SwiperSlide>
@@ -204,7 +231,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleNext}
-          className="pointer-events-auto flex items-center gap-3 px-10 py-5 bg-[#2dd4bf] text-[#0f172a] rounded-2xl font-black text-lg shadow-[0_20px_50px_rgba(45,212,191,0.3)] hover:scale-105 transition-all group"
+          className="pointer-events-auto flex items-center gap-4 px-10 py-5 bg-[#2dd4bf] text-[#0f172a] rounded-2xl font-black text-lg shadow-[0_20px_50px_rgba(45,212,191,0.3)] hover:scale-105 hover:bg-white transition-all group"
         >
           {activeIndex === slides.length - 1 ? "Começar" : "Próximo"}
           {activeIndex === slides.length - 1 ? (
