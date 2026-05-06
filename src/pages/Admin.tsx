@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
@@ -73,6 +74,7 @@ import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
 
 export default function Admin() {
+  const { t } = useTranslation();
   const { user: supabaseUser, loading: loadingSupabase, signOut, profile: authProfile, refreshProfile } = useAuth();
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
@@ -142,6 +144,41 @@ export default function Admin() {
 
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [testWhatsAppLoading, setTestWhatsAppLoading] = useState(false);
+
+  const [testEmailLoading, setTestEmailLoading] = useState(false);
+
+  const handleTestEmail = async () => {
+    setTestEmailLoading(true);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou."));
+        return;
+      }
+
+      const response = await fetch('/api/admin/test-template-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        import('sonner').then(({ toast }) => toast.success("E-mail de teste enviado com sucesso!"));
+      } else {
+        import('sonner').then(({ toast }) => toast.error("Falha no envio: " + (data.error || "Erro desconhecido")));
+      }
+    } catch (err: any) {
+      console.error("Erro no teste de email:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor."));
+    } finally {
+      setTestEmailLoading(false);
+    }
+  };
 
   const handleTestWhatsApp = async () => {
     if (!testPhoneNumber.trim()) {
@@ -737,7 +774,7 @@ export default function Admin() {
       try {
         await addDoc(collection(db, 'notifications'), {
           userId,
-          title: 'Perfil Aprovado!',
+          title: t('admin.profile_approved'),
           message: 'Seu perfil de fisioterapeuta foi aprovado pela administração.',
           type: 'system',
           read: false,
@@ -802,7 +839,7 @@ export default function Admin() {
       try {
         await addDoc(collection(db, 'notifications'), {
           userId,
-          title: 'Perfil Rejeitado',
+          title: t('admin.profile_rejected'),
           message: 'Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes.',
           type: 'system',
           read: false,
@@ -876,7 +913,7 @@ export default function Admin() {
       if (error) throw error;
 
       setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
-      import('sonner').then(({ toast }) => toast.success("Perfil excluído com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('profile.delete_success')));
     } catch (err) {
       console.error("Error deleting user:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao excluir perfil."));
@@ -1736,7 +1773,7 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-tight">Biblioteca de Cuidados</h3>
+                  <h3 className="text-2xl font-black text-white tracking-tight">Biblioteca de Saúde</h3>
                   <p className="text-slate-500 font-medium">Gerencie os materiais disponíveis para venda aos pacientes.</p>
                 </div>
                 <button 
@@ -2319,7 +2356,7 @@ export default function Admin() {
                             <button 
                               onClick={() => handleDeleteUser(u?.id)}
                               className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                              title="Excluir Perfil"
+                              title={t('admin.delete_profile')}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -3158,6 +3195,33 @@ export default function Admin() {
 
           {!loading && !error && activeTab === 'notifications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Email/Template Test Tool */}
+              <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/5 p-8 rounded-[3rem] border border-blue-500/20 shadow-xl">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20">
+                      <Send size={32} />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-white uppercase tracking-tight">Template de E-mail (Produção)</h4>
+                      <p className="text-slate-400 font-medium">Envie um e-mail real para sua caixa de entrada para validar o layout oficial.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleTestEmail}
+                    disabled={testEmailLoading}
+                    className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40 group disabled:opacity-50 active:scale-95 whitespace-nowrap"
+                  >
+                    {testEmailLoading ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+                    )}
+                    <span>Testar template (produção)</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
@@ -3335,11 +3399,11 @@ export default function Admin() {
             <div className="max-w-4xl space-y-8">
               {/* Profile Settings */}
               <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
-                <h3 className="text-2xl font-black text-white tracking-tight">Meu Perfil Admin</h3>
+                <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.profile_title')}</h3>
                 
                 <div className="flex flex-col md:flex-row gap-10 items-start">
                   <div className="flex-shrink-0">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 block text-center">Foto de Perfil</label>
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 block text-center">{t('profile.photo')}</label>
                     <AvatarUpload 
                       userId={supabaseUser?.id || ''} 
                       currentAvatarUrl={authProfile?.avatar_url || authProfile?.foto_url}
@@ -3377,12 +3441,12 @@ export default function Admin() {
                           import('sonner').then(({ toast }) => toast.error("Erro ao atualizar perfil."));
                         } else {
                           await refreshProfile();
-                          import('sonner').then(({ toast }) => toast.success("Perfil atualizado com sucesso!"));
+                          import('sonner').then(({ toast }) => toast.success(t('profile.update_success')));
                         }
                       }}
                       className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
                     >
-                      Atualizar Perfil
+                      {t('admin.update_profile')}
                     </button>
                   </div>
                 </div>
