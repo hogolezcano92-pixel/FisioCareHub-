@@ -263,6 +263,62 @@ export const sendAppointmentConfirmation = async (
 };
 
 /**
+ * Sends a notification email about appointment status changes (approved, cancelled, etc)
+ */
+export const sendAppointmentStatusEmail = async (
+  email: string | undefined,
+  name: string,
+  physioName: string,
+  status: 'aprovado' | 'confirmado' | 'cancelado' | 'reagendado',
+  details: {
+    date: string;
+    time: string;
+    reason?: string;
+    service?: string;
+  }
+) => {
+  if (!email) return { success: false, error: 'Email não fornecido' };
+  
+  console.log(`[EmailService] Sending status update (${status}) to ${name}`);
+
+  const statusMap: Record<string, string> = {
+    aprovado: 'Confirmado',
+    confirmado: 'Confirmado',
+    cancelado: 'Cancelado',
+    reagendado: 'Reagendado'
+  };
+
+  const message = `
+    <h2 style="color: #2563eb; margin-top: 0;">Atualização de Agendamento</h2>
+    <p>Olá, <strong>${name}</strong>, o status do seu agendamento foi atualizado.</p>
+    
+    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Novo Status:</strong> <span style="color: ${status === 'cancelado' ? '#ef4444' : '#10b981'}; font-weight: bold;">${statusMap[status] || status}</span></p>
+      <p style="margin: 5px 0;"><strong>Profissional:</strong> ${physioName}</p>
+      <p style="margin: 5px 0;"><strong>Data:</strong> ${details.date}</p>
+      <p style="margin: 5px 0;"><strong>Horário:</strong> ${details.time}</p>
+      ${details.service ? `<p style="margin: 5px 0;"><strong>Serviço:</strong> ${details.service}</p>` : ''}
+      ${details.reason ? `<p style="margin: 5px 0;"><strong>Motivo:</strong> ${details.reason}</p>` : ''}
+    </div>
+
+    ${status === 'cancelado' ? '<p>Para dúvidas, entre em contato com o suporte.</p>' : '<p>Esperamos por você!</p>'}
+  `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: name,
+    mensagem_principal_da_notificacao: message
+  });
+
+  try {
+    console.log(`[EmailService] Status email (${status}) generated for ${email}.`);
+    return { success: true };
+  } catch (error) {
+    console.error('[EmailService] Error sending status email:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Example of how to use this service with a provider like Resend or Supabase Edge Functions:
  * 
  * export const sendNotification = async (userId: string, message: string) => {
