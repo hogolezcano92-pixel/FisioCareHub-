@@ -155,7 +155,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {slide.type === 'decision' ? (
               <DecisionSlide onSelect={handleSelectType} selectedType={userType} />
             ) : (
-              <ContentSlide slide={slide} index={index} />
+              <ContentSlide slide={slide} />
             )}
           </SwiperSlide>
         ))}
@@ -247,22 +247,22 @@ function ContentSlide({ slide }: { slide: any }) {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-8 sm:px-12 pt-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-4 sm:px-12 pt-16">
         <div className="max-w-xl">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="flex items-center gap-3 mb-8"
+            className="flex items-center gap-3 mb-6 sm:mb-8"
           >
-            <div className="p-4 rounded-3xl bg-[#2dd4bf]/20 text-[#2dd4bf] border border-[#2dd4bf]/20 shadow-2xl backdrop-blur-xl">
-              <slide.icon size={28} />
+            <div className="p-3 sm:p-4 rounded-3xl bg-[#2dd4bf]/20 text-[#2dd4bf] border border-[#2dd4bf]/20 shadow-2xl backdrop-blur-xl">
+              <slide.icon size={24} className="sm:w-7 sm:h-7" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[#2dd4bf] font-black uppercase tracking-[0.35em] text-[10px]">
+              <span className="text-[#2dd4bf] font-black uppercase tracking-[0.35em] text-[9px] sm:text-[10px]">
                 {slide.subtitle}
               </span>
-              <div className="h-0.5 w-8 bg-[#2dd4bf]/30 mt-1 rounded-full" />
+              <div className="h-0.5 w-6 sm:w-8 bg-[#2dd4bf]/30 mt-1 rounded-full" />
             </div>
           </motion.div>
 
@@ -270,7 +270,7 @@ function ContentSlide({ slide }: { slide: any }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="text-4xl sm:text-7xl font-black text-white leading-[1] mb-8 tracking-tighter"
+            className="text-3xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
           >
             {slide.title}
           </motion.h1>
@@ -279,7 +279,7 @@ function ContentSlide({ slide }: { slide: any }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="text-lg sm:text-xl text-slate-300 leading-relaxed font-medium mb-12 max-w-md border-l-2 border-[#2dd4bf]/20 pl-6"
+            className="text-base sm:text-xl text-slate-300 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-2 border-[#2dd4bf]/20 pl-4 sm:pl-6"
           >
             {slide.description}
           </motion.p>
@@ -291,7 +291,7 @@ function ContentSlide({ slide }: { slide: any }) {
 
 function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) => void, selectedType: UserType }) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-8 bg-[#0f172a] overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0f172a] overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(45,212,191,0.08)_0%,transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.08)_0%,transparent_50%)]" />
       
@@ -299,72 +299,87 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
-          <div className="inline-flex items-center justify-center p-5 rounded-3xl bg-white/5 border border-white/10 mb-8 shadow-2xl backdrop-blur-xl">
-            <Users size={40} className="text-[#2dd4bf]" />
+          <div className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl">
+            <Users size={32} className="text-[#2dd4bf] sm:w-10 sm:h-10" />
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-6 tracking-tighter leading-tight">Como você quer usar o FisioCareHub?</h2>
-          <p className="text-slate-400 text-lg font-medium max-w-sm mx-auto">Escolha o seu perfil para personalizarmos sua jornada.</p>
+          <h2 className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight">Como você quer usar o FisioCareHub?</h2>
+          <p className="text-slate-400 text-base sm:text-lg font-medium max-w-sm mx-auto">Escolha o seu perfil para personalizarmos sua jornada.</p>
         </motion.div>
 
-        <div className="grid gap-6 w-full">
+        <div className="grid gap-4 sm:gap-6 w-full">
           {[
             { 
               id: 'paciente', 
               label: 'Sou Paciente', 
-              desc: 'Quero recuperar movimentos e ter saúde com exercícios guiados.', 
+              desc: 'Recupere seus movimentos e encontre fisioterapeutas para te acompanhar.', 
+              badge: 'Encontre profissionais',
               icon: Heart,
               color: 'emerald',
-              img: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a'
             },
             { 
               id: 'fisioterapeuta', 
               label: 'Sou Fisioterapeuta', 
-              desc: 'Quero gerenciar pacientes e prescrever treinos de elite.', 
+              desc: 'Gerencie seus pacientes e atraia novos atendimentos pelo app.', 
+              badge: 'Capte pacientes',
               icon: Stethoscope,
               color: 'blue',
-              img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d'
             }
           ].map((option) => (
             <motion.button
               key={option.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              initial={false}
+              animate={selectedType === option.id ? { scale: 1 } : { scale: 0.98 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               onClick={() => onSelect(option.id as UserType)}
               className={cn(
-                "group relative w-full p-8 bg-white/[0.03] border-2 rounded-[2.5rem] transition-all text-left flex items-center gap-8 overflow-hidden backdrop-blur-sm",
+                "group relative w-full p-5 sm:p-8 bg-white/[0.03] border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
                 selectedType === option.id 
                   ? "border-[#2dd4bf] bg-white/[0.08] shadow-[0_20px_60px_-15px_rgba(45,212,191,0.15)]" 
                   : "border-white/5 hover:border-white/20 hover:bg-white/[0.05]"
               )}
             >
+              {/* Highlight Badge */}
               <div className={cn(
-                "w-20 h-20 rounded-3xl flex items-center justify-center transition-all duration-500",
+                "absolute top-4 right-4 sm:top-6 sm:right-8 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300",
                 selectedType === option.id 
-                  ? "bg-[#2dd4bf] text-[#0f172a] shadow-lg rotate-12" 
-                  : "bg-white/5 text-slate-400 group-hover:bg-[#2dd4bf] group-hover:text-[#0f172a] group-hover:scale-110"
+                  ? "bg-[#2dd4bf] text-[#0f172a] border-[#2dd4bf]" 
+                  : "bg-white/5 text-slate-500 border-white/5 group-hover:border-[#2dd4bf]/30 group-hover:text-[#2dd4bf]"
               )}>
-                <option.icon size={36} />
+                {option.badge}
+              </div>
+
+              <div className={cn(
+                "w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0",
+                selectedType === option.id 
+                  ? "bg-[#2dd4bf] text-[#0f172a] shadow-lg rotate-6 sm:rotate-12" 
+                  : "bg-white/5 text-slate-400 group-hover:bg-[#2dd4bf] group-hover:text-[#0f172a] group-hover:scale-105"
+              )}>
+                <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 min-w-0 pr-12 sm:pr-0">
                 <span className={cn(
-                  "block text-2xl font-black mb-1",
+                  "block text-xl sm:text-2xl font-black mb-1",
                   selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
                 )}>
                   {option.label}
                 </span>
-                <span className="text-slate-500 text-sm font-medium leading-relaxed group-hover:text-slate-400 transition-colors">
+                <span className={cn(
+                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors",
+                  selectedType === option.id ? "text-slate-300" : "text-slate-500 group-hover:text-slate-400"
+                )}>
                   {option.desc}
                 </span>
               </div>
 
               <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 bg-white/5",
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 bg-white/5 shrink-0 sm:absolute sm:right-8 sm:top-1/2 sm:-translate-y-1/2",
                 selectedType === option.id ? "bg-[#2dd4bf] text-[#0f172a] translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
               )}>
-                <ArrowRight size={24} />
+                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </motion.button>
           ))}
