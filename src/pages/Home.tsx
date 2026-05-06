@@ -238,7 +238,10 @@ export default function Home() {
           <div 
             className="space-y-12 max-w-5xl mx-auto lg:mx-0 text-center lg:text-left"
           >
-            <div 
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
               className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl mx-auto lg:mx-0"
             >
               <div className="flex items-center gap-2">
@@ -247,27 +250,50 @@ export default function Home() {
               </div>
               <div className="w-px h-4 bg-white/10 mx-1" />
               <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Fisioterapia Especializada</span>
-            </div>
+            </motion.div>
             
             <div className="space-y-6">
               <h1 className="text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-gray-100 leading-[0.95] tracking-tighter">
-                <span className="block">
+                <motion.span 
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.1 }}
+                  className="block"
+                >
                   {t('home.hero.title1', 'Saúde e')}
-                </span>
-                <span className="block bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic">
+                </motion.span>
+                <motion.span 
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="block bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent italic"
+                >
                   {t('home.hero.highlight', 'Bem-estar')}
-                </span>
-                <span className="block">
+                </motion.span>
+                <motion.span 
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="block"
+                >
                   {t('home.hero.title2', 'no seu lar')}
-                </span>
+                </motion.span>
               </h1>
               
-              <p className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90">
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
+              >
                 {t('home.hero.subtitle', 'Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.')}
-              </p>
+              </motion.p>
             </div>
             
-            <div 
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
               className="flex flex-col sm:flex-row items-center gap-6 pt-6"
             >
               <Link
@@ -275,12 +301,14 @@ export default function Home() {
                 onClick={() => !user && localStorage.setItem('pending_role', 'paciente')}
                 className="group relative w-full sm:w-auto"
               >
-                <div
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
                   className="relative z-10 inline-flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-[0_20px_50px_-15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-all duration-300"
                 >
                   <Search size={22} className="group-hover:scale-110 transition-transform" /> 
                   {t('nav.find_physio', 'Encontrar Fisioterapeuta')}
-                </div>
+                </motion.div>
                 <div className="absolute inset-0 bg-blue-400/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
 
@@ -289,16 +317,21 @@ export default function Home() {
                 onClick={() => localStorage.setItem('pending_role', 'fisioterapeuta')}
                 className="group w-full sm:w-auto"
               >
-                <div
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  whileTap={{ scale: 0.98 }}
                   className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-[2rem] font-black text-lg hover:border-white/40 transition-all duration-300"
                 >
                   <Stethoscope size={22} /> {t('common.i_am_physio', 'Sou Fisioterapeuta')}
-                </div>
+                </motion.div>
               </Link>
-            </div>
+            </motion.div>
 
             {/* Social Proof / Stats */}
-            <div 
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
               className="flex flex-wrap justify-center lg:justify-start gap-8 pt-10 border-t border-white/10"
             >
               <div className="space-y-1">
@@ -313,7 +346,7 @@ export default function Home() {
                 <p className="text-2xl font-black text-white">{t('home.stats.rating_value', '4.9/5')}</p>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('home.stats.rating_label', 'Avaliação Média')}</p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -388,7 +421,13 @@ export default function Home() {
           </motion.div>
 
           {/* Floating Feature Card */}
-          <div className="absolute bottom-16 left-6 right-6 lg:left-auto lg:right-12 lg:w-[32rem] p-12 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] z-10">
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.8, duration: 1 }}
+            className="absolute bottom-16 left-6 right-6 lg:left-auto lg:right-12 lg:w-[32rem] p-12 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] z-10"
+          >
             <div className="flex items-center gap-7 mb-8">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl flex-shrink-0 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
                 <ShieldCheck size={36} />
@@ -401,7 +440,7 @@ export default function Home() {
             <p className="text-xl text-slate-400 leading-relaxed font-medium">
               Gestão completa de prontuários, agendas e pagamentos. Tudo pensado para que o foco seja 100% na reabilitação do paciente.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -409,7 +448,12 @@ export default function Home() {
       <section className="py-32 px-6 lg:px-20 relative z-20 -mt-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Patient Card */}
-          <div className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500"
+          >
             <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-400 mb-8 group-hover:scale-110 transition-transform">
               <Heart size={32} />
             </div>
@@ -426,10 +470,15 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Physio Card */}
-          <div className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="group p-10 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] shadow-2xl hover:bg-slate-900/60 transition-all duration-500"
+          >
             <div className="w-16 h-16 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-400 mb-8 group-hover:scale-110 transition-transform">
               <Stethoscope size={32} />
             </div>
@@ -446,21 +495,26 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Specialties Slider Section - Modern & Professional */}
       <section className="py-32 px-6 lg:px-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-              <div className="space-y-4">
-                <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.specialties_label', 'Especialidades Médicas')}</p>
-                <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
-                  {t('home.specialties_title_part1', 'Excelência em')} <br />
-                  <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent italic">{t('home.specialties_title_part2', 'Diversas Áreas')}</span>
-                </h3>
-              </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8"
+          >
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.specialties_label', 'Especialidades Médicas')}</p>
+              <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
+                {t('home.specialties_title_part1', 'Excelência em')} <br />
+                <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent italic">{t('home.specialties_title_part2', 'Diversas Áreas')}</span>
+              </h3>
+            </div>
             <div className="flex gap-4">
               <button 
                 onClick={() => setCurrentSlide((prev) => (prev - 1 + specialtySlides.length) % specialtySlides.length)}
@@ -475,7 +529,7 @@ export default function Home() {
                 <ChevronRight size={24} />
               </button>
             </div>
-          </div>
+          </motion.div>
 
           <div className="relative h-[600px] rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] border border-white/5">
             <AnimatePresence mode="wait">
@@ -540,12 +594,17 @@ export default function Home() {
       {/* How it Works Section - Bento Grid Style */}
       <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24 space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-24 space-y-4"
+          >
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.process_label', 'Processo Inteligente')}</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
               {t('home.process_title_part1', 'Sua Jornada de')} <span className="text-blue-500 italic font-black">{t('home.process_title_part2', 'Recuperação')}</span>
             </h3>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -571,8 +630,12 @@ export default function Home() {
                 gradient: 'from-emerald-500/20 to-teal-500/20'
               }
             ].map((item, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 }}
                 className="group relative p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] hover:bg-white/10 transition-all duration-500"
               >
                 <div className={cn(
@@ -589,7 +652,7 @@ export default function Home() {
                   <h4 className="text-2xl font-black text-white mb-4 tracking-tight">{item.title}</h4>
                   <p className="text-slate-400 font-medium leading-relaxed">{item.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -598,7 +661,12 @@ export default function Home() {
       {/* Professionals Section - Dynamic Grid */}
       <section className="py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8"
+          >
             <div className="space-y-4">
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">{t('home.network_label', 'Nossa Rede')}</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
@@ -628,7 +696,7 @@ export default function Home() {
                 {t('home.view_all', 'Ver Todos')}
               </button>
             </div>
-          </div>
+          </motion.div>
           
           <div className="relative group">
             {professionals.length > 0 ? (
