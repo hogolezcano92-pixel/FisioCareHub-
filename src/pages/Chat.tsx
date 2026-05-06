@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDate, cn } from '../lib/utils';
+import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import KineAI, { KineIcon } from '../components/KineAI';
 
 export default function Chat() {
@@ -404,7 +405,7 @@ export default function Chat() {
     if (!messages.length || !targetUser || !user) return;
     const transcript = messages.map(m => {
       const sender = m.remetente === user.id ? 'Eu' : (targetUser.nome_completo);
-      return `[${formatDate(m.criado_em)}] ${sender}: ${m.mensagem}`;
+      return `[${formatDateBR(m.criado_em)}] ${sender}: ${m.mensagem}`;
     }).join('\n');
 
     try {
@@ -668,7 +669,7 @@ export default function Chat() {
                         {showDateSeparator && (
                           <div className="flex justify-center my-8">
                             <div className="px-4 py-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                              {msgDate.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}
+                              {formatOnlyDateBR(msg.criado_em)}
                             </div>
                           </div>
                         )}
@@ -689,7 +690,7 @@ export default function Chat() {
                               "text-[9px] font-black uppercase tracking-widest opacity-60 text-right",
                               isMe ? "text-blue-100" : "text-slate-500"
                             )}>
-                              {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formatHourBR(msg.criado_em)}
                             </div>
                           </div>
                         </motion.div>

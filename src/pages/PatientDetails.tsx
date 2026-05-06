@@ -26,6 +26,7 @@ import {
   FileSignature
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
+import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
@@ -266,7 +267,7 @@ export default function PatientDetails() {
           <div className="flex flex-wrap justify-center md:justify-start gap-4 text-slate-400 font-medium">
             <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
               <Calendar size={16} className="text-blue-400" />
-              {patient.data_nascimento ? new Date(patient.data_nascimento).toLocaleDateString('pt-BR') : 'Sem data'}
+              {patient.data_nascimento ? formatOnlyDateBR(patient.data_nascimento) : 'Sem data'}
             </span>
             <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
               <Phone size={16} className="text-blue-400" />
@@ -409,7 +410,7 @@ export default function PatientDetails() {
                           </div>
                           <div>
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Avaliação Realizada</p>
-                            <p className="text-sm font-bold text-white">{formatDate(ava.created_at)}</p>
+                            <p className="text-sm font-bold text-white">{formatDateBR(ava.created_at)}</p>
                           </div>
                         </div>
                         <button 
@@ -474,7 +475,7 @@ export default function PatientDetails() {
                           </div>
                           <div>
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Escala de Dor</p>
-                            <p className="text-sm font-bold text-white">{formatDate(ev.created_at)}</p>
+                            <p className="text-sm font-bold text-white">{formatDateBR(ev.created_at)}</p>
                           </div>
                         </div>
                         <div className="px-4 py-2 bg-white/5 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
@@ -545,7 +546,7 @@ export default function PatientDetails() {
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nível de Dor</p>
-                            <p className="text-sm font-bold text-white">{new Date(journal.data_registro).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-sm font-bold text-white">{formatOnlyDateBR(journal.data_registro)}</p>
                           </div>
                         </div>
                         {!journal.visualizado_por_fisio && (
@@ -592,7 +593,7 @@ export default function PatientDetails() {
                         {journal.visualizado_por_fisio && (
                            <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest flex items-center gap-1">
                               <CheckCircle2 size={10} />
-                              Visualizado em {new Date(journal.visualizado_em).toLocaleDateString()}
+                              Visualizado em {formatDateBR(journal.visualizado_em)}
                            </p>
                         )}
                       </div>
@@ -634,7 +635,7 @@ export default function PatientDetails() {
                         <FileText size={40} />
                       </div>
                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{arq.tipo}</p>
-                      <p className="text-sm font-bold text-white truncate mb-4">{formatDate(arq.created_at)}</p>
+                      <p className="text-sm font-bold text-white truncate mb-4">{formatDateBR(arq.created_at)}</p>
                       <a 
                         href={resolveStorageUrl(arq.arquivo_url)} 
                         target="_blank" 
@@ -771,7 +772,7 @@ export default function PatientDetails() {
                   >
                     <option value="" className="bg-slate-900">Selecione um atendimento realizado...</option>
                     {agendamentos.map(at => (
-                      <option key={at.id} value={at.id} className="bg-slate-900">{formatDate(at.data)} - {at.hora.slice(0, 5)}</option>
+                      <option key={at.id} value={at.id} className="bg-slate-900">{formatOnlyDateBR(at.data)} - {at.hora.slice(0, 5)}</option>
                     ))}
                   </select>
                 </div>

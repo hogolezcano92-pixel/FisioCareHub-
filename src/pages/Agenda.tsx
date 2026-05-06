@@ -22,6 +22,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
+import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
@@ -378,13 +379,13 @@ export default function Agenda() {
               patientCity: patientProfile.cidade,
               patientState: patientProfile.estado,
               patientZip: patientProfile.cep,
-              patientDOB: patientProfile.data_nascimento ? new Date(patientProfile.data_nascimento).toLocaleDateString('pt-BR') : undefined,
+              patientDOB: patientProfile.data_nascimento ? formatOnlyDateBR(patientProfile.data_nascimento) : undefined,
               patientAvatar: patientProfile.avatar_url,
               physioName: profile.nome_completo,
               physioPhone: profile.telefone,
               physioAddress: profile.endereco,
               physioEmail: profile.email,
-              date: new Date(formData.data).toLocaleDateString('pt-BR'),
+              date: formatOnlyDateBR(formData.data),
               time: formData.hora,
               service: formData.tipo || 'Consulta',
               notes: formData.observacoes
@@ -429,31 +430,31 @@ export default function Agenda() {
         if (patientEmail && profile) {
           const { sendAppointmentStatusEmail } = await import('../services/emailService');
           
-          if (status === 'confirmado') {
-            sendAppointmentStatusEmail(
-              patientEmail,
-              patientName || 'Paciente',
-              profile.nome_completo,
-              'confirmado',
-              {
-                date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
-                time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                service: app.tipo || app.servico || 'Consulta'
+              if (status === 'confirmado') {
+                sendAppointmentStatusEmail(
+                  patientEmail,
+                  patientName || 'Paciente',
+                  profile.nome_completo,
+                  'confirmado',
+                  {
+                    date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
+                    time: app.hora || formatHourBR(app.data_servico),
+                    service: app.tipo || app.servico || 'Consulta'
+                  }
+                );
+              } else if (status === 'cancelado') {
+                sendAppointmentStatusEmail(
+                  patientEmail,
+                  patientName || 'Paciente',
+                  profile.nome_completo,
+                  'cancelado',
+                  {
+                    date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
+                    time: app.hora || formatHourBR(app.data_servico),
+                    service: app.tipo || app.servico || 'Consulta'
+                  }
+                );
               }
-            );
-          } else if (status === 'cancelado') {
-            sendAppointmentStatusEmail(
-              patientEmail,
-              patientName || 'Paciente',
-              profile.nome_completo,
-              'cancelado',
-              {
-                date: app.data || new Date(app.data_servico).toLocaleDateString('pt-BR'),
-                time: app.hora || new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                service: app.tipo || app.servico || 'Consulta'
-              }
-            );
-          }
         }
       }
 
@@ -529,7 +530,7 @@ export default function Agenda() {
           </button>
           <div className="flex flex-col items-center">
             <span className="text-[8px] font-bold text-sky-400 uppercase tracking-widest mb-0.5">
-              {new Date(selectedDate).toLocaleDateString('pt-BR', { weekday: 'long' })}
+              {new Date(selectedDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' })}
             </span>
             <input
               type="date"
@@ -593,8 +594,8 @@ export default function Agenda() {
                   <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-sky-500/10 transition-colors border border-white/5">
                     {view === 'all' ? (
                       <>
-                        <span className="text-[7px] font-black text-sky-400 uppercase">{new Date(app.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                        <span className="text-sm font-black leading-none">{new Date(app.data).getDate()}</span>
+                        <span className="text-[7px] font-black text-sky-400 uppercase">{new Date(app.data + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short' })}</span>
+                        <span className="text-sm font-black leading-none">{new Date(app.data + 'T12:00:00').getDate()}</span>
                         <span className="text-[7px] font-bold text-slate-500 mt-0.5">{app.hora?.slice(0, 5)}</span>
                       </>
                     ) : (
@@ -718,11 +719,11 @@ export default function Agenda() {
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Data e Hora</p>
                     <div className="flex items-center gap-2 text-white font-black text-xs">
                       <CalendarIcon size={14} className="text-sky-400" />
-                      {selectedAppointment.data || new Date(selectedAppointment.data_servico).toLocaleDateString('pt-BR')}
+                      {selectedAppointment.data ? formatOnlyDateBR(selectedAppointment.data) : formatOnlyDateBR(selectedAppointment.data_servico)}
                     </div>
                     <div className="flex items-center gap-2 text-white font-black text-xs mt-1.5">
                       <Clock size={14} className="text-sky-400" />
-                      {selectedAppointment.hora || new Date(selectedAppointment.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {selectedAppointment.hora || formatHourBR(selectedAppointment.data_servico)}
                     </div>
                   </div>
                   <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10">

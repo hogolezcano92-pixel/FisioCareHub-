@@ -35,6 +35,7 @@ import {
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { cn, formatDate } from '../lib/utils';
+import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 
 // New FisioCare Components
@@ -249,12 +250,15 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [patientSearch]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Bom dia';
-    if (hour >= 12 && hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  };
+    const getGreeting = () => {
+      const offset = -3; // GMT-3 for America/Sao_Paulo (simplified, but works for most cases in Brazil)
+      const now = new Date();
+      const brazilTime = new Date(now.getTime() + (offset * 3600 * 1000) + (now.getTimezoneOffset() * 60000));
+      const hour = brazilTime.getHours();
+      if (hour >= 5 && hour < 12) return 'Bom dia';
+      if (hour >= 12 && hour < 18) return 'Boa tarde';
+      return 'Boa noite';
+    };
 
   useEffect(() => {
     if (!profile || !isPhysio || authLoading || !user) return;
@@ -487,23 +491,23 @@ export default function Dashboard() {
       {/* Next Step Section for Patients */}
       {!isPhysio && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
-            <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
-                  <span className="text-[9px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                  <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).getDate()}</span>
+            {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
+              <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
+                    <span className="text-[9px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short' })}</span>
+                    <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico + 'T12:00:00').getDate()}</span>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em] mb-0.5">Próxima Consulta</p>
+                    <p className="text-lg font-black text-white tracking-tight">
+                      {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
+                    </p>
+                    <p className="text-xs text-slate-400 font-bold">
+                      {formatHourBR(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico)} • <span className="text-sky-400">Presencial</span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em] mb-0.5">Próxima Consulta</p>
-                  <p className="text-lg font-black text-white tracking-tight">
-                    {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
-                  </p>
-                  <p className="text-xs text-slate-400 font-bold">
-                    {new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span className="text-sky-400">Presencial</span>
-                  </p>
-                </div>
-              </div>
               <button onClick={() => navigate('/appointments')} className="p-3 bg-white/5 text-slate-400 rounded-xl group-hover:bg-sky-500 group-hover:text-white transition-all shadow-sm">
                 <ChevronRight size={20} />
               </button>
@@ -720,18 +724,18 @@ export default function Dashboard() {
                     className="p-3.5 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-black text-xs border border-blue-500/20">
-                        {new Date(appt.data).getDate()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-                          {isPhysio ? (appt.nome_paciente || appt.paciente?.nome_completo || 'Paciente') : (appt.nome_fisioterapeuta || appt.fisioterapeuta?.nome_completo || 'Fisioterapeuta')}
-                        </p>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                          <span className="flex items-center gap-1">
-                            <Clock size={9} /> 
-                            {appt.hora || new Date(appt.data_servico).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                        <div className="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-black text-xs border border-blue-500/20">
+                          {new Date(appt.data + 'T12:00:00').getDate()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                            {isPhysio ? (appt.nome_paciente || appt.paciente?.nome_completo || 'Paciente') : (appt.nome_fisioterapeuta || appt.fisioterapeuta?.nome_completo || 'Fisioterapeuta')}
+                          </p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                            <span className="flex items-center gap-1">
+                              <Clock size={9} /> 
+                              {appt.hora || formatHourBR(appt.data_servico)}
+                            </span>
                           <span className="w-0.5 h-0.5 bg-white/10 rounded-full"></span>
                           <span className={cn(
                             "capitalize px-1.5 py-0.5 rounded text-[8px] font-black",
