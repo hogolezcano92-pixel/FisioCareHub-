@@ -40,15 +40,15 @@ const commonSlides = [
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
     image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200",
-    color: "from-[#0B1C2C] to-[#0F172A]"
+    themeColor: "#3B82F6"
   },
   {
     title: "Cuidado Personalizado",
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://images.unsplash.com/photo-1581578731548-c64695ce6952?auto=format&fit=crop&q=80&w=1200",
-    color: "from-[#0B1C2C] to-[#0F172A]"
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#8B5CF6"
   },
 ];
 
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200",
     themeColor: "#3B82F6"
   }
 ];
@@ -251,18 +251,30 @@ function ContentSlide({ slide }: { slide: any }) {
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {/* Background */}
+      {/* Background with Multi-layer Premium Overlays */}
       <div className="absolute inset-0 z-0">
         <motion.img 
-          initial={{ opacity: 0, scale: 1.2, filter: 'blur(30px)' }}
-          animate={{ opacity: 0.3, scale: 1, filter: 'blur(15px)' }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          initial={{ opacity: 0, scale: 1.2 }}
+          animate={{ opacity: 0.4, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
           src={slide.image} 
           alt="" 
-          className="w-full h-full object-cover scale-110"
+          className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 via-[#0F172A]/80 to-[#0F172A]" />
+        {/* Layer 1: Dark Base Gradient - Applying the requested RGB (11, 28, 44) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/85 via-[#0F172A]/95 to-[#0F172A]" />
+        
+        {/* Layer 2: Color Tint Glow Overlay */}
+        <div 
+          className="absolute inset-0 opacity-15"
+          style={{ 
+            background: `linear-gradient(135deg, ${color}40 0%, #8B5CF640 100%)` 
+          }} 
+        />
+
+        {/* Layer 3: Subtle Backdrop Blur */}
+        <div className="absolute inset-0 backdrop-blur-[6px]" />
       </div>
 
       {/* Content Container */}
@@ -281,7 +293,7 @@ function ContentSlide({ slide }: { slide: any }) {
               <slide.icon size={24} className="sm:w-7 sm:h-7" />
             </div>
             <div className="flex flex-col">
-              <span style={{ color: color }} className="font-black uppercase tracking-[0.35em] text-[9px] sm:text-[10px]">
+              <span style={{ color: color }} className="font-black uppercase tracking-[0.35em] text-[10px]">
                 {slide.subtitle}
               </span>
               <div style={{ backgroundColor: `${color}30` }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full" />
@@ -292,7 +304,7 @@ function ContentSlide({ slide }: { slide: any }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="text-3xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
+            className="text-4xl sm:text-7xl font-black text-white leading-[1.1] sm:leading-[1] mb-6 sm:mb-8 tracking-tighter"
           >
             {slide.title}
           </motion.h1>
@@ -302,7 +314,7 @@ function ContentSlide({ slide }: { slide: any }) {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
             className="text-base sm:text-xl text-[#A1A1AA] leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-2 pl-4 sm:pl-6"
-            style={{ borderColor: `${color}40` }}
+            style={{ borderColor: `${color}40`, overflowWrap: 'break-word', wordWrap: 'break-word' }}
           >
             {slide.description}
           </motion.p>
@@ -320,7 +332,8 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
       desc: 'Recupere seus movimentos e encontre fisioterapeutas para te acompanhar.', 
       badge: 'Encontre profissionais',
       icon: Heart,
-      color: '#3B82F6'
+      color: '#3B82F6',
+      image: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200'
     },
     { 
       id: 'fisioterapeuta', 
@@ -328,15 +341,30 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
       desc: 'Gerencie seus pacientes e atraia novos atendimentos pelo app.', 
       badge: 'Capte pacientes',
       icon: Stethoscope,
-      color: '#8B5CF6'
+      color: '#8B5CF6',
+      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200'
     }
   ];
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.05)_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(139,92,246,0.05)_0%,transparent_50%)]" />
-      
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <AnimatePresence mode="wait">
+          <motion.img 
+            key={selectedType || 'default'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.2 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            src={selectedType === 'paciente' ? options[0].image : (selectedType === 'fisioterapeuta' ? options[1].image : 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200')} 
+            alt="" 
+            className="w-full h-full object-cover blur-[8px] scale-110"
+          />
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/90 via-[#0F172A]/95 to-[#0F172A]" />
+      </div>
+
       <div className="relative z-10 w-full max-w-lg">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -360,21 +388,21 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
               whileTap={{ scale: 0.99 }}
               onClick={() => onSelect(option.id as UserType)}
               className={cn(
-                "group relative w-full p-5 sm:p-8 bg-[#13293D] border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
+                "group relative w-full p-5 sm:p-8 bg-[#13293D]/80 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
                 selectedType === option.id 
                   ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
-                  : "border-white/5 hover:border-white/10 hover:bg-[#1a3a55]"
+                  : "border-white/5 hover:border-white/10 hover:bg-[#1a3a55]/90"
               )}
-              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)' }}
+              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)', boxSizing: 'border-box' }}
             >
-              {/* Highlight Badge */}
+              {/* Highlight Badge - Positioned fixed within card boundaries */}
               <div 
                 style={{ 
-                  backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
+                  backgroundColor: selectedType === option.id ? `${option.color}40` : 'rgba(255,255,255,0.05)',
                   color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA',
-                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)'
+                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.1)'
                 }}
-                className="absolute top-3 right-3 sm:top-5 sm:right-6 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 max-w-[65%] truncate"
+                className="absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 z-20 max-w-[50%] truncate"
               >
                 {option.badge}
               </div>
@@ -382,24 +410,28 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
               <div 
                 style={{ 
                   backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
-                  color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA'
+                  color: '#FFFFFF'
                 }}
                 className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0"
               >
                 <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
               </div>
               
-              <div className="flex-1 min-w-0 pr-10 sm:pr-0">
+              <div className="flex-1 min-w-0 pt-6 sm:pt-0">
                 <span className={cn(
-                  "block text-xl sm:text-2xl font-black mb-1",
+                  "block text-xl sm:text-2xl font-black mb-1 leading-tight",
                   selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
-                )}>
+                )}
+                style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                >
                   {option.label}
                 </span>
                 <span className={cn(
-                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2",
+                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2 sm:line-clamp-none",
                   selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
-                )}>
+                )}
+                style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                >
                   {option.desc}
                 </span>
               </div>
@@ -407,7 +439,7 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
               <div 
                 style={{ backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)' }}
                 className={cn(
-                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shrink-0 sm:absolute sm:right-6 sm:top-1/2 sm:-translate-y-1/2",
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shrink-0 sm:ml-4",
                   selectedType === option.id ? "text-white translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
                 )}
               >
