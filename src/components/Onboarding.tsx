@@ -40,6 +40,7 @@ const commonSlides = [
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
     image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200",
+    color: "from-[#0B1C2C] to-[#0F172A]"
   },
   {
     title: "Cuidado Personalizado",
@@ -47,6 +48,7 @@ const commonSlides = [
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
     image: "https://images.unsplash.com/photo-1581578731548-c64695ce6952?auto=format&fit=crop&q=80&w=1200",
+    color: "from-[#0B1C2C] to-[#0F172A]"
   },
 ];
 
@@ -57,6 +59,7 @@ const patientSlides = [
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
     image: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#3B82F6"
   },
   {
     title: "Acompanhe seu Progresso",
@@ -64,6 +67,7 @@ const patientSlides = [
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
     image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#3B82F6"
   },
   {
     title: "Conecte-se Rapidamente",
@@ -71,6 +75,7 @@ const patientSlides = [
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
     image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#3B82F6"
   }
 ];
 
@@ -81,6 +86,7 @@ const physioSlides = [
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
     image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#8B5CF6"
   },
   {
     title: "Prescreva com Facilidade",
@@ -88,6 +94,7 @@ const physioSlides = [
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
     image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#8B5CF6"
   },
   {
     title: "Acompanhe Resultados",
@@ -95,6 +102,7 @@ const physioSlides = [
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
     image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+    themeColor: "#8B5CF6"
   }
 ];
 
@@ -113,7 +121,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   ];
 
   const handleNext = () => {
-    // If we are at the decision slide and no type is selected, we can't move forward
     if (activeIndex === 2 && !userType) return;
 
     if (activeIndex === allSlides.length - 1) {
@@ -128,7 +135,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     setUserType(type);
     if (type) {
       localStorage.setItem('onboarding_user_type', type);
-      // Brief delay for tactile feedback
       setTimeout(() => {
         swiperRef.current?.slideNext();
       }, 500);
@@ -136,7 +142,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#0f172a] flex flex-col font-sans overflow-hidden">
+    <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] flex flex-col font-sans overflow-hidden select-none">
       <Swiper
         modules={[Pagination, EffectFade]}
         effect="fade"
@@ -151,7 +157,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         allowTouchMove={activeIndex !== 2}
       >
         {allSlides.map((slide: any, index) => (
-          <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0f172a]">
+          <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0B1C2C]">
             {slide.type === 'decision' ? (
               <DecisionSlide onSelect={handleSelectType} selectedType={userType} />
             ) : (
@@ -162,7 +168,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       </Swiper>
 
       {/* Floating Controls */}
-      <div className="absolute bottom-8 left-0 right-0 z-[100] px-8 flex items-center justify-between pointer-events-none">
+      <div className="absolute bottom-8 left-0 right-0 z-[100] px-6 sm:px-8 flex items-center justify-between pointer-events-none">
         <AnimatePresence>
           {activeIndex !== 2 && (
             <motion.button 
@@ -170,7 +176,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onComplete}
-              className="pointer-events-auto text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors p-4"
+              className="pointer-events-auto text-[#A1A1AA] font-bold uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors p-4"
             >
               Pular
             </motion.button>
@@ -186,18 +192,23 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               whileTap={{ scale: 0.95 }}
               onClick={handleNext}
               className={cn(
-                "pointer-events-auto flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-lg transition-all group shadow-2xl",
-                userType === 'paciente' 
-                  ? "bg-[#2dd4bf] text-[#0f172a] shadow-[#2dd4bf]/20" 
-                  : "bg-blue-500 text-white shadow-blue-500/20"
+                "pointer-events-auto flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-lg transition-all group shadow-2xl overflow-hidden relative",
+                userType === 'fisioterapeuta' 
+                  ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-purple-500/20" 
+                  : "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-blue-500/20"
               )}
             >
-              {activeIndex === allSlides.length - 1 ? "Começar" : "Próximo"}
-              {activeIndex === allSlides.length - 1 ? (
-                <Rocket size={22} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              ) : (
-                <ChevronRight size={22} className="group-hover:translate-x-1 transition-transform" />
-              )}
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="relative z-10">
+                {activeIndex === allSlides.length - 1 ? "Começar" : "Próximo"}
+              </span>
+              <div className="relative z-10">
+                {activeIndex === allSlides.length - 1 ? (
+                  <Rocket size={22} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                ) : (
+                  <ChevronRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                )}
+              </div>
             </motion.button>
           )}
         </AnimatePresence>
@@ -205,7 +216,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
       <style>{`
         .swiper-pagination-bullet {
-          background: #2dd4bf !important;
+          background: #3B82F6 !important;
           opacity: 0.15;
           width: 8px;
           height: 8px;
@@ -215,11 +226,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           opacity: 1;
           width: 36px;
           border-radius: 6px;
+          background: #8B5CF6 !important;
         }
         .swiper-pagination {
           bottom: 115px !important;
           text-align: left !important;
-          padding-left: 32px !important;
+          padding-left: 24px !important;
+        }
+        @media (min-width: 640px) {
+          .swiper-pagination {
+            padding-left: 32px !important;
+          }
         }
         .swiper-slide {
           overflow: hidden;
@@ -230,24 +247,26 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 }
 
 function ContentSlide({ slide }: { slide: any }) {
+  const color = slide.themeColor || '#3B82F6';
+
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <motion.img 
           initial={{ opacity: 0, scale: 1.2, filter: 'blur(30px)' }}
-          animate={{ opacity: 0.35, scale: 1, filter: 'blur(15px)' }}
+          animate={{ opacity: 0.3, scale: 1, filter: 'blur(15px)' }}
           transition={{ duration: 1.2, ease: "easeOut" }}
           src={slide.image} 
           alt="" 
           className="w-full h-full object-cover scale-110"
           referrerPolicy="no-referrer"
         />
-        <div className={cn("absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-950/80 to-slate-950")} />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 via-[#0F172A]/80 to-[#0F172A]" />
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-4 sm:px-12 pt-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
         <div className="max-w-xl">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -255,14 +274,17 @@ function ContentSlide({ slide }: { slide: any }) {
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="flex items-center gap-3 mb-6 sm:mb-8"
           >
-            <div className="p-3 sm:p-4 rounded-3xl bg-[#2dd4bf]/20 text-[#2dd4bf] border border-[#2dd4bf]/20 shadow-2xl backdrop-blur-xl">
+            <div 
+              style={{ backgroundColor: `${color}20`, color: color, borderColor: `${color}30` }}
+              className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
+            >
               <slide.icon size={24} className="sm:w-7 sm:h-7" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[#2dd4bf] font-black uppercase tracking-[0.35em] text-[9px] sm:text-[10px]">
+              <span style={{ color: color }} className="font-black uppercase tracking-[0.35em] text-[9px] sm:text-[10px]">
                 {slide.subtitle}
               </span>
-              <div className="h-0.5 w-6 sm:w-8 bg-[#2dd4bf]/30 mt-1 rounded-full" />
+              <div style={{ backgroundColor: `${color}30` }} className="h-0.5 w-6 sm:w-8 mt-1 rounded-full" />
             </div>
           </motion.div>
 
@@ -279,7 +301,8 @@ function ContentSlide({ slide }: { slide: any }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="text-base sm:text-xl text-slate-300 leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-2 border-[#2dd4bf]/20 pl-4 sm:pl-6"
+            className="text-base sm:text-xl text-[#A1A1AA] leading-relaxed font-medium mb-8 sm:mb-12 max-w-md border-l-2 pl-4 sm:pl-6"
+            style={{ borderColor: `${color}40` }}
           >
             {slide.description}
           </motion.p>
@@ -290,10 +313,29 @@ function ContentSlide({ slide }: { slide: any }) {
 }
 
 function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) => void, selectedType: UserType }) {
+  const options = [
+    { 
+      id: 'paciente', 
+      label: 'Sou Paciente', 
+      desc: 'Recupere seus movimentos e encontre fisioterapeutas para te acompanhar.', 
+      badge: 'Encontre profissionais',
+      icon: Heart,
+      color: '#3B82F6'
+    },
+    { 
+      id: 'fisioterapeuta', 
+      label: 'Sou Fisioterapeuta', 
+      desc: 'Gerencie seus pacientes e atraia novos atendimentos pelo app.', 
+      badge: 'Capte pacientes',
+      icon: Stethoscope,
+      color: '#8B5CF6'
+    }
+  ];
+
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0f172a] overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(45,212,191,0.08)_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.08)_0%,transparent_50%)]" />
+    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.05)_0%,transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(139,92,246,0.05)_0%,transparent_50%)]" />
       
       <div className="relative z-10 w-full max-w-lg">
         <motion.div
@@ -302,31 +344,14 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
           className="text-center mb-10 sm:mb-16"
         >
           <div className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl">
-            <Users size={32} className="text-[#2dd4bf] sm:w-10 sm:h-10" />
+            <Users size={32} className="text-white sm:w-10 sm:h-10" />
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight">Como você quer usar o FisioCareHub?</h2>
-          <p className="text-slate-400 text-base sm:text-lg font-medium max-w-sm mx-auto">Escolha o seu perfil para personalizarmos sua jornada.</p>
+          <p className="text-[#A1A1AA] text-base sm:text-lg font-medium max-w-sm mx-auto">Escolha o seu perfil para personalizarmos sua jornada.</p>
         </motion.div>
 
         <div className="grid gap-4 sm:gap-6 w-full">
-          {[
-            { 
-              id: 'paciente', 
-              label: 'Sou Paciente', 
-              desc: 'Recupere seus movimentos e encontre fisioterapeutas para te acompanhar.', 
-              badge: 'Encontre profissionais',
-              icon: Heart,
-              color: 'emerald',
-            },
-            { 
-              id: 'fisioterapeuta', 
-              label: 'Sou Fisioterapeuta', 
-              desc: 'Gerencie seus pacientes e atraia novos atendimentos pelo app.', 
-              badge: 'Capte pacientes',
-              icon: Stethoscope,
-              color: 'blue',
-            }
-          ].map((option) => (
+          {options.map((option) => (
             <motion.button
               key={option.id}
               initial={false}
@@ -335,32 +360,36 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
               whileTap={{ scale: 0.99 }}
               onClick={() => onSelect(option.id as UserType)}
               className={cn(
-                "group relative w-full p-5 sm:p-8 bg-white/[0.03] border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
+                "group relative w-full p-5 sm:p-8 bg-[#13293D] border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
                 selectedType === option.id 
-                  ? "border-[#2dd4bf] bg-white/[0.08] shadow-[0_20px_60px_-15px_rgba(45,212,191,0.15)]" 
-                  : "border-white/5 hover:border-white/20 hover:bg-white/[0.05]"
+                  ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
+                  : "border-white/5 hover:border-white/10 hover:bg-[#1a3a55]"
               )}
+              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)' }}
             >
               {/* Highlight Badge */}
-              <div className={cn(
-                "absolute top-4 right-4 sm:top-6 sm:right-8 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300",
-                selectedType === option.id 
-                  ? "bg-[#2dd4bf] text-[#0f172a] border-[#2dd4bf]" 
-                  : "bg-white/5 text-slate-500 border-white/5 group-hover:border-[#2dd4bf]/30 group-hover:text-[#2dd4bf]"
-              )}>
+              <div 
+                style={{ 
+                  backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
+                  color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA',
+                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)'
+                }}
+                className="absolute top-3 right-3 sm:top-5 sm:right-6 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 max-w-[65%] truncate"
+              >
                 {option.badge}
               </div>
 
-              <div className={cn(
-                "w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0",
-                selectedType === option.id 
-                  ? "bg-[#2dd4bf] text-[#0f172a] shadow-lg rotate-6 sm:rotate-12" 
-                  : "bg-white/5 text-slate-400 group-hover:bg-[#2dd4bf] group-hover:text-[#0f172a] group-hover:scale-105"
-              )}>
+              <div 
+                style={{ 
+                  backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
+                  color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA'
+                }}
+                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0"
+              >
                 <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
               </div>
               
-              <div className="flex-1 min-w-0 pr-12 sm:pr-0">
+              <div className="flex-1 min-w-0 pr-10 sm:pr-0">
                 <span className={cn(
                   "block text-xl sm:text-2xl font-black mb-1",
                   selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
@@ -368,17 +397,20 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
                   {option.label}
                 </span>
                 <span className={cn(
-                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors",
-                  selectedType === option.id ? "text-slate-300" : "text-slate-500 group-hover:text-slate-400"
+                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2",
+                  selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
                 )}>
                   {option.desc}
                 </span>
               </div>
 
-              <div className={cn(
-                "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 bg-white/5 shrink-0 sm:absolute sm:right-8 sm:top-1/2 sm:-translate-y-1/2",
-                selectedType === option.id ? "bg-[#2dd4bf] text-[#0f172a] translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
-              )}>
+              <div 
+                style={{ backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)' }}
+                className={cn(
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shrink-0 sm:absolute sm:right-6 sm:top-1/2 sm:-translate-y-1/2",
+                  selectedType === option.id ? "text-white translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
+                )}
+              >
                 <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </motion.button>
@@ -388,4 +420,5 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
     </div>
   );
 }
+
 
