@@ -30,8 +30,17 @@ const generateEmailHTMLInternal = ({
         body { margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #f8fafc; padding-bottom: 40px; padding-top: 40px; }
         .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .header { padding: 40px 30px; text-align: center; border-bottom: 1px solid #f1f5f9; }
-        .header h1 { color: #2563eb; margin: 0; font-size: 28px; font-weight: 800; }
+        .header { padding: 0; text-align: center; border-bottom: 1px solid #f1f5f9; }
+        .header-container { padding: 40px 30px; background: linear-gradient(135deg, #0f172a, #1e1b4b); }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 800; color: #3B82F6; }
+        @supports (-webkit-background-clip: text) {
+            .gradient-text {
+                background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+        .header-subtitle { margin-top: 10px; color: rgba(255,255,255,0.75); font-size: 14px; }
         .content { padding: 40px 30px; line-height: 1.6; }
         .greeting { font-size: 18px; margin-bottom: 24px; color: #111827; }
         .message-box { font-size: 16px; color: #4b5563; }
@@ -45,7 +54,10 @@ const generateEmailHTMLInternal = ({
         <table class="main">
             <tr>
                 <td class="header">
-                    <h1>FisioCareHub</h1>
+                    <div class="header-container">
+                        <h1 class="gradient-text">FisioCareHub</h1>
+                        <p class="header-subtitle">Plataforma de Gestão em Fisioterapia</p>
+                    </div>
                 </td>
             </tr>
             <tr>
