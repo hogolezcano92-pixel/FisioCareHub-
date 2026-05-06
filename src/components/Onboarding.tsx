@@ -116,7 +116,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const allSlides = [
     ...commonSlides,
-    { type: 'decision' }, // Decision slide at index 2
+    { 
+      type: 'decision',
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200"
+    },
     ...(userType === 'paciente' ? patientSlides : (userType === 'fisioterapeuta' ? physioSlides : [])),
   ];
 
@@ -159,7 +162,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         {allSlides.map((slide: any, index) => (
           <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0B1C2C]">
             {slide.type === 'decision' ? (
-              <DecisionSlide onSelect={handleSelectType} selectedType={userType} />
+              <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
             ) : (
               <ContentSlide slide={slide} />
             )}
@@ -250,32 +253,33 @@ function ContentSlide({ slide }: { slide: any }) {
   const color = slide.themeColor || '#3B82F6';
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {/* Background with Multi-layer Premium Overlays */}
-      <div className="absolute inset-0 z-0">
-        <motion.img 
-          initial={{ opacity: 0, scale: 1.2 }}
-          animate={{ opacity: 0.4, scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          src={slide.image} 
-          alt="" 
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        {/* Layer 1: Dark Base Gradient - Applying the requested RGB (11, 28, 44) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/85 via-[#0F172A]/95 to-[#0F172A]" />
-        
-        {/* Layer 2: Color Tint Glow Overlay */}
-        <div 
-          className="absolute inset-0 opacity-15"
-          style={{ 
-            background: `linear-gradient(135deg, ${color}40 0%, #8B5CF640 100%)` 
-          }} 
-        />
+    <div 
+      className="relative w-full h-full flex flex-col overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.image})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Premium Dark Overlay */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.7) 0%, rgba(11, 28, 44, 0.9) 100%)'
+        }}
+      />
+      
+      {/* Color Tint Overlay for Premium Look */}
+      <div 
+        className="absolute inset-0 z-0 opacity-10"
+        style={{ 
+          background: `linear-gradient(135deg, ${color}30 0%, #8B5CF630 100%)` 
+        }} 
+      />
 
-        {/* Layer 3: Subtle Backdrop Blur */}
-        <div className="absolute inset-0 backdrop-blur-[6px]" />
-      </div>
+      {/* Backdrop Blur to enhance text legibility */}
+      <div className="absolute inset-0 z-0 backdrop-blur-[4px]" />
 
       {/* Content Container */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
@@ -324,7 +328,7 @@ function ContentSlide({ slide }: { slide: any }) {
   );
 }
 
-function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) => void, selectedType: UserType }) {
+function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType }) {
   const options = [
     { 
       id: 'paciente', 
@@ -347,22 +351,42 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
   ];
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden">
-      {/* Dynamic Background */}
+    <div 
+      className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.image})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Premium Dark Overlay */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.7) 0%, rgba(11, 28, 44, 0.9) 100%)'
+        }}
+      />
+      
+      {/* Backdrop Blur */}
+      <div className="absolute inset-0 z-0 backdrop-blur-[4px]" />
+
+      {/* Dynamic Option Background */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
-          <motion.img 
-            key={selectedType || 'default'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.2 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
-            src={selectedType === 'paciente' ? options[0].image : (selectedType === 'fisioterapeuta' ? options[1].image : 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200')} 
-            alt="" 
-            className="w-full h-full object-cover blur-[8px] scale-110"
-          />
+          {selectedType && (
+            <motion.img 
+              key={selectedType}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.15 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              src={selectedType === 'paciente' ? options[0].image : options[1].image} 
+              alt="" 
+              className="w-full h-full object-cover blur-[8px] scale-110"
+            />
+          )}
         </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/90 via-[#0F172A]/95 to-[#0F172A]" />
       </div>
 
       <div className="relative z-10 w-full max-w-lg">
@@ -400,9 +424,9 @@ function DecisionSlide({ onSelect, selectedType }: { onSelect: (type: UserType) 
                 style={{ 
                   backgroundColor: selectedType === option.id ? `${option.color}40` : 'rgba(255,255,255,0.05)',
                   color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA',
-                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.1)'
+                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)'
                 }}
-                className="absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 z-20 max-w-[50%] truncate"
+                className="absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 z-20 max-w-[70%] truncate"
               >
                 {option.badge}
               </div>
