@@ -1491,28 +1491,53 @@ async function startServer() {
   });
 
   app.post("/api/admin/test-template-email", async (req, res) => {
+    console.log("[Admin API] Received test email request");
     try {
       const authHeader = req.headers.authorization;
-      if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
+      if (!authHeader) {
+        console.warn("[Admin API] Unauthorized - No auth header");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
       
       const token = authHeader.split(' ')[1];
-      const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(token);
+      let adminClient;
+      try {
+        adminClient = getSupabaseAdmin();
+      } catch (adminErr: any) {
+        console.error("[Admin API] Failed to get Supabase Admin client:", adminErr.message);
+        return res.status(500).json({ error: "Server configuration error (Supabase Admin)" });
+      }
+
+      const { data: userData, error: authError } = await adminClient.auth.getUser(token);
+      const user = userData?.user;
       
-      if (authError || !user) return res.status(401).json({ error: "Invalid session" });
+      if (authError || !user) {
+        console.error("[Admin API] Invalid session:", authError);
+        return res.status(401).json({ error: "Invalid session" });
+      }
 
       // Check if user is admin
-      const { data: profile } = await getSupabaseAdmin()
+      const { data: profile, error: profileError } = await adminClient
         .from('perfis')
         .select('tipo_usuario, email, nome_completo')
         .eq('id', user.id)
         .single();
 
-      if (profile?.tipo_usuario !== 'admin') {
+      if (profileError || !profile) {
+        console.error("[Admin API] Profile error:", profileError);
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      if (profile.tipo_usuario !== 'admin') {
+        console.warn(`[Admin API] Access denied for user ${user.id} (${profile.tipo_usuario})`);
         return res.status(403).json({ error: "Access denied. Admins only." });
       }
 
       const resendApiKey = process.env.RESEND_API_KEY;
-      if (!resendApiKey) return res.status(500).json({ error: "Resend API Key not configured" });
+      if (!resendApiKey) {
+        console.error("[Admin API] RESEND_API_KEY missing");
+        return res.status(500).json({ error: "Resend API Key not configured" });
+      }
 
       const resend = new Resend(resendApiKey);
 
@@ -1521,23 +1546,24 @@ async function startServer() {
         mensagem_principal_da_notificacao: "Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook."
       });
 
-      const { data, error } = await resend.emails.send({
+      console.log(`[Admin API] Sending test email to ${profile.email}`);
+      const { data, error: sendError } = await resend.emails.send({
         from: process.env.RESEND_FROM || 'FisioCareHub <onboarding@resend.dev>',
         to: [profile.email],
         subject: 'Teste de Template - FisioCareHub',
         html: testHtml,
       });
 
-      if (error) {
-        console.error("[Resend] Error sending test email:", error);
-        return res.status(500).json({ error: error.message });
+      if (sendError) {
+        console.error("[Resend] Error sending test email:", sendError);
+        return res.status(500).json({ error: sendError.message });
       }
 
-      console.log(`[Resend Test] Email sent to ${profile.email}`);
+      console.log(`[Resend Test] Email sent successfully. Message ID: ${data?.id}`);
       res.json({ success: true, messageId: data?.id });
     } catch (err: any) {
       console.error("[Resend Test] Uncaught error:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message || "Erro interno desconhecido" });
     }
   });
 
