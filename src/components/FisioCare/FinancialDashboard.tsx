@@ -46,8 +46,8 @@ export const FinancialDashboard = () => {
         const totalEarnings = payedSessions?.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0) || 0;
         
         const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthlySessions = payedSessions?.filter(s => new Date(s.data) >= firstDayOfMonth) || [];
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const monthlySessions = payedSessions?.filter(s => s.data >= startOfMonth) || [];
         const monthlyEarnings = monthlySessions.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0);
 
         // Forecast from agendamentos (confirmed but not yet in sessoes as net)
