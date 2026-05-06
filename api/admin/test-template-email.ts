@@ -158,12 +158,44 @@ export default async function handler(
 
     // Send Email
     console.log(`[EMAIL SENDING] Attempting to send to ${profile.email}`);
-    const { data, error: resendError } = await resend.emails.send({
-      from: process.env.RESEND_FROM || 'FisioCareHub <onboarding@resend.dev>',
-      to: [profile.email],
-      subject: 'Teste de Template - FisioCareHub',
-      html: testHtml,
-    });
+    
+    // We strictly follow the required format: "Name <email@domain>"
+    // Fallback priority: 1. ENV, 2. Official Domain, 3. Onboarding (Automatic)
+    const primaryFrom = process.env.RESEND_FROM || 'FisioCareHub <no-reply@fisiocarehub.company>';
+    const fallbackFrom = 'FisioCareHub <onboarding@resend.dev>';
+
+    let sendResult;
+    try {
+      console.log(`[RESEND] Attempt 1 with: ${primaryFrom}`);
+      sendResult = await resend.emails.send({
+        from: primaryFrom,
+        to: [profile.email],
+        subject: 'Teste de Template - FisioCareHub',
+        html: testHtml,
+      });
+
+      // Handle specific "from" or "domain" errors from Resend to trigger fallback
+      if (sendResult.error) {
+        const errMsg = sendResult.error.message.toLowerCase();
+        const isDomainError = errMsg.includes('domain') || errMsg.includes('verified') || errMsg.includes('from') || errMsg.includes('identity');
+        
+        if (isDomainError) {
+          console.warn(`[RESEND FALLBACK] Primary sender failed: ${sendResult.error.message}. Trying onboarding@resend.dev...`);
+          sendResult = await resend.emails.send({
+            from: fallbackFrom,
+            to: [profile.email],
+            subject: 'Teste de Template - FisioCareHub (Fallback)',
+            html: testHtml,
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("[RESEND CRITICAL] Exception during send:", error);
+      // If it throws, we can also try fallback here if appropriate
+      throw error;
+    }
+
+    const { data, error: resendError } = sendResult;
 
     if (resendError) {
       console.error("[RESEND ERROR]", resendError);
@@ -178,7 +210,8 @@ export default async function handler(
     return response.status(200).json({ 
       success: true, 
       message: "E-mail de teste enviado com sucesso!",
-      messageId: data?.id 
+      messageId: data?.id,
+      senderUsed: sendResult.data ? (sendResult.data as any).sender || 'unknown' : 'unknown'
     });
 
   } catch (error: any) {
