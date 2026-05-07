@@ -69,6 +69,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { categorizeContent } from '../lib/groq';
+import { sendProfessionalApprovalEmail } from '../services/emailService';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
@@ -795,6 +796,17 @@ export default function Admin() {
       // Manual refresh to ensure UI updates
       await fetchSupabaseProfiles();
 
+      // Disparar e-mail de aprovação
+      const userProfile = supabaseProfiles.find(p => p.id === profileId);
+      if (userProfile && userProfile.email) {
+        console.log(`[Admin] [FLOW-AUDIT] Triggering approval email for ${userProfile.email}`);
+        sendProfessionalApprovalEmail(userProfile.email, userProfile.nome_completo || userProfile.nome || 'Profissional', true)
+          .then(res => console.log(`[Admin] [FLOW-AUDIT] Approval email result:`, res))
+          .catch(err => console.error(`[Admin] [FLOW-AUDIT] Approval email error:`, err));
+      } else {
+        console.warn(`[Admin] [FLOW-AUDIT] Could not send approval email: User profile or email not found in state`, { profileId });
+      }
+
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado com sucesso!"));
     } catch (err: any) {
       console.error("Error approving physio:", err);
@@ -859,6 +871,15 @@ export default function Admin() {
 
       // Manual refresh
       await fetchSupabaseProfiles();
+
+      // Disparar e-mail de rejeição
+      const userProfile = supabaseProfiles.find(p => p.id === profileId);
+      if (userProfile && userProfile.email) {
+        console.log(`[Admin] [FLOW-AUDIT] Triggering rejection email for ${userProfile.email}`);
+        sendProfessionalApprovalEmail(userProfile.email, userProfile.nome_completo || userProfile.nome || 'Profissional', false)
+          .then(res => console.log(`[Admin] [FLOW-AUDIT] Rejection email result:`, res))
+          .catch(err => console.error(`[Admin] [FLOW-AUDIT] Rejection email error:`, err));
+      }
 
       import('sonner').then(({ toast }) => toast.success("Fisioterapeuta rejeitado."));
     } catch (err: any) {
