@@ -119,8 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: userMetadata?.email || '',
           avatar_url: userMetadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
           tipo_usuario: finalRole,
-          plano: finalRole === 'fisioterapeuta' ? 'basic' : 'free',
-          plan_type: finalRole === 'fisioterapeuta' ? 'basic' : null,
+          plano: finalRole === 'fisioterapeuta' ? 'free' : 'free',
+          plan_type: finalRole === 'fisioterapeuta' ? 'free' : null,
           status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente',
           plan_intro_seen: false,
           created_at: new Date().toISOString()
