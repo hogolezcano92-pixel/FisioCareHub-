@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "https://images.pexels.com/photos/4506105/pexels-photo-4506105.jpeg",
+    image: "https://images.pexels.com/photos/4506105/pexels-photo-4506105.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#3B82F6"
   },
   {
@@ -47,7 +47,7 @@ const commonSlides = [
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://images.pexels.com/photos/5793918/pexels-photo-5793918.jpeg",
+    image: "https://images.pexels.com/photos/5793918/pexels-photo-5793918.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#8B5CF6"
   },
 ];
@@ -58,7 +58,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
-    image: "https://images.pexels.com/photos/20860619/pexels-photo-20860619.jpeg",
+    image: "https://images.pexels.com/photos/20860619/pexels-photo-20860619.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#3B82F6"
   },
   {
@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "https://images.pexels.com/photos/4498606/pexels-photo-4498606.jpeg",
+    image: "https://images.pexels.com/photos/4498606/pexels-photo-4498606.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#3B82F6"
   },
   {
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "https://images.pexels.com/photos/20860583/pexels-photo-20860583.jpeg",
+    image: "https://images.pexels.com/photos/20860583/pexels-photo-20860583.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#3B82F6"
   }
 ];
@@ -85,7 +85,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
-    image: "https://images.pexels.com/photos/8376233/pexels-photo-8376233.jpeg",
+    image: "https://images.pexels.com/photos/8376233/pexels-photo-8376233.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#8B5CF6"
   },
   {
@@ -101,7 +101,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
-    image: "https://images.pexels.com/photos/3825539/pexels-photo-3825539.jpeg",
+    image: "https://images.pexels.com/photos/3825539/pexels-photo-3825539.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#8B5CF6"
   }
 ];
@@ -115,28 +115,29 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const swiperRef = useRef<any>(null);
 
   useEffect(() => {
-    // Preload first slide image as priority
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = commonSlides[0].image;
-    document.head.appendChild(link);
-
-    // Preload other critical images
-    const secondImg = new Image();
-    secondImg.src = commonSlides[1].image;
-    
-    const decisionImg = new Image();
-    decisionImg.src = "https://images.unsplash.com/photo-1533332467554-47f9c26284f6?auto=format&fit=crop&q=80&w=1200";
+    const imagesToPreload = [
+      ...commonSlides.map(s => s.image),
+      ...patientSlides.map(s => s.image),
+      ...physioSlides.map(s => s.image),
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200"
+    ];
+    imagesToPreload.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
   }, []);
 
+  // Use a fixed array size for Swiper stability
   const allSlides = [
     ...commonSlides,
     { 
       type: 'decision',
-      image: "https://images.unsplash.com/photo-1533332467554-47f9c26284f6?auto=format&fit=crop&q=80&w=1200"
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200"
     },
-    ...(userType === 'paciente' ? patientSlides : (userType === 'fisioterapeuta' ? physioSlides : [])),
+    // We render placeholders that become actual slides after decision
+    { type: 'dynamic', index: 0 },
+    { type: 'dynamic', index: 1 },
+    { type: 'dynamic', index: 2 },
   ];
 
   const handleNext = () => {
@@ -179,15 +180,37 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           className="w-full h-full"
           allowTouchMove={activeIndex !== 2}
         >
-          {allSlides.map((slide: any, index) => (
-            <SwiperSlide key={`slide-${index}-${userType || 'initial'}`} className="bg-[#0B1C2C]">
-              {slide.type === 'decision' ? (
-                <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
-              ) : (
+          {allSlides.map((slide: any, index) => {
+            if (slide.type === 'decision') {
+              return (
+                <SwiperSlide key="decision" className="bg-[#0B1C2C]">
+                  <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
+                </SwiperSlide>
+              );
+            }
+            
+            if (slide.type === 'dynamic') {
+              const dynamicSlide = userType === 'paciente' 
+                ? patientSlides[slide.index] 
+                : (userType === 'fisioterapeuta' ? physioSlides[slide.index] : null);
+              
+              return (
+                <SwiperSlide key={`dynamic-${slide.index}`} className="bg-[#0B1C2C]">
+                  {dynamicSlide ? (
+                    <ContentSlide slide={dynamicSlide} isActive={activeIndex === index} />
+                  ) : (
+                    <div className="w-full h-full bg-[#0B1C2C]" />
+                  )}
+                </SwiperSlide>
+              );
+            }
+
+            return (
+              <SwiperSlide key={`common-${index}`} className="bg-[#0B1C2C]">
                 <ContentSlide slide={slide} isActive={activeIndex === index} />
-              )}
-            </SwiperSlide>
-          ))}
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       </div>
 
@@ -292,8 +315,9 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
 
   return (
     <div 
-      className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]"
+      className="relative w-full h-full flex flex-col overflow-hidden"
       style={{
+        backgroundColor: '#0B1C2C',
         backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.4)), url(${slide.image})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -429,8 +453,9 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
 
   return (
     <div 
-      className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 bg-[#0B1C2C] overflow-hidden"
+      className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden"
       style={{
+        backgroundColor: '#0B1C2C',
         backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.7)), url(${slide.image})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
