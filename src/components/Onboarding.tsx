@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200",
     themeColor: "#8B5CF6"
   },
   {
@@ -436,18 +436,37 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: 0.2,
         delayChildren: 0.1
       }
     }
   };
 
-  const itemVariants: any = {
-    hidden: { opacity: 0, y: 30 },
+  const titleVariants: any = {
+    hidden: { opacity: 0, y: -30, scale: 0.95 },
     visible: { 
       opacity: 1, 
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" }
+      y: 0, 
+      scale: 1,
+      transition: { 
+        type: "spring",
+        stiffness: 100,
+        damping: 20
+      }
+    }
+  };
+
+  const cardVariants: any = {
+    hidden: { opacity: 0, x: -30, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      x: 0, 
+      scale: 1,
+      transition: { 
+        type: "spring",
+        stiffness: 80,
+        damping: 15
+      }
     }
   };
 
@@ -497,20 +516,20 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
       >
         <div className="text-center mb-10 sm:mb-16">
           <motion.div 
-            variants={itemVariants}
+            variants={titleVariants}
             className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
           >
             <Users size={32} className="text-white sm:w-10 sm:h-10" />
           </motion.div>
           <motion.h2 
-            variants={itemVariants}
+            variants={titleVariants}
             className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
             style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
           >
             Como você quer usar o FisioCareHub?
           </motion.h2>
           <motion.p 
-            variants={itemVariants}
+            variants={titleVariants}
             className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
           >
@@ -523,9 +542,9 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
             <motion.button
               key={option.id}
               layout
-              variants={itemVariants}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              variants={cardVariants}
+              whileHover={{ scale: 1.02, x: 10 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onSelect(option.id as UserType)}
               className={cn(
                 "group relative w-full p-5 sm:p-8 bg-[#13293D]/80 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
@@ -546,7 +565,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
                 {option.badge}
               </div>
 
-              <div 
+              <motion.div 
                 style={{ 
                   backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
                   color: '#FFFFFF'
@@ -554,25 +573,27 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
                 className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0"
               >
                 <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
-              </div>
+              </motion.div>
               
               <div className="flex-1 min-w-0 pt-6 sm:pt-0">
-                <span className={cn(
-                  "block text-xl sm:text-2xl font-black mb-1 leading-tight",
-                  selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
-                )}
-                style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                <motion.span 
+                  className={cn(
+                    "block text-xl sm:text-2xl font-black mb-1 leading-tight",
+                    selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
+                  )}
+                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                 >
                   {option.label}
-                </span>
-                <span className={cn(
-                  "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2 sm:line-clamp-none",
-                  selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
-                )}
-                style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                </motion.span>
+                <motion.span 
+                  className={cn(
+                    "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2 sm:line-clamp-none",
+                    selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
+                  )}
+                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                 >
                   {option.desc}
-                </span>
+                </motion.span>
               </div>
 
               <div 
