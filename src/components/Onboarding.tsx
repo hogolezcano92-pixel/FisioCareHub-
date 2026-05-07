@@ -94,7 +94,8 @@ const physioSlides = [
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
     image: "https://tampacardio.com/wp-content/uploads/2024/03/specialist-fitness-researcher-examining-endurance-2023-11-27-05-11-05-utc-min.jpg",
-    themeColor: "#8B5CF6"
+    themeColor: "#8B5CF6",
+    bgSize: 'contain'
   },
   {
     title: "Acompanhe Resultados",
@@ -319,7 +320,7 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
       style={{
         backgroundColor: '#0B1C2C',
         backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.4)), url(${slide.image})`,
-        backgroundSize: 'cover',
+        backgroundSize: slide.bgSize || 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
