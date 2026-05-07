@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "https://images.pexels.com/photos/4506105/pexels-photo-4506105.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    image: "https://www.clinicarecovery.com/wp-content/uploads/2025/10/nurse-doctor-senior-care-exercise-physical-therapy-2025-01-31-17-41-35-utc.jpg",
     themeColor: "#3B82F6"
   },
   {
@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://tampacardio.com/wp-content/uploads/2024/03/specialist-fitness-researcher-examining-endurance-2023-11-27-05-11-05-utc-min.jpg",
+    image: "https://wordpress-cms-ufbra-prod-assets.quero.space/uploads/2024/06/2149868922.jpg",
     themeColor: "#8B5CF6",
     bgSize: 'contain'
   },
