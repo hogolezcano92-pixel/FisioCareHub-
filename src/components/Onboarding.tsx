@@ -187,7 +187,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             if (slide.type === 'decision') {
               return (
                 <SwiperSlide key="decision" className="bg-[#0B1C2C]">
-                  <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
+                  <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} isActive={activeIndex === index} />
                 </SwiperSlide>
               );
             }
@@ -447,7 +447,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
   );
 }
 
-function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType }) {
+function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType, isActive: boolean }) {
   const [bgLoaded, setBgLoaded] = useState(false);
   const options = [
     { 
@@ -492,143 +492,157 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden bg-[#0B1C2C]">
-      {/* Background Layer - Zoom out effect */}
-      <div className="absolute inset-0 z-0">
-        <motion.img 
-          src={slide.image}
-          initial={{ scale: 1.2, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 3, ease: [0.22, 1, 0.36, 1] }}
-          alt=""
-          className="w-full h-full object-cover object-center"
-          decoding="async"
-          loading="eager"
-          style={{ willChange: 'transform' }}
-          onLoad={() => setBgLoaded(true)}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
-      </div>
+      <AnimatePresence>
+        {isActive && (
+          <>
+            {/* Background Layer - Zoom out effect */}
+            <div className="absolute inset-0 z-0">
+              <motion.img 
+                src={slide.image}
+                initial={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 3, ease: "easeOut" }}
+                alt=""
+                className="w-full h-full object-cover object-center"
+                decoding="async"
+                loading="eager"
+                style={{ willChange: 'transform' }}
+                onLoad={() => setBgLoaded(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
+            </div>
 
-      <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
-      <div className="absolute inset-0 z-0">
-        <AnimatePresence mode="wait">
-          {selectedType && (
-            <motion.img 
-              key={selectedType}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.15 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-              src={selectedType === 'paciente' ? options[0].image : options[1].image} 
-              alt="" 
-              className="w-full h-full object-cover blur-[8px] scale-110"
-            />
-          )}
-        </AnimatePresence>
-      </div>
-
-      <motion.div 
-        className="relative z-10 w-full max-w-lg"
-        variants={container}
-        initial="hidden"
-        animate="visible"
-      >
-        <div className="text-center mb-10 sm:mb-16">
-          <motion.div 
-            variants={fadeUp}
-            className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
-          >
-            <Users size={32} className="text-white sm:w-10 sm:h-10" />
-          </motion.div>
-          <motion.h2 
-            variants={fadeUp}
-            className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
-            style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
-          >
-            Como você quer usar o FisioCareHub?
-          </motion.h2>
-          <motion.p 
-            variants={fadeUp}
-            className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
-          >
-            Escolha o seu perfil para personalizarmos sua jornada.
-          </motion.p>
-        </div>
-
-        <div className="grid gap-4 sm:gap-6 w-full">
-          {options.map((option) => (
-            <motion.button
-              key={option.id}
-              layout
-              variants={fadeUp}
-              whileHover={{ y: -2, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelect(option.id as UserType)}
-              className={cn(
-                "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-md",
-                selectedType === option.id 
-                  ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
-                  : "border-white/10 hover:border-white/20 hover:bg-[#1a3a55]/90"
-              )}
-              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.1)' }}
-            >
-              <div 
-                style={{ 
-                  backgroundColor: selectedType === option.id ? `${option.color}40` : 'rgba(255,255,255,0.05)',
-                  color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA',
-                  borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)'
-                }}
-                className="absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 z-20 max-w-[70%] truncate"
-              >
-                {option.badge}
-              </div>
-
-              <motion.div 
-                style={{ 
-                  backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
-                  color: '#FFFFFF'
-                }}
-                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0"
-              >
-                <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
-              </motion.div>
-              
-              <div className="flex-1 min-w-0 pt-6 sm:pt-0">
-                <motion.span 
-                  className={cn(
-                    "block text-xl sm:text-2xl font-black mb-1 leading-tight",
-                    selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
-                  )}
-                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
-                >
-                  {option.label}
-                </motion.span>
-                <motion.span 
-                  className={cn(
-                    "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2 sm:line-clamp-none",
-                    selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
-                  )}
-                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
-                >
-                  {option.desc}
-                </motion.span>
-              </div>
-
-              <div 
-                style={{ backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)' }}
-                className={cn(
-                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shrink-0 sm:ml-4",
-                  selectedType === option.id ? "text-white translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
+            <div className="absolute inset-0 z-0">
+              <AnimatePresence mode="wait">
+                {selectedType && (
+                  <motion.img 
+                    key={selectedType}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.15 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                    src={selectedType === 'paciente' ? options[0].image : options[1].image} 
+                    alt="" 
+                    className="w-full h-full object-cover blur-[8px] scale-110"
+                  />
                 )}
-              >
-                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
+              </AnimatePresence>
+            </div>
+
+            <motion.div 
+              className="relative z-10 w-full max-w-lg"
+              variants={container}
+              initial="hidden"
+              animate="visible"
+            >
+              <div className="text-center mb-10 sm:mb-16">
+                <motion.div 
+                  variants={fadeUp}
+                  className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Users size={32} className="text-white sm:w-10 sm:h-10" />
+                </motion.div>
+                <motion.h2 
+                  variants={fadeUp}
+                  className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
+                  style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  Como você quer usar o FisioCareHub?
+                </motion.h2>
+                <motion.p 
+                  variants={fadeUp}
+                  className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
+                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  Escolha o seu perfil para personalizarmos sua jornada.
+                </motion.p>
               </div>
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
+
+              <div className="grid gap-4 sm:gap-6 w-full">
+                {options.map((option) => (
+                  <motion.button
+                    key={option.id}
+                    layout
+                    variants={fadeUp}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -2, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onSelect(option.id as UserType)}
+                    className={cn(
+                      "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-md",
+                      selectedType === option.id 
+                        ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
+                        : "border-white/10 hover:border-white/20 hover:bg-[#1a3a55]/90"
+                    )}
+                    style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.1)' }}
+                  >
+                    <div 
+                      style={{ 
+                        backgroundColor: selectedType === option.id ? `${option.color}40` : 'rgba(255,255,255,0.05)',
+                        color: selectedType === option.id ? '#FFFFFF' : '#A1A1AA',
+                        borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)'
+                      }}
+                      className="absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-300 z-20 max-w-[70%] truncate"
+                    >
+                      {option.badge}
+                    </div>
+
+                    <motion.div 
+                      style={{ 
+                        backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)',
+                        color: '#FFFFFF'
+                      }}
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 shrink-0"
+                    >
+                      <option.icon className="w-7 h-7 sm:w-9 sm:h-9" />
+                    </motion.div>
+                    
+                    <div className="flex-1 min-w-0 pt-6 sm:pt-0">
+                      <motion.span 
+                        className={cn(
+                          "block text-xl sm:text-2xl font-black mb-1 leading-tight",
+                          selectedType === option.id ? "text-white" : "text-slate-300 group-hover:text-white"
+                        )}
+                        style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                      >
+                        {option.label}
+                      </motion.span>
+                      <motion.span 
+                        className={cn(
+                          "block text-[11px] sm:text-sm font-medium leading-relaxed transition-colors line-clamp-2 sm:line-clamp-none",
+                          selectedType === option.id ? "text-slate-200" : "text-[#A1A1AA]"
+                        )}
+                        style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                      >
+                        {option.desc}
+                      </motion.span>
+                    </div>
+
+                    <div 
+                      style={{ backgroundColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.05)' }}
+                      className={cn(
+                        "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shrink-0 sm:ml-4",
+                        selectedType === option.id ? "text-white translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
+                      )}
+                    >
+                      <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
