@@ -1,30 +1,42 @@
-import { Crown, ArrowRight } from 'lucide-react';
+import { Crown, ArrowRight, Sparkles, Zap, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 export default function ProBanner() {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-3xl shadow-lg shadow-amber-500/20 text-white group">
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden bg-slate-900 border border-blue-500/30 rounded-[2.5rem] shadow-2xl shadow-blue-900/20 group"
+    >
+      {/* Premium Glow Background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-600/10 group-hover:scale-105 transition-transform duration-700" />
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-600/20 rounded-full blur-[80px] pointer-events-none" />
       
-      <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-            <Crown className="w-6 h-6 text-white" />
+      <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex items-center gap-6 text-center md:text-left flex-col md:flex-row">
+          <div className="w-16 h-16 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
+            <Sparkles className="w-8 h-8 text-blue-400 group-hover:rotate-12 transition-transform" />
           </div>
-          <div>
-            <h3 className="text-lg font-black tracking-tight">Recurso Exclusivo PRO</h3>
-            <p className="text-sm text-white/80 font-medium">Desbloqueie ferramentas avançadas e impulsione sua carreira.</p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <h3 className="text-xl font-black text-white tracking-tight">Destaque-se na Sua Região</h3>
+              <span className="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full">PRO</span>
+            </div>
+            <p className="text-slate-400 font-medium text-sm max-w-sm">
+              ⭐ Seu perfil pode aparecer primeiro para pacientes da sua região. Aumente seu ranking agora.
+            </p>
           </div>
         </div>
         
         <Link 
           to="/subscription" 
-          className="px-6 py-3 bg-white text-amber-600 rounded-2xl text-sm font-black hover:bg-amber-50 transition-all flex items-center gap-2 whitespace-nowrap"
+          className="w-full md:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 group/btn whitespace-nowrap active:scale-95"
         >
-          Assinar Agora
-          <ArrowRight size={16} />
+          Ver planos profissionais
+          <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
