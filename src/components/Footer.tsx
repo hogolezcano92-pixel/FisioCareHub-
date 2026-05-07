@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Mail, Shield, FileText, HelpCircle, LayoutDashboard, User } from 'lucide-react';
+import { Mail, Shield, FileText, HelpCircle, LayoutDashboard, User, Instagram, MessageCircle } from 'lucide-react';
 import Logo from './Logo';
 
 export default function Footer() {
@@ -72,6 +72,32 @@ export default function Footer() {
                   <Mail size={16} className="text-slate-400 group-hover:text-blue-400" />
                   suporte@fisiocarehub.company
                 </a>
+              </li>
+              <li className="pt-2">
+                <div className="flex flex-col gap-4">
+                  <a 
+                    href="https://instagram.com/fisiocarehub.app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-pink-500 transition-all hover:translate-x-1 group"
+                  >
+                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-pink-500/10 transition-colors">
+                      <Instagram size={18} className="group-hover:scale-110 transition-transform" />
+                    </div>
+                    @fisiocarehub.app
+                  </a>
+                  <a 
+                    href="https://wa.me/5511984040563" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-emerald-500 transition-all hover:translate-x-1 group"
+                  >
+                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-emerald-500/10 transition-colors">
+                      <MessageCircle size={18} className="group-hover:scale-110 transition-transform" />
+                    </div>
+                    +55 11 98404-0563
+                  </a>
+                </div>
               </li>
             </ul>
           </div>
