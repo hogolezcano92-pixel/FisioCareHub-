@@ -269,37 +269,50 @@ export default function Register() {
         const fullProfileData = {
           id: authData.user.id,
           nome_completo: cleanName,
-          plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
-          tipo_usuario: role,
           email: cleanEmail,
-          localizacao: `${formData.city}${formData.state ? `, ${formData.state}` : ''}`,
+          telefone: formData.telefone,
+          cpf: formData.cpf.replace(/\D/g, ''), // Limpa pontos e traços
+          cpf_cnpj: formData.cpf.replace(/\D/g, ''),
+          data_nascimento: formData.data_nascimento || null,
+          bio: formData.bio || '',
+          
+          // Localização
           cidade: formData.city || null,
           estado: formData.state || null,
           endereco: formData.address || null,
-          cep: formData.zipCode || null,
-          pais: formData.country || null,
-          crefito: role === 'fisioterapeuta' ? (formData.crefito || null) : null,
-          especialidade: role === 'fisioterapeuta' ? (formData.specialty || null) : null,
-          genero: role === 'fisioterapeuta' ? (formData.gender || null) : null,
-          tipo_servico: role === 'fisioterapeuta' ? (formData.serviceType || null) : null,
-          is_pro: isPro,
+          cep: formData.zipCode?.replace(/\D/g, '') || null,
+          pais: formData.country || 'Brasil',
+          localizacao: `${formData.city}${formData.state ? `, ${formData.state}` : ''}`,
+
+          // Profissional
+          role: role,
+          tipo_usuario: role,
+          crefito: role === 'fisioterapeuta' ? formData.crefito : null,
+          especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
+          tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
+          preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao : null,
+          
+          // Tipos de Array (Garantindo que sejam listas)
+          formacao_academica: formData.formacao_academica 
+            ? formData.formacao_academica.split('\n').map(s => s.trim()).filter(Boolean) 
+            : [],
+          servicos_ofertados: formData.servicos_ofertados 
+            ? formData.servicos_ofertados.split('\n').map(s => s.trim()).filter(Boolean) 
+            : [],
+
+          // Status e Imagens
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-          aprovado: role === 'paciente', // Booleano legado
+          is_pro: isPro,
+          foto_url: docUrls.foto_perfil || null,
+          avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
+          
+          // Documentos
           rg_frente_url: docUrls.rg_frente,
           rg_verso_url: docUrls.rg_verso,
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
-          avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
-          foto_url: docUrls.foto_perfil || null,
-          cpf_cnpj: formData.cpf.replace(/\D/g, ''),
-          cpf: formData.cpf.replace(/\D/g, ''), // Redundância solicitada
-          telefone: formData.telefone,
-          data_nascimento: formData.data_nascimento || null,
-          preco_sessao: role === 'fisioterapeuta' ? (formData.preco_sessao || null) : null,
-          bio: formData.bio,
-          formacao_academica: role === 'fisioterapeuta' ? (formData.formacao_academica ? formData.formacao_academica.split('\n').filter(s => s.trim()) : []) : [],
-          servicos_ofertados: role === 'fisioterapeuta' ? (formData.servicos_ofertados ? formData.servicos_ofertados.split('\n').filter(s => s.trim()) : []) : [],
           documentos: uploadedDocUrls,
+          
           updated_at: new Date().toISOString()
         };
 
