@@ -166,6 +166,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
+      {/* Critical Preload for first image */}
+      <img 
+        src={commonSlides[0].image} 
+        alt="" 
+        className="hidden" 
+        // @ts-ignore - fetchPriority is supported in modern browsers
+        fetchPriority="high"
+        loading="eager"
+      />
+      
       <div className="relative flex-1">
         <Swiper
           modules={[Pagination, EffectFade]}
@@ -315,14 +325,18 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]">
-      {/* Background Layer - Full screen coverage */}
-      <div 
-        className="absolute inset-0 z-0 bg-no-repeat bg-center bg-cover transition-opacity duration-1000"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.6)), url(${slide.image})`,
-          backgroundPosition: 'center center'
-        }}
-      />
+      {/* Background Layer - Full screen coverage using img for priority loading */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={slide.image}
+          alt=""
+          className="w-full h-full object-cover grayscale-[0.2]"
+          // @ts-ignore
+          fetchPriority={isActive ? "high" : "low"}
+          loading={isActive ? "eager" : "lazy"}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/60" />
+      </div>
       
       <div 
         className="absolute inset-0 z-0"
@@ -472,14 +486,18 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden bg-[#0B1C2C]">
-      {/* Background Layer - Full screen coverage */}
-      <div 
-        className="absolute inset-0 z-0 bg-no-repeat bg-center bg-cover"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.7)), url(${slide.image})`,
-          backgroundPosition: 'center center'
-        }}
-      />
+      {/* Background Layer - Full screen coverage using img for priority loading */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={slide.image}
+          alt=""
+          className="w-full h-full object-cover"
+          // @ts-ignore
+          fetchPriority="high"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/70" />
+      </div>
 
       <div 
         className="absolute inset-0 z-0"
