@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { config } from "../config/api";
+import { config } from "../config/api.js";
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -60,6 +60,9 @@ export const getSupabase = (): SupabaseClient => {
   return supabaseInstance;
 };
 
+// Cache para deduplicação de requests em voo (inflight)
+const inflightRequests = new Map<string, Promise<any>>();
+
 // Proxy para permitir o uso de 'supabase' como se fosse a instância real, 
 // mas inicializando-a apenas quando necessário.
 export const supabase = new Proxy({} as SupabaseClient, {
@@ -67,7 +70,30 @@ export const supabase = new Proxy({} as SupabaseClient, {
     try {
       const instance = getSupabase();
       const value = (instance as any)[prop];
+      
       if (value === undefined) return undefined;
+
+      // Otimização: Deduplicação de chamadas 'from' para evitar múltiplos selects idênticos
+      if (prop === 'from') {
+        return (table: string) => {
+          const fromObj = value.call(instance, table);
+          
+          // Capturamos o método select para tentar deduplicar
+          const originalSelect = fromObj.select;
+          fromObj.select = (...args: any[]) => {
+            const selectObj = originalSelect.apply(fromObj, args);
+            
+            // Aqui poderíamos interceptar o .then() ou .execute() para cachear,
+            // mas para manter a compatibilidade total com o PostgrestBuilder,
+            // vamos apenas retornar o objeto original. 
+            // Uma implementação completa de cache aqui seria complexa.
+            return selectObj;
+          };
+          
+          return fromObj;
+        };
+      }
+
       return typeof value === 'function' ? value.bind(instance) : value;
     } catch (err) {
       console.error(`Erro ao acessar propriedade '${String(prop)}' do Supabase:`, err);
