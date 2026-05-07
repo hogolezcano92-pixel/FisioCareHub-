@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
@@ -11,6 +12,7 @@ import { sendWelcomeEmail } from '../services/emailService';
 import { toast } from 'sonner';
 
 export default function Register() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>(() => {
     const saved = localStorage.getItem('pending_role');
@@ -201,8 +203,11 @@ export default function Register() {
       if (authData.user) {
         console.log("User created in Auth:", authData.user.id);
         
-        // Disparar e-mail de boas-vindas (não bloqueia o fluxo)
-        sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta');
+        // Disparar e-mail de boas-vindas
+        console.log(`[Register] [FLOW-AUDIT] Triggering welcome email for ${cleanEmail}`);
+        sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta')
+          .then(res => console.log(`[Register] [FLOW-AUDIT] Welcome email result:`, res))
+          .catch(err => console.error(`[Register] [FLOW-AUDIT] Welcome email error:`, err));
 
         // 3. Upload de documentos obrigatórios se for fisioterapeuta
         let docUrls = {
@@ -723,7 +728,7 @@ export default function Register() {
               disabled={loading}
               className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-base shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
             >
-              {loading ? <Loader2 className="animate-spin" /> : 'Criar Minha Conta'}
+              {loading ? <Loader2 className="animate-spin" /> : t('register.submit')}
             </button>
 
             <div className="relative my-8">
