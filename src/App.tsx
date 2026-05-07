@@ -53,6 +53,7 @@ import SplashScreen from './components/SplashScreen';
 import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
 import LGPDModal from './components/LGPDModal';
+import ProGuard from './components/ProGuard';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -782,19 +783,19 @@ function AppContent() {
                   <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
                   <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
                   <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
-                  <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Agenda /></ProtectedRoute>} />
-                  <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Exercises /></ProtectedRoute>} />
+                  <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Agenda /></ProGuard></ProtectedRoute>} />
+                  <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Exercises /></ProGuard></ProtectedRoute>} />
                   <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
                   <Route path="/treinos" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
-                  <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioTriages /></ProtectedRoute>} />
+                  <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioTriages /></ProGuard></ProtectedRoute>} />
                   <Route path="/guia" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
-                  <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationsList /></ProtectedRoute>} />
-                  <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationForm /></ProtectedRoute>} />
-                  <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioEvaluationForm /></ProtectedRoute>} />
-                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                  <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationsList /></ProGuard></ProtectedRoute>} />
+                  <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
+                  <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
+                  <Route path="/chat" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Chat /></ProGuard></ProtectedRoute>} />
                   <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
-                  <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Documents /></ProGuard></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
                   <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
                   <Route path="/about" element={<About />} />
@@ -812,8 +813,8 @@ function AppContent() {
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
                   <Route path="/fisioterapeuta" element={<FindPhysio />} />
                   <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
-                  <Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><FinanceServiceSettings /></ProtectedRoute>} />
-                  <Route path="/telehealth" element={<ProtectedRoute><Telehealth /></ProtectedRoute>} />
+                  <Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><FinanceServiceSettings /></ProGuard></ProtectedRoute>} />
+                  <Route path="/telehealth" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Telehealth /></ProGuard></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </div>
