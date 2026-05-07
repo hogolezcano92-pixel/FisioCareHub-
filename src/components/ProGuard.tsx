@@ -8,7 +8,7 @@ interface ProGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   variant?: 'full' | 'inline';
-  requiredPlan?: 'basic' | 'pro';
+  requiredPlan?: 'free' | 'basic' | 'pro';
 }
 
 export default function ProGuard({ children, fallback, variant = 'full', requiredPlan = 'pro' }: ProGuardProps) {
@@ -29,11 +29,15 @@ export default function ProGuard({ children, fallback, variant = 'full', require
 
   // Fisioterapeutas
   if (profile?.tipo_usuario === 'fisioterapeuta') {
-    const userPlan = profile?.plan_type || profile?.plano || 'basic';
+    const userPlan = profile?.plan_type || profile?.plano || 'free';
     const isPro = userPlan === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
     const isBasic = userPlan === 'basic' || isPro;
+    const isFree = true; // Todo fisio tem acesso ao nível free
 
-    const hasAccess = requiredPlan === 'pro' ? isPro : isBasic;
+    let hasAccess = false;
+    if (requiredPlan === 'pro') hasAccess = isPro;
+    else if (requiredPlan === 'basic') hasAccess = isBasic;
+    else hasAccess = isFree;
     
     if (hasAccess) {
       return <>{children}</>;

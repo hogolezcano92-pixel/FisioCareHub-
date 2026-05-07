@@ -25,7 +25,8 @@ import {
   Settings,
   Search,
   HelpCircle,
-  Info
+  Info,
+  Lock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
   const isAdmin = profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const isApproved = profile?.status_aprovacao === 'aprovado' || isAdmin || profile?.tipo_usuario === 'paciente';
+  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true;
 
   const sections = useMemo(() => [
     ...(isAdmin ? [
@@ -72,12 +74,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
             { name: t('nav.my_patients'), path: '/patients', icon: Users },
-            { name: t('nav.agenda'), path: '/agenda', icon: Calendar },
-            { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope },
-            { name: t('nav.exercises'), path: '/exercises', icon: Activity },
-            { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
+            { name: t('nav.agenda'), path: '/agenda', icon: Calendar, pro: true },
+            { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
+            { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
+            { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: t('nav.records'), path: '/records', icon: FileText },
-            { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+            { name: t('nav.documents'), path: '/documents', icon: FileSignature, pro: true },
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
@@ -96,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           title: t('nav.finance'),
           items: [
-            { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign },
+            { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign, pro: true },
           ]
         }
       ] : []),
@@ -104,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           title: t('nav.communication'),
           items: [
-            { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
+            { name: t('nav.chat'), path: '/chat', icon: MessageSquare, pro: isPhysio },
             { name: t('nav.support'), path: '/chat?support=true', icon: ShieldCheck },
           ]
         }
@@ -160,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item",
+                      "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item",
                       isActive 
                         ? "bg-primary text-white shadow-lg shadow-premium" 
                         : item.variant === 'danger'
@@ -168,14 +170,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                           : "text-slate-400 hover:bg-white/5 hover:text-white active:scale-95"
                     )}
                   >
-                    <item.icon 
-                      size={20} 
-                      className={cn(
-                        "transition-colors",
-                        isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-primary"
-                      )} 
-                    />
-                    <span>{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <item.icon 
+                        size={20} 
+                        className={cn(
+                          "transition-colors",
+                          isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-primary"
+                        )} 
+                      />
+                      <span>{item.name}</span>
+                    </div>
+
+                    {item.pro && !isPro && (
+                      <Lock size={12} className="text-amber-500 group-hover:text-amber-400 transition-colors" />
+                    )}
+
                     {isActive && (
                       <motion.div 
                         layoutId="activeIndicator"
