@@ -122,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           plano: finalRole === 'fisioterapeuta' ? 'basic' : 'free',
           plan_type: finalRole === 'fisioterapeuta' ? 'basic' : null,
           status_aprovacao: finalRole === 'paciente' ? 'aprovado' : 'pendente',
+          plan_intro_seen: false,
           created_at: new Date().toISOString()
         };
 
