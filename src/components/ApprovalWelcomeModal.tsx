@@ -20,7 +20,7 @@ export default function ApprovalWelcomeModal({ onClose }: ApprovalWelcomeModalPr
       const { error } = await supabase
         .from('perfis')
         .update({ 
-          welcome_seen: true,
+          plan_intro_seen: true,
           plano: 'free'
         })
         .eq('id', user?.id);
