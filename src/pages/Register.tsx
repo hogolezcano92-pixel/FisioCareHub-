@@ -311,7 +311,9 @@ export default function Register() {
           rg_verso_url: docUrls.rg_verso,
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
-          documentos: uploadedDocUrls.join(', '),
+          documentos: uploadedDocUrls.length > 0
+            ? JSON.stringify(uploadedDocUrls)
+            : null,
           
           updated_at: new Date().toISOString()
         };
@@ -319,18 +321,18 @@ export default function Register() {
         console.log("[Register] [FLOW-AUDIT] Profile Payload:", fullProfileData);
 
         try {
-          const { data: profileResult, error: profileError } = await supabase
+          const { error: profileError } = await supabase
             .from('perfis')
-            .upsert(fullProfileData)
-            .select()
-            .single();
+            .upsert(fullProfileData, {
+              onConflict: 'id'
+            });
 
           if (profileError) {
             console.error("[Register] [FLOW-AUDIT] Profile Upsert Error:", profileError);
             throw profileError;
           }
           
-          console.log("[Register] [FLOW-AUDIT] Profile Upsert Success:", profileResult);
+          console.log("[Register] [FLOW-AUDIT] Profile Upsert Success");
         } catch (err: any) {
           console.warn("[Register] [FLOW-AUDIT] Upsert caution:", err.message);
           // Se falhou por RLS mas o usuário foi criado, permitimos seguir

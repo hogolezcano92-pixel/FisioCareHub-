@@ -314,29 +314,40 @@ export default function Admin() {
 
   const processProfiles = useCallback((profiles: any[]) => {
     // Apply normalization rules
-    const normalizedProfiles = profiles.map(p => ({
-      ...p,
-      // Rule 4: Patients are always approved
-      status_aprovacao: p.tipo_usuario === 'paciente' ? 'aprovado' : (p.status_aprovacao || 'pendente'),
-      // Rule 3: Use foto_url or avatar_url
-      avatar_display: p.foto_url || p.avatar_url,
-      // Rule 2: Safe documents array plus mandatory ones for display
-      all_docs: [
+    const normalizedProfiles = profiles.map(p => {
+      const documentos_limpos = (() => {
+        if (typeof p.documentos === 'string') {
+          if (p.documentos.trim().startsWith('[')) {
+            try {
+              return JSON.parse(p.documentos);
+            } catch (e) {
+              return p.documentos.split(',').map((s: string) => s.trim()).filter(Boolean);
+            }
+          }
+          return p.documentos.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+        return Array.isArray(p.documentos) ? p.documentos : [];
+      })();
+
+      const status_aprovacao = p.tipo_usuario === 'paciente' ? 'aprovado' : (p.status_aprovacao || 'pendente');
+      const avatar_display = p.foto_url || p.avatar_url;
+
+      const all_docs = [
         ...(p.rg_frente_url ? [{ url: p.rg_frente_url, label: 'RG Frente' }] : []),
         ...(p.rg_verso_url ? [{ url: p.rg_verso_url, label: 'RG Verso' }] : []),
         ...(p.crefito_frente_url ? [{ url: p.crefito_frente_url, label: 'CREFITO Frente' }] : []),
         ...(p.crefito_verso_url ? [{ url: p.crefito_verso_url, label: 'CREFITO Verso' }] : []),
-        ...(typeof p.documentos === 'string' 
-          ? p.documentos.split(',').map(s => s.trim()).filter(Boolean).map((d, i) => ({ url: d, label: `Documento Adicional ${i+1}` }))
-          : Array.isArray(p.documentos) 
-            ? p.documentos.map((d: any, i: number) => ({ url: d, label: `Documento Adicional ${i+1}` })) 
-            : []
-        )
-      ],
-      documentos_limpos: typeof p.documentos === 'string' 
-        ? p.documentos.split(',').map(s => s.trim()).filter(Boolean) 
-        : (Array.isArray(p.documentos) ? p.documentos : [])
-    }));
+        ...(documentos_limpos.map((d: string, i: number) => ({ url: d, label: `Documento Adicional ${i + 1}` })))
+      ];
+
+      return {
+        ...p,
+        status_aprovacao,
+        avatar_display,
+        documentos_limpos,
+        all_docs
+      };
+    });
 
     setSupabaseProfiles(normalizedProfiles);
     
