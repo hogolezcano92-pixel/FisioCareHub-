@@ -8,8 +8,8 @@ import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
-import { generateEmailHTML } from './src/services/emailService.js';
-import { formatDateBR, formatHourBR } from './src/utils/date.js';
+import { generateEmailHTML } from './src/services/emailService.ts';
+import { formatDateBR, formatHourBR } from './src/utils/date.ts';
 import { 
   generateRegistrationOptions, 
   verifyRegistrationResponse, 
