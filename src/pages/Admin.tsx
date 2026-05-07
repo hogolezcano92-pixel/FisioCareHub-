@@ -1482,6 +1482,18 @@ export default function Admin() {
                       {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data de Nascimento</p>
+                    <p className="text-sm font-bold text-white">
+                      {selectedUserDetail.data_nascimento ? new Date(selectedUserDetail.data_nascimento).toLocaleDateString('pt-BR') : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Preço Sessão</p>
+                    <p className="text-sm font-bold text-white">
+                      {selectedUserDetail.preco_sessao ? `R$ ${selectedUserDetail.preco_sessao}` : 'N/A'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Bio */}
@@ -1491,6 +1503,36 @@ export default function Admin() {
                     {selectedUserDetail.bio || 'Nenhuma biografia informada.'}
                   </div>
                 </div>
+
+                {/* Academic & Services */}
+                {selectedUserDetail.tipo_usuario === 'fisioterapeuta' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Formação Acadêmica</p>
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
+                        {Array.isArray(selectedUserDetail.formacao_academica) && selectedUserDetail.formacao_academica.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1">
+                            {selectedUserDetail.formacao_academica.map((item: string, i: number) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : 'Não informada'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Serviços Ofertados</p>
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
+                        {Array.isArray(selectedUserDetail.servicos_ofertados) && selectedUserDetail.servicos_ofertados.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1">
+                            {selectedUserDetail.servicos_ofertados.map((item: string, i: number) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : 'Não informada'}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Documents */}
                 <div className="space-y-4">

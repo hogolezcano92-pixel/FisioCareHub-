@@ -38,7 +38,11 @@ export default function Register() {
     password: '',
     telefone: '',
     cpf: '',
+    data_nascimento: '',
     bio: '',
+    formacao_academica: '',
+    servicos_ofertados: '',
+    preco_sessao: '',
     zipCode: '',
     city: '',
     state: '',
@@ -53,6 +57,7 @@ export default function Register() {
     rg_verso: null as File | null,
     crefito_frente: null as File | null,
     crefito_verso: null as File | null,
+    foto_perfil: null as File | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -201,7 +206,8 @@ export default function Register() {
           rg_frente: null as string | null,
           rg_verso: null as string | null,
           crefito_frente: null as string | null,
-          crefito_verso: null as string | null
+          crefito_verso: null as string | null,
+          foto_perfil: null as string | null
         };
 
         if (role === 'fisioterapeuta') {
@@ -219,11 +225,19 @@ export default function Register() {
               uploads.map(u => uploadPhysioDocument(authData.user!.id, u.file, u.type))
             );
 
+            // Upload foto de perfil se existir
+            let profilePhotoUrl = null;
+            if (formData.foto_perfil) {
+              const { uploadProfilePhoto } = await import('../services/supabaseStorage');
+              profilePhotoUrl = await uploadProfilePhoto(authData.user!.id, formData.foto_perfil);
+            }
+
             docUrls = {
               rg_frente: results[0],
               rg_verso: results[1],
               crefito_frente: results[2],
-              crefito_verso: results[3]
+              crefito_verso: results[3],
+              foto_perfil: profilePhotoUrl
             };
             console.log("[Register] [FLOW-AUDIT] Mandatory uploads completed:", docUrls);
           } catch (uploadErr: any) {
@@ -275,11 +289,16 @@ export default function Register() {
           rg_verso_url: docUrls.rg_verso,
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
+          avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
+          foto_url: docUrls.foto_perfil || null,
           cpf_cnpj: formData.cpf.replace(/\D/g, ''),
           cpf: formData.cpf.replace(/\D/g, ''), // Redundância solicitada
           telefone: formData.telefone,
+          data_nascimento: formData.data_nascimento || null,
+          preco_sessao: role === 'fisioterapeuta' ? (formData.preco_sessao || null) : null,
           bio: formData.bio,
+          formacao_academica: role === 'fisioterapeuta' ? (formData.formacao_academica ? formData.formacao_academica.split('\n').filter(s => s.trim()) : []) : [],
+          servicos_ofertados: role === 'fisioterapeuta' ? (formData.servicos_ofertados ? formData.servicos_ofertados.split('\n').filter(s => s.trim()) : []) : [],
           documentos: uploadedDocUrls,
           updated_at: new Date().toISOString()
         };
@@ -497,6 +516,18 @@ export default function Register() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Data de Nascimento</label>
+                <input
+                  type="date"
+                  name="data_nascimento"
+                  required
+                  value={formData.data_nascimento}
+                  onChange={handleChange}
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -606,6 +637,54 @@ export default function Register() {
                       placeholder="Ex: Ortopedia, Neuro..."
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Preço da Sessão (R$)</label>
+                    <input
+                      type="text"
+                      name="preco_sessao"
+                      required={role === 'fisioterapeuta'}
+                      value={formData.preco_sessao}
+                      onChange={handleChange}
+                      className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      placeholder="Ex: 150.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Foto de Perfil</label>
+                    <input
+                      type="file"
+                      name="foto_perfil"
+                      accept="image/*"
+                      required={role === 'fisioterapeuta'}
+                      onChange={handleFileChange}
+                      className="w-full text-[10px] text-slate-500 file:mr-3 file:py-3 file:px-4 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Formação Acadêmica (Um por linha)</label>
+                  <textarea
+                    name="formacao_academica"
+                    value={formData.formacao_academica}
+                    onChange={handleChange}
+                    className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-24 resize-none"
+                    placeholder="Bacharel em Fisioterapia - USP&#10;Pós-graduação em Ortopedia - HC"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Serviços Ofertados (Um por linha)</label>
+                  <textarea
+                    name="servicos_ofertados"
+                    value={formData.servicos_ofertados}
+                    onChange={handleChange}
+                    className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-24 resize-none"
+                    placeholder="Fisioterapia Esportiva&#10;Liberação Miofascial&#10;Pilates Clínico"
+                  />
                 </div>
 
                 <div className="space-y-2">
