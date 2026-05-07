@@ -899,6 +899,115 @@ async function startServer() {
     }
   });
 
+  // User Deletion (Secure Admin Endpoint)
+  app.post("/api/admin/delete-user", async (req, res) => {
+    try {
+      const { userId, accessToken } = req.body;
+
+      if (!userId || !accessToken) {
+        return res.status(400).json({ error: "Missing user id or access token" });
+      }
+
+      // 1. Verify the requester is an admin
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: { user: adminUser }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (authError || !adminUser) {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+
+      const { data: profile } = await supabaseAdmin
+        .from('perfis')
+        .select('tipo_usuario')
+        .eq('id', adminUser.id)
+        .single();
+
+      const isAdmin = profile?.tipo_usuario === 'admin' || adminUser.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Forbidden: Admin privileges required" });
+      }
+
+      console.log(`[Admin] Deleting user ${userId} requested by ${adminUser.email}`);
+
+      // 2. Delete user from Auth (this also usually cascades to profiles if RLS/Foreign keys are set, but we also do it explicitly if needed)
+      // First delete from profiles to be sure (as RLS might be strict)
+      const { error: profileDeleteError } = await supabaseAdmin
+        .from('perfis')
+        .delete()
+        .eq('id', userId);
+
+      if (profileDeleteError) {
+        console.warn("[Admin] Profile delete error (continuing to Auth):", profileDeleteError);
+      }
+
+      // Delete from Auth
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+      if (authDeleteError) {
+        console.error("[Admin] Auth delete error:", authDeleteError);
+        return res.status(500).json({ error: `Auth deletion failed: ${authDeleteError.message}` });
+      }
+
+      res.json({ success: true, message: "Usuário excluído permanentemente com sucesso (Auth + Perfil)." });
+    } catch (err: any) {
+      console.error("[Admin User Delete] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/block-user", async (req, res) => {
+    try {
+      const { userId, accessToken, block } = req.body;
+
+      if (!userId || !accessToken) {
+        return res.status(400).json({ error: "Missing user id or access token" });
+      }
+
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: { user: adminUser }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (authError || !adminUser) {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+
+      const { data: adminProfile } = await supabaseAdmin
+        .from('perfis')
+        .select('tipo_usuario')
+        .eq('id', adminUser.id)
+        .single();
+
+      const isAdmin = adminProfile?.tipo_usuario === 'admin' || adminUser.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Forbidden: Admin privileges required" });
+      }
+
+      console.log(`[Admin] ${block ? 'Blocking' : 'Unblocking'} user ${userId}`);
+
+      // Update Auth status (Ban)
+      const { error: authErrorUpdate } = await supabaseAdmin.auth.admin.updateUserById(
+        userId, 
+        { ban_duration: block ? '876600h' : 'none' }
+      );
+
+      if (authErrorUpdate) throw authErrorUpdate;
+
+      // Update profile status
+      const { error: profileError } = await supabaseAdmin
+        .from('perfis')
+        .update({ status_aprovacao: block ? 'bloqueado' : 'aprovado' })
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      res.json({ success: true, message: `Usuário ${block ? 'bloqueado' : 'desbloqueado'} com sucesso.` });
+    } catch (err: any) {
+      console.error("[Admin Block User] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Library Content Generation (Backend Logic)
   app.post("/api/library/generate", async (req, res) => {
     try {
