@@ -311,7 +311,7 @@ export default function Register() {
           rg_verso_url: docUrls.rg_verso,
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
-          documentos: uploadedDocUrls,
+          documentos: uploadedDocUrls.join(', '),
           
           updated_at: new Date().toISOString()
         };

@@ -326,9 +326,16 @@ export default function Admin() {
         ...(p.rg_verso_url ? [{ url: p.rg_verso_url, label: 'RG Verso' }] : []),
         ...(p.crefito_frente_url ? [{ url: p.crefito_frente_url, label: 'CREFITO Frente' }] : []),
         ...(p.crefito_verso_url ? [{ url: p.crefito_verso_url, label: 'CREFITO Verso' }] : []),
-        ...(Array.isArray(p.documentos) ? p.documentos.map((d: any, i: number) => ({ url: d, label: `Documento Adicional ${i+1}` })) : [])
+        ...(typeof p.documentos === 'string' 
+          ? p.documentos.split(',').map(s => s.trim()).filter(Boolean).map((d, i) => ({ url: d, label: `Documento Adicional ${i+1}` }))
+          : Array.isArray(p.documentos) 
+            ? p.documentos.map((d: any, i: number) => ({ url: d, label: `Documento Adicional ${i+1}` })) 
+            : []
+        )
       ],
-      documentos_limpos: Array.isArray(p.documentos) ? p.documentos : []
+      documentos_limpos: typeof p.documentos === 'string' 
+        ? p.documentos.split(',').map(s => s.trim()).filter(Boolean) 
+        : (Array.isArray(p.documentos) ? p.documentos : [])
     }));
 
     setSupabaseProfiles(normalizedProfiles);
