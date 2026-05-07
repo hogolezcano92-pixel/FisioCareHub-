@@ -320,7 +320,14 @@ export default function Admin() {
       status_aprovacao: p.tipo_usuario === 'paciente' ? 'aprovado' : (p.status_aprovacao || 'pendente'),
       // Rule 3: Use foto_url or avatar_url
       avatar_display: p.foto_url || p.avatar_url,
-      // Rule 2: Safe documents array (Registration documents only)
+      // Rule 2: Safe documents array plus mandatory ones for display
+      all_docs: [
+        ...(p.rg_frente_url ? [{ url: p.rg_frente_url, label: 'RG Frente' }] : []),
+        ...(p.rg_verso_url ? [{ url: p.rg_verso_url, label: 'RG Verso' }] : []),
+        ...(p.crefito_frente_url ? [{ url: p.crefito_frente_url, label: 'CREFITO Frente' }] : []),
+        ...(p.crefito_verso_url ? [{ url: p.crefito_verso_url, label: 'CREFITO Verso' }] : []),
+        ...(Array.isArray(p.documentos) ? p.documentos.map((d: any, i: number) => ({ url: d, label: `Documento Adicional ${i+1}` })) : [])
+      ],
       documentos_limpos: Array.isArray(p.documentos) ? p.documentos : []
     }));
 
@@ -1434,18 +1441,40 @@ export default function Admin() {
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                 {/* Basic Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">E-mail</p>
                     <p className="text-sm font-bold text-white break-all">{selectedUserDetail.email}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Telefone</p>
+                    <p className="text-sm font-bold text-white">{selectedUserDetail.telefone || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CPF</p>
+                    <p className="text-sm font-bold text-white">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CREFITO</p>
                     <p className="text-sm font-bold text-white">{selectedUserDetail.crefito || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Localização</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.localizacao || 'Não informada'}</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Especialidade</p>
+                    <p className="text-sm font-bold text-white">{selectedUserDetail.especialidade || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cidade/UF</p>
+                    <p className="text-sm font-bold text-white">
+                      {selectedUserDetail.cidade || 'N/A'}{selectedUserDetail.estado ? ` - ${selectedUserDetail.estado}` : ''}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CEP</p>
+                    <p className="text-sm font-bold text-white">{selectedUserDetail.cep || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">País</p>
+                    <p className="text-sm font-bold text-white">{selectedUserDetail.pais || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cadastro em</p>
@@ -1465,28 +1494,29 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos de Cadastro</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos (Obrigatórios e Adicionais)</p>
                   {(() => {
-                    const docs = selectedUserDetail.documentos_limpos;
+                    const docs = selectedUserDetail.all_docs;
                     
                     if (docs && docs.length > 0) {
                       return (
-                        <div className="grid grid-cols-1 gap-4">
-                          {docs.map((doc: string, idx: number) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {docs.map((doc: { url: string, label: string }, idx: number) => (
                             <a 
                               key={idx} 
-                              href={resolveStorageUrl(doc)} 
+                              href={resolveStorageUrl(doc.url)} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-blue-500/50 hover:bg-white/10 transition-all group"
                             >
                               <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <Download size={20} />
+                                <FileIcon size={20} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white truncate">Documento Profissional {idx + 1}</p>
-                                <p className="text-[10px] text-slate-500 font-medium truncate">{typeof doc === 'string' ? doc.split('/').pop() : 'Visualizar Arquivo'}</p>
+                                <p className="text-xs font-bold text-white truncate">{doc.label}</p>
+                                <p className="text-[10px] text-slate-500 font-medium truncate">Clique para visualizar</p>
                               </div>
+                              <Download size={16} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
                             </a>
                           ))}
                         </div>

@@ -41,6 +41,7 @@ export default function Register() {
     bio: '',
     zipCode: '',
     city: '',
+    state: '',
     country: 'Brasil',
     address: '',
     crefito: '',
@@ -160,51 +161,37 @@ export default function Register() {
     }
 
     try {
-      console.log("Starting registration for:", cleanEmail, "Role:", role);
+      console.log("[Register] [FLOW-AUDIT] Starting registration process");
+      console.log("[Register] [FLOW-AUDIT] Form Data:", { ...formData, password: '***' });
+      
       // Salva o papel selecionado como fallback
       localStorage.setItem('pending_role', role);
       
-      // 2. Criar o usuário no Supabase Auth com metadados COMPLETOS
+      // 2. Criar o usuário no Supabase Auth
+      // Reduzindo metadados para o essencial no Auth, focando no 'perfis' para o restante
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
         options: {
           data: {
             nome_completo: cleanName,
-            telefone: formData.telefone,
-            cpf_cnpj: formData.cpf.replace(/\D/g, ''),
             role: role,
-            tipo_usuario: role, // Mantido para compatibilidade
-            status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-            plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
-            crefito: role === 'fisioterapeuta' ? formData.crefito : null,
-            especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
-            crefito_numero: role === 'fisioterapeuta' ? formData.crefito : null,
-            especialidade_principal: role === 'fisioterapeuta' ? formData.specialty : null,
-            bio: formData.bio,
-            localizacao: formData.city,
-            endereco: formData.address,
-            cep: formData.zipCode,
-            pais: formData.country,
-            genero: role === 'fisioterapeuta' ? formData.gender : null,
-            tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-            is_pro: isPro
+            tipo_usuario: role
           }
         }
       });
 
       if (authError) {
-        console.error("Auth signUp error:", authError);
+        console.error("[Register] [FLOW-AUDIT] Auth signUp error:", authError);
         setError('Erro no cadastro: ' + authError.message);
         setLoading(false);
         return;
       }
 
       if (authData.user) {
-        console.log("User created in Auth:", authData.user.id);
+        console.log("[Register] [FLOW-AUDIT] Auth Success - User ID:", authData.user.id);
         
         // Disparar e-mail de boas-vindas
-        console.log(`[Register] [FLOW-AUDIT] Triggering welcome email for ${cleanEmail}`);
         sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta')
           .then(res => console.log(`[Register] [FLOW-AUDIT] Welcome email result:`, res))
           .catch(err => console.error(`[Register] [FLOW-AUDIT] Welcome email error:`, err));
@@ -217,9 +204,9 @@ export default function Register() {
           crefito_verso: null as string | null
         };
 
-        if (role === 'fisioterapeuta' && authData.user) {
+        if (role === 'fisioterapeuta') {
           try {
-            console.log("Uploading mandatory documents...");
+            console.log("[Register] [FLOW-AUDIT] Starting mandatory document uploads");
             const uploads = [
               { file: formData.rg_frente!, type: 'rg_frente' as const },
               { file: formData.rg_verso!, type: 'rg_verso' as const },
@@ -227,6 +214,7 @@ export default function Register() {
               { file: formData.crefito_verso!, type: 'crefito_verso' as const }
             ];
 
+            // Await ALL uploads before proceeding to profile creation (Prevent Race Condition)
             const results = await Promise.all(
               uploads.map(u => uploadPhysioDocument(authData.user!.id, u.file, u.type))
             );
@@ -237,28 +225,32 @@ export default function Register() {
               crefito_frente: results[2],
               crefito_verso: results[3]
             };
+            console.log("[Register] [FLOW-AUDIT] Mandatory uploads completed:", docUrls);
           } catch (uploadErr: any) {
-            console.error("Erro no upload de documentos obrigatórios:", uploadErr);
+            console.error("[Register] [FLOW-AUDIT] CRITICAL: Mandatory upload failed:", uploadErr);
+            setError("Falha ao processar seus documentos. Por favor, tente novamente.");
+            setLoading(false);
+            return; // Interrompe se documentos obrigatórios falharem
           }
         }
 
         // 4. Upload de documentos adicionais se houver
         const uploadedDocUrls: string[] = [];
         if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
-          console.log("Uploading additional documents...");
+          console.log("[Register] [FLOW-AUDIT] Uploading additional documents");
           const { uploadDocument } = await import('../services/supabaseStorage');
           for (const file of registrationDocs) {
             try {
               const url = await uploadDocument(authData.user.id, file);
               uploadedDocUrls.push(url);
             } catch (uploadErr) {
-              console.error("Erro no upload de documento de registro:", uploadErr);
+              console.error("[Register] [FLOW-AUDIT] Error uploading additional doc:", uploadErr);
             }
           }
         }
 
         // 5. Criar o perfil detalhado na tabela 'perfis'
-        console.log("Upserting profile to 'perfis' table...");
+        console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
         
         const fullProfileData = {
           id: authData.user.id,
@@ -266,44 +258,51 @@ export default function Register() {
           plano: role === 'fisioterapeuta' ? 'fisioterapeuta' : 'free',
           tipo_usuario: role,
           email: cleanEmail,
-          localizacao: formData.city || null,
+          localizacao: `${formData.city}${formData.state ? `, ${formData.state}` : ''}`,
+          cidade: formData.city || null,
+          estado: formData.state || null,
           endereco: formData.address || null,
           cep: formData.zipCode || null,
           pais: formData.country || null,
           crefito: role === 'fisioterapeuta' ? (formData.crefito || null) : null,
           especialidade: role === 'fisioterapeuta' ? (formData.specialty || null) : null,
-          crefito_numero: role === 'fisioterapeuta' ? (formData.crefito || null) : null,
-          especialidade_principal: role === 'fisioterapeuta' ? (formData.specialty || null) : null,
           genero: role === 'fisioterapeuta' ? (formData.gender || null) : null,
           tipo_servico: role === 'fisioterapeuta' ? (formData.serviceType || null) : null,
           is_pro: isPro,
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+          aprovado: role === 'paciente', // Booleano legado
           rg_frente_url: docUrls.rg_frente,
           rg_verso_url: docUrls.rg_verso,
           crefito_frente_url: docUrls.crefito_frente,
           crefito_verso_url: docUrls.crefito_verso,
           avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           cpf_cnpj: formData.cpf.replace(/\D/g, ''),
+          cpf: formData.cpf.replace(/\D/g, ''), // Redundância solicitada
           telefone: formData.telefone,
           bio: formData.bio,
           documentos: uploadedDocUrls,
-          created_at: new Date().toISOString()
+          updated_at: new Date().toISOString()
         };
 
-        // We try to upsert. If it fails (e.g. email confirmation required), 
-        // the AuthContext will handle it upon first login.
+        console.log("[Register] [FLOW-AUDIT] Profile Payload:", fullProfileData);
+
         try {
-          const { error: profileError } = await supabase
+          const { data: profileResult, error: profileError } = await supabase
             .from('perfis')
-            .upsert(fullProfileData);
+            .upsert(fullProfileData)
+            .select()
+            .single();
 
           if (profileError) {
-            console.warn("Manual profile upsert failed (expected if email confirmation is on):", profileError.message);
-          } else {
-            console.log("Profile created successfully in DB.");
+            console.error("[Register] [FLOW-AUDIT] Profile Upsert Error:", profileError);
+            throw profileError;
           }
-        } catch (err) {
-          console.warn("Error during manual profile upsert:", err);
+          
+          console.log("[Register] [FLOW-AUDIT] Profile Upsert Success:", profileResult);
+        } catch (err: any) {
+          console.warn("[Register] [FLOW-AUDIT] Upsert caution:", err.message);
+          // Se falhou por RLS mas o usuário foi criado, permitimos seguir
+          // O AuthContext tentará sincronizar no próximo acesso
         }
 
         // 5. Create subscription record if Pro Key was used
@@ -534,6 +533,19 @@ export default function Register() {
                   onChange={handleChange}
                   className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="Sua cidade"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Estado</label>
+                <input
+                  type="text"
+                  name="state"
+                  required
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase"
+                  placeholder="EX: SP"
+                  maxLength={2}
                 />
               </div>
               <div className="space-y-2 md:col-span-1 col-span-2">
