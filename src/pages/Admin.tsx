@@ -874,32 +874,49 @@ export default function Admin() {
       return;
     }
 
-    try {
-      const isBlocked = currentStatus === 'rejeitado' || currentStatus === 'blocked';
-      const newStatus = isBlocked ? 'aprovado' : 'rejeitado';
-      
-      // Update Supabase
-      await supabase
-        .from('perfis')
-        .update({ status_aprovacao: newStatus })
-        .eq('id', userId);
+    const isBlocked = currentStatus === 'rejeitado' || currentStatus === 'blocked' || currentStatus === 'bloqueado';
+    const newAction = isBlocked ? 'desbloquear' : 'bloquear';
+    
+    if (!window.confirm(`Deseja realmente ${newAction} este usuário?`)) return;
 
-      // Update Firebase (if exists)
-      try {
-        await updateDoc(doc(db, 'users', userId), {
-          status: newStatus === 'aprovado' ? 'approved' : 'blocked'
-        });
-      } catch (fbErr) {
-        console.warn("Firebase update failed:", fbErr);
+    setLoading(true);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou."));
+        return;
       }
 
-      // Manual refresh
-      await fetchSupabaseProfiles();
+      console.log(`[Admin] Solicitando ${newAction} para usuário: ${userId}`);
 
-      import('sonner').then(({ toast }) => toast.success(`Status do usuário atualizado para: ${newStatus}!`));
-    } catch (err) {
-      console.error("Error toggling user status:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao alterar status do usuário."));
+      const response = await fetch('/api/admin/block-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        },
+        body: JSON.stringify({ 
+          userId,
+          accessToken: currentSession.access_token,
+          block: !isBlocked
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        import('sonner').then(({ toast }) => toast.success(`Usuário ${isBlocked ? 'desbloqueado' : 'bloqueado'} com sucesso!`));
+        await fetchSupabaseProfiles();
+      } else {
+        console.error("[Admin] Erro ao bloquear via API:", data);
+        import('sonner').then(({ toast }) => toast.error("Erro ao alterar status: " + (data.error || "Erro desconhecido")));
+      }
+    } catch (err: any) {
+      console.error("Erro fatal ao bloquear usuário:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor."));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -910,21 +927,46 @@ export default function Admin() {
       return;
     }
     
-    if (!window.confirm("Tem certeza que deseja excluir permanentemente este perfil? Esta ação não pode ser desfeita.")) return;
+    if (!window.confirm("Tem certeza que deseja excluir permanentemente este usuário da plataforma e do banco de dados de autenticação? Esta ação não pode ser desfeita.")) return;
     
+    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('perfis')
-        .delete()
-        .eq('id', userId);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou."));
+        return;
+      }
 
-      if (error) throw error;
+      console.log(`[Admin] Solicitando exclusão completa do usuário: ${userId}`);
 
-      setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
-      import('sonner').then(({ toast }) => toast.success(t('profile.delete_success')));
-    } catch (err) {
-      console.error("Error deleting user:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao excluir perfil."));
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        },
+        body: JSON.stringify({ 
+          userId,
+          accessToken: currentSession.access_token
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
+        import('sonner').then(({ toast }) => toast.success("Usuário removido com sucesso de todo o sistema."));
+        console.log("[Admin] Usuário deletado com sucesso:", data);
+      } else {
+        console.error("[Admin] Erro na exclusão via API:", data);
+        import('sonner').then(({ toast }) => toast.error("Erro ao excluir usuário: " + (data.error || "Erro desconhecido")));
+      }
+    } catch (err: any) {
+      console.error("Erro fatal ao excluir usuário:", err);
+      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor de exclusão."));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1864,7 +1906,7 @@ export default function Admin() {
                   <div key={m.id} className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden group hover:shadow-blue-900/10 transition-all">
                     <div className="h-40 relative overflow-hidden">
                       <img 
-                        src={m.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400'} 
+                        src={m.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200'} 
                         alt={m.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         referrerPolicy="no-referrer"
