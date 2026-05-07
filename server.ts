@@ -8,8 +8,8 @@ import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
-import { generateEmailHTML } from './src/services/emailService.ts';
-import { formatDateBR, formatHourBR } from './src/utils/date.ts';
+import { generateEmailHTML } from './src/services/emailService.js';
+import { formatDateBR, formatHourBR } from './src/utils/date.js';
 import { 
   generateRegistrationOptions, 
   verifyRegistrationResponse, 
@@ -516,7 +516,9 @@ async function startServer() {
 
           if (fetchErr || !appData) {
             console.error("Erro ao buscar agendamento no webhook:", fetchErr);
-          } else {
+          } else if (appData.status !== 'confirmado') {
+            // Already confirmed check to avoid double notifications
+            
             // 2. Calculations
             const totalPaid = (session.amount_total || 0) / 100;
             const currentRate = await getCommissionRate();
@@ -576,6 +578,8 @@ async function startServer() {
             // Send Emails
             const baseUrl = process.env.APP_URL || process.env.VITE_APP_URL || "https://fisiocarehub.company";
             
+            console.log(`[Webhook] [FLOW-AUDIT] Triggering confirmation emails for appointment ${appointmentId}`);
+            
             await getSupabaseAdmin().functions.invoke('Send-email', { 
               body: {
                 to: appData.fisioterapeuta.email,
@@ -583,7 +587,7 @@ async function startServer() {
                 appointmentId: appointmentId,
                 html: `<h3>Novo Agendamento Confirmado!</h3><p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p><p><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><a href="${baseUrl}/appointments">Ver na Agenda</a>`
               } 
-            });
+            }).then(v => console.log(`[Webhook] [FLOW-AUDIT] Physio email result:`, v)).catch(e => console.error(`[Webhook] [FLOW-AUDIT] Physio email error:`, e));
             
             await getSupabaseAdmin().functions.invoke('Send-email', { 
               body: {
@@ -591,7 +595,7 @@ async function startServer() {
                 subject: 'Pagamento Confirmado - FisioCareHub',
                 html: `<h3>Pagamento Confirmado!</h3><p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p><p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
               }
-            });
+            }).then(v => console.log(`[Webhook] [FLOW-AUDIT] Patient email result:`, v)).catch(e => console.error(`[Webhook] [FLOW-AUDIT] Patient email error:`, e));
 
             // 6. Record in pagamentos table
             await getSupabaseAdmin().from('pagamentos').upsert({
@@ -1219,6 +1223,28 @@ async function startServer() {
                 lida: false,
                 link: '/appointments'
               });
+
+              // EMAIL NOTIFICATIONS - ASAAS
+              console.log(`[Asaas Webhook] [FLOW-AUDIT] Triggering confirmation emails for appointment ${appointmentId}`);
+              
+              const baseUrl = process.env.APP_URL || process.env.VITE_APP_URL || "https://fisiocarehub.company";
+
+              await getSupabaseAdmin().functions.invoke('Send-email', { 
+                body: {
+                  to: appData.fisioterapeuta.email,
+                  subject: 'Novo Agendamento Recebido (Asaas) - FisioCareHub',
+                  appointmentId: appointmentId,
+                  html: `<h3>Novo Agendamento Confirmado via Asaas!</h3><p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou o agendamento.</p><p><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><a href="${baseUrl}/appointments">Ver na Agenda</a>`
+                } 
+              }).then(v => console.log(`[Asaas Webhook] [FLOW-AUDIT] Physio email result:`, v)).catch(e => console.error(`[Asaas Webhook] [FLOW-AUDIT] Physio email error:`, e));
+              
+              await getSupabaseAdmin().functions.invoke('Send-email', { 
+                body: {
+                  to: appData.paciente.email,
+                  subject: 'Pagamento Confirmado (Asaas) - FisioCareHub',
+                  html: `<h3>Pagamento Confirmado!</h3><p>Olá ${appData.paciente.nome_completo}, seu pagamento via Pix/Boleto foi processado com sucesso.</p><p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
+                }
+              }).then(v => console.log(`[Asaas Webhook] [FLOW-AUDIT] Patient email result:`, v)).catch(e => console.error(`[Asaas Webhook] [FLOW-AUDIT] Patient email error:`, e));
             }
           }
         }
