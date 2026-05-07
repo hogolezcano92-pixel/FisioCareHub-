@@ -940,19 +940,33 @@ export default function Admin() {
 
       console.log(`[Admin] Solicitando exclusão completa do usuário: ${userId}`);
 
-      const response = await fetch('/api/admin/delete-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
-        },
-        body: JSON.stringify({ 
-          userId,
-          accessToken: currentSession.access_token
-        })
-      });
+      let response;
+      try {
+        response = await fetch('/api/admin/delete-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({ 
+            userId,
+            accessToken: currentSession.access_token
+          })
+        });
+      } catch (fetchErr: any) {
+        console.error("[Admin] Falha crítica no fetch:", fetchErr);
+        throw new Error(`Falha de rede/conexão: ${fetchErr.message}`);
+      }
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textError = await response.text();
+        console.error("[Admin] Resposta não-JSON recebida:", textError);
+        throw new Error(`Erro do servidor (${response.status}): ${textError.slice(0, 100)}`);
+      }
 
       if (response.ok) {
         setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
@@ -964,7 +978,8 @@ export default function Admin() {
       }
     } catch (err: any) {
       console.error("Erro fatal ao excluir usuário:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor de exclusão."));
+      const detail = err.message || "Erro desconhecido";
+      import('sonner').then(({ toast }) => toast.error(`Falha na exclusão: ${detail}`));
     } finally {
       setLoading(false);
     }
