@@ -118,7 +118,7 @@ const physioSlides: Slide[] = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.pexels.com/photos/3974635/pexels-photo-3974635.jpeg?auto=compress&cs=tinysrgb&w=1200",
     themeColor: "#8B5CF6"
   },
   {
