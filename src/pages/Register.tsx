@@ -303,6 +303,8 @@ export default function Register() {
           // Status e Imagens
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           is_pro: isPro,
+          plano: role === 'fisioterapeuta' ? 'free' : 'free',
+          plan_type: role === 'fisioterapeuta' ? 'free' : null,
           plan_intro_seen: false,
           foto_url: docUrls.foto_perfil || null,
           avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,

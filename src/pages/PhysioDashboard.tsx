@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
+import ProGuard from '../components/ProGuard';
 import { Sparkles, ArrowUpRight } from 'lucide-react';
 
 export default function PhysioDashboard() {
@@ -303,7 +304,7 @@ export default function PhysioDashboard() {
                           <div className="flex flex-wrap gap-4 pt-4">
                             <button 
                               onClick={() => handleAcceptRequest(req.id)}
-                              className="flex-1 min-w-[140px] py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+                              className="flex-1 min-w-[140px] py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
                             >
                               <CheckCircle2 size={18} />
                               Aceitar Atendimento
@@ -337,68 +338,72 @@ export default function PhysioDashboard() {
               </div>
             </div>
           ) : activeTab === 'financeiro' ? (
-            <FinancialDashboard />
+            <ProGuard requiredPlan="pro">
+              <FinancialDashboard />
+            </ProGuard>
           ) : (
-            <div className="grid gap-6">
-              {appointments.length > 0 ? (
-                appointments.map((app) => (
-                  <div 
-                    key={app.id}
-                    className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6"
-                  >
-                    <div className="flex items-center gap-6">
-                      <img 
-                        src={app.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${app.paciente_id}`}
-                        alt="Paciente"
-                        className="w-16 h-16 rounded-2xl object-cover bg-white/5 border border-white/10"
-                      />
-                      <div>
-                        <h4 className="text-lg font-black text-white tracking-tight">
-                          {app.paciente?.nome_completo || 'Paciente'}
-                        </h4>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Calendar size={14} className="text-blue-400" />
-                            {new Date(app.data).toLocaleDateString()}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Clock size={14} className="text-blue-400" />
-                            {app.hora}
-                          </span>
+            <ProGuard requiredPlan="pro">
+              <div className="grid gap-6">
+                {appointments.length > 0 ? (
+                  appointments.map((app) => (
+                    <div 
+                      key={app.id}
+                      className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6"
+                    >
+                      <div className="flex items-center gap-6">
+                        <img 
+                          src={app.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${app.paciente_id}`}
+                          alt="Paciente"
+                          className="w-16 h-16 rounded-2xl object-cover bg-white/5 border border-white/10"
+                        />
+                        <div>
+                          <h4 className="text-lg font-black text-white tracking-tight">
+                            {app.paciente?.nome_completo || 'Paciente'}
+                          </h4>
+                          <div className="flex items-center gap-4 mt-1">
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                              <Calendar size={14} className="text-blue-400" />
+                              {new Date(app.data).toLocaleDateString()}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                              <Clock size={14} className="text-blue-400" />
+                              {app.hora}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                        app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
-                        app.status === 'pago' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
-                        app.status === 'recusado' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
-                        "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                      )}>
-                        {app.status === 'pendente_pagamento' ? 'Aguardando Pagamento' : 
-                         app.status === 'pago' ? 'Pago (Aguardando Confirmação)' : 
-                         app.status}
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                          app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
+                          app.status === 'pago' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                          app.status === 'recusado' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                          "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        )}>
+                          {app.status === 'pendente_pagamento' ? 'Aguardando Pagamento' : 
+                           app.status === 'pago' ? 'Pago (Aguardando Confirmação)' : 
+                           app.status}
+                        </div>
+                        <button className="p-3 bg-white/5 text-slate-400 rounded-xl hover:bg-white/10 transition-all border border-white/10">
+                          <ChevronRight size={20} />
+                        </button>
                       </div>
-                      <button className="p-3 bg-white/5 text-slate-400 rounded-xl hover:bg-white/10 transition-all border border-white/10">
-                        <ChevronRight size={20} />
-                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-dashed border-white/10 space-y-4">
+                    <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-500">
+                      <Calendar size={32} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-white">Agenda vazia</h3>
+                      <p className="text-slate-400 font-medium">Você ainda não tem consultas agendadas.</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-20 bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-dashed border-white/10 space-y-4">
-                  <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-500">
-                    <Calendar size={32} />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-black text-white">Agenda vazia</h3>
-                    <p className="text-slate-400 font-medium">Você ainda não tem consultas agendadas.</p>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </ProGuard>
           )}
         </div>
       </div>

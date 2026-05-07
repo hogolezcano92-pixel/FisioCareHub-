@@ -246,7 +246,7 @@ export default function Records() {
           <p className="text-slate-400 font-medium">Histórico completo de atendimentos e evoluções.</p>
         </div>
         {isPhysio && (
-          <ProGuard variant="inline" requiredPlan="basic">
+          <ProGuard variant="inline" requiredPlan="free">
             <button
               onClick={() => setShowNewModal(true)}
               className="flex items-center gap-2 px-6 py-3 bg-sky-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
