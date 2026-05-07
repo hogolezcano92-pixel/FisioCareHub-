@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "https://www.clinicarecovery.com/wp-content/uploads/2025/10/nurse-doctor-senior-care-exercise-physical-therapy-2025-01-31-17-41-35-utc.jpg",
+    image: "/onboarding/welcome.jpg", // 
     themeColor: "#3B82F6"
   },
   {
