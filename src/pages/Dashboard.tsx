@@ -50,6 +50,7 @@ import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ProBanner from '../components/ProBanner';
 import ProGuard from '../components/ProGuard';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
+import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 
 export default function Dashboard() {
   const { user, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
@@ -72,6 +73,7 @@ export default function Dashboard() {
 
   const lastLoadedProfileId = useRef<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -202,6 +204,11 @@ export default function Dashboard() {
       if (lastLoadedProfileId.current !== profile.id) {
         lastLoadedProfileId.current = profile.id;
         fetchDashboardData(profile);
+        
+        // Welcome Flow Trigger
+        if (profile.tipo_usuario === 'fisioterapeuta' && profile.status_aprovacao === 'aprovado' && !profile.welcome_seen) {
+          setShowWelcome(true);
+        }
       }
 
       // Handle navigation actions
@@ -1083,6 +1090,7 @@ export default function Dashboard() {
         </div>
       )}
       <FloatingHelpMenu />
+      {showWelcome && <ApprovalWelcomeModal onClose={() => setShowWelcome(false)} />}
     </div>
   </div>
   );
