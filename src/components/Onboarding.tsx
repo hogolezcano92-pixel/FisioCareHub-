@@ -94,8 +94,7 @@ const physioSlides = [
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
     image: "https://wordpress-cms-ufbra-prod-assets.quero.space/uploads/2024/06/2149868922.jpg",
-    themeColor: "#8B5CF6",
-    bgSize: 'contain'
+    themeColor: "#8B5CF6"
   },
   {
     title: "Acompanhe Resultados",
@@ -315,29 +314,29 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
   };
 
   return (
-    <div 
-      className="relative w-full h-full flex flex-col overflow-hidden"
-      style={{
-        backgroundColor: '#0B1C2C',
-        backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.4)), url(${slide.image})`,
-        backgroundSize: slide.bgSize || 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]">
+      {/* Background Layer - Full screen coverage */}
       <div 
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 bg-no-repeat bg-center bg-cover transition-opacity duration-1000"
         style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.4) 0%, rgba(11, 28, 44, 0.8) 100%)'
+          backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.6)), url(${slide.image})`,
+          backgroundPosition: 'center center'
         }}
       />
       
-      <div className="absolute inset-0 z-0 bg-black/20" />
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.2) 0%, rgba(11, 28, 44, 0.8) 100%)'
+        }}
+      />
+      
+      <div className="absolute inset-0 z-0 bg-black/10" />
       
       <div 
-        className="absolute inset-0 z-0 opacity-20"
+        className="absolute inset-0 z-0 opacity-15"
         style={{ 
-          background: `linear-gradient(135deg, ${color}40 0%, #8B5CF640 100%)` 
+          background: `linear-gradient(135deg, ${color}30 0%, #8B5CF630 100%)` 
         }} 
       />
 
@@ -472,16 +471,16 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
   };
 
   return (
-    <div 
-      className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden"
-      style={{
-        backgroundColor: '#0B1C2C',
-        backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.7)), url(${slide.image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden bg-[#0B1C2C]">
+      {/* Background Layer - Full screen coverage */}
+      <div 
+        className="absolute inset-0 z-0 bg-no-repeat bg-center bg-cover"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(11, 28, 44, 0.4), rgba(11, 28, 44, 0.7)), url(${slide.image})`,
+          backgroundPosition: 'center center'
+        }}
+      />
+
       <div 
         className="absolute inset-0 z-0"
         style={{
