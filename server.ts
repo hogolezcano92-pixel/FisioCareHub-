@@ -352,12 +352,17 @@ const getSupabaseAdmin = () => {
     const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
     const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     
+    console.log("[Supabase Admin] Initializing with URL:", supabaseUrl);
+    console.log("[Supabase Admin] Service Role Key present:", !!supabaseServiceRoleKey);
+
     if (!supabaseServiceRoleKey) {
+      console.error("[Supabase Admin] CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.");
       throw new Error("SUPABASE_SERVICE_ROLE_KEY environment variable is required for this operation.");
     }
 
     try {
       supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceRoleKey);
+      console.log("[Supabase Admin] Client created successfully");
     } catch (err) {
       console.error("Failed to initialize Supabase Admin:", err);
       throw new Error("Failed to initialize Supabase client. Check your configuration.");
@@ -901,15 +906,19 @@ async function startServer() {
 
   // User Deletion (Secure Admin Endpoint)
   app.post("/api/admin/delete-user", async (req, res) => {
+    console.log("[Admin API] Received request to /api/admin/delete-user");
     try {
       const { userId, accessToken } = req.body;
+      console.log(`[Admin API] Data: userId=${userId}, hasToken=${!!accessToken}`);
 
       if (!userId || !accessToken) {
+        console.error("[Admin API] Missing payload");
         return res.status(400).json({ error: "Missing user id or access token" });
       }
 
       // 1. Verify the requester is an admin
       const supabaseAdmin = getSupabaseAdmin();
+      console.log("[Admin API] Supabase Admin initialized");
       const { data: { user: adminUser }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
       if (authError || !adminUser) {
