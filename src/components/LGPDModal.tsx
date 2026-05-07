@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, ExternalLink, ChevronRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function LGPDModal() {
   const [visible, setVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const accepted = localStorage.getItem("lgpdAccepted");
@@ -14,10 +17,25 @@ export default function LGPDModal() {
     }
   }, []);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     setIsClosing(true);
+    
+    // Save to localStorage
+    localStorage.setItem("lgpdAccepted", "true");
+
+    // Save to database if user is authenticated
+    if (user) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ lgpd_aceito: true, lgpd_data_aceite: new Date().toISOString() })
+          .eq('id', user.id);
+      } catch (error) {
+        console.error("Erro ao salvar consentimento no banco:", error);
+      }
+    }
+
     setTimeout(() => {
-      localStorage.setItem("lgpdAccepted", "true");
       setVisible(false);
       setIsClosing(false);
     }, 400);
@@ -65,10 +83,20 @@ export default function LGPDModal() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
-                <a href="/termos-de-uso" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider">
+                <a 
+                  href="/termos" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider"
+                >
                   Termos de Uso <ExternalLink size={12} />
                 </a>
-                <a href="/politica-de-privacidade" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider">
+                <a 
+                  href="/privacidade" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider"
+                >
                   Política de Privacidade <ExternalLink size={12} />
                 </a>
               </div>
@@ -81,12 +109,14 @@ export default function LGPDModal() {
                   Aceitar e continuar
                   <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button
-                  onClick={() => window.location.href = '/termos-de-uso'}
-                  className="px-6 py-4 text-slate-500 font-bold hover:text-slate-900 transition-all rounded-2xl hover:bg-slate-100/50"
+                <a
+                  href="/termos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-4 text-slate-500 font-bold hover:text-slate-900 transition-all rounded-2xl hover:bg-slate-100/50 flex items-center justify-center"
                 >
                   Ver termos completos
-                </button>
+                </a>
               </div>
 
               <p className="mt-8 text-center text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em]">
