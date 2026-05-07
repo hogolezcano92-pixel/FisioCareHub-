@@ -3,8 +3,8 @@
  * FisioCareHub - Transactional Email Service
  */
 
-import { formatDateBR } from '../utils/date.js';
-import { invokeFunction } from '../lib/supabase.js';
+import { formatDateBR } from '../utils/date.ts';
+import { invokeFunction } from '../lib/supabase.ts';
 
 interface EmailParams {
   nome_do_usuario: string;
