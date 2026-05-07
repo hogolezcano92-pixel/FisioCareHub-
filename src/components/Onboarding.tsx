@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
   Home, 
-  ShieldCheck, 
   Heart, 
-  Lock, 
   LineChart, 
   Rocket, 
-  CheckCircle2,
   Activity,
   UserCheck,
   Stethoscope,
@@ -20,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, EffectFade } from 'swiper/modules';
+import { Swiper as SwiperType } from 'swiper/types';
 import { cn } from '../lib/utils';
 
 // Import Swiper styles
@@ -27,13 +25,40 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 
+// Constants
+const DECISION_SLIDE_INDEX = 2;
+const AUTO_ADVANCE_DELAY = 500;
+const PAGINATION_BOTTOM = '125px';
+const PRELOAD_IMAGE_URL = "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200";
+
 interface OnboardingProps {
   onComplete: () => void;
 }
 
 type UserType = 'paciente' | 'fisioterapeuta' | null;
 
-const commonSlides = [
+interface Slide {
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  image: string;
+  themeColor: string;
+}
+
+interface DynamicSlide {
+  type: 'dynamic';
+  index: number;
+}
+
+interface DecisionSlideData {
+  type: 'decision';
+  image: string;
+}
+
+type AllSlide = Slide | DecisionSlideData | DynamicSlide;
+
+const commonSlides: Slide[] = [
   {
     title: "Bem-vindo ao FisioCareHub",
     subtitle: "Ecossistema Inteligente",
@@ -52,7 +77,7 @@ const commonSlides = [
   },
 ];
 
-const patientSlides = [
+const patientSlides: Slide[] = [
   {
     title: "Recupere seu Movimento",
     subtitle: "Sou Paciente",
@@ -79,7 +104,7 @@ const patientSlides = [
   }
 ];
 
-const physioSlides = [
+const physioSlides: Slide[] = [
   {
     title: "Gerencie seus Pacientes",
     subtitle: "Sou Fisioterapeuta",
@@ -110,38 +135,39 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [userType, setUserType] = useState<UserType>(() => {
     const saved = localStorage.getItem('onboarding_user_type');
-    return saved as UserType;
+    return (saved as UserType) || null;
   });
-  const swiperRef = useRef<any>(null);
+  const swiperRef = useRef<SwiperType>(null);
 
+  // Preload images on mount
   useEffect(() => {
     const imagesToPreload = [
       ...commonSlides.map(s => s.image),
       ...patientSlides.map(s => s.image),
       ...physioSlides.map(s => s.image),
-      "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200"
+      PRELOAD_IMAGE_URL
     ];
+
     imagesToPreload.forEach(src => {
       const img = new Image();
       img.src = src;
     });
   }, []);
 
-  // Use a fixed array size for Swiper stability
-  const allSlides = [
+  // Use memoization for slides array to prevent unnecessary recalculations
+  const allSlides = useMemo(() => [
     ...commonSlides,
     { 
-      type: 'decision',
-      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200"
-    },
-    // We render placeholders that become actual slides after decision
-    { type: 'dynamic', index: 0 },
-    { type: 'dynamic', index: 1 },
-    { type: 'dynamic', index: 2 },
-  ];
+      type: 'decision' as const,
+      image: PRELOAD_IMAGE_URL
+    } as DecisionSlideData,
+    { type: 'dynamic' as const, index: 0 } as DynamicSlide,
+    { type: 'dynamic' as const, index: 1 } as DynamicSlide,
+    { type: 'dynamic' as const, index: 2 } as DynamicSlide,
+  ], []);
 
   const handleNext = () => {
-    if (activeIndex === 2 && !userType) return;
+    if (activeIndex === DECISION_SLIDE_INDEX && !userType) return;
 
     if (activeIndex === allSlides.length - 1) {
       localStorage.setItem('onboarding_completed', 'true');
@@ -157,11 +183,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       localStorage.setItem('onboarding_user_type', type);
       setTimeout(() => {
         swiperRef.current?.slideNext();
-      }, 500);
+      }, AUTO_ADVANCE_DELAY);
     }
   };
 
-  const showButton = activeIndex !== 2 || userType;
+  const showButton = activeIndex !== DECISION_SLIDE_INDEX || userType;
   const isLastSlide = activeIndex === allSlides.length - 1;
 
   return (
@@ -172,19 +198,24 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           effect="fade"
           fadeEffect={{ crossFade: true }}
           pagination={{ 
-            clickable: activeIndex !== 2,
+            clickable: activeIndex !== DECISION_SLIDE_INDEX,
             dynamicBullets: true
           }}
           onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
           onSwiper={(swiper) => (swiperRef.current = swiper)}
           className="w-full h-full"
-          allowTouchMove={activeIndex !== 2}
+          allowTouchMove={activeIndex !== DECISION_SLIDE_INDEX}
+          aria-label="Onboarding slides"
         >
-          {allSlides.map((slide: any, index) => {
+          {allSlides.map((slide, index) => {
             if (slide.type === 'decision') {
               return (
                 <SwiperSlide key="decision" className="bg-[#0B1C2C]">
-                  <DecisionSlide slide={slide} onSelect={handleSelectType} selectedType={userType} />
+                  <DecisionSlide 
+                    slide={slide} 
+                    onSelect={handleSelectType} 
+                    selectedType={userType} 
+                  />
                 </SwiperSlide>
               );
             }
@@ -205,9 +236,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               );
             }
 
+            const contentSlide = slide as Slide;
             return (
               <SwiperSlide key={`common-${index}`} className="bg-[#0B1C2C]">
-                <ContentSlide slide={slide} isActive={activeIndex === index} />
+                <ContentSlide slide={contentSlide} isActive={activeIndex === index} />
               </SwiperSlide>
             );
           })}
@@ -219,10 +251,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <div className="max-w-xl mx-auto flex items-center justify-between w-full">
           {/* Skip Button */}
           <div className="pointer-events-auto">
-            {activeIndex !== 2 && (
+            {activeIndex !== DECISION_SLIDE_INDEX && (
               <button 
                 onClick={onComplete}
                 className="text-[#A1A1AA] font-bold uppercase tracking-[0.2em] text-[10px] hover:text-white transition-colors p-4"
+                aria-label="Skip onboarding"
               >
                 Pular
               </button>
@@ -240,16 +273,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-purple-500/20" 
                     : "bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white shadow-blue-500/20"
                 )}
+                aria-label={isLastSlide ? "Começar onboarding" : "Próximo slide"}
               >
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
                 <span className="relative z-10">
                   {isLastSlide ? "Começar" : "Próximo"}
                 </span>
                 <div className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">
                   {isLastSlide ? (
-                    <Rocket size={22} className="group-hover:-translate-y-1 transition-transform" />
+                    <Rocket size={22} className="group-hover:-translate-y-1 transition-transform" aria-hidden="true" />
                   ) : (
-                    <ChevronRight size={22} />
+                    <ChevronRight size={22} aria-hidden="true" />
                   )}
                 </div>
               </button>
@@ -273,7 +307,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           background: #8B5CF6 !important;
         }
         .swiper-pagination {
-          bottom: 125px !important;
+          bottom: ${PAGINATION_BOTTOM} !important;
           text-align: left !important;
           padding-left: 24px !important;
         }
@@ -290,7 +324,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   );
 }
 
-function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
+function ContentSlide({ slide, isActive }: { slide: Slide; isActive: boolean }) {
   const color = slide.themeColor || '#3B82F6';
 
   const containerVariants = {
@@ -304,7 +338,7 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
     }
   };
 
-  const itemVariants: any = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
@@ -409,8 +443,26 @@ function ContentSlide({ slide, isActive }: { slide: any, isActive: boolean }) {
   );
 }
 
-function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType }) {
-  const options = [
+interface DecisionOption {
+  id: UserType;
+  label: string;
+  desc: string;
+  badge: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  image: string;
+}
+
+function DecisionSlide({ 
+  slide, 
+  onSelect, 
+  selectedType 
+}: { 
+  slide: DecisionSlideData; 
+  onSelect: (type: UserType) => void; 
+  selectedType: UserType;
+}) {
+  const options: DecisionOption[] = [
     { 
       id: 'paciente', 
       label: 'Sou Paciente', 
@@ -442,28 +494,28 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     }
   };
 
-  const titleVariants: any = {
+  const titleVariants = {
     hidden: { opacity: 0, y: -30, scale: 0.95 },
     visible: { 
       opacity: 1, 
       y: 0, 
       scale: 1,
       transition: { 
-        type: "spring",
+        type: "spring" as const,
         stiffness: 100,
         damping: 20
       }
     }
   };
 
-  const cardVariants: any = {
+  const cardVariants = {
     hidden: { opacity: 0, x: -30, scale: 0.9 },
     visible: { 
       opacity: 1, 
       x: 0, 
       scale: 1,
       transition: { 
-        type: "spring",
+        type: "spring" as const,
         stiffness: 80,
         damping: 15
       }
@@ -502,6 +554,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
               src={selectedType === 'paciente' ? options[0].image : options[1].image} 
               alt="" 
               className="w-full h-full object-cover blur-[8px] scale-110"
+              aria-hidden="true"
             />
           )}
         </AnimatePresence>
@@ -519,7 +572,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
             variants={titleVariants}
             className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
           >
-            <Users size={32} className="text-white sm:w-10 sm:h-10" />
+            <Users size={32} className="text-white sm:w-10 sm:h-10" aria-hidden="true" />
           </motion.div>
           <motion.h2 
             variants={titleVariants}
@@ -538,14 +591,14 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         </div>
 
         <div className="grid gap-4 sm:gap-6 w-full">
-          {options.map((option, idx) => (
+          {options.map((option) => (
             <motion.button
               key={option.id}
               layout
               variants={cardVariants}
               whileHover={{ scale: 1.02, x: 10 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onSelect(option.id as UserType)}
+              onClick={() => onSelect(option.id)}
               className={cn(
                 "group relative w-full p-5 sm:p-8 bg-[#13293D]/80 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
                 selectedType === option.id 
@@ -553,6 +606,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
                   : "border-white/5 hover:border-white/10 hover:bg-[#1a3a55]/90"
               )}
               style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)', boxSizing: 'border-box' }}
+              aria-pressed={selectedType === option.id}
             >
               <div 
                 style={{ 
@@ -603,7 +657,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
                   selectedType === option.id ? "text-white translate-x-0 opacity-100" : "text-slate-700 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0"
                 )}
               >
-                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
               </div>
             </motion.button>
           ))}
@@ -612,6 +666,3 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     </div>
   );
 }
-
-
-
