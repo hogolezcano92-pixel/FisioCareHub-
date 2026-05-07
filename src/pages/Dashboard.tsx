@@ -206,7 +206,7 @@ export default function Dashboard() {
         fetchDashboardData(profile);
         
         // Welcome Flow Trigger
-        if (profile.tipo_usuario === 'fisioterapeuta' && profile.status_aprovacao === 'aprovado' && !profile.welcome_seen) {
+        if (profile.tipo_usuario === 'fisioterapeuta' && profile.status_aprovacao === 'aprovado' && !profile.plan_intro_seen) {
           setShowWelcome(true);
         }
       }

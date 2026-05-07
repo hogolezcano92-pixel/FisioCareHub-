@@ -39,7 +39,7 @@ export default function PhysioDashboard() {
   });
 
   useEffect(() => {
-    if (profile && profile.status_aprovacao === 'aprovado' && !profile.welcome_seen && profile.tipo_usuario === 'fisioterapeuta') {
+    if (profile && profile.status_aprovacao === 'aprovado' && !profile.plan_intro_seen && profile.tipo_usuario === 'fisioterapeuta') {
       setShowWelcome(true);
     }
   }, [profile]);

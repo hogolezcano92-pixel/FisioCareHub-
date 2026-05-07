@@ -290,9 +290,7 @@ export default function Register() {
           crefito: role === 'fisioterapeuta' ? formData.crefito : null,
           especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
           tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-          preco_sessao: role === 'fisioterapeuta' && formData.preco_sessao
-  ? Number(formData.preco_sessao.replace(',', '.'))
-  : null,
+          preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao : null,
           
           // Tipos de Array (Garantindo que sejam listas)
           formacao_academica: formData.formacao_academica 
@@ -305,6 +303,7 @@ export default function Register() {
           // Status e Imagens
           status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
           is_pro: isPro,
+          plan_intro_seen: false,
           foto_url: docUrls.foto_perfil || null,
           avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
           
