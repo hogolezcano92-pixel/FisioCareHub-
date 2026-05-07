@@ -290,7 +290,9 @@ export default function Register() {
           crefito: role === 'fisioterapeuta' ? formData.crefito : null,
           especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
           tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-          preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao : null,
+          preco_sessao: role === 'fisioterapeuta' && formData.preco_sessao
+  ? Number(formData.preco_sessao.replace(',', '.'))
+  : null,
           
           // Tipos de Array (Garantindo que sejam listas)
           formacao_academica: formData.formacao_academica 
