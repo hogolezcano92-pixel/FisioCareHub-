@@ -20,12 +20,28 @@ export function formatDate(date: any) {
 
 export function resolveStorageUrl(url: string) {
   if (!url) return '';
-  // Normaliza caminhos do Supabase Storage
-  // 1. Corrige problemas de caixa alta
-  // 2. Remove a pasta redundante 'documents/documents' e substitui por 'fisioterapeutas'
-  return url
-    .replace('/DOCUMENTS/', '/documents/')
-    .replace('/documents/documents/', '/documents/fisioterapeutas/');
+  
+  // Se já for uma URL completa, retorna sem modificações
+  if (url.startsWith('http')) return url;
+  
+  // Tenta resolver caminhos relativos se a URL do Supabase estiver disponível
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (supabaseUrl) {
+    // Remove barras duplicadas se houver
+    const baseUrl = supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl;
+    const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+    
+    // Se o caminho não começar com 'storage/v1/object/public/', tenta deduzir o bucket
+    // Este é um fallback genérico, o ideal é sempre salvar a URL completa
+    if (!cleanPath.includes('storage/v1/object/public/')) {
+       // Se o caminho tiver estrutura de bucket/arquivo
+       return `${baseUrl}/storage/v1/object/public/${cleanPath}`;
+    }
+    
+    return `${baseUrl}/${cleanPath}`;
+  }
+
+  return url;
 }
 
 export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
