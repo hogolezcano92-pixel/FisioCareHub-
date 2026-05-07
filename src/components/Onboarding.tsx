@@ -482,11 +482,11 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
   };
 
   const fadeUp: any = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0, 
-      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
     }
   };
 
@@ -496,14 +496,14 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
       <div className="absolute inset-0 z-0">
         <motion.img 
           src={slide.image}
-          initial={{ scale: 1.15, opacity: 0 }}
+          initial={{ scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 3, ease: [0.22, 1, 0.36, 1] }}
           alt=""
           className="w-full h-full object-cover object-center"
           decoding="async"
           loading="eager"
-          style={{ scale: 1.1, willChange: 'transform' }}
+          style={{ willChange: 'transform' }}
           onLoad={() => setBgLoaded(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
