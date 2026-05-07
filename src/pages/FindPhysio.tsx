@@ -40,7 +40,7 @@ export default function FindPhysio() {
       const { data: profilesData, error: profilesError } = await supabase
         .from('perfis')
         .select('*')
-        .eq('tipo_usuario', 'fisioterapeuta')
+        .eq('role', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
       if (profilesError) throw profilesError;

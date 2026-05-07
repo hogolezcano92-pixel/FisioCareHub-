@@ -64,6 +64,7 @@ export default function Home() {
   const [specialtyFilter, setSpecialtyFilter] = useState('Todos');
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<any>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [proSlideIndex, setProSlideIndex] = useState(0);
   const [itemsVisible, setItemsVisible] = useState(1);
@@ -168,10 +169,14 @@ export default function Home() {
   const fetchProfessionals = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
+      
+      console.log('Buscando profissionais com filtros:', { nameQuery, locationQuery, specialtyFilter });
+      
       let query = supabase
         .from('perfis')
         .select('*')
-        .eq('tipo_usuario', 'fisioterapeuta')
+        .eq('role', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
       // Filtro por Nome ou E-mail (ilike para ignorar case)
@@ -191,7 +196,11 @@ export default function Home() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      console.log('Resultado da busca de profissionais:', data);
+      if (error) {
+        console.error('Erro retornado pelo Supabase:', error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
         const mappedData: Professional[] = data.map((profile: any) => ({
@@ -211,6 +220,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error);
+      setFetchError(error);
       setProfessionals([]);
     } finally {
       setLoading(false);
@@ -685,7 +695,26 @@ export default function Home() {
           </div>
           
           <div className="relative group">
-            {professionals.length > 0 ? (
+            {loading ? (
+              <div className="py-32 flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                <p className="text-slate-400 font-bold animate-pulse">Buscando especialistas...</p>
+              </div>
+            ) : fetchError ? (
+              <div className="py-32 text-center bg-white/5 rounded-[4rem] border border-red-500/20">
+                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-red-500">
+                  <Activity size={48} />
+                </div>
+                <h4 className="text-3xl font-black text-white mb-3 tracking-tight">Ops! Algo deu errado</h4>
+                <p className="text-lg text-slate-500 font-medium mb-6">Não conseguimos carregar os especialistas no momento.</p>
+                <button 
+                  onClick={() => fetchProfessionals()}
+                  className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all"
+                >
+                  Tentar Novamente
+                </button>
+              </div>
+            ) : professionals.length > 0 ? (
               <div className="relative">
                 {/* Navigation Buttons */}
                 <div className="absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
