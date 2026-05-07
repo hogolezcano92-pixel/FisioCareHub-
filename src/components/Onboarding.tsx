@@ -448,6 +448,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
 }
 
 function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType }) {
+  const [bgLoaded, setBgLoaded] = useState(false);
   const options = [
     { 
       id: 'paciente', 
@@ -469,67 +470,45 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
     }
   ];
 
-  const containerVariants = {
+  const container: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1
+        staggerChildren: 0.12,
+        delayChildren: 0.2
       }
     }
   };
 
-  const titleVariants: any = {
-    hidden: { opacity: 0, y: -30, scale: 0.95 },
+  const fadeUp: any = {
+    hidden: { opacity: 0, y: 24 },
     visible: { 
       opacity: 1, 
       y: 0, 
-      scale: 1,
-      transition: { 
-        type: "spring",
-        stiffness: 100,
-        damping: 20
-      }
-    }
-  };
-
-  const cardVariants: any = {
-    hidden: { opacity: 0, x: -30, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      scale: 1,
-      transition: { 
-        type: "spring",
-        stiffness: 80,
-        damping: 15
-      }
+      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
     }
   };
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden bg-[#0B1C2C]">
-      {/* Background Layer - Full screen coverage using img for priority loading */}
+      {/* Background Layer - Zoom out effect */}
       <div className="absolute inset-0 z-0">
-        <img 
+        <motion.img 
           src={slide.image}
+          initial={{ scale: 1.15, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
           alt=""
-          className="w-full h-full object-cover"
-          // @ts-ignore
-          fetchPriority="high"
+          className="w-full h-full object-cover object-center"
+          decoding="async"
           loading="eager"
+          style={{ scale: 1.1, willChange: 'transform' }}
+          onLoad={() => setBgLoaded(true)}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
       </div>
 
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.3) 0%, rgba(11, 28, 44, 0.6) 100%)'
-        }}
-      />
-      
       <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
       <div className="absolute inset-0 z-0">
@@ -538,7 +517,7 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
             <motion.img 
               key={selectedType}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.25 }}
+              animate={{ opacity: 0.15 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1 }}
               src={selectedType === 'paciente' ? options[0].image : options[1].image} 
@@ -551,27 +530,26 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
 
       <motion.div 
         className="relative z-10 w-full max-w-lg"
-        variants={containerVariants}
+        variants={container}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
+        animate="visible"
       >
         <div className="text-center mb-10 sm:mb-16">
           <motion.div 
-            variants={titleVariants}
+            variants={fadeUp}
             className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
           >
             <Users size={32} className="text-white sm:w-10 sm:h-10" />
           </motion.div>
           <motion.h2 
-            variants={titleVariants}
+            variants={fadeUp}
             className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
             style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
           >
             Como você quer usar o FisioCareHub?
           </motion.h2>
           <motion.p 
-            variants={titleVariants}
+            variants={fadeUp}
             className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
           >
@@ -580,21 +558,21 @@ function DecisionSlide({ slide, onSelect, selectedType }: { slide: any, onSelect
         </div>
 
         <div className="grid gap-4 sm:gap-6 w-full">
-          {options.map((option, idx) => (
+          {options.map((option) => (
             <motion.button
               key={option.id}
               layout
-              variants={cardVariants}
-              whileHover={{ scale: 1.02, x: 10 }}
+              variants={fadeUp}
+              whileHover={{ y: -2, scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onSelect(option.id as UserType)}
               className={cn(
-                "group relative w-full p-5 sm:p-8 bg-[#13293D]/80 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-sm",
+                "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-md",
                 selectedType === option.id 
                   ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
-                  : "border-white/5 hover:border-white/10 hover:bg-[#1a3a55]/90"
+                  : "border-white/10 hover:border-white/20 hover:bg-[#1a3a55]/90"
               )}
-              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.08)', boxSizing: 'border-box' }}
+              style={{ borderColor: selectedType === option.id ? option.color : 'rgba(255,255,255,0.1)' }}
             >
               <div 
                 style={{ 
