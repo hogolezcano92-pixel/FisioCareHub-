@@ -1,10 +1,10 @@
 
 /**
  * FisioCareHub - Transactional Email Service
- * Reusable HTML template for system notifications.
  */
 
-import { formatDateBR } from '../utils/date.ts';
+import { formatDateBR } from '../utils/date.js';
+import { invokeFunction } from '../lib/supabase.js';
 
 interface EmailParams {
   nome_do_usuario: string;
@@ -32,9 +32,7 @@ export const generateEmailHTML = ({
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F8FAFC;">
         <tr>
             <td align="center" style="padding: 40px 0;">
-                <!-- Main Card -->
                 <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                    <!-- Header -->
                     <tr>
                         <td align="center" style="padding: 40px 30px; border-bottom: 1px solid #F1F5F9;">
                             <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #2563EB;">FisioCareHub</h1>
@@ -42,18 +40,15 @@ export const generateEmailHTML = ({
                         </td>
                     </tr>
                     
-                    <!-- Content -->
                     <tr>
                         <td style="padding: 40px 30px; color: #334155; line-height: 1.6;">
                             <p style="font-size: 18px; margin: 0 0 24px 0; color: #1E293B;">Olá, <strong>${nome_do_usuario}</strong></p>
-                            
                             <div style="font-size: 16px; color: #475569;">
                                 ${mensagem_principal_da_notificacao}
                             </div>
                         </td>
                     </tr>
 
-                    <!-- Footer / Branding Block -->
                     <tr>
                         <td style="background-color: #1E293B; padding: 40px 30px; text-align: center;">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -62,12 +57,8 @@ export const generateEmailHTML = ({
                                         <p style="margin: 0 0 10px 0; font-weight: bold; color: #FFFFFF;">Informações de Contato</p>
                                         <p style="margin: 5px 0;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">suporte@fisiocarehub.company</a></p>
                                         <p style="margin: 5px 0;">Website: <a href="https://fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">fisiocarehub.company</a></p>
-                                        <p style="margin: 5px 0; color: #FFFFFF; font-weight: bold;">São Paulo - Brasil | Latin America</p>
-                                        
                                         <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
-                                        
                                         <p style="margin: 10px 0; font-size: 12px; color: #94A3B8;">FisioCareHub © ${ano} - Todos os direitos reservados</p>
-                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8; font-style: italic;">Esta é uma mensagem automática, por favor não responda.</p>
                                         <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${dataExtenso}</p>
                                     </td>
                                 </tr>
@@ -87,30 +78,24 @@ export const generateEmailHTML = ({
  * Sends a welcome email to a new user
  */
 export const sendWelcomeEmail = async (email: string, name: string, role: 'paciente' | 'fisioterapeuta') => {
-  console.log(`[EmailService] Preparing welcome email for ${name} (${email}) as ${role}`);
+  console.log(`[EmailService] [FLOW-AUDIT] Preparing welcome email for ${name} (${email}) as ${role}`);
   
+  if (!email) {
+    console.warn(`[EmailService] [FLOW-AUDIT] ABORTED: No email provided for ${name}`);
+    return { success: false, error: 'Email não fornecido' };
+  }
+
   const welcomeMessage = role === 'fisioterapeuta' 
     ? `
       <h2 style="color: #2563eb; margin-top: 0;">Bem-vindo à nossa rede de especialistas!</h2>
       <p>Estamos muito felizes em ter você como parceiro no <strong>FisioCareHub</strong>.</p>
-      <p>Sua conta está sendo processada. Em breve você poderá:</p>
-      <ul style="padding-left: 20px;">
-        <li>Gerenciar seus pacientes domiciliares</li>
-        <li>Organizar sua agenda de atendimentos</li>
-        <li>Utilizar nossa IA para auxiliar em seus prontuários</li>
-      </ul>
-      <p>Seus documentos já foram enviados para nossa equipe de auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
+      <p>Sua conta está sendo processada. Em breve você poderá gerenciar seus pacientes e utilizar nossa IA.</p>
+      <p>Seus documentos já foram enviados para auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
     `
     : `
       <h2 style="color: #2563eb; margin-top: 0;">Sua jornada de recuperação começa aqui!</h2>
       <p>Estamos felizes em acompanhar você no seu processo de reabilitação através do <strong>FisioCareHub</strong>.</p>
-      <p>Agora você já pode:</p>
-      <ul style="padding-left: 20px;">
-        <li>Visualizar seus exercícios prescritos</li>
-        <li>Acompanhar sua evolução</li>
-        <li>Manter contato direto com seu fisioterapeuta</li>
-      </ul>
-      <p>Acesse o app para começar seus primeiros passos.</p>
+      <p>Acesse o app para visualizar seus exercícios e acompanhar sua evolução.</p>
     `;
 
   const html = generateEmailHTML({
@@ -119,13 +104,120 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
   });
 
   try {
-    // In a production environment, you would call an Edge Function or Email API here.
-    // Example: await supabase.functions.invoke('send-email', { body: { to: email, subject: 'Bem-vindo ao FisioCareHub', html } });
+    console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for ${email}`);
+    // Using PascalCase for function name to match server.ts invocation
+    const result = await invokeFunction('Send-email', {
+      to: email,
+      subject: `Bem-vindo ao FisioCareHub - ${name}`,
+      html
+    });
     
-    console.log(`[EmailService] Welcome email generated for ${email}. (Ready for production integration)`);
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Welcome email sent for ${email}`, result);
     return { success: true };
-  } catch (error) {
-    console.error('[EmailService] Error sending welcome email:', error);
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED to send welcome email to ${email}:`, error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Sends an professional approval/rejection email
+ */
+export const sendProfessionalApprovalEmail = async (email: string, name: string, approved: boolean) => {
+  console.log(`[EmailService] [FLOW-AUDIT] Preparing professional ${approved ? 'approval' : 'rejection'} email for ${email}`);
+  
+  if (!email) {
+    console.warn(`[EmailService] [FLOW-AUDIT] ABORTED: No email for professional status update`);
+    return { success: false, error: 'Email não fornecido' };
+  }
+
+  const message = approved 
+    ? `
+      <h2 style="color: #10b981; margin-top: 0;">Perfil Aprovado!</h2>
+      <p>Parabéns, <strong>${name}</strong>! Seu perfil de fisioterapeuta foi revisado e aprovado com sucesso.</p>
+      <p>Agora você já pode aceitar solicitações de pacientes e gerenciar seus atendimentos.</p>
+    `
+    : `
+      <h2 style="color: #ef4444; margin-top: 0;">Perfil não aprovado</h2>
+      <p>Olá, <strong>${name}</strong>. Infelizmente seu perfil não pôde ser aprovado no momento.</p>
+      <p>Por favor, entre em contato com nosso suporte para mais detalhes.</p>
+    `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: name,
+    mensagem_principal_da_notificacao: message
+  });
+
+  try {
+    console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for professional ${approved ? 'approval' : 'rejection'}`);
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: approved ? 'Perfil Aprovado - FisioCareHub' : 'Atualização de Cadastro - FisioCareHub',
+      html
+    });
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Professional email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED to send professional status email:`, error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Sends an appointment status email
+ */
+export const sendAppointmentStatusEmail = async (
+  email: string | undefined,
+  name: string,
+  physioName: string,
+  status: 'aprovado' | 'confirmado' | 'cancelado' | 'reagendado',
+  details: {
+    date: string;
+    time: string;
+    reason?: string;
+    service?: string;
+    [key: string]: any;
+  }
+) => {
+  if (!email) return { success: false, error: 'Email não fornecido' };
+  
+  console.log(`[EmailService] [FLOW-AUDIT] Sending status update (${status}) to ${name} (${email})`);
+
+  const statusMap: Record<string, string> = {
+    aprovado: 'Confirmado',
+    confirmado: 'Confirmado',
+    cancelado: 'Cancelado',
+    reagendado: 'Reagendado'
+  };
+
+  const message = `
+    <h2 style="color: #2563eb; margin-top: 0;">Atualização de Agendamento</h2>
+    <p>Olá, <strong>${name}</strong>, o status do seu agendamento foi atualizado.</p>
+    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
+      <p><strong>Novo Status:</strong> <span style="font-weight: bold;">${statusMap[status] || status}</span></p>
+      <p><strong>Profissional:</strong> ${physioName}</p>
+      <p><strong>Data:</strong> ${details.date}</p>
+      <p><strong>Horário:</strong> ${details.time}</p>
+      ${details.service ? `<p><strong>Tipo:</strong> ${details.service}</p>` : ''}
+      ${details.reason ? `<p><strong>Motivo:</strong> ${details.reason}</p>` : ''}
+    </div>
+  `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: name,
+    mensagem_principal_da_notificacao: message
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: `Agendamento ${statusMap[status] || 'Atualizado'} - FisioCareHub`,
+      html
+    });
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Status email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED:`, error);
     return { success: false, error };
   }
 };
@@ -140,38 +232,31 @@ export const sendAppointmentConfirmation = async (
     appointmentId: string;
     patientName: string;
     patientEmail: string;
-    patientPhone?: string;
-    patientAddress?: string;
-    patientCity?: string;
-    patientState?: string;
-    patientZip?: string;
-    patientDOB?: string;
-    patientAvatar?: string;
     physioName: string;
-    physioPhone?: string;
-    physioAddress?: string;
-    physioEmail?: string;
     date: string;
     time: string;
     service: string;
     notes?: string;
+    patientPhone?: string;
+    [key: string]: any;
   }
 ) => {
-  console.log(`[EmailService] Preparing appointment confirmation for ${details.patientName}`);
+  console.log(`[EmailService] [FLOW-AUDIT] Preparing appointment confirmation for ${details.patientName} (${patientEmail})`);
+
+  if (!patientEmail) {
+    console.warn(`[EmailService] [FLOW-AUDIT] ABORTED: Patient email missing`);
+    return { success: false, error: 'Email do paciente não fornecido' };
+  }
 
   const message = `
     <h2 style="color: #2563eb; margin-top: 0;">Novo Agendamento Confirmado</h2>
     <p>Olá, <strong>${details.patientName}</strong>, sua sessão de fisioterapia foi agendada com sucesso.</p>
-    
     <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
-      <p style="margin: 5px 0;"><strong>Profissional:</strong> ${details.physioName}</p>
-      <p style="margin: 5px 0;"><strong>Data:</strong> ${details.date}</p>
-      <p style="margin: 5px 0;"><strong>Horário:</strong> ${details.time}</p>
-      <p style="margin: 5px 0;"><strong>Tipo:</strong> ${details.service}</p>
-      ${details.notes ? `<p style="margin: 5px 0;"><strong>Observações:</strong> ${details.notes}</p>` : ''}
+      <p><strong>Profissional:</strong> ${details.physioName}</p>
+      <p><strong>Data:</strong> ${details.date}</p>
+      <p><strong>Horário:</strong> ${details.time}</p>
+      <p><strong>Tipo:</strong> ${details.service}</p>
     </div>
-
-    <p>Caso precise desmarcar ou reagendar, por favor entre em contato com pelo menos 24 horas de antecedência.</p>
   `;
 
   const html = generateEmailHTML({
@@ -180,82 +265,27 @@ export const sendAppointmentConfirmation = async (
   });
 
   try {
-    // Logic for sending email would go here
-    console.log(`[EmailService] Appointment confirmation generated for ${patientEmail}. (ID: ${details.appointmentId})`);
+    await invokeFunction('Send-email', {
+      to: patientEmail,
+      subject: 'Agendamento Confirmado - FisioCareHub',
+      html
+    });
+
+    if (physioEmail) {
+      await invokeFunction('Send-email', {
+        to: physioEmail,
+        subject: 'Novo Agendamento Recebido - FisioCareHub',
+        html: generateEmailHTML({
+          nome_do_usuario: details.physioName,
+          mensagem_principal_da_notificacao: `<p>Novo agendamento com ${details.patientName} em ${details.date} às ${details.time}.</p>`
+        })
+      });
+    }
+
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Appointment emails sent.`);
     return { success: true };
-  } catch (error) {
-    console.error('[EmailService] Error sending appointment confirmation:', error);
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED:`, error);
     return { success: false, error };
   }
 };
-
-/**
- * Sends a notification email about appointment status changes (approved, cancelled, etc)
- */
-export const sendAppointmentStatusEmail = async (
-  email: string | undefined,
-  name: string,
-  physioName: string,
-  status: 'aprovado' | 'confirmado' | 'cancelado' | 'reagendado',
-  details: {
-    date: string;
-    time: string;
-    reason?: string;
-    service?: string;
-  }
-) => {
-  if (!email) return { success: false, error: 'Email não fornecido' };
-  
-  console.log(`[EmailService] Sending status update (${status}) to ${name}`);
-
-  const statusMap: Record<string, string> = {
-    aprovado: 'Confirmado',
-    confirmado: 'Confirmado',
-    cancelado: 'Cancelado',
-    reagendado: 'Reagendado'
-  };
-
-  const message = `
-    <h2 style="color: #2563eb; margin-top: 0;">Atualização de Agendamento</h2>
-    <p>Olá, <strong>${name}</strong>, o status do seu agendamento foi atualizado.</p>
-    
-    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
-      <p style="margin: 5px 0;"><strong>Novo Status:</strong> <span style="color: ${status === 'cancelado' ? '#ef4444' : '#10b981'}; font-weight: bold;">${statusMap[status] || status}</span></p>
-      <p style="margin: 5px 0;"><strong>Profissional:</strong> ${physioName}</p>
-      <p style="margin: 5px 0;"><strong>Data:</strong> ${details.date}</p>
-      <p style="margin: 5px 0;"><strong>Horário:</strong> ${details.time}</p>
-      ${details.service ? `<p style="margin: 5px 0;"><strong>Serviço:</strong> ${details.service}</p>` : ''}
-      ${details.reason ? `<p style="margin: 5px 0;"><strong>Motivo:</strong> ${details.reason}</p>` : ''}
-    </div>
-
-    ${status === 'cancelado' ? '<p>Para dúvidas, entre em contato com o suporte.</p>' : '<p>Esperamos por você!</p>'}
-  `;
-
-  const html = generateEmailHTML({
-    nome_do_usuario: name,
-    mensagem_principal_da_notificacao: message
-  });
-
-  try {
-    console.log(`[EmailService] Status email (${status}) generated for ${email}.`);
-    return { success: true };
-  } catch (error) {
-    console.error('[EmailService] Error sending status email:', error);
-    return { success: false, error };
-  }
-};
-
-/**
- * Example of how to use this service with a provider like Resend or Supabase Edge Functions:
- * 
- * export const sendNotification = async (userId: string, message: string) => {
- *   const { data: userProfile } = await supabase.from('profiles').select('nome_completo, email').eq('id', userId).single();
- *   
- *   const html = generateEmailHTML({
- *     nome_do_usuario: userProfile.nome_completo,
- *     mensagem_principal_da_notificacao: message
- *   });
- *   
- *   // Logic to call your SMTP/Email API provider here
- * };
- */
