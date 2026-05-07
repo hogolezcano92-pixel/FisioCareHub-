@@ -36,12 +36,31 @@ export default function ApprovalWelcomeModal({ onClose }: ApprovalWelcomeModalPr
     }
   };
 
-  const handleViewPlans = () => {
-    // We don't mark as seen here yet, or maybe we should?
-    // User request: "usuário pode voltar e continuar no FREE"
-    // So we just navigate to plans page.
-    navigate('/subscription');
-    onClose();
+  const handleViewPlans = async () => {
+    setLoading(true);
+    try {
+      // Também marcamos como visto ao ir para a tela de planos
+      // para garantir que o fluxo de "introdução" foi concluído
+      const { error } = await supabase
+        .from('perfis')
+        .update({ 
+          plan_intro_seen: true
+        })
+        .eq('id', user?.id);
+      
+      if (error) throw error;
+      
+      await refreshProfile();
+      navigate('/subscription');
+      onClose();
+    } catch (err) {
+      console.error('Error updating plan intro status:', err);
+      // Mesmo com erro, tentamos navegar para não travar o usuário
+      navigate('/subscription');
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,17 +133,22 @@ export default function ApprovalWelcomeModal({ onClose }: ApprovalWelcomeModalPr
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <button
+                disabled={loading}
                 onClick={handleViewPlans}
-                className="flex-1 px-8 py-5 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 group"
+                className="flex-1 px-8 py-5 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 group disabled:opacity-50"
               >
-                Ver planos profissionais
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {loading ? "Carregando..." : (
+                  <>
+                    Ver planos profissionais
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
               
               <button
                 disabled={loading}
                 onClick={handleContinueFree}
-                className="flex-1 px-8 py-5 bg-white/5 text-slate-400 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
+                className="flex-1 px-8 py-5 bg-white/5 text-slate-400 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 disabled:opacity-50"
               >
                 {loading ? "Processando..." : "Continuar gratuitamente"}
               </button>
