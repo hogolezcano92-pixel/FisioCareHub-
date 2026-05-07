@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200",
     themeColor: "#8B5CF6"
   },
   {
@@ -119,7 +119,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       ...commonSlides.map(s => s.image),
       ...patientSlides.map(s => s.image),
       ...physioSlides.map(s => s.image),
-      "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200"
     ];
     imagesToPreload.forEach(src => {
       const img = new Image();
@@ -132,7 +132,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     ...commonSlides,
     { 
       type: 'decision',
-      image: "https://images.unsplash.com/photo-1576091160550-217359f4bd08?auto=format&fit=crop&q=80&w=1200"
+      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=1200"
     },
     // We render placeholders that become actual slides after decision
     { type: 'dynamic', index: 0 },
