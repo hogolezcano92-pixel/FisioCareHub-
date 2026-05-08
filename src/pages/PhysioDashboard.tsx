@@ -23,7 +23,6 @@ import { toast } from 'sonner';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProGuard from '../components/ProGuard';
-import { Sparkles, ArrowUpRight } from 'lucide-react';
 
 export default function PhysioDashboard() {
   const { user, profile } = useAuth();
@@ -186,39 +185,6 @@ export default function PhysioDashboard() {
 
         {/* Content */}
         <div className="space-y-6">
-          {/* Upgrade Banner for FREE users */}
-          {profile?.plano === 'free' && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-blue-600/20 group-hover:scale-105 transition-transform duration-500" />
-              <div className="relative p-6 px-8 bg-slate-900/50 backdrop-blur-xl border border-blue-500/30 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-                <div className="flex items-center gap-6 text-center md:text-left">
-                  <div className="w-14 h-14 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-7 h-7 text-blue-400 group-hover:rotate-12 transition-transform" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-white font-black text-lg">
-                      ⭐ Seu perfil pode aparecer primeiro para pacientes da sua região.
-                    </p>
-                    <p className="text-slate-400 font-medium text-sm">
-                      Aumente sua visibilidade e receba até 5x mais solicitações.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/subscription')}
-                  className="w-full md:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 group/btn"
-                >
-                  Ver planos
-                  <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
