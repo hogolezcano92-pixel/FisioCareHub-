@@ -39,6 +39,12 @@
     66% { transform: translate(-20px, 20px) rotate(240deg) scale(0.9); }
     100% { transform: translate(0, 0) rotate(360deg) scale(1); }
   }
+
+  @keyframes ken-burns {
+    0% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.12) translateY(-2%); }
+    100% { transform: scale(1) translateY(0); }
+  }
 }
 
 @layer utilities {
@@ -47,6 +53,9 @@
   }
   .animate-blob-float {
     animation: float-blob 25s infinite ease-in-out;
+  }
+  .animate-ken-burns {
+    animation: ken-burns 20s ease-in-out infinite;
   }
 
   .text-ice {
@@ -58,7 +67,7 @@
     background-color: #0B1120;
     background-image: 
       linear-gradient(to right, rgba(11, 17, 32, 0.95), rgba(11, 17, 32, 0.95)),
-      url("https://images.unsplash.com/photo-1584432810601-6a7f27a2362b?auto=format&fit=crop&q=80&w=2000");
+      url("https://images.unsplash.com/photo-1584432810601-6a7f27a2362b?auto=format&fit=crop&q=80&w=1200");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
