@@ -101,7 +101,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
-    image: "https://images.pexels.com/photos/3825539/pexels-photo-3825539.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/acompanhe.mp4",
     themeColor: "#8B5CF6"
   }
 ];
