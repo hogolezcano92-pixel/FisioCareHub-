@@ -216,5 +216,66 @@ export const kineAIService = {
       console.error("Erro ao processar voz clínica:", error);
       throw error;
     }
+  },
+
+  async generateClinicalInsights(context: any) {
+    if (!apiKey || apiKey === "MISSING_API_KEY") {
+      return {
+        statusDay: "Bem-vindo ao seu dashboard profissional.",
+        alerts: ["Configuração de IA pendente."],
+        suggestions: ["Configure sua chave de API para liberar insights."]
+      };
+    }
+
+    try {
+      const model = "llama-3.3-70b-versatile";
+      
+      const systemInstruction = `
+        Você é o "Assistente Clínico Inteligente" do dashboard de um fisioterapeuta.
+        Seu objetivo é transformar dados reais da clínica em INSIGHTS ÚTEIS e AÇÕES práticas.
+
+        DIRETRIZES:
+        - Use APENAS os dados fornecidos no contexto.
+        - Não invente nomes ou eventos.
+        - Se não houver dados, diga "Sem dados suficientes".
+        - Mantenha linguagem curta, objetiva e profissional.
+
+        ESTRUTURA DE RETORNO (JSON):
+        {
+          "statusDay": "Resumo curto do dia (atendimentos, próximo, janelas livres, carga)",
+          "alerts": ["Lista de alertas (faltas recorrentes, evolução pendente, ociosidade)"],
+          "suggestions": ["Lista de ações sugeridas (reagendar, preencher furos, revisar pacientes)"],
+          "nextPatientSummary": "Breve resumo do próximo paciente: última sessão + queixa + evolução",
+          "daySummary": "Resumo opcional para fim de dia"
+        }
+
+        REGRAS DE ALERTAS:
+        - Paciente faltou 2x ou mais consecutivas -> Alerta Crítico.
+        - Mais de 2 agendamentos 'concluídos' nos últimos 7 dias sem evolução registrada -> Alerta de Prontuário.
+        - Muitos furos na agenda (ex: apenas 2 atendimentos num dia longo) -> Alerta de Ociosidade.
+      `;
+
+      const response = await groq.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: `DADOS CLÍNICOS REAIS (CONTEXTO): ${JSON.stringify(context)}` }
+        ],
+        temperature: 0.3,
+        response_format: { type: "json_object" }
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("Resposta vazia da IA");
+      
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Erro ao gerar insights clínicos:", error);
+      return {
+        statusDay: "Olá! Como está sua agenda hoje?",
+        alerts: ["Houve um erro ao processar os alertas em tempo real."],
+        suggestions: ["Recarregue a página para tentar novamente."]
+      };
+    }
   }
 };
