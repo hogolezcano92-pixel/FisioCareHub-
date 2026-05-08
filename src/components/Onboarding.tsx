@@ -58,10 +58,10 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
-    image: "https://images.pexels.com/photos/20860619/pexels-photo-20860619.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/recupere.mp4",
     themeColor: "#3B82F6"
   },
-  {
+  {m
     title: "Acompanhe seu Progresso",
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
