@@ -372,7 +372,7 @@ export default function Home() {
             {/* Using an abstract architectural medical background instead of humans */}
             <img 
               src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover animate-ken-burns"
               alt="Medical background"
               referrerPolicy="no-referrer"
               loading="lazy"
@@ -555,7 +555,7 @@ export default function Home() {
               >
                 <img 
                   src={specialtySlides[currentSlide].image} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover animate-ken-burns"
                   alt={specialtySlides[currentSlide].title}
                   referrerPolicy="no-referrer"
                   loading="lazy"
