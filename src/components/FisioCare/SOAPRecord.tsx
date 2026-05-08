@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { generateIntegrityHash } from '../../lib/security';
+import { logActivity } from '../../services/activityService';
 
 interface SOAPData {
   subjective: string;
@@ -305,6 +306,19 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       setIsReadOnly(true);
       
       if (onSave) onSave();
+
+      // Log the medical record creation for auditing
+      logActivity(
+        profile.id,
+        'fisio',
+        'prontuario_criado',
+        `Prontuário SOAP criado para o paciente ${finalPacienteId}`,
+        finalPacienteId,
+        {
+          targetType: 'paciente',
+          metadata: { integrityHash }
+        }
+      );
     } catch (error) {
       console.error(error);
       toast.error('Erro ao salvar prontuário.');
