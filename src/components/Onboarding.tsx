@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "/onboarding/comovocequer.mp4",
+    image: "/onboarding/prescrever.mp4",
     themeColor: "#3B82F6"
   }
 ];
@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "/onboarding/prescrever.mp4",
+    image: "/onboarding/prescreva.mp4",
     themeColor: "#8B5CF6"
   },
   {
@@ -191,12 +191,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <Swiper
           modules={[Pagination, EffectFade]}
           effect="fade"
-          fadeEffect={{ crossFade: false }}
+          fadeEffect={{ crossFade: true }}
           speed={500}
           watchSlidesProgress={true}
           resistanceRatio={0.85}
-          observer={true}
-          observeParents={true}
+          observer={false}
+          observeParents={false}
           // @ts-ignore
           preloadImages={false}
           // @ts-ignore
@@ -227,7 +227,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               return (
                 <SwiperSlide key={`dynamic-${slide.index}`} className="bg-[#0B1C2C]">
                   {dynamicSlide ? (
-                    <ContentSlide slide={dynamicSlide} isActive={activeIndex === index} isPriority={false} />
+                    <ContentSlide slide={dynamicSlide} isActive={activeIndex === index} isPriority={false} slideIndex={index} />
                   ) : (
                     <div className="w-full h-full bg-[#0B1C2C]" />
                   )}
@@ -237,7 +237,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
             return (
               <SwiperSlide key={`common-${index}`} className="bg-[#0B1C2C]">
-                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={index === 0} />
+                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={index === 0} slideIndex={index} />
               </SwiperSlide>
             );
           })}
@@ -320,9 +320,25 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   );
 }
 
-function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: boolean, isPriority: boolean }) {
+function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any, isActive: boolean, isPriority: boolean, slideIndex: number }) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const color = slide.themeColor || '#3B82F6';
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -350,12 +366,12 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
       <div className="absolute inset-0 z-0">
         {slide.image.endsWith('.mp4') ? (
           <video
-            key={slide.image}
-            autoPlay={isActive}
+            ref={videoRef}
+            key={`${slide.image}-${slideIndex}`}
             muted
             loop
             playsInline
-            preload="auto"
+            preload={isActive ? "auto" : "metadata"}
             disablePictureInPicture
             className="w-full h-full object-cover"
             onLoadedData={() => setIsLoaded(true)}
@@ -373,7 +389,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
             alt=""
             className={cn(
               "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
-              isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
+              isLoaded ? "grayscale-[0.2]" : "grayscale-0"
             )}
             // @ts-ignore
             fetchPriority={isActive ? "high" : "low"}
@@ -389,7 +405,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
       </div>
       
       <div className={cn(
-        "absolute inset-0 z-0 backdrop-blur-[1px] transition-opacity duration-1000",
+        "absolute inset-0 z-0 transition-opacity duration-1000",
         isLoaded ? "opacity-100" : "opacity-0"
       )} />
       
@@ -429,7 +445,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
                       borderColor: `${color}30`,
                       textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
-                    className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
+                    className="p-3 sm:p-4 rounded-3xl border shadow-2xl"
                   >
                     <slide.icon size={24} className="sm:w-7 sm:h-7" />
                   </div>
@@ -478,6 +494,23 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
 
 function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType, isActive: boolean }) {
   const [bgLoaded, setBgLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
+
   const options = [
     { 
       id: 'paciente', 
@@ -528,11 +561,11 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
             <div className="absolute inset-0 z-0">
               {slide.image.endsWith('.mp4') ? (
                 <video
-                  autoPlay={isActive}
+                  ref={videoRef}
                   muted
                   loop
                   playsInline
-                  preload="auto"
+                  preload={isActive ? "auto" : "metadata"}
                   disablePictureInPicture
                   className="w-full h-full object-cover"
                   onLoadedData={() => setBgLoaded(true)}
@@ -561,7 +594,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
               <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
             </div>
 
-            <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 z-0" />
 
             <div className="absolute inset-0 z-0">
               <AnimatePresence mode="wait">
@@ -574,7 +607,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                     transition={{ duration: 0.5 }}
                     src={selectedType === 'paciente' ? options[0].image : options[1].image} 
                     alt="" 
-                    className="w-full h-full object-cover blur-[8px] scale-110"
+                    className="w-full h-full object-cover scale-110"
                   />
                 )}
               </AnimatePresence>
@@ -589,7 +622,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
               <div className="text-center mb-10 sm:mb-16">
                 <motion.div 
                   variants={fadeUp}
-                  className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
+                  className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -627,7 +660,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onSelect(option.id as UserType)}
                     className={cn(
-                      "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-md",
+                      "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden",
                       selectedType === option.id 
                         ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
                         : "border-white/10 hover:border-white/20 hover:bg-[#1a3a55]/90"
