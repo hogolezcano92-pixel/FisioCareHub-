@@ -340,6 +340,7 @@ export default function Agenda() {
       }
 
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
+      const patient = patients.find(p => p.id === formData.paciente_id);
 
       if (newApp) {
         // Log activity
@@ -377,8 +378,6 @@ export default function Agenda() {
         if (sessionError) console.error('Erro detalhado (Sessões Agenda):', sessionError);
       }
 
-      // Buscar e-mail do paciente para enviar confirmação
-      const patient = patients.find(p => p.id === formData.paciente_id);
       if (patient && newApp) {
         const { data: patientProfile } = await supabase
           .from('perfis')
