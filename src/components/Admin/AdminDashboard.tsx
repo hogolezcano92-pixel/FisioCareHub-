@@ -188,39 +188,38 @@ export default function AdminDashboard() {
     }
   ];
 
-  return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Real-time Pulse Header */}
-      <div className="flex items-center justify-between bg-white/[0.02] p-8 rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-600/10 blur-3xl rounded-full group-hover:bg-blue-600/20 transition-all duration-1000" />
+  return (    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* SaaS Style Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
+        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
-            <Zap size={32} className="fill-current" />
+          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <Zap size={28} className="text-white fill-current" />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-white tracking-tight uppercase">Central de Comando</h2>
-            <div className="flex items-center gap-2 mt-1">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Command Center</h2>
+            <div className="flex items-center gap-2 mt-0.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">{stats.onlineUsers} Usuários Online agora</p>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} Active Sessions</p>
             </div>
           </div>
         </div>
 
-        <div className="relative z-10 hidden md:flex items-center gap-12">
+        <div className="relative z-10 hidden lg:flex items-center gap-12 mt-6 md:mt-0">
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Status Sistema</p>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">System Health</p>
+            <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
               <ShieldCheck size={16} />
-              Operacional
+              Operational
             </div>
           </div>
-          <div className="w-px h-10 bg-white/10" />
+          <div className="w-px h-10 bg-slate-100" />
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Base de Dados</p>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Network</p>
+            <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
               <CheckCircle2 size={16} />
-              Sincronizado
+              Synchronized
             </div>
           </div>
         </div>
@@ -234,37 +233,30 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group hover:bg-white/[0.08] transition-all"
+            className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-blue-200 transition-all"
           >
-            <div className={cn(
-              "absolute top-0 right-0 p-6 -mr-6 -mt-6 blur-2xl rounded-full opacity-10 transition-opacity group-hover:opacity-20",
-              kpi.color === 'blue' ? 'bg-blue-600' :
-              kpi.color === 'emerald' ? 'bg-emerald-600' :
-              kpi.color === 'indigo' ? 'bg-indigo-600' : 'bg-amber-600'
-            )} />
-            
-            <div className="relative z-10 flex justify-between items-start mb-6">
+            <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all group-hover:scale-110",
-                kpi.color === 'blue' ? 'bg-blue-600/10 border-blue-500/20 text-blue-400' :
-                kpi.color === 'emerald' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-400' :
-                kpi.color === 'indigo' ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400' : 'bg-amber-600/10 border-amber-500/20 text-amber-400'
+                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110",
+                kpi.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
+                kpi.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+                kpi.color === 'indigo' ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-amber-50 border-amber-100 text-amber-600'
               )}>
-                <kpi.icon size={24} />
+                <kpi.icon size={22} />
               </div>
               <div className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
+                kpi.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
               )}>
-                {kpi.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {kpi.trend}
               </div>
             </div>
 
-            <div className="relative z-10 space-y-1">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{kpi.label}</p>
-              <h3 className="text-3xl font-black text-white tracking-tighter tabular-nums">{loading ? '...' : kpi.value}</h3>
-              <p className="text-[10px] font-bold text-slate-600 italic">{kpi.description}</p>
+            <div className="relative z-10">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{loading ? '...' : kpi.value}</h3>
+              <p className="text-[10px] font-medium text-slate-400 mt-1">{kpi.description}</p>
             </div>
           </motion.div>
         ))}
@@ -272,17 +264,11 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white/5 p-8 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-xl font-black text-white tracking-tight uppercase">Performance Financeira</h4>
-              <p className="text-xs text-slate-500 font-bold">Distribuição de receita por dia da semana</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-600" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Receita</span>
-              </div>
+              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Revenue Performance</h4>
+              <p className="text-xs text-slate-500 font-medium">Daily income distribution</p>
             </div>
           </div>
 
@@ -291,36 +277,38 @@ export default function AdminDashboard() {
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900 }} 
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10 }}
-                  tickFormatter={(val) => `R$ ${val}`} 
+                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  tickFormatter={(val) => `R$${val}`} 
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#0F172A', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
+                    backgroundColor: '#ffffff', 
+                    border: '1px solid #e2e8f0', 
                     borderRadius: '1rem',
-                    fontSize: '12px'
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
                   }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
                   stroke="#3B82F6" 
-                  strokeWidth={4}
+                  strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorValue)" 
                 />
@@ -329,61 +317,58 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white/5 p-8 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-xl font-black text-white tracking-tight uppercase">Atividade Recente</h4>
-              <p className="text-xs text-slate-500 font-bold">Resumo das últimas interações críticas</p>
+              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Recent Activity</h4>
+              <p className="text-xs text-slate-500 font-medium">Real-time event stream</p>
             </div>
-            <button className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-400 transition-colors">
-              Ver completo
-            </button>
           </div>
 
-          <div className="flex-1 space-y-4">
-            {recentActivities.map((activity, i) => (
-              <div key={activity.id} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5 group">
+          <div className="flex-1 space-y-3">
+            {recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-110",
-                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
-                  activity.tipo_acao === 'admin_action' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                  activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                  'bg-blue-500/10 border-blue-500/20 text-blue-500'
+                  "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform",
+                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+                  activity.tipo_acao === 'admin_action' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+                  activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-50 border-amber-100 text-amber-600' :
+                  'bg-blue-50 border-blue-100 text-blue-600'
                 )}>
                   {activity.tipo_acao === 'erro_sistema' ? <AlertCircle size={18} /> : 
                    activity.tipo_acao === 'pagamento_realizado' ? <DollarSign size={18} /> : <Zap size={18} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-sm font-black text-white truncate pr-2 tracking-tight">{activity.descricao}</p>
-                    <span className="text-[9px] font-black text-slate-500 uppercase whitespace-nowrap">
+                    <p className="text-xs font-bold text-slate-900 truncate pr-2 tracking-tight">{activity.descricao}</p>
+                    <span className="text-[9px] font-black text-slate-400 uppercase whitespace-nowrap">
                       {new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 font-medium truncate">ID: {activity.usuario_id.split('-')[0]}...</p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">USER: {activity.usuario_id.split('-')[0]}</p>
                 </div>
               </div>
             ))}
             {recentActivities.length === 0 && (
-              <p className="text-center text-slate-500 text-xs py-10 font-bold uppercase tracking-widest leading-loose">
-                Sem atividades recentes no radar.
+              <p className="text-center text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">
+                No recent activity detected.
               </p>
             )}
           </div>
           
-          <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between">
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-blue-400">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-blue-600 shadow-inner">
                 <Activity size={18} />
               </div>
               <div>
-                <p className="text-xs font-black text-white">{recentActivities.length}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Ações recentes</p>
+                <p className="text-xs font-black text-slate-900">{recentActivities.length}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">Live Operations</p>
               </div>
             </div>
-            <div className="flex -space-x-3 opacity-20">
+            <div className="flex -space-x-2">
                {[1,2,3].map(i => (
-                 <div key={i} className="w-8 h-8 rounded-full bg-slate-700 border-2 border-[#0B1120]" />
+                 <div key={i} className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white shadow-sm" />
                ))}
             </div>
           </div>
