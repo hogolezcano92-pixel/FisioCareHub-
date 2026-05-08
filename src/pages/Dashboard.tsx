@@ -309,16 +309,6 @@ export default function Dashboard() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-10 relative z-10">
-        {/* Banner Pro para Fisioterapeutas */}
-        {isPhysio && !isPro && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <ProBanner />
-          </motion.div>
-        )}
-
         {/* Cabeçalho de Boas-vindas Premium Dark */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
           {/* Efeito de brilho interno */}
@@ -975,13 +965,15 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <ProGuard variant="full">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  <div id="financial-section" className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group xl:col-span-1 md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <ProGuard variant="full" className="xl:col-span-1 md:col-span-2">
+                  <div id="financial-section" className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group h-full">
                     <FinancialDashboard />
                   </div>
+                </ProGuard>
 
-                  <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group">
+                <ProGuard variant="full">
+                  <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20 relative group h-full">
                     <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-full text-[7px] font-black uppercase tracking-widest border border-blue-500/20">
                         <MapPin size={8} />
@@ -990,16 +982,17 @@ export default function Dashboard() {
                     </div>
                     <RouteOptimizer />
                   </div>
-                  <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
-                    <SOAPIntelligentRecord 
-                      pacienteId={selectedPatientId || undefined} 
-                      onSave={() => {
-                        fetchDashboardData(profile);
-                      }}
-                    />
-                  </div>
+                </ProGuard>
+
+                <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
+                  <SOAPIntelligentRecord 
+                    pacienteId={selectedPatientId || undefined} 
+                    onSave={() => {
+                      fetchDashboardData(profile);
+                    }}
+                  />
                 </div>
-              </ProGuard>
+              </div>
             </div>
           </>
         ) : (
@@ -1078,17 +1071,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-      {/* Floating Action Button (FAB) - Positioned safely */}
-      {isPhysio && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <button 
-            onClick={() => navigate('/agenda')}
-            className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-900/40 hover:bg-blue-500 hover:scale-110 active:scale-95 transition-all group border-4 border-white/10"
-          >
-            <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-          </button>
-        </div>
-      )}
       <FloatingHelpMenu />
       {showWelcome && <ApprovalWelcomeModal onClose={() => setShowWelcome(false)} />}
     </div>
