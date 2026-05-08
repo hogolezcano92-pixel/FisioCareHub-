@@ -382,3 +382,55 @@ export async function generateLibraryContent(theme: string, type: string, level:
     throw new Error(error.message || "Não foi possível gerar o conteúdo no momento.");
   }
 }
+
+export async function generateAdminInsights(data: any) {
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta.");
+
+  const prompt = `
+    Você é Viva, a assistente de inteligência artificial de um painel administrativo de uma plataforma de fisioterapia.
+    Analise os seguintes dados de performance e gere 3 insights estratégicos:
+    ${JSON.stringify(data, null, 2)}
+
+    O retorno DEVE ser um objeto JSON com uma chave "insights" contendo um array de 3 objetos:
+    {
+      "insights": [
+        {
+          "id": "1",
+          "type": "growth" | "risk" | "improvement",
+          "title": "Título do Insight",
+          "description": "Descrição detalhada",
+          "action": "Ação recomendada"
+        }
+      ]
+    }
+
+    IMPORTANTE: Retorne APENAS o JSON puro.
+  `;
+
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Você é um assistente de IA especializado em business intelligence para saúde. Responda apenas com JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: MODEL,
+      response_format: { type: "json_object" }
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("Resposta da IA vazia");
+    
+    const parsed = JSON.parse(content);
+    return parsed.insights || [];
+  } catch (error: any) {
+    console.error("Error generating admin insights (Groq):", error);
+    throw new Error(error.message || "Não foi possível gerar os insights no momento.");
+  }
+}
