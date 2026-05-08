@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
   ShieldAlert, 
@@ -6,6 +6,7 @@ import {
   Unlock, 
   Lock, 
   Smartphone, 
+  Clock, // Added Clock
   Globe, 
   Search, 
   History,
@@ -61,7 +62,7 @@ export default function AdminSecurity() {
           tipo_usuario: p.tipo_usuario,
           status: p.status_aprovacao === 'rejeitado' ? 'banido' : p.status_aprovacao === 'pendente' ? 'suspenso' : 'ativo',
           lastSeen: p.last_active_at ? new Date(p.last_active_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
-          devices: Math.floor(Math.random() * 2) + 1 // We don't have a devices table yet, so we keep a minor simulation or just 1
+          devices: 1 // Default to 1 active session until actual devices table is available
         }));
 
         setUsers(mappedUsers);

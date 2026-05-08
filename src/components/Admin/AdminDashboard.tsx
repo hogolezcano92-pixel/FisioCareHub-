@@ -54,7 +54,7 @@ export default function AdminDashboard() {
     monthlyRevenue: 0,
     revenueGrowth: 0,
     patientGrowth: 0,
-    avgRating: 4.8
+    avgRating: 0
   });
 
   const [revenueData, setRevenueData] = useState<any[]>([]);
@@ -69,6 +69,8 @@ export default function AdminDashboard() {
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
         const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString();
 
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
         const [
           { count: profilesCount },
           { count: physiosCount },
@@ -79,7 +81,9 @@ export default function AdminDashboard() {
           { data: weekRevenue },
           { data: lastActivities },
           { count: newPatientsThisMonth },
-          { count: newPatientsLastMonth }
+          { count: newPatientsLastMonth },
+          { count: activeNowCount },
+          { data: ratingsData }
         ] = await Promise.all([
           supabase.from('perfis').select('*', { count: 'exact', head: true }),
           supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'fisioterapeuta'),
@@ -90,7 +94,9 @@ export default function AdminDashboard() {
           supabase.from('agendamentos').select('data_horario, valor_cobrado').gte('data_horario', new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()).eq('status', 'concluido'),
           supabase.from('historico_atividades').select('*').order('created_at', { ascending: false }).limit(5),
           supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'paciente').gte('created_at', firstDayOfMonth),
-          supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'paciente').gte('created_at', firstDayOfLastMonth).lt('created_at', firstDayOfMonth)
+          supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'paciente').gte('created_at', firstDayOfLastMonth).lt('created_at', firstDayOfMonth),
+          supabase.from('perfis').select('*', { count: 'exact', head: true }).gte('last_active_at', fiveMinutesAgo),
+          supabase.from('avaliacoes').select('estrelas')
         ]);
 
         const totalRevenueThisMonth = (revenueThisMonth || []).reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
@@ -102,6 +108,10 @@ export default function AdminDashboard() {
 
         const patGrowth = (newPatientsLastMonth || 0) > 0
           ? (((newPatientsThisMonth || 0) - (newPatientsLastMonth || 0)) / (newPatientsLastMonth || 0)) * 100
+          : 0;
+
+        const avg = ratingsData && ratingsData.length > 0
+          ? ratingsData.reduce((acc, curr) => acc + curr.estrelas, 0) / ratingsData.length
           : 0;
 
         // Process revenue for chart
@@ -126,7 +136,8 @@ export default function AdminDashboard() {
           monthlyRevenue: totalRevenueThisMonth,
           revenueGrowth: revGrowth,
           patientGrowth: patGrowth,
-          onlineUsers: Math.floor(Math.random() * 20) + 1 // Keep this somewhat simulated or fetch from presence
+          onlineUsers: activeNowCount || 0,
+          avgRating: avg
         }));
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
