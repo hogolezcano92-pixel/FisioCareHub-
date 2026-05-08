@@ -49,6 +49,7 @@ import { Skeleton, CardSkeleton, ListSkeleton } from '../components/Skeleton';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ProBanner from '../components/ProBanner';
 import ProGuard from '../components/ProGuard';
+import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 
@@ -846,7 +847,9 @@ export default function Dashboard() {
 
         {/* Quick Actions & AI Insights */}
         <div className="space-y-8">
-          <motion.div 
+          {isPhysio && <ClinicalAssistant isPhysio={isPhysio} />}
+          {!isPhysio && (
+            <motion.div 
             layout
             onClick={() => setIsAiExpanded(!isAiExpanded)}
             className={cn(
@@ -872,7 +875,7 @@ export default function Dashboard() {
               
               <div className="space-y-2">
                 <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
-                  Assistente <span className="text-blue-200">Viva</span>
+                  Assistente <span className="text-blue-200">{isPhysio ? 'Clínico' : 'Viva'}</span>
                   <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
                 </h3>
                 <p className="text-blue-50/90 text-sm leading-relaxed font-medium">
@@ -940,6 +943,7 @@ export default function Dashboard() {
               )}
             </div>
           </motion.div>
+          )}
 
           {/* Quick Actions - Removed from here as it was moved to top */}
         </div>
