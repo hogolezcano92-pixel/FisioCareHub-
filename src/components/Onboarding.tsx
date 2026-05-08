@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "/onboarding/welcome.mp4",
+    image: "/onboarding/aqpqetumwgqp12l-5pt72dhiznspx9lueytjcfq-px0nzpkvayatdba7md63j4a-ruy-kygmz5dd-hx2_uZ7Rwj8v.mp4",
     themeColor: "#3B82F6"
   },
   {
