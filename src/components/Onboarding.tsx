@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "/onboarding/welcome.webp",
+    image: "/onboarding/welcome.mp4",
     themeColor: "#3B82F6"
   },
   {
@@ -47,7 +47,7 @@ const commonSlides = [
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://images.pexels.com/photos/5793918/pexels-photo-5793918.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/cuidado.mp4",
     themeColor: "#8B5CF6"
   },
 ];
@@ -58,7 +58,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Exercícios guiados para sua evolução. Acesse seu plano de tratamento personalizado em qualquer lugar.",
     icon: Activity,
-    image: "https://images.pexels.com/photos/20860619/pexels-photo-20860619.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/recupere.mp4",
     themeColor: "#3B82F6"
   },
   {
@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "https://images.pexels.com/photos/4498606/pexels-photo-4498606.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/acompanhe.mp4",
     themeColor: "#3B82F6"
   },
   {
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "https://images.pexels.com/photos/20860583/pexels-photo-20860583.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/prescrever.mp4",
     themeColor: "#3B82F6"
   }
 ];
@@ -85,7 +85,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
-    image: "https://images.pexels.com/photos/8376233/pexels-photo-8376233.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/decision.mp4",
     themeColor: "#8B5CF6"
   },
   {
@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "https://wordpress-cms-ufbra-prod-assets.quero.space/uploads/2024/06/2149868922.jpg",
+    image: "/onboarding/prescreva.mp4",
     themeColor: "#8B5CF6"
   },
   {
@@ -101,7 +101,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Evolução dos pacientes em tempo real. Analise dados de aderência e melhora clínica com precisão.",
     icon: Sparkles,
-    image: "https://images.pexels.com/photos/3825539/pexels-photo-3825539.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/acompanhe.mp4",
     themeColor: "#8B5CF6"
   }
 ];
@@ -115,23 +115,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const swiperRef = useRef<any>(null);
 
   useLayoutEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = '/onboarding/welcome.webp';
-    // @ts-ignore
-    link.fetchPriority = 'high';
-    document.head.appendChild(link);
-    return () => {
-      document.head.removeChild(link);
-    };
+    // Preload first video
+    const video = document.createElement('video');
+    video.src = '/onboarding/welcome.mp4';
+    video.preload = 'auto';
+    return () => {};
   }, []);
 
   const allSlides = [
     ...commonSlides,
     { 
       type: 'decision',
-      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=60&w=800"
+      image: "/onboarding/comovocequer.mp4"
     },
     // We render placeholders that become actual slides after decision
     { type: 'dynamic', index: 0 },
@@ -163,8 +158,35 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const showButton = activeIndex !== 2 || userType;
   const isLastSlide = activeIndex === allSlides.length - 1;
 
+  // Next video preloader
+  const getNextVideoUrl = () => {
+    if (isLastSlide) return null;
+    const nextSlide = allSlides[activeIndex + 1] as any;
+    if (!nextSlide) return null;
+    
+    let url = '';
+    if (nextSlide.type === 'dynamic') {
+      const dynamicSlide = userType === 'paciente' 
+        ? patientSlides[nextSlide.index] 
+        : (userType === 'fisioterapeuta' ? physioSlides[nextSlide.index] : null);
+      url = dynamicSlide?.image || '';
+    } else {
+      url = nextSlide.image || '';
+    }
+    return url.endsWith('.mp4') ? url : null;
+  };
+
+  const nextVideoUrl = getNextVideoUrl();
+
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
+      {/* Hidden Preloader */}
+      {nextVideoUrl && (
+        <video key={`preload-${nextVideoUrl}`} preload="auto" className="hidden">
+          <source src={nextVideoUrl} type="video/mp4" />
+        </video>
+      )}
+      
       <div className="relative flex-1">
         <Swiper
           modules={[Pagination, EffectFade]}
@@ -326,38 +348,21 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]">
       {/* Background Layer - Full screen coverage using img for priority loading */}
       <div className="absolute inset-0 z-0">
-        {isPriority ? (
-          <picture>
-            <source srcSet="/onboarding/welcome.webp" type="image/webp" />
-            <img 
-              src="/onboarding/welcome_optimized.jpg"
-              alt=""
-              className={cn(
-                "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
-                isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
-              )}
-              // @ts-ignore
-              fetchPriority="high"
-              loading="eager"
-              decoding="async"
-              onLoad={() => setIsLoaded(true)}
-            />
-          </picture>
-        ) : slide.image.endsWith('.mp4') ? (
+        {slide.image.endsWith('.mp4') ? (
           <video
             key={slide.image}
             autoPlay={isActive}
             muted
             loop
             playsInline
-            preload={isActive ? "auto" : "metadata"}
+            preload="auto"
             disablePictureInPicture
-            className="w-full h-full object-cover animate-ken-burns"
+            className="w-full h-full object-cover"
             onLoadedData={() => setIsLoaded(true)}
             style={{
               transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
-              willChange: 'transform, opacity'
+              willChange: 'opacity'
             }}
           >
             <source src={slide.image} type="video/mp4" />
@@ -521,18 +526,38 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
           <>
             {/* Background Layer - Zoom out effect */}
             <div className="absolute inset-0 z-0">
-              <motion.img 
-                src={slide.image}
-                initial={{ scale: 1.2, opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 3, ease: "easeOut" }}
-                alt=""
-                className="w-full h-full object-cover object-center animate-ken-burns"
-                decoding="async"
-                loading="eager"
-                style={{ willChange: 'transform, opacity' }}
-                onLoad={() => setBgLoaded(true)}
-              />
+              {slide.image.endsWith('.mp4') ? (
+                <video
+                  autoPlay={isActive}
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  disablePictureInPicture
+                  className="w-full h-full object-cover"
+                  onLoadedData={() => setBgLoaded(true)}
+                  style={{
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                    willChange: 'opacity'
+                  }}
+                >
+                  <source src={slide.image} type="video/mp4" />
+                </video>
+              ) : (
+                <motion.img 
+                  src={slide.image}
+                  initial={{ scale: 1.2, opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 3, ease: "easeOut" }}
+                  alt=""
+                  className="w-full h-full object-cover object-center animate-ken-burns"
+                  decoding="async"
+                  loading="eager"
+                  style={{ willChange: 'transform, opacity' }}
+                  onLoad={() => setBgLoaded(true)}
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
             </div>
 
