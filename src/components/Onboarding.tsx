@@ -39,7 +39,7 @@ const commonSlides = [
     subtitle: "Ecossistema Inteligente",
     description: "Tecnologia que conecta recuperação e cuidado. A plataforma de elite para fisioterapia moderna e eficiente.",
     icon: Home,
-    image: "/onboarding/aqpqetumwgqp12l-5pt72dhiznspx9lueytjcfq-px0nzpkvayatdba7md63j4a-ruy-kygmz5dd-hx2_uZ7Rwj8v.mp4",
+    image: "/onboarding/welcome.webp",
     themeColor: "#3B82F6"
   },
   {
@@ -210,7 +210,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
             return (
               <SwiperSlide key={`common-${index}`} className="bg-[#0B1C2C]">
-                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={index === 0} />
+                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={false} />
               </SwiperSlide>
             );
           })}
@@ -338,6 +338,17 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
               onLoad={() => setIsLoaded(true)}
             />
           </picture>
+        ) : slide.image.endsWith('.mp4') ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            onLoadedData={() => setIsLoaded(true)}
+          >
+            <source src={slide.image} type="video/mp4" />
+          </video>
         ) : (
           <img 
             src={slide.image}
