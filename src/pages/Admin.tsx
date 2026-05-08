@@ -1652,19 +1652,19 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[45] w-64 bg-[#0B1120] border-r border-white/5 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[45] w-64 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
+          <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
             <div className={cn("flex items-center gap-2 overflow-visible transition-all whitespace-nowrap min-w-0 flex-1", !sidebarOpen && "lg:hidden")}>
-              <Logo size="sm" variant="light" />
+              <Logo size="sm" variant="dark" />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all active:scale-95 flex-shrink-0"
+              className="p-2 rounded-xl hover:bg-slate-50 text-slate-400 transition-all active:scale-95 flex-shrink-0"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -1673,48 +1673,49 @@ export default function Admin() {
           {/* Nav Links */}
           <nav className="flex-1 py-6 px-3 space-y-1">
             {[
-              { id: 'dashboard', label: 'Monitoramento Real-time', icon: LayoutDashboard },
-              { id: 'viva', label: 'Viva AI Administrative', icon: Brain },
-              { id: 'logs', label: 'Centro de Auditoria', icon: History },
-              { id: 'security', label: 'Segurança & LGPD', icon: Shield },
-              { id: 'materiais', label: 'Biblioteca de Conteúdo', icon: BookOpen },
-              { id: 'physios', label: 'Gestão de Fisioterapeutas', icon: Stethoscope },
-              { id: 'patients', label: 'Gestão de Pacientes', icon: User },
-              { id: 'approvals', label: 'Aprovações Pendentes', icon: UserCheck },
-              { id: 'users', label: 'Base Global de Usuários', icon: Users },
-              { id: 'financial', label: 'Controle Financeiro', icon: DollarSign },
-              { id: 'saques', label: 'Solicitações de Saque', icon: CreditCard },
-              { id: 'tickets', label: 'Tickets de Suporte', icon: AlertTriangle },
-              { id: 'chat', label: 'Chat de Suporte Central', icon: MessageSquare },
-              { id: 'notifications', label: 'Alertas do Sistema', icon: Bell },
-              { id: 'settings', label: 'Configurações Mestras', icon: Settings },
-            ].map((item) => (
+              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'viva', label: 'Viva AI Platform', icon: Brain, isAI: true },
+              { id: 'logs', label: 'Audit Timeline', icon: History },
+              { id: 'security', label: 'Security & LGPD', icon: Shield },
+              { id: 'materiais', label: 'Library Assets', icon: BookOpen },
+              { id: 'physios', label: 'Professionals', icon: Stethoscope },
+              { id: 'patients', label: 'Patient Base', icon: User },
+              { id: 'approvals', label: 'Verification Queue', icon: UserCheck },
+              { id: 'users', label: 'Global Directory', icon: Users },
+              { id: 'financial', label: 'Revenue Center', icon: DollarSign },
+              { id: 'saques', label: 'Payout Requests', icon: CreditCard },
+              { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
+              { id: 'chat', label: 'Central Chat', icon: MessageSquare },
+              { id: 'notifications', label: 'System Alerts', icon: Bell },
+              { id: 'settings', label: 'Global Settings', icon: Settings },
+            ].map((item: any) => (
               <button
                 key={item.id}
                 onClick={() => {
+                  setActiveTab(item.id);
                   navigate(`/admin?tab=${item.id}`);
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group",
                   activeTab === item.id 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    ? (item.isAI ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-blue-600 text-white shadow-lg shadow-blue-200") 
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-slate-500 group-hover:text-blue-400")} />
+                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-slate-400 group-hover:text-blue-600")} />
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
 
             {/* Logout Button moved inside Nav */}
-            <div className="pt-2 mt-2 border-t border-white/5">
+            <div className="pt-2 mt-2 border-t border-slate-100">
               <button
                 onClick={() => {
                   signOut().then(() => navigate('/'));
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 transition-all",
                   !sidebarOpen && "lg:justify-center"
                 )}
               >
@@ -1725,12 +1726,12 @@ export default function Admin() {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-slate-100">
             <div className={cn(
-              "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
+              "flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 transition-all",
               !sidebarOpen && "lg:justify-center lg:p-2"
             )}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg shadow-blue-900/40 overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg shadow-blue-100 overflow-hidden">
                 {authProfile?.avatar_url || authProfile?.foto_url ? (
                   <img 
                     src={authProfile.avatar_url || authProfile.foto_url} 
@@ -1743,8 +1744,8 @@ export default function Admin() {
                 )}
               </div>
               <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
-                <p className="text-sm font-black text-white truncate">Admin Master</p>
-                <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
+                <p className="text-sm font-black text-slate-900 truncate">Admin Master</p>
+                <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
               </div>
             </div>
           </div>
@@ -1752,35 +1753,35 @@ export default function Admin() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[#0B1120]">
+      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-slate-50/50">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl pt-[env(safe-area-inset-top)]">
-          <div className="w-full px-4 sm:px-10 pt-10 h-auto sm:h-24 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
+          <div className="w-full px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
               <button 
-                className="lg:hidden p-3 text-slate-400 hover:bg-white/10 rounded-2xl transition-all active:scale-95" 
+                className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-all active:scale-95" 
                 onClick={() => setSidebarOpen(true)}
               >
-                <Menu size={28} />
+                <Menu size={24} />
               </button>
             </div>
 
             {/* Center Section - Title */}
             <div className="flex-[2] flex justify-center min-w-0">
-              <h2 className="text-xs sm:text-sm md:text-base font-black text-white tracking-[0.2em] sm:tracking-[0.3em] uppercase text-center truncate px-2">
-                {activeTab === 'dashboard' ? 'PAINEL DE CONTROLE' : 
-                 activeTab === 'materiais' ? 'BIBLIOTECA' :
-                 activeTab === 'physios' ? 'FISIOTERAPEUTAS' :
-                 activeTab === 'patients' ? 'PACIENTES' :
-                 activeTab === 'approvals' ? 'APROVAÇÕES' :
-                 activeTab === 'users' ? 'USUÁRIOS' :
-                 activeTab === 'financial' ? 'FINANCEIRO' :
-                 activeTab === 'chat' ? 'SUPORTE' :
-                 activeTab === 'logs' ? 'AUDITORIA' :
-                 activeTab === 'security' ? 'SEGURANÇA' :
-                 activeTab === 'viva' ? 'ADMIN AI' :
-                 activeTab === 'settings' ? 'CONFIGURAÇÕES' :
+              <h2 className="text-sm md:text-base font-black text-slate-900 tracking-[0.15em] uppercase text-center truncate px-2">
+                {activeTab === 'dashboard' ? 'Overview' : 
+                 activeTab === 'materiais' ? 'Library' :
+                 activeTab === 'physios' ? 'Professionals' :
+                 activeTab === 'patients' ? 'Patients' :
+                 activeTab === 'approvals' ? 'Approvals' :
+                 activeTab === 'users' ? 'User Directory' :
+                 activeTab === 'financial' ? 'Financials' :
+                 activeTab === 'chat' ? 'Support' :
+                 activeTab === 'logs' ? 'Audit Logs' :
+                 activeTab === 'security' ? 'Security' :
+                 activeTab === 'viva' ? 'Viva AI' :
+                 activeTab === 'settings' ? 'Settings' :
                  activeTab.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
             </div>
@@ -1790,27 +1791,23 @@ export default function Admin() {
               <div className="relative hidden md:block">
                 <Search 
                   className="absolute pointer-events-none z-20" 
-                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#94a3b8' }}
                 />
                 <input 
                   type="text" 
-                  placeholder="Buscar..."
+                  placeholder="Universal Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32 lg:w-64 !pl-[60px]"
+                  className="pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white focus:border-blue-500/30 transition-all w-32 lg:w-64"
                 />
               </div>
-              <button 
-                onClick={() => navigate('/admin?tab=notifications')}
-                className="p-2 text-slate-400 hover:text-blue-400 transition-colors relative flex-shrink-0"
-              >
-                <Bell size={20} />
-                {adminNotifications.filter(n => !n.lida).length > 0 && (
-                  <span className="absolute top-0 right-0 w-5 h-5 bg-rose-600 text-white text-[10px] font-black rounded-full border-2 border-[#0B1120] flex items-center justify-center">
-                    {adminNotifications.filter(n => !n.lida).length}
-                  </span>
-                )}
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-all relative">
+                  <Bell size={20} />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -1820,22 +1817,22 @@ export default function Admin() {
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Sincronizando Dados...</p>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Syncing Core Systems...</p>
             </div>
           )}
 
           {error && !loading && (
-            <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-[2.5rem] text-center space-y-4">
-              <div className="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center mx-auto">
+            <div className="bg-rose-50 p-8 rounded-[2.5rem] border border-rose-100 text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-black text-white tracking-tight">Ops! Algo deu errado</h3>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">{error}</p>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">System Outage</h3>
+              <p className="text-slate-500 text-sm max-w-md mx-auto">{error}</p>
               <button 
                 onClick={() => fetchSupabaseProfiles()}
-                className="px-8 py-3 bg-white/5 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
+                className="px-8 py-3 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-200"
               >
-                Tentar Novamente
+                Reconnect
               </button>
             </div>
           )}
