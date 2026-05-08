@@ -224,6 +224,24 @@ export default function ProfessionalProfile() {
         throw new Error('Falha ao registrar o agendamento.');
       }
 
+      // Log activity
+      const { logActivity } = await import('../services/activityService');
+      await logActivity(
+        user.id,
+        'paciente',
+        'agendamento_criado',
+        `Você solicitou um agendamento com Dr(a). ${physio.nome_completo}`,
+        newApp.id.toString()
+      );
+
+      await logActivity(
+        physio.id,
+        'fisio',
+        'agendamento_criado',
+        `Nova solicitação de agendamento recebida de ${patientProfile.nome_completo}`,
+        newApp.id.toString()
+      );
+
       // 3. REDIRECIONAMENTO PARA A PÁGINA DE PAGAMENTO INTERMEDIÁRIA
       toast.success('Agendamento registrado! Redirecionando para o pagamento...');
       setTimeout(() => {

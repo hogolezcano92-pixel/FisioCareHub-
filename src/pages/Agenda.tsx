@@ -26,6 +26,7 @@ import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
+import { logActivity } from '../services/activityService';
 
 export default function Agenda() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -341,6 +342,25 @@ export default function Agenda() {
       const newApp = insertData && insertData.length > 0 ? insertData[0] : null;
 
       if (newApp) {
+        // Log activity
+        await logActivity(
+          user.id,
+          'fisio',
+          'agendamento_criado',
+          `Você realizou um agendamento direto para ${patient?.nome_completo || 'um paciente'}`,
+          newApp.id.toString()
+        );
+
+        if (formData.paciente_id) {
+          await logActivity(
+            formData.paciente_id,
+            'paciente',
+            'agendamento_criado',
+            `O profissional agendou uma consulta para você no dia ${formatOnlyDateBR(formData.data)}`,
+            newApp.id.toString()
+          );
+        }
+
         // Criar registro na tabela sessoes para pagamento
         const { error: sessionError } = await supabase
           .from('sessoes')
@@ -416,6 +436,25 @@ export default function Agenda() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Log activity
+      await logActivity(
+        user?.id || '',
+        'fisio',
+        status === 'concluido' ? 'agendamento_concluido' : 'agendamento_criado',
+        `Status do agendamento atualizado para: ${status}`,
+        id
+      );
+
+      if (app?.paciente_id) {
+        await logActivity(
+          app.paciente_id,
+          'paciente',
+          status === 'concluido' ? 'agendamento_concluido' : 'agendamento_criado',
+          `Seu agendamento foi atualizado para: ${status} pelo profissional`,
+          id
+        );
+      }
 
       // Enviar e-mail se confirmado ou cancelado
       if (status === 'confirmado' || status === 'cancelado') {

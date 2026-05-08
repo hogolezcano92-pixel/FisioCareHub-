@@ -33,6 +33,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl, formatCPF, validateCPF } from '../lib/utils';
 import { THEMES } from '../lib/themes';
 import { uploadDocument } from '../services/supabaseStorage';
+import { logActivity } from '../services/activityService';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
 import PaymentMethods from '../components/PaymentMethods';
@@ -358,6 +359,14 @@ export default function Profile() {
 
       // Refresh global profile context
       if (refreshProfile) await refreshProfile();
+
+      // Log activity
+      await logActivity(
+        user.id,
+        isPhysio ? 'fisio' : 'paciente',
+        'perfil_atualizado',
+        'Seus dados de perfil foram atualizados com sucesso.'
+      );
 
       const { toast } = await import('sonner');
       import('sonner').then(({ toast }) => toast.success(t('profile.update_success')));

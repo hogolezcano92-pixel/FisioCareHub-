@@ -45,6 +45,7 @@ import { RouteOptimizer } from '../components/FisioCare/RouteOptimizer';
 import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
 import { DigitalLibrary } from '../components/FisioCare/DigitalLibrary';
 import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
+import ActivityTimeline from '../components/FisioCare/ActivityTimeline';
 import { Skeleton, CardSkeleton, ListSkeleton } from '../components/Skeleton';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ProBanner from '../components/ProBanner';
@@ -65,6 +66,7 @@ export default function Dashboard() {
   });
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [recentTriages, setRecentTriages] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [apptsLoading, setApptsLoading] = useState(true);
   const [patientSearch, setPatientSearch] = useState('');
@@ -152,11 +154,22 @@ export default function Dashboard() {
             paciente:paciente_id (nome_completo, avatar_url, email)
           `)
           .order('created_at', { ascending: false })
+          .limit(5),
+        // Activities
+        supabase
+          .from('historico_atividades')
+          .select('*')
+          .eq('usuario_id', data.id)
+          .order('created_at', { ascending: false })
           .limit(5)
       ];
 
       // Process Stats
-      const [statsResults, apptsResult, triagesResult] = await Promise.allSettled(queries as any[]);
+      const results = await Promise.allSettled(queries as any[]);
+      const statsResults = results[0];
+      const apptsResult = results[1];
+      const triagesResult = results[2];
+      const activitiesResult = results[3];
 
       if (statsResults.status === 'fulfilled') {
         const res = statsResults.value;
@@ -185,6 +198,11 @@ export default function Dashboard() {
       // Process Triages
       if (triagesResult.status === 'fulfilled') {
         setRecentTriages(triagesResult.value.data || []);
+      }
+
+      // Process Activities
+      if (activitiesResult && activitiesResult.status === 'fulfilled') {
+        setActivities(activitiesResult.value.data || []);
       }
 
     } catch (err) {
@@ -616,7 +634,17 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Stats Grid - Only for Physio or if not empty for patients */}
+      {/* Histórico de Atividades */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">Histórico de <span className="text-blue-400 italic">Atividades</span></h2>
+        </div>
+        <div className="premium-card">
+          <ActivityTimeline activities={activities} />
+        </div>
+      </div>
+
+      {/* Quick Stats Grid - Only for Physio or if not empty for patients */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
           { label: 'Consultas', value: stats.appointments, icon: Calendar, color: 'sky', trend: '+12%', show: isPhysio || stats.appointments > 0 },

@@ -14,9 +14,11 @@ import {
   ChevronRight,
   ClipboardList,
   DollarSign,
-  Package
+  Package,
+  Activity
 } from 'lucide-react';
 import { FinancialDashboard } from '../components/FisioCare/FinancialDashboard';
+import ActivityTimeline from '../components/FisioCare/ActivityTimeline';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -28,9 +30,10 @@ export default function PhysioDashboard() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'requests' | 'agenda' | 'financeiro'>((searchParams.get('tab') as any) || 'requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'agenda' | 'financeiro' | 'historico'>((searchParams.get('tab') as any) || 'requests');
   const [requests, setRequests] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [filter, setFilter] = useState({
@@ -88,6 +91,16 @@ export default function PhysioDashboard() {
       const { data: appData, error: appError } = await appQuery.order('data', { ascending: true });
 
       if (!appError) setAppointments(appData || []);
+
+      // 3. Fetch Activities
+      const { data: actData } = await supabase
+        .from('historico_atividades')
+        .select('*')
+        .eq('usuario_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      setActivities(actData || []);
 
     } catch (err) {
       console.error('Erro ao buscar dados do dashboard:', err);
@@ -179,6 +192,16 @@ export default function PhysioDashboard() {
             >
               <DollarSign size={16} />
               Financeiro
+            </button>
+            <button 
+              onClick={() => navigate('/dashboard/fisio?tab=historico')}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                activeTab === 'historico' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-200"
+              )}
+            >
+              <Activity size={16} />
+              Histórico
             </button>
           </div>
         </div>
@@ -307,6 +330,19 @@ export default function PhysioDashboard() {
             <ProGuard requiredPlan="pro">
               <FinancialDashboard />
             </ProGuard>
+          ) : activeTab === 'historico' ? (
+            <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center">
+                  <Activity size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Histórico de Atividades</h2>
+                  <p className="text-slate-400 text-xs font-medium">Acompanhe suas interações recentes no sistema.</p>
+                </div>
+              </div>
+              <ActivityTimeline activities={activities} />
+            </div>
           ) : (
             <ProGuard requiredPlan="pro">
               <div className="grid gap-6">
