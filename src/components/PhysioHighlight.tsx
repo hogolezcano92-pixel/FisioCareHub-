@@ -3,13 +3,12 @@ import { ShieldCheck, Activity, Users, Heart, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 
-const PATIENT_IMAGES = [
-  "https://static.wixstatic.com/media/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png/v1/fill/w_568,h_314,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/817c2f_fdd977fd7600425a9734fc7c20b5453b~mv2.png",
-  "https://soscardio.com.br/wp-content/uploads/2023/02/Fisioterapia-no-Hospital-SOS-Cardio.jpg",
-  "https://www.biosete.com.br/site/wp-content/uploads/2019/09/alzheimer_blog_fisio.png",
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPEXy4VYcy4VbOpBGQgdZqJ06Pbgui8IJ0qLQhh9r4VA&s=10",
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdNki-2MEp873H0ctTrSJmuzsLjTxjBf0QuA0CBqMQFQ&s=10",
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7_-RfpQNcNcnEBvarfHPqNUzk_pY34Wpwc0T8QrC86g&s=10"
+const TESTIMONIALS = [
+  { text: "A praticidade de ser atendido em casa mudou minha rotina. O fisio é excelente!", author: "Maria Silva" },
+  { text: "Recuperei meus movimentos muito mais rápido com o acompanhamento pela plataforma.", author: "José Santos" },
+  { text: "Segurança e qualidade em cada sessão. Recomendo muito o FisioCareHub.", author: "Ana Oliveira" },
+  { text: "O suporte da plataforma é incrível e os profissionais são de altíssimo nível.", author: "Ricardo Lima" },
+  { text: "Minha mãe teve uma evolução fantástica. O atendimento humanizado faz toda a diferença.", author: "Carla Souza" }
 ];
 
 export default function PhysioHighlight() {
@@ -33,8 +32,8 @@ export default function PhysioHighlight() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % (PATIENT_IMAGES.length - 2));
-    }, 3000);
+      setIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -52,33 +51,33 @@ export default function PhysioHighlight() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="bg-white/5 backdrop-blur-3xl border border-white/10 p-10 md:p-14 rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col items-center gap-8 mb-20 group hover:border-white/20 transition-all duration-500 w-full max-w-2xl overflow-hidden"
         >
-          {/* Multi-Avatar Carousel */}
-          <div className="relative w-full overflow-hidden flex justify-center py-4">
-             <div className="flex gap-4">
-              <AnimatePresence mode="popLayout">
-                {PATIENT_IMAGES.slice(index, index + 3).map((url, i) => (
-                  <motion.div
-                    key={url}
-                    initial={{ opacity: 0, scale: 0.5, x: 50 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.5, x: -50 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative shrink-0"
-                  >
-                    <div className="absolute -inset-1 bg-gradient-to-tr from-blue-500 to-sky-400 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity" />
-                    <img 
-                      src={url} 
-                      alt="Paciente Real" 
-                      className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full border-4 border-slate-900 object-cover relative z-10 shadow-2xl"
-                      referrerPolicy="no-referrer"
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-             </div>
+          {/* Testimonial Carousel */}
+          <div className="relative w-full h-32 flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+                className="text-center px-4"
+              >
+                <p className="text-lg md:text-xl text-white font-medium italic leading-relaxed mb-4">
+                  "{TESTIMONIALS[index].text}"
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+                    <span className="text-[10px] font-black text-blue-400">{TESTIMONIALS[index].author[0]}</span>
+                  </div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    {TESTIMONIALS[index].author}
+                  </span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
           
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 border-t border-white/5 pt-8 w-full">
             <h2 className="text-white font-black text-2xl md:text-5xl tracking-tighter leading-tight">
               +2.000 <span className="text-blue-500 italic drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]">Vidas Transformadas</span>
             </h2>
