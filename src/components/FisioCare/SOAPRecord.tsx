@@ -315,8 +315,10 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
         `Prontuário SOAP criado para o paciente ${finalPacienteId}`,
         finalPacienteId,
         {
-          targetType: 'paciente',
-          metadata: { integrityHash }
+          metadata: { 
+            targetType: 'paciente',
+            integrityHash 
+          }
         }
       );
     } catch (error) {
