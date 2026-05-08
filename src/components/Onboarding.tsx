@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "/onboarding/acompanhe.mp4.mp4",
+    image: "/onboarding/prescrever.mp4",
     themeColor: "#3B82F6"
   },
   {
