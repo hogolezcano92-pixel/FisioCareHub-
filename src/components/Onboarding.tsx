@@ -93,7 +93,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Crie planos de exercícios personalizados e envie diretamente para o celular do seu paciente.",
     icon: ClipboardCheck,
-    image: "/onboarding/prescreva.mp4",
+    image: "/onboarding/prescrever.mp4",
     themeColor: "#8B5CF6"
   },
   {
