@@ -275,11 +275,11 @@ export default function AdminLogs() {
                         </div>
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-slate-500 font-bold">Browser</span>
-                          <span className="text-white font-mono truncate max-w-[120px]">{selectedLog.detalhes?.userAgent || 'Chrome/124.0.0'}</span>
+                          <span className="text-white font-mono truncate max-w-[120px]">{selectedLog.detalhes?.userAgent || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-slate-500 font-bold">Location</span>
-                          <span className="text-white font-mono">São Paulo, BR</span>
+                          <span className="text-white font-mono uppercase">{selectedLog.detalhes?.location || 'N/A'}</span>
                         </div>
                       </div>
                     </div>

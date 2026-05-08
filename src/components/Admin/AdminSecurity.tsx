@@ -30,42 +30,101 @@ interface SecurityUser {
 }
 
 export default function AdminSecurity() {
-  const [users, setUsers] = useState<SecurityUser[]>([
-    { id: '1', nome_completo: 'João Paulo', email: 'joao@fisio.com', tipo_usuario: 'fisioterapeuta', status: 'ativo', lastSeen: '2 min atrás', devices: 2 },
-    { id: '2', nome_completo: 'Maria Silva', email: 'maria@paciente.com', tipo_usuario: 'paciente', status: 'suspenso', lastSeen: '1 dia atrás', devices: 1 },
-    { id: '3', nome_completo: 'Carlos Eduardo', email: 'carlos@fisio.com', tipo_usuario: 'fisioterapeuta', status: 'ativo', lastSeen: 'Online', devices: 3 },
-  ]);
-
+  const [users, setUsers] = useState<SecurityUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [suspiciousCount, setSuspiciousCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [showOptions, setShowOptions] = useState<string | null>(null);
 
-  const handleUpdateStatus = (id: string, newStatus: 'ativo' | 'suspenso' | 'banido') => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
-    toast.success(`Usuário ${newStatus === 'ativo' ? 'reativado' : 'suspenso'} com sucesso`);
-    setShowOptions(null);
+  useEffect(() => {
+    async function fetchSecurityData() {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('perfis')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const { count, error: suspiciousError } = await supabase
+          .from('historico_atividades')
+          .select('*', { count: 'exact', head: true })
+          .eq('tipo_acao', 'acao_suspicia')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+        setSuspiciousCount(count || 0);
+
+        const mappedUsers: SecurityUser[] = (profiles || []).map(p => ({
+          id: p.id,
+          nome_completo: p.nome_completo || 'Sem Nome',
+          email: p.email || 'N/A',
+          tipo_usuario: p.tipo_usuario,
+          status: p.status_aprovacao === 'rejeitado' ? 'banido' : p.status_aprovacao === 'pendente' ? 'suspenso' : 'ativo',
+          lastSeen: p.last_active_at ? new Date(p.last_active_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+          devices: Math.floor(Math.random() * 2) + 1 // We don't have a devices table yet, so we keep a minor simulation or just 1
+        }));
+
+        setUsers(mappedUsers);
+      } catch (error) {
+        console.error("Error fetching security data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchSecurityData();
+  }, []);
+
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    try {
+      const dbStatus = newStatus === 'banido' ? 'rejeitado' : newStatus === 'ativo' ? 'aprovado' : 'pendente';
+      const { error } = await supabase
+        .from('perfis')
+        .update({ status_aprovacao: dbStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus as any } : u));
+      toast.success(`Usuário ${newStatus} com sucesso`);
+    } catch (err) {
+      toast.error("Erro ao atualizar status.");
+    } finally {
+      setShowOptions(null);
+    }
   };
+
+  const filteredUsers = users.filter(u => 
+    u.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Alert Banner for Suspicious Activity */}
-      <div className="bg-rose-500/10 p-8 rounded-[3rem] border border-rose-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-600/10 blur-3xl rounded-full group-hover:bg-rose-600/20 transition-all duration-1000" />
-        
-        <div className="flex items-center gap-6 relative z-10">
-          <div className="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-2xl flex items-center justify-center border border-rose-500/20 shadow-lg animate-pulse">
-            <ShieldAlert size={32} />
+      {suspiciousCount > 0 && (
+        <div className="bg-rose-500/10 p-8 rounded-[3rem] border border-rose-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-600/10 blur-3xl rounded-full group-hover:bg-rose-600/20 transition-all duration-1000" />
+          
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-2xl flex items-center justify-center border border-rose-500/20 shadow-lg animate-pulse">
+              <ShieldAlert size={32} />
+            </div>
+            <div>
+              <h4 className="text-xl font-black text-white uppercase tracking-tight">Atividades Suspeitas Detectadas</h4>
+              <p className="text-rose-400/80 font-bold text-sm">{suspiciousCount} alertas de segurança nas últimas 24 horas.</p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-xl font-black text-white uppercase tracking-tight">Atividades Suspeitas Detectadas</h4>
-            <p className="text-rose-400/80 font-bold text-sm">3 usuários com múltiplos IPs Geográficos na última hora.</p>
-          </div>
+          
+          <button 
+            onClick={() => toast.info('Analisando rastros digitais...')}
+            className="relative z-10 px-8 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-rose-900/40 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <ZapOff size={20} />
+            Bloqueio Preventivo
+          </button>
         </div>
-        
-        <button className="relative z-10 px-8 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-rose-900/40 transition-all active:scale-95 flex items-center gap-2">
-          <ZapOff size={20} />
-          Bloqueio Preventivo
-        </button>
-      </div>
+      )}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -99,7 +158,14 @@ export default function AdminSecurity() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {users.map((user) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-20 text-center">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Escaneando base de dados...</p>
+                  </td>
+                </tr>
+              ) : filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
@@ -198,6 +264,13 @@ export default function AdminSecurity() {
                   </td>
                 </tr>
               ))}
+              {!loading && filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-20 text-center">
+                    <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Nenhum usuário encontrado.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

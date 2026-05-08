@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 import { 
   Sparkles, 
   Brain, 
@@ -31,45 +33,35 @@ export default function AdminViva() {
   const generateInsights = async () => {
     setAnalyzing(true);
     try {
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+
+      const [
+        { count: physiosCount },
+        { count: patientsCount },
+        { data: revenueData },
+        { data: recentLogs }
+      ] = await Promise.all([
+        supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'fisioterapeuta'),
+        supabase.from('perfis').select('*', { count: 'exact', head: true }).eq('tipo_usuario', 'paciente').gte('created_at', firstDayOfMonth),
+        supabase.from('agendamentos').select('valor_cobrado').gte('data_horario', firstDayOfMonth).eq('status', 'concluido'),
+        supabase.from('historico_atividades').select('tipo_acao, descricao').order('created_at', { ascending: false }).limit(10)
+      ]);
+
+      const totalRevenue = (revenueData || []).reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
+
       const performanceData = {
-        fisioterapeutas_ativos: 42,
-        pacientes_novos: 128,
-        taxa_cancelamento: "14%",
-        faturamento: "R$ 12.450",
-        logs_recentes: [
-          "3 falhas de login de IPs internacionais",
-          "5 novos fisioterapeutas aguardando aprovação"
-        ]
+        fisioterapeutas_ativos: physiosCount || 0,
+        pacientes_novos_mes: patientsCount || 0,
+        faturamento_mes: `R$ ${totalRevenue.toLocaleString('pt-BR')}`,
+        logs_recentes: (recentLogs || []).map(l => `${l.tipo_acao}: ${l.descricao}`)
       };
 
       const data = await generateAdminInsights(performanceData);
       setInsights(data);
     } catch (error) {
       console.error("Error generating insights:", error);
-      // Fallback data
-      setInsights([
-        { 
-          id: '1', 
-          type: 'risk', 
-          title: 'Alerta de Inatividade', 
-          description: '15% dos fisioterapeutas aprovados não realizaram nenhum atendimento nos últimos 30 dias.', 
-          action: 'Enviar e-mail de engajamento' 
-        },
-        { 
-          id: '2', 
-          type: 'growth', 
-          title: 'Oportunidade na Região Sul', 
-          description: 'Houve um aumento de 40% na procura por fisioterapia ortopédica em Curitiba, mas temos apenas 2 profissionais lá.', 
-          action: 'Investir em tráfego pago na região' 
-        },
-        { 
-          id: '3', 
-          type: 'improvement', 
-          title: 'Otimização de Agenda', 
-          description: 'A maioria dos cancelamentos ocorre em segundas-feiras às 08h.', 
-          action: 'Implementar lembrete de WhatsApp duplicado para este horário' 
-        }
-      ]);
+      toast.error("Não foi possível analisar os dados reais no momento.");
     } finally {
       setAnalyzing(false);
     }
