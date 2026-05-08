@@ -85,7 +85,7 @@ const physioSlides = [
     subtitle: "Sou Fisioterapeuta",
     description: "Organização simples e eficiente de prontuários, agendas e históricos de atendimento.",
     icon: UserCheck,
-    image: "/onboarding/decision.mp4",
+    image: "/onboarding/gerencie.mp4",
     themeColor: "#8B5CF6"
   },
   {
