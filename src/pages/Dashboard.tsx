@@ -50,6 +50,7 @@ import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ProBanner from '../components/ProBanner';
 import ProGuard from '../components/ProGuard';
 import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
+import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import { Trophy, Medal, Star, Zap } from 'lucide-react';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 
@@ -71,6 +72,9 @@ export default function Dashboard() {
   const [searching, setSearching] = useState(false);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
 
   const lastLoadedProfileId = useRef<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -96,6 +100,11 @@ export default function Dashboard() {
     
     setStatsLoading(true);
     setApptsLoading(true);
+
+    // If patient, check for pending evaluations
+    if (data.tipo_usuario === 'paciente') {
+      checkPendingEvaluations(data.id);
+    }
     
     try {
       const isPhysio = data.tipo_usuario === 'fisioterapeuta';
@@ -267,6 +276,47 @@ export default function Dashboard() {
       if (hour >= 12 && hour < 18) return 'Boa tarde';
       return 'Boa noite';
     };
+
+  const checkPendingEvaluations = useCallback(async (userId: string) => {
+    try {
+      const { data: appointments, error: apptError } = await supabase
+        .from('agendamentos')
+        .select(`
+          id, 
+          fisio_id,
+          fisioterapeuta:perfis!fisio_id(nome_completo)
+        `)
+        .eq('paciente_id', userId)
+        .eq('status', 'concluido')
+        .order('data_servico', { ascending: false });
+
+      if (apptError) throw apptError;
+      if (!appointments || appointments.length === 0) return;
+
+      const { data: evaluations, error: evalError } = await supabase
+        .from('avaliacoes')
+        .select('agendamento_id')
+        .eq('paciente_id', userId);
+
+      if (evalError) throw evalError;
+
+      const evaluatedIds = new Set(evaluations?.map(e => e.agendamento_id) || []);
+      const apptToEvaluate = appointments.find(a => !evaluatedIds.has(a.id));
+
+      if (apptToEvaluate) {
+        setPendingEvaluation({
+          id: apptToEvaluate.id,
+          fisio_id: apptToEvaluate.fisio_id,
+          fisio_nome: Array.isArray(apptToEvaluate.fisioterapeuta) 
+            ? apptToEvaluate.fisioterapeuta[0]?.nome_completo 
+            : (apptToEvaluate.fisioterapeuta as any)?.nome_completo
+        });
+        setShowEvaluation(true);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar avaliações pendentes:', err);
+    }
+  }, []);
 
   useEffect(() => {
     if (!profile || !isPhysio || authLoading || !user) return;
@@ -1077,6 +1127,19 @@ export default function Dashboard() {
       </div>
       <FloatingHelpMenu />
       {showWelcome && <ApprovalWelcomeModal onClose={() => setShowWelcome(false)} />}
+      
+      {user && pendingEvaluation && (
+        <EvaluationModal
+          isOpen={showEvaluation}
+          onClose={() => setShowEvaluation(false)}
+          appointment={pendingEvaluation}
+          userId={user.id}
+          onSuccess={() => {
+            // Refresh dashboard data to update stats if needed
+            fetchDashboardData(profile);
+          }}
+        />
+      )}
     </div>
   </div>
   );
