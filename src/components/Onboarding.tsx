@@ -47,7 +47,7 @@ const commonSlides = [
     subtitle: "Inovação",
     description: "Transformamos a jornada de recuperação através de inteligência artificial e acompanhamento humano especializado.",
     icon: BrainCircuit,
-    image: "https://images.pexels.com/photos/5793918/pexels-photo-5793918.jpeg?auto=compress&cs=tinysrgb&w=800&q=60",
+    image: "/onboarding/cuidado.mp4",
     themeColor: "#8B5CF6"
   },
 ];
