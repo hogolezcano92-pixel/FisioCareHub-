@@ -64,7 +64,10 @@ import {
   Tag,
   FileText as FileIcon,
   Upload,
-  Loader2
+  Loader2,
+  History,
+  Shield,
+  Brain
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
@@ -73,6 +76,10 @@ import { sendProfessionalApprovalEmail } from '../services/emailService';
 import Logo from '../components/Logo';
 import SplashScreen from '../components/SplashScreen';
 import AvatarUpload from '../components/AvatarUpload';
+import AdminDashboard from '../components/Admin/AdminDashboard';
+import AdminLogs from '../components/Admin/AdminLogs';
+import AdminSecurity from '../components/Admin/AdminSecurity';
+import AdminViva from '../components/Admin/AdminViva';
 
 export default function Admin() {
   const { t } = useTranslation();
@@ -1666,18 +1673,21 @@ export default function Admin() {
           {/* Nav Links */}
           <nav className="flex-1 py-6 px-3 space-y-1">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'materiais', label: 'Materiais (Loja)', icon: BookOpen },
-              { id: 'physios', label: 'Fisioterapeutas', icon: Stethoscope },
-              { id: 'patients', label: 'Pacientes', icon: User },
-              { id: 'approvals', label: 'Aprovações', icon: UserCheck },
-              { id: 'users', label: 'Todos Usuários', icon: Users },
-              { id: 'financial', label: 'Financeiro', icon: DollarSign },
-              { id: 'saques', label: 'Saques (PIX)', icon: CreditCard },
-              { id: 'tickets', label: 'Suporte (Tickets)', icon: AlertTriangle },
-              { id: 'notifications', label: 'Notificações', icon: Bell },
-              { id: 'chat', label: 'Suporte Chat', icon: MessageSquare },
-              { id: 'settings', label: 'Configurações', icon: Settings },
+              { id: 'dashboard', label: 'Monitoramento Real-time', icon: LayoutDashboard },
+              { id: 'viva', label: 'Viva AI Administrative', icon: Brain },
+              { id: 'logs', label: 'Centro de Auditoria', icon: History },
+              { id: 'security', label: 'Segurança & LGPD', icon: Shield },
+              { id: 'materiais', label: 'Biblioteca de Conteúdo', icon: BookOpen },
+              { id: 'physios', label: 'Gestão de Fisioterapeutas', icon: Stethoscope },
+              { id: 'patients', label: 'Gestão de Pacientes', icon: User },
+              { id: 'approvals', label: 'Aprovações Pendentes', icon: UserCheck },
+              { id: 'users', label: 'Base Global de Usuários', icon: Users },
+              { id: 'financial', label: 'Controle Financeiro', icon: DollarSign },
+              { id: 'saques', label: 'Solicitações de Saque', icon: CreditCard },
+              { id: 'tickets', label: 'Tickets de Suporte', icon: AlertTriangle },
+              { id: 'chat', label: 'Chat de Suporte Central', icon: MessageSquare },
+              { id: 'notifications', label: 'Alertas do Sistema', icon: Bell },
+              { id: 'settings', label: 'Configurações Mestras', icon: Settings },
             ].map((item) => (
               <button
                 key={item.id}
@@ -1767,6 +1777,9 @@ export default function Admin() {
                  activeTab === 'users' ? 'USUÁRIOS' :
                  activeTab === 'financial' ? 'FINANCEIRO' :
                  activeTab === 'chat' ? 'SUPORTE' :
+                 activeTab === 'logs' ? 'AUDITORIA' :
+                 activeTab === 'security' ? 'SEGURANÇA' :
+                 activeTab === 'viva' ? 'ADMIN AI' :
                  activeTab === 'settings' ? 'CONFIGURAÇÕES' :
                  activeTab.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
@@ -1828,121 +1841,19 @@ export default function Admin() {
           )}
 
           {!loading && !error && activeTab === 'dashboard' && (
-            <>
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {STATS_CARDS.map((stat, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-white/5 p-6 rounded-[2.5rem] border border-white/5 hover:border-white/10 transition-all group"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
-                        stat.color === 'blue' && "bg-blue-500/10 text-blue-400",
-                        stat.color === 'emerald' && "bg-emerald-500/10 text-emerald-400",
-                        stat.color === 'indigo' && "bg-indigo-500/10 text-indigo-400",
-                        stat.color === 'rose' && "bg-rose-500/10 text-rose-400",
-                      )}>
-                        <stat.icon size={24} />
-                      </div>
-                      <div className="text-[10px] font-black uppercase text-emerald-500 tracking-widest flex items-center gap-1.5 bg-emerald-500/10 px-2 py-1 rounded-full">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Live
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-2xl sm:text-3xl font-black text-white tracking-tighter">{stat.value}</p>
-                      <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+            <AdminDashboard />
+          )}
 
-              {/* Recent Users Table */}
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-                <div className="p-8 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-black text-white tracking-tight">Usuários Recentes</h3>
-                    <p className="text-sm text-slate-500 font-medium">Últimos cadastros na plataforma.</p>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead>
-                      <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Usuário</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Papel</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {supabaseProfiles
-                        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-                        .slice(0, 5)
-                        .map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 font-bold text-lg overflow-hidden border border-white/10">
-                                {u.avatar_display ? (
-                                  <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                ) : (
-                                  u.nome_completo?.charAt(0)
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-white">{u.nome_completo}</p>
-                                <p className="text-xs text-slate-500">{u.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className={cn(
-                                "text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider w-fit",
-                                u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-500/10 text-blue-400" : "bg-white/5 text-slate-400"
-                              )}>
-                                {u.tipo_usuario === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
-                              </span>
-                              {u.is_pro && (
-                                <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
-                                  <Crown size={8} /> PRO
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={cn(
-                              "text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider",
-                              u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400" : 
-                              u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400" : "bg-amber-500/10 text-amber-400"
-                            )}>
-                              {u.status_aprovacao || 'Pendente'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => {
-                                setActiveTab('users');
-                                setSelectedUserDetail(u);
-                              }}
-                              className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
-                            >
-                              <Eye size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
+          {!loading && !error && activeTab === 'logs' && (
+            <AdminLogs />
+          )}
+
+          {!loading && !error && activeTab === 'security' && (
+            <AdminSecurity />
+          )}
+
+          {!loading && !error && activeTab === 'viva' && (
+            <AdminViva />
           )}
 
           {activeTab === 'materiais' && (
