@@ -131,7 +131,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     ...commonSlides,
     { 
       type: 'decision',
-      image: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=60&w=800"
+      image: "/onboarding/decision.mp4"
     },
     // We render placeholders that become actual slides after decision
     { type: 'dynamic', index: 0 },
