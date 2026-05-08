@@ -328,7 +328,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
               src="/onboarding/welcome_optimized.jpg"
               alt=""
               className={cn(
-                "w-full h-full object-cover transition-all duration-1000",
+                "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
                 isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
               )}
               // @ts-ignore
@@ -343,7 +343,7 @@ function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: b
             src={slide.image}
             alt=""
             className={cn(
-              "w-full h-full object-cover transition-all duration-1000",
+              "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
               isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
             )}
             // @ts-ignore
@@ -499,11 +499,11 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
             <div className="absolute inset-0 z-0">
               <motion.img 
                 src={slide.image}
-                initial={{ scale: 1.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 3, ease: "easeOut" }}
                 alt=""
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center animate-ken-burns"
                 decoding="async"
                 loading="eager"
                 style={{ willChange: 'transform' }}
