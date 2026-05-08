@@ -12,7 +12,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
+import { generateAdminInsights } from '../../lib/groq';
 import { cn } from '../../lib/utils';
 
 interface Insight {
@@ -31,33 +31,19 @@ export default function AdminViva() {
   const generateInsights = async () => {
     setAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const prompt = `
-        Você é Viva, a assistente de inteligência artificial de um painel administrativo de uma plataforma de fisioterapia.
-        Analise os seguintes dados fictícios de performance e gere 3 insights estratégicos em formato JSON:
-        - Fisioterapeutas ativos: 42
-        - Pacientes novos: 128
-        - Taxa de cancelamento: 14%
-        - Faturamento: R$ 12.450
-        - Logs recentes: 3 falhas de login de IPs internacionais, 5 novos fisioterapeutas aguardando aprovação.
+      const performanceData = {
+        fisioterapeutas_ativos: 42,
+        pacientes_novos: 128,
+        taxa_cancelamento: "14%",
+        faturamento: "R$ 12.450",
+        logs_recentes: [
+          "3 falhas de login de IPs internacionais",
+          "5 novos fisioterapeutas aguardando aprovação"
+        ]
+      };
 
-        Retorne um array de objetos JSON com: id, type (growth, risk, improvement), title, description, action.
-      `;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const text = response.text;
-      if (text) {
-        const data = JSON.parse(text);
-        setInsights(data);
-      }
+      const data = await generateAdminInsights(performanceData);
+      setInsights(data);
     } catch (error) {
       console.error("Error generating insights:", error);
       // Fallback data
