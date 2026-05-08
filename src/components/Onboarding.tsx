@@ -61,7 +61,7 @@ const patientSlides = [
     image: "/onboarding/recupere.mp4",
     themeColor: "#3B82F6"
   },
-  {m
+  {
     title: "Acompanhe seu Progresso",
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
