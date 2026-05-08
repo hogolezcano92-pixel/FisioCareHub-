@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "/onboarding/prescrever.mp4",
+    image: "/onboarding/comovocequer.mp4",
     themeColor: "#3B82F6"
   }
 ];
