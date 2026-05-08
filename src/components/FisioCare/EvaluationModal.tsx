@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Star, MessageSquare, Send, X, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
+import { logActivity } from '../../services/activityService';
 
 interface EvaluationModalProps {
   isOpen: boolean;
@@ -46,6 +47,24 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
         });
 
       if (submitError) throw submitError;
+
+      // Log activity
+      await logActivity(
+        userId,
+        'paciente',
+        'avaliacao_enviada',
+        `Você avaliou o atendimento com ${appointment.fisio_nome || 'o especialista'}`,
+        appointment.id.toString()
+      );
+
+      // Also log for the physio
+      await logActivity(
+        appointment.fisio_id,
+        'fisio',
+        'avaliacao_enviada',
+        `Um paciente enviou uma avaliação para o seu atendimento`,
+        appointment.id.toString()
+      );
 
       setSubmitted(true);
       onSuccess();
