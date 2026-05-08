@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, memo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -19,12 +19,13 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination } from 'swiper/modules';
+import { Pagination, EffectFade } from 'swiper/modules';
 import { cn } from '../lib/utils';
 
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -166,7 +167,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
       <div className="relative flex-1">
         <Swiper
-          modules={[Pagination]}
+          modules={[Pagination, EffectFade]}
+          effect="fade"
+          fadeEffect={{ crossFade: false }}
           speed={500}
           watchSlidesProgress={true}
           resistanceRatio={0.85}
@@ -174,6 +177,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           observeParents={true}
           // @ts-ignore
           preloadImages={false}
+          // @ts-ignore
+          lazy={{ loadPrevNext: true }}
           pagination={{ 
             clickable: activeIndex !== 2,
             dynamicBullets: true
@@ -210,7 +215,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
             return (
               <SwiperSlide key={`common-${index}`} className="bg-[#0B1C2C]">
-                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={false} />
+                <ContentSlide slide={slide} isActive={activeIndex === index} isPriority={index === 0} />
               </SwiperSlide>
             );
           })}
@@ -293,7 +298,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   );
 }
 
-const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActive: boolean, isPriority: boolean }) => {
+function ContentSlide({ slide, isActive, isPriority }: { slide: any, isActive: boolean, isPriority: boolean }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const color = slide.themeColor || '#3B82F6';
 
@@ -302,18 +307,18 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.05
+        staggerChildren: 0.2,
+        delayChildren: 0.1
       }
     }
   };
 
   const itemVariants: any = {
-    hidden: { opacity: 0, y: 10 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.35, ease: "easeOut" }
+      transition: { duration: 0.7, ease: "easeOut" }
     }
   };
 
@@ -328,8 +333,8 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
               src="/onboarding/welcome_optimized.jpg"
               alt=""
               className={cn(
-                "w-full h-full object-cover transition-opacity duration-700",
-                isLoaded ? "grayscale-[0.2]" : "grayscale-0"
+                "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
+                isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
               )}
               // @ts-ignore
               fetchPriority="high"
@@ -347,12 +352,12 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
             playsInline
             preload={isActive ? "auto" : "metadata"}
             disablePictureInPicture
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover animate-ken-burns"
             onLoadedData={() => setIsLoaded(true)}
             style={{
               transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
-              willChange: 'opacity'
+              willChange: 'transform, opacity'
             }}
           >
             <source src={slide.image} type="video/mp4" />
@@ -362,8 +367,8 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
             src={slide.image}
             alt=""
             className={cn(
-              "w-full h-full object-cover transition-opacity duration-700",
-              isLoaded ? "grayscale-[0.2]" : "grayscale-0"
+              "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
+              isLoaded ? "grayscale-[0.2]" : "grayscale-0 blur-sm"
             )}
             // @ts-ignore
             fetchPriority={isActive ? "high" : "low"}
@@ -373,10 +378,15 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
           />
         )}
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/60 transition-opacity duration-700",
+          "absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/60 transition-opacity duration-1000",
           isLoaded ? "opacity-100" : "opacity-0"
         )} />
       </div>
+      
+      <div className={cn(
+        "absolute inset-0 z-0 backdrop-blur-[1px] transition-opacity duration-1000",
+        isLoaded ? "opacity-100" : "opacity-0"
+      )} />
       
       <div 
         className="absolute inset-0 z-0"
@@ -414,7 +424,7 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
                       borderColor: `${color}30`,
                       textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
-                    className="p-3 sm:p-4 rounded-3xl border shadow-2xl"
+                    className="p-3 sm:p-4 rounded-3xl border shadow-2xl backdrop-blur-xl"
                   >
                     <slide.icon size={24} className="sm:w-7 sm:h-7" />
                   </div>
@@ -459,7 +469,7 @@ const ContentSlide = memo(({ slide, isActive, isPriority }: { slide: any, isActi
       </div>
     </div>
   );
-});
+}
 
 function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any, onSelect: (type: UserType) => void, selectedType: UserType, isActive: boolean }) {
   const [bgLoaded, setBgLoaded] = useState(false);
@@ -496,11 +506,11 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
   };
 
   const fadeUp: any = {
-    hidden: { opacity: 0, y: 10 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0, 
-      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
     }
   };
 
@@ -513,18 +523,20 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
             <div className="absolute inset-0 z-0">
               <motion.img 
                 src={slide.image}
-                initial={{ opacity: 0 }}
+                initial={{ scale: 1.2, opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1, ease: "easeOut" }}
+                transition={{ duration: 3, ease: "easeOut" }}
                 alt=""
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center animate-ken-burns"
                 decoding="async"
                 loading="eager"
-                style={{ willChange: 'opacity' }}
+                style={{ willChange: 'transform, opacity' }}
                 onLoad={() => setBgLoaded(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
             </div>
+
+            <div className="absolute inset-0 z-0 backdrop-blur-[1px]" />
 
             <div className="absolute inset-0 z-0">
               <AnimatePresence mode="wait">
@@ -537,7 +549,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                     transition={{ duration: 0.5 }}
                     src={selectedType === 'paciente' ? options[0].image : options[1].image} 
                     alt="" 
-                    className="w-full h-full object-cover scale-110"
+                    className="w-full h-full object-cover blur-[8px] scale-110"
                   />
                 )}
               </AnimatePresence>
@@ -552,8 +564,8 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
               <div className="text-center mb-10 sm:mb-16">
                 <motion.div 
                   variants={fadeUp}
-                  className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl"
-                  initial={{ opacity: 0, y: 20 }}
+                  className="inline-flex items-center justify-center p-4 sm:p-5 rounded-3xl bg-white/5 border border-white/10 mb-6 sm:mb-8 shadow-2xl backdrop-blur-xl"
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <Users size={32} className="text-white sm:w-10 sm:h-10" />
@@ -562,7 +574,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   variants={fadeUp}
                   className="text-3xl sm:text-5xl font-black text-white mb-4 sm:mb-6 tracking-tighter leading-tight"
                   style={{ textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   Como você quer usar o FisioCareHub?
@@ -571,7 +583,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   variants={fadeUp}
                   className="text-slate-200 text-base sm:text-lg font-medium max-w-sm mx-auto"
                   style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   Escolha o seu perfil para personalizarmos sua jornada.
@@ -584,12 +596,13 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                     key={option.id}
                     layout
                     variants={fadeUp}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -2, scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onSelect(option.id as UserType)}
                     className={cn(
-                      "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden",
+                      "group relative w-full p-5 sm:p-8 bg-[#0F2235]/70 border-2 rounded-[2rem] sm:rounded-[2.5rem] transition-all text-left flex items-center gap-4 sm:gap-8 overflow-hidden backdrop-blur-md",
                       selectedType === option.id 
                         ? "shadow-[0_20px_60px_-15px_rgba(59,130,246,0.2)]" 
                         : "border-white/10 hover:border-white/20 hover:bg-[#1a3a55]/90"
