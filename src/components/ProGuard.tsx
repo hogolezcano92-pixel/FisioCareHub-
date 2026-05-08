@@ -3,15 +3,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Lock } from 'lucide-react';
 import ProBanner from './ProBanner';
+import { cn } from '../lib/utils';
 
 interface ProGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   variant?: 'full' | 'inline';
   requiredPlan?: 'free' | 'basic' | 'pro';
+  className?: string;
 }
 
-export default function ProGuard({ children, fallback, variant = 'full', requiredPlan = 'pro' }: ProGuardProps) {
+export default function ProGuard({ children, fallback, variant = 'full', requiredPlan = 'pro', className }: ProGuardProps) {
   const { profile, subscription, loading } = useAuth();
 
   if (loading) {
@@ -46,11 +48,15 @@ export default function ProGuard({ children, fallback, variant = 'full', require
     if (fallback) return <>{fallback}</>;
 
     if (variant === 'inline') {
-      return <ProBanner />;
+      return (
+        <div className={className}>
+          <ProBanner />
+        </div>
+      );
     }
 
     return (
-      <div className="relative group">
+      <div className={cn("relative group", className)}>
         <div className="blur-sm pointer-events-none select-none opacity-50 transition-all duration-500 group-hover:blur-md">
           {children}
         </div>
