@@ -1475,39 +1475,45 @@ export default function Admin() {
       import('sonner').then(({ toast }) => toast.success(t('admin_actions.material.delete_success', "Material excluído com sucesso!")));
     } catch (err: any) {
       console.error("Erro ao excluir material:", err);
-      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.delete_error', { defaultValue: `Erro ao excluir: ${err.message || 'Erro desconhecido'}`, error: err.message })));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.delete_error', { defaultValue: `Erro ao excluir material: ${err.message}` })));
     }
   };
 
-
-
-  if (!isAdmin) {
-    return null;
-  }
-
   return (
-    <div className="flex admin-dashboard font-sans w-full min-h-screen bg-[var(--bg)] overflow-x-hidden relative">
+    <div className="flex font-sans w-full min-h-screen bg-[#0A1931] overflow-x-hidden relative">
+      {/* Mobile Status Bar Simulation */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-6 bg-[#0A1931] z-[100] flex items-center justify-between px-6 text-[10px] font-bold text-white">
+        <span>06:32</span>
+        <div className="flex items-center gap-1.5">
+          <Activity size={10} className="text-white" />
+          <span>5G</span>
+          <div className="w-5 h-2.5 border border-white/50 rounded-[2px] relative flex items-center px-[1px]">
+            <div className="bg-white h-1.5 w-3" />
+          </div>
+        </div>
+      </div>
+
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedUserDetail(null)}
-              className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#0A1931]/80 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-[var(--surface)] backdrop-blur-xl w-full max-w-2xl rounded-3xl lg:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-[var(--border)]"
+              className="relative bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className="p-8 border-b border-[var(--border)] flex items-center justify-between">
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-[var(--primary)] flex items-center justify-center text-[var(--white)] font-black text-2xl overflow-hidden shadow-lg shadow-[var(--primary)]/20">
+                  <div className="w-16 h-16 rounded-2xl bg-[#7B2CBF] flex items-center justify-center text-white font-black text-2xl overflow-hidden">
                     {selectedUserDetail.foto_url || selectedUserDetail.avatar_url ? (
                       <img src={selectedUserDetail.foto_url || selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
@@ -1515,13 +1521,13 @@ export default function Admin() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl text-[var(--text)] font-black tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                    <h3 className="text-2xl text-[#0A1931] font-black tracking-tight">{selectedUserDetail.nome_completo}</h3>
+                    <p className="text-[#7B2CBF] font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedUserDetail(null)}
-                  className="p-3 bg-[var(--bg)] text-[var(--text-2)] hover:text-[var(--text)] rounded-2xl border border-[var(--border)] transition-all"
+                  className="p-3 bg-gray-50 text-gray-400 hover:text-[#0A1931] rounded-2xl transition-all"
                 >
                   <X size={24} />
                 </button>
@@ -1530,170 +1536,26 @@ export default function Admin() {
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                 {/* Basic Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-[#0A1931]">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">E-mail</p>
-                    <p className="text-sm font-bold text-[var(--text)] break-all">{selectedUserDetail.email}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Telefone</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.telefone || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">E-mail</p>
+                    <p className="text-sm font-bold break-all">{selectedUserDetail.email}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CPF</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Telefone</p>
+                    <p className="text-sm font-bold">{selectedUserDetail.telefone || 'N/A'}</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CREFITO</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.crefito || 'N/A'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Especialidade</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.especialidade || 'N/A'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Cidade/UF</p>
-                    <p className="text-sm font-bold text-[var(--text)]">
-                      {selectedUserDetail.cidade || 'N/A'}{selectedUserDetail.estado ? ` - ${selectedUserDetail.estado}` : ''}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CEP</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.cep || 'N/A'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
-                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.pais || 'N/A'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
-                    <p className="text-sm font-bold text-[var(--text)]">
-                      {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
-                    <p className="text-sm font-bold text-[var(--text)]">
-                      {selectedUserDetail.data_nascimento ? new Date(selectedUserDetail.data_nascimento).toLocaleDateString('pt-BR') : 'N/A'}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
-                    <p className="text-sm font-bold text-[var(--text)]">
-                      {selectedUserDetail.preco_sessao ? `R$ ${selectedUserDetail.preco_sessao}` : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Bio */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
-                  <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text-2)] leading-relaxed italic">
-                    {selectedUserDetail.bio || t('admin_users.details.no_bio', 'Nenhuma biografia informada.')}
-                  </div>
-                </div>
-
-                {/* Academic & Services */}
-                {selectedUserDetail.tipo_usuario === 'fisioterapeuta' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
-                      <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text)]">
-                        {Array.isArray(selectedUserDetail.formacao_academica) && selectedUserDetail.formacao_academica.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-1">
-                            {selectedUserDetail.formacao_academica.map((item: string, i: number) => (
-                              <li key={i}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : t('admin_users.details.not_informed', 'Não informada')}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
-                      <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text)]">
-                        {Array.isArray(selectedUserDetail.servicos_ofertados) && selectedUserDetail.servicos_ofertados.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-1">
-                            {selectedUserDetail.servicos_ofertados.map((item: string, i: number) => (
-                              <li key={i}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : t('admin_users.details.not_informed', 'Não informada')}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Documents */}
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
-                  {(() => {
-                    const docs = selectedUserDetail.all_docs;
-                    
-                    if (docs && docs.length > 0) {
-                      return (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {docs.map((doc: { url: string, label: string }, idx: number) => (
-                            <a 
-                              key={idx} 
-                              href={resolveStorageUrl(doc.url)} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-[var(--bg)] border border-[var(--border)] rounded-2xl hover:border-[var(--primary-2)]/50 hover:bg-[var(--surface)] transition-all group"
-                            >
-                              <div className="w-10 h-10 rounded-xl bg-[var(--primary-2)]/10 text-[var(--primary-2)] flex items-center justify-center group-hover:bg-[var(--primary-2)] group-hover:text-white transition-all">
-                                <FileIcon size={20} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-[var(--text)] truncate">{doc.label}</p>
-                                <p className="text-[10px] text-[var(--text-2)] font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
-                              </div>
-                              <Download size={16} className="text-[var(--text-2)] group-hover:text-[var(--primary-2)] transition-colors" />
-                            </a>
-                          ))}
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <div className="p-8 border-2 border-dashed border-[var(--border)] rounded-[2rem] text-center">
-                        <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="p-8 border-t border-[var(--border)] flex gap-4">
-                {selectedUserDetail.status_aprovacao === 'pendente' ? (
-                  <>
-                    <button 
-                      onClick={() => {
-                        handleApprovePhysio(selectedUserDetail?.id, selectedUserDetail?.id);
-                        setSelectedUserDetail(null);
-                      }}
-                      className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      {t('admin_users.details.approve_btn', 'Aprovar Cadastro')}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        handleRejectPhysio(selectedUserDetail?.id, selectedUserDetail?.id);
-                        setSelectedUserDetail(null);
-                      }}
-                      className="flex-1 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-sm hover:bg-rose-500/20 transition-all"
-                    >
-                      {t('admin_users.details.reject_btn', 'Rejeitar')}
-                    </button>
-                  </>
-                ) : (
-                  <button 
-                    onClick={() => setSelectedUserDetail(null)}
-                    className="w-full py-4 bg-[var(--surface)] text-[var(--text)] rounded-2xl font-black text-sm hover:bg-[var(--border)] transition-all border border-[var(--border)]"
-                  >
-                    {t('admin_users.details.close_btn', 'Fechar Detalhes')}
-                  </button>
-                )}
+              <div className="p-8 border-t border-gray-100 flex gap-4">
+                <button 
+                  onClick={() => setSelectedUserDetail(null)}
+                  className="w-full py-4 bg-[#7B2CBF] text-white rounded-2xl font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-[#7B2CBF]/20"
+                >
+                  Fechar Detalhes
+                </button>
               </div>
             </motion.div>
           </div>
@@ -1708,50 +1570,53 @@ export default function Admin() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-slate-950/20 backdrop-blur-sm z-[40] lg:hidden"
+            className="fixed inset-0 bg-[#0A1931]/60 backdrop-blur-sm z-[100] lg:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed 280px */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] w-64 admin-sidebar transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden",
-          !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
+          "fixed inset-y-0 left-0 z-[110] w-[280px] bg-[#071230] transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden",
+          !sidebarOpen ? "-translate-x-full" : "translate-x-0"
         )}
       >
-        <div className="flex flex-col h-full bg-[var(--surface)]">
+        <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--border)]">
-            <div className={cn("flex items-center gap-2 overflow-visible transition-all whitespace-nowrap min-w-0 flex-1", !sidebarOpen && "lg:hidden")}>
-              <Logo size="sm" variant={theme === 'dark' ? 'light' : 'dark'} />
+          <div className="p-8 pb-4 space-y-2 pt-12 lg:pt-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#8A2BE2] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#8A2BE2]/20">
+                <Plus size={24} strokeWidth={4} />
+              </div>
+              <h1 className="text-2xl font-black tracking-tighter">
+                <span className="text-white">Fisio</span>
+                <span className="text-[#8A2BE2]">CareHub</span>
+              </h1>
             </div>
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-white/5 text-[var(--text-2)] transition-all active:scale-95 flex-shrink-0"
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            <p className="text-[8px] font-bold text-white/50 tracking-[0.25em] uppercase pl-1">
+              REABILITAÇÃO & PERFORMANCE
+            </p>
           </div>
 
           {/* Nav Links */}
-          <nav className="flex-1 py-6 px-3 space-y-1 custom-scrollbar overflow-y-auto">
+          <nav className="flex-1 px-4 space-y-1 custom-scrollbar overflow-y-auto mt-4">
             {[
-              { id: 'dashboard', label: t('admin.sidebar.dashboard', 'Dashboard'), icon: LayoutDashboard },
-              { id: 'viva', label: t('admin.sidebar.viva', 'Viva AI Platform'), icon: Brain, isAI: true },
-              { id: 'logs', label: t('admin.sidebar.logs', 'Audit Timeline'), icon: History },
-              { id: 'security', label: t('admin.sidebar.security', 'Security & LGPD'), icon: Shield },
-              { id: 'materiais', label: t('admin.sidebar.library', 'Library Assets'), icon: BookOpen },
-              { id: 'physios', label: t('admin.sidebar.professionals', 'Professionals'), icon: Stethoscope },
-              { id: 'patients', label: t('admin.sidebar.patients', 'Patient Base'), icon: User },
-              { id: 'approvals', label: t('admin.sidebar.approvals', 'Verification Queue'), icon: UserCheck },
-              { id: 'users', label: t('admin.sidebar.users', 'Global Directory'), icon: Users },
-              { id: 'financial', label: t('admin.sidebar.financial', 'Revenue Center'), icon: DollarSign },
-              { id: 'saques', label: t('admin.sidebar.payouts', 'Payout Requests'), icon: CreditCard },
-              { id: 'tickets', label: t('admin.sidebar.tickets', 'Support Desk'), icon: AlertTriangle },
-              { id: 'chat', label: t('admin.sidebar.support', 'Central Chat'), icon: MessageSquare },
-              { id: 'notifications', label: t('admin.sidebar.notifications', 'System Alerts'), icon: Bell },
-              { id: 'settings', label: t('admin.sidebar.settings', 'Global Settings'), icon: Settings },
+              { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+              { id: 'viva', label: 'Viva AI', icon: Brain },
+              { id: 'logs', label: 'Logs de Auditoria', icon: History },
+              { id: 'security', label: 'Segurança', icon: ShieldCheck },
+              { id: 'materiais', label: 'Biblioteca', icon: BookOpen },
+              { id: 'physios', label: 'Profissionais', icon: Stethoscope },
+              { id: 'patients', label: 'Pacientes', icon: User },
+              { id: 'approvals', label: 'Aprovações', icon: UserCheck },
+              { id: 'users', label: 'Diretório', icon: Users },
+              { id: 'financial', label: 'Financeiro', icon: DollarSign },
+              { id: 'saques', label: 'Payout Requests', icon: CreditCard },
+              { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
+              { id: 'chat', label: 'Suporte', icon: MessageSquare },
+              { id: 'notifications', label: 'System Alerts', icon: Bell },
+              { id: 'settings', label: 'Configurações', icon: Settings },
             ].map((item: any) => (
               <button
                 key={item.id}
@@ -1761,576 +1626,130 @@ export default function Admin() {
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group relative",
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group relative",
                   activeTab === item.id 
-                    ? "text-[var(--white)] bg-[var(--gradient)] shadow-lg" 
-                    : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--border)]/50"
+                    ? "text-white bg-white/5" 
+                    : "text-white/40 hover:text-white hover:bg-white/5"
                 )}
               >
                 {activeTab === item.id && (
-                  <motion.div 
-                    layoutId="active-sidebar-indicator"
-                    className="absolute left-0 w-1 h-6 bg-[var(--white)] rounded-full -translate-x-1" 
-                  />
+                  <div className="absolute left-0 w-1 h-6 bg-[#8A2BE2] rounded-r-full" />
                 )}
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-[var(--white)]" : "text-[var(--text-2)] group-hover:text-[var(--primary)]")} />
-                <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
+                <item.icon size={18} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-white/40 group-hover:text-white")} />
+                <span className="font-semibold tracking-wide">{item.label}</span>
               </button>
             ))}
-
-            {/* Logout Button moved inside Nav */}
-            <div className="pt-2 mt-2 border-t border-white/5">
-              <button
-                onClick={() => {
-                  signOut().then(() => navigate('/'));
-                }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
-                  !sidebarOpen && "lg:justify-center"
-                )}
-              >
-                <LogOut size={20} className="flex-shrink-0" />
-                <span className={cn(!sidebarOpen && "lg:hidden")}>{t('admin.sidebar.logout', 'Sair da Conta')}</span>
-              </button>
-            </div>
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-[var(--border)]">
-              <div className={cn(
-                "flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg)] border border-[var(--border)] transition-all",
-                !sidebarOpen && "lg:justify-center lg:p-2"
-              )}>
-                <div className="w-10 h-10 rounded-xl bg-[var(--gradient)] flex items-center justify-center text-[var(--white)] font-black text-lg flex-shrink-0 shadow-lg overflow-hidden border border-white/10">
-                  {authProfile?.avatar_url || authProfile?.foto_url ? (
-                    <img 
-                      src={authProfile.avatar_url || authProfile.foto_url} 
-                      alt="" 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    firebaseUser?.email?.charAt(0).toUpperCase() || 'H'
-                  )}
-                </div>
-                <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
-                  <p className="text-sm font-black text-[var(--text)] truncate">Admin Master</p>
-                  <p className="text-[10px] font-bold text-[var(--text-2)] truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
-                </div>
+          <div className="p-6 mt-auto">
+            <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+              <div className="w-10 h-10 rounded-full bg-[#7B2CBF] flex items-center justify-center text-white font-black text-lg overflow-hidden flex-shrink-0">
+                <img 
+                  src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200" 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                   <p className="text-[10px] font-black text-white truncate">Admin Master</p>
+                </div>
+                <p className="text-[9px] font-bold text-[#8A2BE2] uppercase tracking-widest truncate">FISIOCAREHUB</p>
+                <p className="text-[8px] text-white/40 truncate mt-0.5">HOGOLEZCANO92@...</p>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[var(--bg)]">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0A1931]">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-[var(--surface)] border-b border-[var(--border)] shadow-sm pt-[env(safe-area-inset-top)]">
-          <div className="w-full px-4 sm:px-10 h-16 sm:h-18 flex items-center justify-between gap-4">
-            {/* Left Section */}
-            <div className="flex-1 flex items-center min-w-0">
-              <button 
-                className="lg:hidden p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all active:scale-95" 
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu size={24} />
-              </button>
-            </div>
-
-            {/* Center Section - Title */}
-            <div className="flex-[2] flex justify-center min-w-0">
-              <h2 className="text-sm md:text-base font-black text-[var(--text)] tracking-[0.15em] uppercase text-center truncate px-2">
-                {activeTab === 'dashboard' ? t('admin.header.overview', 'Overview') : 
-                 activeTab === 'materiais' ? t('admin.header.library', 'Library') :
-                 activeTab === 'physios' ? t('admin.header.professionals', 'Professionals') :
-                 activeTab === 'patients' ? t('admin.header.patients', 'Patients') :
-                 activeTab === 'approvals' ? t('admin.header.approvals', 'Approvals') :
-                 activeTab === 'users' ? t('admin.header.user_directory', 'User Directory') :
-                 activeTab === 'financial' ? t('admin.header.financials', 'Financials') :
-                 activeTab === 'chat' ? t('admin.header.support', 'Support') :
-                 activeTab === 'logs' ? t('admin.header.audit_logs', 'Audit Logs') :
-                 activeTab === 'security' ? t('admin.header.security', 'Security') :
-                 activeTab === 'viva' ? t('admin.header.viva_ai', 'Viva AI') :
-                 activeTab === 'settings' ? t('admin.header.settings', 'Settings') :
-                 activeTab.replace(/([A-Z])/g, ' $1').trim()}
-              </h2>
-            </div>
-
-            {/* Right Section - Actions */}
-            <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 min-w-0">
-              <div className="relative hidden md:block">
-                <Search 
-                  className="absolute pointer-events-none z-20" 
-                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-2)' }}
-                />
-                <input 
-                  type="text" 
-                  placeholder={t('admin.header.search_placeholder', 'Universal Search...')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-xs text-[var(--text)] placeholder:text-[var(--text-2)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all w-32 lg:w-48"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 sm:gap-2">
-                <button 
-                  onClick={toggleTheme}
-                  className="p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all"
-                  title={theme === 'light' ? 'Ativar Modo Dark' : 'Ativar Modo Claro'}
-                >
-                  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                </button>
-                <button className="p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all relative">
-                  <Bell size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--surface)]" />
-                </button>
-              </div>
-            </div>
+        <header className="h-20 flex items-center justify-between px-8 bg-transparent pt-6 lg:pt-0">
+          <button 
+            className="lg:hidden p-3 text-white hover:bg-white/5 rounded-2xl transition-all" 
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
+          
+          <div className="flex-1 px-4 lg:px-0">
+             <h2 className="text-lg lg:text-xl font-black text-white uppercase tracking-tight">
+               {activeTab === 'dashboard' ? 'Overview' : activeTab}
+             </h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleTheme}
+              className="p-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+            >
+              <Sun size={20} />
+            </button>
+            <button className="p-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all relative">
+              <Bell size={20} />
+              <div className="absolute top-3 right-3 w-2 h-2 bg-[#8A2BE2] rounded-full border-2 border-[#0A1931]" />
+            </button>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar bg-[var(--bg)]">
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
-            </div>
-          )}
-
-          {error && !loading && (
-            <div className="bg-rose-500/5 p-8 rounded-[var(--radius)] border border-rose-500/20 text-center space-y-4">
-              <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto">
-                <AlertTriangle size={32} />
-              </div>
-              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin.status.outage', 'System Outage')}</h3>
-              <p className="text-[var(--text-2)] text-sm max-w-md mx-auto">{error}</p>
-              <button 
-                onClick={() => fetchSupabaseProfiles()}
-                className="px-8 py-3 bg-[var(--surface)] text-[var(--text)] rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[var(--border)] transition-all border border-[var(--border)]"
-              >
-                {t('admin.status.reconnect', 'Reconnect')}
-              </button>
-            </div>
-          )}
-
+        <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar pt-2 lg:pt-4">
           {!loading && !error && activeTab === 'dashboard' && (
             <AdminDashboard />
           )}
 
-          {!loading && !error && activeTab === 'logs' && (
-            <AdminLogs />
-          )}
-
-          {!loading && !error && activeTab === 'security' && (
-            <AdminSecurity />
-          )}
-
-          {!loading && !error && activeTab === 'viva' && (
-            <AdminViva />
-          )}
-
-          {activeTab === 'materiais' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl text-[var(--text)] font-black tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
-                  <p className="text-[var(--text-2)] font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
+          {activeTab === 'materials' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-black text-white tracking-tight">{t('admin_materials.title', 'Biblioteca de Materiais')}</h3>
+                  <p className="text-sm text-white/50 font-medium tracking-tight">{t('admin_materials.subtitle', 'Gerencie PDFs e imagens para profissionais e pacientes.')}</p>
                 </div>
                 <button 
-                  onClick={() => setShowMaterialModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-[var(--gradient)] text-[var(--white)] rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-[var(--primary)]/20"
+                  onClick={() => setShowMaterialModal(!showMaterialModal)}
+                  className="px-6 py-3 bg-[#7B2CBF] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-[#7B2CBF]/20 flex items-center justify-center gap-2"
                 >
-                  <Plus size={20} />
-                  {t('admin.library.new_material', 'Novo Material (Manual)')}
+                  <Plus size={16} />
+                  {showMaterialModal ? t('common.cancel', 'Cancelar') : t('admin_materials.new_material', 'Novo Material')}
                 </button>
               </div>
 
-              {/* AI GENERATOR SECTION */}
-              <div className="p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                   <Sparkles size={120} className="text-[var(--primary)]" />
-                </div>
-                <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
-                  <div className="space-y-4 max-w-sm">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-[10px] font-black uppercase tracking-widest">
-                      <Sparkles size={12} />
-                      {t('admin.library.ai_generator', 'IA Content Creator')}
-                    </div>
-                    <h3 className="text-xl text-[var(--text)] font-black">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
-                    <p className="text-[var(--text-2)] text-sm leading-relaxed font-medium">
-                      {t('admin.library.ai_gen_desc', 'Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.')}
-                    </p>
-                  </div>
-
-                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1 md:col-span-3">
-                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
-                       <input 
-                        type="text"
-                        value={aiGenForm.theme}
-                        onChange={(e) => setAiGenForm({ ...aiGenForm, theme: e.target.value })}
-                        placeholder="Ex: Exercícios para dor ciática em casa ou Prevenção de lesões no corredor"
-                        className="w-full px-6 py-4 bg-[var(--bg)] border border-[var(--border)] rounded-2xl text-[var(--text)] outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.type_label', 'Tipo')}</label>
-                        <select 
-                          value={aiGenForm.type}
-                          onChange={(e) => setAiGenForm({...aiGenForm, type: e.target.value})}
-                          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] outline-none"
-                        >
-                          <option value="educational">{t('admin.library.educational', 'Educativo')}</option>
-                          <option value="exercise">{t('admin.library.exercise', 'Exercício')}</option>
-                          <option value="alert">{t('admin.library.alert', 'Alerta/Prevenção')}</option>
-                        </select>
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.level_label', 'Nível')}</label>
-                        <select 
-                          value={aiGenForm.level}
-                          onChange={(e) => setAiGenForm({...aiGenForm, level: e.target.value})}
-                          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] outline-none"
-                        >
-                          <option value="beginner">{t('admin.library.beginner', 'Iniciante')}</option>
-                          <option value="intermediate">{t('admin.library.intermediate', 'Intermediário')}</option>
-                          <option value="advanced">{t('admin.library.advanced', 'Avançado')}</option>
-                        </select>
-                    </div>
-                    <div className="flex items-end">
-                      <button 
-                        onClick={handleGenerateAIContent}
-                        disabled={isGenerating || !aiGenForm.theme}
-                        className="w-full h-[48px] bg-[var(--primary-2)] hover:opacity-90 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50"
-                      >
-                        {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
-                        {isGenerating ? t('admin.library.generating', 'Gerando...') : t('admin.library.generate', 'Gerar')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {materiais.map((m) => (
-                  <div key={m.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden group hover:shadow-[var(--primary)]/10 shadow-xl transition-all">
-                    <div className="h-40 relative overflow-hidden">
-                      <img 
-                        src={m.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200'} 
-                        alt={m.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <span className="px-3 py-1 bg-[var(--primary)] text-[var(--white)] text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
-                          {m.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6 space-y-4">
-                      <div>
-                        <h4 className="font-black text-[var(--text)] text-lg leading-tight mb-1">{m.title}</h4>
-                        <p className="text-xs text-[var(--text-2)] font-medium line-clamp-2">{m.description}</p>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
-                        <p className="text-xl font-black text-[var(--primary-2)]">R$ {m.price?.toLocaleString()}</p>
-                        <button 
-                          onClick={() => handleDeleteMaterial(m.id)}
-                          className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {materiais.length === 0 && (
-                <div className="p-12 border-2 border-dashed border-[var(--border)] rounded-[var(--radius)] text-center space-y-4">
-                  <div className="w-16 h-16 bg-[var(--surface)] text-[var(--text-2)] rounded-full flex items-center justify-center mx-auto">
-                    <BookOpen size={32} />
-                  </div>
-                  <p className="text-[var(--text-2)] font-bold">{t('admin.library.no_materials', 'Nenhum material cadastrado ainda.')}</p>
-                </div>
-              )}
-
-              {/* Modal Novo Material */}
               <AnimatePresence>
                 {showMaterialModal && (
-                  <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      onClick={() => setShowMaterialModal(false)}
-                      className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                      className="relative bg-[var(--surface)] backdrop-blur-xl w-full max-w-lg rounded-[3rem] shadow-2xl border border-[var(--border)] overflow-hidden p-8 space-y-6"
+                  <div className="p-8 bg-[#071230] rounded-[24px] border border-white/5 border-dashed">
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="space-y-6"
                     >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.library.new_material', 'Novo Material')}</h3>
-                        <button onClick={() => setShowMaterialModal(false)} className="text-[var(--text-2)] hover:text-[var(--text)]">
-                          <X size={24} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
                         <div className="space-y-4">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.form.title', 'Título')}</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Título do Material</label>
                             <input 
                               type="text" 
                               value={newMaterial.title}
                               onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
-                              placeholder={t('admin.library.form.title_placeholder', "Ex: Guia de Exercícios para Lombar")}
-                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
+                              placeholder="Fisioterapia Esportiva - Guia..."
+                              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" 
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.form.description', 'Descrição')}</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Descrição curta</label>
                             <textarea 
                               value={newMaterial.description}
                               onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
-                              placeholder={t('admin.library.form.description_placeholder', "Breve descrição do conteúdo...")}
-                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none h-20 resize-none"
+                              placeholder="Breve resumo do conteúdo..."
+                              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all h-32" 
                             />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Objetivo Clínico</label>
-                            <input 
-                              type="text" 
-                              value={newMaterial.clinical_objective}
-                              onChange={(e) => setNewMaterial({...newMaterial, clinical_objective: e.target.value})}
-                              placeholder="Ex: Alívio de dor e melhora da mobilidade"
-                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Nível</label>
-                              <select 
-                                value={newMaterial.level}
-                                onChange={(e) => setNewMaterial({...newMaterial, level: e.target.value as any})}
-                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
-                              >
-                                <option value="beginner">Iniciante</option>
-                                <option value="intermediate">Intermediário</option>
-                                <option value="advanced">Avançado</option>
-                              </select>
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Tipo</label>
-                              <select 
-                                value={newMaterial.type}
-                                onChange={(e) => setNewMaterial({...newMaterial, type: e.target.value as any})}
-                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
-                              >
-                                <option value="educational">Educativo</option>
-                                <option value="exercise">Exercício</option>
-                                <option value="alert">Alerta</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 items-end">
-                            <div className="space-y-1 flex-1">
-                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest flex justify-between items-center pr-2">
-                                Categoria
-                                <button 
-                                  onClick={handleAutoCategorize}
-                                  disabled={isCategorizing || !newMaterial.title}
-                                  className="text-[var(--primary-2)] hover:opacity-80 transition-opacity flex items-center gap-1 normal-case tracking-normal disabled:opacity-50"
-                                >
-                                  {isCategorizing ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                                  IA
-                                </button>
-                              </label>
-                              <input 
-                                type="text" 
-                                value={newMaterial.category}
-                                readOnly
-                                className="w-full px-4 py-3 bg-[var(--bg)]/50 border border-[var(--border)] rounded-xl text-[var(--text)] italic outline-none text-sm"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 mb-4">
-                                <button
-                                  onClick={() => setNewMaterial({...newMaterial, is_premium: !newMaterial.is_premium})}
-                                  className={cn(
-                                    "w-10 h-5 rounded-full relative transition-colors",
-                                    newMaterial.is_premium ? "bg-[var(--primary)]" : "bg-[var(--surface)] border border-[var(--border)]"
-                                  )}
-                                >
-                                  <div className={cn(
-                                    "absolute top-0.5 w-4 h-4 rounded-full bg-[var(--white)] transition-all shadow-sm",
-                                    newMaterial.is_premium ? "left-5.5" : "left-0.5"
-                                  )} />
-                                </button>
-                                <span className="text-[10px] font-black uppercase text-[var(--text-2)]">Premium</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {newMaterial.is_premium && (
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Preço Individual (R$)</label>
-                              <input 
-                                type="text" 
-                                value={newMaterial.price}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/[^0-9.]/g, '');
-                                  setNewMaterial({...newMaterial, price: val});
-                                }}
-                                placeholder="0.00"
-                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
-                              />
-                            </div>
-                          )}
-
-                          {/* Section Editor */}
-                          <div className="space-y-4 pt-4 border-t border-white/10">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Seções do Conteúdo</label>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setNewMaterial({
-                                    ...newMaterial, 
-                                    sections: [...newMaterial.sections, { type: 'text', content: { title: '', body: '' } }]
-                                  })}
-                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
-                                  title="Texto"
-                                >
-                                  <FileIcon size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setNewMaterial({
-                                    ...newMaterial, 
-                                    sections: [...newMaterial.sections, { type: 'step-by-step', content: { steps: [''] } }]
-                                  })}
-                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
-                                  title="Checklist"
-                                >
-                                  <CheckCircle2 size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setNewMaterial({
-                                    ...newMaterial, 
-                                    sections: [...newMaterial.sections, { type: 'alert', content: { message: '' } }]
-                                  })}
-                                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white"
-                                  title="Alerta"
-                                >
-                                  <AlertCircle size={14} />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="space-y-3">
-                              {newMaterial.sections.map((section, idx) => (
-                                <div key={idx} className="p-4 bg-white/5 rounded-2xl border border-white/5 relative group">
-                                  <button 
-                                    onClick={() => {
-                                      const newSections = [...newMaterial.sections];
-                                      newSections.splice(idx, 1);
-                                      setNewMaterial({...newMaterial, sections: newSections});
-                                    }}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <X size={12} />
-                                  </button>
-
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <Tag size={10} className="text-blue-400" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                      {section.type === 'text' ? 'Texto' : section.type === 'step-by-step' ? 'Passo a Passo' : 'Alerta'}
-                                    </span>
-                                  </div>
-
-                                  {section.type === 'text' && (
-                                    <div className="space-y-2">
-                                      <input 
-                                        type="text"
-                                        placeholder="Subtítulo"
-                                        value={section.content.title}
-                                        onChange={(e) => {
-                                          const news = [...newMaterial.sections];
-                                          news[idx].content.title = e.target.value;
-                                          setNewMaterial({...newMaterial, sections: news});
-                                        }}
-                                        className="w-full bg-transparent border-b border-white/10 text-xs font-bold text-white outline-none"
-                                      />
-                                      <textarea 
-                                        placeholder="Conteúdo..."
-                                        value={section.content.body}
-                                        onChange={(e) => {
-                                          const news = [...newMaterial.sections];
-                                          news[idx].content.body = e.target.value;
-                                          setNewMaterial({...newMaterial, sections: news});
-                                        }}
-                                        className="w-full bg-transparent text-[10px] text-slate-400 outline-none h-16 resize-none"
-                                      />
-                                    </div>
-                                  )}
-
-                                  {section.type === 'step-by-step' && (
-                                    <div className="space-y-2">
-                                      {section.content.steps.map((step: string, sIdx: number) => (
-                                        <div key={sIdx} className="flex gap-2">
-                                          <span className="text-[10px] font-black text-slate-500 pt-1">{sIdx + 1}.</span>
-                                          <input 
-                                            type="text"
-                                            value={step}
-                                            onChange={(e) => {
-                                              const news = [...newMaterial.sections];
-                                              news[idx].content.steps[sIdx] = e.target.value;
-                                              setNewMaterial({...newMaterial, sections: news});
-                                            }}
-                                            className="flex-1 bg-transparent border-b border-white/5 text-[10px] text-white outline-none"
-                                          />
-                                        </div>
-                                      ))}
-                                      <button 
-                                        onClick={() => {
-                                          const news = [...newMaterial.sections];
-                                          news[idx].content.steps.push('');
-                                          setNewMaterial({...newMaterial, sections: news});
-                                        }}
-                                        className="text-[10px] text-blue-400 font-bold"
-                                      >
-                                        + Adicionar Passo
-                                      </button>
-                                    </div>
-                                  )}
-
-                                  {section.type === 'alert' && (
-                                    <textarea 
-                                      placeholder="Mensagem de alerta..."
-                                      value={section.content.message}
-                                      onChange={(e) => {
-                                        const news = [...newMaterial.sections];
-                                        news[idx].content.message = e.target.value;
-                                        setNewMaterial({...newMaterial, sections: news});
-                                      }}
-                                      className="w-full bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[10px] text-rose-200 outline-none h-12 resize-none"
-                                    />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
                           </div>
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t border-white/10">
-                          <div className="space-y-1 text-slate-400 text-[10px] uppercase font-black tracking-widest pl-1">Mídia e Arquivos</div>
+                        <div className="space-y-6">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Imagem de Capa</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Capa (Upload ou URL)</label>
                             <div className="flex items-center gap-4">
                               <label className="flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed border-white/10 rounded-2xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
                                 {imageFile ? (
