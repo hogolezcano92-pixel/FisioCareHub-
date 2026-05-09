@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -78,22 +78,30 @@ export default function AdminLogs() {
     }
   };
 
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch = 
-      log.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.perfil?.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.tipo_acao.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filterType === 'all' || log.tipo_usuario === filterType;
-    
-    return matchesSearch && matchesFilter;
-  });
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const descricao = (log.descricao ?? '').toLowerCase();
+      const nomeCompleto = (log.perfil?.nome_completo ?? '').toLowerCase();
+      const tipoAcao = (log.tipo_acao ?? '').toLowerCase();
+      const search = (searchTerm ?? '').toLowerCase();
+
+      const matchesSearch = 
+        descricao.includes(search) ||
+        nomeCompleto.includes(search) ||
+        tipoAcao.includes(search);
+      
+      const matchesFilter = filterType === 'all' || log.tipo_usuario === filterType;
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [logs, searchTerm, filterType]);
 
   const getActionIcon = (type: string) => {
-    if (type.includes('login') || type.includes('logout')) return <Shield size={16} className="text-blue-400" />;
-    if (type.includes('prontuario')) return <FileText size={16} className="text-emerald-400" />;
-    if (type.includes('finance') || type.includes('pagamento')) return <Database size={16} className="text-amber-400" />;
-    if (type.includes('erro') || type.includes('suspicia')) return <AlertCircle size={16} className="text-rose-400" />;
+    const actionType = type ?? '';
+    if (actionType.includes('login') || actionType.includes('logout')) return <Shield size={16} className="text-blue-400" />;
+    if (actionType.includes('prontuario')) return <FileText size={16} className="text-emerald-400" />;
+    if (actionType.includes('finance') || actionType.includes('pagamento')) return <Database size={16} className="text-amber-400" />;
+    if (actionType.includes('erro') || actionType.includes('suspicia')) return <AlertCircle size={16} className="text-rose-400" />;
     return <Activity size={16} className="text-slate-400" />;
   };
 
@@ -102,8 +110,8 @@ export default function AdminLogs() {
       {/* Header & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.logs.title', 'Audit Trail & Central Logs')}</h3>
-          <p className="admin-text-secondary text-xs font-medium">{t('admin.logs.subtitle', 'Real-time monitoring of all platform-wide operational vectors.')}</p>
+          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.logs.title')}</h3>
+          <p className="admin-text-secondary text-xs font-medium">{t('admin.logs.subtitle')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -111,7 +119,7 @@ export default function AdminLogs() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
             <input 
               type="text"
-              placeholder={t('admin.logs.search_placeholder', 'Query audit database...')}
+              placeholder={t('admin.logs.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white border border-slate-200 rounded-xl pl-11 pr-6 py-2.5 text-xs text-slate-900 font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all w-full md:w-64"
@@ -130,7 +138,7 @@ export default function AdminLogs() {
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
-                {type === 'all' ? t('common.all', 'All') : type}
+                {type === 'all' ? t('common.all') : t(`admin_users.role_${type === 'fisio' ? 'physio' : type === 'paciente' ? 'patient' : type}`)}
               </button>
             ))}
           </div>
@@ -144,11 +152,11 @@ export default function AdminLogs() {
             <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h4 className="text-sm admin-title tracking-tight flex items-center gap-2">
                 <Clock className="text-blue-600" size={16} />
-                {t('admin.logs.timeline_title', 'Activity Timeline')}
+                {t('admin.logs.timeline_title')}
               </h4>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{t('admin.logs.live_flow', 'Live Flow')}</span>
+                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{t('admin.logs.live_flow')}</span>
               </div>
             </div>
 
@@ -156,7 +164,7 @@ export default function AdminLogs() {
               {loading ? (
                 <div className="p-20 text-center space-y-4">
                   <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.ingesting', 'Ingesting logs...')}</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.ingesting')}</p>
                 </div>
               ) : filteredLogs.length > 0 ? (
                 <div className="divide-y divide-slate-50">
@@ -180,7 +188,7 @@ export default function AdminLogs() {
 
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-4">
-                          <p className="text-xs font-black text-slate-900">{log.descricao}</p>
+                          <p className="text-xs font-black text-slate-900">{log.descricao ?? ''}</p>
                           <span className="text-[10px] font-bold text-slate-400 tabular-nums">
                             {formatDate(log.created_at)}
                           </span>
@@ -189,7 +197,7 @@ export default function AdminLogs() {
                           <div className="flex items-center gap-1.5">
                             <User size={12} className="text-slate-300" />
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                              {log.perfil?.nome_completo || 'System Core'}
+                              {log.perfil?.nome_completo ?? 'System Core'}
                             </span>
                           </div>
                           <div className="w-1 h-1 rounded-full bg-slate-200" />
@@ -214,7 +222,7 @@ export default function AdminLogs() {
               ) : (
                 <div className="py-32 text-center space-y-4">
                   <Activity size={40} className="text-slate-200 mx-auto" />
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.no_entries', 'No terminal entries detected.')}</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.no_entries')}</p>
                 </div>
               )}
             </div>
@@ -229,8 +237,8 @@ export default function AdminLogs() {
                 <Shield size={24} />
               </div>
               <div>
-                <h4 className="text-sm admin-title uppercase tracking-tight">{t('admin.logs.inspector.title', 'Log Inspector')}</h4>
-                <p className="admin-text-secondary text-[10px] font-bold uppercase tracking-widest">{t('admin.logs.inspector.metadata', 'Internal Metadata')}</p>
+                <h4 className="text-sm admin-title uppercase tracking-tight">{t('admin.logs.inspector.title')}</h4>
+                <p className="admin-text-secondary text-[10px] font-bold uppercase tracking-widest">{t('admin.logs.inspector.metadata')}</p>
               </div>
             </div>
 
@@ -246,19 +254,19 @@ export default function AdminLogs() {
                   <div className="space-y-4">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        <span>{t('admin.logs.inspector.event_type', 'Event Type')}</span>
-                        <span className="text-blue-600">{selectedLog.tipo_acao}</span>
+                        <span>{t('admin.logs.inspector.event_type')}</span>
+                        <span className="text-blue-600">{selectedLog.tipo_acao ?? ''}</span>
                       </div>
-                      <p className="text-xs font-bold text-slate-900 leading-relaxed">{selectedLog.descricao}</p>
+                      <p className="text-xs font-bold text-slate-900 leading-relaxed">{selectedLog.descricao ?? ''}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.vector_id', 'Vector ID')}</p>
-                        <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.usuario_id}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.vector_id')}</p>
+                        <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.usuario_id ?? ''}</p>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.linked_ref', 'Linked Ref')}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.linked_ref')}</p>
                         <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.referencia_id || 'N/A'}</p>
                       </div>
                     </div>
@@ -266,23 +274,23 @@ export default function AdminLogs() {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                       <div className="flex items-center gap-3">
                         <Monitor size={14} className="text-slate-400" />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.logs.inspector.diagnostics', 'System Diagnostics')}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.logs.inspector.diagnostics')}</span>
                       </div>
                       
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400 font-bold">Client IP</span>
+                          <span className="text-slate-400 font-bold">{t('admin.logs.inspector.client_ip')}</span>
                           <span className="text-slate-900 font-mono font-bold">{selectedLog.ip_address || '127.0.0.1'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400 font-bold">User Agent</span>
+                          <span className="text-slate-400 font-bold">{t('admin.logs.inspector.user_agent')}</span>
                           <span className="text-slate-900 font-mono truncate max-w-[120px]">{selectedLog.detalhes?.userAgent || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">Payload (Structured)</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-4">{t('admin.logs.inspector.payload')}</p>
                       <pre className="p-5 bg-slate-900 rounded-2xl border border-slate-800 text-[10px] font-mono text-blue-300 overflow-x-auto custom-scrollbar shadow-inner">
                         {JSON.stringify(selectedLog.detalhes || { status: 'Success' }, null, 2)}
                       </pre>
@@ -290,7 +298,7 @@ export default function AdminLogs() {
                   </div>
 
                   <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 group">
-                    {t('admin.logs.inspector.inspect_action', 'Inspect Object Hash')}
+                    {t('admin.logs.inspector.inspect_action')}
                     <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </motion.div>
@@ -300,7 +308,7 @@ export default function AdminLogs() {
                     <Database size={32} />
                   </div>
                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                    {t('admin.logs.inspector.select_event', 'Select event for deep inspection')}
+                    {t('admin.logs.inspector.select_event')}
                   </p>
                 </div>
               )}

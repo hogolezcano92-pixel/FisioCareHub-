@@ -57,15 +57,15 @@ export default function AdminViva() {
       const performanceData = {
         fisioterapeutas_ativos: physiosCount || 0,
         pacientes_novos_mes: patientsCount || 0,
-        faturamento_mes: `R$ ${totalRevenue.toLocaleString('pt-BR')}`,
-        logs_recentes: (recentLogs || []).map(l => `${l.tipo_acao}: ${l.descricao}`)
+        faturamento_mes: `R$ ${(totalRevenue || 0).toLocaleString('pt-BR')}`,
+        logs_recentes: (recentLogs || []).map(l => `${l.tipo_acao ?? ''}: ${l.descricao ?? ''}`)
       };
 
       const data = await generateAdminInsights(performanceData);
-      setInsights(data);
+      setInsights(data || []);
     } catch (error) {
       console.error("Error generating insights:", error);
-      toast.error(t('admin.viva.toast.error_insights', 'Não foi possível analisar os dados reais no momento.'));
+      toast.error(t('admin.viva.toast.error_insights'));
     } finally {
       setAnalyzing(false);
     }
@@ -89,11 +89,11 @@ export default function AdminViva() {
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black uppercase tracking-[0.2em]">
               <Sparkles size={12} className="text-blue-200" />
-              {t('admin.viva.hero_subtitle', 'Inteligência Neural Avançada')}
+              {t('admin.viva.hero_subtitle')}
             </div>
-            <h2 className="text-4xl font-black tracking-tight">{t('admin.viva.hero_title', 'Eu sou Viva, sua Estrategista de IA.')}</h2>
+            <h2 className="text-4xl font-black tracking-tight">{t('admin.viva.hero_title')}</h2>
             <p className="text-base font-medium text-blue-50/80 max-w-2xl leading-relaxed">
-              {t('admin.viva.hero_desc', 'Sintetizando dados operacionais em tempo real para detectar anomalias, prever o crescimento da rede e otimizar a eficiência da plataforma.')}
+              {t('admin.viva.hero_desc')}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-4">
               <button 
@@ -102,14 +102,14 @@ export default function AdminViva() {
                 className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2"
               >
                 {analyzing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                {t('admin.viva.generate_insights', 'Gerar Insights Dinâmicos')}
+                {t('admin.viva.generate_insights')}
               </button>
               <button 
                 onClick={() => setOpenViva(true)}
                 className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest border border-white/20 transition-all flex items-center gap-2"
               >
                 <MessageSquare size={18} />
-                {t('admin.viva.speak_with_viva', 'Falar com a Viva')}
+                {t('admin.viva.speak_with_viva')}
               </button>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function AdminViva() {
                 <Brain size={32} />
               </div>
               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                {t('admin.viva.empty_state', 'Inicie o escaneamento da plataforma para gerar inteligência estratégica.')}
+                {t('admin.viva.empty_state')}
               </p>
             </div>
           ) : (
@@ -175,8 +175,8 @@ export default function AdminViva() {
                 <RefreshCw className="animate-spin text-blue-600 relative z-10" size={40} />
               </div>
               <div className="space-y-2">
-                <p className="text-slate-900 font-black text-xl tracking-tight uppercase">{t('admin.viva.loading_title', 'Processando Big Data...')}</p>
-                <p className="text-slate-500 font-bold text-xs">{t('admin.viva.loading_desc', 'Cruzando referências de clusters da rede, vetores fiscais e logs de segurança.')}</p>
+                <p className="text-slate-900 font-black text-xl tracking-tight uppercase">{t('admin.viva.loading_title')}</p>
+                <p className="text-slate-500 font-bold text-xs">{t('admin.viva.loading_desc')}</p>
               </div>
             </div>
           )}
@@ -190,18 +190,18 @@ export default function AdminViva() {
             <CheckCircle2 size={28} />
           </div>
           <div>
-            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title', 'Escudo Financeiro')}</h5>
-            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc', 'Detecção proativa de fraudes e correspondência de padrões neurais para transações suspeitas.')}</p>
+            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title')}</h5>
+            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc')}</p>
           </div>
         </div>
 
         <div className="admin-card p-8 bg-white flex items-center gap-8 group cursor-pointer">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm" >
             <TrendingUp size={28} />
           </div>
           <div>
-            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.growth_title', 'Previsão de Crescimento')}</h5>
-            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc', 'Análise preditiva de churn de profissionais e trajetórias de aquisição de pacientes.')}</p>
+            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.growth_title')}</h5>
+            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc')}</p>
           </div>
         </div>
       </div>

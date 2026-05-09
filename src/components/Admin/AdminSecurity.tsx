@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -59,9 +59,9 @@ export default function AdminSecurity() {
 
         const mappedUsers: SecurityUser[] = (profiles || []).map(p => ({
           id: p.id,
-          nome_completo: p.nome_completo || t('common.no_name', 'Sem Nome'),
+          nome_completo: p.nome_completo || t('common.no_name'),
           email: p.email || 'N/A',
-          tipo_usuario: p.tipo_usuario,
+          tipo_usuario: p.tipo_usuario ?? 'patient',
           status: p.status_aprovacao === 'rejeitado' ? 'banido' : p.status_aprovacao === 'pendente' ? 'suspenso' : 'ativo',
           lastSeen: p.last_active_at ? new Date(p.last_active_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
           devices: 1 // Default to 1 active session until actual devices table is available
@@ -89,18 +89,23 @@ export default function AdminSecurity() {
       if (error) throw error;
 
       setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus as any } : u));
-      toast.success(t('admin.security.toast_success', 'Usuário {{status}} com sucesso', { status: newStatus }));
+      toast.success(t('admin.security.toast_success', { status: newStatus }));
     } catch (err) {
-      toast.error(t('admin.security.toast_error', 'Erro ao atualizar status.'));
+      toast.error(t('admin.security.toast_error'));
     } finally {
       setShowOptions(null);
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => {
+      const nomeCompleto = (u.nome_completo ?? '').toLowerCase();
+      const email = (u.email ?? '').toLowerCase();
+      const search = (searchTerm ?? '').toLowerCase();
+
+      return nomeCompleto.includes(search) || email.includes(search);
+    });
+  }, [users, searchTerm]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -114,8 +119,8 @@ export default function AdminSecurity() {
               <ShieldAlert size={28} />
             </div>
             <div>
-              <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('admin.security.threats_detected', 'Security Threats Detected')}</h4>
-              <p className="text-rose-600 font-bold text-xs">{suspiciousCount} {t('admin.security.flagged_events', 'suspicious events flagged in the last 24h.')}</p>
+              <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('admin.security.threats_detected')}</h4>
+              <p className="text-rose-600 font-bold text-xs">{suspiciousCount} {t('admin.security.flagged_events')}</p>
             </div>
           </div>
           
@@ -124,22 +129,22 @@ export default function AdminSecurity() {
             className="relative z-10 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-rose-100 transition-all active:scale-95 flex items-center gap-2"
           >
             <ZapOff size={18} />
-            {t('admin.security.lockdown', 'Preventive Lockdown')}
+            {t('admin.security.lockdown')}
           </button>
         </div>
       )}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.security.access_control', 'Access Control & Security')}</h3>
-          <p className="admin-text-secondary text-xs font-medium">{t('admin.security.access_desc', 'Manage sessions, reset credentials, and enforce policies.')}</p>
+          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.security.access_control')}</h3>
+          <p className="admin-text-secondary text-xs font-medium">{t('admin.security.access_desc')}</p>
         </div>
 
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text"
-            placeholder={t('admin.security.search_placeholder', 'Search security pool...')}
+            placeholder={t('admin.security.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="bg-white border border-slate-200 rounded-xl pl-11 pr-6 py-2.5 text-xs text-slate-900 font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all w-full md:w-80"
@@ -153,11 +158,11 @@ export default function AdminSecurity() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.user', 'System User')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.tier', 'Access Tier')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.sync', 'Last Sync')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.hardware', 'Hardware')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em] text-right">{t('admin.security.table.shield', 'Shield')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.user')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.tier')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.sync')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.hardware')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em] text-right">{t('admin.security.table.shield')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -165,7 +170,7 @@ export default function AdminSecurity() {
                 <tr>
                   <td colSpan={5} className="py-20 text-center">
                     <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{t('admin.security.scanning', 'Scanning encrypted pool...')}</p>
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{t('admin.security.scanning')}</p>
                   </td>
                 </tr>
               ) : filteredUsers.map((user) => (
@@ -173,7 +178,7 @@ export default function AdminSecurity() {
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-blue-600 border border-slate-200 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        {user.nome_completo.charAt(0)}
+                        {(user.nome_completo ?? '').charAt(0)}
                       </div>
                       <div>
                         <p className="text-xs font-black text-slate-900 pr-4">{user.nome_completo}</p>
@@ -193,7 +198,7 @@ export default function AdminSecurity() {
                         user.status === 'ativo' ? "bg-emerald-500" :
                         user.status === 'suspenso' ? "bg-amber-500" : "bg-rose-500"
                       )} />
-                      {user.status}
+                      {t(`admin.security.status.${user.status}`)}
                     </div>
                   </td>
                   <td className="px-8 py-5">
@@ -212,7 +217,7 @@ export default function AdminSecurity() {
                         ))}
                       </div>
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        {user.devices} {t('admin.security.connected', 'Connected')}
+                        {user.devices} {t('admin.security.connected')}
                       </span>
                     </div>
                   </td>
@@ -242,23 +247,23 @@ export default function AdminSecurity() {
                               onClick={() => handleUpdateStatus(user.id, user.status === 'suspenso' ? 'ativo' : 'suspenso')}
                             >
                               {user.status === 'suspenso' ? (
-                                <><Unlock size={14} className="text-emerald-500" /> {t('admin.security.actions.activate', 'Activate Account')}</>
+                                <><Unlock size={14} className="text-emerald-500" /> {t('admin.security.actions.activate')}</>
                               ) : (
-                                <><Lock size={14} className="text-amber-500" /> {t('admin.security.actions.suspend', 'Suspend Access')}</>
+                                <><Lock size={14} className="text-amber-500" /> {t('admin.security.actions.suspend')}</>
                               )}
                             </button>
                             <button 
                               className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
                               onClick={() => toast.info('Sessions terminated!')}
                             >
-                              <ZapOff size={14} className="text-blue-500" /> {t('admin.security.actions.kill_sessions', 'Kill Remote Sessions')}
+                              <ZapOff size={14} className="text-blue-500" /> {t('admin.security.actions.kill_sessions')}
                             </button>
                             <div className="h-px bg-slate-100 my-1" />
                             <button 
                               className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-black text-rose-500 hover:bg-rose-50 transition-all"
                               onClick={() => handleUpdateStatus(user.id, 'banido')}
                             >
-                              <UserX size={14} /> {t('admin.security.actions.ban', 'Permanent Ban')}
+                              <UserX size={14} /> {t('admin.security.actions.ban')}
                             </button>
                           </motion.div>
                         </>
@@ -270,7 +275,7 @@ export default function AdminSecurity() {
               {!loading && filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-20 text-center">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('admin.security.no_assets', 'No assets found matching criteria.')}</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('admin.security.no_assets')}</p>
                   </td>
                 </tr>
               )}
@@ -282,9 +287,9 @@ export default function AdminSecurity() {
       {/* Security Tools Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { icon: History, title: t('admin.security.tools.audit_title', 'Auth Audit'), desc: t('admin.security.tools.audit_desc', 'Detailed tracking of administrative overrides and config changes.'), color: 'blue', action: t('admin.security.tools.audit_action', 'View Logs') },
-          { icon: Globe, title: t('admin.security.tools.shield_title', 'Network Shield'), desc: t('admin.security.tools.shield_desc', 'Enforce geo-fencing and restrict access to authorized IP pools.'), color: 'amber', action: t('admin.security.tools.shield_action', 'Configure') },
-          { icon: CheckCircle2, title: t('admin.security.tools.lgpd_title', 'LGPD Compliance'), desc: t('admin.security.tools.lgpd_desc', 'GDPR-grade reports for sensitive data access and HIPAA audits.'), color: 'emerald', action: t('admin.security.tools.lgpd_action', 'Audit Hub') }
+          { icon: History, title: t('admin.security.tools.audit_title'), desc: t('admin.security.tools.audit_desc'), color: 'blue', action: t('admin.security.tools.audit_action') },
+          { icon: Globe, title: t('admin.security.tools.shield_title'), desc: t('admin.security.tools.shield_desc'), color: 'amber', action: t('admin.security.tools.shield_action') },
+          { icon: CheckCircle2, title: t('admin.security.tools.lgpd_title'), desc: t('admin.security.tools.lgpd_desc'), color: 'emerald', action: t('admin.security.tools.lgpd_action') }
         ].map((tool, idx) => (
           <div key={idx} className="admin-card p-8 bg-white space-y-6 group">
             <div className={cn(
