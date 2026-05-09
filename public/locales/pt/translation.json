@@ -16,7 +16,16 @@
     "applied": "Aplicado",
     "profile": "Perfil",
     "language_changed": "Idioma alterado para Português",
-    "all_app_applied": "O idioma será aplicado em todo o aplicativo"
+    "all_app_applied": "O idioma será aplicado em todo o aplicativo",
+    "days_short": {
+      "sun": "Dom",
+      "mon": "Seg",
+      "tue": "Ter",
+      "wed": "Qua",
+      "thu": "Qui",
+      "fri": "Sex",
+      "sat": "Sáb"
+    }
   },
   "nav": {
     "home": "Início",
@@ -192,6 +201,302 @@
     "profile_approved": "Perfil Aprovado!",
     "profile_rejected": "Perfil Rejeitado",
     "update_profile": "Atualizar Perfil",
-    "delete_profile": "Excluir Perfil"
+    "delete_profile": "Excluir Perfil",
+    "restricted_access": "Acesso Restrito",
+    "restricted_access_desc": "Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.",
+    "login_popup_notice": "Importante: Uma janela (popup) será aberta para o login. Certifique-se de que seu navegador permite popups.",
+    "connect_database": "Conectar ao Banco de Dados",
+    "sidebar": {
+      "dashboard": "Overview",
+      "library": "Biblioteca",
+      "professionals": "Profissionais",
+      "patients": "Pacientes",
+      "approvals": "Aprovações",
+      "users": "Diretório",
+      "financial": "Financeiro",
+      "support": "Suporte",
+      "logs": "Logs de Auditoria",
+      "security": "Segurança",
+      "viva": "Viva AI",
+      "settings": "Configurações",
+      "logout": "Sair da Conta"
+    },
+    "header": {
+      "search_placeholder": "Busca Universal...",
+      "overview": "Overview",
+      "library": "Biblioteca",
+      "professionals": "Profissionais",
+      "patients": "Pacientes",
+      "approvals": "Aprovações",
+      "user_directory": "Diretório de Usuários",
+      "financials": "Financeiro",
+      "support": "Suporte",
+      "audit_logs": "Logs de Auditoria",
+      "security": "Segurança",
+      "viva_ai": "Viva AI",
+      "settings": "Configurações"
+    },
+    "status": {
+      "syncing": "Sincronizando Sistemas...",
+      "outage": "Falha no Sistema",
+      "reconnect": "Reconectar"
+    },
+    "library": {
+      "title": "Biblioteca de Saúde",
+      "desc": "Gerencie os materiais disponíveis para venda aos pacientes.",
+      "new_material": "Novo Material (Manual)",
+      "ai_generator": "IA Content Creator",
+      "ai_gen_title": "Geração Automática",
+      "ai_gen_desc": "Crie materiais educativos completos apenas informando o tema.",
+      "theme_label": "Tema do Conteúdo",
+      "type_label": "Tipo",
+      "level_label": "Nível",
+      "generate": "Gerar",
+      "generating": "Gerando...",
+      "no_materials": "Nenhum material cadastrado ainda.",
+      "save_material": "Salvar Material",
+      "uploading": "Subindo..."
+    },
+    "users": {
+      "title": "Todos os Usuários",
+      "filter_placeholder": "Filtrar usuários...",
+      "table": {
+        "name": "Nome",
+        "email": "Email",
+        "role": "Papel",
+        "crefito": "CREFITO",
+        "status": "Status",
+        "actions": "Ações"
+      }
+    },
+    "dashboard": {
+      "command_center": "Centro de Comando",
+      "active_sessions": "Sessões Ativas",
+      "system_health": "Saúde do Sistema",
+      "operational": "Operacional",
+      "network": "Rede",
+      "synchronized": "Sincronizado",
+      "kpi": {
+        "physios": "Fisioterapeutas",
+        "physios_desc": "Base total cadastrada",
+        "patients": "Novos Pacientes",
+        "patients_desc": "Crescimento mensal",
+        "appointments": "Consultas Hoje",
+        "appointments_desc": "Volume operacional",
+        "revenue": "Faturamento Mensal",
+        "revenue_desc": "Receita confirmada"
+      },
+      "charts": {
+        "revenue_title": "Performance de Receita",
+        "revenue_desc": "Distribuição de ganhos diários",
+        "activity_title": "Atividade Recente",
+        "activity_desc": "Fluxo de eventos em tempo real",
+        "no_activity": "Nenhuma atividade recente detectada.",
+        "live_ops": "Operações ao Vivo"
+      }
+    },
+    "security": {
+      "threats_detected": "Ameaças de Segurança Detectadas",
+      "flagged_events": "eventos suspeitos sinalizados nas últimas 24h.",
+      "lockdown": "Bloqueio Preventivo",
+      "access_control": "Controle de Acesso & Segurança",
+      "access_desc": "Gerencie sessões, redefina credenciais e aplique políticas.",
+      "search_placeholder": "Buscar pool de segurança...",
+      "table": {
+        "user": "Usuário do Sistema",
+        "tier": "Nível de Acesso",
+        "sync": "Última Sincronização",
+        "hardware": "Dispositivos",
+        "shield": "Proteção"
+      },
+      "scanning": "Escaneando pool criptografado...",
+      "connected": "Conectado",
+      "no_assets": "Nenhum registro encontrado para os critérios.",
+      "tools": {
+        "audit_title": "Auditoria de Auth",
+        "audit_desc": "Rastreamento detalhado de alterações administrativas.",
+        "audit_action": "Ver Logs",
+        "shield_title": "Escudo de Rede",
+        "shield_desc": "Geo-fencing e restrição de acesso por IP.",
+        "shield_action": "Configurar",
+        "lgpd_title": "Conformidade LGPD",
+        "lgpd_desc": "Relatórios para auditorias de dados sensíveis.",
+        "lgpd_action": "Hub de Auditoria"
+      }
+    },
+    "viva": {
+      "hero_subtitle": "Inteligência Neural Avançada",
+      "hero_title": "Eu sou Viva, sua Estrategista de IA.",
+      "hero_desc": "Sintetizando dados operacionais em tempo real para detectar anomalias, prever o crescimento da rede e otimizar a eficiência da plataforma.",
+      "generate_insights": "Gerar Insights Dinâmicos",
+      "speak_with_viva": "Falar com a Viva",
+      "empty_state": "Inicie o escaneamento da plataforma para gerar inteligência estratégica.",
+      "loading_title": "Processando Big Data...",
+      "loading_desc": "Cruzando referências de clusters da rede, vetores fiscais e logs de segurança.",
+      "capabilities": {
+        "financial_shield_title": "Escudo Financeiro",
+        "financial_shield_desc": "Detecção proativa de fraudes e correspondência de padrões neurais para transações suspeitas.",
+        "growth_title": "Previsão de Crescimento",
+        "growth_desc": "Análise preditiva de churn de profissionais e trajetórias de aquisição de pacientes."
+      },
+      "toast": {
+        "error_insights": "Não foi possível analisar os dados reais no momento."
+      }
+    },
+    "logs": {
+      "title": "Trilha de Auditoria & Logs Centrais",
+      "subtitle": "Monitoramento em tempo real de todos os vetores operacionais da plataforma.",
+      "search_placeholder": "Consultar banco de auditoria...",
+      "timeline_title": "Linha do Tempo de Atividade",
+      "live_flow": "Fluxo ao Vivo",
+      "ingesting": "Ingerindo logs...",
+      "no_entries": "Nenhuma entrada de terminal detectada.",
+      "inspector": {
+        "title": "Inspetor de Log",
+        "metadata": "Metadados Internos",
+        "event_type": "Tipo de Evento",
+        "vector_id": "ID do Vetor",
+        "linked_ref": "Ref Vinculada",
+        "diagnostics": "Diagnósticos do Sistema",
+        "inspect_action": "Inspecionar Hash do Objeto",
+        "select_event": "Selecione um evento para inspeção profunda"
+      }
+    },
+    "kineai": {
+      "welcome": "Olá! Sou a **KineAI**, sua assistente de reabilitação. Como posso ajudar com sua saúde ou suporte hoje? 🌟",
+      "voice_not_supported": "Reconhecimento de voz não suportado neste navegador.",
+      "help_text": "Aqui estão alguns comandos que posso executar:\n\n- **/triagem**: Iniciar triagem de sintomas\n- **/agenda**: Ver meus agendamentos\n- **/ajuda**: Mostrar esta lista\n\nVocê também pode ditar seus sintomas ou pedir para falar com um humano!",
+      "transferring": "Transferindo para um atendente humano...",
+      "login_required": "Para falar com um atendente, você precisa entrar na sua conta.",
+      "error_message": "Ocorreu um erro ao processar sua mensagem.",
+      "input_placeholder": "Pergunte sobre sua saúde...",
+      "smart_saas": "SaaS Inteligente",
+      "pills": {
+        "find_physio": "Encontrar Fisio",
+        "session_price": "Preço Sessão",
+        "back_pain": "Dor Lombar",
+        "talk_human": "Falar com Humano"
+      },
+      "pills_cmd": {
+        "find_physio": "Quero encontrar um fisioterapeuta domiciliar",
+        "session_price": "Qual o valor médio das sessões de fisioterapia?",
+        "back_pain": "Quais exercícios são bons para dor lombar?",
+        "talk_human": "Gostaria de falar com um atendente humano"
+      }
+    },
+    "admin_actions": {
+      "approve_success": "Fisioterapeuta aprovado com sucesso!",
+      "approve_error": "Erro ao aprovar fisioterapeuta: {{error}}",
+      "reject_success": "Fisioterapeuta rejeitado.",
+      "reject_error": "Erro ao rejeitar fisioterapeuta: {{error}}",
+      "block_success": "Usuário bloqueado com sucesso!",
+      "unblock_success": "Usuário desbloqueado com sucesso!",
+      "block_error": "Erro ao alterar status: {{error}}",
+      "delete_success": "Usuário removido com sucesso de todo o sistema.",
+      "delete_error": "Erro ao excluir usuário: {{error}}",
+      "delete_fail": "Falha na exclusão: {{error}}",
+      "delete_confirm": "Tem certeza que deseja excluir permanentemente este usuário da plataforma e do banco de dados de autenticação? Esta ação não pode ser desfeita.",
+      "block_confirm": "Deseja realmente {{action}} este usuário?",
+      "block_action": "bloquear",
+      "unblock_action": "desbloquear",
+      "invalid_id": "Erro: ID de usuário inválido.",
+      "session_expired": "Sua sessão expirou.",
+      "server_error": "Erro na conexão com o servidor.",
+      "rls_warning": "Aviso: O perfil não foi atualizado no banco de dados. Verifique as permissões RLS.",
+      "cleanup": {
+        "confirm": "Deseja remover perfis incompletos (sem nome ou email)? Isso ajuda a limpar registros de testes ou falhas no cadastro.",
+        "none_found": "Nenhum registro órfão encontrado.",
+        "success": "{{count}} registros órfãos removidos!",
+        "error": "Erro ao limpar registros."
+      },
+      "conflict": {
+        "confirm": "Deseja corrigir o conflito de papéis para {{email}}? Isso garantirá que o usuário seja apenas Administrador em todos os bancos de dados.",
+        "success": "Conflito de papéis resolvido com sucesso!",
+        "error": "Erro ao resolver conflito: {{error}}"
+      },
+      "support_msg": {
+        "title": "Nova mensagem do Suporte",
+        "message": "A administração respondeu ao seu chamado."
+      },
+      "settings": {
+        "success": "Configurações salvas com sucesso!",
+        "error": "Erro ao salvar configurações."
+      },
+      "repasse": {
+        "success": "Repasse marcado como concluído!",
+        "error": "Erro ao atualizar status de repasse."
+      },
+      "material": {
+        "fill_fields": "Preencha título e descrição primeiro.",
+        "categorized_as": "Categorizado como: {{category}}",
+        "add_success": "Material adicionado com sucesso!",
+        "add_error": "Erro ao adicionar: {{error}}",
+        "check_supabase": "Verifique se a tabela e o bucket materiais existem no Supabase",
+        "delete_confirm": "Tem certeza que deseja excluir este material?",
+        "delete_success": "Material excluído com sucesso!",
+        "delete_error": "Erro ao excluir: {{error}}"
+      },
+      "ai_generation": {
+        "enter_theme": "Digite um tema para o conteúdo.",
+        "error": "Erro ao gerar conteúdo",
+        "success": "Conteúdo gerado e publicado com sucesso!",
+        "gen_error": "Erro ao gerar: {{error}}"
+      },
+      "notifications": {
+        "approved_msg": "Seu perfil de fisioterapeuta foi aprovado pela administração.",
+        "rejected_msg": "Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes."
+      }
+    },
+    "admin_users": {
+       "role_physio": "Fisioterapeuta",
+       "role_patient": "Paciente",
+       "status_pending": "Pendente",
+       "view_details": "Ver Detalhes",
+       "block_unblock": "Bloquear/Desbloquear",
+       "details": {
+         "title": "Detalhes do Usuário",
+         "country": "País",
+         "registered_at": "Cadastro em",
+         "birth_date": "Data de Nascimento",
+         "session_price": "Preço Sessão",
+         "bio": "Sobre / Bio",
+         "no_bio": "Nenhuma biografia informada.",
+         "education": "Formação Acadêmica",
+         "services": "Serviços Ofertados",
+         "not_informed": "Não informada",
+         "documents": "Documentos (Obrigatórios e Adicionais)",
+         "click_to_view": "Clique para visualizar",
+         "no_docs": "Sem documentos de cadastro",
+         "approve_btn": "Aprovar Cadastro",
+         "reject_btn": "Rejeitar",
+         "close_btn": "Fechar Detalhes"
+       }
+    },
+    "admin_financial": {
+      "title": "Finanças & Repasses",
+      "total_paid_patients": "Total Pago pelos Pacientes",
+      "bruto_desc": "Valor bruto recebido pela plataforma",
+      "net_physio": "Líquido Fisioterapeutas (88%)",
+      "net_desc": "Valor total que deve ser repassado",
+      "commission_platform": "Comissão Plataforma (12%)",
+      "commission_desc": "Receita líquida da FisioCareHub",
+      "repasse_control": "Controle de Repasses",
+      "repasse_subtitle": "Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.",
+      "table": {
+        "date_time": "Data/Hora",
+        "patient": "Paciente",
+        "physio": "Fisioterapeuta",
+        "total_paid": "Total Pago",
+        "commission": "Comissão",
+        "net_physio": "Líquido Fisio",
+        "repasse": "Repasse",
+        "action": "Ação"
+      }
+    },
+    "admin_materials": {
+      "external_url": "Ou URL externa...",
+      "uploading": "Subindo...",
+      "save_material": "Salvar Material"
+    }
   }
 }
