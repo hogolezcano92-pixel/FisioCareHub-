@@ -731,9 +731,9 @@ export default function Admin() {
             <ShieldCheck size={48} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-black text-white tracking-tight">Acesso Restrito</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight">{t('admin.restricted_access', 'Acesso Restrito')}</h2>
             <p className="text-slate-400 font-medium leading-relaxed">
-              Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.
+              {t('admin.restricted_access_desc', 'Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.')}
             </p>
           </div>
 
@@ -741,7 +741,7 @@ export default function Admin() {
             <div className="flex gap-3">
               <AlertTriangle className="text-amber-400 flex-shrink-0" size={20} />
               <p className="text-xs text-amber-200/70 leading-relaxed font-medium">
-                <strong>Importante:</strong> Uma janela (popup) será aberta para o login. Certifique-se de que seu navegador permite popups e não feche a janela antes de concluir o processo.
+                {t('admin.login_popup_notice', 'Importante: Uma janela (popup) será aberta para o login. Certifique-se de que seu navegador permite popups e não feche a janela antes de concluir o processo.')}
               </p>
             </div>
           </div>
@@ -752,7 +752,7 @@ export default function Admin() {
             className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3 disabled:opacity-50"
           >
             {firebaseLoginLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <LogIn size={24} />}
-            Conectar ao Banco de Dados
+            {t('admin.connect_database', 'Conectar ao Banco de Dados')}
           </button>
           <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
             Use o mesmo e-mail: {supabaseUser?.email}
@@ -816,7 +816,7 @@ export default function Admin() {
         await addDoc(collection(db, 'notifications'), {
           userId,
           title: t('admin.profile_approved'),
-          message: 'Seu perfil de fisioterapeuta foi aprovado pela administração.',
+          message: t('admin_actions.notifications.approved_msg', 'Seu perfil de fisioterapeuta foi aprovado pela administração.'),
           type: 'system',
           read: false,
           createdAt: serverTimestamp()
@@ -839,17 +839,17 @@ export default function Admin() {
         console.warn(`[Admin] [FLOW-AUDIT] Could not send approval email: User profile or email not found in state`, { profileId });
       }
 
-      import('sonner').then(({ toast }) => toast.success("Fisioterapeuta aprovado com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.approve_success', "Fisioterapeuta aprovado com sucesso!")));
     } catch (err: any) {
       console.error("Error approving physio:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao aprovar fisioterapeuta: " + (err.message || "")));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.approve_error', { defaultValue: "Erro ao aprovar fisioterapeuta: " + (err.message || ""), error: err.message })));
     }
   };
 
   const handleRejectPhysio = async (profileId: string, userId: string) => {
     if (!profileId || profileId === 'undefined') {
       console.error("ID inválido para rejeição:", profileId);
-      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.invalid_id', "Erro: ID de usuário inválido.")));
       return;
     }
 
@@ -869,7 +869,7 @@ export default function Admin() {
       }
 
       if (!updateData || updateData.length === 0) {
-        import('sonner').then(({ toast }) => toast.error("Aviso: O perfil não foi atualizado no banco de dados. Verifique as permissões RLS."));
+        import('sonner').then(({ toast }) => toast.error(t('admin_actions.rls_warning', "Aviso: O perfil não foi atualizado no banco de dados. Verifique as permissões RLS.")));
       }
 
       // Update Firebase (if exists)
@@ -892,7 +892,7 @@ export default function Admin() {
         await addDoc(collection(db, 'notifications'), {
           userId,
           title: t('admin.profile_rejected'),
-          message: 'Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes.',
+          message: t('admin_actions.notifications.rejected_msg', 'Infelizmente seu perfil não foi aprovado. Entre em contato com o suporte para mais detalhes.'),
           type: 'system',
           read: false,
           createdAt: serverTimestamp()
@@ -913,31 +913,31 @@ export default function Admin() {
           .catch(err => console.error(`[Admin] [FLOW-AUDIT] Rejection email error:`, err));
       }
 
-      import('sonner').then(({ toast }) => toast.success("Fisioterapeuta rejeitado."));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.reject_success', "Fisioterapeuta rejeitado.")));
     } catch (err: any) {
       console.error("Error rejecting physio:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao rejeitar fisioterapeuta: " + (err.message || "")));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.reject_error', { defaultValue: "Erro ao rejeitar fisioterapeuta: " + (err.message || ""), error: err.message })));
     }
   };
 
   const handleBlockUser = async (userId: string, currentStatus: string) => {
     if (!userId || userId === 'undefined') {
       console.error("ID inválido para bloquear usuário:", userId);
-      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.invalid_id', "Erro: ID de usuário inválido.")));
       return;
     }
 
     const isBlocked = currentStatus === 'rejeitado' || currentStatus === 'blocked' || currentStatus === 'bloqueado';
-    const newAction = isBlocked ? 'desbloquear' : 'bloquear';
+    const newAction = isBlocked ? t('admin_actions.unblock_action', 'desbloquear') : t('admin_actions.block_action', 'bloquear');
     
-    if (!window.confirm(`Deseja realmente ${newAction} este usuário?`)) return;
+    if (!window.confirm(t('admin_actions.block_confirm', { defaultValue: `Deseja realmente ${newAction} este usuário?`, action: newAction }))) return;
 
     setLoading(true);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       if (!currentSession) {
-        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou."));
+        import('sonner').then(({ toast }) => toast.error(t('admin_actions.session_expired', "Sua sessão expirou.")));
         return;
       }
 
@@ -959,15 +959,15 @@ export default function Admin() {
       const data = await response.json();
 
       if (response.ok) {
-        import('sonner').then(({ toast }) => toast.success(`Usuário ${isBlocked ? 'desbloqueado' : 'bloqueado'} com sucesso!`));
+        import('sonner').then(({ toast }) => toast.success(isBlocked ? t('admin_actions.unblock_success', 'Usuário desbloqueado com sucesso!') : t('admin_actions.block_success', 'Usuário bloqueado com sucesso!')));
         await fetchSupabaseProfiles();
       } else {
         console.error("[Admin] Erro ao bloquear via API:", data);
-        import('sonner').then(({ toast }) => toast.error("Erro ao alterar status: " + (data.error || "Erro desconhecido")));
+        import('sonner').then(({ toast }) => toast.error(t('admin_actions.block_error', { defaultValue: "Erro ao alterar status: " + (data.error || "Erro desconhecido"), error: data.error })));
       }
     } catch (err: any) {
       console.error("Erro fatal ao bloquear usuário:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro na conexão com o servidor."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.server_error', "Erro na conexão com o servidor.")));
     } finally {
       setLoading(false);
     }
@@ -976,11 +976,11 @@ export default function Admin() {
   const handleDeleteUser = async (userId: string) => {
     if (!userId || userId === 'undefined') {
       console.error("ID inválido para exclusão:", userId);
-      import('sonner').then(({ toast }) => toast.error("Erro: ID de usuário inválido."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.invalid_id', "Erro: ID de usuário inválido.")));
       return;
     }
     
-    if (!window.confirm("Tem certeza que deseja excluir permanentemente este usuário da plataforma e do banco de dados de autenticação? Esta ação não pode ser desfeita.")) return;
+    if (!window.confirm(t('admin_actions.delete_confirm', "Tem certeza que deseja excluir permanentemente este usuário da plataforma e do banco de dados de autenticação? Esta ação não pode ser desfeita."))) return;
     
     setLoading(true);
     try {
@@ -1023,23 +1023,23 @@ export default function Admin() {
 
       if (response.ok) {
         setSupabaseProfiles(prev => prev.filter(p => p.id !== userId));
-        import('sonner').then(({ toast }) => toast.success("Usuário removido com sucesso de todo o sistema."));
+        import('sonner').then(({ toast }) => toast.success(t('admin_actions.delete_success', "Usuário removido com sucesso de todo o sistema.")));
         console.log("[Admin] Usuário deletado com sucesso:", data);
       } else {
         console.error("[Admin] Erro na exclusão via API:", data);
-        import('sonner').then(({ toast }) => toast.error("Erro ao excluir usuário: " + (data.error || "Erro desconhecido")));
+        import('sonner').then(({ toast }) => toast.error(t('admin_actions.delete_error', { defaultValue: "Erro ao excluir usuário: " + (data.error || "Erro desconhecido"), error: data.error })));
       }
     } catch (err: any) {
       console.error("Erro fatal ao excluir usuário:", err);
       const detail = err.message || "Erro desconhecido";
-      import('sonner').then(({ toast }) => toast.error(`Falha na exclusão: ${detail}`));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.delete_fail', { defaultValue: `Falha na exclusão: ${detail}`, error: detail })));
     } finally {
       setLoading(false);
     }
   };
 
   const handleCleanupOrphans = async () => {
-    if (!window.confirm("Deseja remover perfis incompletos (sem nome ou email)? Isso ajuda a limpar registros de testes ou falhas no cadastro.")) return;
+    if (!window.confirm(t('admin_actions.cleanup.confirm', "Deseja remover perfis incompletos (sem nome ou email)? Isso ajuda a limpar registros de testes ou falhas no cadastro."))) return;
     
     try {
       const { data: orphans, error: fetchError } = await supabase
@@ -1050,7 +1050,7 @@ export default function Admin() {
       if (fetchError) throw fetchError;
       
       if (!orphans || orphans.length === 0) {
-        import('sonner').then(({ toast }) => toast.info("Nenhum registro órfão encontrado."));
+        import('sonner').then(({ toast }) => toast.info(t('admin_actions.cleanup.none_found', "Nenhum registro órfão encontrado.")));
         return;
       }
 
@@ -1063,16 +1063,16 @@ export default function Admin() {
       if (deleteError) throw deleteError;
 
       setSupabaseProfiles(prev => prev.filter(p => !idsToDelete.includes(p.id)));
-      import('sonner').then(({ toast }) => toast.success(`${idsToDelete.length} registros órfãos removidos!`));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.cleanup.success', { defaultValue: `${idsToDelete.length} registros órfãos removidos!`, count: idsToDelete.length })));
     } catch (err) {
       console.error("Error cleaning orphans:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao limpar registros."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.cleanup.error', "Erro ao limpar registros.")));
     }
   };
 
   const handleFixAdminRoleConflict = async () => {
     const adminEmail = 'hogolezcano92@gmail.com';
-    if (!window.confirm(`Deseja corrigir o conflito de papéis para ${adminEmail}? Isso garantirá que o usuário seja apenas Administrador em todos os bancos de dados.`)) return;
+    if (!window.confirm(t('admin_actions.conflict.confirm', { defaultValue: `Deseja corrigir o conflito de papéis para ${adminEmail}? Isso garantirá que o usuário seja apenas Administrador em todos os bancos de dados.`, email: adminEmail }))) return;
 
     setLoading(true);
     try {
@@ -1133,10 +1133,10 @@ export default function Admin() {
       await fetchSupabaseProfiles();
       if (refreshProfile) await refreshProfile();
       
-      import('sonner').then(({ toast }) => toast.success("Conflito de papéis resolvido com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.conflict.success', "Conflito de papéis resolvido com sucesso!")));
     } catch (err: any) {
       console.error("Erro ao resolver conflito:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao resolver conflito: " + err.message));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.conflict.error', { defaultValue: "Erro ao resolver conflito: " + err.message, error: err.message })));
     } finally {
       setLoading(false);
     }
@@ -1163,8 +1163,8 @@ export default function Admin() {
         .from('notificacoes')
         .insert({
           user_id: selectedChatUser.id,
-          titulo: 'Nova mensagem do Suporte',
-          mensagem: 'A administração respondeu ao seu chamado.',
+          titulo: t('admin_actions.support_msg.title', 'Nova mensagem do Suporte'),
+          mensagem: t('admin_actions.support_msg.message', 'A administração respondeu ao seu chamado.'),
           tipo: 'message',
           lida: false,
           link: '/chat'
@@ -1191,10 +1191,10 @@ export default function Admin() {
         updatedAt: serverTimestamp(),
         updatedBy: firebaseUser?.uid
       });
-      import('sonner').then(({ toast }) => toast.success("Configurações salvas com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.settings.success', "Configurações salvas com sucesso!")));
     } catch (err) {
       console.error("Error saving settings:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao salvar configurações."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.settings.error', "Erro ao salvar configurações.")));
     }
   };
 
@@ -1225,24 +1225,24 @@ export default function Admin() {
       
       if (error) throw error;
       
-      import('sonner').then(({ toast }) => toast.success("Repasse marcado como concluído!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.repasse.success', "Repasse marcado como concluído!")));
       fetchSessions();
     } catch (err) {
       console.error("Erro ao marcar repasse:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status de repasse."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.repasse.error', "Erro ao atualizar status de repasse.")));
     }
   };
 
   const handleAutoCategorize = async () => {
     if (!newMaterial.title || !newMaterial.description) {
-      import('sonner').then(({ toast }) => toast.error("Preencha título e descrição primeiro."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.fill_fields', "Preencha título e descrição primeiro.")));
       return;
     }
     setIsCategorizing(true);
     try {
       const category = await categorizeContent(newMaterial.title, newMaterial.description);
       setNewMaterial(prev => ({ ...prev, category }));
-      import('sonner').then(({ toast }) => toast.success(`Categorizado como: ${category}`));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.material.categorized_as', { defaultValue: `Categorizado como: ${category}`, category })));
     } catch (error) {
       console.error(error);
     } finally {
@@ -1252,7 +1252,7 @@ export default function Admin() {
 
   const handleGenerateAIContent = async () => {
     if (!aiGenForm.theme) {
-      import('sonner').then(({ toast }) => toast.error("Digite um tema para o conteúdo."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.ai_generation.enter_theme', "Digite um tema para o conteúdo.")));
       return;
     }
 
@@ -1272,7 +1272,7 @@ export default function Admin() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorMsg = "Erro ao gerar conteúdo";
+        let errorMsg = t('admin_actions.ai_generation.error', "Erro ao gerar conteúdo");
         try {
           const errorData = JSON.parse(errorText);
           errorMsg = errorData.error || errorMsg;
@@ -1284,12 +1284,12 @@ export default function Admin() {
 
       const material = await response.json();
       
-      import('sonner').then(({ toast }) => toast.success("Conteúdo gerado e publicado com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.ai_generation.success', "Conteúdo gerado e publicado com sucesso!")));
       setAiGenForm({ ...aiGenForm, theme: '' });
       fetchMateriais();
     } catch (error: any) {
       console.error(error);
-      import('sonner').then(({ toast }) => toast.error(`Erro ao gerar: ${error.message}`));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.ai_generation.gen_error', { defaultValue: `Erro ao gerar: ${error.message}`, error: error.message })));
     } finally {
       setIsGenerating(false);
     }
@@ -1299,7 +1299,7 @@ export default function Admin() {
     const precoNum = parseFloat(newMaterial.price);
     
     if (!newMaterial.title || (newMaterial.is_premium && isNaN(precoNum))) {
-      import('sonner').then(({ toast }) => toast.error("Preencha o título e o preço corretamente."));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.fill_fields', "Preencha o título e o preço corretamente.")));
       return;
     }
 
@@ -1339,7 +1339,7 @@ export default function Admin() {
         throw new Error(error.message);
       }
       
-      import('sonner').then(({ toast }) => toast.success("Material adicionado com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.material.add_success', "Material adicionado com sucesso!")));
       setShowMaterialModal(false);
       setImageFile(null);
       setMaterialFile(null);
@@ -1359,19 +1359,19 @@ export default function Admin() {
       fetchMateriais();
     } catch (err: any) {
       console.error("Erro ao adicionar material:", err);
-      import('sonner').then(({ toast }) => toast.error(`Erro ao adicionar: ${err.message || 'Verifique se a tabela e o bucket materiais existem no Supabase'}`));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.add_error', { defaultValue: `Erro ao adicionar: ${err.message || 'Verifique se a tabela e o bucket materiais existem no Supabase'}`, error: err.message || t('admin_actions.material.check_supabase') })));
     } finally {
       setUploading(false);
     }
   };
 
   const handleDeleteMaterial = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja excluir este material?")) return;
+    if (!window.confirm(t('admin_actions.material.delete_confirm', "Tem certeza que deseja excluir este material?"))) return;
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       if (!currentSession) {
-        import('sonner').then(({ toast }) => toast.error("Sua sessão expirou. Por favor, faça login novamente."));
+        import('sonner').then(({ toast }) => toast.error(t('admin_actions.session_expired', "Sua sessão expirou. Por favor, faça login novamente.")));
         return;
       }
 
@@ -1390,14 +1390,14 @@ export default function Admin() {
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || "Erro ao excluir material");
+        throw new Error(result.error || t('admin_actions.material.delete_error', "Erro ao excluir material"));
       }
       
       fetchMateriais();
-      import('sonner').then(({ toast }) => toast.success("Material excluído com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success(t('admin_actions.material.delete_success', "Material excluído com sucesso!")));
     } catch (err: any) {
       console.error("Erro ao excluir material:", err);
-      import('sonner').then(({ toast }) => toast.error(`Erro ao excluir: ${err.message || 'Erro desconhecido'}`));
+      import('sonner').then(({ toast }) => toast.error(t('admin_actions.material.delete_error', { defaultValue: `Erro ao excluir: ${err.message || 'Erro desconhecido'}`, error: err.message })));
     }
   };
 
@@ -1498,23 +1498,23 @@ export default function Admin() {
                     <p className="text-sm font-bold text-white">{selectedUserDetail.cep || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">País</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
                     <p className="text-sm font-bold text-white">{selectedUserDetail.pais || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cadastro em</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
                     <p className="text-sm font-bold text-white">
                       {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data de Nascimento</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
                     <p className="text-sm font-bold text-white">
                       {selectedUserDetail.data_nascimento ? new Date(selectedUserDetail.data_nascimento).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Preço Sessão</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
                     <p className="text-sm font-bold text-white">
                       {selectedUserDetail.preco_sessao ? `R$ ${selectedUserDetail.preco_sessao}` : 'N/A'}
                     </p>
@@ -1523,9 +1523,9 @@ export default function Admin() {
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sobre / Bio</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-400 leading-relaxed italic">
-                    {selectedUserDetail.bio || 'Nenhuma biografia informada.'}
+                    {selectedUserDetail.bio || t('admin_users.details.no_bio', 'Nenhuma biografia informada.')}
                   </div>
                 </div>
 
@@ -1533,7 +1533,7 @@ export default function Admin() {
                 {selectedUserDetail.tipo_usuario === 'fisioterapeuta' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Formação Acadêmica</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
                       <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
                         {Array.isArray(selectedUserDetail.formacao_academica) && selectedUserDetail.formacao_academica.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
@@ -1541,11 +1541,11 @@ export default function Admin() {
                               <li key={i}>{item}</li>
                             ))}
                           </ul>
-                        ) : 'Não informada'}
+                        ) : t('admin_users.details.not_informed', 'Não informada')}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Serviços Ofertados</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
                       <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
                         {Array.isArray(selectedUserDetail.servicos_ofertados) && selectedUserDetail.servicos_ofertados.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
@@ -1553,7 +1553,7 @@ export default function Admin() {
                               <li key={i}>{item}</li>
                             ))}
                           </ul>
-                        ) : 'Não informada'}
+                        ) : t('admin_users.details.not_informed', 'Não informada')}
                       </div>
                     </div>
                   </div>
@@ -1561,7 +1561,7 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documentos (Obrigatórios e Adicionais)</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
                   {(() => {
                     const docs = selectedUserDetail.all_docs;
                     
@@ -1581,7 +1581,7 @@ export default function Admin() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-white truncate">{doc.label}</p>
-                                <p className="text-[10px] text-slate-500 font-medium truncate">Clique para visualizar</p>
+                                <p className="text-[10px] text-slate-500 font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
                               </div>
                               <Download size={16} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
                             </a>
@@ -1592,7 +1592,7 @@ export default function Admin() {
                     
                     return (
                       <div className="p-8 border-2 border-dashed border-white/10 rounded-[2rem] text-center">
-                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sem documentos de cadastro</p>
+                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
                       </div>
                     );
                   })()}
@@ -1610,7 +1610,7 @@ export default function Admin() {
                       }}
                       className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20"
                     >
-                      Aprovar Cadastro
+                      {t('admin_users.details.approve_btn', 'Aprovar Cadastro')}
                     </button>
                     <button 
                       onClick={() => {
@@ -1619,7 +1619,7 @@ export default function Admin() {
                       }}
                       className="flex-1 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-sm hover:bg-rose-500/20 transition-all"
                     >
-                      Rejeitar
+                      {t('admin_users.details.reject_btn', 'Rejeitar')}
                     </button>
                   </>
                 ) : (
@@ -1627,7 +1627,7 @@ export default function Admin() {
                     onClick={() => setSelectedUserDetail(null)}
                     className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-sm hover:bg-white/10 transition-all border border-white/10"
                   >
-                    Fechar Detalhes
+                    {t('admin_users.details.close_btn', 'Fechar Detalhes')}
                   </button>
                 )}
               </div>
@@ -1673,21 +1673,21 @@ export default function Admin() {
           {/* Nav Links */}
           <nav className="flex-1 py-6 px-3 space-y-1">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'viva', label: 'Viva AI Platform', icon: Brain, isAI: true },
-              { id: 'logs', label: 'Audit Timeline', icon: History },
-              { id: 'security', label: 'Security & LGPD', icon: Shield },
-              { id: 'materiais', label: 'Library Assets', icon: BookOpen },
-              { id: 'physios', label: 'Professionals', icon: Stethoscope },
-              { id: 'patients', label: 'Patient Base', icon: User },
-              { id: 'approvals', label: 'Verification Queue', icon: UserCheck },
-              { id: 'users', label: 'Global Directory', icon: Users },
-              { id: 'financial', label: 'Revenue Center', icon: DollarSign },
-              { id: 'saques', label: 'Payout Requests', icon: CreditCard },
-              { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
-              { id: 'chat', label: 'Central Chat', icon: MessageSquare },
-              { id: 'notifications', label: 'System Alerts', icon: Bell },
-              { id: 'settings', label: 'Global Settings', icon: Settings },
+              { id: 'dashboard', label: t('admin.sidebar.dashboard', 'Dashboard'), icon: LayoutDashboard },
+              { id: 'viva', label: t('admin.sidebar.viva', 'Viva AI Platform'), icon: Brain, isAI: true },
+              { id: 'logs', label: t('admin.sidebar.logs', 'Audit Timeline'), icon: History },
+              { id: 'security', label: t('admin.sidebar.security', 'Security & LGPD'), icon: Shield },
+              { id: 'materiais', label: t('admin.sidebar.library', 'Library Assets'), icon: BookOpen },
+              { id: 'physios', label: t('admin.sidebar.professionals', 'Professionals'), icon: Stethoscope },
+              { id: 'patients', label: t('admin.sidebar.patients', 'Patient Base'), icon: User },
+              { id: 'approvals', label: t('admin.sidebar.approvals', 'Verification Queue'), icon: UserCheck },
+              { id: 'users', label: t('admin.sidebar.users', 'Global Directory'), icon: Users },
+              { id: 'financial', label: t('admin.sidebar.financial', 'Revenue Center'), icon: DollarSign },
+              { id: 'saques', label: t('admin.sidebar.payouts', 'Payout Requests'), icon: CreditCard },
+              { id: 'tickets', label: t('admin.sidebar.tickets', 'Support Desk'), icon: AlertTriangle },
+              { id: 'chat', label: t('admin.sidebar.support', 'Central Chat'), icon: MessageSquare },
+              { id: 'notifications', label: t('admin.sidebar.notifications', 'System Alerts'), icon: Bell },
+              { id: 'settings', label: t('admin.sidebar.settings', 'Global Settings'), icon: Settings },
             ].map((item: any) => (
               <button
                 key={item.id}
@@ -1720,7 +1720,7 @@ export default function Admin() {
                 )}
               >
                 <LogOut size={20} className="flex-shrink-0" />
-                <span className={cn(!sidebarOpen && "lg:hidden")}>Sair da Conta</span>
+                <span className={cn(!sidebarOpen && "lg:hidden")}>{t('admin.sidebar.logout', 'Sair da Conta')}</span>
               </button>
             </div>
           </nav>
@@ -1770,18 +1770,18 @@ export default function Admin() {
             {/* Center Section - Title */}
             <div className="flex-[2] flex justify-center min-w-0">
               <h2 className="text-sm md:text-base font-black text-slate-900 tracking-[0.15em] uppercase text-center truncate px-2">
-                {activeTab === 'dashboard' ? 'Overview' : 
-                 activeTab === 'materiais' ? 'Library' :
-                 activeTab === 'physios' ? 'Professionals' :
-                 activeTab === 'patients' ? 'Patients' :
-                 activeTab === 'approvals' ? 'Approvals' :
-                 activeTab === 'users' ? 'User Directory' :
-                 activeTab === 'financial' ? 'Financials' :
-                 activeTab === 'chat' ? 'Support' :
-                 activeTab === 'logs' ? 'Audit Logs' :
-                 activeTab === 'security' ? 'Security' :
-                 activeTab === 'viva' ? 'Viva AI' :
-                 activeTab === 'settings' ? 'Settings' :
+                {activeTab === 'dashboard' ? t('admin.header.overview', 'Overview') : 
+                 activeTab === 'materiais' ? t('admin.header.library', 'Library') :
+                 activeTab === 'physios' ? t('admin.header.professionals', 'Professionals') :
+                 activeTab === 'patients' ? t('admin.header.patients', 'Patients') :
+                 activeTab === 'approvals' ? t('admin.header.approvals', 'Approvals') :
+                 activeTab === 'users' ? t('admin.header.user_directory', 'User Directory') :
+                 activeTab === 'financial' ? t('admin.header.financials', 'Financials') :
+                 activeTab === 'chat' ? t('admin.header.support', 'Support') :
+                 activeTab === 'logs' ? t('admin.header.audit_logs', 'Audit Logs') :
+                 activeTab === 'security' ? t('admin.header.security', 'Security') :
+                 activeTab === 'viva' ? t('admin.header.viva_ai', 'Viva AI') :
+                 activeTab === 'settings' ? t('admin.header.settings', 'Settings') :
                  activeTab.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
             </div>
@@ -1795,7 +1795,7 @@ export default function Admin() {
                 />
                 <input 
                   type="text" 
-                  placeholder="Universal Search..."
+                  placeholder={t('admin.header.search_placeholder', 'Universal Search...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white focus:border-blue-500/30 transition-all w-32 lg:w-64"
@@ -1817,7 +1817,7 @@ export default function Admin() {
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Syncing Core Systems...</p>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
             </div>
           )}
 
@@ -1826,13 +1826,13 @@ export default function Admin() {
               <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">System Outage</h3>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('admin.status.outage', 'System Outage')}</h3>
               <p className="text-slate-500 text-sm max-w-md mx-auto">{error}</p>
               <button 
                 onClick={() => fetchSupabaseProfiles()}
                 className="px-8 py-3 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-200"
               >
-                Reconnect
+                {t('admin.status.reconnect', 'Reconnect')}
               </button>
             </div>
           )}
@@ -1857,15 +1857,15 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-tight">Biblioteca de Saúde</h3>
-                  <p className="text-slate-500 font-medium">Gerencie os materiais disponíveis para venda aos pacientes.</p>
+                  <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
+                  <p className="text-slate-500 font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
                 </div>
                 <button 
                   onClick={() => setShowMaterialModal(true)}
                   className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
                 >
                   <Plus size={20} />
-                  Novo Material (Manual)
+                  {t('admin.library.new_material', 'Novo Material (Manual)')}
                 </button>
               </div>
 
@@ -1878,17 +1878,17 @@ export default function Admin() {
                   <div className="space-y-4 max-w-sm">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-lg text-blue-400 text-[10px] font-black uppercase tracking-widest">
                       <Sparkles size={12} />
-                      IA Content Creator
+                      {t('admin.library.ai_generator', 'IA Content Creator')}
                     </div>
-                    <h3 className="text-xl font-black text-white">Geração Automática</h3>
+                    <h3 className="text-xl font-black text-white">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
                     <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                      Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.
+                      {t('admin.library.ai_gen_desc', 'Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.')}
                     </p>
                   </div>
 
                   <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1 md:col-span-3">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tema do Conteúdo</label>
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
                        <input 
                         type="text"
                         value={aiGenForm.theme}
@@ -1898,27 +1898,27 @@ export default function Admin() {
                       />
                     </div>
                     <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tipo</label>
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.type_label', 'Tipo')}</label>
                         <select 
                           value={aiGenForm.type}
                           onChange={(e) => setAiGenForm({...aiGenForm, type: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
                         >
-                          <option value="educational">Educativo</option>
-                          <option value="exercise">Exercício</option>
-                          <option value="alert">Alerta/Prevenção</option>
+                          <option value="educational">{t('admin.library.educational', 'Educativo')}</option>
+                          <option value="exercise">{t('admin.library.exercise', 'Exercício')}</option>
+                          <option value="alert">{t('admin.library.alert', 'Alerta/Prevenção')}</option>
                         </select>
                     </div>
                     <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Nível</label>
+                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.level_label', 'Nível')}</label>
                         <select 
                           value={aiGenForm.level}
                           onChange={(e) => setAiGenForm({...aiGenForm, level: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
                         >
-                          <option value="beginner">Iniciante</option>
-                          <option value="intermediate">Intermediário</option>
-                          <option value="advanced">Avançado</option>
+                          <option value="beginner">{t('admin.library.beginner', 'Iniciante')}</option>
+                          <option value="intermediate">{t('admin.library.intermediate', 'Intermediário')}</option>
+                          <option value="advanced">{t('admin.library.advanced', 'Avançado')}</option>
                         </select>
                     </div>
                     <div className="flex items-end">
@@ -1928,7 +1928,7 @@ export default function Admin() {
                         className="w-full h-[48px] bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50"
                       >
                         {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
-                        {isGenerating ? "Gerando..." : "Gerar"}
+                        {isGenerating ? t('admin.library.generating', 'Gerando...') : t('admin.library.generate', 'Gerar')}
                       </button>
                     </div>
                   </div>
@@ -1975,7 +1975,7 @@ export default function Admin() {
                   <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
                     <BookOpen size={32} />
                   </div>
-                  <p className="text-slate-500 font-bold">Nenhum material cadastrado ainda.</p>
+                  <p className="text-slate-500 font-bold">{t('admin.library.no_materials', 'Nenhum material cadastrado ainda.')}</p>
                 </div>
               )}
 
@@ -2314,7 +2314,7 @@ export default function Admin() {
                                   type="text" 
                                   value={newMaterial.file_url}
                                   onChange={(e) => setNewMaterial({...newMaterial, file_url: e.target.value})}
-                                  placeholder="Ou URL externa..."
+                                  placeholder={t('admin_materials.external_url', "Ou URL externa...")}
                                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none text-xs"
                                 />
                               </div>
@@ -2331,9 +2331,9 @@ export default function Admin() {
                         {uploading ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Subindo...
+                            {t('admin_materials.uploading', 'Subindo...')}
                           </>
-                        ) : 'Salvar Material'}
+                        ) : t('admin_materials.save_material', 'Salvar Material')}
                       </button>
                     </motion.div>
                   </div>
@@ -2345,12 +2345,12 @@ export default function Admin() {
           {activeTab === 'users' && (
             <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                <h3 className="text-xl font-black text-white tracking-tight">Todos os Usuários</h3>
+                <h3 className="text-xl font-black text-white tracking-tight">{t('admin.users.title', 'Todos os Usuários')}</h3>
                 <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
                   <Search className="text-slate-500" size={18} />
                   <input 
                     type="text" 
-                    placeholder="Filtrar usuários..." 
+                    placeholder={t('admin.users.filter_placeholder', 'Filtrar usuários...')}
                     className="text-sm border-none focus:ring-0 bg-transparent text-white placeholder:text-slate-600"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -2361,12 +2361,12 @@ export default function Admin() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Nome</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Email</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Papel</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">CREFITO</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.name', 'Nome')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.email', 'Email')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.role', 'Papel')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.crefito', 'CREFITO')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.status', 'Status')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.users.table.actions', 'Ações')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -2398,7 +2398,7 @@ export default function Admin() {
                               "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
                               u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-500/10 text-blue-400" : "bg-white/5 text-slate-400"
                             )}>
-                              {u.tipo_usuario === 'fisioterapeuta' ? 'Fisioterapeuta' : 'Paciente'}
+                              {u.tipo_usuario === 'fisioterapeuta' ? t('admin_users.role_physio', 'Fisioterapeuta') : t('admin_users.role_patient', 'Paciente')}
                             </span>
                             {u.is_pro && (
                               <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase tracking-tighter flex items-center gap-0.5 w-fit">
@@ -2418,7 +2418,9 @@ export default function Admin() {
                             u.status_aprovacao === 'aprovado' ? "bg-emerald-500/10 text-emerald-400" : 
                             u.status_aprovacao === 'rejeitado' ? "bg-rose-500/10 text-rose-400" : "bg-amber-500/10 text-amber-400"
                           )}>
-                            {u.status_aprovacao || 'Pendente'}
+                            {u.status_aprovacao === 'aprovado' ? t('admin.status.approved', 'Aprovado') :
+                             u.status_aprovacao === 'rejeitado' ? t('admin.status.rejected', 'Rejeitado') :
+                             t('admin_users.status_pending', 'Pendente')}
                           </span>
                         </td>
                         <td className="px-8 py-5 text-right">
@@ -2426,14 +2428,14 @@ export default function Admin() {
                             <button 
                               onClick={() => setSelectedUserDetail(u)}
                               className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                              title="Ver Detalhes"
+                              title={t('admin_users.view_details', 'Ver Detalhes')}
                             >
                               <Eye size={16} />
                             </button>
                             <button 
                               onClick={() => handleBlockUser(u?.id, u?.status_aprovacao)}
                               className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
-                              title="Bloquear/Desbloquear"
+                              title={t('admin_users.block_unblock', 'Bloquear/Desbloquear')}
                             >
                               <Lock size={16} />
                             </button>
@@ -2458,39 +2460,39 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Pago pelos Pacientes</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('admin_financial.total_paid_patients', 'Total Pago pelos Pacientes')}</p>
                   <p className="text-3xl font-black text-white tracking-tight">R$ {stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[10px] text-slate-500 font-bold mt-2 italic">Valor bruto recebido pela plataforma</p>
+                  <p className="text-[10px] text-slate-500 font-bold mt-2 italic">{t('admin_financial.bruto_desc', 'Valor bruto recebido pela plataforma')}</p>
                 </div>
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-emerald-500/20">
-                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Líquido Fisioterapeutas (88%)</p>
+                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('admin_financial.net_physio', 'Líquido Fisioterapeutas (88%)')}</p>
                   <p className="text-3xl font-black text-emerald-400 tracking-tight">R$ {stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[10px] text-emerald-500/50 font-bold mt-2 italic">Valor total que deve ser repassado</p>
+                  <p className="text-[10px] text-emerald-500/50 font-bold mt-2 italic">{t('admin_financial.net_desc', 'Valor total que deve ser repassado')}</p>
                 </div>
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-blue-500/20">
-                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Comissão Plataforma (12%)</p>
+                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{t('admin_financial.commission_platform', 'Comissão Plataforma (12%)')}</p>
                   <p className="text-3xl font-black text-blue-400 tracking-tight">R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[10px] text-blue-500/50 font-bold mt-2 italic">Receita líquida da FisioCareHub</p>
+                  <p className="text-[10px] text-blue-500/50 font-bold mt-2 italic">{t('admin_financial.commission_desc', 'Receita líquida da FisioCareHub')}</p>
                 </div>
               </div>
 
               <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
                 <div className="p-8 border-b border-white/5">
-                  <h3 className="text-xl font-black text-white tracking-tight">Controle de Repasses</h3>
-                  <p className="text-sm text-slate-500 font-medium">Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.</p>
+                  <h3 className="text-xl font-black text-white tracking-tight">{t('admin_financial.repasse_control', 'Controle de Repasses')}</h3>
+                  <p className="text-sm text-slate-500 font-medium">{t('admin_financial.repasse_subtitle', 'Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.')}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data/Hora</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Paciente</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Fisioterapeuta</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Total Pago</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão ({commissionRate}%)</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Líquido Fisio ({100 - commissionRate}%)</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Repasse</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ação</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.date_time', 'Data/Hora')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.patient', 'Paciente')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.physio', 'Fisioterapeuta')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.total_paid', 'Total Pago')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.commission', `Comissão (${commissionRate}%)`)}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.net_physio', `Líquido Fisio (${100 - commissionRate}%)`)}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.repasse', 'Repasse')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin_financial.table.action', 'Ação')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
