@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { 
   Clock, 
@@ -35,6 +36,7 @@ interface Log {
 }
 
 export default function AdminLogs() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,8 +102,8 @@ export default function AdminLogs() {
       {/* Header & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">Audit Trail & Central Logs</h3>
-          <p className="text-xs text-slate-500 font-medium">Real-time monitoring of all platform-wide operational vectors.</p>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">{t('admin.logs.title', 'Audit Trail & Central Logs')}</h3>
+          <p className="text-xs text-slate-500 font-medium">{t('admin.logs.subtitle', 'Real-time monitoring of all platform-wide operational vectors.')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -109,7 +111,7 @@ export default function AdminLogs() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
             <input 
               type="text"
-              placeholder="Query audit database..."
+              placeholder={t('admin.logs.search_placeholder', 'Query audit database...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white border border-slate-200 rounded-xl pl-11 pr-6 py-2.5 text-xs text-slate-900 font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all w-full md:w-64"
@@ -128,7 +130,7 @@ export default function AdminLogs() {
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
-                {type === 'all' ? 'All' : type}
+                {type === 'all' ? t('common.all', 'All') : type}
               </button>
             ))}
           </div>
@@ -142,11 +144,11 @@ export default function AdminLogs() {
             <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h4 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <Clock className="text-blue-600" size={16} />
-                Activity Timeline
+                {t('admin.logs.timeline_title', 'Activity Timeline')}
               </h4>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Live Flow</span>
+                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{t('admin.logs.live_flow', 'Live Flow')}</span>
               </div>
             </div>
 
@@ -154,7 +156,7 @@ export default function AdminLogs() {
               {loading ? (
                 <div className="p-20 text-center space-y-4">
                   <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Ingesting logs...</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.ingesting', 'Ingesting logs...')}</p>
                 </div>
               ) : filteredLogs.length > 0 ? (
                 <div className="divide-y divide-slate-50">
@@ -212,7 +214,7 @@ export default function AdminLogs() {
               ) : (
                 <div className="py-32 text-center space-y-4">
                   <Activity size={40} className="text-slate-200 mx-auto" />
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">No terminal entries detected.</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.no_entries', 'No terminal entries detected.')}</p>
                 </div>
               )}
             </div>
@@ -227,8 +229,8 @@ export default function AdminLogs() {
                 <Shield size={24} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Log Inspector</h4>
-                <p className="text-[10px] text-blue-600/60 font-bold uppercase tracking-widest">Internal Metadata</p>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.logs.inspector.title', 'Log Inspector')}</h4>
+                <p className="text-[10px] text-blue-600/60 font-bold uppercase tracking-widest">{t('admin.logs.inspector.metadata', 'Internal Metadata')}</p>
               </div>
             </div>
 
@@ -244,7 +246,7 @@ export default function AdminLogs() {
                   <div className="space-y-4">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        <span>Event Type</span>
+                        <span>{t('admin.logs.inspector.event_type', 'Event Type')}</span>
                         <span className="text-blue-600">{selectedLog.tipo_acao}</span>
                       </div>
                       <p className="text-xs font-bold text-slate-900 leading-relaxed">{selectedLog.descricao}</p>
@@ -252,11 +254,11 @@ export default function AdminLogs() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Vector ID</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.vector_id', 'Vector ID')}</p>
                         <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.usuario_id}</p>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Linked Ref</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.linked_ref', 'Linked Ref')}</p>
                         <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.referencia_id || 'N/A'}</p>
                       </div>
                     </div>
@@ -264,7 +266,7 @@ export default function AdminLogs() {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                       <div className="flex items-center gap-3">
                         <Monitor size={14} className="text-slate-400" />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">System Diagnostics</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.logs.inspector.diagnostics', 'System Diagnostics')}</span>
                       </div>
                       
                       <div className="space-y-2">
@@ -288,7 +290,7 @@ export default function AdminLogs() {
                   </div>
 
                   <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 group">
-                    Inspect Object Hash
+                    {t('admin.logs.inspector.inspect_action', 'Inspect Object Hash')}
                     <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </motion.div>
@@ -298,7 +300,7 @@ export default function AdminLogs() {
                     <Database size={32} />
                   </div>
                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                    Select event for deep inspection
+                    {t('admin.logs.inspector.select_event', 'Select event for deep inspection')}
                   </p>
                 </div>
               )}

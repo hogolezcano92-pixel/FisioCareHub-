@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, 
@@ -45,6 +46,7 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalPhysios: 0,
@@ -115,7 +117,15 @@ export default function AdminDashboard() {
           : 0;
 
         // Process revenue for chart
-        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const days = [
+          t('common.days_short.sun', 'Dom'),
+          t('common.days_short.mon', 'Seg'),
+          t('common.days_short.tue', 'Ter'),
+          t('common.days_short.wed', 'Qua'),
+          t('common.days_short.thu', 'Qui'),
+          t('common.days_short.fri', 'Sex'),
+          t('common.days_short.sat', 'Sáb')
+        ];
         const chartData = Array.from({ length: 7 }, (_, i) => {
           const d = new Date(today.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
           const dayName = days[d.getDay()];
@@ -147,48 +157,49 @@ export default function AdminDashboard() {
     }
 
     fetchDashboardData();
-  }, []);
+  }, [t]);
 
   const KPI_CARDS = [
     { 
-      label: 'Fisioterapeutas', 
+      label: t('admin.dashboard.kpi.physios', 'Fisioterapeutas'), 
       value: stats.totalPhysios, 
       icon: UserCheck, 
       color: 'blue', 
       trend: `${stats.totalPhysios > 0 ? '+100%' : '0%'}`, 
       isPositive: true,
-      description: 'Base total cadastrada'
+      description: t('admin.dashboard.kpi.physios_desc', 'Base total cadastrada')
     },
     { 
-      label: 'Novos Pacientes', 
+      label: t('admin.dashboard.kpi.patients', 'Novos Pacientes'), 
       value: stats.totalPatients, 
       icon: UserPlus, 
       color: 'emerald', 
       trend: `${stats.patientGrowth.toFixed(1)}%`, 
       isPositive: stats.patientGrowth >= 0,
-      description: 'Crescimento mensal'
+      description: t('admin.dashboard.kpi.patients_desc', 'Crescimento mensal')
     },
     { 
-      label: 'Consultas Hoje', 
+      label: t('admin.dashboard.kpi.appointments', 'Consultas Hoje'), 
       value: stats.appointmentsToday, 
       icon: Calendar, 
       color: 'indigo', 
       trend: '', 
       isPositive: true,
-      description: 'Volume operacional'
+      description: t('admin.dashboard.kpi.appointments_desc', 'Volume operacional')
     },
     { 
-      label: 'Faturamento Mensal', 
+      label: t('admin.dashboard.kpi.revenue', 'Faturamento Mensal'), 
       value: `R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
       icon: DollarSign, 
       color: 'amber', 
       trend: `${stats.revenueGrowth.toFixed(1)}%`, 
       isPositive: stats.revenueGrowth >= 0,
-      description: 'Receita confirmada'
+      description: t('admin.dashboard.kpi.revenue_desc', 'Receita confirmada')
     }
   ];
 
-  return (    <div className="space-y-8 animate-in fade-in duration-700">
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
       {/* SaaS Style Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
         <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
@@ -198,28 +209,28 @@ export default function AdminDashboard() {
             <Zap size={28} className="text-white fill-current" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Command Center</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('admin.dashboard.command_center', 'Command Center')}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} Active Sessions</p>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions', 'Active Sessions')}</p>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 hidden lg:flex items-center gap-12 mt-6 md:mt-0">
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">System Health</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health', 'System Health')}</p>
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
               <ShieldCheck size={16} />
-              Operational
+              {t('admin.dashboard.operational', 'Operational')}
             </div>
           </div>
           <div className="w-px h-10 bg-slate-100" />
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Network</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network', 'Network')}</p>
             <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
               <CheckCircle2 size={16} />
-              Synchronized
+              {t('admin.dashboard.synchronized', 'Synchronized')}
             </div>
           </div>
         </div>
@@ -267,8 +278,8 @@ export default function AdminDashboard() {
         <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Revenue Performance</h4>
-              <p className="text-xs text-slate-500 font-medium">Daily income distribution</p>
+              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title', 'Revenue Performance')}</h4>
+              <p className="text-xs text-slate-500 font-medium">{t('admin.dashboard.charts.revenue_desc', 'Daily income distribution')}</p>
             </div>
           </div>
 
@@ -320,8 +331,8 @@ export default function AdminDashboard() {
         <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Recent Activity</h4>
-              <p className="text-xs text-slate-500 font-medium">Real-time event stream</p>
+              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">{t('admin.dashboard.charts.activity_title', 'Recent Activity')}</h4>
+              <p className="text-xs text-slate-500 font-medium">{t('admin.dashboard.charts.activity_desc', 'Real-time event stream')}</p>
             </div>
           </div>
 
@@ -351,7 +362,7 @@ export default function AdminDashboard() {
             ))}
             {recentActivities.length === 0 && (
               <p className="text-center text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">
-                No recent activity detected.
+                {t('admin.dashboard.charts.no_activity', 'No recent activity detected.')}
               </p>
             )}
           </div>
@@ -363,7 +374,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-xs font-black text-slate-900">{recentActivities.length}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">Live Operations</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('admin.dashboard.charts.live_ops', 'Live Operations')}</p>
               </div>
             </div>
             <div className="flex -space-x-2">
