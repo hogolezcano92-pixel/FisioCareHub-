@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
-import { useDebounce } from '@/hooks/useDebounce';
-import { 
-  Clock, 
-  Search, 
-  Filter, 
-  User, 
-  Shield, 
-  AlertCircle, 
-  FileText, 
+import { useDebounce } from '../../hooks/useDebounce'; // <-- CORRIGIDO
+import {
+  Clock,
+  Search,
+  Filter,
+  User,
+  Shield,
+  AlertCircle,
+  FileText,
   Activity,
   ArrowRight,
   Monitor,
@@ -49,25 +49,25 @@ export default function AdminLogs() {
     fetchLogs();
 
     const channel = supabase
-      .channel('admin_audit_logs')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'historico_atividades' }, async (payload) => {
+     .channel('admin_audit_logs')
+     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'historico_atividades' }, async (payload) => {
         const newLog = payload.new as Log;
-        
+
         // Fetch profile for the new log to maintain UI consistency
         const { data: profile } = await supabase
-          .from('perfis')
-          .select('nome_completo, email, foto_url')
-          .eq('id', newLog.usuario_id)
-          .single();
-        
+         .from('perfis')
+         .select('nome_completo, email, foto_url')
+         .eq('id', newLog.usuario_id)
+         .single();
+
         const logWithProfile = {
-          ...newLog,
+         ...newLog,
           perfil: profile || undefined
         };
 
-        setLogs(prev => [logWithProfile, ...prev].slice(0, 100));
+        setLogs(prev => [logWithProfile,...prev].slice(0, 100));
       })
-      .subscribe();
+     .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -77,13 +77,13 @@ export default function AdminLogs() {
   const fetchLogs = async () => {
     try {
       const { data, error } = await supabase
-        .from('historico_atividades')
-        .select(`
+       .from('historico_atividades')
+       .select(`
           *,
           perfil:perfis!usuario_id (nome_completo, email, foto_url)
         `)
-        .order('created_at', { ascending: false })
-        .limit(100);
+       .order('created_at', { ascending: false })
+       .limit(100);
 
       if (error) throw error;
       setLogs(data || []);
@@ -96,24 +96,24 @@ export default function AdminLogs() {
 
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
-      const descricao = (log.descricao ?? '').toLowerCase();
-      const nomeCompleto = (log.perfil?.nome_completo ?? '').toLowerCase();
-      const tipoAcao = (log.tipo_acao ?? '').toLowerCase();
-      const search = (debouncedSearch ?? '').toLowerCase();
+      const descricao = (log.descricao?? '').toLowerCase();
+      const nomeCompleto = (log.perfil?.nome_completo?? '').toLowerCase();
+      const tipoAcao = (log.tipo_acao?? '').toLowerCase();
+      const search = (debouncedSearch?? '').toLowerCase();
 
-      const matchesSearch = 
+      const matchesSearch =
         descricao.includes(search) ||
         nomeCompleto.includes(search) ||
         tipoAcao.includes(search);
-      
+
       const matchesFilter = filterType === 'all' || log.tipo_usuario === filterType;
-      
+
       return matchesSearch && matchesFilter;
     });
   }, [logs, debouncedSearch, filterType]);
 
   const getActionIcon = (type: string) => {
-    const actionType = type ?? '';
+    const actionType = type?? '';
     if (actionType.includes('login') || actionType.includes('logout')) return <Shield size={16} className="text-blue-400" />;
     if (actionType.includes('prontuario')) return <FileText size={16} className="text-emerald-400" />;
     if (actionType.includes('finance') || actionType.includes('pagamento')) return <Database size={16} className="text-amber-400" />;
@@ -133,7 +133,7 @@ export default function AdminLogs() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
-            <input 
+            <input
               type="text"
               placeholder={t('admin.logs.search_placeholder')}
               value={searchTerm}
@@ -149,12 +149,12 @@ export default function AdminLogs() {
                 onClick={() => setFilterType(type)}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                  filterType === type 
-                    ? "bg-white text-slate-900 shadow-sm" 
+                  filterType === type
+                   ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
-                {type === 'all' ? t('common.all') : t(`admin_users.role_${type === 'fisio' ? 'physio' : type === 'paciente' ? 'patient' : type}`)}
+                {type === 'all'? t('common.all') : t(`admin_users.role_${type === 'fisio'? 'physio' : type === 'paciente'? 'patient' : type}`)}
               </button>
             ))}
           </div>
@@ -177,15 +177,15 @@ export default function AdminLogs() {
             </div>
 
             <div className="p-0 overflow-y-auto max-h-[700px] custom-scrollbar">
-              {loading ? (
+              {loading? (
                 <div className="p-20 text-center space-y-4">
                   <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
                   <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{t('admin.logs.ingesting')}</p>
                 </div>
-              ) : filteredLogs.length > 0 ? (
+              ) : filteredLogs.length > 0? (
                 <div className="divide-y divide-slate-50">
                   {filteredLogs.map((log) => (
-                    <motion.div 
+                    <motion.div
                       key={log.id}
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -197,14 +197,14 @@ export default function AdminLogs() {
                     >
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-colors",
-                        selectedLog?.id === log.id ? "bg-white border-blue-200 shadow-sm" : "bg-slate-100 border-slate-200"
+                        selectedLog?.id === log.id? "bg-white border-blue-200 shadow-sm" : "bg-slate-100 border-slate-200"
                       )}>
                         {getActionIcon(log.tipo_acao)}
                       </div>
 
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-4">
-                          <p className="text-xs font-black text-slate-900">{log.descricao ?? ''}</p>
+                          <p className="text-xs font-black text-slate-900">{log.descricao?? ''}</p>
                           <span className="text-[10px] font-bold text-slate-400 tabular-nums">
                             {formatDate(log.created_at)}
                           </span>
@@ -213,14 +213,14 @@ export default function AdminLogs() {
                           <div className="flex items-center gap-1.5">
                             <User size={12} className="text-slate-300" />
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                              {log.perfil?.nome_completo ?? 'System Core'}
+                              {log.perfil?.nome_completo?? 'System Core'}
                             </span>
                           </div>
                           <div className="w-1 h-1 rounded-full bg-slate-200" />
                           <span className={cn(
                             "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
-                            log.tipo_usuario === 'admin' ? "text-amber-600 bg-amber-50 border-amber-100" :
-                            log.tipo_usuario === 'fisio' ? "text-blue-600 bg-blue-50 border-blue-100" : "text-emerald-600 bg-emerald-50 border-emerald-100"
+                            log.tipo_usuario === 'admin'? "text-amber-600 bg-amber-50 border-amber-100" :
+                            log.tipo_usuario === 'fisio'? "text-blue-600 bg-blue-50 border-blue-100" : "text-emerald-600 bg-emerald-50 border-emerald-100"
                           )}>
                             {log.tipo_usuario}
                           </span>
@@ -259,7 +259,7 @@ export default function AdminLogs() {
             </div>
 
             <AnimatePresence mode="wait">
-              {selectedLog ? (
+              {selectedLog? (
                 <motion.div
                   key={selectedLog.id}
                   initial={{ opacity: 0, scale: 0.98 }}
@@ -271,15 +271,15 @@ export default function AdminLogs() {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
                         <span>{t('admin.logs.inspector.event_type')}</span>
-                        <span className="text-blue-600">{selectedLog.tipo_acao ?? ''}</span>
+                        <span className="text-blue-600">{selectedLog.tipo_acao?? ''}</span>
                       </div>
-                      <p className="text-xs font-bold text-slate-900 leading-relaxed">{selectedLog.descricao ?? ''}</p>
+                      <p className="text-xs font-bold text-slate-900 leading-relaxed">{selectedLog.descricao?? ''}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.vector_id')}</p>
-                        <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.usuario_id ?? ''}</p>
+                        <p className="text-[9px] font-mono text-slate-600 truncate">{selectedLog.usuario_id?? ''}</p>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('admin.logs.inspector.linked_ref')}</p>
@@ -292,7 +292,7 @@ export default function AdminLogs() {
                         <Monitor size={14} className="text-slate-400" />
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.logs.inspector.diagnostics')}</span>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-slate-400 font-bold">{t('admin.logs.inspector.client_ip')}</span>
