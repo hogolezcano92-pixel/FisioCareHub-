@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
-import { useDebounce } from '../../hooks/useDebounce';
+import { useDebounce } from '@/src/hooks/useDebounce';
 import { 
   ShieldAlert, 
   UserX, 
