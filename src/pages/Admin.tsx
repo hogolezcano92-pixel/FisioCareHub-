@@ -1422,7 +1422,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0B1120] font-sans text-white -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
+    <div className="flex min-h-screen admin-dashboard font-sans -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
@@ -1432,18 +1432,18 @@ export default function Admin() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedUserDetail(null)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-[#0B1120] w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200"
             >
               {/* Modal Header */}
-              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-900/20">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-500/20">
                     {selectedUserDetail.foto_url || selectedUserDetail.avatar_url ? (
                       <img src={selectedUserDetail.foto_url || selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
@@ -1451,13 +1451,13 @@ export default function Admin() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                    <h3 className="text-2xl admin-title tracking-tight">{selectedUserDetail.nome_completo}</h3>
+                    <p className="admin-text-secondary font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedUserDetail(null)}
-                  className="p-3 bg-white/5 text-slate-400 hover:text-white rounded-2xl shadow-sm border border-white/10 transition-all"
+                  className="p-3 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all"
                 >
                   <X size={24} />
                 </button>
@@ -1468,54 +1468,54 @@ export default function Admin() {
                 {/* Basic Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">E-mail</p>
-                    <p className="text-sm font-bold text-white break-all">{selectedUserDetail.email}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
+                    <p className="text-sm font-bold text-slate-900 break-all">{selectedUserDetail.email}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Telefone</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.telefone || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Telefone</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.telefone || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CPF</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CPF</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CREFITO</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.crefito || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CREFITO</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.crefito || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Especialidade</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.especialidade || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialidade</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.especialidade || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cidade/UF</p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cidade/UF</p>
+                    <p className="text-sm font-bold text-slate-900">
                       {selectedUserDetail.cidade || 'N/A'}{selectedUserDetail.estado ? ` - ${selectedUserDetail.estado}` : ''}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CEP</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.cep || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEP</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.cep || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
-                    <p className="text-sm font-bold text-white">{selectedUserDetail.pais || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.pais || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
+                    <p className="text-sm font-bold text-slate-900">
                       {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
+                    <p className="text-sm font-bold text-slate-900">
                       {selectedUserDetail.data_nascimento ? new Date(selectedUserDetail.data_nascimento).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
+                    <p className="text-sm font-bold text-slate-900">
                       {selectedUserDetail.preco_sessao ? `R$ ${selectedUserDetail.preco_sessao}` : 'N/A'}
                     </p>
                   </div>
@@ -1523,8 +1523,8 @@ export default function Admin() {
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
-                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-400 leading-relaxed italic">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-600 leading-relaxed italic">
                     {selectedUserDetail.bio || t('admin_users.details.no_bio', 'Nenhuma biografia informada.')}
                   </div>
                 </div>
@@ -1533,8 +1533,8 @@ export default function Admin() {
                 {selectedUserDetail.tipo_usuario === 'fisioterapeuta' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
-                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-700">
                         {Array.isArray(selectedUserDetail.formacao_academica) && selectedUserDetail.formacao_academica.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
                             {selectedUserDetail.formacao_academica.map((item: string, i: number) => (
@@ -1545,8 +1545,8 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
-                      <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-slate-300">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-700">
                         {Array.isArray(selectedUserDetail.servicos_ofertados) && selectedUserDetail.servicos_ofertados.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
                             {selectedUserDetail.servicos_ofertados.map((item: string, i: number) => (
@@ -1561,7 +1561,7 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
                   {(() => {
                     const docs = selectedUserDetail.all_docs;
                     
@@ -1574,16 +1574,16 @@ export default function Admin() {
                               href={resolveStorageUrl(doc.url)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-blue-500/50 hover:bg-white/10 transition-all group"
+                              className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-500/50 hover:bg-white transition-all group"
                             >
-                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
                                 <FileIcon size={20} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white truncate">{doc.label}</p>
-                                <p className="text-[10px] text-slate-500 font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
+                                <p className="text-xs font-bold text-slate-900 truncate">{doc.label}</p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
                               </div>
-                              <Download size={16} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
+                              <Download size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
                             </a>
                           ))}
                         </div>
@@ -1591,8 +1591,8 @@ export default function Admin() {
                     }
                     
                     return (
-                      <div className="p-8 border-2 border-dashed border-white/10 rounded-[2rem] text-center">
-                        <p className="text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
+                      <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
+                        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest text-[10px]">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
                       </div>
                     );
                   })()}
@@ -1600,7 +1600,7 @@ export default function Admin() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-8 border-t border-white/5 flex gap-4">
+              <div className="p-8 border-t border-slate-100 flex gap-4">
                 {selectedUserDetail.status_aprovacao === 'pendente' ? (
                   <>
                     <button 
@@ -1608,7 +1608,7 @@ export default function Admin() {
                         handleApprovePhysio(selectedUserDetail?.id, selectedUserDetail?.id);
                         setSelectedUserDetail(null);
                       }}
-                      className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20"
+                      className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
                     >
                       {t('admin_users.details.approve_btn', 'Aprovar Cadastro')}
                     </button>
@@ -1617,7 +1617,7 @@ export default function Admin() {
                         handleRejectPhysio(selectedUserDetail?.id, selectedUserDetail?.id);
                         setSelectedUserDetail(null);
                       }}
-                      className="flex-1 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-sm hover:bg-rose-500/20 transition-all"
+                      className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-sm hover:bg-rose-100 transition-all"
                     >
                       {t('admin_users.details.reject_btn', 'Rejeitar')}
                     </button>
@@ -1625,7 +1625,7 @@ export default function Admin() {
                 ) : (
                   <button 
                     onClick={() => setSelectedUserDetail(null)}
-                    className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-sm hover:bg-white/10 transition-all border border-white/10"
+                    className="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all border border-slate-200"
                   >
                     {t('admin_users.details.close_btn', 'Fechar Detalhes')}
                   </button>
@@ -1644,7 +1644,7 @@ export default function Admin() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[40] lg:hidden"
+            className="fixed inset-0 bg-slate-950/20 backdrop-blur-sm z-[40] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -1652,26 +1652,26 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[45] w-64 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[45] w-64 admin-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
+          <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
             <div className={cn("flex items-center gap-2 overflow-visible transition-all whitespace-nowrap min-w-0 flex-1", !sidebarOpen && "lg:hidden")}>
-              <Logo size="sm" variant="dark" />
+              <Logo size="sm" variant="light" />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-slate-50 text-slate-400 transition-all active:scale-95 flex-shrink-0"
+              className="p-2 rounded-xl hover:bg-white/5 text-white/40 transition-all active:scale-95 flex-shrink-0"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
 
           {/* Nav Links */}
-          <nav className="flex-1 py-6 px-3 space-y-1">
+          <nav className="flex-1 py-6 px-3 space-y-1 custom-scrollbar overflow-y-auto">
             {[
               { id: 'dashboard', label: t('admin.sidebar.dashboard', 'Dashboard'), icon: LayoutDashboard },
               { id: 'viva', label: t('admin.sidebar.viva', 'Viva AI Platform'), icon: Brain, isAI: true },
@@ -1699,23 +1699,23 @@ export default function Admin() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group",
                   activeTab === item.id 
-                    ? (item.isAI ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-blue-600 text-white shadow-lg shadow-blue-200") 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    ? "sidebar-item-active shadow-sm" 
+                    : "text-white/60 hover:text-white hover:bg-white/5"
                 )}
               >
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-slate-400 group-hover:text-blue-600")} />
+                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-[#06b6d4]" : "text-white/40 group-hover:text-[#06b6d4]")} />
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
 
             {/* Logout Button moved inside Nav */}
-            <div className="pt-2 mt-2 border-t border-slate-100">
+            <div className="pt-2 mt-2 border-t border-white/5">
               <button
                 onClick={() => {
                   signOut().then(() => navigate('/'));
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 transition-all",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-400/10 transition-all",
                   !sidebarOpen && "lg:justify-center"
                 )}
               >
@@ -1726,12 +1726,12 @@ export default function Admin() {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-100">
+          <div className="p-4 border-t border-white/5">
             <div className={cn(
-              "flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 transition-all",
+              "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
               !sidebarOpen && "lg:justify-center lg:p-2"
             )}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg shadow-blue-100 overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg overflow-hidden">
                 {authProfile?.avatar_url || authProfile?.foto_url ? (
                   <img 
                     src={authProfile.avatar_url || authProfile.foto_url} 
@@ -1744,8 +1744,8 @@ export default function Admin() {
                 )}
               </div>
               <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
-                <p className="text-sm font-black text-slate-900 truncate">Admin Master</p>
-                <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
+                <p className="text-sm font-black text-white truncate">Admin Master</p>
+                <p className="text-[10px] font-bold text-white/40 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
               </div>
             </div>
           </div>
@@ -1753,9 +1753,9 @@ export default function Admin() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-slate-50/50">
+      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-white">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm pt-[env(safe-area-inset-top)]">
           <div className="w-full px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
@@ -1769,7 +1769,7 @@ export default function Admin() {
 
             {/* Center Section - Title */}
             <div className="flex-[2] flex justify-center min-w-0">
-              <h2 className="text-sm md:text-base font-black text-slate-900 tracking-[0.15em] uppercase text-center truncate px-2">
+              <h2 className="text-sm md:text-base admin-title tracking-[0.15em] uppercase text-center truncate px-2">
                 {activeTab === 'dashboard' ? t('admin.header.overview', 'Overview') : 
                  activeTab === 'materiais' ? t('admin.header.library', 'Library') :
                  activeTab === 'physios' ? t('admin.header.professionals', 'Professionals') :
@@ -1798,7 +1798,7 @@ export default function Admin() {
                   placeholder={t('admin.header.search_placeholder', 'Universal Search...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white focus:border-blue-500/30 transition-all w-32 lg:w-64"
+                  className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white focus:border-blue-500/30 transition-all w-32 lg:w-64"
                 />
               </div>
 
@@ -1817,7 +1817,7 @@ export default function Admin() {
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
+              <p className="admin-text-secondary font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
             </div>
           )}
 
@@ -1827,7 +1827,7 @@ export default function Admin() {
                 <AlertTriangle size={32} />
               </div>
               <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('admin.status.outage', 'System Outage')}</h3>
-              <p className="text-slate-500 text-sm max-w-md mx-auto">{error}</p>
+              <p className="admin-text-secondary text-sm max-w-md mx-auto">{error}</p>
               <button 
                 onClick={() => fetchSupabaseProfiles()}
                 className="px-8 py-3 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-200"
@@ -1857,12 +1857,12 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
-                  <p className="text-slate-500 font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
+                  <h3 className="text-2xl admin-title tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
+                  <p className="admin-text-secondary font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
                 </div>
                 <button 
                   onClick={() => setShowMaterialModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                 >
                   <Plus size={20} />
                   {t('admin.library.new_material', 'Novo Material (Manual)')}
@@ -1870,31 +1870,31 @@ export default function Admin() {
               </div>
 
               {/* AI GENERATOR SECTION */}
-              <div className="p-8 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-[2.5rem] border border-blue-500/20 relative overflow-hidden">
+              <div className="p-8 admin-card relative overflow-hidden bg-white">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                   <Sparkles size={120} className="text-blue-400" />
+                   <Sparkles size={120} className="text-[#06b6d4]" />
                 </div>
                 <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
                   <div className="space-y-4 max-w-sm">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-lg text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 sidebar-item-active rounded-lg text-[10px] font-black uppercase tracking-widest">
                       <Sparkles size={12} />
                       {t('admin.library.ai_generator', 'IA Content Creator')}
                     </div>
-                    <h3 className="text-xl font-black text-white">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
-                    <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                    <h3 className="text-xl admin-title">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
+                    <p className="admin-text-secondary text-sm leading-relaxed font-medium">
                       {t('admin.library.ai_gen_desc', 'Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.')}
                     </p>
                   </div>
 
                   <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1 md:col-span-3">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
                        <input 
                         type="text"
                         value={aiGenForm.theme}
                         onChange={(e) => setAiGenForm({ ...aiGenForm, theme: e.target.value })}
                         placeholder="Ex: Exercícios para dor ciática em casa ou Prevenção de lesões no corredor"
-                        className="w-full px-6 py-4 bg-slate-950/50 border border-white/10 rounded-2xl text-white outline-none focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/40"
                       />
                     </div>
                     <div className="space-y-1">
