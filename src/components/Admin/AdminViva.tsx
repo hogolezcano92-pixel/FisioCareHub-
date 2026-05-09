@@ -74,9 +74,9 @@ export default function AdminViva() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* VIVA Hero Banner */}
-      <div className="bg-gradient-to-br from-indigo-700 via-blue-600 to-indigo-600 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-xl shadow-blue-100">
-        <div className="absolute top-0 right-0 p-32 -mr-32 -mt-32 bg-white/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-0 left-0 p-32 -ml-32 -mb-32 bg-blue-400/10 blur-3xl rounded-full" />
+      <div className="bg-[var(--gradient)] rounded-[2.5rem] p-10 text-[var(--white)] relative overflow-hidden shadow-xl shadow-[var(--primary)]/10">
+        <div className="absolute top-0 right-0 p-32 -mr-32 -mt-32 bg-white/5 blur-3xl rounded-full" />
+        <div className="absolute bottom-0 left-0 p-32 -ml-32 -mb-32 bg-[var(--primary-2)]/10 blur-3xl rounded-full" />
         
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
           <div className="relative">
@@ -88,18 +88,18 @@ export default function AdminViva() {
           
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black uppercase tracking-[0.2em]">
-              <Sparkles size={12} className="text-blue-200" />
+              <Sparkles size={12} className="text-blue-100" />
               {t('admin.viva.hero_subtitle')}
             </div>
             <h2 className="text-4xl font-black tracking-tight">{t('admin.viva.hero_title')}</h2>
-            <p className="text-base font-medium text-blue-50/80 max-w-2xl leading-relaxed">
+            <p className="text-base font-medium text-white/80 max-w-2xl leading-relaxed">
               {t('admin.viva.hero_desc')}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-4">
               <button 
                 onClick={generateInsights}
                 disabled={analyzing}
-                className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                className="px-6 py-3 bg-[var(--white)] text-[var(--primary)] rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-white/90 transition-all shadow-lg active:scale-95 flex items-center gap-2"
               >
                 {analyzing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
                 {t('admin.viva.generate_insights')}
@@ -132,38 +132,38 @@ export default function AdminViva() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.1 }}
-                className="admin-card p-7 flex flex-col group"
+                className="admin-card p-7 flex flex-col group bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)]"
               >
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center mb-5 shadow-sm border",
-                  insight.type === 'risk' ? 'bg-rose-50/50 border-rose-100/50 text-rose-500' :
-                  insight.type === 'growth' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                  'bg-blue-50 border-blue-100 text-blue-600'
+                  insight.type === 'risk' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                  insight.type === 'growth' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                  'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]'
                 )}>
                   {insight.type === 'risk' ? <AlertCircle size={22} /> : 
                    insight.type === 'growth' ? <TrendingUp size={22} /> : <Zap size={22} />}
                 </div>
 
                 <div className="flex-1 space-y-3">
-                  <h4 className="text-lg admin-title tracking-tight leading-tight">{insight.title}</h4>
-                  <p className="admin-text-secondary text-xs font-medium leading-relaxed">{insight.description}</p>
+                  <h4 className="text-lg text-[var(--text)] font-black tracking-tight leading-tight">{insight.title}</h4>
+                  <p className="text-[var(--text-2)] text-xs font-medium leading-relaxed">{insight.description}</p>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-100">
-                  <button className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border border-slate-200 flex items-center justify-center gap-2 group/btn">
+                <div className="mt-6 pt-6 border-t border-[var(--border)]">
+                  <button className="w-full py-3 bg-[var(--bg)] hover:bg-[var(--surface)] text-[var(--text)] rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border border-[var(--border)] flex items-center justify-center gap-2 group/btn">
                     {insight.action}
-                    <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform text-blue-600" />
+                    <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform text-[var(--primary)]" />
                   </button>
                 </div>
               </motion.div>
             ))
           ) : !analyzing ? (
             /* Empty State */
-            <div className="col-span-3 py-16 text-center space-y-4 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto border border-slate-200 shadow-sm">
+            <div className="col-span-3 py-16 text-center space-y-4 bg-[var(--surface)]/50 rounded-[2.5rem] border border-dashed border-[var(--border)]">
+              <div className="w-16 h-16 bg-[var(--bg)] rounded-2xl flex items-center justify-center text-[var(--text-2)] mx-auto border border-[var(--border)] shadow-sm">
                 <Brain size={32} />
               </div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+              <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">
                 {t('admin.viva.empty_state')}
               </p>
             </div>
@@ -171,12 +171,12 @@ export default function AdminViva() {
             /* Loading State */
             <div className="col-span-3 py-20 text-center space-y-6">
               <div className="relative inline-block">
-                <div className="absolute inset-0 bg-blue-400 blur-xl opacity-20 animate-pulse" />
-                <RefreshCw className="animate-spin text-blue-600 relative z-10" size={40} />
+                <div className="absolute inset-0 bg-[var(--primary)] blur-xl opacity-20 animate-pulse" />
+                <RefreshCw className="animate-spin text-[var(--primary)] relative z-10" size={40} />
               </div>
               <div className="space-y-2">
-                <p className="text-slate-900 font-black text-xl tracking-tight uppercase">{t('admin.viva.loading_title')}</p>
-                <p className="text-slate-500 font-bold text-xs">{t('admin.viva.loading_desc')}</p>
+                <p className="text-[var(--text)] font-black text-xl tracking-tight uppercase">{t('admin.viva.loading_title')}</p>
+                <p className="text-[var(--text-2)] font-bold text-xs">{t('admin.viva.loading_desc')}</p>
               </div>
             </div>
           )}
@@ -185,23 +185,23 @@ export default function AdminViva() {
 
       {/* Advanced Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="admin-card p-8 flex items-center gap-8 group cursor-pointer">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+        <div className="admin-card p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] flex items-center gap-8 group cursor-pointer">
+          <div className="w-16 h-16 bg-[var(--primary-2)]/10 text-[var(--primary-2)] rounded-2xl flex items-center justify-center border border-[var(--primary-2)]/20 group-hover:bg-[var(--primary-2)] group-hover:text-white transition-all shadow-sm">
             <CheckCircle2 size={28} />
           </div>
           <div>
-            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title')}</h5>
-            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc')}</p>
+            <h5 className="text-base text-[var(--text)] font-black uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title')}</h5>
+            <p className="text-[var(--text-2)] text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc')}</p>
           </div>
         </div>
 
-        <div className="admin-card p-8 flex items-center gap-8 group cursor-pointer">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm" >
+        <div className="admin-card p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] flex items-center gap-8 group cursor-pointer">
+          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm" >
             <TrendingUp size={28} />
           </div>
           <div>
-            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.growth_title')}</h5>
-            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc')}</p>
+            <h5 className="text-base text-[var(--text)] font-black uppercase tracking-tight">{t('admin.viva.capabilities.growth_title')}</h5>
+            <p className="text-[var(--text-2)] text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc')}</p>
           </div>
         </div>
       </div>

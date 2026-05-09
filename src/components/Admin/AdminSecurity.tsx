@@ -113,22 +113,22 @@ export default function AdminSecurity() {
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Alert Banner for Suspicious Activity */}
       {suspiciousCount > 0 && (
-        <div className="bg-rose-50/50 p-6 rounded-3xl border border-rose-100/50 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-100/30 blur-3xl rounded-full group-hover:bg-rose-200/40 transition-all duration-1000" />
+        <div className="bg-rose-500/10 p-6 rounded-3xl border border-rose-500/20 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-500/5 blur-3xl rounded-full group-hover:bg-rose-500/10 transition-all duration-1000" />
           
           <div className="flex items-center gap-6 relative z-10">
-            <div className="w-14 h-14 bg-rose-100/50 text-rose-500 rounded-2xl flex items-center justify-center shadow-sm animate-pulse">
+            <div className="w-14 h-14 bg-rose-500/20 text-rose-500 rounded-2xl flex items-center justify-center shadow-sm animate-pulse">
               <ShieldAlert size={28} />
             </div>
             <div>
-              <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('admin.security.threats_detected')}</h4>
+              <h4 className="text-lg font-black text-[var(--text)] uppercase tracking-tight">{t('admin.security.threats_detected')}</h4>
               <p className="text-rose-500 font-bold text-xs">{suspiciousCount} {t('admin.security.flagged_events')}</p>
             </div>
           </div>
           
           <button 
             onClick={() => toast.info('Analyzing digital footprints...')}
-            className="relative z-10 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-rose-100/50 transition-all active:scale-95 flex items-center gap-2"
+            className="relative z-10 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 transition-all active:scale-95 flex items-center gap-2"
           >
             <ZapOff size={18} />
             {t('admin.security.lockdown')}
@@ -138,62 +138,62 @@ export default function AdminSecurity() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.security.access_control')}</h3>
-          <p className="admin-text-secondary text-xs font-medium">{t('admin.security.access_desc')}</p>
+          <h3 className="text-xl text-[var(--text)] font-black tracking-tight uppercase">{t('admin.security.access_control')}</h3>
+          <p className="text-[var(--text-2)] text-xs font-medium">{t('admin.security.access_desc')}</p>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-2)]" size={16} />
           <input 
             type="text"
             placeholder={t('admin.security.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-white border border-slate-200 rounded-xl pl-11 pr-6 py-2.5 text-xs text-slate-900 font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all w-full md:w-80"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-11 pr-6 py-2.5 text-xs text-[var(--text)] font-bold outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all w-full md:w-80"
           />
         </div>
       </div>
 
       {/* Users Security List */}
-      <div className="admin-card overflow-hidden">
+      <div className="admin-card overflow-hidden bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)]">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.user')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.tier')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.sync')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.hardware')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em] text-right">{t('admin.security.table.shield')}</th>
+              <tr className="bg-[var(--bg)]/50 border-b border-[var(--border)]">
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.15em]">{t('admin.security.table.user')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.15em]">{t('admin.security.table.tier')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.15em]">{t('admin.security.table.sync')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.15em]">{t('admin.security.table.hardware')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.15em] text-right">{t('admin.security.table.shield')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-20 text-center">
-                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{t('admin.security.scanning')}</p>
+                    <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-[var(--text-2)] text-[10px] font-black uppercase tracking-widest">{t('admin.security.scanning')}</p>
                   </td>
                 </tr>
               ) : filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={user.id} className="hover:bg-[var(--bg)]/30 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-blue-600 border border-slate-200 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-[var(--bg)] flex items-center justify-center font-black text-[var(--primary)] border border-[var(--border)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                         {(user.nome_completo ?? '').charAt(0)}
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900 pr-4">{user.nome_completo}</p>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</p>
+                        <p className="text-xs font-black text-[var(--text)] pr-4">{user.nome_completo}</p>
+                        <p className="text-[9px] text-[var(--text-2)] font-bold uppercase tracking-widest">{user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-5">
                     <div className={cn(
                       "inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                      user.status === 'ativo' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
-                      user.status === 'suspenso' ? "border-amber-100 bg-amber-50 text-amber-600" :
-                      "border-rose-100 bg-rose-50 text-rose-600"
+                      user.status === 'ativo' ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500" :
+                      user.status === 'suspenso' ? "border-amber-500/20 bg-amber-500/10 text-amber-500" :
+                      "border-rose-500/20 bg-rose-500/10 text-rose-500"
                     )}>
                       <div className={cn(
                         "w-1 h-1 rounded-full",
@@ -204,8 +204,8 @@ export default function AdminSecurity() {
                     </div>
                   </td>
                   <td className="px-8 py-5">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                      <Clock size={14} className="text-slate-300" />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-[var(--text-2)]">
+                      <Clock size={14} className="text-[var(--text-2)]/50" />
                       {user.lastSeen}
                     </div>
                   </td>
@@ -213,12 +213,12 @@ export default function AdminSecurity() {
                     <div className="flex items-center gap-3">
                       <div className="flex -space-x-2">
                         {Array.from({ length: user.devices }).map((_, i) => (
-                          <div key={i} className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-slate-400" title="Active Terminal">
+                          <div key={i} className="w-7 h-7 rounded-full bg-[var(--bg)] border-2 border-[var(--surface)] flex items-center justify-center text-[var(--text-2)]" title="Active Terminal">
                             <Smartphone size={12} />
                           </div>
                         ))}
                       </div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <span className="text-[9px] font-black text-[var(--text-2)] uppercase tracking-widest">
                         {user.devices} {t('admin.security.connected')}
                       </span>
                     </div>
@@ -226,7 +226,7 @@ export default function AdminSecurity() {
                   <td className="px-8 py-5 text-right relative">
                     <button 
                       onClick={() => setShowOptions(showOptions === user.id ? null : user.id)}
-                      className="p-2 text-slate-400 hover:text-slate-900 rounded-lg transition-all"
+                      className="p-2 text-[var(--text-2)] hover:text-[var(--text)] rounded-lg transition-all"
                     >
                       <MoreVertical size={18} />
                     </button>
@@ -242,10 +242,10 @@ export default function AdminSecurity() {
                             initial={{ opacity: 0, scale: 0.95, y: -5 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                            className="absolute right-8 top-12 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 py-2 overflow-hidden"
+                            className="absolute right-8 top-12 w-56 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xl z-20 py-2 overflow-hidden"
                           >
                             <button 
-                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-bold text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)] transition-all"
                               onClick={() => handleUpdateStatus(user.id, user.status === 'suspenso' ? 'ativo' : 'suspenso')}
                             >
                               {user.status === 'suspenso' ? (
@@ -255,14 +255,14 @@ export default function AdminSecurity() {
                               )}
                             </button>
                             <button 
-                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-bold text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)] transition-all"
                               onClick={() => toast.info('Sessions terminated!')}
                             >
-                              <ZapOff size={14} className="text-blue-500" /> {t('admin.security.actions.kill_sessions')}
+                              <ZapOff size={14} className="text-[var(--primary-2)]" /> {t('admin.security.actions.kill_sessions')}
                             </button>
-                            <div className="h-px bg-slate-100 my-1" />
+                            <div className="h-px bg-[var(--border)] my-1" />
                             <button 
-                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-black text-rose-500 hover:bg-rose-50 transition-all"
+                              className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-black text-rose-500 hover:bg-rose-500/10 transition-all"
                               onClick={() => handleUpdateStatus(user.id, 'banido')}
                             >
                               <UserX size={14} /> {t('admin.security.actions.ban')}
@@ -277,7 +277,7 @@ export default function AdminSecurity() {
               {!loading && filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-20 text-center">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('admin.security.no_assets')}</p>
+                    <p className="text-[var(--text-2)] text-xs font-bold uppercase tracking-widest">{t('admin.security.no_assets')}</p>
                   </td>
                 </tr>
               )}
@@ -293,23 +293,23 @@ export default function AdminSecurity() {
           { icon: Globe, title: t('admin.security.tools.shield_title'), desc: t('admin.security.tools.shield_desc'), color: 'amber', action: t('admin.security.tools.shield_action') },
           { icon: CheckCircle2, title: t('admin.security.tools.lgpd_title'), desc: t('admin.security.tools.lgpd_desc'), color: 'emerald', action: t('admin.security.tools.lgpd_action') }
         ].map((tool, idx) => (
-          <div key={idx} className="admin-card p-8 space-y-6 group">
+          <div key={idx} className="admin-card p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] space-y-6 group">
             <div className={cn(
               "w-14 h-14 rounded-xl flex items-center justify-center border transition-transform group-hover:scale-110",
-              tool.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
-              tool.color === 'amber' ? 'bg-amber-50 border-amber-100 text-amber-600' :
-              'bg-emerald-50 border-emerald-100 text-emerald-600'
+              tool.color === 'blue' ? 'bg-[var(--primary-2)]/10 border-[var(--primary-2)]/20 text-[var(--primary-2)]' :
+              tool.color === 'amber' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+              'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
             )}>
               <tool.icon size={28} />
             </div>
             <div>
-              <h5 className="text-lg admin-title uppercase tracking-tight">{tool.title}</h5>
-              <p className="admin-text-secondary text-xs font-medium mt-2 leading-relaxed">{tool.desc}</p>
+              <h5 className="text-lg text-[var(--text)] font-black uppercase tracking-tight">{tool.title}</h5>
+              <p className="text-[var(--text-2)] text-xs font-medium mt-2 leading-relaxed">{tool.desc}</p>
             </div>
             <button className={cn(
               "w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all",
-              tool.color === 'blue' ? 'bg-blue-600 text-white hover:bg-blue-700' :
-              'bg-white border text-slate-900 hover:bg-slate-50 border-slate-200'
+              tool.color === 'blue' ? 'bg-[var(--gradient)] text-[var(--white)] hover:shadow-lg' :
+              'bg-[var(--bg)] border text-[var(--text)] hover:bg-[var(--surface)] border-[var(--border)]'
             )}>
               {tool.action}
             </button>

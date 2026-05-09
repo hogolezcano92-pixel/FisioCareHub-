@@ -201,34 +201,34 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* SaaS Style Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between bg-white/90 backdrop-blur-md p-8 rounded-3xl lg:rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
+      <div className="flex flex-col md:flex-row items-center justify-between bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl overflow-hidden relative group">
+        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-[var(--primary)]/5 blur-3xl rounded-full group-hover:bg-[var(--primary)]/10 transition-all duration-1000" />
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <Zap size={28} className="text-white fill-current" />
+          <div className="w-14 h-14 bg-[var(--gradient)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--primary)]/20 text-[var(--white)]">
+            <Zap size={28} className="fill-current" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('admin.dashboard.command_center')}</h2>
+            <h2 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.dashboard.command_center')}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions')}</p>
+              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions')}</p>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 hidden lg:flex items-center gap-12 mt-6 md:mt-0">
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health')}</p>
-            <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+            <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health')}</p>
+            <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm">
               <ShieldCheck size={16} />
               {t('admin.dashboard.operational')}
             </div>
           </div>
-          <div className="w-px h-10 bg-slate-100" />
+          <div className="w-px h-10 bg-[var(--border)]" />
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network')}</p>
-            <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+            <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network')}</p>
+            <div className="flex items-center gap-2 text-[var(--primary-2)] font-bold text-sm">
               <CheckCircle2 size={16} />
               {t('admin.dashboard.synchronized')}
             </div>
@@ -244,17 +244,18 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-[#0891B2] border border-cyan-500/30 shadow-lg rounded-3xl lg:rounded-[2.5rem] p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300"
+            className="bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded-[var(--radius)] p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300"
           >
             <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110 bg-white/10 border-white/20 text-white"
+                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110",
+                "bg-[var(--bg)] border-[var(--border)] text-[var(--primary)] shadow-sm"
               )}>
                 <kpi.icon size={22} />
               </div>
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-white/20 text-white" : "bg-rose-500/20 text-rose-100"
+                kpi.isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
               )}>
                 {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {kpi.trend}
@@ -262,21 +263,22 @@ export default function AdminDashboard() {
             </div>
  
             <div className="relative z-10">
-              <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-white tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
-              <p className="text-[10px] font-medium text-white/60 mt-1">{kpi.description}</p>
+              <p className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-widest mb-1">{kpi.label}</p>
+              <h3 className="text-2xl font-black text-[var(--text)] tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
+              <p className="text-[10px] font-medium text-[var(--text-2)] mt-1">{kpi.description}</p>
             </div>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[var(--primary)]/5 blur-2xl rounded-full group-hover:bg-[var(--primary)]/10 transition-all duration-500" />
           </motion.div>
         ))}
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-3xl lg:rounded-[2.5rem] p-8 overflow-hidden space-y-8 hover:shadow-lg transition-all duration-300">
+        <div className="bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded-[var(--radius)] p-8 overflow-hidden space-y-8 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-lg text-slate-900 font-black tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title')}</h4>
-              <p className="text-slate-500 text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
+              <h4 className="text-lg text-[var(--text)] font-black tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title')}</h4>
+              <p className="text-[var(--text-2)] text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
             </div>
           </div>
  
@@ -285,37 +287,39 @@ export default function AdminDashboard() {
               <AreaChart data={revenueData || []}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
+                  tick={{ fill: 'var(--text-2)', fontSize: 10, fontWeight: 700 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10 }}
+                  tick={{ fill: 'var(--text-2)', fontSize: 10 }}
                   tickFormatter={(val) => `R$${val}`} 
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#ffffff', 
-                    border: '1px solid #e2e8f0', 
+                    backgroundColor: 'var(--surface)', 
+                    border: '1px solid var(--border)', 
                     borderRadius: '1rem',
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     fontSize: '11px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    color: 'var(--text)'
                   }}
+                  itemStyle={{ color: 'var(--text)' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
-                  stroke="#0F172A" 
+                  stroke="var(--primary)" 
                   strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorValue)" 
@@ -325,58 +329,59 @@ export default function AdminDashboard() {
           </div>
         </div>
  
-        <div className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-3xl lg:rounded-[2.5rem] p-8 overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
+        <div className="bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded-[var(--radius)] p-8 overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-lg text-slate-900 font-black tracking-tight uppercase">{t('admin.dashboard.charts.activity_title')}</h4>
-              <p className="text-slate-500 text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
+              <h4 className="text-lg text-[var(--text)] font-black tracking-tight uppercase">{t('admin.dashboard.charts.activity_title')}</h4>
+              <p className="text-[var(--text-2)] text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
             </div>
           </div>
  
           <div className="flex-1 space-y-3">
             {(recentActivities || []).map((activity) => (
-              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-[var(--bg)] transition-all border border-transparent hover:border-[var(--border)] group">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform",
-                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-50/50 border-rose-100/50 text-rose-500' :
-                  activity.tipo_acao === 'admin_action' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                  activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-50 border-amber-100 text-amber-600' :
-                  'bg-blue-50 border-blue-100 text-blue-600'
+                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                  activity.tipo_acao === 'admin_action' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                  activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+                  'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]'
                 )}>
                   {activity.tipo_acao === 'erro_sistema' ? <AlertCircle size={18} /> : 
-                   activity.tipo_acao === 'pagamento_realizado' ? <DollarSign size={18} /> : <Zap size={18} />}
+                   activity.tipo_acao === 'pagamento_realizado' ? <DollarSign size={18} /> : 
+                   activity.tipo_acao === 'admin_action' ? <ShieldCheck size={18} /> : <Zap size={18} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-xs font-bold text-slate-900 truncate pr-2 tracking-tight">{activity.descricao ?? ''}</p>
-                    <span className="text-[9px] font-black text-slate-400 uppercase whitespace-nowrap">
+                    <p className="text-xs font-bold text-[var(--text)] truncate pr-2 tracking-tight">{activity.descricao ?? ''}</p>
+                    <span className="text-[9px] font-black text-[var(--text-2)] uppercase whitespace-nowrap">
                       {activity.created_at ? new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">USER: {(activity.usuario_id ?? '').split('-')[0]}</p>
+                  <p className="text-[10px] text-[var(--text-2)] font-medium truncate">USER: {(activity.usuario_id ?? '').split('-')[0]}</p>
                 </div>
               </div>
             ))}
             {(!recentActivities || recentActivities.length === 0) && (
-              <p className="text-center text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">
+              <p className="text-center text-[var(--text-2)] text-[10px] py-10 font-bold uppercase tracking-widest">
                 {t('admin.dashboard.charts.no_activity')}
               </p>
             )}
           </div>
           
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+          <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-blue-600 shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--primary)] shadow-sm">
                 <Activity size={18} />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-900">{(recentActivities || []).length}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('admin.dashboard.charts.live_ops')}</p>
+                <p className="text-xs font-black text-[var(--text)]">{(recentActivities || []).length}</p>
+                <p className="text-[9px] font-bold text-[var(--text-2)] uppercase">{t('admin.dashboard.charts.live_ops')}</p>
               </div>
             </div>
             <div className="flex -space-x-2">
                {[1,2,3].map(i => (
-                 <div key={i} className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white shadow-sm" />
+                 <div key={i} className="w-7 h-7 rounded-full bg-[var(--surface)] border-2 border-[var(--bg)] shadow-sm" />
                ))}
             </div>
           </div>
