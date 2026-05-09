@@ -10,31 +10,22 @@ i18n
   .init({
     fallbackLng: 'pt',
     supportedLngs: ['pt', 'en', 'es'],
-
+    load: 'languageOnly',
     debug: false,
-
-    ns: ['translation'],
-    defaultNS: 'translation',
-
     detection: {
-      order: ['querystring', 'localStorage', 'navigator'],
-      caches: ['localStorage']
+      order: ['localStorage', 'navigator', 'querystring'],
+      caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
     },
-
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/locales/{{lng}}/translation.json',
     },
-
     interpolation: {
       escapeValue: false
     },
-
     react: {
       useSuspense: false
-    },
-
-    returnNull: false,
-    returnEmptyString: false
+    }
   });
 
 export default i18n;
