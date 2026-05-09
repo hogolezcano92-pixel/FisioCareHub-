@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
-import { useDebounce } from '../../hooks/useDebounce'; // <-- CORRIGIDO
+import { useDebounce } from '../../hooks/useDebounce';
 import {
   Clock,
   Search,
@@ -16,7 +16,7 @@ import {
   Globe,
   Database
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatDate } from '../../lib/utils';
 
 interface Log {
@@ -53,7 +53,6 @@ export default function AdminLogs() {
      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'historico_atividades' }, async (payload) => {
         const newLog = payload.new as Log;
 
-        // Fetch profile for the new log to maintain UI consistency
         const { data: profile } = await supabase
          .from('perfis')
          .select('nome_completo, email, foto_url')
@@ -123,7 +122,6 @@ export default function AdminLogs() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.logs.title')}</h3>
@@ -162,7 +160,6 @@ export default function AdminLogs() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Timeline View */}
         <div className="lg:col-span-2 space-y-6">
           <div className="admin-card overflow-hidden">
             <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -245,7 +242,6 @@ export default function AdminLogs() {
           </div>
         </div>
 
-        {/* Log Inspector */}
         <div className="space-y-6">
           <div className="admin-card p-8 shadow-xl sticky top-8">
             <div className="flex items-center gap-4 mb-8">
