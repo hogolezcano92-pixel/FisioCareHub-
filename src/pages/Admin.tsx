@@ -716,6 +716,67 @@ export default function Admin() {
     };
   }, [isAdmin, selectedChatUser, supabaseUser]);
 
+  // Memoized Filtered Lists for Performance
+  const filteredSupabaseProfiles = useMemo(() => {
+    return supabaseProfiles.filter(p => {
+      const search = debouncedSearch.toLowerCase();
+      const name = (p.nome_completo || '').toLowerCase();
+      const email = (p.email || '').toLowerCase();
+      return name.includes(search) || email.includes(search);
+    });
+  }, [supabaseProfiles, debouncedSearch]);
+
+  const filteredPhysios = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta' &&
+      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+       (p.crefito || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
+    );
+  }, [supabaseProfiles, debouncedSearch]);
+
+  const filteredPatients = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario || '').toLowerCase() === 'paciente' &&
+      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+       (p.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
+    );
+  }, [supabaseProfiles, debouncedSearch]);
+
+  const filteredApprovals = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario === 'fisioterapeuta') && 
+      (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
+    );
+  }, [supabaseProfiles]);
+
+  const filteredMaterials = useMemo(() => {
+    return materiais.filter(m => 
+      (m.title || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (m.category || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [materiais, debouncedSearch]);
+
+  const filteredWithdrawals = useMemo(() => {
+    return withdrawals.filter(w => {
+      if (withdrawalFilter === 'todos') return true;
+      return w.status === withdrawalFilter;
+    });
+  }, [withdrawals, withdrawalFilter]);
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(t => 
+      (t.assunto || t.subject || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (t.usuario?.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [tickets, debouncedSearch]);
+
+  const STATS_CARDS = useMemo(() => [
+    { label: t('admin.dashboard.kpi.users', 'Total de Usuários'), value: stats.totalUsers.toString(), icon: Users, color: 'blue' },
+    { label: t('admin.dashboard.kpi.physios', 'Fisios Ativos'), value: stats.activePhysios.toString(), icon: UserCheck, color: 'emerald' },
+    { label: t('admin.dashboard.kpi.revenue', 'Total Faturado'), value: `R$ ${stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: 'indigo' },
+    { label: t('admin.dashboard.kpi.net_physio', 'Líquido Fisio'), value: `R$ ${stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity, color: 'emerald' },
+  ], [stats, t]);
+
   if (!mounted || loadingSupabase || checkingAdmin) return <SplashScreen />;
 
   if (!isAdmin) return null;
@@ -1403,70 +1464,7 @@ export default function Admin() {
     }
   };
 
-  // Memoized Filtered Lists for Performance
-  const filteredSupabaseProfiles = useMemo(() => {
-    return supabaseProfiles.filter(p => {
-      const search = debouncedSearch.toLowerCase();
-      const name = (p.nome_completo || '').toLowerCase();
-      const email = (p.email || '').toLowerCase();
-      return name.includes(search) || email.includes(search);
-    });
-  }, [supabaseProfiles, debouncedSearch]);
 
-  const filteredPhysios = useMemo(() => {
-    return supabaseProfiles.filter(p => 
-      (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta' &&
-      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-       (p.crefito || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
-    );
-  }, [supabaseProfiles, debouncedSearch]);
-
-  const filteredPatients = useMemo(() => {
-    return supabaseProfiles.filter(p => 
-      (p.tipo_usuario || '').toLowerCase() === 'paciente' &&
-      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-       (p.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
-    );
-  }, [supabaseProfiles, debouncedSearch]);
-
-  const filteredApprovals = useMemo(() => {
-    return supabaseProfiles.filter(p => 
-      (p.tipo_usuario === 'fisioterapeuta') && 
-      (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
-    );
-  }, [supabaseProfiles]);
-
-  const filteredMaterials = useMemo(() => {
-    return materiais.filter(m => 
-      (m.title || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (m.category || '').toLowerCase().includes(debouncedSearch.toLowerCase())
-    );
-  }, [materiais, debouncedSearch]);
-
-  const filteredWithdrawals = useMemo(() => {
-    return withdrawals.filter(w => {
-      if (withdrawalFilter === 'todos') return true;
-      return w.status === withdrawalFilter;
-    });
-  }, [withdrawals, withdrawalFilter]);
-
-  const filteredTickets = useMemo(() => {
-    return tickets.filter(t => 
-      (t.assunto || t.subject || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (t.usuario?.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase())
-    );
-  }, [tickets, debouncedSearch]);
-
-  const STATS_CARDS = useMemo(() => [
-    { label: t('admin.dashboard.kpi.users', 'Total de Usuários'), value: stats.totalUsers.toString(), icon: Users, color: 'blue' },
-    { label: t('admin.dashboard.kpi.physios', 'Fisios Ativos'), value: stats.activePhysios.toString(), icon: UserCheck, color: 'emerald' },
-    { label: t('admin.dashboard.kpi.revenue', 'Total Faturado'), value: `R$ ${stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: 'indigo' },
-    { label: t('admin.dashboard.kpi.net_physio', 'Líquido Fisio'), value: `R$ ${stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity, color: 'emerald' },
-  ], [stats, t]);
-
-  if (!mounted || checkingAdmin) {
-    return <SplashScreen />;
-  }
 
   if (!isAdmin) {
     return null;
