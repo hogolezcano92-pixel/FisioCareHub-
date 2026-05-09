@@ -1,12 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+@import "./theme-dark.css";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
   --font-accent: "Poppins", sans-serif;
   
-  /* Dynamic Theme Variables */
+  /* Meta AI Dark Theme Colors */
+  --color-dark-bg: var(--bg);
+  --color-dark-surface: var(--surface);
+  --color-dark-border: var(--border);
+  --color-dark-text: var(--text);
+  --color-dark-text-muted: var(--text-2);
+  --color-dark-primary: var(--primary);
+  --color-dark-primary-2: var(--primary-2);
+  --color-dark-gradient: var(--gradient);
   --color-primary: var(--theme-primary, #0047AB);
   --color-primary-hover: var(--theme-primary-hover, #003580);
   --color-bg-general: var(--theme-bg, #0B1120);

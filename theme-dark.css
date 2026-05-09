@@ -1,0 +1,75 @@
+:root {
+  --bg: #FFFFFF;
+  --surface: #F8FAFC;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --text-2: #64748B;
+  --white: #FFFFFF;
+  --primary: #7B61FF;
+  --primary-2: #3B82F6;
+  --gradient: linear-gradient(90deg, #3B82F6, #7B61FF, #C837AB);
+  --radius: 16px;
+  --space: 24px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0B0B0C;
+  --surface: #14161A;
+  --border: #23262D;
+  --text: #E4E6EB;
+  --text-2: #B0B3B8;
+  --white: #FFFFFF;
+  --primary: #7B61FF;
+  --primary-2: #3B82F6;
+  --gradient: linear-gradient(90deg, #3B82F6, #7B61FF, #C837AB);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space);
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--gradient);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  filter: brightness(0.9);
+  transform: translateY(0);
+}
+
+/* Specific UI Bridges */
+.admin-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.admin-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
