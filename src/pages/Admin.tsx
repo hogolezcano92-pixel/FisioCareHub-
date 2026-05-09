@@ -7,6 +7,8 @@ import { useDebounce } from '@/src/hooks/useDebounce';
 import { 
   doc, 
   getDoc, 
+  getDocs,
+  deleteDoc,
   collection, 
   onSnapshot, 
   query, 
@@ -1158,7 +1160,6 @@ export default function Admin() {
       }
 
       // 2. Limpar Firestore
-      const { deleteDoc, doc: firestoreDoc, getDocs, query, collection, where, updateDoc: firestoreUpdateDoc } = await import('firebase/firestore');
       
       // Coleções para limpar (onde o admin não deve estar como fisio)
       const collectionsToClean = ['physiotherapists', 'therapists', 'fisios', 'fisioterapeutas'];
@@ -1168,13 +1169,13 @@ export default function Admin() {
           const q = query(collection(db, collName), where('email', '==', adminEmail));
           const snapshot = await getDocs(q);
           for (const docSnap of snapshot.docs) {
-            await deleteDoc(firestoreDoc(db, collName, docSnap.id));
+            await deleteDoc(doc(db, collName, docSnap.id));
             console.log(`Deleted admin from Firestore collection: ${collName}`);
           }
           
           // Tentar também deletar por ID se o ID do perfil for igual ao ID do documento
           if (profile) {
-            await deleteDoc(firestoreDoc(db, collName, profile.id)).catch(() => {});
+            await deleteDoc(doc(db, collName, profile.id)).catch(() => {});
           }
         } catch (err) {
           console.warn(`Error cleaning collection ${collName}:`, err);
@@ -1186,7 +1187,7 @@ export default function Admin() {
         const userQ = query(collection(db, 'users'), where('email', '==', adminEmail));
         const userSnapshot = await getDocs(userQ);
         for (const docSnap of userSnapshot.docs) {
-          await firestoreUpdateDoc(firestoreDoc(db, 'users', docSnap.id), { role: 'admin' });
+          await updateDoc(doc(db, 'users', docSnap.id), { role: 'admin' });
           console.log(`Updated admin role in Firestore users collection.`);
         }
       } catch (err) {
@@ -1471,7 +1472,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="flex min-h-screen admin-dashboard font-sans -mx-4 sm:-mx-6 lg:-mx-8 -my-8 overflow-x-hidden relative">
+    <div className="flex admin-dashboard font-sans w-full overflow-x-hidden relative">
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
@@ -1487,7 +1488,7 @@ export default function Admin() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white/90 backdrop-blur-xl w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/20"
+              className="relative bg-white/90 backdrop-blur-xl w-full max-w-2xl rounded-3xl lg:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/20"
             >
               {/* Modal Header */}
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
@@ -1701,7 +1702,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[45] w-64 admin-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[60] w-64 admin-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
@@ -3140,7 +3141,7 @@ export default function Admin() {
                 ) : (
                   /* Empty State */
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
-                    <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-blue-500 mb-8 animate-bounce-slow border border-white/10 shadow-2xl">
+                    <div className="w-24 h-24 bg-white/5 rounded-3xl lg:rounded-[2.5rem] flex items-center justify-center text-blue-500 mb-8 animate-bounce-slow border border-white/10 shadow-2xl">
                       <MessageSquare size={48} strokeWidth={1.5} />
                     </div>
                     <h3 className="text-2xl font-black text-white mb-3 tracking-tight">Central de Suporte</h3>
@@ -3162,7 +3163,7 @@ export default function Admin() {
             <div className="space-y-8">
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-amber-500/10 p-8 rounded-[2.5rem] border border-amber-500/20 flex items-center justify-between">
+                <div className="bg-amber-500/10 p-8 rounded-3xl lg:rounded-[2.5rem] border border-amber-500/20 flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t('admin.withdrawals.pending_title', 'Saques Pendentes')}</p>
                     <p className="text-3xl font-black text-white">{stats.pendingWithdrawals}</p>
@@ -3171,7 +3172,7 @@ export default function Admin() {
                     <Clock size={28} />
                   </div>
                 </div>
-                <div className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between">
+                <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl lg:rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin.withdrawals.total_requested', 'Total Solicitado')}</p>
                     <p className="text-3xl font-black text-slate-900">
@@ -3203,7 +3204,7 @@ export default function Admin() {
               </div>
 
               {/* List Table */}
-              <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
                 <div className="p-8 border-b border-slate-200/60">
                   <h3 className="text-xl font-black admin-title tracking-tight">{t('admin.withdrawals.table_title', 'Solicitações de Saque')}</h3>
                   <p className="text-sm text-slate-500 font-medium">{t('admin.withdrawals.table_subtitle', 'Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.')}</p>
@@ -3286,7 +3287,7 @@ export default function Admin() {
           {!loading && !error && activeTab === 'notifications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Email/Template Test Tool */}
-              <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/5 p-8 rounded-[3rem] border border-blue-500/20 shadow-xl">
+              <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/5 p-8 rounded-3xl lg:rounded-[3rem] border border-blue-500/20 shadow-xl">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                   <div className="flex items-center gap-6">
                     <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20">
@@ -3328,7 +3329,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl">
+              <div className="bg-white/5 rounded-3xl lg:rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl">
                 <div className="divide-y divide-white/5">
                   {adminNotifications.length > 0 ? (
                     adminNotifications.map((notification) => (
@@ -3401,7 +3402,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+              <div className="bg-white/5 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
@@ -3488,7 +3489,7 @@ export default function Admin() {
           {!loading && !error && activeTab === 'settings' && (
             <div className="max-w-4xl space-y-8">
               {/* Profile Settings */}
-              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
+              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
                 <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.profile_title')}</h3>
                 
                 <div className="flex flex-col md:flex-row gap-10 items-start">
@@ -3542,7 +3543,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
+              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
                 <h3 className="text-2xl font-black text-white tracking-tight">Configurações do Sistema</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -3587,7 +3588,7 @@ export default function Admin() {
                   <div className="space-y-8">
                     <div className="space-y-3">
                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Manutenção</label>
-                      <div className="p-8 bg-amber-500/5 rounded-[2.5rem] border border-amber-500/10 space-y-5">
+                      <div className="p-8 bg-amber-500/5 rounded-3xl lg:rounded-[2.5rem] border border-amber-500/10 space-y-5">
                         <p className="text-xs font-bold text-amber-500/80 leading-relaxed">
                           Utilize estas ferramentas para manter a integridade dos dados da plataforma e otimizar o desempenho.
                         </p>
@@ -3629,7 +3630,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-8">
+              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-8">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                     <Smartphone size={24} />
@@ -3640,7 +3641,7 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="p-8 bg-blue-600/5 rounded-[2.5rem] border border-blue-600/10 space-y-6">
+                <div className="p-8 bg-blue-600/5 rounded-3xl lg:rounded-[2.5rem] border border-blue-600/10 space-y-6">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Telefone para Teste</label>
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -3671,7 +3672,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl">
+              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl">
                 <h4 className="text-xl font-black text-white mb-6 tracking-tight">Logs de Atividade</h4>
                 <div className="space-y-2">
                   {[
@@ -3679,7 +3680,7 @@ export default function Admin() {
                     { action: 'Novo material adicionado', user: 'Admin Master', time: '1 hora atrás' },
                     { action: 'Fisioterapeuta aprovado', user: 'Admin Master', time: '3 horas atrás' },
                   ].map((log, i) => (
-                    <div key={i} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] px-4 -mx-4 rounded-xl transition-colors">
+                    <div key={i} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] px-4 rounded-xl transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                         <span className="text-sm font-bold text-slate-300">{log.action}</span>
