@@ -70,7 +70,9 @@ import {
   Loader2,
   History,
   Shield,
-  Brain
+  Brain,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
@@ -90,6 +92,18 @@ export default function Admin() {
   const [firebaseUser, loadingFirebase] = useAuthState(auth);
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('admin-theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('admin-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -786,18 +800,18 @@ export default function Admin() {
   // Se for admin mas não estiver logado no Firebase, mostra tela de conexão
   if (!firebaseUser) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-4 bg-[#0B1120]">
+      <div className="min-h-[60vh] flex items-center justify-center p-4 bg-[var(--bg)]">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/5 p-12 rounded-[3rem] shadow-2xl border border-white/10 max-w-md w-full text-center space-y-8 backdrop-blur-xl"
+          className="bg-[var(--surface)] p-12 rounded-[var(--radius)] shadow-2xl border border-[var(--border)] max-w-md w-full text-center space-y-8 backdrop-blur-xl"
         >
-          <div className="w-24 h-24 bg-blue-600/10 text-blue-400 rounded-full flex items-center justify-center mx-auto border border-blue-500/20">
+          <div className="w-24 h-24 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full flex items-center justify-center mx-auto border border-[var(--primary)]/20">
             <ShieldCheck size={48} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-black text-white tracking-tight">{t('admin.restricted_access', 'Acesso Restrito')}</h2>
-            <p className="text-slate-400 font-medium leading-relaxed">
+            <h2 className="text-3xl font-black text-[var(--white)] tracking-tight">{t('admin.restricted_access', 'Acesso Restrito')}</h2>
+            <p className="text-[var(--text-2)] font-medium leading-relaxed">
               {t('admin.restricted_access_desc', 'Você é um administrador, mas precisa conectar sua conta ao banco de dados administrativo para ver as informações.')}
             </p>
           </div>
@@ -814,12 +828,12 @@ export default function Admin() {
           <button
             onClick={handleFirebaseLogin}
             disabled={firebaseLoginLoading}
-            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-5 bg-[var(--gradient)] text-[var(--white)] rounded-2xl font-black text-xl hover:opacity-90 transition-all shadow-2xl shadow-[var(--primary)]/20 flex items-center justify-center gap-3 disabled:opacity-50"
           >
             {firebaseLoginLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <LogIn size={24} />}
             {t('admin.connect_database', 'Conectar ao Banco de Dados')}
           </button>
-          <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
+          <p className="text-[10px] text-[var(--text-2)] font-black uppercase tracking-[0.2em]">
             Use o mesmo e-mail: {supabaseUser?.email}
           </p>
         </motion.div>
@@ -1472,7 +1486,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="flex admin-dashboard font-sans w-full min-h-screen bg-white overflow-x-hidden relative">
+    <div className="flex admin-dashboard font-sans w-full min-h-screen bg-[var(--bg)] overflow-x-hidden relative">
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
@@ -1488,12 +1502,12 @@ export default function Admin() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white/90 backdrop-blur-xl w-full max-w-2xl rounded-3xl lg:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/20"
+              className="relative bg-[var(--surface)] backdrop-blur-xl w-full max-w-2xl rounded-3xl lg:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-[var(--border)]"
             >
               {/* Modal Header */}
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="p-8 border-b border-[var(--border)] flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-500/20">
+                  <div className="w-16 h-16 rounded-2xl bg-[var(--primary)] flex items-center justify-center text-[var(--white)] font-black text-2xl overflow-hidden shadow-lg shadow-[var(--primary)]/20">
                     {selectedUserDetail.foto_url || selectedUserDetail.avatar_url ? (
                       <img src={selectedUserDetail.foto_url || selectedUserDetail.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
@@ -1501,13 +1515,13 @@ export default function Admin() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl admin-title tracking-tight">{selectedUserDetail.nome_completo}</h3>
-                    <p className="admin-text-secondary font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
+                    <h3 className="text-2xl text-[var(--text)] font-black tracking-tight">{selectedUserDetail.nome_completo}</h3>
+                    <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">{selectedUserDetail.tipo_usuario}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedUserDetail(null)}
-                  className="p-3 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all"
+                  className="p-3 bg-[var(--bg)] text-[var(--text-2)] hover:text-[var(--text)] rounded-2xl border border-[var(--border)] transition-all"
                 >
                   <X size={24} />
                 </button>
@@ -1518,54 +1532,54 @@ export default function Admin() {
                 {/* Basic Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                    <p className="text-sm font-bold text-slate-900 break-all">{selectedUserDetail.email}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">E-mail</p>
+                    <p className="text-sm font-bold text-[var(--text)] break-all">{selectedUserDetail.email}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Telefone</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.telefone || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Telefone</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.telefone || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CPF</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CPF</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.cpf_cnpj || selectedUserDetail.cpf || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CREFITO</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.crefito || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CREFITO</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.crefito || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialidade</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.especialidade || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Especialidade</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.especialidade || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cidade/UF</p>
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Cidade/UF</p>
+                    <p className="text-sm font-bold text-[var(--text)]">
                       {selectedUserDetail.cidade || 'N/A'}{selectedUserDetail.estado ? ` - ${selectedUserDetail.estado}` : ''}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEP</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.cep || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">CEP</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.cep || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedUserDetail.pais || 'N/A'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.country', 'País')}</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{selectedUserDetail.pais || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.registered_at', 'Cadastro em')}</p>
+                    <p className="text-sm font-bold text-[var(--text)]">
                       {selectedUserDetail.created_at ? new Date(selectedUserDetail.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.birth_date', 'Data de Nascimento')}</p>
+                    <p className="text-sm font-bold text-[var(--text)]">
                       {selectedUserDetail.data_nascimento ? new Date(selectedUserDetail.data_nascimento).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.session_price', 'Preço Sessão')}</p>
+                    <p className="text-sm font-bold text-[var(--text)]">
                       {selectedUserDetail.preco_sessao ? `R$ ${selectedUserDetail.preco_sessao}` : 'N/A'}
                     </p>
                   </div>
@@ -1573,8 +1587,8 @@ export default function Admin() {
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-600 leading-relaxed italic">
+                  <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.bio', 'Sobre / Bio')}</p>
+                  <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text-2)] leading-relaxed italic">
                     {selectedUserDetail.bio || t('admin_users.details.no_bio', 'Nenhuma biografia informada.')}
                   </div>
                 </div>
@@ -1583,8 +1597,8 @@ export default function Admin() {
                 {selectedUserDetail.tipo_usuario === 'fisioterapeuta' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-700">
+                      <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.education', 'Formação Acadêmica')}</p>
+                      <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text)]">
                         {Array.isArray(selectedUserDetail.formacao_academica) && selectedUserDetail.formacao_academica.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
                             {selectedUserDetail.formacao_academica.map((item: string, i: number) => (
@@ -1595,8 +1609,8 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-700">
+                      <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.services', 'Serviços Ofertados')}</p>
+                      <div className="p-4 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-sm text-[var(--text)]">
                         {Array.isArray(selectedUserDetail.servicos_ofertados) && selectedUserDetail.servicos_ofertados.length > 0 ? (
                           <ul className="list-disc list-inside space-y-1">
                             {selectedUserDetail.servicos_ofertados.map((item: string, i: number) => (
@@ -1611,7 +1625,7 @@ export default function Admin() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
+                  <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.documents', 'Documentos (Obrigatórios e Adicionais)')}</p>
                   {(() => {
                     const docs = selectedUserDetail.all_docs;
                     
@@ -1624,16 +1638,16 @@ export default function Admin() {
                               href={resolveStorageUrl(doc.url)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-blue-500/50 hover:bg-white transition-all group"
+                              className="flex items-center gap-3 p-4 bg-[var(--bg)] border border-[var(--border)] rounded-2xl hover:border-[var(--primary-2)]/50 hover:bg-[var(--surface)] transition-all group"
                             >
-                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                              <div className="w-10 h-10 rounded-xl bg-[var(--primary-2)]/10 text-[var(--primary-2)] flex items-center justify-center group-hover:bg-[var(--primary-2)] group-hover:text-white transition-all">
                                 <FileIcon size={20} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-slate-900 truncate">{doc.label}</p>
-                                <p className="text-[10px] text-slate-400 font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
+                                <p className="text-xs font-bold text-[var(--text)] truncate">{doc.label}</p>
+                                <p className="text-[10px] text-[var(--text-2)] font-medium truncate">{t('admin_users.details.click_to_view', 'Clique para visualizar')}</p>
                               </div>
-                              <Download size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                              <Download size={16} className="text-[var(--text-2)] group-hover:text-[var(--primary-2)] transition-colors" />
                             </a>
                           ))}
                         </div>
@@ -1641,8 +1655,8 @@ export default function Admin() {
                     }
                     
                     return (
-                      <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center">
-                        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest text-[10px]">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
+                      <div className="p-8 border-2 border-dashed border-[var(--border)] rounded-[2rem] text-center">
+                        <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin_users.details.no_docs', 'Sem documentos de cadastro')}</p>
                       </div>
                     );
                   })()}
@@ -1650,7 +1664,7 @@ export default function Admin() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-8 border-t border-slate-100 flex gap-4">
+              <div className="p-8 border-t border-[var(--border)] flex gap-4">
                 {selectedUserDetail.status_aprovacao === 'pendente' ? (
                   <>
                     <button 
@@ -1667,7 +1681,7 @@ export default function Admin() {
                         handleRejectPhysio(selectedUserDetail?.id, selectedUserDetail?.id);
                         setSelectedUserDetail(null);
                       }}
-                      className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-sm hover:bg-rose-100 transition-all"
+                      className="flex-1 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-sm hover:bg-rose-500/20 transition-all"
                     >
                       {t('admin_users.details.reject_btn', 'Rejeitar')}
                     </button>
@@ -1675,7 +1689,7 @@ export default function Admin() {
                 ) : (
                   <button 
                     onClick={() => setSelectedUserDetail(null)}
-                    className="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all border border-slate-200"
+                    className="w-full py-4 bg-[var(--surface)] text-[var(--text)] rounded-2xl font-black text-sm hover:bg-[var(--border)] transition-all border border-[var(--border)]"
                   >
                     {t('admin_users.details.close_btn', 'Fechar Detalhes')}
                   </button>
@@ -1702,19 +1716,19 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] w-64 bg-[#06B6D4] transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 border-r border-cyan-400/30 shadow-2xl",
+          "fixed inset-y-0 left-0 z-[60] w-64 admin-sidebar transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-[var(--surface)]">
           {/* Sidebar Header */}
-          <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
+          <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--border)]">
             <div className={cn("flex items-center gap-2 overflow-visible transition-all whitespace-nowrap min-w-0 flex-1", !sidebarOpen && "lg:hidden")}>
-              <Logo size="sm" variant="light" />
+              <Logo size="sm" variant={theme === 'dark' ? 'light' : 'dark'} />
             </div>
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-white/5 text-white/40 transition-all active:scale-95 flex-shrink-0"
+              className="p-2 rounded-xl hover:bg-white/5 text-[var(--text-2)] transition-all active:scale-95 flex-shrink-0"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -1747,13 +1761,19 @@ export default function Admin() {
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group relative",
                   activeTab === item.id 
-                    ? "bg-white/20 text-white shadow-sm" 
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                    ? "text-[var(--white)] bg-[var(--gradient)] shadow-lg" 
+                    : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--border)]/50"
                 )}
               >
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-white/40 group-hover:text-white")} />
+                {activeTab === item.id && (
+                  <motion.div 
+                    layoutId="active-sidebar-indicator"
+                    className="absolute left-0 w-1 h-6 bg-[var(--white)] rounded-full -translate-x-1" 
+                  />
+                )}
+                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-[var(--white)]" : "text-[var(--text-2)] group-hover:text-[var(--primary)]")} />
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
@@ -1765,7 +1785,7 @@ export default function Admin() {
                   signOut().then(() => navigate('/'));
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-400/10 transition-all",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all",
                   !sidebarOpen && "lg:justify-center"
                 )}
               >
@@ -1776,12 +1796,12 @@ export default function Admin() {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-[var(--border)]">
               <div className={cn(
-                "flex items-center gap-3 p-3 rounded-2xl bg-black/10 border border-white/10 transition-all",
+                "flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg)] border border-[var(--border)] transition-all",
                 !sidebarOpen && "lg:justify-center lg:p-2"
               )}>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-slate-800 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg overflow-hidden border border-white/10">
+                <div className="w-10 h-10 rounded-xl bg-[var(--gradient)] flex items-center justify-center text-[var(--white)] font-black text-lg flex-shrink-0 shadow-lg overflow-hidden border border-white/10">
                   {authProfile?.avatar_url || authProfile?.foto_url ? (
                     <img 
                       src={authProfile.avatar_url || authProfile.foto_url} 
@@ -1794,23 +1814,22 @@ export default function Admin() {
                   )}
                 </div>
                 <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
-                  <p className="text-sm font-black text-white truncate">Admin Master</p>
-                  <p className="text-[10px] font-bold text-white/50 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
+                  <p className="text-sm font-black text-[var(--text)] truncate">Admin Master</p>
+                  <p className="text-[10px] font-bold text-[var(--text-2)] truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
                 </div>
               </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[var(--bg)]">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-[#0F172A] border-b border-slate-800 shadow-sm pt-[env(safe-area-inset-top)] text-white">
-          <div className="w-full px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-40 w-full bg-[var(--surface)] border-b border-[var(--border)] shadow-sm pt-[env(safe-area-inset-top)]">
+          <div className="w-full px-4 sm:px-10 h-16 sm:h-18 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
               <button 
-                className="lg:hidden p-2 text-white/70 hover:bg-slate-800 rounded-xl transition-all active:scale-95" 
+                className="lg:hidden p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all active:scale-95" 
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu size={24} />
@@ -1819,7 +1838,7 @@ export default function Admin() {
 
             {/* Center Section - Title */}
             <div className="flex-[2] flex justify-center min-w-0">
-              <h2 className="text-sm md:text-base admin-title tracking-[0.15em] uppercase text-center truncate px-2">
+              <h2 className="text-sm md:text-base font-black text-[var(--text)] tracking-[0.15em] uppercase text-center truncate px-2">
                 {activeTab === 'dashboard' ? t('admin.header.overview', 'Overview') : 
                  activeTab === 'materiais' ? t('admin.header.library', 'Library') :
                  activeTab === 'physios' ? t('admin.header.professionals', 'Professionals') :
@@ -1841,21 +1860,28 @@ export default function Admin() {
               <div className="relative hidden md:block">
                 <Search 
                   className="absolute pointer-events-none z-20" 
-                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#cbd5e1' }}
+                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-2)' }}
                 />
                 <input 
                   type="text" 
                   placeholder={t('admin.header.search_placeholder', 'Universal Search...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:bg-slate-800 focus:border-cyan-500/30 transition-all w-32 lg:w-64"
+                  className="pl-9 pr-4 py-2 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-xs text-[var(--text)] placeholder:text-[var(--text-2)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 transition-all w-32 lg:w-48"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-slate-400 hover:bg-slate-800 rounded-xl transition-all relative">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <button 
+                  onClick={toggleTheme}
+                  className="p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all"
+                  title={theme === 'light' ? 'Ativar Modo Dark' : 'Ativar Modo Claro'}
+                >
+                  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                </button>
+                <button className="p-2 text-[var(--text-2)] hover:bg-[var(--border)] rounded-xl transition-all relative">
                   <Bell size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0F172A]" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--surface)]" />
                 </button>
               </div>
             </div>
@@ -1863,24 +1889,24 @@ export default function Admin() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar bg-white">
+        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar bg-[var(--bg)]">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="admin-text-secondary font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
+              <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">{t('admin.status.syncing', 'Syncing Core Systems...')}</p>
             </div>
           )}
 
           {error && !loading && (
-            <div className="bg-rose-50 p-8 rounded-[2.5rem] border border-rose-100 text-center space-y-4">
-              <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto">
+            <div className="bg-rose-500/5 p-8 rounded-[var(--radius)] border border-rose-500/20 text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('admin.status.outage', 'System Outage')}</h3>
-              <p className="admin-text-secondary text-sm max-w-md mx-auto">{error}</p>
+              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin.status.outage', 'System Outage')}</h3>
+              <p className="text-[var(--text-2)] text-sm max-w-md mx-auto">{error}</p>
               <button 
                 onClick={() => fetchSupabaseProfiles()}
-                className="px-8 py-3 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-200"
+                className="px-8 py-3 bg-[var(--surface)] text-[var(--text)] rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[var(--border)] transition-all border border-[var(--border)]"
               >
                 {t('admin.status.reconnect', 'Reconnect')}
               </button>
@@ -1907,12 +1933,12 @@ export default function Admin() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl admin-title tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
-                  <p className="admin-text-secondary font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
+                  <h3 className="text-2xl text-[var(--text)] font-black tracking-tight">{t('admin.library.title', 'Biblioteca de Saúde')}</h3>
+                  <p className="text-[var(--text-2)] font-medium">{t('admin.library.desc', 'Gerencie os materiais disponíveis para venda aos pacientes.')}</p>
                 </div>
                 <button 
                   onClick={() => setShowMaterialModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--gradient)] text-[var(--white)] rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-[var(--primary)]/20"
                 >
                   <Plus size={20} />
                   {t('admin.library.new_material', 'Novo Material (Manual)')}
@@ -1920,39 +1946,39 @@ export default function Admin() {
               </div>
 
               {/* AI GENERATOR SECTION */}
-              <div className="p-8 admin-card relative overflow-hidden">
+              <div className="p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                   <Sparkles size={120} className="text-[#06b6d4]" />
+                   <Sparkles size={120} className="text-[var(--primary)]" />
                 </div>
                 <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
                   <div className="space-y-4 max-w-sm">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 sidebar-item-active rounded-lg text-[10px] font-black uppercase tracking-widest">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-[10px] font-black uppercase tracking-widest">
                       <Sparkles size={12} />
                       {t('admin.library.ai_generator', 'IA Content Creator')}
                     </div>
-                    <h3 className="text-xl admin-title">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
-                    <p className="admin-text-secondary text-sm leading-relaxed font-medium">
+                    <h3 className="text-xl text-[var(--text)] font-black">{t('admin.library.ai_gen_title', 'Geração Automática')}</h3>
+                    <p className="text-[var(--text-2)] text-sm leading-relaxed font-medium">
                       {t('admin.library.ai_gen_desc', 'Crie materiais educativos completos apenas informando o tema. A IA gerará títulos, descrições e roteiros clínicos prontos para o paciente.')}
                     </p>
                   </div>
 
                   <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1 md:col-span-3">
-                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
+                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.theme_label', 'Tema do Conteúdo')}</label>
                        <input 
                         type="text"
                         value={aiGenForm.theme}
                         onChange={(e) => setAiGenForm({ ...aiGenForm, theme: e.target.value })}
                         placeholder="Ex: Exercícios para dor ciática em casa ou Prevenção de lesões no corredor"
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full px-6 py-4 bg-[var(--bg)] border border-[var(--border)] rounded-2xl text-[var(--text)] outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                       />
                     </div>
                     <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.type_label', 'Tipo')}</label>
+                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.type_label', 'Tipo')}</label>
                         <select 
                           value={aiGenForm.type}
                           onChange={(e) => setAiGenForm({...aiGenForm, type: e.target.value})}
-                          className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
+                          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] outline-none"
                         >
                           <option value="educational">{t('admin.library.educational', 'Educativo')}</option>
                           <option value="exercise">{t('admin.library.exercise', 'Exercício')}</option>
@@ -1960,11 +1986,11 @@ export default function Admin() {
                         </select>
                     </div>
                     <div className="space-y-1">
-                       <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.level_label', 'Nível')}</label>
+                       <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.level_label', 'Nível')}</label>
                         <select 
                           value={aiGenForm.level}
                           onChange={(e) => setAiGenForm({...aiGenForm, level: e.target.value})}
-                          className="w-full px-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-white outline-none"
+                          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] outline-none"
                         >
                           <option value="beginner">{t('admin.library.beginner', 'Iniciante')}</option>
                           <option value="intermediate">{t('admin.library.intermediate', 'Intermediário')}</option>
@@ -1975,7 +2001,7 @@ export default function Admin() {
                       <button 
                         onClick={handleGenerateAIContent}
                         disabled={isGenerating || !aiGenForm.theme}
-                        className="w-full h-[48px] bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-full h-[48px] bg-[var(--primary-2)] hover:opacity-90 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-50"
                       >
                         {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
                         {isGenerating ? t('admin.library.generating', 'Gerando...') : t('admin.library.generate', 'Gerar')}
@@ -1987,7 +2013,7 @@ export default function Admin() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {materiais.map((m) => (
-                  <div key={m.id} className="admin-card overflow-hidden group hover:shadow-blue-900/10">
+                  <div key={m.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden group hover:shadow-[var(--primary)]/10 shadow-xl transition-all">
                     <div className="h-40 relative overflow-hidden">
                       <img 
                         src={m.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200'} 
@@ -1996,18 +2022,18 @@ export default function Admin() {
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute top-4 left-4">
-                        <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
+                        <span className="px-3 py-1 bg-[var(--primary)] text-[var(--white)] text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
                           {m.category}
                         </span>
                       </div>
                     </div>
                     <div className="p-6 space-y-4">
                       <div>
-                        <h4 className="font-black text-white text-lg leading-tight mb-1">{m.title}</h4>
-                        <p className="text-xs text-slate-500 font-medium line-clamp-2">{m.description}</p>
+                        <h4 className="font-black text-[var(--text)] text-lg leading-tight mb-1">{m.title}</h4>
+                        <p className="text-xs text-[var(--text-2)] font-medium line-clamp-2">{m.description}</p>
                       </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                        <p className="text-xl font-black text-blue-400">R$ {m.price?.toLocaleString()}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                        <p className="text-xl font-black text-[var(--primary-2)]">R$ {m.price?.toLocaleString()}</p>
                         <button 
                           onClick={() => handleDeleteMaterial(m.id)}
                           className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
@@ -2021,11 +2047,11 @@ export default function Admin() {
               </div>
 
               {materiais.length === 0 && (
-                <div className="p-12 border-2 border-dashed border-white/5 rounded-[3rem] text-center space-y-4">
-                  <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="p-12 border-2 border-dashed border-[var(--border)] rounded-[var(--radius)] text-center space-y-4">
+                  <div className="w-16 h-16 bg-[var(--surface)] text-[var(--text-2)] rounded-full flex items-center justify-center mx-auto">
                     <BookOpen size={32} />
                   </div>
-                  <p className="text-slate-500 font-bold">{t('admin.library.no_materials', 'Nenhum material cadastrado ainda.')}</p>
+                  <p className="text-[var(--text-2)] font-bold">{t('admin.library.no_materials', 'Nenhum material cadastrado ainda.')}</p>
                 </div>
               )}
 
@@ -2044,11 +2070,11 @@ export default function Admin() {
                       initial={{ opacity: 0, scale: 0.9, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                      className="relative bg-white/90 backdrop-blur-xl w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden p-8 space-y-6"
+                      className="relative bg-[var(--surface)] backdrop-blur-xl w-full max-w-lg rounded-[3rem] shadow-2xl border border-[var(--border)] overflow-hidden p-8 space-y-6"
                     >
                       <div className="flex items-center justify-between">
-                        <h3 className="text-2xl font-black admin-title tracking-tight">{t('admin.library.new_material', 'Novo Material')}</h3>
-                        <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-600">
+                        <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.library.new_material', 'Novo Material')}</h3>
+                        <button onClick={() => setShowMaterialModal(false)} className="text-[var(--text-2)] hover:text-[var(--text)]">
                           <X size={24} />
                         </button>
                       </div>
@@ -2056,43 +2082,43 @@ export default function Admin() {
                       <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                         <div className="space-y-4">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.form.title', 'Título')}</label>
+                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.form.title', 'Título')}</label>
                             <input 
                               type="text" 
                               value={newMaterial.title}
                               onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
                               placeholder={t('admin.library.form.title_placeholder', "Ex: Guia de Exercícios para Lombar")}
-                              className="w-full px-4 py-3 bg-white/5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.form.description', 'Descrição')}</label>
+                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin.library.form.description', 'Descrição')}</label>
                             <textarea 
                               value={newMaterial.description}
                               onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
                               placeholder={t('admin.library.form.description_placeholder', "Breve descrição do conteúdo...")}
-                              className="w-full px-4 py-3 bg-white/5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none h-20 resize-none"
+                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none h-20 resize-none"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Objetivo Clínico</label>
+                            <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Objetivo Clínico</label>
                             <input 
                               type="text" 
                               value={newMaterial.clinical_objective}
                               onChange={(e) => setNewMaterial({...newMaterial, clinical_objective: e.target.value})}
                               placeholder="Ex: Alívio de dor e melhora da mobilidade"
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
                             />
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Nível</label>
+                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Nível</label>
                               <select 
                                 value={newMaterial.level}
                                 onChange={(e) => setNewMaterial({...newMaterial, level: e.target.value as any})}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
                               >
                                 <option value="beginner">Iniciante</option>
                                 <option value="intermediate">Intermediário</option>
@@ -2100,11 +2126,11 @@ export default function Admin() {
                               </select>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Tipo</label>
+                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Tipo</label>
                               <select 
                                 value={newMaterial.type}
                                 onChange={(e) => setNewMaterial({...newMaterial, type: e.target.value as any})}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
                               >
                                 <option value="educational">Educativo</option>
                                 <option value="exercise">Exercício</option>
@@ -2115,12 +2141,12 @@ export default function Admin() {
 
                           <div className="grid grid-cols-2 gap-4 items-end">
                             <div className="space-y-1 flex-1">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex justify-between items-center pr-2">
+                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest flex justify-between items-center pr-2">
                                 Categoria
                                 <button 
                                   onClick={handleAutoCategorize}
                                   disabled={isCategorizing || !newMaterial.title}
-                                  className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 normal-case tracking-normal disabled:opacity-50"
+                                  className="text-[var(--primary-2)] hover:opacity-80 transition-opacity flex items-center gap-1 normal-case tracking-normal disabled:opacity-50"
                                 >
                                   {isCategorizing ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                                   IA
@@ -2130,7 +2156,7 @@ export default function Admin() {
                                 type="text" 
                                 value={newMaterial.category}
                                 readOnly
-                                className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-xl text-white italic outline-none text-sm"
+                                className="w-full px-4 py-3 bg-[var(--bg)]/50 border border-[var(--border)] rounded-xl text-[var(--text)] italic outline-none text-sm"
                               />
                             </div>
                             <div className="space-y-2">
@@ -2139,22 +2165,22 @@ export default function Admin() {
                                   onClick={() => setNewMaterial({...newMaterial, is_premium: !newMaterial.is_premium})}
                                   className={cn(
                                     "w-10 h-5 rounded-full relative transition-colors",
-                                    newMaterial.is_premium ? "bg-blue-600" : "bg-slate-700"
+                                    newMaterial.is_premium ? "bg-[var(--primary)]" : "bg-[var(--surface)] border border-[var(--border)]"
                                   )}
                                 >
                                   <div className={cn(
-                                    "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all",
+                                    "absolute top-0.5 w-4 h-4 rounded-full bg-[var(--white)] transition-all shadow-sm",
                                     newMaterial.is_premium ? "left-5.5" : "left-0.5"
                                   )} />
                                 </button>
-                                <span className="text-[10px] font-black uppercase text-slate-400">Premium</span>
+                                <span className="text-[10px] font-black uppercase text-[var(--text-2)]">Premium</span>
                               </div>
                             </div>
                           </div>
 
                           {newMaterial.is_premium && (
                             <div className="space-y-1">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Preço Individual (R$)</label>
+                              <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">Preço Individual (R$)</label>
                               <input 
                                 type="text" 
                                 value={newMaterial.price}
@@ -2163,7 +2189,7 @@ export default function Admin() {
                                   setNewMaterial({...newMaterial, price: val});
                                 }}
                                 placeholder="0.00"
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]/20 outline-none"
                               />
                             </div>
                           )}
@@ -2393,15 +2419,15 @@ export default function Admin() {
           )}
 
           {activeTab === 'users' && (
-            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                <h3 className="text-xl font-black text-white tracking-tight">{t('admin.users.title', 'Todos os Usuários')}</h3>
-                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                  <Search className="text-slate-500" size={18} />
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-2xl overflow-hidden">
+              <div className="p-8 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin.users.title', 'Todos os Usuários')}</h3>
+                <div className="flex items-center gap-3 bg-[var(--bg)] px-4 py-2 rounded-xl border border-[var(--border)]">
+                  <Search className="text-[var(--text-2)]" size={18} />
                   <input 
                     type="text" 
                     placeholder={t('admin.users.filter_placeholder', 'Filtrar usuários...')}
-                    className="text-sm border-none focus:ring-0 bg-transparent text-white placeholder:text-slate-600"
+                    className="text-sm border-none focus:ring-0 bg-transparent text-[var(--text)] placeholder:text-[var(--text-2)]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -2410,36 +2436,36 @@ export default function Admin() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.name', 'Nome')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.email', 'Email')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.role', 'Papel')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.crefito', 'CREFITO')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.users.table.status', 'Status')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.users.table.actions', 'Ações')}</th>
+                    <tr className="bg-[var(--bg)]/50">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.users.table.name', 'Nome')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.users.table.email', 'Email')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.users.table.role', 'Papel')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.users.table.crefito', 'CREFITO')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.users.table.status', 'Status')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">{t('admin.users.table.actions', 'Ações')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {filteredSupabaseProfiles.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={u.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white/10">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--bg)] overflow-hidden flex items-center justify-center text-[10px] font-bold text-[var(--text-2)] border border-[var(--border)]">
                               {u.avatar_display ? (
                                 <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                               ) : (
                                 u.nome_completo?.charAt(0)
                               )}
                             </div>
-                            <span className="text-sm font-bold text-white">{u.nome_completo}</span>
+                            <span className="text-sm font-bold text-[var(--text)]">{u.nome_completo}</span>
                           </div>
                         </td>
-                        <td className="px-8 py-5 text-sm text-slate-500">{u.email}</td>
+                        <td className="px-8 py-5 text-sm text-[var(--text-2)]">{u.email}</td>
                         <td className="px-8 py-5">
                           <div className="flex flex-col gap-1">
                             <span className={cn(
                               "text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit",
-                              u.tipo_usuario === 'fisioterapeuta' ? "bg-blue-500/10 text-blue-400" : "bg-white/5 text-slate-400"
+                              u.tipo_usuario === 'fisioterapeuta' ? "bg-[var(--primary-2)]/10 text-[var(--primary-2)]" : "bg-[var(--border)] text-[var(--text-2)]"
                             )}>
                               {u.tipo_usuario === 'fisioterapeuta' ? t('admin_users.role_physio', 'Fisioterapeuta') : t('admin_users.role_patient', 'Paciente')}
                             </span>
@@ -2451,7 +2477,7 @@ export default function Admin() {
                           </div>
                         </td>
                         <td className="px-8 py-5">
-                          <span className="text-xs font-black text-white bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                          <span className="text-xs font-black text-[var(--text)] bg-[var(--bg)] px-2 py-1 rounded-lg border border-[var(--border)]">
                             {u.crefito || '---'}
                           </span>
                         </td>
@@ -2470,7 +2496,7 @@ export default function Admin() {
                           <div className="flex items-center justify-end gap-2">
                             <button 
                               onClick={() => setSelectedUserDetail(u)}
-                              className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                              className="p-2 text-[var(--primary-2)] hover:bg-[var(--primary-2)]/10 rounded-lg transition-colors"
                               title={t('admin_users.view_details', 'Ver Detalhes')}
                             >
                               <Eye size={16} />
@@ -2484,7 +2510,7 @@ export default function Admin() {
                             </button>
                             <button 
                               onClick={() => handleDeleteUser(u?.id)}
-                              className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
                               title={t('admin.delete_profile')}
                             >
                               <Trash2 size={16} />
@@ -2499,46 +2525,46 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'financial' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('admin_financial.total_paid_patients', 'Total Pago pelos Pacientes')}</p>
-                  <p className="text-3xl font-black text-white tracking-tight">R$ {stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[10px] text-slate-500 font-bold mt-2 italic">{t('admin_financial.bruto_desc', 'Valor bruto recebido pela plataforma')}</p>
+          {activeTab === 'financial' && (
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl space-y-2">
+                  <p className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-widest">{t('admin_financial.total_paid_patients', 'Total Pago pelos Pacientes')}</p>
+                  <p className="text-3xl font-black text-[var(--white)] tracking-tight">R$ {stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-[10px] text-[var(--text-2)] font-bold mt-2 italic">{t('admin_financial.bruto_desc', 'Valor bruto recebido pela plataforma')}</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-emerald-500/20">
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl space-y-2">
                   <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('admin_financial.net_physio', 'Líquido Fisioterapeutas (88%)')}</p>
                   <p className="text-3xl font-black text-emerald-400 tracking-tight">R$ {stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   <p className="text-[10px] text-emerald-500/50 font-bold mt-2 italic">{t('admin_financial.net_desc', 'Valor total que deve ser repassado')}</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 border-blue-500/20">
-                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{t('admin_financial.commission_platform', 'Comissão Plataforma (12%)')}</p>
-                  <p className="text-3xl font-black text-blue-400 tracking-tight">R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[10px] text-blue-500/50 font-bold mt-2 italic">{t('admin_financial.commission_desc', 'Receita líquida da FisioCareHub')}</p>
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl space-y-2">
+                  <p className="text-[10px] font-black text-[var(--primary-2)] uppercase tracking-widest mb-1">{t('admin_financial.commission_platform', 'Comissão Plataforma (12%)')}</p>
+                  <p className="text-3xl font-black text-[var(--primary-2)] tracking-tight">R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-[10px] text-[var(--primary-2)]/50 font-bold mt-2 italic">{t('admin_financial.commission_desc', 'Receita líquida da FisioCareHub')}</p>
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-                <div className="p-8 border-b border-white/5">
-                  <h3 className="text-xl font-black text-white tracking-tight">{t('admin_financial.repasse_control', 'Controle de Repasses')}</h3>
-                  <p className="text-sm text-slate-500 font-medium">{t('admin_financial.repasse_subtitle', 'Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.')}</p>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-[var(--border)]">
+                  <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin_financial.repasse_control', 'Controle de Repasses')}</h3>
+                  <p className="text-sm text-[var(--text-2)] font-medium">{t('admin_financial.repasse_subtitle', 'Gerencie os pagamentos recebidos pelo app e os repasses manuais aos fisioterapeutas.')}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
-                      <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.date_time', 'Data/Hora')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.patient', 'Paciente')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.physio', 'Fisioterapeuta')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.total_paid', 'Total Pago')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.commission', `Comissão (${commissionRate}%)`)}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.net_physio', `Líquido Fisio (${100 - commissionRate}%)`)}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin_financial.table.repasse', 'Repasse')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin_financial.table.action', 'Ação')}</th>
+                      <tr className="bg-[var(--bg)]/50">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.date_time', 'Data/Hora')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.patient', 'Paciente')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.physio', 'Fisioterapeuta')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.total_paid', 'Total Pago')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.commission', `Comissão (${commissionRate}%)`)}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.net_physio', `Líquido Fisio (${100 - commissionRate}%)`)}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin_financial.table.repasse', 'Repasse')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">{t('admin_financial.table.action', 'Ação')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[var(--border)]">
                       {sessions
                         .filter(s => s.status_pagamento === 'pago_app')
                         .map((s) => {
@@ -2548,22 +2574,22 @@ export default function Admin() {
                           const commValue = totalValue * (commissionRate / 100);
 
                           return (
-                            <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                              <td className="px-8 py-5 text-sm font-bold text-white">
+                            <tr key={s.id} className="hover:bg-[var(--bg)]/30 transition-colors">
+                              <td className="px-8 py-5 text-sm font-bold text-[var(--text)]">
                                 {new Date(s.data).toLocaleDateString('pt-BR')} {s.hora}
                               </td>
                               <td className="px-8 py-5">
-                                <p className="text-sm font-bold text-white">{s.paciente?.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500">{s.paciente?.email}</p>
+                                <p className="text-sm font-bold text-[var(--text)]">{s.paciente?.nome_completo}</p>
+                                <p className="text-[10px] text-[var(--text-2)]">{s.paciente?.email}</p>
                               </td>
                               <td className="px-8 py-5">
-                                <p className="text-sm font-bold text-white">{s.fisioterapeuta?.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500">{s.fisioterapeuta?.email}</p>
+                                <p className="text-sm font-bold text-[var(--text)]">{s.fisioterapeuta?.nome_completo}</p>
+                                <p className="text-[10px] text-[var(--text-2)]">{s.fisioterapeuta?.email}</p>
                               </td>
-                              <td className="px-8 py-5 text-sm font-bold text-slate-400">
+                              <td className="px-8 py-5 text-sm font-bold text-[var(--text-2)]">
                                 R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
-                              <td className="px-8 py-5 text-sm font-bold text-blue-400">
+                              <td className="px-8 py-5 text-sm font-bold text-[var(--primary-2)]">
                                 R$ {commValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-8 py-5 text-sm font-black text-emerald-400">
@@ -2572,7 +2598,7 @@ export default function Admin() {
                               <td className="px-8 py-5">
                                 <span className={cn(
                                   "px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                                  s.status_repasse === 'repassado_fisio' ? "bg-blue-500/10 text-blue-500" : "bg-amber-500/10 text-amber-500"
+                                  s.status_repasse === 'repassado_fisio' ? "bg-[var(--primary-2)]/10 text-[var(--primary-2)]" : "bg-amber-500/10 text-amber-500"
                                 )}>
                                   {s.status_repasse === 'repassado_fisio' ? 'Repassado' : 'Pendente'}
                                 </span>
@@ -2581,7 +2607,7 @@ export default function Admin() {
                                 {s.status_repasse === 'pendente' && (
                                   <button 
                                     onClick={() => handleMarkAsRepassado(s.id)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                                    className="px-4 py-2 bg-[var(--primary-2)] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary-2)]/20"
                                   >
                                     Marcar Repasse
                                   </button>
@@ -2595,10 +2621,10 @@ export default function Admin() {
                 </div>
                 {sessions.filter(s => s.status_pagamento === 'pago_app').length === 0 && (
                   <div className="p-12 text-center space-y-4">
-                    <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-16 h-16 bg-[var(--bg)] text-[var(--text-2)] rounded-full flex items-center justify-center mx-auto">
                       <DollarSign size={32} />
                     </div>
-                    <p className="text-slate-500 font-bold">Nenhuma sessão paga encontrada.</p>
+                    <p className="text-[var(--text-2)] font-bold">Nenhuma sessão paga encontrada.</p>
                   </div>
                 )}
               </div>
@@ -2606,18 +2632,18 @@ export default function Admin() {
           )}
 
           {!loading && !error && activeTab === 'physios' && (
-            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-2xl overflow-hidden p-8">
+              <div className="p-8 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">Fisioterapeutas Cadastrados</h3>
-                  <p className="text-xs text-slate-500 font-medium">Lista exclusiva de profissionais.</p>
+                  <h3 className="text-xl font-black text-[var(--text)] tracking-tight">Fisioterapeutas Cadastrados</h3>
+                  <p className="text-xs text-[var(--text-2)] font-medium">Lista exclusiva de profissionais.</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                  <Search className="text-slate-500" size={18} />
+                <div className="flex items-center gap-3 bg-[var(--bg)] px-4 py-2 rounded-xl border border-[var(--border)]">
+                  <Search className="text-[var(--text-2)]" size={18} />
                   <input 
                     type="text" 
                     placeholder="Buscar fisioterapeuta..." 
-                    className="text-sm border-none focus:ring-0 bg-transparent text-white placeholder:text-slate-600"
+                    className="text-sm border-none focus:ring-0 bg-transparent text-[var(--text)] placeholder:text-[var(--text-2)]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -2626,32 +2652,32 @@ export default function Admin() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Profissional</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">CREFITO</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Especialidade</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                    <tr className="bg-[var(--bg)]/50">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Profissional</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">CREFITO</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Especialidade</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Status</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[var(--border)] text-[var(--text)]">
                     {filteredPhysios.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-8 py-24 text-center">
-                          <div className="space-y-6">
-                            <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                          <div className="space-y-6 text-[var(--text-2)]">
+                            <div className="w-20 h-20 bg-[var(--bg)] rounded-full flex items-center justify-center mx-auto shadow-inner border border-[var(--border)]">
                               <Users size={40} />
                             </div>
-                            <p className="text-slate-500 font-black text-lg uppercase tracking-widest">{t('admin.dashboard.charts.no_physios', 'Nenhum fisioterapeuta encontrado.')}</p>
+                            <p className="font-black text-lg uppercase tracking-widest">{t('admin.dashboard.charts.no_physios', 'Nenhum fisioterapeuta encontrado.')}</p>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       filteredPhysios.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-50/80 transition-all group">
+                      <tr key={u.id} className="hover:bg-[var(--bg)]/30 transition-all group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
-                              <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-blue-400 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
+                              <div className="w-14 h-14 rounded-2xl bg-[var(--bg)] overflow-hidden flex items-center justify-center text-sm font-black text-[var(--primary-2)] border border-[var(--border)] shadow-lg group-hover:scale-105 transition-transform">
                                 {u.avatar_display ? (
                                   <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
@@ -2659,17 +2685,17 @@ export default function Admin() {
                                 )}
                               </div>
                               <div>
-                                <p className="text-base font-black text-white tracking-tight">{u.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{u.email}</p>
+                                <p className="text-base font-black text-[var(--white)] tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-[var(--text-2)] font-black uppercase tracking-widest">{u.email}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-8 py-6">
-                            <span className="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white text-[10px] font-black shadow-lg shadow-blue-900/20 uppercase tracking-widest">
+                            <span className="inline-flex items-center px-4 py-2 rounded-xl bg-[var(--primary-2)] text-white text-[10px] font-black shadow-lg shadow-[var(--primary-2)]/20 uppercase tracking-widest">
                               {u.crefito || 'PENDENTE'}
                             </span>
                           </td>
-                          <td className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">{u.especialidade || '---'}</td>
+                          <td className="px-8 py-6 text-xs font-black text-[var(--text-2)] uppercase tracking-widest">{u.especialidade || '---'}</td>
                           <td className="px-8 py-6">
                             <span className={cn(
                               "text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.15em] shadow-sm",
@@ -2683,7 +2709,7 @@ export default function Admin() {
                             <div className="flex items-center justify-end gap-4">
                               <button 
                                 onClick={() => setSelectedUserDetail(u)}
-                                className="p-3 text-blue-400 hover:bg-blue-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                                className="p-3 text-[var(--primary-2)] hover:bg-[var(--primary-2)]/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Ver Detalhes"
                               >
                                 <Eye size={22} />
@@ -2708,7 +2734,7 @@ export default function Admin() {
                               )}
                               <button 
                                 onClick={() => handleDeleteUser(u?.id)}
-                                className="p-3 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                                className="p-3 text-[var(--text-2)] hover:text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Excluir"
                               >
                                 <Trash2 size={22} />
@@ -2725,18 +2751,18 @@ export default function Admin() {
           )}
 
           {!loading && !error && activeTab === 'patients' && (
-            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-2xl overflow-hidden p-8">
+              <div className="p-8 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">{t('admin.patients.title', 'Pacientes Cadastrados')}</h3>
-                  <p className="text-xs text-slate-500 font-medium">{t('admin.patients.subtitle', 'Lista exclusiva de clientes.')}</p>
+                  <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin.patients.title', 'Pacientes Cadastrados')}</h3>
+                  <p className="text-xs text-[var(--text-2)] font-medium">{t('admin.patients.subtitle', 'Lista exclusiva de clientes.')}</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                  <Search className="text-slate-500" size={18} />
+                <div className="flex items-center gap-3 bg-[var(--bg)] px-4 py-2 rounded-xl border border-[var(--border)]">
+                  <Search className="text-[var(--text-2)]" size={18} />
                   <input 
                     type="text" 
                     placeholder={t('admin.patients.search_placeholder', "Buscar paciente...")} 
-                    className="text-sm border-none focus:ring-0 bg-transparent text-white placeholder:text-slate-600"
+                    className="text-sm border-none focus:ring-0 bg-transparent text-[var(--text)] placeholder:text-[var(--text-2)]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -2745,31 +2771,31 @@ export default function Admin() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.patient', 'Paciente')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.email', 'Email')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.location', 'Localização')}</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.patients.table.actions', 'Ações')}</th>
+                    <tr className="bg-[var(--bg)]/50">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.patients.table.patient', 'Paciente')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.patients.table.email', 'Email')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.patients.table.location', 'Localização')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">{t('admin.patients.table.actions', 'Ações')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[var(--border)] text-[var(--text)]">
                     {filteredPatients.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="px-8 py-24 text-center">
-                            <div className="space-y-6">
-                              <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                            <div className="space-y-6 text-[var(--text-2)]">
+                              <div className="w-20 h-20 bg-[var(--bg)] rounded-full flex items-center justify-center mx-auto shadow-inner border border-[var(--border)]">
                                 <Users size={40} />
                               </div>
-                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">{t('admin.patients.no_patients', 'Nenhum paciente encontrado.')}</p>
+                              <p className="font-black text-lg uppercase tracking-widest">{t('admin.patients.no_patients', 'Nenhum paciente encontrado.')}</p>
                             </div>
                           </td>
                         </tr>
                       ) : (
                       filteredPatients.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition-all group">
+                        <tr key={u.id} className="hover:bg-[var(--bg)]/30 transition-all group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
-                              <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-slate-500 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
+                              <div className="w-14 h-14 rounded-2xl bg-[var(--bg)] overflow-hidden flex items-center justify-center text-sm font-black text-[var(--text-2)] border border-[var(--border)] shadow-lg group-hover:scale-105 transition-transform">
                                 {u.avatar_display ? (
                                   <img src={u.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
@@ -2777,18 +2803,18 @@ export default function Admin() {
                                 )}
                               </div>
                               <div>
-                                <p className="text-base font-black text-white tracking-tight">{u.nome_completo}</p>
-                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                                <p className="text-base font-black text-[var(--white)] tracking-tight">{u.nome_completo}</p>
+                                <p className="text-[10px] text-[var(--text-2)] font-black uppercase tracking-widest">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-sm text-slate-400 font-bold">{u.email}</td>
-                          <td className="px-8 py-6 text-xs font-black text-slate-500 uppercase tracking-widest">{u.localizacao || 'Não inf.'}</td>
+                          <td className="px-8 py-6 text-sm text-[var(--text-2)] font-bold">{u.email}</td>
+                          <td className="px-8 py-6 text-xs font-black text-[var(--text-2)] uppercase tracking-widest">{u.localizacao || 'Não inf.'}</td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-4">
                               <button 
                                 onClick={() => setSelectedUserDetail(u)}
-                                className="p-3 text-blue-400 hover:bg-blue-500/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                                className="p-3 text-[var(--primary-2)] hover:bg-[var(--primary-2)]/10 rounded-2xl transition-all hover:scale-110 active:scale-95"
                                 title="Ver Detalhes"
                               >
                                 <Eye size={22} />
@@ -2820,15 +2846,15 @@ export default function Admin() {
 
           {!loading && !error && activeTab === 'approvals' && (
             <div className="space-y-8">
-              <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.approvals.title', 'Aprovações Pendentes')}</h3>
+              <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.approvals.title', 'Aprovações Pendentes')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredApprovals.length === 0 ? (
-                  <div className="col-span-full bg-white/80 backdrop-blur-md p-12 rounded-[2.5rem] border border-slate-200/60 text-center space-y-4 shadow-2xl">
+                  <div className="col-span-full bg-[var(--surface)] p-12 rounded-[var(--radius)] border border-[var(--border)] text-center space-y-4 shadow-2xl">
                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
                       <CheckCircle2 size={32} />
                     </div>
-                    <p className="font-black text-white text-lg">{t('admin.approvals.empty_title', 'Tudo em dia!')}</p>
-                    <p className="text-sm text-slate-500">{t('admin.approvals.empty_desc', 'Não há fisioterapeutas aguardando aprovação no momento.')}</p>
+                    <p className="font-black text-[var(--white)] text-lg">{t('admin.approvals.empty_title', 'Tudo em dia!')}</p>
+                    <p className="text-sm text-[var(--text-2)]">{t('admin.approvals.empty_desc', 'Não há fisioterapeutas aguardando aprovação no momento.')}</p>
                   </div>
                 ) : (
                   filteredApprovals.map((profile) => (
@@ -2836,10 +2862,10 @@ export default function Admin() {
                       key={profile.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-2xl space-y-6 group hover:border-blue-500/30 transition-all"
+                      className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-2xl space-y-6 group hover:border-[var(--primary)]/30 transition-all"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-white/10">
+                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg)] flex items-center justify-center text-[var(--text-2)] font-bold overflow-hidden border border-[var(--border)]">
                           {profile.avatar_display ? (
                             <img src={profile.avatar_display} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
@@ -2847,13 +2873,13 @@ export default function Admin() {
                           )}
                         </div>
                         <div>
-                          <p className="font-black text-white text-lg tracking-tight">{profile.nome_completo}</p>
-                          <p className="text-xs text-slate-500 font-medium">{profile.email} • CREFITO: {profile.crefito || 'N/A'}</p>
+                          <p className="font-black text-[var(--white)] text-lg tracking-tight">{profile.nome_completo}</p>
+                          <p className="text-xs text-[var(--text-2)] font-medium">{profile.email} • CREFITO: {profile.crefito || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-[10px] font-black uppercase tracking-[0.15em]">
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-slate-400 truncate">Especialidade: {profile.especialidade || 'Não inf.'}</div>
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-slate-400 truncate">Tipo: {profile.plano || profile.tipo_usuario}</div>
+                        <div className="bg-[var(--bg)] p-3 rounded-xl border border-[var(--border)] text-[var(--text-2)] truncate">Especialidade: {profile.especialidade || 'Não inf.'}</div>
+                        <div className="bg-[var(--bg)] p-3 rounded-xl border border-[var(--border)] text-[var(--text-2)] truncate">Tipo: {profile.plano || profile.tipo_usuario}</div>
                       </div>
                       
                       {(() => {
@@ -2865,8 +2891,8 @@ export default function Admin() {
                         
                         if (docs.length > 0) {
                           return (
-                            <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">Documentos Anexados ({docs.length})</p>
+                            <div className="p-4 bg-[var(--primary)]/5 rounded-2xl border border-[var(--primary)]/10">
+                              <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-3">Documentos Anexados ({docs.length})</p>
                               <div className="flex flex-wrap gap-2">
                                 {docs.map((doc: string, idx: number) => (
                                   <a 
@@ -2874,7 +2900,7 @@ export default function Admin() {
                                     href={resolveStorageUrl(doc)} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all"
+                                    className="px-3 py-1.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-[10px] font-bold text-[var(--primary-2)] hover:bg-[var(--primary-2)] hover:text-white transition-all shadow-sm"
                                   >
                                     Visualizar Doc {idx + 1}
                                   </a>
@@ -2889,7 +2915,7 @@ export default function Admin() {
                       <div className="flex items-center gap-3 pt-2">
                         <button 
                           onClick={() => setSelectedUserDetail(profile)}
-                          className="p-3 bg-white/5 text-slate-400 rounded-xl hover:bg-white/10 transition-colors border border-white/5"
+                          className="p-3 bg-[var(--bg)] text-[var(--text-2)] rounded-xl hover:bg-[var(--surface)] transition-colors border border-[var(--border)]"
                           title="Ver Detalhes"
                         >
                           <Eye size={20} />
@@ -2902,7 +2928,7 @@ export default function Admin() {
                         </button>
                         <button 
                           onClick={() => handleRejectPhysio(profile?.id, profile?.id)}
-                          className="flex-1 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-black hover:bg-rose-500/20 transition-all"
+                          className="flex-1 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/10"
                         >
                           Rejeitar
                         </button>
@@ -2914,56 +2940,56 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'financial' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Receita Mensal (Total)</p>
-                  <p className="text-3xl font-black text-white tracking-tighter">R$ {stats.totalRevenue.toLocaleString()}</p>
+          {activeTab === 'financial' && (
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
+                  <p className="text-xs font-black text-[var(--text-2)] uppercase tracking-widest mb-3">Receita Mensal (Total)</p>
+                  <p className="text-3xl font-black text-[var(--white)] tracking-tighter">R$ {stats.totalRevenue.toLocaleString()}</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Comissões ({commissionRate}%)</p>
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
+                  <p className="text-xs font-black text-[var(--text-2)] uppercase tracking-widest mb-3">Comissões ({commissionRate}%)</p>
                   <p className="text-3xl font-black text-emerald-400 tracking-tighter">R$ {(stats.totalRevenue * (commissionRate / 100)).toLocaleString()}</p>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Transações</p>
-                  <p className="text-3xl font-black text-blue-400 tracking-tighter">{payments.length}</p>
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
+                  <p className="text-xs font-black text-[var(--text-2)] uppercase tracking-widest mb-3">Transações</p>
+                  <p className="text-3xl font-black text-[var(--primary-2)] tracking-tighter">{payments.length}</p>
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-                <div className="p-8 border-b border-white/5">
-                  <h3 className="text-xl font-black text-white tracking-tight">Histórico de Transações</h3>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-[var(--border)]">
+                  <h3 className="text-xl font-black text-[var(--text)] tracking-tight">Histórico de Transações</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Comissão ({commissionRate}%)</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
+                      <tr className="bg-[var(--bg)]/50">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Data</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Valor</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Comissão ({commissionRate}%)</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[var(--border)]">
                       {payments.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="px-8 py-20 text-center">
-                            <div className="space-y-4">
-                              <div className="w-16 h-16 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto">
+                            <div className="space-y-4 text-[var(--text-2)]">
+                              <div className="w-16 h-16 bg-[var(--bg)] rounded-full flex items-center justify-center mx-auto border border-[var(--border)]">
                                 <DollarSign size={32} />
                               </div>
-                              <p className="text-slate-500 font-bold">Nenhuma transação encontrada.</p>
+                              <p className="font-bold">Nenhuma transação encontrada.</p>
                             </div>
                           </td>
                         </tr>
                       ) : (
                         payments.map((p) => (
-                          <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-8 py-5 text-xs text-slate-500 font-medium">
+                          <tr key={p.id} className="hover:bg-[var(--bg)]/30 transition-colors">
+                            <td className="px-8 py-5 text-xs text-[var(--text-2)] font-medium">
                               {p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('pt-BR') : 'Recent'}
                             </td>
-                            <td className="px-8 py-5 text-sm font-bold text-white">R$ {p.amount?.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-sm font-bold text-[var(--white)]">R$ {p.amount?.toLocaleString()}</td>
                             <td className="px-8 py-5 text-sm font-bold text-emerald-400">R$ {(p.amount * (commissionRate / 100)).toLocaleString()}</td>
                             <td className="px-8 py-5">
                               <span className={cn(
@@ -2983,16 +3009,16 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'chat' && (
-            <div className="h-[calc(100vh-200px)] min-h-[500px] bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl flex overflow-hidden relative">
+          {activeTab === 'chat' && (
+            <div className="h-[calc(100vh-200px)] min-h-[500px] bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] shadow-2xl flex overflow-hidden relative">
               {/* User List - Sidebar */}
               <div className={cn(
-                "w-full md:w-1/3 border-r border-white/5 flex flex-col bg-white/5 transition-all duration-300",
+                "w-full md:w-1/3 border-r border-[var(--border)] flex flex-col bg-[var(--bg)]/50 transition-all duration-300",
                 selectedChatUser ? "hidden md:flex" : "flex"
               )}>
-                <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                  <h4 className="font-black text-white tracking-tight">Conversas</h4>
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 border border-white/10">
+                <div className="p-8 border-b border-[var(--border)] flex items-center justify-between">
+                  <h4 className="font-black text-[var(--text)] tracking-tight">Conversas</h4>
+                  <div className="w-10 h-10 rounded-xl bg-[var(--surface)] flex items-center justify-center text-[var(--text-2)] border border-[var(--border)]">
                     <Search size={16} />
                   </div>
                 </div>
@@ -3004,13 +3030,13 @@ export default function Admin() {
                       className={cn(
                         "w-full flex items-center gap-4 p-4 rounded-2xl transition-all group",
                         selectedChatUser?.id === u.id 
-                          ? "bg-blue-600 text-white shadow-xl shadow-blue-900/40" 
-                          : "hover:bg-white/5 text-slate-400 hover:text-white"
+                          ? "bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/40" 
+                          : "hover:bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)]"
                       )}
                     >
                       <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-white/10",
-                        selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400"
+                        "w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-[var(--border)]",
+                        selectedChatUser?.id === u.id ? "bg-[var(--white)]/20 text-[var(--white)]" : "bg-[var(--primary-2)]/10 text-[var(--primary-2)]"
                       )}>
                         {u.nome_completo?.charAt(0).toUpperCase()}
                       </div>
@@ -3020,15 +3046,15 @@ export default function Admin() {
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
                             u.tipo_usuario === 'fisioterapeuta'
-                              ? (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-emerald-500/10 text-emerald-400")
-                              : (selectedChatUser?.id === u.id ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400")
+                              ? (selectedChatUser?.id === u.id ? "bg-[var(--white)]/20 text-white" : "bg-emerald-500/10 text-emerald-400")
+                              : (selectedChatUser?.id === u.id ? "bg-[var(--white)]/20 text-white" : "bg-[var(--primary-2)]/10 text-[var(--primary-2)]")
                           )}>
                             {u.tipo_usuario === 'fisioterapeuta' ? 'Fisio' : 'Paciente'}
                           </span>
                         </div>
                         <p className={cn(
                           "text-[10px] font-bold truncate uppercase tracking-widest",
-                          selectedChatUser?.id === u.id ? "text-white/60" : "text-slate-500"
+                          selectedChatUser?.id === u.id ? "text-[var(--white)]/60" : "text-[var(--text-2)]"
                         )}>
                           Clique para iniciar conversa
                         </p>
@@ -3040,24 +3066,24 @@ export default function Admin() {
 
               {/* Chat Area - Main Content */}
               <div className={cn(
-                "flex-1 flex flex-col bg-white/[0.02] transition-all duration-300",
+                "flex-1 flex flex-col bg-[var(--surface)] transition-all duration-300",
                 !selectedChatUser ? "hidden md:flex" : "flex"
               )}>
                 {selectedChatUser ? (
                   <>
                     {/* Chat Header */}
-                    <div className="px-3 py-2.5 md:p-6 bg-white/5 border-b border-white/5 flex items-center gap-2 md:gap-4 h-[70px] md:h-auto">
+                    <div className="px-3 py-2.5 md:p-6 bg-[var(--bg)]/30 border-b border-[var(--border)] flex items-center gap-2 md:gap-4 h-[70px] md:h-auto">
                       <button 
                         onClick={() => setSelectedChatUser(null)}
-                        className="md:hidden p-1.5 -ml-1 text-slate-400 hover:text-white transition-colors"
+                        className="md:hidden p-1.5 -ml-1 text-[var(--text-2)] hover:text-[var(--text)] transition-colors"
                       >
                         <ArrowLeft size={20} />
                       </button>
-                      <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-black text-sm shadow-sm flex-shrink-0 border border-white/10">
+                      <div className="w-9 h-9 md:w-12 md:h-12 rounded-2xl bg-[var(--primary-2)]/10 flex items-center justify-center text-[var(--primary-2)] font-black text-sm shadow-sm flex-shrink-0 border border-[var(--border)]">
                         {selectedChatUser.nome_completo?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-white truncate text-sm md:text-lg pr-2 tracking-tight">{selectedChatUser.nome_completo}</p>
+                        <p className="font-black text-[var(--white)] truncate text-sm md:text-lg pr-2 tracking-tight">{selectedChatUser.nome_completo}</p>
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                           <p className="text-[8px] md:text-[10px] text-emerald-400 font-black uppercase tracking-widest">Online</p>
@@ -3066,7 +3092,7 @@ export default function Admin() {
                     </div>
 
                     {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar bg-[var(--bg)]/20">
                       {messages.map((m, idx) => {
                         const mDate = m.criado_em ? new Date(m.criado_em) : new Date();
                         const prevM = idx > 0 ? messages[idx - 1] : null;
@@ -3079,7 +3105,7 @@ export default function Admin() {
                           <div key={m.id} className="space-y-6">
                             {showDateSeparator && (
                               <div className="flex justify-center my-8">
-                                <div className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                                <div className="px-4 py-1.5 bg-[var(--surface)] border border-[var(--border)] rounded-full text-[9px] font-black text-[var(--text-2)] uppercase tracking-[0.3em]">
                                   {mDate.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </div>
                               </div>
@@ -3088,14 +3114,14 @@ export default function Admin() {
                               className={cn(
                                 "max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-2xl relative group",
                                 m.remetente === supabaseUser?.id 
-                                  ? "ml-auto bg-blue-600 text-white rounded-tr-none shadow-blue-900/20" 
-                                  : "bg-white/5 border border-white/10 text-white rounded-tl-none"
+                                  ? "ml-auto bg-[var(--primary)] text-white rounded-tr-none shadow-[var(--primary)]/20" 
+                                  : "bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] rounded-tl-none"
                               )}
                             >
                               <p className="leading-relaxed font-bold tracking-tight break-words">{m.mensagem}</p>
                               <div className={cn(
                                 "text-[9px] mt-2 font-black uppercase tracking-widest opacity-50",
-                                m.remetente === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-slate-500"
+                                m.remetente === supabaseUser?.id ? "text-right text-blue-100" : "text-left text-[var(--text-2)]"
                               )}>
                                 {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
@@ -3106,7 +3132,7 @@ export default function Admin() {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-3 md:p-6 bg-white/5 border-t border-white/5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                    <div className="p-3 md:p-6 bg-[var(--bg)]/30 border-t border-[var(--border)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                       <div className="flex gap-3 md:gap-4 items-center max-w-4xl mx-auto w-full">
                         <div className="flex-1 relative group">
                           <input 
@@ -3115,10 +3141,10 @@ export default function Admin() {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="w-full pl-6 pr-14 py-4 bg-white/5 border border-white/10 rounded-full outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 focus:bg-white/10 transition-all font-bold text-sm md:text-base text-white placeholder:text-slate-600 shadow-inner"
+                            className="w-full pl-6 pr-14 py-4 bg-[var(--bg)] border border-[var(--border)] rounded-full outline-none focus:ring-4 focus:ring-[var(--primary)]/10 focus:border-[var(--primary)] focus:bg-[var(--surface)] transition-all font-bold text-sm md:text-base text-[var(--text)] placeholder:text-[var(--text-2)] shadow-inner"
                           />
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                            <button type="button" className="p-1.5 md:p-2 text-slate-500 hover:text-blue-400 transition-colors">
+                            <button type="button" className="p-1.5 md:p-2 text-[var(--text-2)] hover:text-[var(--primary-2)] transition-colors">
                               <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
                           </div>
@@ -3129,8 +3155,8 @@ export default function Admin() {
                           className={cn(
                             "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl flex-shrink-0",
                             newMessage.trim() 
-                              ? "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 shadow-blue-900/40" 
-                              : "bg-white/5 text-slate-700 cursor-not-allowed border border-white/5"
+                              ? "bg-[var(--primary)] text-white hover:opacity-90 hover:scale-105 active:scale-95 shadow-[var(--primary)]/40" 
+                              : "bg-[var(--bg)] text-[var(--text-2)] cursor-not-allowed border border-[var(--border)]"
                           )}
                         >
                           <Send className="w-6 h-6 md:w-7 md:h-7 translate-x-0.5 -translate-y-0.5" />
@@ -3141,17 +3167,17 @@ export default function Admin() {
                 ) : (
                   /* Empty State */
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
-                    <div className="w-24 h-24 bg-white/5 rounded-3xl lg:rounded-[2.5rem] flex items-center justify-center text-blue-500 mb-8 animate-bounce-slow border border-white/10 shadow-2xl">
+                    <div className="w-24 h-24 bg-[var(--bg)] rounded-3xl lg:rounded-[2.5rem] flex items-center justify-center text-[var(--primary-2)] mb-8 border border-[var(--border)] shadow-2xl">
                       <MessageSquare size={48} strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-3 tracking-tight">Central de Suporte</h3>
-                    <p className="text-sm text-slate-500 max-w-xs leading-relaxed font-medium">
+                    <h3 className="text-2xl font-black text-[var(--white)] mb-3 tracking-tight">Central de Suporte</h3>
+                    <p className="text-sm text-[var(--text-2)] max-w-xs leading-relaxed font-medium">
                       Selecione um usuário na lista ao lado para visualizar o histórico de mensagens e iniciar um novo atendimento.
                     </p>
                     <div className="mt-10 flex gap-3">
-                      <div className="w-2 h-2 rounded-full bg-blue-600/20" />
-                      <div className="w-2 h-2 rounded-full bg-blue-600/40" />
-                      <div className="w-2 h-2 rounded-full bg-blue-600/60" />
+                      <div className="w-2 h-2 rounded-full bg-[var(--primary-2)]/20" />
+                      <div className="w-2 h-2 rounded-full bg-[var(--primary-2)]/40" />
+                      <div className="w-2 h-2 rounded-full bg-[var(--primary-2)]/60" />
                     </div>
                   </div>
                 )}
@@ -3159,27 +3185,27 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'saques' && (
-            <div className="space-y-8">
+          {activeTab === 'saques' && (
+            <div className="space-y-10">
               {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-amber-500/10 p-8 rounded-3xl lg:rounded-[2.5rem] border border-amber-500/20 flex items-center justify-between">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-amber-500/10 p-8 rounded-[var(--radius)] border border-amber-500/20 flex items-center justify-between shadow-xl">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t('admin.withdrawals.pending_title', 'Saques Pendentes')}</p>
-                    <p className="text-3xl font-black text-white">{stats.pendingWithdrawals}</p>
+                    <p className="text-3xl font-black text-[var(--white)]">{stats.pendingWithdrawals}</p>
                   </div>
                   <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500">
                     <Clock size={28} />
                   </div>
                 </div>
-                <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl lg:rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between">
+                <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] flex items-center justify-between shadow-xl">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin.withdrawals.total_requested', 'Total Solicitado')}</p>
-                    <p className="text-3xl font-black text-slate-900">
+                    <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">{t('admin.withdrawals.total_requested', 'Total Solicitado')}</p>
+                    <p className="text-3xl font-black text-[var(--white)] tracking-tight">
                       R$ {withdrawals.reduce((acc, curr) => acc + Number(curr.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
-                  <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                  <div className="w-14 h-14 bg-[var(--primary-2)]/10 rounded-2xl flex items-center justify-center text-[var(--primary-2)] border border-[var(--border)]">
                     <CreditCard size={28} />
                   </div>
                 </div>
@@ -3194,8 +3220,8 @@ export default function Admin() {
                     className={cn(
                       "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
                       withdrawalFilter === f
-                        ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                        : "bg-white/80 border-slate-200/60 text-slate-400 hover:text-blue-600"
+                        ? "bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
+                        : "bg-[var(--surface)] border-[var(--border)] text-[var(--text-2)] hover:text-[var(--primary)]"
                     )}
                   >
                     {t(`admin.withdrawals.filters.${f}`, f)}
@@ -3204,41 +3230,41 @@ export default function Admin() {
               </div>
 
               {/* List Table */}
-              <div className="bg-white/80 backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
-                <div className="p-8 border-b border-slate-200/60">
-                  <h3 className="text-xl font-black admin-title tracking-tight">{t('admin.withdrawals.table_title', 'Solicitações de Saque')}</h3>
-                  <p className="text-sm text-slate-500 font-medium">{t('admin.withdrawals.table_subtitle', 'Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.')}</p>
+              <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-[var(--border)]">
+                  <h3 className="text-xl font-black text-[var(--text)] tracking-tight">{t('admin.withdrawals.table_title', 'Solicitações de Saque')}</h3>
+                  <p className="text-sm text-[var(--text-2)] font-medium">{t('admin.withdrawals.table_subtitle', 'Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.')}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
-                      <tr className="bg-slate-50">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.date', 'Data')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.professional', 'Profissional')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.value', 'Valor')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.status', 'Status')}</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.withdrawals.table.actions', 'Ações')}</th>
+                      <tr className="bg-[var(--bg)]/50">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.withdrawals.table.date', 'Data')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.withdrawals.table.professional', 'Profissional')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.withdrawals.table.value', 'Valor')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">{t('admin.withdrawals.table.status', 'Status')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">{t('admin.withdrawals.table.actions', 'Ações')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[var(--border)]">
                       {filteredWithdrawals.map((w) => (
-                          <tr key={w.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-5 text-sm font-bold text-slate-600 uppercase tabular-nums">
+                          <tr key={w.id} className="hover:bg-[var(--bg)]/30 transition-colors">
+                            <td className="px-8 py-5 text-sm font-bold text-[var(--text)] uppercase tabular-nums">
                               {new Date(w.created_at).toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-8 py-5">
-                              <p className="text-sm font-bold text-slate-900">{w.fisioterapeuta?.nome_completo}</p>
-                              <p className="text-[10px] text-slate-500">{w.fisioterapeuta?.email}</p>
+                              <p className="text-sm font-bold text-[var(--text)]">{w.fisioterapeuta?.nome_completo}</p>
+                              <p className="text-[10px] text-[var(--text-2)]">{w.fisioterapeuta?.email}</p>
                             </td>
-                            <td className="px-8 py-5 text-sm font-black text-slate-900 tabular-nums">
+                            <td className="px-8 py-5 text-sm font-black text-[var(--text)] tabular-nums">
                               R$ {Number(w.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-8 py-5">
                               <div className={cn(
                                 "inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                w.status === 'pago' ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/5" :
-                                w.status === 'recusado' ? "border-rose-500/30 text-rose-600 bg-rose-500/5" :
-                                "border-amber-500/30 text-amber-600 bg-amber-500/5"
+                                w.status === 'pago' ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/5" :
+                                w.status === 'recusado' ? "border-rose-500/30 text-rose-400 bg-rose-500/5" :
+                                "border-amber-500/30 text-amber-400 bg-amber-500/5"
                               )}>
                                 {String(t(`admin.withdrawals.status.${w.status}`, w.status))}
                               </div>
@@ -3248,21 +3274,21 @@ export default function Admin() {
                                 <div className="flex items-center justify-end gap-3">
                                   <button
                                     onClick={() => handleUpdateWithdrawalStatus(w.id, 'recusado')}
-                                    className="p-2.5 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl border border-rose-500/20 transition-all"
+                                    className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl border border-rose-500/20 transition-all"
                                     title={t('admin.withdrawals.actions.reject', 'Recusar')}
                                   >
                                     <XCircle size={18} />
                                   </button>
                                   <button
                                     onClick={() => handleUpdateWithdrawalStatus(w.id, 'pago')}
-                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2"
                                   >
                                     <CheckCircle2 size={16} /> {t('admin.withdrawals.actions.approve', 'Marcar como Pago')}
                                   </button>
                                 </div>
                               )}
                               {w.status !== 'pendente' && (
-                                <span className="text-[10px] font-bold text-slate-400 italic uppercase">
+                                <span className="text-[10px] font-bold text-[var(--text-2)] italic uppercase">
                                   {w.processado_em ? `${t('admin.withdrawals.processed_at', 'Proc. em')} ${new Date(w.processado_em).toLocaleDateString('pt-BR')}` : t('admin.withdrawals.finished', 'Finalizado')}
                                 </span>
                               )}
@@ -3273,10 +3299,10 @@ export default function Admin() {
                   </table>
                   {filteredWithdrawals.length === 0 && (
                     <div className="p-20 text-center">
-                      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mx-auto mb-6">
+                      <div className="w-20 h-20 bg-[var(--bg)] rounded-3xl flex items-center justify-center text-[var(--text-2)] mx-auto mb-6 border border-[var(--border)]">
                         <Filter size={40} strokeWidth={1} />
                       </div>
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{t('admin.withdrawals.no_results', 'Nenhuma solicitação encontrada.')}</p>
+                      <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">{t('admin.withdrawals.no_results', 'Nenhuma solicitação encontrada.')}</p>
                     </div>
                   )}
                 </div>
@@ -3287,21 +3313,21 @@ export default function Admin() {
           {!loading && !error && activeTab === 'notifications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Email/Template Test Tool */}
-              <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/5 p-8 rounded-3xl lg:rounded-[3rem] border border-blue-500/20 shadow-xl">
+              <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                   <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20">
+                    <div className="w-16 h-16 bg-[var(--primary-2)]/10 text-[var(--primary-2)] rounded-2xl flex items-center justify-center border border-[var(--border)]">
                       <Send size={32} />
                     </div>
                     <div>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight">Template de E-mail (Produção)</h4>
-                      <p className="text-slate-400 font-medium">Envie um e-mail real para sua caixa de entrada para validar o layout oficial.</p>
+                      <h4 className="text-xl font-black text-[var(--text)] uppercase tracking-tight">Template de E-mail (Produção)</h4>
+                      <p className="text-[var(--text-2)] font-medium">Envie um e-mail real para sua caixa de entrada para validar o layout oficial.</p>
                     </div>
                   </div>
                   <button
                     onClick={handleTestEmail}
                     disabled={testEmailLoading}
-                    className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40 group disabled:opacity-50 active:scale-95 whitespace-nowrap"
+                    className="flex items-center justify-center gap-3 px-8 py-4 bg-[var(--primary-2)] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary-2)]/20 group disabled:opacity-50 active:scale-95 whitespace-nowrap"
                   >
                     {testEmailLoading ? (
                       <Loader2 size={20} className="animate-spin" />
@@ -3315,47 +3341,47 @@ export default function Admin() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                  <div className="w-16 h-16 bg-[var(--surface)] text-[var(--primary-2)] rounded-3xl flex items-center justify-center border border-[var(--border)] shadow-lg shadow-[var(--primary-2)]/10">
                     <Bell size={32} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">NOTIFICAÇÕES DO SISTEMA</h3>
-                    <p className="text-sm text-slate-400 font-medium">Acompanhe eventos importantes e ações pendentes.</p>
+                    <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">NOTIFICAÇÕES DO SISTEMA</h3>
+                    <p className="text-sm text-[var(--text-2)] font-medium">Acompanhe eventos importantes e ações pendentes.</p>
                   </div>
                 </div>
-                <div className="px-6 py-4 bg-white/5 rounded-[2rem] border border-white/10">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Não Lidas</p>
+                <div className="px-6 py-4 bg-[var(--surface)] rounded-[2rem] border border-[var(--border)]">
+                  <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest mb-1">Não Lidas</p>
                   <p className="text-2xl font-black text-rose-500">{adminNotifications.filter(n => !n.lida).length}</p>
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-3xl lg:rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl">
-                <div className="divide-y divide-white/5">
+              <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden shadow-2xl">
+                <div className="divide-y divide-[var(--border)]">
                   {adminNotifications.length > 0 ? (
                     adminNotifications.map((notification) => (
                       <div 
                         key={notification.id} 
                         className={cn(
-                          "p-8 flex items-start justify-between gap-6 transition-all hover:bg-white/[0.02]",
-                          !notification.lida && "bg-blue-500/5"
+                          "p-8 flex items-start justify-between gap-6 transition-all hover:bg-[var(--bg)]/10",
+                          !notification.lida && "bg-[var(--primary-2)]/5"
                         )}
                       >
                         <div className="flex items-start gap-4">
                           <div className={cn(
                             "w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 mt-1",
-                            notification.tipo === 'saque' ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"
+                            notification.tipo === 'saque' ? "bg-emerald-500/10 text-emerald-400" : "bg-[var(--primary-2)]/10 text-[var(--primary-2)]"
                           )}>
                             {notification.tipo === 'saque' ? <DollarSign size={24} /> : <Bell size={24} />}
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
-                              <h4 className="text-lg font-black text-white">{notification.titulo}</h4>
+                              <h4 className="text-lg font-black text-[var(--text)]">{notification.titulo}</h4>
                               {!notification.lida && (
-                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                <span className="w-2 h-2 bg-[var(--primary-2)] rounded-full animate-pulse" />
                               )}
                             </div>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{notification.mensagem}</p>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pt-2">
+                            <p className="text-[var(--text-2)] text-sm leading-relaxed max-w-2xl">{notification.mensagem}</p>
+                            <p className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-widest pt-2">
                               {new Date(notification.created_at).toLocaleDateString('pt-BR')} às {new Date(notification.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
@@ -3364,7 +3390,7 @@ export default function Admin() {
                         {!notification.lida && (
                           <button
                             onClick={() => handleMarkNotificationAsRead(notification.id)}
-                            className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/10 flex-shrink-0"
+                            className="px-6 py-3 bg-[var(--bg)] hover:bg-[var(--surface)] text-[var(--text)] rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-[var(--border)] flex-shrink-0"
                           >
                             Marcar como lida
                           </button>
@@ -3373,11 +3399,11 @@ export default function Admin() {
                     ))
                   ) : (
                     <div className="p-32 text-center">
-                      <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-slate-600 mx-auto mb-8">
+                      <div className="w-24 h-24 bg-[var(--bg)] rounded-[2.5rem] flex items-center justify-center text-[var(--border)] mx-auto mb-8 border border-[var(--border)]">
                         <Bell size={48} strokeWidth={1} />
                       </div>
-                      <h4 className="text-xl font-black text-white mb-2">Tudo em dia!</h4>
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Nenhuma notificação encontrada no momento.</p>
+                      <h4 className="text-xl font-black text-[var(--text)] mb-2">Tudo em dia!</h4>
+                      <p className="text-[var(--text-2)] font-bold uppercase tracking-widest text-[10px]">Nenhuma notificação encontrada no momento.</p>
                     </div>
                   )}
                 </div>
@@ -3385,53 +3411,53 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'tickets' && (
-            <div className="space-y-8">
+          {activeTab === 'tickets' && (
+            <div className="space-y-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-tight">Suporte e Tickets</h3>
-                  <p className="text-slate-500 font-medium">Gerencie as solicitações de pacientes e fisioterapeutas.</p>
+                  <h3 className="text-2xl font-black text-[var(--white)] tracking-tight">Suporte e Tickets</h3>
+                  <p className="text-[var(--text-2)] font-medium">Gerencie as solicitações de pacientes e fisioterapeutas.</p>
                 </div>
                 <div className="flex gap-2">
-                   <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl flex items-center gap-2">
+                   <div className="bg-[var(--surface)] border border-[var(--border)] px-4 py-2 rounded-xl flex items-center gap-2">
                      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                     <span className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">
                        {tickets.filter(t => t.status === 'aberto').length} Pendentes
                      </span>
                    </div>
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+              <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Ticket</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Usuário</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      <tr className="bg-[var(--bg)]/50">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Ticket</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Usuário</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Data</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[var(--border)]">
                       {tickets.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-8 py-20 text-center">
-                            <p className="text-slate-500 font-bold">Nenhum ticket encontrado.</p>
+                            <p className="text-[var(--text-2)] font-bold">Nenhum ticket encontrado.</p>
                           </td>
                         </tr>
                       ) : (
                         tickets.map((t) => (
-                          <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
+                          <tr key={t.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                             <td className="px-8 py-5">
-                              <p className="text-sm font-black text-white">{t.assunto}</p>
-                              <p className="text-[10px] text-slate-500 uppercase tracking-tight">{t.categoria}</p>
-                              <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{t.descricao}</p>
+                              <p className="text-sm font-black text-[var(--white)]">{t.assunto}</p>
+                              <p className="text-[10px] text-[var(--text-2)] uppercase tracking-tight">{t.categoria}</p>
+                              <p className="text-[11px] text-[var(--text-2)]/70 mt-1 line-clamp-1">{t.descricao}</p>
                             </td>
                             <td className="px-8 py-5">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-400 flex items-center justify-center text-xs font-black border border-blue-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-2)]/10 text-[var(--primary-2)] flex items-center justify-center text-xs font-black border border-[var(--border)]">
                                   {t.usuario?.avatar_url || t.usuario?.foto_url ? (
                                     <img src={t.usuario.avatar_url || t.usuario.foto_url} className="w-full h-full object-cover rounded-lg" />
                                   ) : (
@@ -3439,8 +3465,8 @@ export default function Admin() {
                                   )}
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-white">{t.usuario?.nome_completo || 'Usuário Desconhecido'}</p>
-                                  <p className="text-[9px] text-slate-500">{t.usuario?.email}</p>
+                                  <p className="text-xs font-bold text-[var(--white)]">{t.usuario?.nome_completo || 'Usuário Desconhecido'}</p>
+                                  <p className="text-[9px] text-[var(--text-2)]">{t.usuario?.email}</p>
                                 </div>
                               </div>
                             </td>
@@ -3449,9 +3475,9 @@ export default function Admin() {
                                 value={t.status}
                                 onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
                                 className={cn(
-                                  "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/10 focus:outline-none focus:ring-0",
+                                  "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-[var(--border)] focus:outline-none focus:ring-0 bg-[var(--surface)]",
                                   t.status === 'aberto' ? "bg-amber-500/10 text-amber-500" :
-                                  t.status === 'em_analise' ? "bg-blue-500/10 text-blue-500" :
+                                  t.status === 'em_analise' ? "bg-[var(--primary-2)]/10 text-[var(--primary-2)]" :
                                   "bg-emerald-500/10 text-emerald-500"
                                 )}
                               >
@@ -3461,7 +3487,7 @@ export default function Admin() {
                                 <option value="fechado">Fechado</option>
                               </select>
                             </td>
-                            <td className="px-8 py-5 text-[10px] text-slate-500 font-bold">
+                            <td className="px-8 py-5 text-[10px] text-[var(--text-2)] font-bold">
                               {new Date(t.criado_em).toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-8 py-5 text-right">
@@ -3470,7 +3496,7 @@ export default function Admin() {
                                   setSelectedChatUser(t.usuario);
                                   setActiveTab('chat');
                                 }}
-                                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all"
+                                className="p-2 text-[var(--primary-2)] hover:bg-[var(--primary-2)]/10 rounded-xl transition-all"
                                 title="Conversar com Usuário"
                               >
                                 <MessageSquare size={18} />
@@ -3486,15 +3512,15 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'settings' && (
-            <div className="max-w-4xl space-y-8">
+          {activeTab === 'settings' && (
+            <div className="max-w-4xl space-y-10">
               {/* Profile Settings */}
-              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
-                <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.profile_title')}</h3>
+              <div className="bg-[var(--surface)] p-10 rounded-[var(--radius)] border border-[var(--border)] shadow-2xl space-y-10">
+                <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.profile_title')}</h3>
                 
                 <div className="flex flex-col md:flex-row gap-10 items-start">
                   <div className="flex-shrink-0">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 block text-center">{t('profile.photo')}</label>
+                    <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em] mb-4 block text-center">{t('profile.photo')}</label>
                     <AvatarUpload 
                       userId={supabaseUser?.id || ''} 
                       currentAvatarUrl={authProfile?.avatar_url || authProfile?.foto_url}
@@ -3505,21 +3531,21 @@ export default function Admin() {
                   <div className="flex-1 space-y-8 w-full">
                     <div className="grid grid-cols-1 gap-8">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Nome Completo</label>
+                        <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Nome Completo</label>
                         <input 
                           type="text"
                           defaultValue={authProfile?.nome_completo || supabaseUser?.user_metadata?.full_name || 'Admin Master'}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/20"
+                          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text)] font-bold outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                           id="admin-name"
                         />
                       </div>
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">E-mail</label>
+                        <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">E-mail</label>
                         <input 
                           type="email"
                           value={supabaseUser?.email || ''}
                           disabled
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-500 font-bold outline-none cursor-not-allowed"
+                          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text-2)] font-bold outline-none cursor-not-allowed opacity-50"
                         />
                       </div>
                     </div>
@@ -3535,7 +3561,7 @@ export default function Admin() {
                           import('sonner').then(({ toast }) => toast.success(t('profile.update_success')));
                         }
                       }}
-                      className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
+                      className="px-8 py-3 bg-[var(--primary)] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
                     >
                       {t('admin.update_profile')}
                     </button>
@@ -3543,23 +3569,23 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-10">
-                <h3 className="text-2xl font-black text-white tracking-tight">Configurações do Sistema</h3>
+              <div className="bg-[var(--surface)] p-10 rounded-[var(--radius)] border border-[var(--border)] shadow-2xl space-y-10">
+                <h3 className="text-2xl font-black text-[var(--text)] tracking-tight">Configurações do Sistema</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-8">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Taxa de Comissão (%)</label>
+                      <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Taxa de Comissão (%)</label>
                       <div className="flex gap-4">
                         <input 
                           type="number" 
                           value={commissionRate}
                           onChange={(e) => setCommissionRate(Number(e.target.value))}
-                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" 
+                          className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text)] font-bold focus:ring-2 focus:ring-[var(--primary)]/20 outline-none transition-all" 
                         />
                         <button 
                           onClick={handleSaveSettings}
-                          className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                          className="px-8 py-3 bg-[var(--primary)] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
                         >
                           Salvar
                         </button>
@@ -3567,18 +3593,18 @@ export default function Admin() {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Notificações por Email</label>
+                      <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Notificações por Email</label>
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5">
-                          <span className="text-sm font-bold text-slate-300">Novos Cadastros</span>
-                          <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer shadow-inner">
+                        <div className="flex items-center justify-between p-5 bg-[var(--bg)] rounded-2xl border border-[var(--border)]">
+                          <span className="text-sm font-bold text-[var(--text)]">Novos Cadastros</span>
+                          <div className="w-12 h-6 bg-[var(--primary)] rounded-full relative cursor-pointer shadow-inner">
                             <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 opacity-40">
-                          <span className="text-sm font-bold text-slate-300">Novos Pagamentos</span>
-                          <div className="w-12 h-6 bg-white/10 rounded-full relative cursor-pointer">
-                            <div className="absolute left-1 top-1 w-4 h-4 bg-slate-400 rounded-full" />
+                        <div className="flex items-center justify-between p-5 bg-[var(--bg)] rounded-2xl border border-[var(--border)] opacity-40">
+                          <span className="text-sm font-bold text-[var(--text)]">Novos Pagamentos</span>
+                          <div className="w-12 h-6 bg-[var(--surface)] rounded-full relative cursor-pointer border border-[var(--border)]">
+                            <div className="absolute left-1 top-1 w-4 h-4 bg-[var(--text-2)] rounded-full" />
                           </div>
                         </div>
                       </div>
@@ -3587,26 +3613,26 @@ export default function Admin() {
 
                   <div className="space-y-8">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Manutenção</label>
-                      <div className="p-8 bg-amber-500/5 rounded-3xl lg:rounded-[2.5rem] border border-amber-500/10 space-y-5">
+                      <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Manutenção</label>
+                      <div className="p-8 bg-amber-500/5 rounded-[var(--radius)] border border-amber-500/10 space-y-5">
                         <p className="text-xs font-bold text-amber-500/80 leading-relaxed">
                           Utilize estas ferramentas para manter a integridade dos dados da plataforma e otimizar o desempenho.
                         </p>
                         <button 
                           onClick={handleCleanupOrphans}
-                          className="w-full py-4 bg-white/5 text-amber-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-500/10 transition-all border border-amber-500/20"
+                          className="w-full py-4 bg-[var(--bg)] text-amber-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-500/10 transition-all border border-amber-500/20 shadow-sm"
                         >
                           Limpar Registros Órfãos
                         </button>
                         <button 
                           onClick={handleFixAdminRoleConflict}
-                          className="w-full py-4 bg-blue-600/10 text-blue-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-600/20 transition-all border border-blue-500/20 shadow-lg shadow-blue-500/5"
+                          className="w-full py-4 bg-[var(--primary-2)]/10 text-[var(--primary-2)] rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-[var(--primary-2)]/20 transition-all border border-[var(--primary-2)]/20 shadow-sm"
                         >
                           Corrigir Conflito de Papéis (Admin Master)
                         </button>
                         <button 
                           onClick={() => import('sonner').then(({ toast }) => toast.info("Cache do sistema limpo!"))}
-                          className="w-full py-4 bg-white/5 text-rose-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-500/10 transition-all border border-rose-500/20"
+                          className="w-full py-4 bg-[var(--bg)] text-rose-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-500/10 transition-all border border-rose-500/20 shadow-sm"
                         >
                           Limpar Cache Global
                         </button>
@@ -3614,14 +3640,14 @@ export default function Admin() {
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Versão do Sistema</label>
-                      <div className="p-6 bg-white/5 rounded-2xl border border-white/5 text-white">
+                      <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Versão do Sistema</label>
+                      <div className="p-6 bg-[var(--bg)] rounded-2xl border border-[var(--border)] text-[var(--text)]">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Build</span>
-                          <span className="text-xs font-mono text-blue-400">v2.4.0-stable</span>
+                          <span className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Build</span>
+                          <span className="text-xs font-mono text-[var(--primary-2)]">v2.4.0-stable</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ambiente</span>
+                          <span className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest">Ambiente</span>
                           <span className="text-xs font-mono text-emerald-400">Produção</span>
                         </div>
                       </div>
@@ -3630,27 +3656,27 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl space-y-8">
+              <div className="bg-[var(--surface)] p-10 rounded-[var(--radius)] border border-[var(--border)] shadow-2xl space-y-8">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
                     <Smartphone size={24} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">Integração WhatsApp</h3>
-                    <p className="text-sm text-slate-500 font-medium tracking-tight">Teste do sistema de notificações automáticas via Twilio.</p>
+                    <h3 className="text-2xl font-black text-[var(--white)] tracking-tight">Integração WhatsApp</h3>
+                    <p className="text-sm text-[var(--text-2)] font-medium tracking-tight">Teste do sistema de notificações automáticas via Twilio.</p>
                   </div>
                 </div>
 
-                <div className="p-8 bg-blue-600/5 rounded-3xl lg:rounded-[2.5rem] border border-blue-600/10 space-y-6">
+                <div className="p-8 bg-[var(--primary-2)]/5 rounded-[var(--radius)] border border-[var(--primary-2)]/10 space-y-6">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Telefone para Teste</label>
+                    <label className="text-[10px] font-black uppercase text-[var(--text-2)] tracking-[0.2em]">Telefone para Teste</label>
                     <div className="flex flex-col sm:flex-row gap-4">
                       <input 
                         type="text" 
                         placeholder="Ex: 5511999999999"
                         value={testPhoneNumber}
                         onChange={(e) => setTestPhoneNumber(e.target.value)}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" 
+                        className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text)] font-bold focus:ring-2 focus:ring-[var(--primary)]/20 outline-none transition-all" 
                       />
                       <button 
                         onClick={handleTestWhatsApp}
@@ -3665,29 +3691,29 @@ export default function Admin() {
                         Enviar Teste
                       </button>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-bold italic">
+                    <p className="text-[10px] text-[var(--text-2)] font-bold italic">
                       Certifique-se de que o número está no formato internacional (DDI + DDD + Número) sem símbolos.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white/5 p-10 rounded-3xl lg:rounded-[2.5rem] border border-white/5 shadow-2xl">
-                <h4 className="text-xl font-black text-white mb-6 tracking-tight">Logs de Atividade</h4>
+              <div className="bg-[var(--surface)] p-10 rounded-[var(--radius)] border border-[var(--border)] shadow-2xl">
+                <h4 className="text-xl font-black text-[var(--white)] mb-6 tracking-tight">Logs de Atividade</h4>
                 <div className="space-y-2">
                   {[
                     { action: 'Configuração alterada', user: 'Admin Master', time: '10 min atrás' },
                     { action: 'Novo material adicionado', user: 'Admin Master', time: '1 hora atrás' },
                     { action: 'Fisioterapeuta aprovado', user: 'Admin Master', time: '3 horas atrás' },
                   ].map((log, i) => (
-                    <div key={i} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] px-4 rounded-xl transition-colors">
+                    <div key={i} className="flex items-center justify-between py-4 border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg)]/30 px-4 rounded-xl transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                        <span className="text-sm font-bold text-slate-300">{log.action}</span>
+                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_8px_rgba(123,97,255,0.5)]" />
+                        <span className="text-sm font-bold text-[var(--text)]">{log.action}</span>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest">{log.user}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">{log.time}</p>
+                        <p className="text-[10px] font-black text-[var(--white)] uppercase tracking-widest">{log.user}</p>
+                        <p className="text-[10px] text-[var(--text-2)] font-medium">{log.time}</p>
                       </div>
                     </div>
                   ))}
