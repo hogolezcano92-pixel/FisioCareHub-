@@ -244,20 +244,17 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-3xl lg:rounded-[2.5rem] p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300"
+            className="bg-[#0891B2] border border-cyan-500/30 shadow-lg rounded-3xl lg:rounded-[2.5rem] p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300"
           >
             <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110",
-                kpi.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
-                kpi.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                kpi.color === 'indigo' ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-amber-50 border-amber-100 text-amber-600'
+                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110 bg-white/10 border-white/20 text-white"
               )}>
                 <kpi.icon size={22} />
               </div>
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-emerald-50/50 text-emerald-600" : "bg-rose-50/50 text-rose-500"
+                kpi.isPositive ? "bg-white/20 text-white" : "bg-rose-500/20 text-rose-100"
               )}>
                 {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {kpi.trend}
@@ -265,9 +262,9 @@ export default function AdminDashboard() {
             </div>
  
             <div className="relative z-10">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
-              <p className="text-[10px] font-medium text-slate-400 mt-1">{kpi.description}</p>
+              <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">{kpi.label}</p>
+              <h3 className="text-2xl font-black text-white tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
+              <p className="text-[10px] font-medium text-white/60 mt-1">{kpi.description}</p>
             </div>
           </motion.div>
         ))}
@@ -288,8 +285,8 @@ export default function AdminDashboard() {
               <AreaChart data={revenueData || []}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -297,12 +294,12 @@ export default function AdminDashboard() {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  tick={{ fill: '#64748b', fontSize: 10 }}
                   tickFormatter={(val) => `R$${val}`} 
                 />
                 <Tooltip 
@@ -310,7 +307,7 @@ export default function AdminDashboard() {
                     backgroundColor: '#ffffff', 
                     border: '1px solid #e2e8f0', 
                     borderRadius: '1rem',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     fontSize: '11px',
                     fontWeight: 'bold'
                   }}
@@ -318,7 +315,7 @@ export default function AdminDashboard() {
                 <Area 
                   type="monotone" 
                   dataKey="value" 
-                  stroke="#3B82F6" 
+                  stroke="#0F172A" 
                   strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorValue)" 
