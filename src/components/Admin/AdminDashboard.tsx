@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
-import { 
-  Users, 
-  UserCheck, 
-  UserPlus, 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Users,
+  UserCheck,
+  UserPlus,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
   Activity,
   Calendar,
   Clock,
@@ -18,15 +18,15 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion'; // <-- CORRIGIDO
 import { cn } from '../../lib/utils';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -103,20 +103,19 @@ export default function AdminDashboard() {
 
         const totalRevenueThisMonth = (revenueThisMonth || []).reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
         const totalRevenueLastMonth = (revenueLastMonth || []).reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
-        
-        const revGrowth = totalRevenueLastMonth > 0 
-          ? ((totalRevenueThisMonth - totalRevenueLastMonth) / totalRevenueLastMonth) * 100 
+
+        const revGrowth = totalRevenueLastMonth > 0
+         ? ((totalRevenueThisMonth - totalRevenueLastMonth) / totalRevenueLastMonth) * 100
           : 0;
 
         const patGrowth = (newPatientsLastMonth || 0) > 0
-          ? (((newPatientsThisMonth || 0) - (newPatientsLastMonth || 0)) / (newPatientsLastMonth || 0)) * 100
+         ? (((newPatientsThisMonth || 0) - (newPatientsLastMonth || 0)) / (newPatientsLastMonth || 0)) * 100
           : 0;
 
         const avg = ratingsData && ratingsData.length > 0
-          ? ratingsData.reduce((acc, curr) => acc + curr.estrelas, 0) / ratingsData.length
+         ? ratingsData.reduce((acc, curr) => acc + curr.estrelas, 0) / ratingsData.length
           : 0;
 
-        // Process revenue for chart
         const days = [
           t('common.days_short.sun', 'Dom'),
           t('common.days_short.mon', 'Seg'),
@@ -130,15 +129,15 @@ export default function AdminDashboard() {
           const d = new Date(today.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
           const dayName = days[d.getDay()];
           const value = (weekRevenue || [])
-            .filter(r => new Date(r.data_horario).toDateString() === d.toDateString())
-            .reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
+           .filter(r => new Date(r.data_horario).toDateString() === d.toDateString())
+           .reduce((acc, curr) => acc + (Number(curr.valor_cobrado) || 0), 0);
           return { name: dayName, value };
         });
 
         setRevenueData(chartData);
         setRecentActivities(lastActivities || []);
         setStats(prev => ({
-          ...prev,
+         ...prev,
           totalUsers: profilesCount || 0,
           totalPhysios: physiosCount || 0,
           totalPatients: patientsCount || 0,
@@ -160,39 +159,39 @@ export default function AdminDashboard() {
   }, [t]);
 
   const KPI_CARDS = useMemo(() => [
-    { 
-      label: t('admin.dashboard.kpi.physios'), 
-      value: stats.totalPhysios, 
-      icon: UserCheck, 
-      color: 'blue' as const, 
-      trend: `${stats.totalPhysios > 0 ? '+100%' : '0%'}`, 
+    {
+      label: t('admin.dashboard.kpi.physios'),
+      value: stats.totalPhysios,
+      icon: UserCheck,
+      color: 'blue' as const,
+      trend: `${stats.totalPhysios > 0? '+100%' : '0%'}`,
       isPositive: true,
       description: t('admin.dashboard.kpi.physios_desc')
     },
-    { 
-      label: t('admin.dashboard.kpi.patients'), 
-      value: stats.totalPatients, 
-      icon: UserPlus, 
-      color: 'emerald' as const, 
-      trend: `${stats.patientGrowth.toFixed(1)}%`, 
+    {
+      label: t('admin.dashboard.kpi.patients'),
+      value: stats.totalPatients,
+      icon: UserPlus,
+      color: 'emerald' as const,
+      trend: `${stats.patientGrowth.toFixed(1)}%`,
       isPositive: stats.patientGrowth >= 0,
       description: t('admin.dashboard.kpi.patients_desc')
     },
-    { 
-      label: t('admin.dashboard.kpi.appointments'), 
-      value: stats.appointmentsToday, 
-      icon: Calendar, 
-      color: 'indigo' as const, 
-      trend: '', 
+    {
+      label: t('admin.dashboard.kpi.appointments'),
+      value: stats.appointmentsToday,
+      icon: Calendar,
+      color: 'indigo' as const,
+      trend: '',
       isPositive: true,
       description: t('admin.dashboard.kpi.appointments_desc')
     },
-    { 
-      label: t('admin.dashboard.kpi.revenue'), 
-      value: `R$ ${(stats.monthlyRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
-      icon: DollarSign, 
-      color: 'amber' as const, 
-      trend: `${stats.revenueGrowth.toFixed(1)}%`, 
+    {
+      label: t('admin.dashboard.kpi.revenue'),
+      value: `R$ ${(stats.monthlyRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      color: 'amber' as const,
+      trend: `${stats.revenueGrowth.toFixed(1)}%`,
       isPositive: stats.revenueGrowth >= 0,
       description: t('admin.dashboard.kpi.revenue_desc')
     }
@@ -200,10 +199,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* SaaS Style Header */}
       <div className="flex flex-col md:flex-row items-center justify-between bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden relative group">
         <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
-        
+
         <div className="relative z-10 flex items-center gap-6">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
             <Zap size={28} className="text-white fill-current" />
@@ -236,7 +234,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {KPI_CARDS.map((kpi, idx) => (
           <motion.div
@@ -249,31 +246,30 @@ export default function AdminDashboard() {
             <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110",
-                kpi.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
-                kpi.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                kpi.color === 'indigo' ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-amber-50 border-amber-100 text-amber-600'
+                kpi.color === 'blue'? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                kpi.color === 'emerald'? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                kpi.color === 'indigo'? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
               )}>
                 <kpi.icon size={22} />
               </div>
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-emerald-50/50 text-emerald-600" : "bg-rose-50/50 text-rose-500"
+                kpi.isPositive? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
               )}>
-                {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {kpi.isPositive? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {kpi.trend}
               </div>
             </div>
- 
+
             <div className="relative z-10">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
-              <p className="text-[10px] font-medium text-slate-400 mt-1">{kpi.description}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
+              <h3 className="text-3xl font-black text-white tracking-tighter tabular-nums">{loading? '...' : (kpi.value?? '')}</h3>
+              <p className="text-[10px] font-medium text-slate-500 mt-1">{kpi.description}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="admin-card p-8 overflow-hidden shadow-sm space-y-8">
           <div className="flex items-center justify-between">
@@ -282,52 +278,53 @@ export default function AdminDashboard() {
               <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
             </div>
           </div>
- 
+
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData || []}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} 
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
-                  tickFormatter={(val) => `R$${val}`} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 10 }}
+                  tickFormatter={(val) => `R$${val}`}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#ffffff', 
-                    border: '1px solid #e2e8f0', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0f172a',
+                    border: '1px solid #1e293b',
                     borderRadius: '1rem',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)',
                     fontSize: '11px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    color: '#fff'
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#3B82F6" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3B82F6"
                   strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorValue)" 
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
- 
+
         <div className="admin-card p-8 overflow-hidden shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -335,51 +332,50 @@ export default function AdminDashboard() {
               <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
             </div>
           </div>
- 
+
           <div className="flex-1 space-y-3">
             {(recentActivities || []).map((activity) => (
-              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-700/50 group">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform",
-                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-50/50 border-rose-100/50 text-rose-500' :
-                  activity.tipo_acao === 'admin_action' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                  activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-50 border-amber-100 text-amber-600' :
-                  'bg-blue-50 border-blue-100 text-blue-600'
+                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia'? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
+                  activity.tipo_acao === 'admin_action'? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                  activity.tipo_acao === 'pagamento_realizado'? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                  'bg-blue-500/10 border-blue-500/20 text-blue-400'
                 )}>
-                  {activity.tipo_acao === 'erro_sistema' ? <AlertCircle size={18} /> : 
-                   activity.tipo_acao === 'pagamento_realizado' ? <DollarSign size={18} /> : <Zap size={18} />}
+                  {activity.tipo_acao === 'erro_sistema'? <AlertCircle size={18} /> :
+                   activity.tipo_acao === 'pagamento_realizado'? <DollarSign size={18} /> : <Zap size={18} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-xs font-bold text-slate-900 truncate pr-2 tracking-tight">{activity.descricao ?? ''}</p>
-                    <span className="text-[9px] font-black text-slate-400 uppercase whitespace-nowrap">
-                      {activity.created_at ? new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                    <p className="text-xs font-bold text-white truncate pr-2 tracking-tight">{activity.descricao?? ''}</p>
+                    <span className="text-[9px] font-black text-slate-500 uppercase whitespace-nowrap">
+                      {activity.created_at? new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">USER: {(activity.usuario_id ?? '').split('-')[0]}</p>
+                  <p className="text-[10px] text-slate-500 font-medium truncate">USER: {(activity.usuario_id?? '').split('-')[0]}</p>
                 </div>
               </div>
             ))}
             {(!recentActivities || recentActivities.length === 0) && (
-              <p className="text-center text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">
+              <p className="text-center text-slate-500 text-[10px] py-10 font-bold uppercase tracking-widest">
                 {t('admin.dashboard.charts.no_activity')}
               </p>
             )}
           </div>
-          
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+
+          <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-blue-600 shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-blue-400">
                 <Activity size={18} />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-900">{(recentActivities || []).length}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('admin.dashboard.charts.live_ops')}</p>
+                <p className="text-xs font-black text-white">{(recentActivities || []).length}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase">{t('admin.dashboard.charts.live_ops')}</p>
               </div>
-            </div>
             <div className="flex -space-x-2">
                {[1,2,3].map(i => (
-                 <div key={i} className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white shadow-sm" />
+                 <div key={i} className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-900" />
                ))}
             </div>
           </div>
