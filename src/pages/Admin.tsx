@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
-import { useDebounce } from '../hooks/useDebounce';
+import { useDebounce } from '@/src/hooks/useDebounce';
 import { 
   doc, 
   getDoc, 
