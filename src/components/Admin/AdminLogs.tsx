@@ -102,8 +102,8 @@ export default function AdminLogs() {
       {/* Header & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">{t('admin.logs.title', 'Audit Trail & Central Logs')}</h3>
-          <p className="text-xs text-slate-500 font-medium">{t('admin.logs.subtitle', 'Real-time monitoring of all platform-wide operational vectors.')}</p>
+          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.logs.title', 'Audit Trail & Central Logs')}</h3>
+          <p className="admin-text-secondary text-xs font-medium">{t('admin.logs.subtitle', 'Real-time monitoring of all platform-wide operational vectors.')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -140,9 +140,9 @@ export default function AdminLogs() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Timeline View */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+          <div className="admin-card overflow-hidden bg-white">
             <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-              <h4 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <h4 className="text-sm admin-title tracking-tight flex items-center gap-2">
                 <Clock className="text-blue-600" size={16} />
                 {t('admin.logs.timeline_title', 'Activity Timeline')}
               </h4>
@@ -223,14 +223,14 @@ export default function AdminLogs() {
 
         {/* Log Inspector */}
         <div className="space-y-6">
-          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-8 sticky top-8">
+          <div className="admin-card p-8 bg-white shadow-xl sticky top-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100 shadow-sm">
                 <Shield size={24} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.logs.inspector.title', 'Log Inspector')}</h4>
-                <p className="text-[10px] text-blue-600/60 font-bold uppercase tracking-widest">{t('admin.logs.inspector.metadata', 'Internal Metadata')}</p>
+                <h4 className="text-sm admin-title uppercase tracking-tight">{t('admin.logs.inspector.title', 'Log Inspector')}</h4>
+                <p className="admin-text-secondary text-[10px] font-bold uppercase tracking-widest">{t('admin.logs.inspector.metadata', 'Internal Metadata')}</p>
               </div>
             </div>
 

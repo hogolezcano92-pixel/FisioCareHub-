@@ -244,7 +244,7 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-blue-200 transition-all"
+            className="admin-card p-6 relative overflow-hidden group"
           >
             <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
@@ -275,11 +275,11 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-8">
+        <div className="admin-card p-8 bg-white overflow-hidden shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title', 'Revenue Performance')}</h4>
-              <p className="text-xs text-slate-500 font-medium">{t('admin.dashboard.charts.revenue_desc', 'Daily income distribution')}</p>
+              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title', 'Revenue Performance')}</h4>
+              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.revenue_desc', 'Daily income distribution')}</p>
             </div>
           </div>
 
@@ -328,11 +328,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col">
+        <div className="admin-card p-8 bg-white overflow-hidden shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">{t('admin.dashboard.charts.activity_title', 'Recent Activity')}</h4>
-              <p className="text-xs text-slate-500 font-medium">{t('admin.dashboard.charts.activity_desc', 'Real-time event stream')}</p>
+              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.activity_title', 'Recent Activity')}</h4>
+              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.activity_desc', 'Real-time event stream')}</p>
             </div>
           </div>
 

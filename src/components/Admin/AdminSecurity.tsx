@@ -131,8 +131,8 @@ export default function AdminSecurity() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">{t('admin.security.access_control', 'Access Control & Security')}</h3>
-          <p className="text-xs text-slate-500 font-medium">{t('admin.security.access_desc', 'Manage sessions, reset credentials, and enforce policies.')}</p>
+          <h3 className="text-xl admin-title tracking-tight uppercase">{t('admin.security.access_control', 'Access Control & Security')}</h3>
+          <p className="admin-text-secondary text-xs font-medium">{t('admin.security.access_desc', 'Manage sessions, reset credentials, and enforce policies.')}</p>
         </div>
 
         <div className="relative">
@@ -148,16 +148,16 @@ export default function AdminSecurity() {
       </div>
 
       {/* Users Security List */}
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+      <div className="admin-card overflow-hidden bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.15em]">{t('admin.security.table.user', 'System User')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.15em]">{t('admin.security.table.tier', 'Access Tier')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.15em]">{t('admin.security.table.sync', 'Last Sync')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.15em]">{t('admin.security.table.hardware', 'Hardware')}</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] text-right">{t('admin.security.table.shield', 'Shield')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.user', 'System User')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.tier', 'Access Tier')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.sync', 'Last Sync')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">{t('admin.security.table.hardware', 'Hardware')}</th>
+                <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.15em] text-right">{t('admin.security.table.shield', 'Shield')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -286,7 +286,7 @@ export default function AdminSecurity() {
           { icon: Globe, title: t('admin.security.tools.shield_title', 'Network Shield'), desc: t('admin.security.tools.shield_desc', 'Enforce geo-fencing and restrict access to authorized IP pools.'), color: 'amber', action: t('admin.security.tools.shield_action', 'Configure') },
           { icon: CheckCircle2, title: t('admin.security.tools.lgpd_title', 'LGPD Compliance'), desc: t('admin.security.tools.lgpd_desc', 'GDPR-grade reports for sensitive data access and HIPAA audits.'), color: 'emerald', action: t('admin.security.tools.lgpd_action', 'Audit Hub') }
         ].map((tool, idx) => (
-          <div key={idx} className="bg-white p-8 rounded-[2rem] border border-slate-200 space-y-6 hover:shadow-md hover:border-slate-300 transition-all group">
+          <div key={idx} className="admin-card p-8 bg-white space-y-6 group">
             <div className={cn(
               "w-14 h-14 rounded-xl flex items-center justify-center border transition-transform group-hover:scale-110",
               tool.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
@@ -296,8 +296,8 @@ export default function AdminSecurity() {
               <tool.icon size={28} />
             </div>
             <div>
-              <h5 className="text-lg font-black text-slate-900 uppercase tracking-tight">{tool.title}</h5>
-              <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">{tool.desc}</p>
+              <h5 className="text-lg admin-title uppercase tracking-tight">{tool.title}</h5>
+              <p className="admin-text-secondary text-xs font-medium mt-2 leading-relaxed">{tool.desc}</p>
             </div>
             <button className={cn(
               "w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all",

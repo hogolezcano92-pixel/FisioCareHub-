@@ -132,7 +132,7 @@ export default function AdminViva() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col hover:border-slate-300 hover:shadow-md transition-all group"
+                className="admin-card p-7 flex flex-col group bg-white"
               >
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center mb-5 shadow-sm border",
@@ -145,8 +145,8 @@ export default function AdminViva() {
                 </div>
 
                 <div className="flex-1 space-y-3">
-                  <h4 className="text-lg font-black text-slate-900 tracking-tight leading-tight">{insight.title}</h4>
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed">{insight.description}</p>
+                  <h4 className="text-lg admin-title tracking-tight leading-tight">{insight.title}</h4>
+                  <p className="admin-text-secondary text-xs font-medium leading-relaxed">{insight.description}</p>
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-slate-100">
@@ -185,23 +185,23 @@ export default function AdminViva() {
 
       {/* Advanced Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-8 group cursor-pointer hover:border-slate-300 transition-all">
+        <div className="admin-card p-8 bg-white flex items-center gap-8 group cursor-pointer">
           <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
             <CheckCircle2 size={28} />
           </div>
           <div>
-            <h5 className="text-base font-black text-slate-900 uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title', 'Escudo Financeiro')}</h5>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc', 'Detecção proativa de fraudes e correspondência de padrões neurais para transações suspeitas.')}</p>
+            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.financial_shield_title', 'Escudo Financeiro')}</h5>
+            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.financial_shield_desc', 'Detecção proativa de fraudes e correspondência de padrões neurais para transações suspeitas.')}</p>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-8 group cursor-pointer hover:border-slate-300 transition-all">
+        <div className="admin-card p-8 bg-white flex items-center gap-8 group cursor-pointer">
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
             <TrendingUp size={28} />
           </div>
           <div>
-            <h5 className="text-base font-black text-slate-900 uppercase tracking-tight">{t('admin.viva.capabilities.growth_title', 'Previsão de Crescimento')}</h5>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc', 'Análise preditiva de churn de profissionais e trajetórias de aquisição de pacientes.')}</p>
+            <h5 className="text-base admin-title uppercase tracking-tight">{t('admin.viva.capabilities.growth_title', 'Previsão de Crescimento')}</h5>
+            <p className="admin-text-secondary text-xs font-medium leading-relaxed mt-1">{t('admin.viva.capabilities.growth_desc', 'Análise preditiva de churn de profissionais e trajetórias de aquisição de pacientes.')}</p>
           </div>
         </div>
       </div>
