@@ -199,77 +199,115 @@ export default function AdminDashboard() {
   ], [stats, t]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* SaaS Style Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-[var(--primary)]/5 blur-3xl rounded-full group-hover:bg-[var(--primary)]/10 transition-all duration-1000" />
-        
-        <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 bg-[var(--gradient)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--primary)]/20 text-[var(--white)]">
-            <Zap size={28} className="fill-current" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black text-[var(--text)] tracking-tight">{t('admin.dashboard.command_center')}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10 hidden lg:flex items-center gap-12 mt-6 md:mt-0">
-          <div className="text-center">
-            <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health')}</p>
-            <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm">
-              <ShieldCheck size={16} />
-              {t('admin.dashboard.operational')}
-            </div>
-          </div>
-          <div className="w-px h-10 bg-[var(--border)]" />
-          <div className="text-center">
-            <p className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network')}</p>
-            <div className="flex items-center gap-2 text-[var(--primary-2)] font-bold text-sm">
-              <CheckCircle2 size={16} />
-              {t('admin.dashboard.synchronized')}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Grid */}
+    <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-700">
+      {/* KPI Grid - Replaced with High Fidelity Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {KPI_CARDS.map((kpi, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded-[var(--radius)] p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300"
-          >
-            <div className="relative z-10 flex justify-between items-start mb-4">
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center border transition-all group-hover:scale-110",
-                "bg-[var(--bg)] border-[var(--border)] text-[var(--primary)] shadow-sm"
-              )}>
-                <kpi.icon size={22} />
-              </div>
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
-              )}>
-                {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                {kpi.trend}
+        {/* Card 1: Centro de Comando */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[24px] p-6 shadow-xl border border-gray-100 flex flex-col justify-between min-h-[160px] group relative overflow-hidden"
+        >
+          <div className="relative z-10 flex items-center justify-between mb-4">
+             <h3 className="text-[11px] font-black text-[#7B2CBF] uppercase tracking-widest">Centro de Comando</h3>
+             <div className="w-10 h-10 bg-[#7B2CBF]/10 rounded-full flex items-center justify-center text-[#7B2CBF]">
+                <Zap size={20} className="fill-current" />
+             </div>
+          </div>
+          <div className="relative z-10 space-y-1">
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#7B2CBF] animate-pulse" />
+                <span className="text-[10px] font-bold text-[#7B2CBF] tracking-wider">0 SESSÕES ATIVAS</span>
+             </div>
+             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Monitoramento em Tempo Real</p>
+          </div>
+          {/* Decorative floating icon */}
+          <Zap size={80} className="absolute -bottom-6 -right-6 text-[#7B2CBF]/5 rotate-12 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+        </motion.div>
+
+        {/* Card 2: Fisioterapeutas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-[24px] shadow-xl border border-gray-100 overflow-hidden flex flex-col group"
+        >
+          <div className="p-6 flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[11px] font-black text-[#7B2CBF] uppercase tracking-widest">FISIOTERAPEUTAS</h3>
+              <div className="w-10 h-10 bg-gradient-to-br from-[#3A86FF] to-[#7B2CBF] rounded-full flex items-center justify-center text-white">
+                <Users size={18} />
               </div>
             </div>
- 
-            <div className="relative z-10">
-              <p className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-[var(--text)] tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
-              <p className="text-[10px] font-medium text-[var(--text-2)] mt-1">{kpi.description}</p>
+            <div className="flex flex-col">
+              <h4 className="text-5xl font-black text-[#0A1931] tracking-tighter leading-none mb-1">{loading ? '...' : stats.totalPhysios}</h4>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Base total cadastrada</p>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[var(--primary)]/5 blur-2xl rounded-full group-hover:bg-[var(--primary)]/10 transition-all duration-500" />
-          </motion.div>
-        ))}
+          </div>
+          <div className="h-10 bg-gradient-to-r from-[#3A86FF] to-[#7B2CBF] flex items-center px-6">
+             <div className="flex items-center gap-1.5 text-white">
+                <ArrowUpRight size={14} className="font-black" />
+                <span className="text-[11px] font-black">+100%</span>
+             </div>
+          </div>
+        </motion.div>
+
+        {/* Card 3: Novos Pacientes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-[24px] shadow-xl border border-gray-100 overflow-hidden flex flex-col group"
+        >
+          <div className="p-6 flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[11px] font-black text-[#7B2CBF] uppercase tracking-widest">NOVOS PACIENTES</h3>
+              <div className="w-10 h-10 bg-[#0A1931]/5 border border-gray-100 rounded-full flex items-center justify-center text-[#3A86FF]">
+                <UserPlus size={18} />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <h4 className="text-5xl font-black text-[#0A1931] tracking-tighter leading-none mb-1">{loading ? '...' : stats.totalPatients}</h4>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Crescimento mensal</p>
+            </div>
+          </div>
+          <div className="h-10 bg-[#0A1931] flex items-center px-6 border-b-4 border-[#7B2CBF]">
+             <div className="flex items-center gap-1.5 text-[#7B2CBF]">
+                <TrendingDown size={14} className="font-black" />
+                <span className="text-[11px] font-black text-white/90">↓ {stats.patientGrowth.toFixed(1)}%</span>
+             </div>
+          </div>
+        </motion.div>
+
+        {/* Card 4: Consultas Hoje */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-[24px] shadow-xl border border-gray-100 overflow-hidden flex flex-col group relative"
+        >
+          <button className="absolute top-4 right-4 w-8 h-8 bg-[#F8F9FF] text-[#7B2CBF] rounded-lg flex items-center justify-center hover:bg-[#7B2CBF] hover:text-white transition-all z-20">
+            <ArrowUpRight size={16} />
+          </button>
+          <div className="p-6 flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[11px] font-black text-[#7B2CBF] uppercase tracking-widest">CONSULTAS HOJE</h3>
+              <div className="w-10 h-10 bg-[#F8F9FF] rounded-full flex items-center justify-center text-[#7B2CBF]">
+                <Calendar size={18} />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <h4 className="text-5xl font-black text-[#0A1931] tracking-tighter leading-none mb-1">{loading ? '...' : stats.appointmentsToday}</h4>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Volume operacional</p>
+            </div>
+          </div>
+          <div className="h-10 bg-gradient-to-r from-[#7B2CBF] to-[#5A189A] flex items-center px-6">
+             <div className="flex items-center gap-1.5 text-white">
+                <TrendingUp size={14} className="font-black" />
+                <span className="text-[11px] font-black">↑ {stats.appointmentsToday > 0 ? '+12.5%' : 'N/A'}</span>
+             </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Charts Section */}
