@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { 
   AreaChart, 
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* SaaS Style Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden relative group">
+      <div className="flex flex-col md:flex-row items-center justify-between bg-white/90 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden relative group">
         <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
         
         <div className="relative z-10 flex items-center gap-6">
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="admin-card p-6 relative overflow-hidden group"
+            className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-[2.5rem] p-6 relative overflow-hidden group hover:shadow-md transition-all duration-300"
           >
             <div className="relative z-10 flex justify-between items-start mb-4">
               <div className={cn(
@@ -275,11 +275,11 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="admin-card p-8 overflow-hidden shadow-sm space-y-8">
+        <div className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-[2.5rem] p-8 overflow-hidden space-y-8 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title')}</h4>
-              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
+              <h4 className="text-lg text-slate-900 font-black tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title')}</h4>
+              <p className="text-slate-500 text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
             </div>
           </div>
  
@@ -328,11 +328,11 @@ export default function AdminDashboard() {
           </div>
         </div>
  
-        <div className="admin-card p-8 overflow-hidden shadow-sm flex flex-col">
+        <div className="bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-sm rounded-[2.5rem] p-8 overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.activity_title')}</h4>
-              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
+              <h4 className="text-lg text-slate-900 font-black tracking-tight uppercase">{t('admin.dashboard.charts.activity_title')}</h4>
+              <p className="text-slate-500 text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
             </div>
           </div>
  
