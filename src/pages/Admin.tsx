@@ -1472,7 +1472,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="flex admin-dashboard font-sans w-full overflow-x-hidden relative">
+    <div className="flex admin-dashboard font-sans w-full min-h-screen bg-white overflow-x-hidden relative">
       {/* User Detail Modal */}
       <AnimatePresence>
         {selectedUserDetail && (
@@ -1702,7 +1702,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] w-64 admin-sidebar transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[60] w-64 bg-[#06B6D4] transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 border-r border-cyan-400/30 shadow-2xl",
           !sidebarOpen ? "-translate-x-full lg:w-20" : "translate-x-0"
         )}
       >
@@ -1749,11 +1749,11 @@ export default function Admin() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all group",
                   activeTab === item.id 
-                    ? "sidebar-item-active shadow-sm" 
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-white/20 text-white shadow-sm" 
+                    : "text-white/70 hover:text-white hover:bg-white/10"
                 )}
               >
-                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-[#06b6d4]" : "text-white/40 group-hover:text-[#06b6d4]")} />
+                <item.icon size={20} className={cn("flex-shrink-0", activeTab === item.id ? "text-white" : "text-white/40 group-hover:text-white")} />
                 <span className={cn("transition-opacity", !sidebarOpen && "lg:hidden")}>{item.label}</span>
               </button>
             ))}
@@ -1777,27 +1777,27 @@ export default function Admin() {
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-white/5">
-            <div className={cn(
-              "flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 transition-all",
-              !sidebarOpen && "lg:justify-center lg:p-2"
-            )}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg overflow-hidden">
-                {authProfile?.avatar_url || authProfile?.foto_url ? (
-                  <img 
-                    src={authProfile.avatar_url || authProfile.foto_url} 
-                    alt="" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  firebaseUser?.email?.charAt(0).toUpperCase() || 'H'
-                )}
+              <div className={cn(
+                "flex items-center gap-3 p-3 rounded-2xl bg-black/10 border border-white/10 transition-all",
+                !sidebarOpen && "lg:justify-center lg:p-2"
+              )}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-slate-800 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-lg overflow-hidden border border-white/10">
+                  {authProfile?.avatar_url || authProfile?.foto_url ? (
+                    <img 
+                      src={authProfile.avatar_url || authProfile.foto_url} 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    firebaseUser?.email?.charAt(0).toUpperCase() || 'H'
+                  )}
+                </div>
+                <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
+                  <p className="text-sm font-black text-white truncate">Admin Master</p>
+                  <p className="text-[10px] font-bold text-white/50 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
+                </div>
               </div>
-              <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:hidden lg:opacity-0 lg:w-0")}>
-                <p className="text-sm font-black text-white truncate">Admin Master</p>
-                <p className="text-[10px] font-bold text-white/40 truncate uppercase tracking-widest">{firebaseUser?.email || 'hogolezcano92@gmail.com'}</p>
-              </div>
-            </div>
           </div>
         </div>
       </aside>
@@ -1805,12 +1805,12 @@ export default function Admin() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-white/60 backdrop-blur-xl border-b border-slate-200/40 shadow-sm pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 w-full bg-[#0F172A] border-b border-slate-800 shadow-sm pt-[env(safe-area-inset-top)] text-white">
           <div className="w-full px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
               <button 
-                className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-all active:scale-95" 
+                className="lg:hidden p-2 text-white/70 hover:bg-slate-800 rounded-xl transition-all active:scale-95" 
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu size={24} />
@@ -1841,21 +1841,21 @@ export default function Admin() {
               <div className="relative hidden md:block">
                 <Search 
                   className="absolute pointer-events-none z-20" 
-                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#94a3b8' }}
+                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#cbd5e1' }}
                 />
                 <input 
                   type="text" 
                   placeholder={t('admin.header.search_placeholder', 'Universal Search...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white focus:border-blue-500/30 transition-all w-32 lg:w-64"
+                  className="pl-9 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:bg-slate-800 focus:border-cyan-500/30 transition-all w-32 lg:w-64"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-all relative">
+                <button className="p-2 text-slate-400 hover:bg-slate-800 rounded-xl transition-all relative">
                   <Bell size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0F172A]" />
                 </button>
               </div>
             </div>
@@ -1863,7 +1863,7 @@ export default function Admin() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar">
+        <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-8 overflow-x-hidden custom-scrollbar bg-white">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
