@@ -7,6 +7,16 @@
   --font-display: "Playfair Display", serif;
   --font-accent: "Poppins", sans-serif;
   
+  /* FisioCareHub Exact Theme Colors */
+  --fisio-bg: #0A1931;
+  --fisio-sidebar: #071230;
+  --fisio-purple: #7B2CBF;
+  --fisio-purple-logo: #8A2BE2;
+  --fisio-blue: #3A86FF;
+  --fisio-card-bg: #FFFFFF;
+  --fisio-card-text: #0A1931;
+  --fisio-text-white: #FFFFFF;
+
   /* Meta AI Dark Theme Colors */
   --color-dark-bg: var(--bg);
   --color-dark-surface: var(--surface);
