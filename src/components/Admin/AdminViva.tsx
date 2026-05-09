@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
+import KineAI from '../KineAI';
 import { 
   Sparkles, 
   Brain, 
@@ -29,6 +30,7 @@ export default function AdminViva() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [openViva, setOpenViva] = useState(false);
 
   const generateInsights = async () => {
     setAnalyzing(true);
@@ -85,12 +87,12 @@ export default function AdminViva() {
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-black uppercase tracking-[0.2em]">
               <Sparkles size={12} className="text-blue-200" />
-              Advanced Neural Intelligence
+              Inteligência Neural Avançada
             </div>
-            <h2 className="text-4xl font-black tracking-tight">I am Viva, Your AI Strategist.</h2>
+            <h2 className="text-4xl font-black tracking-tight">Eu sou Viva, sua Estrategista de IA.</h2>
             <p className="text-base font-medium text-blue-50/80 max-w-2xl leading-relaxed">
-              Synthesizing real-time operational data to detect anomalies, 
-              forecast network growth, and optimize platform efficiency.
+              Sintetizando dados operacionais em tempo real para detectar anomalias, 
+              prever o crescimento da rede e otimizar a eficiência da plataforma.
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-4">
               <button 
@@ -99,16 +101,24 @@ export default function AdminViva() {
                 className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2"
               >
                 {analyzing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                Generate Dynamic Insights
+                Gerar Insights Dinâmicos
               </button>
-              <button className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest border border-white/20 transition-all flex items-center gap-2">
+              <button 
+                onClick={() => setOpenViva(true)}
+                className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest border border-white/20 transition-all flex items-center gap-2"
+              >
                 <MessageSquare size={18} />
-                Cognitive Interface
+                Falar com a Viva
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <KineAI 
+        externalForceOpen={openViva} 
+        onClose={() => setOpenViva(false)} 
+      />
 
       {/* Insights Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
