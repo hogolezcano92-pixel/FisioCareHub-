@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -159,49 +159,49 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, [t]);
 
-  const KPI_CARDS = [
+  const KPI_CARDS = useMemo(() => [
     { 
-      label: t('admin.dashboard.kpi.physios', 'Fisioterapeutas'), 
+      label: t('admin.dashboard.kpi.physios'), 
       value: stats.totalPhysios, 
       icon: UserCheck, 
-      color: 'blue', 
+      color: 'blue' as const, 
       trend: `${stats.totalPhysios > 0 ? '+100%' : '0%'}`, 
       isPositive: true,
-      description: t('admin.dashboard.kpi.physios_desc', 'Base total cadastrada')
+      description: t('admin.dashboard.kpi.physios_desc')
     },
     { 
-      label: t('admin.dashboard.kpi.patients', 'Novos Pacientes'), 
+      label: t('admin.dashboard.kpi.patients'), 
       value: stats.totalPatients, 
       icon: UserPlus, 
-      color: 'emerald', 
+      color: 'emerald' as const, 
       trend: `${stats.patientGrowth.toFixed(1)}%`, 
       isPositive: stats.patientGrowth >= 0,
-      description: t('admin.dashboard.kpi.patients_desc', 'Crescimento mensal')
+      description: t('admin.dashboard.kpi.patients_desc')
     },
     { 
-      label: t('admin.dashboard.kpi.appointments', 'Consultas Hoje'), 
+      label: t('admin.dashboard.kpi.appointments'), 
       value: stats.appointmentsToday, 
       icon: Calendar, 
-      color: 'indigo', 
+      color: 'indigo' as const, 
       trend: '', 
       isPositive: true,
-      description: t('admin.dashboard.kpi.appointments_desc', 'Volume operacional')
+      description: t('admin.dashboard.kpi.appointments_desc')
     },
     { 
-      label: t('admin.dashboard.kpi.revenue', 'Faturamento Mensal'), 
-      value: `R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+      label: t('admin.dashboard.kpi.revenue'), 
+      value: `R$ ${(stats.monthlyRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
       icon: DollarSign, 
-      color: 'amber', 
+      color: 'amber' as const, 
       trend: `${stats.revenueGrowth.toFixed(1)}%`, 
       isPositive: stats.revenueGrowth >= 0,
-      description: t('admin.dashboard.kpi.revenue_desc', 'Receita confirmada')
+      description: t('admin.dashboard.kpi.revenue_desc')
     }
-  ];
+  ], [stats, t]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* SaaS Style Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
+      <div className="flex flex-col md:flex-row items-center justify-between bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden relative group">
         <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-blue-50 blur-3xl rounded-full group-hover:bg-blue-100 transition-all duration-1000" />
         
         <div className="relative z-10 flex items-center gap-6">
@@ -209,28 +209,28 @@ export default function AdminDashboard() {
             <Zap size={28} className="text-white fill-current" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('admin.dashboard.command_center', 'Command Center')}</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('admin.dashboard.command_center')}</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions', 'Active Sessions')}</p>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{stats.onlineUsers} {t('admin.dashboard.active_sessions')}</p>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 hidden lg:flex items-center gap-12 mt-6 md:mt-0">
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health', 'System Health')}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.system_health')}</p>
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
               <ShieldCheck size={16} />
-              {t('admin.dashboard.operational', 'Operational')}
+              {t('admin.dashboard.operational')}
             </div>
           </div>
           <div className="w-px h-10 bg-slate-100" />
           <div className="text-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network', 'Network')}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{t('admin.dashboard.network')}</p>
             <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
               <CheckCircle2 size={16} />
-              {t('admin.dashboard.synchronized', 'Synchronized')}
+              {t('admin.dashboard.synchronized')}
             </div>
           </div>
         </div>
@@ -257,16 +257,16 @@ export default function AdminDashboard() {
               </div>
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter",
-                kpi.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                kpi.isPositive ? "bg-emerald-50/50 text-emerald-600" : "bg-rose-50/50 text-rose-500"
               )}>
                 {kpi.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {kpi.trend}
               </div>
             </div>
-
+ 
             <div className="relative z-10">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{loading ? '...' : kpi.value}</h3>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{loading ? '...' : (kpi.value ?? '')}</h3>
               <p className="text-[10px] font-medium text-slate-400 mt-1">{kpi.description}</p>
             </div>
           </motion.div>
@@ -275,17 +275,17 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="admin-card p-8 bg-white overflow-hidden shadow-sm space-y-8">
+        <div className="admin-card p-8 overflow-hidden shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title', 'Revenue Performance')}</h4>
-              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.revenue_desc', 'Daily income distribution')}</p>
+              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.revenue_title')}</h4>
+              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.revenue_desc')}</p>
             </div>
           </div>
-
+ 
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
+              <AreaChart data={revenueData || []}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
@@ -327,21 +327,21 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="admin-card p-8 bg-white overflow-hidden shadow-sm flex flex-col">
+ 
+        <div className="admin-card p-8 overflow-hidden shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.activity_title', 'Recent Activity')}</h4>
-              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.activity_desc', 'Real-time event stream')}</p>
+              <h4 className="text-lg admin-title tracking-tight uppercase">{t('admin.dashboard.charts.activity_title')}</h4>
+              <p className="admin-text-secondary text-xs font-medium">{t('admin.dashboard.charts.activity_desc')}</p>
             </div>
           </div>
-
+ 
           <div className="flex-1 space-y-3">
-            {recentActivities.map((activity) => (
+            {(recentActivities || []).map((activity) => (
               <div key={activity.id} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform",
-                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+                  activity.tipo_acao === 'erro_sistema' || activity.tipo_acao === 'acao_suspicia' ? 'bg-rose-50/50 border-rose-100/50 text-rose-500' :
                   activity.tipo_acao === 'admin_action' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
                   activity.tipo_acao === 'pagamento_realizado' ? 'bg-amber-50 border-amber-100 text-amber-600' :
                   'bg-blue-50 border-blue-100 text-blue-600'
@@ -351,18 +351,18 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-xs font-bold text-slate-900 truncate pr-2 tracking-tight">{activity.descricao}</p>
+                    <p className="text-xs font-bold text-slate-900 truncate pr-2 tracking-tight">{activity.descricao ?? ''}</p>
                     <span className="text-[9px] font-black text-slate-400 uppercase whitespace-nowrap">
-                      {new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {activity.created_at ? new Date(activity.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">USER: {activity.usuario_id.split('-')[0]}</p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">USER: {(activity.usuario_id ?? '').split('-')[0]}</p>
                 </div>
               </div>
             ))}
-            {recentActivities.length === 0 && (
+            {(!recentActivities || recentActivities.length === 0) && (
               <p className="text-center text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">
-                {t('admin.dashboard.charts.no_activity', 'No recent activity detected.')}
+                {t('admin.dashboard.charts.no_activity')}
               </p>
             )}
           </div>
@@ -373,8 +373,8 @@ export default function AdminDashboard() {
                 <Activity size={18} />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-900">{recentActivities.length}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('admin.dashboard.charts.live_ops', 'Live Operations')}</p>
+                <p className="text-xs font-black text-slate-900">{(recentActivities || []).length}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('admin.dashboard.charts.live_ops')}</p>
               </div>
             </div>
             <div className="flex -space-x-2">

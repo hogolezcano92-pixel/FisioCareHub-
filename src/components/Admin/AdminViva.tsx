@@ -132,11 +132,11 @@ export default function AdminViva() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.1 }}
-                className="admin-card p-7 flex flex-col group bg-white"
+                className="admin-card p-7 flex flex-col group"
               >
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center mb-5 shadow-sm border",
-                  insight.type === 'risk' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+                  insight.type === 'risk' ? 'bg-rose-50/50 border-rose-100/50 text-rose-500' :
                   insight.type === 'growth' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
                   'bg-blue-50 border-blue-100 text-blue-600'
                 )}>
@@ -185,7 +185,7 @@ export default function AdminViva() {
 
       {/* Advanced Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="admin-card p-8 bg-white flex items-center gap-8 group cursor-pointer">
+        <div className="admin-card p-8 flex items-center gap-8 group cursor-pointer">
           <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
             <CheckCircle2 size={28} />
           </div>
@@ -195,7 +195,7 @@ export default function AdminViva() {
           </div>
         </div>
 
-        <div className="admin-card p-8 bg-white flex items-center gap-8 group cursor-pointer">
+        <div className="admin-card p-8 flex items-center gap-8 group cursor-pointer">
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm" >
             <TrendingUp size={28} />
           </div>

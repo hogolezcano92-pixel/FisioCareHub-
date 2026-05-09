@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { useDebounce } from '../../hooks/useDebounce';
 import { 
   Clock, 
   Search, 
@@ -40,6 +41,7 @@ export default function AdminLogs() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [filterType, setFilterType] = useState('all');
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
 
@@ -48,8 +50,22 @@ export default function AdminLogs() {
 
     const channel = supabase
       .channel('admin_audit_logs')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'historico_atividades' }, () => {
-        fetchLogs();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'historico_atividades' }, async (payload) => {
+        const newLog = payload.new as Log;
+        
+        // Fetch profile for the new log to maintain UI consistency
+        const { data: profile } = await supabase
+          .from('perfis')
+          .select('nome_completo, email, foto_url')
+          .eq('id', newLog.usuario_id)
+          .single();
+        
+        const logWithProfile = {
+          ...newLog,
+          perfil: profile || undefined
+        };
+
+        setLogs(prev => [logWithProfile, ...prev].slice(0, 100));
       })
       .subscribe();
 
@@ -83,7 +99,7 @@ export default function AdminLogs() {
       const descricao = (log.descricao ?? '').toLowerCase();
       const nomeCompleto = (log.perfil?.nome_completo ?? '').toLowerCase();
       const tipoAcao = (log.tipo_acao ?? '').toLowerCase();
-      const search = (searchTerm ?? '').toLowerCase();
+      const search = (debouncedSearch ?? '').toLowerCase();
 
       const matchesSearch = 
         descricao.includes(search) ||
@@ -94,7 +110,7 @@ export default function AdminLogs() {
       
       return matchesSearch && matchesFilter;
     });
-  }, [logs, searchTerm, filterType]);
+  }, [logs, debouncedSearch, filterType]);
 
   const getActionIcon = (type: string) => {
     const actionType = type ?? '';
@@ -148,7 +164,7 @@ export default function AdminLogs() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Timeline View */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="admin-card overflow-hidden bg-white">
+          <div className="admin-card overflow-hidden">
             <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h4 className="text-sm admin-title tracking-tight flex items-center gap-2">
                 <Clock className="text-blue-600" size={16} />
@@ -231,7 +247,7 @@ export default function AdminLogs() {
 
         {/* Log Inspector */}
         <div className="space-y-6">
-          <div className="admin-card p-8 bg-white shadow-xl sticky top-8">
+          <div className="admin-card p-8 shadow-xl sticky top-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100 shadow-sm">
                 <Shield size={24} />

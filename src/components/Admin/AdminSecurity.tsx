@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { useDebounce } from '../../hooks/useDebounce';
 import { 
   ShieldAlert, 
   UserX, 
@@ -37,6 +38,7 @@ export default function AdminSecurity() {
   const [loading, setLoading] = useState(true);
   const [suspiciousCount, setSuspiciousCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [showOptions, setShowOptions] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,32 +103,32 @@ export default function AdminSecurity() {
     return users.filter(u => {
       const nomeCompleto = (u.nome_completo ?? '').toLowerCase();
       const email = (u.email ?? '').toLowerCase();
-      const search = (searchTerm ?? '').toLowerCase();
+      const search = (debouncedSearch ?? '').toLowerCase();
 
       return nomeCompleto.includes(search) || email.includes(search);
     });
-  }, [users, searchTerm]);
+  }, [users, debouncedSearch]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Alert Banner for Suspicious Activity */}
       {suspiciousCount > 0 && (
-        <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-100 blur-3xl rounded-full group-hover:bg-rose-200 transition-all duration-1000" />
+        <div className="bg-rose-50/50 p-6 rounded-3xl border border-rose-100/50 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-rose-100/30 blur-3xl rounded-full group-hover:bg-rose-200/40 transition-all duration-1000" />
           
           <div className="flex items-center gap-6 relative z-10">
-            <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center shadow-sm animate-pulse">
+            <div className="w-14 h-14 bg-rose-100/50 text-rose-500 rounded-2xl flex items-center justify-center shadow-sm animate-pulse">
               <ShieldAlert size={28} />
             </div>
             <div>
               <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('admin.security.threats_detected')}</h4>
-              <p className="text-rose-600 font-bold text-xs">{suspiciousCount} {t('admin.security.flagged_events')}</p>
+              <p className="text-rose-500 font-bold text-xs">{suspiciousCount} {t('admin.security.flagged_events')}</p>
             </div>
           </div>
           
           <button 
             onClick={() => toast.info('Analyzing digital footprints...')}
-            className="relative z-10 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-rose-100 transition-all active:scale-95 flex items-center gap-2"
+            className="relative z-10 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-rose-100/50 transition-all active:scale-95 flex items-center gap-2"
           >
             <ZapOff size={18} />
             {t('admin.security.lockdown')}
@@ -153,7 +155,7 @@ export default function AdminSecurity() {
       </div>
 
       {/* Users Security List */}
-      <div className="admin-card overflow-hidden bg-white">
+      <div className="admin-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -291,7 +293,7 @@ export default function AdminSecurity() {
           { icon: Globe, title: t('admin.security.tools.shield_title'), desc: t('admin.security.tools.shield_desc'), color: 'amber', action: t('admin.security.tools.shield_action') },
           { icon: CheckCircle2, title: t('admin.security.tools.lgpd_title'), desc: t('admin.security.tools.lgpd_desc'), color: 'emerald', action: t('admin.security.tools.lgpd_action') }
         ].map((tool, idx) => (
-          <div key={idx} className="admin-card p-8 bg-white space-y-6 group">
+          <div key={idx} className="admin-card p-8 space-y-6 group">
             <div className={cn(
               "w-14 h-14 rounded-xl flex items-center justify-center border transition-transform group-hover:scale-110",
               tool.color === 'blue' ? 'bg-blue-50 border-blue-100 text-blue-600' :
