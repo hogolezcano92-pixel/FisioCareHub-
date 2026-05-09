@@ -1,12 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+@import "./theme-dark.css";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
   --font-accent: "Poppins", sans-serif;
   
-  /* Dynamic Theme Variables */
+  /* FisioCareHub Exact Theme Colors */
+  --fisio-bg: #0A1931;
+  --fisio-sidebar: #071230;
+  --fisio-purple: #7B2CBF;
+  --fisio-purple-logo: #8A2BE2;
+  --fisio-blue: #3A86FF;
+  --fisio-card-bg: #FFFFFF;
+  --fisio-card-text: #0A1931;
+  --fisio-text-white: #FFFFFF;
+
+  /* Meta AI Dark Theme Colors */
+  --color-dark-bg: var(--bg);
+  --color-dark-surface: var(--surface);
+  --color-dark-border: var(--border);
+  --color-dark-text: var(--text);
+  --color-dark-text-muted: var(--text-2);
+  --color-dark-primary: var(--primary);
+  --color-dark-primary-2: var(--primary-2);
+  --color-dark-gradient: var(--gradient);
   --color-primary: var(--theme-primary, #0047AB);
   --color-primary-hover: var(--theme-primary-hover, #003580);
   --color-bg-general: var(--theme-bg, #0B1120);
@@ -21,6 +40,17 @@
   /* Unified Background/Text */
   --color-background: var(--theme-bg, #0B1120);
   --color-foreground: var(--theme-text, #FFFFFF);
+
+  /* Admin SaaS Theme Variables */
+  --admin-sidebar-bg: #0F172A;
+  --admin-dashboard-bg: #F8FAFC;
+  --admin-card-bg: rgba(255, 255, 255, 0.8);
+  --admin-cyan: #38bdf8;
+  --admin-purple: #6B4EFF;
+  --admin-text-main: #0F172A;
+  --admin-text-secondary: #64748B;
+  --admin-rose: #f43f5e;
+  --admin-rose-soft: rgba(244, 63, 94, 0.1);
 
   /* Premium Shadows */
   --shadow-premium: 0 4px 20px -5px rgba(var(--theme-shadow-rgb, 0, 71, 171), 0.2);
@@ -56,6 +86,70 @@
   }
   .animate-ken-burns {
     animation: ken-burns 20s ease-in-out infinite;
+  }
+
+  /* Admin SaaS Utility Classes */
+  .admin-dashboard {
+    background-image: radial-gradient(at top, rgba(59, 130, 246, 0.05) 0%, transparent 70%), 
+                      linear-gradient(to bottom right, #f8fafc, #ffffff, #eff6ff);
+    background-attachment: fixed;
+    color: var(--admin-text-main);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .admin-dashboard::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 600px;
+    background: radial-gradient(circle at 50% -100px, rgba(59, 130, 246, 0.08), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .admin-sidebar {
+    background-color: var(--admin-sidebar-bg);
+    box-shadow: 10px 0 30px -10px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+  }
+
+  .admin-card {
+    background-color: var(--admin-card-bg);
+    backdrop-filter: blur(8px);
+    border-radius: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+  }
+
+  .admin-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .admin-title {
+    color: var(--admin-purple);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+  }
+
+  .admin-text-secondary {
+    color: var(--admin-text-secondary);
+  }
+
+  .sidebar-item-active {
+    color: var(--admin-cyan);
+    background-color: rgba(6, 182, 212, 0.1);
+  }
+
+  .sidebar-item-hover:hover {
+    color: var(--admin-cyan);
   }
 
   .text-ice {
