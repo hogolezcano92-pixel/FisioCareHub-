@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
+import { useDebounce } from '../hooks/useDebounce';
 import { 
   doc, 
   getDoc, 
@@ -91,6 +92,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [firebaseLoginLoading, setFirebaseLoginLoading] = useState(false);
@@ -1401,17 +1403,66 @@ export default function Admin() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Memoized Filtered Lists for Performance
+  const filteredSupabaseProfiles = useMemo(() => {
+    return supabaseProfiles.filter(p => {
+      const search = debouncedSearch.toLowerCase();
+      const name = (p.nome_completo || '').toLowerCase();
+      const email = (p.email || '').toLowerCase();
+      return name.includes(search) || email.includes(search);
+    });
+  }, [supabaseProfiles, debouncedSearch]);
 
-  const STATS_CARDS = [
-    { label: 'Total de Usuários', value: stats.totalUsers.toString(), icon: Users, color: 'blue' },
-    { label: 'Fisios Ativos', value: stats.activePhysios.toString(), icon: UserCheck, color: 'emerald' },
-    { label: 'Total Faturado', value: `R$ ${stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: 'indigo' },
-    { label: 'Líquido Fisio', value: `R$ ${stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity, color: 'emerald' },
-  ];
+  const filteredPhysios = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta' &&
+      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+       (p.crefito || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
+    );
+  }, [supabaseProfiles, debouncedSearch]);
+
+  const filteredPatients = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario || '').toLowerCase() === 'paciente' &&
+      ((p.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+       (p.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
+    );
+  }, [supabaseProfiles, debouncedSearch]);
+
+  const filteredApprovals = useMemo(() => {
+    return supabaseProfiles.filter(p => 
+      (p.tipo_usuario === 'fisioterapeuta') && 
+      (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
+    );
+  }, [supabaseProfiles]);
+
+  const filteredMaterials = useMemo(() => {
+    return materiais.filter(m => 
+      (m.title || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (m.category || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [materiais, debouncedSearch]);
+
+  const filteredWithdrawals = useMemo(() => {
+    return withdrawals.filter(w => {
+      if (withdrawalFilter === 'todos') return true;
+      return w.status === withdrawalFilter;
+    });
+  }, [withdrawals, withdrawalFilter]);
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(t => 
+      (t.assunto || t.subject || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (t.usuario?.nome_completo || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [tickets, debouncedSearch]);
+
+  const STATS_CARDS = useMemo(() => [
+    { label: t('admin.dashboard.kpi.users', 'Total de Usuários'), value: stats.totalUsers.toString(), icon: Users, color: 'blue' },
+    { label: t('admin.dashboard.kpi.physios', 'Fisios Ativos'), value: stats.activePhysios.toString(), icon: UserCheck, color: 'emerald' },
+    { label: t('admin.dashboard.kpi.revenue', 'Total Faturado'), value: `R$ ${stats.totalPaidByPatients.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: 'indigo' },
+    { label: t('admin.dashboard.kpi.net_physio', 'Líquido Fisio'), value: `R$ ${stats.totalNetPhysio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity, color: 'emerald' },
+  ], [stats, t]);
 
   if (!mounted || checkingAdmin) {
     return <SplashScreen />;
@@ -1438,10 +1489,10 @@ export default function Admin() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200"
+              className="relative bg-white/90 backdrop-blur-xl w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/20"
             >
               {/* Modal Header */}
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
+              <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-lg shadow-blue-500/20">
                     {selectedUserDetail.foto_url || selectedUserDetail.avatar_url ? (
@@ -1753,9 +1804,9 @@ export default function Admin() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-white">
+      <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 w-full bg-white/60 backdrop-blur-xl border-b border-slate-200/40 shadow-sm pt-[env(safe-area-inset-top)]">
           <div className="w-full px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
             {/* Left Section */}
             <div className="flex-1 flex items-center min-w-0">
@@ -1870,7 +1921,7 @@ export default function Admin() {
               </div>
 
               {/* AI GENERATOR SECTION */}
-              <div className="p-8 admin-card relative overflow-hidden bg-white">
+              <div className="p-8 admin-card relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                    <Sparkles size={120} className="text-[#06b6d4]" />
                 </div>
@@ -1937,7 +1988,7 @@ export default function Admin() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {materiais.map((m) => (
-                  <div key={m.id} className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden group hover:shadow-blue-900/10 transition-all">
+                  <div key={m.id} className="admin-card overflow-hidden group hover:shadow-blue-900/10">
                     <div className="h-40 relative overflow-hidden">
                       <img 
                         src={m.cover_image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1200'} 
@@ -1994,11 +2045,11 @@ export default function Admin() {
                       initial={{ opacity: 0, scale: 0.9, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                      className="relative bg-[#0B1120] w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden p-8 space-y-6"
+                      className="relative bg-white/90 backdrop-blur-xl w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden p-8 space-y-6"
                     >
                       <div className="flex items-center justify-between">
-                        <h3 className="text-2xl font-black text-white tracking-tight">Novo Material</h3>
-                        <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-white">
+                        <h3 className="text-2xl font-black admin-title tracking-tight">{t('admin.library.new_material', 'Novo Material')}</h3>
+                        <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-600">
                           <X size={24} />
                         </button>
                       </div>
@@ -2006,22 +2057,22 @@ export default function Admin() {
                       <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                         <div className="space-y-4">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Título</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.form.title', 'Título')}</label>
                             <input 
                               type="text" 
                               value={newMaterial.title}
                               onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
-                              placeholder="Ex: Guia de Exercícios para Lombar"
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                              placeholder={t('admin.library.form.title_placeholder', "Ex: Guia de Exercícios para Lombar")}
+                              className="w-full px-4 py-3 bg-white/5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Descrição</label>
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('admin.library.form.description', 'Descrição')}</label>
                             <textarea 
                               value={newMaterial.description}
                               onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
-                              placeholder="Breve descrição do conteúdo..."
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 outline-none h-20 resize-none"
+                              placeholder={t('admin.library.form.description_placeholder', "Breve descrição do conteúdo...")}
+                              className="w-full px-4 py-3 bg-white/5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 outline-none h-20 resize-none"
                             />
                           </div>
 
@@ -2343,7 +2394,7 @@ export default function Admin() {
           )}
 
           {activeTab === 'users' && (
-            <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-xl font-black text-white tracking-tight">{t('admin.users.title', 'Todos os Usuários')}</h3>
                 <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
@@ -2369,16 +2420,9 @@ export default function Admin() {
                       <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.users.table.actions', 'Ações')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {supabaseProfiles
-                      .filter(p => {
-                        const search = searchTerm.toLowerCase();
-                        const name = (p.nome_completo || '').toLowerCase();
-                        const email = (p.email || '').toLowerCase();
-                        return name.includes(search) || email.includes(search);
-                      })
-                      .map((u) => (
-                      <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSupabaseProfiles.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white/10">
@@ -2563,7 +2607,7 @@ export default function Admin() {
           )}
 
           {!loading && !error && activeTab === 'physios' && (
-            <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-black text-white tracking-tight">Fisioterapeutas Cadastrados</h3>
@@ -2591,36 +2635,21 @@ export default function Admin() {
                       <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {supabaseProfiles
-                      .filter(p => (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta')
-                      .filter(p => {
-                        const search = searchTerm.toLowerCase();
-                        const name = (p.nome_completo || '').toLowerCase();
-                        const crefito = (p.crefito || '').toLowerCase();
-                        return name.includes(search) || crefito.includes(search);
-                      }).length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-8 py-24 text-center">
-                            <div className="space-y-6">
-                              <div className="w-20 h-20 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                                <Users size={40} />
-                              </div>
-                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">Nenhum fisioterapeuta encontrado.</p>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredPhysios.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-24 text-center">
+                          <div className="space-y-6">
+                            <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                              <Users size={40} />
                             </div>
-                          </td>
-                        </tr>
-                      ) : (
-                      supabaseProfiles
-                        .filter(p => (p.tipo_usuario || '').toLowerCase() === 'fisioterapeuta')
-                        .filter(p => {
-                          const search = searchTerm.toLowerCase();
-                          const name = (p.nome_completo || '').toLowerCase();
-                          const crefito = (p.crefito || '').toLowerCase();
-                          return name.includes(search) || crefito.includes(search);
-                        })
-                        .map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.03] transition-all group">
+                            <p className="text-slate-500 font-black text-lg uppercase tracking-widest">{t('admin.dashboard.charts.no_physios', 'Nenhum fisioterapeuta encontrado.')}</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPhysios.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/80 transition-all group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
                               <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-blue-400 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
@@ -2697,17 +2726,17 @@ export default function Admin() {
           )}
 
           {!loading && !error && activeTab === 'patients' && (
-            <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">Pacientes Cadastrados</h3>
-                  <p className="text-xs text-slate-500 font-medium">Lista exclusiva de clientes.</p>
+                  <h3 className="text-xl font-black text-white tracking-tight">{t('admin.patients.title', 'Pacientes Cadastrados')}</h3>
+                  <p className="text-xs text-slate-500 font-medium">{t('admin.patients.subtitle', 'Lista exclusiva de clientes.')}</p>
                 </div>
                 <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
                   <Search className="text-slate-500" size={18} />
                   <input 
                     type="text" 
-                    placeholder="Buscar paciente..." 
+                    placeholder={t('admin.patients.search_placeholder', "Buscar paciente...")} 
                     className="text-sm border-none focus:ring-0 bg-transparent text-white placeholder:text-slate-600"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -2718,42 +2747,27 @@ export default function Admin() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Paciente</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Email</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Localização</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.patient', 'Paciente')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.email', 'Email')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.patients.table.location', 'Localização')}</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.patients.table.actions', 'Ações')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {supabaseProfiles
-                      .filter(p => (p.tipo_usuario || '').toLowerCase() === 'paciente')
-                      .filter(p => {
-                        const search = searchTerm.toLowerCase();
-                        const name = (p.nome_completo || '').toLowerCase();
-                        const email = (p.email || '').toLowerCase();
-                        return name.includes(search) || email.includes(search);
-                      }).length === 0 ? (
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredPatients.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="px-8 py-24 text-center">
                             <div className="space-y-6">
-                              <div className="w-20 h-20 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                              <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
                                 <Users size={40} />
                               </div>
-                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">Nenhum paciente encontrado.</p>
+                              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">{t('admin.patients.no_patients', 'Nenhum paciente encontrado.')}</p>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                      supabaseProfiles
-                        .filter(p => (p.tipo_usuario || '').toLowerCase() === 'paciente')
-                        .filter(p => {
-                          const search = searchTerm.toLowerCase();
-                          const name = (p.nome_completo || '').toLowerCase();
-                          const email = (p.email || '').toLowerCase();
-                          return name.includes(search) || email.includes(search);
-                        })
-                        .map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.03] transition-all group">
+                      filteredPatients.map((u) => (
+                        <tr key={u.id} className="hover:bg-slate-50/80 transition-all group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-5">
                               <div className="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex items-center justify-center text-sm font-black text-slate-500 border border-white/10 shadow-lg group-hover:scale-105 transition-transform">
@@ -2807,29 +2821,23 @@ export default function Admin() {
 
           {!loading && !error && activeTab === 'approvals' && (
             <div className="space-y-8">
-              <h3 className="text-2xl font-black text-white tracking-tight">Aprovações Pendentes</h3>
+              <h3 className="text-2xl font-black text-white tracking-tight">{t('admin.approvals.title', 'Aprovações Pendentes')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {supabaseProfiles.filter(p => 
-                  (p.tipo_usuario === 'fisioterapeuta') && 
-                  (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
-                ).length === 0 ? (
-                  <div className="col-span-full bg-white/5 p-12 rounded-[2.5rem] border border-white/5 text-center space-y-4 shadow-2xl">
+                {filteredApprovals.length === 0 ? (
+                  <div className="col-span-full bg-white/80 backdrop-blur-md p-12 rounded-[2.5rem] border border-slate-200/60 text-center space-y-4 shadow-2xl">
                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
                       <CheckCircle2 size={32} />
                     </div>
-                    <p className="font-black text-white text-lg">Tudo em dia!</p>
-                    <p className="text-sm text-slate-500">Não há fisioterapeutas aguardando aprovação no momento.</p>
+                    <p className="font-black text-white text-lg">{t('admin.approvals.empty_title', 'Tudo em dia!')}</p>
+                    <p className="text-sm text-slate-500">{t('admin.approvals.empty_desc', 'Não há fisioterapeutas aguardando aprovação no momento.')}</p>
                   </div>
                 ) : (
-                  supabaseProfiles.filter(p => 
-                    (p.tipo_usuario === 'fisioterapeuta') && 
-                    (p.status_aprovacao === 'pendente' || !p.status_aprovacao)
-                  ).map((profile) => (
+                  filteredApprovals.map((profile) => (
                     <motion.div 
                       key={profile.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-6 group hover:border-blue-500/30 transition-all"
+                      className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 shadow-2xl space-y-6 group hover:border-blue-500/30 transition-all"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-white/10">
@@ -3158,17 +3166,17 @@ export default function Admin() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-amber-500/10 p-8 rounded-[2.5rem] border border-amber-500/20 flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Saques Pendentes</p>
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t('admin.withdrawals.pending_title', 'Saques Pendentes')}</p>
                     <p className="text-3xl font-black text-white">{stats.pendingWithdrawals}</p>
                   </div>
                   <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500">
                     <Clock size={28} />
                   </div>
                 </div>
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex items-center justify-between">
+                <div className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Solicitado</p>
-                    <p className="text-3xl font-black text-white">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('admin.withdrawals.total_requested', 'Total Solicitado')}</p>
+                    <p className="text-3xl font-black text-slate-900">
                       R$ {withdrawals.reduce((acc, curr) => acc + Number(curr.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
@@ -3188,54 +3196,52 @@ export default function Admin() {
                       "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
                       withdrawalFilter === f
                         ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                        : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                        : "bg-white/80 border-slate-200/60 text-slate-400 hover:text-blue-600"
                     )}
                   >
-                    {f}
+                    {t(`admin.withdrawals.filters.${f}`, f)}
                   </button>
                 ))}
               </div>
 
               {/* List Table */}
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-                <div className="p-8 border-b border-white/5">
-                  <h3 className="text-xl font-black text-white tracking-tight">Solicitações de Saque</h3>
-                  <p className="text-sm text-slate-500 font-medium">Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.</p>
+              <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-slate-200/60">
+                  <h3 className="text-xl font-black admin-title tracking-tight">{t('admin.withdrawals.table_title', 'Solicitações de Saque')}</h3>
+                  <p className="text-sm text-slate-500 font-medium">{t('admin.withdrawals.table_subtitle', 'Controle os pedidos de saque feitos pelos fisioterapeutas via PIX.')}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
-                      <tr className="bg-white/5">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Data</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Profissional</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Valor</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">Ações</th>
+                      <tr className="bg-slate-50">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.date', 'Data')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.professional', 'Profissional')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.value', 'Valor')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('admin.withdrawals.table.status', 'Status')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-right">{t('admin.withdrawals.table.actions', 'Ações')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {withdrawals
-                        .filter(w => withdrawalFilter === 'todos' || w.status === withdrawalFilter)
-                        .map((w) => (
-                          <tr key={w.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-8 py-5 text-sm font-bold text-white uppercase tabular-nums">
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredWithdrawals.map((w) => (
+                          <tr key={w.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-8 py-5 text-sm font-bold text-slate-600 uppercase tabular-nums">
                               {new Date(w.created_at).toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-8 py-5">
-                              <p className="text-sm font-bold text-white">{w.fisioterapeuta?.nome_completo}</p>
+                              <p className="text-sm font-bold text-slate-900">{w.fisioterapeuta?.nome_completo}</p>
                               <p className="text-[10px] text-slate-500">{w.fisioterapeuta?.email}</p>
                             </td>
-                            <td className="px-8 py-5 text-sm font-black text-white tabular-nums">
+                            <td className="px-8 py-5 text-sm font-black text-slate-900 tabular-nums">
                               R$ {Number(w.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-8 py-5">
                               <div className={cn(
                                 "inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                w.status === 'pago' ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/5" :
-                                w.status === 'recusado' ? "border-rose-500/30 text-rose-400 bg-rose-500/5" :
-                                "border-amber-500/30 text-amber-500 bg-amber-500/5"
+                                w.status === 'pago' ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/5" :
+                                w.status === 'recusado' ? "border-rose-500/30 text-rose-600 bg-rose-500/5" :
+                                "border-amber-500/30 text-amber-600 bg-amber-500/5"
                               )}>
-                                {w.status}
+                                {String(t(`admin.withdrawals.status.${w.status}`, w.status))}
                               </div>
                             </td>
                             <td className="px-8 py-5 text-right">
@@ -3243,22 +3249,22 @@ export default function Admin() {
                                 <div className="flex items-center justify-end gap-3">
                                   <button
                                     onClick={() => handleUpdateWithdrawalStatus(w.id, 'recusado')}
-                                    className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl border border-rose-500/20 transition-all shadow-lg shadow-rose-900/5"
-                                    title="Recusar"
+                                    className="p-2.5 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl border border-rose-500/20 transition-all"
+                                    title={t('admin.withdrawals.actions.reject', 'Recusar')}
                                   >
                                     <XCircle size={18} />
                                   </button>
                                   <button
                                     onClick={() => handleUpdateWithdrawalStatus(w.id, 'pago')}
-                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2"
                                   >
-                                    <CheckCircle2 size={16} /> Marcar como Pago
+                                    <CheckCircle2 size={16} /> {t('admin.withdrawals.actions.approve', 'Marcar como Pago')}
                                   </button>
                                 </div>
                               )}
                               {w.status !== 'pendente' && (
-                                <span className="text-[10px] font-bold text-slate-600 italic uppercase">
-                                  {w.processado_em ? `Proc. em ${new Date(w.processado_em).toLocaleDateString('pt-BR')}` : 'Finalizado'}
+                                <span className="text-[10px] font-bold text-slate-400 italic uppercase">
+                                  {w.processado_em ? `${t('admin.withdrawals.processed_at', 'Proc. em')} ${new Date(w.processado_em).toLocaleDateString('pt-BR')}` : t('admin.withdrawals.finished', 'Finalizado')}
                                 </span>
                               )}
                             </td>
@@ -3266,12 +3272,12 @@ export default function Admin() {
                         ))}
                     </tbody>
                   </table>
-                  {withdrawals.filter(w => withdrawalFilter === 'todos' || w.status === withdrawalFilter).length === 0 && (
+                  {filteredWithdrawals.length === 0 && (
                     <div className="p-20 text-center">
-                      <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-slate-600 mx-auto mb-6">
+                      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mx-auto mb-6">
                         <Filter size={40} strokeWidth={1} />
                       </div>
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Nenhuma solicitação encontrada para o filtro selecionado.</p>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{t('admin.withdrawals.no_results', 'Nenhuma solicitação encontrada.')}</p>
                     </div>
                   )}
                 </div>
