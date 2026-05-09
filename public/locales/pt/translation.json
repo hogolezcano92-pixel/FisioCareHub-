@@ -312,6 +312,19 @@
       "scanning": "Escaneando pool criptografado...",
       "connected": "Conectado",
       "no_assets": "Nenhum registro encontrado para os critérios.",
+      "status": {
+        "ativo": "Ativo",
+        "suspenso": "Suspenso",
+        "banido": "Banido"
+      },
+      "actions": {
+        "activate": "Ativar Conta",
+        "suspend": "Suspender Acesso",
+        "kill_sessions": "Encerrar Sessões Remotas",
+        "ban": "Banimento Permanente"
+      },
+      "toast_success": "Usuário {{status}} com sucesso",
+      "toast_error": "Erro ao atualizar status.",
       "tools": {
         "audit_title": "Auditoria de Auth",
         "audit_desc": "Rastreamento detalhado de alterações administrativas.",
@@ -358,6 +371,9 @@
         "vector_id": "ID do Vetor",
         "linked_ref": "Ref Vinculada",
         "diagnostics": "Diagnósticos do Sistema",
+        "client_ip": "IP do Cliente",
+        "user_agent": "Navegador / Sistema",
+        "payload": "Payload (Estruturado)",
         "inspect_action": "Inspecionar Hash do Objeto",
         "select_event": "Selecione um evento para inspeção profunda"
       }
@@ -450,6 +466,7 @@
     "admin_users": {
        "role_physio": "Fisioterapeuta",
        "role_patient": "Paciente",
+       "role_admin": "Administrador",
        "status_pending": "Pendente",
        "view_details": "Ver Detalhes",
        "block_unblock": "Bloquear/Desbloquear",
