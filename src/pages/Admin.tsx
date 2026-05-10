@@ -1603,6 +1603,7 @@ export default function Admin() {
           <nav className="flex-1 px-4 space-y-1 custom-scrollbar overflow-y-auto mt-4">
             {[
               { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+              { id: 'profile', label: 'Meu Perfil', icon: User },
               { id: 'viva', label: 'Viva AI', icon: Brain },
               { id: 'logs', label: 'Logs de Auditoria', icon: History },
               { id: 'security', label: 'Segurança', icon: ShieldCheck },
@@ -1642,24 +1643,34 @@ export default function Admin() {
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-6 mt-auto">
-            <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+          <button 
+            onClick={() => {
+              setActiveTab('profile');
+              navigate('/admin?tab=profile');
+              if (window.innerWidth < 1024) setSidebarOpen(false);
+            }}
+            className="p-6 mt-auto w-full text-left"
+          >
+            <div className={cn(
+              "flex items-center gap-3 p-4 bg-white/5 rounded-2xl border transition-all",
+              activeTab === 'profile' ? "border-[#7B2CBF] bg-[#7B2CBF]/5 shadow-lg shadow-[#7B2CBF]/10" : "border-white/5 hover:bg-white/10"
+            )}>
               <div className="w-10 h-10 rounded-full bg-[#7B2CBF] flex items-center justify-center text-white font-black text-lg overflow-hidden flex-shrink-0">
                 <img 
-                  src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200" 
+                  src={authProfile?.avatar_url || authProfile?.foto_url || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200"} 
                   alt="" 
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                   <p className="text-[10px] font-black text-white truncate">Admin Master</p>
+                   <p className="text-[10px] font-black text-white truncate">{authProfile?.nome_completo || 'Admin Master'}</p>
                 </div>
                 <p className="text-[9px] font-bold text-[#8A2BE2] uppercase tracking-widest truncate">FISIOCAREHUB</p>
-                <p className="text-[8px] text-white/40 truncate mt-0.5">HOGOLEZCANO92@...</p>
+                <p className="text-[8px] text-white/40 truncate mt-0.5">{supabaseUser?.email?.toUpperCase() || 'HOGOLEZCANO92@...'}</p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -1699,7 +1710,7 @@ export default function Admin() {
             <AdminDashboard />
           )}
 
-          {activeTab === 'materials' && (
+          {activeTab === 'materiais' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
@@ -2046,6 +2057,121 @@ export default function Admin() {
                     <p className="text-[var(--text-2)] font-bold">Nenhuma sessão paga encontrada.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && activeTab === 'profile' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="bg-white rounded-[32px] p-10 shadow-2xl overflow-hidden relative border border-gray-100">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50" />
+                 
+                 <div className="relative z-10 flex flex-col md:flex-row gap-10 items-start md:items-center">
+                    <div className="relative group">
+                      <div className="w-40 h-40 rounded-[40px] bg-slate-100 overflow-hidden shadow-2xl border-4 border-white">
+                         <img 
+                           src={authProfile?.avatar_url || authProfile?.foto_url || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400"} 
+                           alt="Admin" 
+                           className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
+                         />
+                      </div>
+                      <button className="absolute -bottom-2 -right-2 w-12 h-12 bg-[#7B2CBF] text-white rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
+                        <Edit3 size={20} />
+                      </button>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-[#7B2CBF] uppercase tracking-[0.2em]">{t('admin.profile.role', 'Administrador Master')}</p>
+                          <h2 className="text-4xl font-black text-[#0A1931] tracking-tighter capitalize">{authProfile?.nome_completo || 'Admin Master'}</h2>
+                          <div className="flex items-center gap-2 text-gray-400 font-bold text-sm">
+                             <ShieldCheck size={16} className="text-emerald-500" />
+                             Acesso Total ao Sistema
+                          </div>
+                       </div>
+                       
+                       <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
+                          <div className="flex flex-col">
+                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Email Principal</span>
+                             <span className="text-sm font-bold text-[#0A1931]">{supabaseUser?.email}</span>
+                          </div>
+                          <div className="w-px h-8 bg-gray-100 hidden sm:block" />
+                          <div className="flex flex-col">
+                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">ID de Sistema</span>
+                             <span className="text-xs font-mono font-bold text-gray-400 uppercase">{supabaseUser?.id.substring(0, 12)}...</span>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div className="bg-white rounded-[32px] p-10 shadow-xl border border-gray-100 space-y-8">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-2xl bg-[#0A1931]/5 flex items-center justify-center text-[#7B2CBF]">
+                          <User size={24} />
+                       </div>
+                       <h3 className="text-xl font-black text-[#0A1931] tracking-tight">Editar Informações</h3>
+                    </div>
+
+                    <div className="space-y-6">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                          <input 
+                            type="text" 
+                            defaultValue={authProfile?.nome_completo}
+                            className="w-full h-14 px-6 bg-gray-50 border border-gray-100 rounded-2xl text-[#0A1931] font-bold focus:ring-2 focus:ring-[#7B2CBF]/20 outline-none"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+                          <input 
+                            type="text" 
+                            defaultValue={authProfile?.telefone}
+                            className="w-full h-14 px-6 bg-gray-50 border border-gray-100 rounded-2xl text-[#0A1931] font-bold focus:ring-2 focus:ring-[#7B2CBF]/20 outline-none"
+                          />
+                       </div>
+                       <button className="w-full py-5 bg-[#0A1931] text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                          <Save size={16} />
+                          Atualizar Perfil
+                       </button>
+                    </div>
+                 </div>
+
+                 <div className="bg-[#071230] rounded-[32px] p-10 shadow-xl border border-white/5 space-y-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                       <Lock size={120} className="text-white" />
+                    </div>
+                    
+                    <div className="relative z-10 flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#8A2BE2]">
+                          <Shield size={24} />
+                       </div>
+                       <h3 className="text-xl font-black text-white tracking-tight">Segurança da Conta</h3>
+                    </div>
+
+                    <div className="relative z-10 space-y-6">
+                       <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                          <h4 className="text-xs font-black text-white uppercase tracking-widest">Senha</h4>
+                          <p className="text-xs text-white/40 font-medium">Sua senha é gerenciada pelo provedor de autenticação.</p>
+                          <button className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.1em] mt-2 hover:underline">Solicitar Alteração</button>
+                       </div>
+
+                       <div className="p-6 bg-white/5 rounded-2xl border border-white/5 flex items-center justify-between">
+                          <div className="space-y-1">
+                             <h4 className="text-xs font-black text-white uppercase tracking-widest">Autenticação 2FA</h4>
+                             <p className="text-[10px] text-emerald-500 font-black">ATIVADO</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                             <CheckCircle2 size={18} />
+                          </div>
+                       </div>
+
+                       <button className="w-full py-5 border border-white/10 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] hover:bg-white/5 transition-all">
+                          Ver Logs de Segurança
+                       </button>
+                    </div>
+                 </div>
               </div>
             </div>
           )}
