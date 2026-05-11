@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Logo from './Logo';
 
 const splashImages = [
-  "/assets/fisio1.jpg",
-  "/assets/fisio2.jpg",
-  "/assets/fisio3.jpg"
+  "/assets/fisio1.jpeg",
+  "/assets/fisio2.jpeg",
+  "/assets/fisio3.jpeg"
 ];
 
 export default function SplashScreen() {
