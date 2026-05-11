@@ -66,7 +66,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Veja sua melhora dia após dia com gráficos de evolução e feedback contínuo do seu fisioterapeuta.",
     icon: LineChart,
-    image: "/onboarding/acompanhe.mp4",
+    image: "/onboarding/acompanheseuprogreso.mp4",
     themeColor: "#3B82F6"
   },
   {
@@ -74,7 +74,7 @@ const patientSlides = [
     subtitle: "Sou Paciente",
     description: "Comunicação direta com seu profissional. Tire dúvidas e receba orientações em tempo real.",
     icon: Heart,
-    image: "/onboarding/prescrever.mp4",
+    image: "/onboarding/conectese.mp4",
     themeColor: "#3B82F6"
   }
 ];
