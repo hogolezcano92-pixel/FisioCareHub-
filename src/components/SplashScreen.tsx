@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Logo from './Logo';
 
 const splashImages = [
-  "https://images.unsplash.com/photo-1584432810601-6a7f27a2362b?auto=format&fit=crop&q=80&w=2000",
-  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2000",
-  "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2000"
+  "https://images.unsplash.com/photo-1580281657527-47f249e8f5d6?auto=format&fit=crop&w=2000&q=80",
+  "https://images.unsplash.com/photo-1571019613914-85f342c1a2c7?auto=format&fit=crop&w=2000&q=80",
+  "https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=2000&q=80"
 ];
 
 export default function SplashScreen() {
