@@ -1479,8 +1479,30 @@ export default function Admin() {
     }
   };
 
+  const adminTabs = [
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+    { id: 'profile', label: 'Meu Perfil', icon: User },
+    { id: 'viva', label: 'Viva AI', icon: Brain },
+    { id: 'logs', label: 'Logs de Auditoria', icon: History },
+    { id: 'security', label: 'Segurança', icon: ShieldCheck },
+    { id: 'materiais', label: 'Biblioteca', icon: BookOpen },
+    { id: 'physios', label: 'Profissionais', icon: Stethoscope },
+    { id: 'patients', label: 'Pacientes', icon: User },
+    { id: 'approvals', label: 'Aprovações', icon: UserCheck },
+    { id: 'users', label: 'Diretório', icon: Users },
+    { id: 'financial', label: 'Financeiro', icon: DollarSign },
+    { id: 'saques', label: 'Payout Requests', icon: CreditCard },
+    { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
+    { id: 'chat', label: 'Suporte', icon: MessageSquare },
+    { id: 'notifications', label: 'System Alerts', icon: Bell },
+    { id: 'settings', label: 'Configurações', icon: Settings },
+  ] as const;
+
+  const adminTabTitleMap = Object.fromEntries(adminTabs.map(tab => [tab.id, tab.label])) as Record<string, string>;
+  const currentTabTitle = adminTabTitleMap[activeTab] || 'Admin Panel';
+
   return (
-    <div className="flex font-sans w-full min-h-screen bg-[#0A1931] overflow-x-hidden relative">
+    <div className="flex font-sans w-full min-h-screen bg-gradient-to-br from-[#060F24] via-[#0A1931] to-[#101F45] overflow-x-hidden relative text-slate-100">
       {/* Mobile Status Bar Simulation */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-6 bg-[#0A1931] z-[100] flex items-center justify-between px-6 text-[10px] font-bold text-white">
         <span>06:32</span>
@@ -1578,7 +1600,7 @@ export default function Admin() {
       {/* Sidebar - Fixed 280px */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-[110] w-[280px] bg-[#071230] transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden",
+          "fixed inset-y-0 left-0 z-[110] w-[280px] bg-[#071230]/90 border-r border-white/10 backdrop-blur-xl transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden",
           !sidebarOpen ? "-translate-x-full" : "translate-x-0"
         )}
       >
@@ -1601,24 +1623,7 @@ export default function Admin() {
 
           {/* Nav Links */}
           <nav className="flex-1 px-4 space-y-1 custom-scrollbar overflow-y-auto mt-4">
-            {[
-              { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-              { id: 'profile', label: 'Meu Perfil', icon: User },
-              { id: 'viva', label: 'Viva AI', icon: Brain },
-              { id: 'logs', label: 'Logs de Auditoria', icon: History },
-              { id: 'security', label: 'Segurança', icon: ShieldCheck },
-              { id: 'materiais', label: 'Biblioteca', icon: BookOpen },
-              { id: 'physios', label: 'Profissionais', icon: Stethoscope },
-              { id: 'patients', label: 'Pacientes', icon: User },
-              { id: 'approvals', label: 'Aprovações', icon: UserCheck },
-              { id: 'users', label: 'Diretório', icon: Users },
-              { id: 'financial', label: 'Financeiro', icon: DollarSign },
-              { id: 'saques', label: 'Payout Requests', icon: CreditCard },
-              { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
-              { id: 'chat', label: 'Suporte', icon: MessageSquare },
-              { id: 'notifications', label: 'System Alerts', icon: Bell },
-              { id: 'settings', label: 'Configurações', icon: Settings },
-            ].map((item: any) => (
+            {adminTabs.map((item: any) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -1627,10 +1632,10 @@ export default function Admin() {
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group relative",
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group relative border border-transparent",
                   activeTab === item.id 
-                    ? "text-white bg-white/5" 
-                    : "text-white/40 hover:text-white hover:bg-white/5"
+                    ? "text-white bg-white/10 border-white/15 shadow-lg shadow-black/20" 
+                    : "text-white/55 hover:text-white hover:bg-white/5 hover:border-white/10"
                 )}
               >
                 {activeTab === item.id && (
@@ -1674,9 +1679,9 @@ export default function Admin() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 bg-[#0A1931]">
+      <main className="flex-1 flex flex-col min-w-0 bg-transparent">
         {/* Header */}
-        <header className="h-20 flex items-center justify-between px-8 bg-transparent pt-6 lg:pt-0">
+        <header className="h-20 sticky top-0 z-40 flex items-center justify-between px-8 bg-black/20 border-b border-white/10 backdrop-blur-md pt-6 lg:pt-0">
           <button 
             className="lg:hidden p-3 text-white hover:bg-white/5 rounded-2xl transition-all" 
             onClick={() => setSidebarOpen(true)}
@@ -1685,19 +1690,20 @@ export default function Admin() {
           </button>
           
           <div className="flex-1 px-4 lg:px-0">
-             <h2 className="text-lg lg:text-xl font-black text-white uppercase tracking-tight">
-               {activeTab === 'dashboard' ? 'Overview' : activeTab}
-             </h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45 mb-1">Administrator Panel</p>
+            <h2 className="text-lg lg:text-xl font-black text-white tracking-tight">
+              {currentTabTitle}
+            </h2>
           </div>
           
           <div className="flex items-center gap-2">
             <button 
               onClick={toggleTheme}
-              className="p-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+              className="p-2.5 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 rounded-xl transition-all"
             >
               <Sun size={20} />
             </button>
-            <button className="p-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all relative">
+            <button className="p-2.5 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 rounded-xl transition-all relative">
               <Bell size={20} />
               <div className="absolute top-3 right-3 w-2 h-2 bg-[#8A2BE2] rounded-full border-2 border-[#0A1931]" />
             </button>
@@ -1705,7 +1711,7 @@ export default function Admin() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar pt-2 lg:pt-4">
+        <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar pt-2 lg:pt-6">
           {!loading && !error && activeTab === 'dashboard' && (
             <AdminDashboard />
           )}
@@ -1715,11 +1721,11 @@ export default function Admin() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h3 className="text-2xl font-black text-white tracking-tight">{t('admin_materials.title', 'Biblioteca de Materiais')}</h3>
-                  <p className="text-sm text-white/50 font-medium tracking-tight">{t('admin_materials.subtitle', 'Gerencie PDFs e imagens para profissionais e pacientes.')}</p>
+                  <p className="text-sm text-white/65 font-medium tracking-tight">{t('admin_materials.subtitle', 'Gerencie PDFs e imagens para profissionais e pacientes.')}</p>
                 </div>
                 <button 
                   onClick={() => setShowMaterialModal(!showMaterialModal)}
-                  className="px-6 py-3 bg-[#7B2CBF] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-[#7B2CBF]/20 flex items-center justify-center gap-2"
+                  className="px-6 py-3 bg-gradient-to-r from-[#7B2CBF] to-[#9D4EDD] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-95 transition-all shadow-xl shadow-[#7B2CBF]/30 border border-white/10 flex items-center justify-center gap-2"
                 >
                   <Plus size={16} />
                   {showMaterialModal ? t('common.cancel', 'Cancelar') : t('admin_materials.new_material', 'Novo Material')}
@@ -1728,7 +1734,7 @@ export default function Admin() {
 
               <AnimatePresence>
                 {showMaterialModal && (
-                  <div className="p-8 bg-[#071230] rounded-[24px] border border-white/5 border-dashed">
+                  <div className="p-8 bg-[#071230]/85 backdrop-blur-md rounded-[24px] border border-white/10 shadow-2xl shadow-black/20">
                     <motion.div 
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1744,7 +1750,7 @@ export default function Admin() {
                               value={newMaterial.title}
                               onChange={(e) => setNewMaterial({...newMaterial, title: e.target.value})}
                               placeholder="Fisioterapia Esportiva - Guia..."
-                              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" 
+                              className="w-full px-4 py-4 bg-white/5 border border-white/15 rounded-2xl text-white font-semibold focus:ring-2 focus:ring-[#9D4EDD]/25 focus:border-[#9D4EDD] outline-none transition-all" 
                             />
                           </div>
                           <div className="space-y-1">
@@ -1753,7 +1759,7 @@ export default function Admin() {
                               value={newMaterial.description}
                               onChange={(e) => setNewMaterial({...newMaterial, description: e.target.value})}
                               placeholder="Breve resumo do conteúdo..."
-                              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all h-32" 
+                              className="w-full px-4 py-4 bg-white/5 border border-white/15 rounded-2xl text-white font-semibold focus:ring-2 focus:ring-[#9D4EDD]/25 focus:border-[#9D4EDD] outline-none transition-all h-32" 
                             />
                           </div>
                         </div>
@@ -3271,4 +3277,3 @@ export default function Admin() {
     </div>
   );
 }
-
