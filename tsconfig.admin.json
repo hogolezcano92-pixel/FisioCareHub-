@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.app.json",
+  "files": [
+    "src/pages/Admin.tsx"
+  ]
+}
