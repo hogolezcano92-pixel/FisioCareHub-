@@ -305,16 +305,20 @@ export default function Profile() {
         return;
       }
 
+      const normalizedCountry = (formData.country || '').trim();
       const updateData = {
-        nome_completo: formData.name,
+        nome_completo: formData.name.trim(),
         bio: formData.bio,
-        telefone: formData.telefone,
-        cidade: formData.city,
-        estado: formData.state,
-        endereco: formData.address,
-        cep: formData.zipCode,
-        pais: formData.country,
+        telefone: formData.telefone.trim(),
+        cidade: formData.city.trim(),
+        estado: formData.state.trim(),
+        endereco: formData.address.trim(),
+        cep: formData.zipCode.replace(/\D/g, ''),
+        pais: normalizedCountry === 'Brasil' || normalizedCountry === '' ? 'Brasil' : normalizedCountry,
         cpf_cnpj: formData.cpf.replace(/\D/g, ''),
+        cpf: formData.cpf.replace(/\D/g, ''),
+        role: 'user',
+        tipo_usuario: isPhysio ? 'fisioterapeuta' : 'paciente',
         crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
         preco_sessao: isPhysio ? Number(formData.preco_sessao) : (userData?.preco_sessao || undefined),
         stripe_account_id: isPhysio ? formData.stripe_account_id : (userData?.stripe_account_id || undefined),
@@ -326,6 +330,8 @@ export default function Profile() {
         observacoes_saude: !isPhysio ? formData.observacoes_saude : undefined,
         formacao_academica: isPhysio ? formData.formacao_academica : undefined,
         servicos_ofertados: isPhysio ? formData.servicos_ofertados : undefined,
+        status_aprovacao: isPhysio ? (userData?.status_aprovacao || 'pendente') : (userData?.status_aprovacao || 'aprovado'),
+        updated_at: new Date().toISOString()
       };
 
       // Clean undefined fields
@@ -336,12 +342,23 @@ export default function Profile() {
       console.log("Genero enviado:", formData.gender);
       console.log("Atualizando perfil no Supabase:", updateData);
 
-      const { error } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('perfis')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error || !updatedProfile) {
+        console.error('[PROFILE_SAVE_ERROR]', {
+          module: 'profile',
+          action: 'save_profile',
+          userId: user.id,
+          payload: updateData,
+          error
+        });
+        throw error || new Error('Perfil não retornou dados após atualizar.');
+      }
 
       // Update Auth Metadata if name changed
       if (formData.name !== user.user_metadata?.full_name) {
@@ -354,7 +371,7 @@ export default function Profile() {
       // Update local state
       setUserData((prev: any) => ({
         ...prev,
-        ...updateData
+        ...updatedProfile
       }));
 
       // Refresh global profile context
@@ -391,14 +408,18 @@ export default function Profile() {
       const currentDocs = Array.isArray(userData?.documentos) ? userData.documentos : [];
       const newDocs = [...currentDocs, url];
       
-      const { error } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('perfis')
         .update({ documentos: newDocs })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error || !updatedProfile) {
+        throw error || new Error('Falha ao confirmar salvamento do documento no perfil.');
+      }
 
-      setUserData({ ...userData, documentos: newDocs });
+      setUserData({ ...userData, ...updatedProfile, documentos: newDocs });
       import('sonner').then(({ toast }) => toast.success("Documento enviado com sucesso!"));
     } catch (err: any) {
       console.error("Erro no upload de documento para Supabase:", err);

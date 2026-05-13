@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { Lock, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -10,22 +10,60 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
+  const [recoveryReady, setRecoveryReady] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const extractHashParams = (hash: string) => {
+    const raw = hash.startsWith('#') ? hash.slice(1) : hash;
+    return new URLSearchParams(raw);
+  };
 
   useEffect(() => {
-    // Check if we have a session (Supabase should have set it from the recovery link)
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // If no session, they might have accessed this page directly without a recovery link
-        // Or the link expired.
-        // However, sometimes the hash is still being processed.
+    const setupRecoverySession = async () => {
+      setCheckingLink(true);
+      setError('');
+      try {
+        const query = new URLSearchParams(location.search);
+        const hashParams = extractHashParams(window.location.hash);
+        const code = query.get('code');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const hashType = hashParams.get('type');
+
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+        } else if (accessToken && refreshToken && hashType === 'recovery') {
+          const { error: setSessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (setSessionError) throw setSessionError;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setRecoveryReady(false);
+          setError('Link de recuperação inválido ou expirado. Solicite um novo link.');
+          return;
+        }
+
+        setRecoveryReady(true);
+      } catch (err: any) {
+        console.error('Erro ao validar link de recuperação:', err);
+        setRecoveryReady(false);
+        setError(err?.message || 'Não foi possível validar o link de recuperação.');
+      } finally {
+        setCheckingLink(false);
       }
     };
-    checkSession();
-  }, []);
+
+    setupRecoverySession();
+  }, [location.search]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +73,13 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
+    if (!recoveryReady) {
+      setError('Sessão de recuperação não encontrada. Solicite um novo link.');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('A senha deve ter pelo menos 8 caracteres.');
       return;
     }
 
@@ -52,18 +95,34 @@ export default function ResetPassword() {
 
       setSuccess(true);
       const { toast } = await import('sonner');
-      toast.success('Senha redefinida com sucesso!');
+      toast.success('Senha atualizada com sucesso');
       
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      setTimeout(() => navigate('/login'), 1800);
     } catch (err: any) {
       console.error("Erro ao redefinir senha:", err);
-      setError('Erro ao redefinir senha: ' + err.message);
+      const message = String(err?.message || '');
+      if (message.toLowerCase().includes('expired')) {
+        setError('Link de recuperação expirado. Solicite um novo link.');
+      } else if (message.toLowerCase().includes('session')) {
+        setError('Sessão de recuperação inválida. Abra novamente o link recebido por e-mail.');
+      } else {
+        setError('Erro ao redefinir senha: ' + message);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (checkingLink) {
+    return (
+      <div className="max-w-md mx-auto pt-20">
+        <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border border-white/10 text-center">
+          <Loader2 className="animate-spin mx-auto text-blue-400 mb-4" />
+          <p className="text-slate-300 font-semibold">Validando link de recuperação...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -77,7 +136,7 @@ export default function ResetPassword() {
             <CheckCircle2 size={40} />
           </div>
           <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Senha Redefinida!</h2>
-          <p className="text-slate-400 mb-8 font-medium">
+          <p className="text-slate-300 mb-8 font-medium">
             Sua senha foi atualizada com sucesso. Você será redirecionado para a tela de login em instantes.
           </p>
           <button
@@ -103,7 +162,7 @@ export default function ResetPassword() {
             <Lock size={32} />
           </div>
           <h2 className="text-3xl font-black text-white tracking-tight">Nova Senha</h2>
-          <p className="text-base text-slate-400 mt-2 font-medium">Digite sua nova senha de acesso.</p>
+          <p className="text-base text-slate-300 mt-2 font-medium">Digite sua nova senha de acesso.</p>
         </div>
 
         <form onSubmit={handleReset} className="space-y-6">
@@ -166,10 +225,10 @@ export default function ResetPassword() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !recoveryReady}
             className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="animate-spin" /> : 'Redefinir Senha'}
+            {loading ? <Loader2 className="animate-spin" /> : (recoveryReady ? 'Redefinir Senha' : 'Link inválido')}
           </button>
         </form>
       </motion.div>

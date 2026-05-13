@@ -266,26 +266,31 @@ export default function Register() {
         // 5. Criar o perfil detalhado na tabela 'perfis'
         console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
         
+        const normalizedCountry = (formData.country || '').trim();
+        const normalizedCity = formData.city.trim();
+        const normalizedState = formData.state.trim();
+        const normalizedAddress = formData.address.trim();
+
         const fullProfileData = {
           id: authData.user.id,
           nome_completo: cleanName,
           email: cleanEmail,
-          telefone: formData.telefone,
+          telefone: formData.telefone.trim(),
           cpf: formData.cpf.replace(/\D/g, ''), // Limpa pontos e traços
           cpf_cnpj: formData.cpf.replace(/\D/g, ''),
           data_nascimento: formData.data_nascimento || null,
           bio: formData.bio || '',
           
           // Localização
-          cidade: formData.city || null,
-          estado: formData.state || null,
-          endereco: formData.address || null,
+          cidade: normalizedCity || null,
+          estado: normalizedState || null,
+          endereco: normalizedAddress || null,
           cep: formData.zipCode?.replace(/\D/g, '') || null,
-          pais: formData.country || 'Brasil',
-          localizacao: `${formData.city}${formData.state ? `, ${formData.state}` : ''}`,
+          pais: normalizedCountry === 'Brasil' || normalizedCountry === '' ? 'Brasil' : normalizedCountry,
+          localizacao: `${normalizedCity}${normalizedState ? `, ${normalizedState}` : ''}`,
 
           // Profissional
-          role: role,
+          role: 'user',
           tipo_usuario: role,
           crefito: role === 'fisioterapeuta' ? formData.crefito : null,
           especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
@@ -324,22 +329,31 @@ export default function Register() {
         console.log("[Register] [FLOW-AUDIT] Profile Payload:", fullProfileData);
 
         try {
-          const { error: profileError } = await supabase
+          const { data: savedProfile, error: profileError } = await supabase
             .from('perfis')
             .upsert(fullProfileData, {
               onConflict: 'id'
-            });
+            })
+            .select()
+            .single();
 
-          if (profileError) {
+          if (profileError || !savedProfile) {
             console.error("[Register] [FLOW-AUDIT] Profile Upsert Error:", profileError);
-            throw profileError;
+            throw profileError || new Error('Perfil não retornou dados após salvar.');
           }
           
           console.log("[Register] [FLOW-AUDIT] Profile Upsert Success");
         } catch (err: any) {
-          console.warn("[Register] [FLOW-AUDIT] Upsert caution:", err.message);
-          // Se falhou por RLS mas o usuário foi criado, permitimos seguir
-          // O AuthContext tentará sincronizar no próximo acesso
+          console.error('[PROFILE_SAVE_ERROR]', {
+            module: 'register',
+            action: 'save_profile',
+            userId: authData.user.id,
+            payload: fullProfileData,
+            error: err
+          });
+          setError('Não foi possível salvar seu perfil. Tente novamente.');
+          setLoading(false);
+          return;
         }
 
         // 5. Create subscription record if Pro Key was used
@@ -375,8 +389,8 @@ export default function Register() {
               user_id: admin.id,
               titulo: 'Novo Fisioterapeuta',
               mensagem: `O Dr(a). ${cleanName} se cadastrou e aguarda aprovação de perfil.`,
-              tipo: 'support_request',
-              link: '/admin'
+              tipo: 'physio_approval_request',
+              link: '/admin?tab=users'
             }));
 
             await supabase.from('notificacoes').insert(notifications);

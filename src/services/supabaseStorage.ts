@@ -111,7 +111,7 @@ export const uploadPhysioDocument = async (
   const fileExt = file.name.split('.').pop();
   const fileName = `${documentType}.${fileExt}`;
   const path = `${userId}/${fileName}`;
-  const bucket = 'documentos_fisioterapeutas';
+  const bucket = 'documents';
 
   const supabase = getSupabase();
   console.log(`Tentando upload de documento fisioterapeuta para o bucket "${bucket}" no caminho "${path}"...`);
