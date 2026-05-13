@@ -32,7 +32,7 @@ import {
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl, formatCPF, validateCPF } from '../lib/utils';
 import { THEMES } from '../lib/themes';
-import { uploadDocument } from '../services/supabaseStorage';
+import { uploadDocument, uploadPhysioDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { logActivity } from '../services/activityService';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
@@ -58,6 +58,50 @@ export default function Profile() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const navigate = useNavigate();
+
+  type ProfessionalDocumentField =
+    | 'rg_frente_url'
+    | 'rg_verso_url'
+    | 'crefito_frente_url'
+    | 'crefito_verso_url';
+
+  type ProfessionalDocumentUploadType =
+    | 'rg_frente'
+    | 'rg_verso'
+    | 'crefito_frente'
+    | 'crefito_verso';
+
+  const professionalDocuments: Array<{
+    label: string;
+    description: string;
+    field: ProfessionalDocumentField;
+    uploadType: ProfessionalDocumentUploadType;
+  }> = [
+    {
+      label: 'RG Frente',
+      description: 'Documento de identidade — frente',
+      field: 'rg_frente_url',
+      uploadType: 'rg_frente',
+    },
+    {
+      label: 'RG Verso',
+      description: 'Documento de identidade — verso',
+      field: 'rg_verso_url',
+      uploadType: 'rg_verso',
+    },
+    {
+      label: 'CREFITO Frente',
+      description: 'Carteira profissional — frente',
+      field: 'crefito_frente_url',
+      uploadType: 'crefito_frente',
+    },
+    {
+      label: 'CREFITO Verso',
+      description: 'Carteira profissional — verso',
+      field: 'crefito_verso_url',
+      uploadType: 'crefito_verso',
+    },
+  ];
 
   const languages = [
     { code: 'pt', name: t('settings.portuguese'), flag: '🇧🇷' },
@@ -486,6 +530,81 @@ export default function Profile() {
       toast.error("Erro ao enviar documento: " + (err.message || "Erro desconhecido"));
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleViewProfessionalDocument = async (path?: string | null) => {
+    if (!path) {
+      const { toast } = await import('sonner');
+      toast.error('Documento ainda não enviado.');
+      return;
+    }
+
+    try {
+      const signedUrl = await getPrivateDocumentUrl(path, 60 * 10);
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      console.error('[VIEW_PROFESSIONAL_DOCUMENT_ERROR]', err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Não foi possível abrir o documento.');
+    }
+  };
+
+  const handleReplaceProfessionalDocument = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: ProfessionalDocumentField,
+    uploadType: ProfessionalDocumentUploadType
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUpdating(true);
+
+    try {
+      const path = await uploadPhysioDocument(user.id, file, uploadType);
+
+      const { data: updatedProfile, error } = await supabase
+        .from('perfis')
+        .update({
+          [field]: path,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[REPLACE_PROFESSIONAL_DOCUMENT_ERROR]', {
+          userId: user.id,
+          field,
+          uploadType,
+          path,
+          error,
+        });
+
+        throw error;
+      }
+
+      if (!updatedProfile) {
+        throw new Error('O documento foi enviado, mas o perfil não foi atualizado corretamente.');
+      }
+
+      setUserData((prev: any) => ({
+        ...prev,
+        ...updatedProfile,
+      }));
+
+      if (refreshProfile) await refreshProfile();
+
+      const { toast } = await import('sonner');
+      toast.success('Documento atualizado com sucesso!');
+    } catch (err: any) {
+      console.error('[REPLACE_PROFESSIONAL_DOCUMENT_FATAL]', err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Erro ao atualizar documento.');
+    } finally {
+      setUpdating(false);
+      e.target.value = '';
     }
   };
 
@@ -985,6 +1104,82 @@ export default function Profile() {
                                   </div>
                                 ))}
                               </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {isPhysio && (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <h4 className="text-lg font-black text-white flex items-center gap-3">
+                                  <FileText className="text-blue-500" size={22} />
+                                  Documentos Profissionais
+                                </h4>
+                                <p className="text-xs text-slate-500 font-medium mt-1">
+                                  Visualize ou atualize os documentos enviados para aprovação do seu perfil.
+                                </p>
+                              </div>
+
+                              <span className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                {userData?.status_aprovacao || 'pendente'}
+                              </span>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                              {professionalDocuments.map((doc) => {
+                                const currentPath = userData?.[doc.field];
+                                const hasDocument = Boolean(currentPath);
+
+                                return (
+                                  <div
+                                    key={doc.field}
+                                    className="p-5 bg-white/5 border border-white/10 rounded-[2rem] space-y-4"
+                                  >
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <p className="font-black text-white text-sm">{doc.label}</p>
+                                        <p className="text-xs text-slate-500 font-medium">{doc.description}</p>
+                                      </div>
+
+                                      <span
+                                        className={cn(
+                                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                          hasDocument
+                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                        )}
+                                      >
+                                        {hasDocument ? 'Enviado' : 'Pendente'}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                      <button
+                                        type="button"
+                                        disabled={!hasDocument || updating}
+                                        onClick={() => handleViewProfessionalDocument(currentPath)}
+                                        className="flex-1 px-4 py-3 bg-white/10 border border-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                      >
+                                        <Eye size={16} />
+                                        Visualizar
+                                      </button>
+
+                                      <label className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all cursor-pointer flex items-center justify-center gap-2">
+                                        {updating ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                                        Substituir
+                                        <input
+                                          type="file"
+                                          accept="image/*,application/pdf"
+                                          className="hidden"
+                                          disabled={updating}
+                                          onChange={(e) => handleReplaceProfessionalDocument(e, doc.field, doc.uploadType)}
+                                        />
+                                      </label>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
