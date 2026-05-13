@@ -32,6 +32,7 @@ export default function Register() {
     setRole(newRole);
     localStorage.setItem('pending_role', newRole);
   };
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -62,10 +63,17 @@ export default function Register() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
     if (name === 'cpf') {
       setFormData(prev => ({ ...prev, [name]: formatCPF(value) }));
       return;
     }
+
+    if (name === 'state') {
+      setFormData(prev => ({ ...prev, [name]: value.toUpperCase().slice(0, 2) }));
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -84,16 +92,17 @@ export default function Register() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
+
     try {
-      // Salva o papel selecionado para que o AuthContext saiba qual perfil criar
       localStorage.setItem('pending_role', role);
-      
+
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`
         }
       });
+
       if (googleError) throw googleError;
     } catch (err: any) {
       console.error("Erro no cadastro com Google:", err);
@@ -107,9 +116,18 @@ export default function Register() {
     setLoading(true);
     setError('');
 
-    // 1. Validação e Limpeza de Dados (Ponto CRÍTICO)
     const cleanName = formData.name.trim();
-    const cleanEmail = formData.email.trim();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanCpf = formData.cpf.replace(/\D/g, '');
+    const cleanZip = formData.zipCode.replace(/\D/g, '');
+    const cleanCity = formData.city.trim();
+    const cleanState = formData.state.trim().toUpperCase();
+    const cleanAddress = formData.address.trim();
+    const normalizedCountry = formData.country.trim();
+    const cleanCountry = normalizedCountry === '' || normalizedCountry.toLowerCase() === 'brasi'
+      ? 'Brasil'
+      : normalizedCountry;
+
     const isPro = role === 'fisioterapeuta' && formData.proKey.trim().toUpperCase() === 'PRO2024';
 
     if (cleanName.length < 2) {
@@ -137,15 +155,57 @@ export default function Register() {
       return;
     }
 
+    if (cleanZip.length !== 8) {
+      setError("Por favor, insira um CEP válido com 8 dígitos.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanCity) {
+      setError("Por favor, informe sua cidade.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanState || cleanState.length !== 2) {
+      setError("Por favor, informe a sigla do estado com 2 letras. Exemplo: SP.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanAddress) {
+      setError("Por favor, informe seu endereço completo.");
+      setLoading(false);
+      return;
+    }
+
     if (role === 'fisioterapeuta') {
       if (!formData.crefito.trim()) {
         setError("O CREFITO é obrigatório para fisioterapeutas.");
         setLoading(false);
         return;
       }
-      // Simple CREFITO validation: at least 4 digits
+
       if (!/^\d{4,}/.test(formData.crefito.trim())) {
         setError("Por favor, insira um CREFITO válido.");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.specialty.trim()) {
+        setError("A especialidade é obrigatória para fisioterapeutas.");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.preco_sessao.trim()) {
+        setError("O preço da sessão é obrigatório para fisioterapeutas.");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.foto_perfil) {
+        setError("A foto de perfil é obrigatória para fisioterapeutas.");
         setLoading(false);
         return;
       }
@@ -157,30 +217,19 @@ export default function Register() {
       }
     }
 
-    // CEP validation (8 digits, ignore non-digits)
-    const cleanZip = formData.zipCode.replace(/\D/g, '');
-    if (cleanZip.length !== 8) {
-      setError("Por favor, insira um CEP válido com 8 dígitos.");
-      setLoading(false);
-      return;
-    }
-
     try {
       console.log("[Register] [FLOW-AUDIT] Starting registration process");
       console.log("[Register] [FLOW-AUDIT] Form Data:", { ...formData, password: '***' });
-      
-      // Salva o papel selecionado como fallback
+
       localStorage.setItem('pending_role', role);
-      
-      // 2. Criar o usuário no Supabase Auth
-      // Reduzindo metadados para o essencial no Auth, focando no 'perfis' para o restante
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
         options: {
           data: {
             nome_completo: cleanName,
-            role: role,
+            role,
             tipo_usuario: role
           }
         }
@@ -193,198 +242,231 @@ export default function Register() {
         return;
       }
 
-      if (authData.user) {
-        console.log("[Register] [FLOW-AUDIT] Auth Success - User ID:", authData.user.id);
-        
-        // Disparar e-mail de boas-vindas
-        sendWelcomeEmail(cleanEmail, cleanName, role as 'paciente' | 'fisioterapeuta')
-          .then(res => console.log(`[Register] [FLOW-AUDIT] Welcome email result:`, res))
-          .catch(err => console.error(`[Register] [FLOW-AUDIT] Welcome email error:`, err));
+      if (!authData.user) {
+        throw new Error('Usuário não foi criado corretamente.');
+      }
 
-        // 3. Upload de documentos obrigatórios se for fisioterapeuta
-        let docUrls = {
-          rg_frente: null as string | null,
-          rg_verso: null as string | null,
-          crefito_frente: null as string | null,
-          crefito_verso: null as string | null,
-          foto_perfil: null as string | null
-        };
+      console.log("[Register] [FLOW-AUDIT] Auth Success - User ID:", authData.user.id);
 
-        if (role === 'fisioterapeuta') {
-          try {
-            console.log("[Register] [FLOW-AUDIT] Starting mandatory document uploads");
-            const uploads = [
-              { file: formData.rg_frente!, type: 'rg_frente' as const },
-              { file: formData.rg_verso!, type: 'rg_verso' as const },
-              { file: formData.crefito_frente!, type: 'crefito_frente' as const },
-              { file: formData.crefito_verso!, type: 'crefito_verso' as const }
-            ];
+      sendWelcomeEmail(cleanEmail, cleanName, role)
+        .then(res => console.log(`[Register] [FLOW-AUDIT] Welcome email result:`, res))
+        .catch(err => console.error(`[Register] [FLOW-AUDIT] Welcome email error:`, err));
 
-            // Await ALL uploads before proceeding to profile creation (Prevent Race Condition)
-            const results = await Promise.all(
-              uploads.map(u => uploadPhysioDocument(authData.user!.id, u.file, u.type))
-            );
+      let docUrls = {
+        rg_frente: null as string | null,
+        rg_verso: null as string | null,
+        crefito_frente: null as string | null,
+        crefito_verso: null as string | null,
+        foto_perfil: null as string | null
+      };
 
-            // Upload foto de perfil se existir
-            let profilePhotoUrl = null;
-            if (formData.foto_perfil) {
-              const { uploadProfilePhoto } = await import('../services/supabaseStorage');
-              profilePhotoUrl = await uploadProfilePhoto(authData.user!.id, formData.foto_perfil);
-            }
-
-            docUrls = {
-              rg_frente: results[0],
-              rg_verso: results[1],
-              crefito_frente: results[2],
-              crefito_verso: results[3],
-              foto_perfil: profilePhotoUrl
-            };
-            console.log("[Register] [FLOW-AUDIT] Mandatory uploads completed:", docUrls);
-          } catch (uploadErr: any) {
-            console.error("[Register] [FLOW-AUDIT] CRITICAL: Mandatory upload failed:", uploadErr);
-            setError("Falha ao processar seus documentos. Por favor, tente novamente.");
-            setLoading(false);
-            return; // Interrompe se documentos obrigatórios falharem
-          }
-        }
-
-        // 4. Upload de documentos adicionais se houver
-        const uploadedDocUrls: string[] = [];
-        if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
-          console.log("[Register] [FLOW-AUDIT] Uploading additional documents");
-          const { uploadDocument } = await import('../services/supabaseStorage');
-          for (const file of registrationDocs) {
-            try {
-              const url = await uploadDocument(authData.user.id, file);
-              uploadedDocUrls.push(url);
-            } catch (uploadErr) {
-              console.error("[Register] [FLOW-AUDIT] Error uploading additional doc:", uploadErr);
-            }
-          }
-        }
-
-        // 5. Criar o perfil detalhado na tabela 'perfis'
-        console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
-        
-        const fullProfileData = {
-          id: authData.user.id,
-          nome_completo: cleanName,
-          email: cleanEmail,
-          telefone: formData.telefone,
-          cpf: formData.cpf.replace(/\D/g, ''), // Limpa pontos e traços
-          cpf_cnpj: formData.cpf.replace(/\D/g, ''),
-          data_nascimento: formData.data_nascimento || null,
-          bio: formData.bio || '',
-          
-          // Localização
-          cidade: formData.city || null,
-          estado: formData.state || null,
-          endereco: formData.address || null,
-          cep: formData.zipCode?.replace(/\D/g, '') || null,
-          pais: formData.country || 'Brasil',
-          localizacao: `${formData.city}${formData.state ? `, ${formData.state}` : ''}`,
-
-          // Profissional
-          role: role,
-          tipo_usuario: role,
-          crefito: role === 'fisioterapeuta' ? formData.crefito : null,
-          especialidade: role === 'fisioterapeuta' ? formData.specialty : null,
-          tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-          preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao : null,
-          
-          // Tipos de Array (Garantindo que sejam listas)
-          formacao_academica: formData.formacao_academica 
-            ? formData.formacao_academica.split('\n').map(s => s.trim()).filter(Boolean) 
-            : [],
-          servicos_ofertados: formData.servicos_ofertados 
-            ? formData.servicos_ofertados.split('\n').map(s => s.trim()).filter(Boolean) 
-            : [],
-
-          // Status e Imagens
-          status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-          is_pro: isPro,
-          plano: role === 'fisioterapeuta' ? 'free' : 'free',
-          plan_type: role === 'fisioterapeuta' ? 'free' : null,
-          plan_intro_seen: false,
-          foto_url: docUrls.foto_perfil || null,
-          avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName.replace(/\s+/g, '_')}`,
-          
-          // Documentos
-          rg_frente_url: docUrls.rg_frente,
-          rg_verso_url: docUrls.rg_verso,
-          crefito_frente_url: docUrls.crefito_frente,
-          crefito_verso_url: docUrls.crefito_verso,
-          documentos: uploadedDocUrls.length > 0
-            ? JSON.stringify(uploadedDocUrls)
-            : null,
-          
-          updated_at: new Date().toISOString()
-        };
-
-        console.log("[Register] [FLOW-AUDIT] Profile Payload:", fullProfileData);
-
+      if (role === 'fisioterapeuta') {
         try {
-          const { error: profileError } = await supabase
-            .from('perfis')
-            .upsert(fullProfileData, {
-              onConflict: 'id'
-            });
+          console.log("[Register] [FLOW-AUDIT] Starting mandatory document uploads");
 
-          if (profileError) {
-            console.error("[Register] [FLOW-AUDIT] Profile Upsert Error:", profileError);
-            throw profileError;
+          const uploads = [
+            { file: formData.rg_frente!, type: 'rg_frente' as const },
+            { file: formData.rg_verso!, type: 'rg_verso' as const },
+            { file: formData.crefito_frente!, type: 'crefito_frente' as const },
+            { file: formData.crefito_verso!, type: 'crefito_verso' as const }
+          ];
+
+          const results = await Promise.all(
+            uploads.map(u => uploadPhysioDocument(authData.user!.id, u.file, u.type))
+          );
+
+          let profilePhotoUrl = null;
+
+          if (formData.foto_perfil) {
+            const { uploadProfilePhoto } = await import('../services/supabaseStorage');
+            profilePhotoUrl = await uploadProfilePhoto(authData.user!.id, formData.foto_perfil);
           }
-          
-          console.log("[Register] [FLOW-AUDIT] Profile Upsert Success");
-        } catch (err: any) {
-          console.warn("[Register] [FLOW-AUDIT] Upsert caution:", err.message);
-          // Se falhou por RLS mas o usuário foi criado, permitimos seguir
-          // O AuthContext tentará sincronizar no próximo acesso
-        }
 
-        // 5. Create subscription record if Pro Key was used
-        if (isPro) {
-          console.log("Creating subscription record for Pro Key...");
+          docUrls = {
+            rg_frente: results[0],
+            rg_verso: results[1],
+            crefito_frente: results[2],
+            crefito_verso: results[3],
+            foto_perfil: profilePhotoUrl
+          };
+
+          console.log("[Register] [FLOW-AUDIT] Mandatory uploads completed:", docUrls);
+        } catch (uploadErr: any) {
+          console.error("[Register] [FLOW-AUDIT] CRITICAL: Mandatory upload failed:", uploadErr);
+          setError(uploadErr?.message || "Falha ao processar seus documentos. Por favor, tente novamente.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const uploadedDocUrls: string[] = [];
+
+      if (role === 'fisioterapeuta' && registrationDocs.length > 0) {
+        console.log("[Register] [FLOW-AUDIT] Uploading additional documents");
+
+        const { uploadDocument } = await import('../services/supabaseStorage');
+
+        for (const file of registrationDocs) {
           try {
-            await supabase.from('assinaturas').insert({
-              user_id: authData.user.id,
-              plano: 'pro',
-              status: 'ativo',
-              valor: 0,
-              data_inicio: new Date().toISOString(),
-              data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-            });
-          } catch (err) {
-            console.warn("Erro ao criar assinatura inicial:", err);
+            const url = await uploadDocument(authData.user.id, file);
+            uploadedDocUrls.push(url);
+          } catch (uploadErr) {
+            console.error("[Register] [FLOW-AUDIT] Error uploading additional doc:", uploadErr);
+            throw new Error('Falha ao enviar um dos documentos adicionais.');
           }
         }
+      }
 
-        toast.success('Cadastro realizado com sucesso!', {
-          description: 'Sua conta foi configurada. Faça login para continuar.'
+      console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
+
+      const fullProfileData = {
+        id: authData.user.id,
+        nome_completo: cleanName,
+        email: cleanEmail,
+        telefone: formData.telefone.trim() || null,
+        cpf: cleanCpf || null,
+        cpf_cnpj: cleanCpf || null,
+        data_nascimento: formData.data_nascimento || null,
+        bio: formData.bio.trim() || '',
+
+        cep: cleanZip || null,
+        cidade: cleanCity || null,
+        estado: cleanState || null,
+        endereco: cleanAddress || null,
+        pais: cleanCountry,
+        localizacao: cleanCity && cleanState ? `${cleanCity}, ${cleanState}` : null,
+
+        role,
+        tipo_usuario: role,
+
+        crefito: role === 'fisioterapeuta' ? formData.crefito.trim() : null,
+        especialidade: role === 'fisioterapeuta' ? formData.specialty.trim() : null,
+        tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
+        preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao.trim() : null,
+
+        genero: formData.gender || null,
+
+        formacao_academica: role === 'fisioterapeuta' && formData.formacao_academica
+          ? formData.formacao_academica.split('\n').map(s => s.trim()).filter(Boolean)
+          : [],
+
+        servicos_ofertados: role === 'fisioterapeuta' && formData.servicos_ofertados
+          ? formData.servicos_ofertados.split('\n').map(s => s.trim()).filter(Boolean)
+          : [],
+
+        status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+        is_pro: isPro,
+        plano: isPro ? 'pro' : 'free',
+        plan_intro_seen: false,
+
+        foto_url: docUrls.foto_perfil || null,
+        avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName.replace(/\s+/g, '_'))}`,
+
+        rg_frente_url: docUrls.rg_frente,
+        rg_verso_url: docUrls.rg_verso,
+        crefito_frente_url: docUrls.crefito_frente,
+        crefito_verso_url: docUrls.crefito_verso,
+
+        documentos: uploadedDocUrls.length > 0
+          ? JSON.stringify(uploadedDocUrls)
+          : null,
+
+        updated_at: new Date().toISOString()
+      };
+
+      console.log("[Register] [FLOW-AUDIT] Profile Payload:", fullProfileData);
+
+      const { data: savedProfile, error: profileError } = await supabase
+        .from('perfis')
+        .upsert(fullProfileData, {
+          onConflict: 'id'
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error('[REGISTER_PROFILE_SAVE_ERROR]', {
+          payload: fullProfileData,
+          error: profileError,
         });
 
-        // 6. Notify admins if it's a physiotherapist registration
-        if (role === 'fisioterapeuta') {
-          const { data: admins } = await supabase
+        throw new Error(
+          profileError.message || 'Não foi possível salvar os dados do perfil.'
+        );
+      }
+
+      if (!savedProfile) {
+        throw new Error('O perfil não foi salvo corretamente.');
+      }
+
+      console.log("[Register] [FLOW-AUDIT] Profile Upsert Success:", savedProfile);
+
+      if (isPro) {
+        console.log("Creating subscription record for Pro Key...");
+
+        try {
+          const { error: subscriptionError } = await supabase.from('assinaturas').insert({
+            user_id: authData.user.id,
+            plano: 'pro',
+            status: 'ativo',
+            valor: 0,
+            data_inicio: new Date().toISOString(),
+            data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+          });
+
+          if (subscriptionError) {
+            console.warn("Erro ao criar assinatura inicial:", subscriptionError);
+          }
+        } catch (err) {
+          console.warn("Erro ao criar assinatura inicial:", err);
+        }
+      }
+
+      if (role === 'fisioterapeuta') {
+        try {
+          const { data: admins, error: adminsError } = await supabase
             .from('perfis')
             .select('id')
-            .eq('tipo_usuario', 'admin');
+            .or('tipo_usuario.eq.admin,role.eq.admin');
+
+          if (adminsError) {
+            console.warn("[Register] [FLOW-AUDIT] Could not load admins for notification:", adminsError);
+          }
 
           if (admins && admins.length > 0) {
             const notifications = admins.map(admin => ({
               user_id: admin.id,
-              titulo: 'Novo Fisioterapeuta',
-              mensagem: `O Dr(a). ${cleanName} se cadastrou e aguarda aprovação de perfil.`,
-              tipo: 'support_request',
-              link: '/admin'
+              titulo: 'Novo fisioterapeuta aguardando aprovação',
+              mensagem: `O(a) fisioterapeuta ${cleanName} se cadastrou e aguarda aprovação de perfil.`,
+              tipo: 'physio_approval_request',
+              link: '/admin/approvals',
+              metadata: {
+                physio_id: authData.user!.id,
+                email: cleanEmail
+              },
+              lida: false
             }));
 
-            await supabase.from('notificacoes').insert(notifications);
-          }
-        }
+            const { error: notificationError } = await supabase
+              .from('notificacoes')
+              .insert(notifications);
 
-        navigate('/login');
+            if (notificationError) {
+              console.warn("[Register] [FLOW-AUDIT] Admin notification error:", notificationError);
+            }
+          }
+        } catch (notificationErr) {
+          console.warn("[Register] [FLOW-AUDIT] Admin notification failed:", notificationErr);
+        }
       }
+
+      toast.success('Cadastro realizado com sucesso!', {
+        description: role === 'fisioterapeuta'
+          ? 'Sua conta foi criada e enviada para aprovação administrativa.'
+          : 'Sua conta foi configurada. Faça login para continuar.'
+      });
+
+      navigate('/login');
     } catch (err: any) {
       console.error("Erro inesperado durante o cadastro:", err);
       setError(err.message || 'Ocorreu um erro inesperado. Por favor, tente novamente.');
@@ -424,8 +506,8 @@ export default function Register() {
                 onClick={() => handleRoleChange('paciente')}
                 className={cn(
                   "flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all",
-                  role === 'paciente' 
-                    ? "bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]" 
+                  role === 'paciente'
+                    ? "bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]"
                     : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
                 )}
               >
@@ -437,8 +519,8 @@ export default function Register() {
                 onClick={() => handleRoleChange('fisioterapeuta')}
                 className={cn(
                   "flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all",
-                  role === 'fisioterapeuta' 
-                    ? "bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]" 
+                  role === 'fisioterapeuta'
+                    ? "bg-blue-600/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]"
                     : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
                 )}
               >
@@ -450,7 +532,7 @@ export default function Register() {
 
           <form onSubmit={handleRegister} className="space-y-6">
             {role === 'fisioterapeuta' && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4"
@@ -485,7 +567,7 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Nome Completo</label>
                 <div className="relative group">
-                  <div 
+                  <div
                     className="absolute flex items-center justify-center pointer-events-none z-20"
                     style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                   >
@@ -518,7 +600,7 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">CPF</label>
                 <div className="relative group">
-                  <div 
+                  <div
                     className="absolute flex items-center justify-center pointer-events-none z-20"
                     style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                   >
@@ -761,7 +843,7 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">E-mail</label>
                 <div className="relative group">
-                  <div 
+                  <div
                     className="absolute flex items-center justify-center pointer-events-none z-20"
                     style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                   >
@@ -782,7 +864,7 @@ export default function Register() {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Senha</label>
                 <div className="relative group">
-                  <div 
+                  <div
                     className="absolute flex items-center justify-center pointer-events-none z-20"
                     style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                   >
@@ -809,7 +891,7 @@ export default function Register() {
             </div>
 
             {error && (
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-red-400 text-xs bg-red-500/10 p-4 rounded-2xl border border-red-500/20 font-medium"
@@ -820,10 +902,10 @@ export default function Register() {
 
             {role === 'fisioterapeuta' && (
               <div className="text-center pt-2">
-                <button 
+                <button
                   type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
-                    detail: { search: 'cadastro', profile: 'fisioterapeuta' } 
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', {
+                    detail: { search: 'cadastro', profile: 'fisioterapeuta' }
                   }))}
                   className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-400 transition-colors"
                 >
