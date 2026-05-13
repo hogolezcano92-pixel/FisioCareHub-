@@ -159,10 +159,17 @@ export default function Profile() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
     if (name === 'cpf') {
       setFormData(prev => ({ ...prev, [name]: formatCPF(value) }));
       return;
     }
+
+    if (name === 'state') {
+      setFormData(prev => ({ ...prev, [name]: value.toUpperCase().slice(0, 2) }));
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -286,16 +293,24 @@ export default function Profile() {
     if (!user || updating) return;
 
     setUpdating(true);
+
     try {
-      // CEP validation if provided
-      if (formData.zipCode) {
-        const cleanZip = formData.zipCode.replace(/\D/g, '');
-        if (cleanZip.length > 0 && cleanZip.length !== 8) {
-          const { toast } = await import('sonner');
-          toast.error("Por favor, insira um CEP válido com 8 dígitos.");
-          setUpdating(false);
-          return;
-        }
+      const cleanZip = formData.zipCode.replace(/\D/g, '');
+      const cleanCpf = formData.cpf.replace(/\D/g, '');
+      const cleanCity = formData.city.trim();
+      const cleanState = formData.state.trim().toUpperCase();
+      const cleanAddress = formData.address.trim();
+      const normalizedCountry = formData.country.trim();
+      const cleanCountry =
+        normalizedCountry === '' || normalizedCountry.toLowerCase() === 'brasi'
+          ? 'Brasil'
+          : normalizedCountry;
+
+      if (formData.zipCode && cleanZip.length > 0 && cleanZip.length !== 8) {
+        const { toast } = await import('sonner');
+        toast.error("Por favor, insira um CEP válido com 8 dígitos.");
+        setUpdating(false);
+        return;
       }
 
       if (formData.cpf && !validateCPF(formData.cpf)) {
@@ -305,62 +320,89 @@ export default function Profile() {
         return;
       }
 
-      const updateData = {
-        nome_completo: formData.name,
-        bio: formData.bio,
-        telefone: formData.telefone,
-        cidade: formData.city,
-        estado: formData.state,
-        endereco: formData.address,
-        cep: formData.zipCode,
-        pais: formData.country,
-        cpf_cnpj: formData.cpf.replace(/\D/g, ''),
-        crefito: isPhysio ? formData.crefito : (userData?.crefito || undefined),
-        preco_sessao: isPhysio ? Number(formData.preco_sessao) : (userData?.preco_sessao || undefined),
-        stripe_account_id: isPhysio ? formData.stripe_account_id : (userData?.stripe_account_id || undefined),
-        genero: formData.gender || undefined,
-        especialidade: isPhysio ? formData.specialty : (userData?.especialidade || undefined),
-        tipo_servico: isPhysio ? formData.serviceType : (userData?.tipo_servico || undefined),
-        data_nascimento: formData.data_nascimento || undefined,
-        experiencia_profissional: isPhysio ? formData.experiencia_profissional : undefined,
-        observacoes_saude: !isPhysio ? formData.observacoes_saude : undefined,
-        formacao_academica: isPhysio ? formData.formacao_academica : undefined,
-        servicos_ofertados: isPhysio ? formData.servicos_ofertados : undefined,
+      if (cleanState && cleanState.length !== 2) {
+        const { toast } = await import('sonner');
+        toast.error("Informe a sigla do estado com 2 letras. Exemplo: SP.");
+        setUpdating(false);
+        return;
+      }
+
+      const updateData: Record<string, any> = {
+        nome_completo: formData.name.trim(),
+        bio: formData.bio.trim(),
+        telefone: formData.telefone.trim() || null,
+
+        cidade: cleanCity || null,
+        estado: cleanState || null,
+        endereco: cleanAddress || null,
+        cep: cleanZip || null,
+        pais: cleanCountry || 'Brasil',
+        localizacao: cleanCity && cleanState ? `${cleanCity}, ${cleanState}` : null,
+
+        cpf: cleanCpf || null,
+        cpf_cnpj: cleanCpf || null,
+
+        genero: formData.gender || null,
+        data_nascimento: formData.data_nascimento || null,
+
+        updated_at: new Date().toISOString(),
       };
 
-      // Clean undefined fields
-      Object.keys(updateData).forEach(key => 
-        (updateData as any)[key] === undefined && delete (updateData as any)[key]
-      );
+      if (isPhysio) {
+        updateData.crefito = formData.crefito.trim() || null;
+        updateData.preco_sessao = formData.preco_sessao ? Number(formData.preco_sessao) : null;
+        updateData.stripe_account_id = formData.stripe_account_id || null;
+        updateData.especialidade = formData.specialty.trim() || null;
+        updateData.tipo_servico = formData.serviceType || null;
+        updateData.experiencia_profissional = formData.experiencia_profissional.trim() || null;
+        updateData.formacao_academica = formData.formacao_academica || [];
+        updateData.servicos_ofertados = formData.servicos_ofertados || [];
+      } else {
+        updateData.observacoes_saude = formData.observacoes_saude.trim() || null;
+      }
 
-      console.log("Genero enviado:", formData.gender);
+      // Não enviar role nem tipo_usuario em edição normal de perfil.
+      // Isso evita converter admin em paciente ou fisioterapeuta em user.
       console.log("Atualizando perfil no Supabase:", updateData);
 
-      const { error } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('perfis')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[PROFILE_UPDATE_ERROR]', {
+          userId: user.id,
+          payload: updateData,
+          error,
+        });
 
-      // Update Auth Metadata if name changed
+        throw error;
+      }
+
+      if (!updatedProfile) {
+        throw new Error('O perfil não foi atualizado corretamente.');
+      }
+
       if (formData.name !== user.user_metadata?.full_name) {
         const { error: authError } = await supabase.auth.updateUser({
           data: { full_name: formData.name }
         });
-        if (authError) console.warn("Erro ao atualizar metadados de autenticação:", authError);
+
+        if (authError) {
+          console.warn("Erro ao atualizar metadados de autenticação:", authError);
+        }
       }
 
-      // Update local state
       setUserData((prev: any) => ({
         ...prev,
-        ...updateData
+        ...updatedProfile
       }));
 
-      // Refresh global profile context
       if (refreshProfile) await refreshProfile();
 
-      // Log activity
       await logActivity(
         user.id,
         isPhysio ? 'fisio' : 'paciente',
@@ -369,7 +411,7 @@ export default function Profile() {
       );
 
       const { toast } = await import('sonner');
-      import('sonner').then(({ toast }) => toast.success(t('profile.update_success')));
+      toast.success(t('profile.update_success'));
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
       const { toast } = await import('sonner');
@@ -384,25 +426,64 @@ export default function Profile() {
     if (!file || !user) return;
 
     setUpdating(true);
+
     try {
       console.log("Iniciando upload de documento para Supabase...");
-      const url = await uploadDocument(user.id, file);
-      
-      const currentDocs = Array.isArray(userData?.documentos) ? userData.documentos : [];
-      const newDocs = [...currentDocs, url];
-      
-      const { error } = await supabase
+
+      const path = await uploadDocument(user.id, file);
+
+      let currentDocs: string[] = [];
+
+      if (Array.isArray(userData?.documentos)) {
+        currentDocs = userData.documentos;
+      } else if (typeof userData?.documentos === 'string' && userData.documentos.trim()) {
+        try {
+          const parsed = JSON.parse(userData.documentos);
+          currentDocs = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          currentDocs = [];
+        }
+      }
+
+      const newDocs = [...currentDocs, path];
+
+      const { data: updatedProfile, error } = await supabase
         .from('perfis')
-        .update({ documentos: newDocs })
-        .eq('id', user.id);
+        .update({
+          documentos: JSON.stringify(newDocs),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[PROFILE_DOCUMENT_UPLOAD_ERROR]', {
+          userId: user.id,
+          path,
+          error,
+        });
 
-      setUserData({ ...userData, documentos: newDocs });
-      import('sonner').then(({ toast }) => toast.success("Documento enviado com sucesso!"));
+        throw error;
+      }
+
+      if (!updatedProfile) {
+        throw new Error('O documento foi enviado, mas o perfil não foi atualizado corretamente.');
+      }
+
+      setUserData((prev: any) => ({
+        ...prev,
+        ...updatedProfile,
+      }));
+
+      if (refreshProfile) await refreshProfile();
+
+      const { toast } = await import('sonner');
+      toast.success("Documento enviado com sucesso!");
     } catch (err: any) {
       console.error("Erro no upload de documento para Supabase:", err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao enviar documento: " + (err.message || "Erro desconhecido")));
+      const { toast } = await import('sonner');
+      toast.error("Erro ao enviar documento: " + (err.message || "Erro desconhecido"));
     } finally {
       setUpdating(false);
     }
