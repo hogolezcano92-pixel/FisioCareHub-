@@ -22,7 +22,7 @@ export const DigitalLibrary = () => {
       
       try {
         const [materiaisRes, purchasesRes] = await Promise.all([
-          supabase.from('library_materials').select('*').order('created_at', { ascending: false }),
+          supabase.from('library_materials').select('*').order('title', { ascending: true }),
           supabase.from('material_purchases').select('material_id').eq('patient_id', profile.id)
         ]);
         
@@ -40,6 +40,17 @@ export const DigitalLibrary = () => {
     };
 
     fetchData();
+
+    const channel = supabase
+      .channel('digital_library_materials_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'library_materials' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile]);
 
   const handleBuy = async (material: any) => {
