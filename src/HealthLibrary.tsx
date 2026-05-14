@@ -281,9 +281,6 @@ export default function HealthLibrary() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {CATEGORY_DATA.map((cat) => {
           const matchedMaterial = getShowcaseMaterial(cat.name);
-          const displayTitle = matchedMaterial?.title || cat.name;
-          const displayPrice = matchedMaterial?.price ?? cat.price;
-          const displayImage = matchedMaterial?.cover_image || cat.image;
 
           return (
             <button
@@ -296,14 +293,14 @@ export default function HealthLibrary() {
               )}
               title={matchedMaterial ? `Abrir material: ${matchedMaterial.title}` : `Filtrar por ${cat.name}`}
             >
-              <img src={displayImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={displayTitle} />
+              <img src={showcase.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={showcase.name} />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex flex-col justify-end p-4 text-left">
                 <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">
                   {matchedMaterial ? 'Material disponível' : 'A partir de'}
                 </p>
-                <p className="text-white font-black text-xs leading-tight line-clamp-2">{displayTitle}</p>
+                <p className="text-white font-black text-xs leading-tight line-clamp-2">{showcase.name}</p>
                 <p className="text-white/80 font-bold text-[10px] mt-1">
-                  {displayPrice === 0 ? 'Grátis' : `R$ ${displayPrice.toFixed(2)}`}
+                  {displayPrice === 0 ? 'Grátis' : `R$ ${showcase.price.toFixed(2)}`}
                 </p>
               </div>
             </button>
