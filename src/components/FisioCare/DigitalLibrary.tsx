@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import LibraryPaymentModal from '../LibraryPaymentModal';
+import { filterPatientVisibleLibraryMaterials } from '../../utils/libraryVisibility';
 
 export const DigitalLibrary = () => {
   const { profile } = useAuth();
@@ -26,7 +27,7 @@ export const DigitalLibrary = () => {
         ]);
         
         if (materiaisRes.error) throw materiaisRes.error;
-        setMateriais(materiaisRes.data || []);
+        setMateriais(filterPatientVisibleLibraryMaterials(materiaisRes.data || []));
         
         if (purchasesRes.data) {
           setPurchasedIds(purchasesRes.data.map(p => p.material_id));
