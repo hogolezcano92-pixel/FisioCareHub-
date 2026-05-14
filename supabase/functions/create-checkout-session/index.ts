@@ -13,6 +13,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
+// NÃO ALTERAR: este Price ID é usado somente para assinatura Pro.
 const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0-SA8SPjo9l"
 
 const normalizeBrazilianAmount = (rawValue: unknown): number => {
@@ -24,11 +25,23 @@ const normalizeBrazilianAmount = (rawValue: unknown): number => {
     return rawValue
   }
 
-  const cleaned = String(rawValue)
+  let cleaned = String(rawValue)
     .replace("R$", "")
     .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
+    .trim()
+
+  const hasComma = cleaned.includes(",")
+  const hasDot = cleaned.includes(".")
+
+  // Ex.: 1.250,00 -> 1250.00
+  if (hasComma && hasDot) {
+    cleaned = cleaned.replace(/\./g, "").replace(",", ".")
+  } else if (hasComma) {
+    // Ex.: 25,99 -> 25.99
+    cleaned = cleaned.replace(",", ".")
+  }
+  // Ex.: 25.99 permanece 25.99
+  // Ex.: 2500 permanece 2500
 
   return Number(cleaned)
 }
@@ -51,14 +64,20 @@ const getMaterialAmountCents = (item: any): number => {
     throw new Error(`Valor (amount) inválido para o material: ${item.title || item.id}`)
   }
 
-  const rawAsString = String(rawValue)
+  // Campos com estes nomes já devem estar em centavos.
+  // Ex.: price_cents = 2599 significa R$ 25,99.
+  const centsFields = [
+    item.amount_cents,
+    item.price_cents,
+    item.valor_centavos,
+    item.valor_cents,
+  ]
 
-  const amountCents =
-    rawAsString.includes(",") ||
-    rawAsString.includes(".") ||
-    normalizedValue < 100
-      ? Math.round(normalizedValue * 100)
-      : Math.round(normalizedValue)
+  const isAlreadyInCents = centsFields.some(value => value === rawValue)
+
+  const amountCents = isAlreadyInCents
+    ? Math.round(normalizedValue)
+    : Math.round(normalizedValue * 100)
 
   if (!Number.isInteger(amountCents) || amountCents < 50) {
     throw new Error(`Valor (amount) inválido para o material: ${item.title || item.id}`)
