@@ -14,12 +14,6 @@ const falsy = (value: unknown) => {
   return ['false', '0', 'nao', 'não', 'no', 'inativo', 'inactive', 'oculto', 'hidden', 'arquivado', 'archived'].includes(text);
 };
 
-/**
- * Regra oficial da biblioteca do paciente:
- * - paciente só vê material publicado/ativo pelo Admin;
- * - material gerado/publicado por IA diretamente deve ficar oculto;
- * - se o banco antigo ainda não tiver status/is_active, mantém compatibilidade e exibe material legado.
- */
 export const isPatientVisibleLibraryMaterial = (material: LibraryMaterialLike) => {
   if (!material) return false;
 
@@ -46,11 +40,15 @@ export const isPatientVisibleLibraryMaterial = (material: LibraryMaterialLike) =
   if ('archived' in material && truthy(material.archived)) return false;
   if ('is_active' in material && falsy(material.is_active)) return false;
 
-  // Compatibilidade com materiais antigos criados antes da coluna status.
-  // O Admin continua sendo responsável por revisar/ocultar manualmente.
   return true;
 };
 
+export const sortLibraryMaterialsByTitle = <T extends LibraryMaterialLike>(materials: T[] = []) => {
+  return [...materials].sort((a, b) =>
+    String(a.title || '').localeCompare(String(b.title || ''), 'pt-BR', { sensitivity: 'base' })
+  );
+};
+
 export const filterPatientVisibleLibraryMaterials = <T extends LibraryMaterialLike>(materials: T[] = []) => {
-  return materials.filter(isPatientVisibleLibraryMaterial);
+  return sortLibraryMaterialsByTitle(materials.filter(isPatientVisibleLibraryMaterial));
 };
