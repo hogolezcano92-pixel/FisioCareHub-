@@ -605,38 +605,28 @@ export default function HealthLibrary() {
         </div>
       </header>
 
-      {/* Category Showcase */}
+            {/* Category Showcase - vitrine estática, não clicável */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {CATEGORY_DATA.map((cat) => {
-          const matchedMaterial = getShowcaseMaterial(cat.name);
-
-          return (
-            <button
-              key={cat.name}
-              onClick={() => handleCategoryShowcaseClick(cat.name)}
-              className={cn(
-                "group relative aspect-square rounded-[2rem] overflow-hidden border-2 transition-all text-left",
-                selectedCategory === cat.name ? "border-sky-500 scale-95" : "border-transparent hover:border-white/10",
-                matchedMaterial && "ring-1 ring-sky-400/40"
-              )}
-              title={matchedMaterial ? `Abrir material: ${matchedMaterial.title}` : `Filtrar por ${cat.name}`}
-            >
-              <img src={showcase.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={showcase.name} />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex flex-col justify-end p-4 text-left">
-                <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">
-                  {matchedMaterial ? 'Material disponível' : 'A partir de'}
-                </p>
-                <p className="text-white font-black text-xs leading-tight line-clamp-2">{showcase.name}</p>
-                <p className="text-white/80 font-bold text-[10px] mt-1">
-                  {displayPrice === 0 ? 'Grátis' : `R$ ${showcase.price.toFixed(2)}`}
-                </p>
-              </div>
-            </button>
-          );
-        })}
+        {CATEGORY_DATA.map((cat) => (
+          <div
+            key={cat.name}
+            className="group relative aspect-square rounded-[2rem] overflow-hidden border-2 border-transparent hover:border-white/10 transition-all text-left"
+          >
+            <img
+              src={cat.image}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              alt={cat.name}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex flex-col justify-end p-4 text-left">
+              <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">A partir de</p>
+              <p className="text-white font-black text-xs leading-tight line-clamp-2">{cat.name}</p>
+              <p className="text-white/80 font-bold text-[10px] mt-1">R$ {cat.price.toFixed(2)}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Filters */}
+{/* Filters */}
       <div id="library-materials-filter" className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search 
