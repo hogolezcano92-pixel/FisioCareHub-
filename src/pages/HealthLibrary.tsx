@@ -21,6 +21,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { filterPatientVisibleLibraryMaterials } from '../utils/libraryVisibility';
 import LibraryPaymentModal from '../components/LibraryPaymentModal';
 
 interface LibrarySection {
@@ -83,7 +84,7 @@ export default function HealthLibrary() {
     try {
       setLoading(true);
       
-      // Fetch materials - Wrap in try-catch to handle missing tables
+      // Fetch only patient-visible materials. Publishing is controlled manually by Admin.
       const { data: materialsData, error: materialsError } = await supabase
         .from('library_materials')
         .select('*')
@@ -94,7 +95,7 @@ export default function HealthLibrary() {
         // Fallback to empty or sample if needed, but we'll just show empty for now
         setMaterials([]);
       } else {
-        setMaterials(materialsData || []);
+        setMaterials(filterPatientVisibleLibraryMaterials(materialsData || []) as LibraryMaterial[]);
       }
 
       // Fetch user purchases if logged in

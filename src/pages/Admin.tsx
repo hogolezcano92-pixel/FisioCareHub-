@@ -1329,48 +1329,9 @@ export default function Admin() {
   };
 
   const handleGenerateAIContent = async () => {
-    if (!aiGenForm.theme) {
-      import('sonner').then(({ toast }) => toast.error(t('admin_actions.ai_generation.enter_theme', "Digite um tema para o conteúdo.")));
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/library/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          theme: aiGenForm.theme,
-          type: aiGenForm.type,
-          level: aiGenForm.level
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMsg = t('admin_actions.ai_generation.error', "Erro ao gerar conteúdo");
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          errorMsg = errorText || errorMsg;
-        }
-        throw new Error(errorMsg);
-      }
-
-      const material = await response.json();
-      
-      import('sonner').then(({ toast }) => toast.success(t('admin_actions.ai_generation.success', "Conteúdo gerado e publicado com sucesso!")));
-      setAiGenForm({ ...aiGenForm, theme: '' });
-      fetchMateriais();
-    } catch (error: any) {
-      console.error(error);
-      import('sonner').then(({ toast }) => toast.error(t('admin_actions.ai_generation.gen_error', { defaultValue: `Erro ao gerar: ${error.message}`, error: error.message })));
-    } finally {
-      setIsGenerating(false);
-    }
+    import('sonner').then(({ toast }) => toast.info(
+      'Geração automática por IA desativada. Crie e publique materiais manualmente pelo Admin.'
+    ));
   };
 
   const handleAddMaterial = async () => {
@@ -1409,7 +1370,12 @@ export default function Admin() {
           cover_image: finalImageUrl,
           file_url: finalArquivoUrl,
           category: newMaterial.category === 'Sendo categorizado...' ? 'Reabilitação' : newMaterial.category,
-          sections: newMaterial.sections
+          sections: newMaterial.sections,
+          source: 'admin',
+          origem: 'admin',
+          status: 'publicado',
+          is_published: true,
+          is_active: true
         }]);
       
       if (error) {

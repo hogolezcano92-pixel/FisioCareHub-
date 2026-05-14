@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { isPatientVisibleLibraryMaterial } from '../utils/libraryVisibility';
 
 interface LibrarySection {
   type: 'text' | 'step-by-step' | 'alert';
@@ -75,6 +76,9 @@ export default function LibraryMaterialDetail() {
       if (error || !data) {
         console.error('Error fetching material:', error);
         setMaterial(null);
+      } else if (!isPatientVisibleLibraryMaterial(data)) {
+        setMaterial(null);
+        document.title = 'Material indisponível - Biblioteca de Saúde | FisioCareHub';
       } else {
         setMaterial(data);
         document.title = `${data.title} - Biblioteca de Saúde | FisioCareHub`;
