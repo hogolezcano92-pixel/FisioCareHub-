@@ -257,20 +257,60 @@ export default function HealthLibrary() {
     if (category === 'Todas') return true;
 
     const target = normalizeText(category);
-    const fields = [
-      material.title,
-      material.category,
-      material.description,
-      material.clinical_objective,
-      material.topic,
-      material.type,
-    ].map(normalizeText);
+    if (!target) return true;
 
-    return fields.some(field => field.includes(target) || target.includes(field));
+    const title = normalizeText(material.title);
+    const categoryField = normalizeText(material.category);
+    const topic = normalizeText(material.topic);
+    const description = normalizeText(material.description);
+    const objective = normalizeText(material.clinical_objective);
+
+    const searchableFields = [title, categoryField, topic, description, objective]
+      .filter(field => field.length > 0);
+
+    return searchableFields.some(field => field.includes(target));
   };
 
   const getShowcaseMaterial = (categoryName: string) => {
+    const target = normalizeText(categoryName);
+
+    if (!target) return undefined;
+
+    // 1) Primeiro tenta título exatamente igual ou muito próximo.
+    const byTitle = materials.find(material => {
+      const title = normalizeText(material.title);
+      return title === target || title.includes(target);
+    });
+
+    if (byTitle) return byTitle;
+
+    // 2) Depois tenta categoria/tópico exatamente relacionados.
+    const byCategory = materials.find(material => {
+      const category = normalizeText(material.category);
+      const topic = normalizeText(material.topic);
+      return category === target || topic === target || category.includes(target) || topic.includes(target);
+    });
+
+    if (byCategory) return byCategory;
+
+    // 3) Só depois usa descrição/objetivo como busca complementar.
     return materials.find(material => materialMatchesCategory(material, categoryName));
+  };
+
+
+
+  const getMaterialSections = (material?: LibraryMaterial | null): LibrarySection[] => {
+    return Array.isArray(material?.sections) ? material!.sections : [];
+  };
+
+  const getSectionSteps = (section: LibrarySection): string[] => {
+    const steps = section?.content?.steps;
+    return Array.isArray(steps) ? steps : [];
+  };
+
+  const getSectionItems = (section: LibrarySection): string[] => {
+    const items = section?.content?.items;
+    return Array.isArray(items) ? items : [];
   };
 
   const handleCategoryShowcaseClick = (categoryName: string) => {
@@ -421,7 +461,27 @@ export default function HealthLibrary() {
 
                 {/* Content Sections */}
                 <div className="space-y-12">
-                  {selectedMaterial.sections.map((section, idx) => (
+                  {getMaterialSections(selectedMaterial).length === 0 && (
+                    <div className="bg-slate-800/40 rounded-[2rem] p-8 border border-white/5 space-y-4">
+                      <h5 className="text-xl font-black text-white flex items-center gap-3">
+                        <div className="w-2 h-8 bg-sky-500 rounded-full" />
+                        Material em PDF disponível
+                      </h5>
+                      <p className="text-slate-400 leading-relaxed">
+                        Este material foi publicado pelo administrador como arquivo PDF. Use o botão abaixo para abrir o conteúdo.
+                      </p>
+                      {selectedMaterial.file_url && (
+                        <button
+                          onClick={() => window.open(selectedMaterial.file_url, '_blank')}
+                          className="px-5 py-3 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-xs uppercase tracking-widest transition-all"
+                        >
+                          Abrir PDF
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {getMaterialSections(selectedMaterial).map((section, idx) => (
                     <motion.div 
                       key={idx}
                       initial={{ opacity: 0, x: -20 }}
@@ -450,7 +510,7 @@ export default function HealthLibrary() {
                             Guia de Execução
                           </h5>
                           <div className="space-y-4">
-                            {section.content.steps.map((step: string, sIdx: number) => (
+                            {getSectionSteps(section).map((step: string, sIdx: number) => (
                               <div key={sIdx} className="flex gap-4 group">
                                 <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-sky-400 font-black text-xs shrink-0 group-hover:bg-sky-500 group-hover:text-white transition-all">
                                   {sIdx + 1}

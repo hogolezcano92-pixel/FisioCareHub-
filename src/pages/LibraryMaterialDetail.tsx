@@ -16,7 +16,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { isPatientVisibleLibraryMaterial } from '../utils/libraryVisibility';
 
 interface LibrarySection {
   type: 'text' | 'step-by-step' | 'alert';
@@ -76,9 +75,6 @@ export default function LibraryMaterialDetail() {
       if (error || !data) {
         console.error('Error fetching material:', error);
         setMaterial(null);
-      } else if (!isPatientVisibleLibraryMaterial(data)) {
-        setMaterial(null);
-        document.title = 'Material indisponível - Biblioteca de Saúde | FisioCareHub';
       } else {
         setMaterial(data);
         document.title = `${data.title} - Biblioteca de Saúde | FisioCareHub`;
@@ -251,7 +247,7 @@ export default function LibraryMaterialDetail() {
           </div>
         ) : (
           <div className="space-y-12">
-             {material.sections.map((section, idx) => (
+             {(Array.isArray(material.sections) ? material.sections : []).map((section, idx) => (
                 <div key={idx} className="space-y-6">
                    {section.type === 'text' && (
                       <div className="space-y-4">
@@ -269,7 +265,7 @@ export default function LibraryMaterialDetail() {
                             Guia de Execução
                          </h3>
                          <div className="grid gap-4">
-                            {section.content.steps.map((step: string, sIdx: number) => (
+                            {(Array.isArray(section.content?.steps) ? section.content.steps : []).map((step: string, sIdx: number) => (
                                <div key={sIdx} className="flex gap-4 p-4 hover:bg-white/5 rounded-2xl transition-all group">
                                   <div className="w-8 h-8 bg-sky-500 text-white rounded-full flex items-center justify-center font-black text-xs shrink-0 ring-4 ring-sky-500/10">
                                      {sIdx + 1}
