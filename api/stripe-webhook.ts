@@ -1,1 +1,1 @@
-export { default, config } from './webhooks/stripe';
+export { default, config } from './webhooks/stripe.js';
