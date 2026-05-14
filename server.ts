@@ -1021,50 +1021,15 @@ async function startServer() {
     }
   });
 
-  // Library Content Generation (Backend Logic)
-  app.post("/api/library/generate", async (req, res) => {
-    try {
-      const { theme, type, level } = req.body;
-      if (!theme || !type || !level) {
-        return res.status(400).json({ error: "Missing required fields (theme, type, level)" });
-      }
-
-      const aiResponse = await generateLibraryContentAI(theme, type, level);
-      const priceCents = calculateLibraryPrice(aiResponse.complexity, aiResponse.topic, theme);
-      const coverImage = resolveCoverImage(aiResponse.topic, theme);
-      const category = resolveCategory(aiResponse.topic, theme);
-
-      const { data: material, error } = await getSupabaseAdmin()
-        .from('library_materials')
-        .insert({
-          title: aiResponse.title,
-          topic: aiResponse.topic,
-          complexity: aiResponse.complexity,
-          price_cents: priceCents,
-          price: priceCents / 100, // Sync legacy price column
-          description: aiResponse.content.description || aiResponse.content.clinical_objective || "Sem descrição",
-          clinical_objective: aiResponse.content.clinical_objective || "Objetivo Clínico",
-          sections: aiResponse.content.sections,
-          level: (level || 'beginner').toLowerCase(),
-          type: (type || 'educational').toLowerCase(),
-          category: category,
-          is_premium: priceCents > 0,
-          cover_image: coverImage
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      res.json(material);
-    } catch (err: any) {
-      console.error("[Library Generate] Error:", err);
-      res.status(500).json({ error: err.message });
-    }
+  // Library Content Generation disabled
+  // Materiais da Biblioteca de Saúde agora devem ser criados/publicados manualmente pelo Admin.
+  app.post("/api/library/generate", async (_req, res) => {
+    return res.status(403).json({
+      error: "Geração automática de materiais por IA desativada.",
+      message: "Use o Admin > Biblioteca / Materiais para criar, revisar e publicar materiais manualmente."
+    });
   });
 
-  // Updated Webhook to handle bulk material purchase
-  // I will add this to the webhook block later or just update the metadata type check
 
   // Asaas Webhook (New Path)
   app.post("/api/webhooks/asaas", async (req, res) => {
