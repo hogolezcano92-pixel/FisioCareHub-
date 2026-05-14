@@ -21,8 +21,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { filterPatientVisibleLibraryMaterials } from '../utils/libraryVisibility';
 import LibraryPaymentModal from '../components/LibraryPaymentModal';
+import { filterPatientVisibleLibraryMaterials } from '../utils/libraryVisibility';
 
 interface LibrarySection {
   type: 'text' | 'step-by-step' | 'alert';
@@ -78,17 +78,28 @@ export default function HealthLibrary() {
   useEffect(() => {
     document.title = "Biblioteca de Saúde - FisioCareHub";
     fetchData();
+
+    const channel = supabase
+      .channel('patient_library_materials_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'library_materials' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Fetch only patient-visible materials. Publishing is controlled manually by Admin.
+      // Fetch materials - Wrap in try-catch to handle missing tables
       const { data: materialsData, error: materialsError } = await supabase
         .from('library_materials')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('title', { ascending: true });
 
       if (materialsError) {
         console.warn('Table library_materials might not exist yet:', materialsError);
