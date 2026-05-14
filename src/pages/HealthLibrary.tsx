@@ -22,7 +22,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import LibraryPaymentModal from '../components/LibraryPaymentModal';
-import { filterPatientVisibleLibraryMaterials } from '../utils/libraryVisibility';
 
 interface LibrarySection {
   type: 'text' | 'step-by-step' | 'alert';
@@ -78,17 +77,6 @@ export default function HealthLibrary() {
   useEffect(() => {
     document.title = "Biblioteca de Saúde - FisioCareHub";
     fetchData();
-
-    const channel = supabase
-      .channel('patient_library_materials_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'library_materials' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user]);
 
   const fetchData = async () => {
@@ -106,7 +94,7 @@ export default function HealthLibrary() {
         // Fallback to empty or sample if needed, but we'll just show empty for now
         setMaterials([]);
       } else {
-        setMaterials(filterPatientVisibleLibraryMaterials(materialsData || []) as LibraryMaterial[]);
+        setMaterials(materialsData || []);
       }
 
       // Fetch user purchases if logged in
@@ -257,12 +245,68 @@ export default function HealthLibrary() {
     setSelectedMaterial(material);
   };
 
-  const categories = useMemo(() => ['Todas', ...CATEGORY_DATA.map(c => c.name)], []);
+  const normalizeText = (value: unknown) => {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  };
+
+  const materialMatchesCategory = (material: LibraryMaterial, category: string) => {
+    if (category === 'Todas') return true;
+
+    const target = normalizeText(category);
+    const fields = [
+      material.title,
+      material.category,
+      material.description,
+      material.clinical_objective,
+      material.topic,
+      material.type,
+    ].map(normalizeText);
+
+    return fields.some(field => field.includes(target) || target.includes(field));
+  };
+
+  const getShowcaseMaterial = (categoryName: string) => {
+    return materials.find(material => materialMatchesCategory(material, categoryName));
+  };
+
+  const handleCategoryShowcaseClick = (categoryName: string) => {
+    const matchedMaterial = getShowcaseMaterial(categoryName);
+
+    setSelectedCategory(categoryName);
+    setSearchQuery('');
+
+    if (matchedMaterial) {
+      handleAccess(matchedMaterial);
+      return;
+    }
+
+    const filtersElement = document.getElementById('library-materials-filter');
+    filtersElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const categories = useMemo(() => {
+    const dynamicCategories = materials
+      .map(material => material.category)
+      .filter(Boolean);
+
+    return Array.from(new Set(['Todas', ...CATEGORY_DATA.map(c => c.name), ...dynamicCategories]));
+  }, [materials]);
 
   const filteredMaterials = useMemo(() => materials.filter(m => {
-    const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         m.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Todas' || m.category === selectedCategory;
+    const query = normalizeText(searchQuery);
+
+    const matchesSearch = !query ||
+      normalizeText(m.title).includes(query) ||
+      normalizeText(m.description).includes(query) ||
+      normalizeText(m.category).includes(query) ||
+      normalizeText(m.topic).includes(query);
+
+    const matchesCategory = materialMatchesCategory(m, selectedCategory);
+
     return matchesSearch && matchesCategory;
   }), [materials, searchQuery, selectedCategory]);
 
@@ -542,27 +586,40 @@ export default function HealthLibrary() {
 
       {/* Category Showcase */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {CATEGORY_DATA.map((cat) => (
-          <button
-            key={cat.name}
-            onClick={() => setSelectedCategory(cat.name)}
-            className={cn(
-              "group relative aspect-square rounded-[2rem] overflow-hidden border-2 transition-all",
-              selectedCategory === cat.name ? "border-sky-500 scale-95" : "border-transparent hover:border-white/10"
-            )}
-          >
-            <img src={cat.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={cat.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-4 text-left">
-              <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">A partir de</p>
-              <p className="text-white font-black text-xs leading-tight">{cat.name}</p>
-              <p className="text-white/80 font-bold text-[10px] mt-1">R$ {cat.price.toFixed(2)}</p>
-            </div>
-          </button>
-        ))}
+        {CATEGORY_DATA.map((cat) => {
+          const matchedMaterial = getShowcaseMaterial(cat.name);
+          const displayTitle = matchedMaterial?.title || cat.name;
+          const displayPrice = matchedMaterial?.price ?? cat.price;
+          const displayImage = matchedMaterial?.cover_image || cat.image;
+
+          return (
+            <button
+              key={cat.name}
+              onClick={() => handleCategoryShowcaseClick(cat.name)}
+              className={cn(
+                "group relative aspect-square rounded-[2rem] overflow-hidden border-2 transition-all text-left",
+                selectedCategory === cat.name ? "border-sky-500 scale-95" : "border-transparent hover:border-white/10",
+                matchedMaterial && "ring-1 ring-sky-400/40"
+              )}
+              title={matchedMaterial ? `Abrir material: ${matchedMaterial.title}` : `Filtrar por ${cat.name}`}
+            >
+              <img src={displayImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={displayTitle} />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent flex flex-col justify-end p-4 text-left">
+                <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">
+                  {matchedMaterial ? 'Material disponível' : 'A partir de'}
+                </p>
+                <p className="text-white font-black text-xs leading-tight line-clamp-2">{displayTitle}</p>
+                <p className="text-white/80 font-bold text-[10px] mt-1">
+                  {displayPrice === 0 ? 'Grátis' : `R$ ${displayPrice.toFixed(2)}`}
+                </p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div id="library-materials-filter" className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search 
             className="absolute pointer-events-none z-20" 
