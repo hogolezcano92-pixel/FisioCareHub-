@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { filterPatientVisibleLibraryMaterials } from './utils/libraryVisibility';
 
 interface LibraryMaterial {
   id: string;
@@ -58,6 +59,17 @@ export default function HealthLibrary() {
     if (user) {
       fetchData();
     }
+
+    const channel = supabase
+      .channel('patient_library_materials_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'library_materials' }, () => {
+        if (user) fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchData = async () => {
@@ -68,14 +80,14 @@ export default function HealthLibrary() {
       const { data: materialsData, error: materialsError } = await supabase
         .from('library_materials')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('title', { ascending: true });
 
       if (materialsError) {
         console.warn('Table library_materials might not exist yet:', materialsError);
         // Fallback to empty or sample if needed, but we'll just show empty for now
         setMaterials([]);
       } else {
-        setMaterials(materialsData || []);
+        setMaterials(filterPatientVisibleLibraryMaterials(materialsData || []) as LibraryMaterial[]);
       }
 
       // Fetch user purchases
