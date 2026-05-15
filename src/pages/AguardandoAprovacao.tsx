@@ -9,7 +9,8 @@ import {
   MessageCircle,
   RefreshCcw,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -93,7 +94,7 @@ export default function AguardandoAprovacao() {
                 : "bg-blue-50 text-blue-600 border-blue-100"
             )}>
               {isRejected ? <AlertCircle size={14} /> : <Sparkles size={14} />}
-              {isRejected ? 'Ação necessária' : 'Análise em andamento'}
+              {isRejected ? 'Correção necessária' : 'Análise em andamento'}
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black text-slate-950 mb-4 tracking-tight leading-tight">
@@ -102,7 +103,7 @@ export default function AguardandoAprovacao() {
 
             <p className="text-slate-600 font-semibold leading-relaxed text-base sm:text-lg max-w-md mx-auto">
               {isRejected
-                ? 'Nossa equipe analisou seu cadastro profissional e identificou informações ou documentos que precisam ser corrigidos.'
+                ? 'Seu acesso completo continua bloqueado, mas você pode entrar na área limitada de correção para revisar seus dados e documentos.'
                 : 'Seu perfil profissional foi recebido com sucesso e está sendo revisado pela nossa equipe antes da liberação do acesso completo.'}
             </p>
 
@@ -169,13 +170,23 @@ export default function AguardandoAprovacao() {
                 <div className="flex items-start gap-3 text-left bg-amber-50/80 border border-amber-100 rounded-3xl p-4">
                   <HelpCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
                   <p className="text-xs sm:text-sm font-semibold text-amber-900 leading-relaxed">
-                    Acesse sua conta, revise seus dados em Minha Conta ou Perfil Profissional e envie novamente para análise.
+                    Use a área de correção para atualizar seus dados. Depois de salvar, seu cadastro voltará automaticamente para análise.
                   </p>
                 </div>
               )}
             </div>
 
             <div className="mt-8 space-y-4">
+              {isRejected && (
+                <button
+                  onClick={() => navigate('/profile?tab=profile_prof')}
+                  className="flex items-center justify-center gap-3 w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all"
+                >
+                  <UserCog size={21} />
+                  Corrigir Cadastro
+                </button>
+              )}
+
               <a
                 href={supportUrl}
                 target="_blank"
