@@ -178,7 +178,7 @@ function ScrollToTop() {
       left: 0,
       behavior: 'auto'
     });
-    
+
     // Fallback for different browsers/containers
     document.documentElement.scrollTo({
       top: 0,
@@ -286,7 +286,7 @@ function Navbar() {
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
         ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
         : []),
-      
+
       // Items for Physiotherapists
       ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
@@ -355,7 +355,7 @@ function Navbar() {
                 </Link>
               );
             })}
-            
+
             {user ? (
               <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
                 <Link to="/profile" className="flex items-center gap-3 group p-1 pr-3 rounded-2xl hover:bg-white/5 transition-all">
@@ -449,7 +449,7 @@ function Navbar() {
                   {item.name}
                 </Link>
               ))}
-              
+
               {user ? (
                 <div className="pt-4 mt-4 border-t border-white/5 space-y-2">
                   <Link
@@ -506,7 +506,7 @@ function NotificationHandler() {
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
-    
+
     const timer = setTimeout(() => {
       isInitialLoad.current = false;
     }, 3000);
@@ -540,7 +540,7 @@ function NotificationHandler() {
       if (!isInitialLoad.current && data && data.length > 0) {
         const notification = data[0];
         const createdAt = new Date(notification.created_at).getTime();
-        
+
         if (Date.now() - createdAt < 10000) {
           playSound();
           toast.info(notification.titulo, {
@@ -645,20 +645,20 @@ function NotificationHandler() {
 
 function HeaderObserver() {
   const location = useLocation();
-  
+
   useEffect(() => {
     const updateHeaderHeight = () => {
       // Find the currently active fixed or sticky header
       // We look for elements that are likely headers and visible
       const headers = document.querySelectorAll('header, nav.sticky, nav.fixed');
       let activeHeader: HTMLElement | null = null;
-      
+
       // Filter for visible headers that are at the top and FIXED
       for (const h of Array.from(headers) as HTMLElement[]) {
         const rect = h.getBoundingClientRect();
         const style = window.getComputedStyle(h);
         const isFixed = style.position === 'fixed';
-        
+
         if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
           activeHeader = h;
           break; // Usually only one fixed header at top
@@ -675,10 +675,10 @@ function HeaderObserver() {
 
     // Run on mount and location change
     updateHeaderHeight();
-    
+
     // Also run on resize
     window.addEventListener('resize', updateHeaderHeight);
-    
+
     // Observer for dynamic changes (like mobile menu opening affecting header height or visibility)
     const observer = new MutationObserver(updateHeaderHeight);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
@@ -707,7 +707,7 @@ function AppContent() {
 
   const isApproved = profile?.status_aprovacao === 'aprovado';
   const isWaitingPage = location.pathname === '/aguardando-aprovacao';
-  
+
   const showSidebar = useMemo(() => 
     user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea),
     [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]
@@ -729,7 +729,7 @@ function AppContent() {
       <ScrollToTop />
       <LGPDModal />
       <Toaster position="top-right" richColors closeButton />
-      
+
       <ErrorBoundary>
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         <NotificationHandler />
@@ -771,7 +771,7 @@ function AppContent() {
                       <AguardandoAprovacao />
                     </ProtectedRoute>
                   } />
-                  
+
                   {/* Protected Routes */}
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
@@ -792,7 +792,7 @@ function AppContent() {
                   <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationsList /></ProGuard></ProtectedRoute>} />
                   <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
                   <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
-                  <Route path="/chat" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Chat /></ProGuard></ProtectedRoute>} />
+                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                   <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Documents /></ProGuard></ProtectedRoute>} />
@@ -845,7 +845,7 @@ export default function App() {
       try {
         await fetchConfig();
         initSupabase();
-        
+
         clearTimeout(timeoutId);
         setConfigLoaded(true);
         console.log("Aplicação inicializada com sucesso.");
