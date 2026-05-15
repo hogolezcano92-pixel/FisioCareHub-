@@ -257,40 +257,40 @@ export const opportunitiesService = {
       throw error;
     }
 
-    // Notificação para o paciente abrir o app/chat. Se falhar, não bloqueia o interesse.
-    try {
-      await supabase
-        .from('notificacoes')
-        .insert({
-          user_id: input.paciente_id,
-          titulo: 'Fisioterapeuta interessado',
-          mensagem: `${profile?.nome_completo || 'Um fisioterapeuta'} demonstrou interesse na sua solicitação. Continue pelo FisioCareHub para manter o pagamento seguro.`,
-          tipo: 'opportunity_interest',
-          link: '/chat',
-          metadata: {
-            solicitacao_id: input.solicitacao_id,
-            fisio_id: user.id,
-            interest_id: data.id,
-          },
-          lida: false,
-        });
-    } catch (notificationErr) {
-      console.warn('[OPPORTUNITY_NOTIFICATION_WARN]', notificationErr);
+    // Mensagem inicial no chat interno para não liberar contato fora da plataforma.
+    // Usa exatamente o mesmo formato da tela Chat.tsx.
+    const { error: messageError } = await supabase
+      .from('mensagens')
+      .insert({
+        remetente: user.id,
+        destinatario: input.paciente_id,
+        mensagem: message,
+        criado_em: new Date().toISOString(),
+        lida: false,
+      });
+
+    if (messageError) {
+      console.error('[OPPORTUNITY_CHAT_MESSAGE_ERROR]', messageError);
+      throw new Error(`Interesse registrado, mas não foi possível abrir o chat: ${messageError.message}`);
     }
 
-    // Mensagem inicial no chat interno para não liberar contato fora da plataforma.
-    try {
-      await supabase
-        .from('mensagens')
-        .insert({
-          remetente: user.id,
-          destinatario: input.paciente_id,
-          mensagem: message,
-          criado_em: new Date().toISOString(),
-          lida: false,
-        });
-    } catch (messageErr) {
-      console.warn('[OPPORTUNITY_CHAT_MESSAGE_WARN]', messageErr);
+    // Notificação para o paciente.
+    // Importante: não enviar metadata aqui, porque alguns projetos não têm essa coluna em notificacoes.
+    // O sino já reconhece tipo='message' e link='/chat'.
+    const { error: notificationError } = await supabase
+      .from('notificacoes')
+      .insert({
+        user_id: input.paciente_id,
+        titulo: 'Fisioterapeuta interessado',
+        mensagem: `${profile?.nome_completo || 'Um fisioterapeuta'} demonstrou interesse na sua solicitação. Abra o chat para continuar pelo FisioCareHub.`,
+        tipo: 'message',
+        lida: false,
+        link: '/chat',
+      });
+
+    if (notificationError) {
+      console.error('[OPPORTUNITY_NOTIFICATION_ERROR]', notificationError);
+      throw new Error(`Mensagem enviada no chat, mas não foi possível criar notificação: ${notificationError.message}`);
     }
 
     return data;
