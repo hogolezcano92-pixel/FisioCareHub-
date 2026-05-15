@@ -103,12 +103,16 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
     return { success: false, error: 'Email não fornecido' };
   }
 
+  const safeName = escapeHtml(name);
+
   const welcomeMessage = role === 'fisioterapeuta'
     ? `
-      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Bem-vindo à nossa rede de especialistas!</h2>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Estamos muito felizes em ter você como parceiro no <strong>FisioCareHub</strong>.</p>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Sua conta está sendo processada. Em breve você poderá gerenciar seus pacientes e utilizar nossa IA.</p>
-      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seus documentos já foram enviados para auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
+      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Cadastro profissional recebido!</h2>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${safeName}</strong>. Seja bem-vindo à rede de profissionais do <strong>FisioCareHub</strong>.</p>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seu cadastro profissional foi recebido com sucesso e agora está em análise pela nossa equipe.</p>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seus documentos e informações serão revisados para garantir mais segurança aos pacientes e à plataforma.</p>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Assim que seu perfil for aprovado, você receberá uma confirmação por e-mail e poderá acessar os recursos profissionais do FisioCareHub, incluindo sua área de atendimentos, pacientes e ferramentas inteligentes.</p>
+      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Obrigado por escolher fazer parte do <strong>FisioCareHub</strong>.</p>
     `
     : `
       <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Sua jornada de recuperação começa aqui!</h2>
@@ -125,7 +129,9 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
     console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for ${email}`);
     const result = await invokeFunction('Send-email', {
       to: email,
-      subject: `Bem-vindo ao FisioCareHub - ${name}`,
+      subject: role === 'fisioterapeuta'
+        ? `Cadastro profissional recebido - FisioCareHub`
+        : `Bem-vindo ao FisioCareHub - ${name}`,
       html
     });
 
