@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Users,
   Lock,
+  UserRound,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -305,6 +306,28 @@ export default function PhysioOpportunities() {
                       <h2 className="text-lg font-black text-white tracking-tight line-clamp-2">
                         {item.titulo || 'Paciente procurando atendimento'}
                       </h2>
+
+                      <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                        {item.paciente_avatar_url ? (
+                          <img
+                            src={item.paciente_avatar_url}
+                            alt={item.paciente_nome || 'Paciente'}
+                            className="h-10 w-10 rounded-2xl object-cover border border-white/10"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-300">
+                            <UserRound size={18} />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            Paciente
+                          </p>
+                          <p className="text-sm font-black text-white truncate">
+                            {item.paciente_nome || 'Paciente'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="h-11 w-11 rounded-2xl bg-white/5 flex items-center justify-center text-blue-300 border border-white/10 shrink-0">
@@ -374,42 +397,64 @@ export default function PhysioOpportunities() {
       </div>
 
       {selected && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelected(null)} />
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-2xl rounded-[3rem] border border-white/10 bg-slate-900 p-6 sm:p-8 shadow-2xl"
+            className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 bg-slate-900 p-4 sm:p-8 shadow-2xl flex flex-col"
           >
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
+            <div className="flex items-start justify-between gap-4 mb-4 sm:mb-6 shrink-0">
+              <div className="min-w-0 flex-1">
                 <span className="inline-flex rounded-full bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-blue-300 border border-blue-500/20 mb-3">
                   {serviceLabel[selected.tipo_atendimento]}
                 </span>
-                <h2 className="text-2xl font-black text-white">{selected.titulo}</h2>
-                <p className="text-sm text-slate-400 font-semibold mt-1">
+                <h2 className="text-xl sm:text-2xl font-black text-white break-words">{selected.titulo}</h2>
+                <p className="text-sm text-slate-400 font-semibold mt-1 break-words">
                   {[selected.bairro, selected.cidade, selected.estado].filter(Boolean).join(', ') || 'Local não informado'}
                 </p>
+
+                <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  {selected.paciente_avatar_url ? (
+                    <img
+                      src={selected.paciente_avatar_url}
+                      alt={selected.paciente_nome || 'Paciente'}
+                      className="h-12 w-12 rounded-2xl object-cover border border-white/10"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-300">
+                      <UserRound size={20} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Solicitação publicada por
+                    </p>
+                    <p className="text-base font-black text-white truncate">
+                      {selected.paciente_nome || 'Paciente'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <button
                 onClick={() => setSelected(null)}
-                className="h-10 w-10 rounded-2xl bg-white/10 text-white hover:bg-white/15 transition-all"
+                className="h-10 w-10 shrink-0 rounded-2xl bg-white/10 text-white hover:bg-white/15 transition-all"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4">
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Queixa principal</p>
-                <p className="text-sm font-semibold text-slate-200 leading-relaxed">{selected.queixa_principal}</p>
+                <p className="text-sm font-semibold text-slate-200 leading-relaxed break-words">{selected.queixa_principal}</p>
               </div>
 
               {selected.descricao && (
                 <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Descrição</p>
-                  <p className="text-sm font-semibold text-slate-200 leading-relaxed whitespace-pre-wrap">{selected.descricao}</p>
+                  <p className="text-sm font-semibold text-slate-200 leading-relaxed whitespace-pre-wrap break-words">{selected.descricao}</p>
                 </div>
               )}
 
@@ -427,13 +472,13 @@ export default function PhysioOpportunities() {
               </label>
 
               <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
-                <p className="text-xs font-bold text-amber-200 leading-relaxed">
+                <p className="text-xs font-bold text-amber-200 leading-relaxed break-words">
                   Não compartilhe telefone, WhatsApp ou e-mail. O paciente deve contratar e pagar dentro do FisioCareHub para manter a comissão e a segurança do atendimento.
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="mt-4 sm:mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row gap-3 shrink-0">
               <button
                 onClick={() => setSelected(null)}
                 className="flex-1 rounded-2xl bg-white/10 border border-white/10 px-5 py-4 text-xs font-black uppercase tracking-widest text-white hover:bg-white/15 transition-all"
