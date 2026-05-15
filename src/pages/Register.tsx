@@ -23,7 +23,11 @@ export default function Register() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/dashboard');
+      const registrationInProgress = localStorage.getItem('registration_in_progress') === '1';
+
+      if (!registrationInProgress) {
+        navigate('/dashboard');
+      }
     }
   }, [user, authLoading, navigate]);
 
@@ -108,6 +112,34 @@ export default function Register() {
       console.error("Erro no cadastro com Google:", err);
       setError('Erro ao entrar com Google: ' + err.message);
       setLoading(false);
+    }
+  };
+
+  const ensureRegistrationSession = async (userId: string, email: string, password: string) => {
+    const { data: currentSessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.warn('[Register] [FLOW-AUDIT] Could not read current session:', sessionError);
+    }
+
+    if (currentSessionData?.session?.user?.id === userId) {
+      return;
+    }
+
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (loginError || !loginData.session) {
+      throw new Error(
+        loginError?.message ||
+        'Conta criada, mas não foi possível iniciar sessão para salvar os dados completos.'
+      );
+    }
+
+    if (loginData.user?.id !== userId) {
+      throw new Error('Sessão iniciada não corresponde ao usuário recém-cadastrado.');
     }
   };
 
@@ -218,6 +250,8 @@ export default function Register() {
     }
 
     try {
+      localStorage.setItem('registration_in_progress', '1');
+
       console.log("[Register] [FLOW-AUDIT] Starting registration process");
       console.log("[Register] [FLOW-AUDIT] Form Data:", { ...formData, password: '***' });
 
@@ -247,6 +281,8 @@ export default function Register() {
       }
 
       console.log("[Register] [FLOW-AUDIT] Auth Success - User ID:", authData.user.id);
+
+      await ensureRegistrationSession(authData.user.id, cleanEmail, formData.password);
 
       sendWelcomeEmail(cleanEmail, cleanName, role)
         .then(res => console.log(`[Register] [FLOW-AUDIT] Welcome email result:`, res))
@@ -466,11 +502,13 @@ export default function Register() {
           : 'Sua conta foi configurada. Faça login para continuar.'
       });
 
+      await supabase.auth.signOut();
       navigate('/login');
     } catch (err: any) {
       console.error("Erro inesperado durante o cadastro:", err);
       setError(err.message || 'Ocorreu um erro inesperado. Por favor, tente novamente.');
     } finally {
+      localStorage.removeItem('registration_in_progress');
       setLoading(false);
     }
   };
