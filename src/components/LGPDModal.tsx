@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, ExternalLink, ChevronRight } from 'lucide-react';
+import {
+  ShieldCheck,
+  ExternalLink,
+  ChevronRight,
+  LockKeyhole,
+  FileText,
+  Eye,
+  CheckCircle2,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -10,7 +18,7 @@ export default function LGPDModal() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const accepted = localStorage.getItem("lgpdAccepted");
+    const accepted = localStorage.getItem('lgpdAccepted');
     if (!accepted) {
       const timer = setTimeout(() => setVisible(true), 500);
       return () => clearTimeout(timer);
@@ -19,19 +27,20 @@ export default function LGPDModal() {
 
   const handleAccept = async () => {
     setIsClosing(true);
-    
-    // Save to localStorage
-    localStorage.setItem("lgpdAccepted", "true");
 
-    // Save to database if user is authenticated
+    localStorage.setItem('lgpdAccepted', 'true');
+
     if (user) {
       try {
         await supabase
           .from('profiles')
-          .update({ lgpd_aceito: true, lgpd_data_aceite: new Date().toISOString() })
+          .update({
+            lgpd_aceito: true,
+            lgpd_data_aceite: new Date().toISOString(),
+          })
           .eq('id', user.id);
       } catch (error) {
-        console.error("Erro ao salvar consentimento no banco:", error);
+        console.error('Erro ao salvar consentimento no banco:', error);
       }
     }
 
@@ -47,81 +56,107 @@ export default function LGPDModal() {
     <AnimatePresence>
       {(visible || isClosing) && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            className="absolute inset-0 bg-slate-950/75 backdrop-blur-xl"
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 overflow-hidden"
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-[2.25rem] border border-white/30 bg-white shadow-[0_32px_90px_rgba(15,23,42,0.35)]"
           >
             <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
 
-            <div className="p-8 sm:p-10">
-              <div className="flex items-center gap-4 mb-6 text-left">
-                <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 shrink-0">
-                  <ShieldCheck size={32} />
+            <div className="relative p-7 sm:p-10">
+              <div className="absolute right-[-70px] top-[-70px] h-44 w-44 rounded-full bg-blue-500/10 blur-3xl" />
+              <div className="absolute bottom-[-70px] left-[-70px] h-44 w-44 rounded-full bg-purple-500/10 blur-3xl" />
+
+              <div className="relative">
+                <div className="mb-7 flex items-start gap-4 text-left">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
+                    <ShieldCheck size={34} />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                      <LockKeyhole size={12} />
+                      Proteção de dados
+                    </div>
+
+                    <h2 className="text-2xl font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">
+                      Seus dados, sua segurança 🔐
+                    </h2>
+                  </div>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
-                  Seus dados, sua segurança 🔐
-                </h2>
-              </div>
 
-              <div className="space-y-4 text-slate-600 leading-relaxed text-left">
-                <p className="text-base sm:text-lg">
-                  Utilizamos seus dados para melhorar sua experiência. Ao continuar, você concorda com nossos termos de uso e política de privacidade.
+                <div className="space-y-4 text-left">
+                  <p className="text-base font-medium leading-relaxed text-slate-700 sm:text-lg">
+                    Para continuar usando o <strong className="text-slate-950">FisioCareHub</strong>, confirme que você leu e concorda com nossos Termos de Uso e Política de Privacidade.
+                  </p>
+
+                  <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 shadow-inner">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                      <p className="text-sm font-semibold leading-relaxed text-slate-700">
+                        Tratamos suas informações conforme a <strong className="text-slate-950">LGPD</strong>, com foco em segurança, transparência e proteção dos seus dados pessoais e de saúde.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <a
+                    href="/termos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-black uppercase tracking-wider text-blue-700 transition-all hover:border-blue-200 hover:bg-blue-100"
+                  >
+                    <FileText size={15} />
+                    Termos de Uso
+                    <ExternalLink size={12} />
+                  </a>
+
+                  <a
+                    href="/privacidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs font-black uppercase tracking-wider text-indigo-700 transition-all hover:border-indigo-200 hover:bg-indigo-100"
+                  >
+                    <Eye size={15} />
+                    Privacidade
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+
+                <div className="mt-9 space-y-3">
+                  <button
+                    onClick={handleAccept}
+                    className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-5 text-lg font-black text-white shadow-xl shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-blue-500/40 active:scale-[0.98]"
+                  >
+                    Aceitar e continuar
+                    <ChevronRight size={22} className="transition-transform group-hover:translate-x-1" />
+                  </button>
+
+                  <a
+                    href="/termos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950"
+                  >
+                    Ver termos completos
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+
+                <p className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                  FisioCareHub • Plataforma de Gestão em Fisioterapia
                 </p>
-                <p className="text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  Para oferecer a melhor experiência na gestão da sua clínica e tratamentos, processamos informações de acordo com a <strong>LGPD</strong>.
-                </p>
               </div>
-
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
-                <a 
-                  href="/termos" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider"
-                >
-                  Termos de Uso <ExternalLink size={12} />
-                </a>
-                <a 
-                  href="/privacidade" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider"
-                >
-                  Política de Privacidade <ExternalLink size={12} />
-                </a>
-              </div>
-
-              <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleAccept}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center gap-2 group"
-                >
-                  Aceitar e continuar
-                  <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </button>
-                <a
-                  href="/termos"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-4 text-slate-500 font-bold hover:text-slate-900 transition-all rounded-2xl hover:bg-slate-100/50 flex items-center justify-center"
-                >
-                  Ver termos completos
-                </a>
-              </div>
-
-              <p className="mt-8 text-center text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em]">
-                FisioCareHub • Plataforma de Gestão em Fisioterapia
-              </p>
             </div>
           </motion.div>
         </div>
