@@ -52,6 +52,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+  const isRejectedPhysio = isPhysio && (
+    profile?.status_aprovacao === 'reprovado' ||
+    profile?.status_aprovacao === 'rejeitado'
+  );
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || (isPhysio ? 'profile_prof' : 'profile'));
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -401,6 +405,12 @@ export default function Profile() {
         updateData.experiencia_profissional = formData.experiencia_profissional.trim() || null;
         updateData.formacao_academica = formData.formacao_academica || [];
         updateData.servicos_ofertados = formData.servicos_ofertados || [];
+
+        // Se o fisioterapeuta foi reprovado, ao salvar correções ele volta para análise.
+        if (isRejectedPhysio) {
+          updateData.status_aprovacao = 'pendente';
+          updateData.motivo_reprovacao = null;
+        }
       } else {
         updateData.observacoes_saude = formData.observacoes_saude.trim() || null;
       }
@@ -451,11 +461,17 @@ export default function Profile() {
         user.id,
         isPhysio ? 'fisio' : 'paciente',
         'perfil_atualizado',
-        'Seus dados de perfil foram atualizados com sucesso.'
+        isRejectedPhysio
+          ? 'Seus dados foram corrigidos e enviados para nova análise administrativa.'
+          : 'Seus dados de perfil foram atualizados com sucesso.'
       );
 
       const { toast } = await import('sonner');
-      toast.success(t('profile.update_success'));
+      toast.success(
+        isRejectedPhysio
+          ? 'Dados atualizados. Seu cadastro voltou para análise administrativa.'
+          : t('profile.update_success')
+      );
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
       const { toast } = await import('sonner');
@@ -495,6 +511,10 @@ export default function Profile() {
         .from('perfis')
         .update({
           documentos: JSON.stringify(newDocs),
+          ...(isRejectedPhysio ? {
+            status_aprovacao: 'pendente',
+            motivo_reprovacao: null,
+          } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
@@ -523,7 +543,11 @@ export default function Profile() {
       if (refreshProfile) await refreshProfile();
 
       const { toast } = await import('sonner');
-      toast.success("Documento enviado com sucesso!");
+      toast.success(
+        isRejectedPhysio
+          ? 'Documento enviado. Seu cadastro voltou para análise administrativa.'
+          : 'Documento enviado com sucesso!'
+      );
     } catch (err: any) {
       console.error("Erro no upload de documento para Supabase:", err);
       const { toast } = await import('sonner');
@@ -567,6 +591,10 @@ export default function Profile() {
         .from('perfis')
         .update({
           [field]: path,
+          ...(isRejectedPhysio ? {
+            status_aprovacao: 'pendente',
+            motivo_reprovacao: null,
+          } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
@@ -597,7 +625,11 @@ export default function Profile() {
       if (refreshProfile) await refreshProfile();
 
       const { toast } = await import('sonner');
-      toast.success('Documento atualizado com sucesso!');
+      toast.success(
+        isRejectedPhysio
+          ? 'Documento atualizado. Seu cadastro voltou para análise administrativa.'
+          : 'Documento atualizado com sucesso!'
+      );
     } catch (err: any) {
       console.error('[REPLACE_PROFESSIONAL_DOCUMENT_FATAL]', err);
       const { toast } = await import('sonner');
@@ -623,32 +655,32 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
-    
+
     const { toast } = await import('sonner');
     let loadingToast: string | number | undefined;
     setUpdating(true);
-    
+
     try {
       console.log("Iniciando processo de exclusão segura para:", user.id);
       loadingToast = toast.loading("Excluindo sua conta e dados permanentemente...");
-      
+
       // 1. Call Edge Function for complete deletion (Auth + DB + Storage)
       const response = await invokeFunction('delete-user', { userId: user.id });
-      
+
       if (loadingToast) toast.dismiss(loadingToast);
-      
+
       if (response && !response.error) {
         console.log("Edge Function 'delete-user' executada com sucesso:", response.message);
-        
+
         // 2. Final Sign Out and Redirect
         await signOut();
-        
+
         toast.success("Sua conta e todos os seus dados foram apagados.");
         navigate('/');
       } else {
         const errorMsg = response?.error || "Erro ao conectar com servidor de exclusão.";
         console.error("Erro retornado pela Edge Function:", errorMsg, response?.details);
-        
+
         // Se o erro for "User not found", talvez a conta já tenha sido excluída parcialmente
         if (errorMsg.includes("not found") || errorMsg.includes("404") || errorMsg.includes("Function not found")) {
           console.warn("Conta não encontrada ou função não configurada. Forçando saída.");
@@ -663,9 +695,9 @@ export default function Profile() {
     } catch (err: any) {
       if (loadingToast) toast.dismiss(loadingToast);
       console.error("Erro fatal ao excluir conta:", err);
-      
+
       const errorMsg = err.message || "Erro desconhecido.";
-      
+
       // Fallback: Se a função falhou mas o erro indica que o usuário não existe mais no Auth
       if (errorMsg.includes("not found") || errorMsg.includes("404")) {
         await signOut();
@@ -693,11 +725,11 @@ export default function Profile() {
         html: `<h1>Olá ${userData.nome_completo || 'Usuário'}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
         type: "email"
       });
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
-      
+
       import('sonner').then(({ toast }) => toast.success("Sucesso! Um e-mail de teste foi enviado para: " + userData.email));
     } catch (err: any) {
       console.error("Erro ao enviar e-mail de teste:", err);
@@ -814,7 +846,7 @@ export default function Profile() {
                     {/* Profile Header Card */}
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-premium/5 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -mr-32 -mt-32 opacity-50" />
-                      
+
                       <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <AvatarUpload 
                           userId={user?.id || ''}
@@ -824,7 +856,7 @@ export default function Profile() {
                             if (refreshProfile) refreshProfile();
                           }}
                         />
-                        
+
                         <div className="flex-1 text-center md:text-left space-y-4">
                           <div className="space-y-1">
                             <div className="flex items-center justify-center md:justify-start gap-3">
@@ -851,11 +883,39 @@ export default function Profile() {
 
                     {/* Profile Form */}
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                      {isRejectedPhysio && (
+                        <div className="mb-8 p-6 rounded-[2rem] bg-rose-500/10 border border-rose-500/20">
+                          <div className="flex items-start gap-4">
+                            <AlertTriangle className="text-rose-400 shrink-0 mt-1" size={22} />
+                            <div>
+                              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-2">
+                                Correção necessária
+                              </h4>
+                              <p className="text-rose-100/90 text-sm font-medium leading-relaxed">
+                                Seu cadastro profissional foi reprovado temporariamente. Revise seus dados e documentos.
+                                Ao salvar as alterações, seu cadastro voltará automaticamente para análise administrativa.
+                              </p>
+
+                              {(profile as any)?.motivo_reprovacao && (
+                                <div className="mt-4 p-4 rounded-2xl bg-black/20 border border-rose-400/20">
+                                  <p className="text-[10px] font-black text-rose-300 uppercase tracking-widest mb-1">
+                                    Motivo informado pela análise
+                                  </p>
+                                  <p className="text-sm text-white font-bold leading-relaxed">
+                                    {(profile as any).motivo_reprovacao}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
                         <User className="text-blue-500" size={24} />
                         {t('profile.personal_info')}
                       </h3>
-                      
+
                       <form onSubmit={handleUpdateProfile} className="space-y-8">
                         <div className="grid md:grid-cols-2 gap-8">
                           <div className="space-y-2">
@@ -1047,7 +1107,7 @@ export default function Profile() {
 
                             <div className="space-y-4">
                               <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Serviços Oferecidos</label>
-                              
+
                               <div className="flex flex-wrap gap-2 mb-4">
                                 {commonServices.map(service => {
                                   const isSelected = formData.servicos_ofertados.includes(service);
@@ -1223,7 +1283,7 @@ export default function Profile() {
                         <Lock className="text-blue-500" size={24} />
                         Segurança e Acesso
                       </h3>
-                      
+
                       <div className="space-y-6">
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
                           <div className="text-center md:text-left">
@@ -1263,7 +1323,7 @@ export default function Profile() {
                         <Bell className="text-blue-500" size={24} />
                         Preferências de Notificação
                       </h3>
-                      
+
                       <div className="space-y-4">
                         {[
                           { label: 'Notificações Push', desc: 'Alertas em tempo real no navegador/celular.' },
@@ -1313,7 +1373,7 @@ export default function Profile() {
                         <Eye className="text-blue-500" size={24} />
                         Privacidade e Dados
                       </h3>
-                      
+
                       <div className="space-y-6">
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-4">
                           <p className="font-black text-white">{t('profile.visibility')}</p>
@@ -1322,7 +1382,7 @@ export default function Profile() {
                             Seus dados de saúde são protegidos por criptografia de ponta a ponta.
                           </p>
                         </div>
-                        
+
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex items-center justify-between">
                           <div>
                             <p className="font-black text-white">Exportar Meus Dados</p>
@@ -1352,7 +1412,7 @@ export default function Profile() {
                         {t('settings.language')}
                       </h3>
                       <p className="text-slate-400 font-medium mb-8 ml-9">{t('settings.language_description')}</p>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         {languages.map((lang) => (
                           <button
@@ -1379,7 +1439,7 @@ export default function Profile() {
                                 </p>
                               </div>
                             </div>
-                            
+
                             {i18n.language.startsWith(lang.code) && (
                               <div className="absolute top-4 right-4">
                                 <CheckCircle className="text-blue-500" size={20} />
@@ -1397,7 +1457,7 @@ export default function Profile() {
                         Personalização de Tema
                       </h3>
                       <p className="text-slate-400 font-medium mb-8 ml-9">Escolha o tema que melhor combina com seu estilo.</p>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         {Object.values(THEMES).map((t) => (
                           <button
@@ -1417,14 +1477,14 @@ export default function Profile() {
                             >
                               {currentThemeId === t.id && <CheckCircle size={24} />}
                             </div>
-                            
+
                             <p className={cn(
                               "font-black text-lg tracking-tight mb-1",
                               currentThemeId === t.id ? "text-white" : "text-slate-300"
                             )}>
                               {t.name}
                             </p>
-                            
+
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                               {t.id === 'blue' ? 'Padrão Profissional' : t.id === 'green' ? 'Bem-estar Profundo' : 'Visual Exclusivo'}
                             </p>
@@ -1467,7 +1527,7 @@ export default function Profile() {
                         <Building2 className="text-blue-500" size={24} />
                         {isPhysio ? t('clinic.clinic_data') : t('clinic.patient_data')}
                       </h3>
-                      
+
                       <div className="grid md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                           <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CEP</label>
@@ -1548,7 +1608,7 @@ export default function Profile() {
                   >
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-xl shadow-blue-900/5 overflow-hidden relative">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -mr-32 -mt-32 opacity-50" />
-                      
+
                       <div className="relative z-10 space-y-8">
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center shadow-lg shadow-amber-500/10">
@@ -1605,7 +1665,7 @@ export default function Profile() {
                         <DollarSign className="text-emerald-400" size={24} />
                         Pagamentos Recebidos
                       </h3>
-                      
+
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <div className="p-8 bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 space-y-1">
                           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saldo Disponível</p>
