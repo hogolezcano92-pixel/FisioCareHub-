@@ -83,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ...(profile?.tipo_usuario === 'paciente' ? [
             { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
             { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
+            { name: 'Solicitar atendimento', path: '/patient/requests', icon: MessageSquare },
             { name: t('nav.agenda'), path: '/appointments', icon: Calendar },
             { name: t('nav.workouts'), path: '/treinos', icon: Activity },
             { name: t('nav.records'), path: '/records', icon: FileText },
