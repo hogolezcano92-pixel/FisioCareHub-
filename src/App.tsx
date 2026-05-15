@@ -97,6 +97,7 @@ const FindPhysio = lazy(() => import('./pages/FindPhysio'));
 const PhysioDashboard = lazy(() => import('./pages/PhysioDashboard'));
 const FinanceServiceSettings = lazy(() => import('./pages/FinanceServiceSettings'));
 const PhysioOpportunities = lazy(() => import('./pages/PhysioOpportunities'));
+const PatientOpportunityRequests = lazy(() => import('./pages/PatientOpportunityRequests'));
 const Telehealth = lazy(() => import('./pages/Telehealth'));
 const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
 
@@ -816,6 +817,7 @@ function AppContent() {
                   <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
                   <Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><FinanceServiceSettings /></ProGuard></ProtectedRoute>} />
                   <Route path="/opportunities" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioOpportunities /></ProGuard></ProtectedRoute>} />
+                  <Route path="/patient/requests" element={<ProtectedRoute allowedRoles={['paciente']}><PatientOpportunityRequests /></ProtectedRoute>} />
                   <Route path="/telehealth" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Telehealth /></ProGuard></ProtectedRoute>} />
                 </Routes>
               </Suspense>
