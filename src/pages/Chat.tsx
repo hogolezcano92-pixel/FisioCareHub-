@@ -874,7 +874,7 @@ export default function Chat() {
           </>
         )}
       </main>
-      {!isChattingWithSupport && (
+      {!isChattingWithSupport && showKineAI && (
         <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
       )}
     </div>
