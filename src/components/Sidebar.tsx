@@ -71,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
             { name: t('nav.my_patients'), path: '/patients', icon: Users },
+            { name: 'Oportunidades', path: '/opportunities', icon: Search, pro: true },
             { name: t('nav.agenda'), path: '/agenda', icon: Calendar, pro: true },
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
