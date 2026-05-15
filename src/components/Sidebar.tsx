@@ -9,11 +9,8 @@ import {
   Stethoscope,
   BrainCircuit, 
   MessageSquare, 
-  Bell, 
   User, 
   LogOut,
-  X,
-  Menu,
   ShieldCheck,
   Activity,
   Crown,
@@ -106,22 +103,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           title: t('nav.communication'),
           items: [
-            { name: t('nav.chat'), path: '/chat', icon: MessageSquare, pro: isPhysio },
+            // Chat e Suporte precisam ficar liberados para fisioterapeuta gratuito,
+            // porque são o canal direto com administrador/suporte.
+            { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
             { name: t('nav.support'), path: '/chat?support=true', icon: ShieldCheck },
           ]
         }
       ] : [])
     ]),
-        {
-          title: t('nav.account'),
-          items: [
-            ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
-            { name: profile?.tipo_usuario === 'paciente' ? t('nav.patient_guide') : t('nav.guide'), path: '/guia', icon: BookOpen },
-            { name: t('nav.about'), path: '/sobre', icon: Info },
-            { name: t('nav.help'), path: '#help', icon: HelpCircle },
-            { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
-          ]
-        }
+    {
+      title: t('nav.account'),
+      items: [
+        ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
+        { name: profile?.tipo_usuario === 'paciente' ? t('nav.patient_guide') : t('nav.guide'), path: '/guia', icon: BookOpen },
+        { name: t('nav.about'), path: '/sobre', icon: Info },
+        { name: t('nav.help'), path: '#help', icon: HelpCircle },
+        { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
+      ]
+    }
   ], [isAdmin, isApproved, isPhysio, profile, user, t]);
 
   const sidebarContent = (
@@ -145,6 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 const isActive = location.pathname === item.path;
                 const isLogout = item.path === '#logout';
                 const isHelp = item.path === '#help';
+                const isLocked = item.pro && !isPro;
 
                 return (
                   <button
@@ -156,6 +156,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         window.dispatchEvent(new CustomEvent('toggle-help-center', { 
                           detail: { profile: profile?.tipo_usuario } 
                         }));
+                      } else if (isLocked) {
+                        navigate('/subscription');
                       } else {
                         navigate(item.path);
                       }
@@ -181,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       <span>{item.name}</span>
                     </div>
 
-                    {item.pro && !isPro && (
+                    {isLocked && (
                       <Lock size={12} className="text-amber-500 group-hover:text-amber-400 transition-colors" />
                     )}
 
@@ -212,7 +214,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               {profile?.nome_completo || 'Usuário'}
             </p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
-              {profile?.tipo_usuario === 'paciente' ? (profile?.idioma === 'en' ? 'Patient' : profile?.idioma === 'es' ? 'Paciente' : 'Paciente') : (profile?.plano === 'admin' ? 'Admin' : (profile?.idioma === 'en' ? 'Professional' : profile?.idioma === 'es' ? 'Profesional' : 'Profissional'))}
+              {profile?.tipo_usuario === 'paciente'
+                ? (profile?.idioma === 'en' ? 'Patient' : profile?.idioma === 'es' ? 'Paciente' : 'Paciente')
+                : (profile?.plano === 'admin'
+                  ? 'Admin'
+                  : (profile?.idioma === 'en' ? 'Professional' : profile?.idioma === 'es' ? 'Profesional' : 'Profissional'))}
             </p>
           </div>
         </div>
