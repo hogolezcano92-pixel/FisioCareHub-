@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLocation } from 'react-router-dom';
 import {
   ShieldCheck,
   ExternalLink,
@@ -16,14 +17,29 @@ export default function LGPDModal() {
   const [visible, setVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
+
+  const isLegalPage =
+    location.pathname === '/termos' ||
+    location.pathname === '/privacidade' ||
+    location.pathname.startsWith('/termos/') ||
+    location.pathname.startsWith('/privacidade/');
 
   useEffect(() => {
+    if (isLegalPage) {
+      setVisible(false);
+      setIsClosing(false);
+      return;
+    }
+
     const accepted = localStorage.getItem('lgpdAccepted');
     if (!accepted) {
       const timer = setTimeout(() => setVisible(true), 500);
       return () => clearTimeout(timer);
     }
-  }, []);
+
+    setVisible(false);
+  }, [isLegalPage]);
 
   const handleAccept = async () => {
     setIsClosing(true);
@@ -50,7 +66,7 @@ export default function LGPDModal() {
     }, 400);
   };
 
-  if (!visible && !isClosing) return null;
+  if (isLegalPage || (!visible && !isClosing)) return null;
 
   return (
     <AnimatePresence>
