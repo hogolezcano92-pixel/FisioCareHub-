@@ -1,6 +1,6 @@
-
 /**
  * FisioCareHub - Transactional Email Service
+ * Template compatível com Gmail, Outlook e clientes móveis.
  */
 
 import { formatDateBR } from '../utils/date.ts';
@@ -12,6 +12,13 @@ interface EmailParams {
   data_hora_formatada?: string;
 }
 
+const escapeHtml = (value: string) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
 export const generateEmailHTML = ({
   nome_do_usuario,
   mensagem_principal_da_notificacao,
@@ -19,56 +26,67 @@ export const generateEmailHTML = ({
 }: EmailParams): string => {
   const ano = new Date().getFullYear();
   const dataExtenso = data_hora_formatada || formatDateBR(new Date());
+  const safeName = escapeHtml(nome_do_usuario);
 
   return `
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Notificação FisioCareHub</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Notificação FisioCareHub</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, p, a, h1, h2 { font-family: Arial, sans-serif !important; }
+    table { border-collapse: collapse !important; }
+  </style>
+  <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F8FAFC;">
-        <tr>
-            <td align="center" style="padding: 40px 0;">
-                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                    <tr>
-                        <td align="center" style="padding: 40px 30px; border-bottom: 1px solid #F1F5F9;">
-                            <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #2563EB;">FisioCareHub</h1>
-                            <p style="margin: 10px 0 0 0; color: #475569; font-size: 14px;">Plataforma de Gestão em Fisioterapia</p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style="padding: 40px 30px; color: #334155; line-height: 1.6;">
-                            <p style="font-size: 18px; margin: 0 0 24px 0; color: #1E293B;">Olá, <strong>${nome_do_usuario}</strong></p>
-                            <div style="font-size: 16px; color: #475569;">
-                                ${mensagem_principal_da_notificacao}
-                            </div>
-                        </td>
-                    </tr>
+<body style="margin:0; padding:0; width:100% !important; min-width:100%; background-color:#f8fafc; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+  <center style="width:100%; background-color:#f8fafc;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%; margin:0; padding:0; background-color:#f8fafc; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+          <!--[if mso]>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"><tr><td>
+          <![endif]-->
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%; max-width:600px; background-color:#ffffff; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; border:1px solid #e5e7eb;">
+            <tr>
+              <td align="center" style="padding:34px 22px 28px 22px; border-bottom:1px solid #f1f5f9; text-align:center;">
+                <h1 style="margin:0; padding:0; font-family:Arial, Helvetica, sans-serif; font-size:30px; line-height:36px; font-weight:800; color:#2563eb; word-break:break-word;">FisioCareHub</h1>
+                <p style="margin:10px 0 0 0; padding:0; font-family:Arial, Helvetica, sans-serif; color:#475569; font-size:14px; line-height:22px;">Plataforma de Gestão em Fisioterapia</p>
+              </td>
+            </tr>
 
-                    <tr>
-                        <td style="background-color: #1E293B; padding: 40px 30px; text-align: center;">
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                                <tr>
-                                    <td style="color: #CBD5E1; font-size: 14px; line-height: 1.5;">
-                                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #FFFFFF;">Informações de Contato</p>
-                                        <p style="margin: 5px 0;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">suporte@fisiocarehub.company</a></p>
-                                        <p style="margin: 5px 0;">Website: <a href="https://fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">fisiocarehub.company</a></p>
-                                        <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
-                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8;">FisioCareHub © ${ano} - Todos os direitos reservados</p>
-                                        <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${dataExtenso}</p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
+            <tr>
+              <td style="padding:34px 22px; font-family:Arial, Helvetica, sans-serif; color:#334155; font-size:16px; line-height:26px; word-break:break-word; overflow-wrap:break-word;">
+                <p style="font-family:Arial, Helvetica, sans-serif; font-size:18px; line-height:26px; margin:0 0 22px 0; color:#1e293b;">Olá, <strong>${safeName}</strong></p>
+                <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569; word-break:break-word; overflow-wrap:break-word;">
+                  ${mensagem_principal_da_notificacao}
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="background-color:#1e293b; padding:32px 22px; text-align:center; font-family:Arial, Helvetica, sans-serif;">
+                <p style="margin:0 0 10px 0; font-family:Arial, Helvetica, sans-serif; font-weight:bold; color:#ffffff; font-size:14px; line-height:21px;">Informações de Contato</p>
+                <p style="margin:5px 0; font-family:Arial, Helvetica, sans-serif; color:#cbd5e1; font-size:14px; line-height:21px;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color:#ffffff; text-decoration:none; font-weight:bold; word-break:break-word;">suporte@fisiocarehub.company</a></p>
+                <p style="margin:5px 0; font-family:Arial, Helvetica, sans-serif; color:#cbd5e1; font-size:14px; line-height:21px;">Website: <a href="https://fisiocarehub.company" style="color:#ffffff; text-decoration:none; font-weight:bold; word-break:break-word;">fisiocarehub.company</a></p>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; margin:20px 0;"><tr><td style="border-top:1px solid #334155; font-size:0; line-height:0;">&nbsp;</td></tr></table>
+                <p style="margin:10px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#94a3b8;">FisioCareHub © ${ano} - Todos os direitos reservados</p>
+                <p style="margin:15px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:17px; color:#94a3b8;">Gerado em: ${dataExtenso}</p>
+              </td>
+            </tr>
+          </table>
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
+        </td>
+      </tr>
     </table>
+  </center>
 </body>
 </html>
   `;
@@ -79,23 +97,23 @@ export const generateEmailHTML = ({
  */
 export const sendWelcomeEmail = async (email: string, name: string, role: 'paciente' | 'fisioterapeuta') => {
   console.log(`[EmailService] [FLOW-AUDIT] Preparing welcome email for ${name} (${email}) as ${role}`);
-  
+
   if (!email) {
     console.warn(`[EmailService] [FLOW-AUDIT] ABORTED: No email provided for ${name}`);
     return { success: false, error: 'Email não fornecido' };
   }
 
-  const welcomeMessage = role === 'fisioterapeuta' 
+  const welcomeMessage = role === 'fisioterapeuta'
     ? `
-      <h2 style="color: #2563eb; margin-top: 0;">Bem-vindo à nossa rede de especialistas!</h2>
-      <p>Estamos muito felizes em ter você como parceiro no <strong>FisioCareHub</strong>.</p>
-      <p>Sua conta está sendo processada. Em breve você poderá gerenciar seus pacientes e utilizar nossa IA.</p>
-      <p>Seus documentos já foram enviados para auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
+      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Bem-vindo à nossa rede de especialistas!</h2>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Estamos muito felizes em ter você como parceiro no <strong>FisioCareHub</strong>.</p>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Sua conta está sendo processada. Em breve você poderá gerenciar seus pacientes e utilizar nossa IA.</p>
+      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seus documentos já foram enviados para auditoria e você receberá uma confirmação assim que seu perfil for aprovado.</p>
     `
     : `
-      <h2 style="color: #2563eb; margin-top: 0;">Sua jornada de recuperação começa aqui!</h2>
-      <p>Estamos felizes em acompanhar você no seu processo de reabilitação através do <strong>FisioCareHub</strong>.</p>
-      <p>Acesse o app para visualizar seus exercícios e acompanhar sua evolução.</p>
+      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Sua jornada de recuperação começa aqui!</h2>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Estamos felizes em acompanhar você no seu processo de reabilitação através do <strong>FisioCareHub</strong>.</p>
+      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Acesse o app para visualizar seus exercícios e acompanhar sua evolução.</p>
     `;
 
   const html = generateEmailHTML({
@@ -105,13 +123,12 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
 
   try {
     console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for ${email}`);
-    // Using PascalCase for function name to match server.ts invocation
     const result = await invokeFunction('Send-email', {
       to: email,
       subject: `Bem-vindo ao FisioCareHub - ${name}`,
       html
     });
-    
+
     console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Welcome email sent for ${email}`, result);
     return { success: true };
   } catch (error: any) {
@@ -125,22 +142,22 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
  */
 export const sendProfessionalApprovalEmail = async (email: string, name: string, approved: boolean) => {
   console.log(`[EmailService] [FLOW-AUDIT] Preparing professional ${approved ? 'approval' : 'rejection'} email for ${email}`);
-  
+
   if (!email) {
     console.warn(`[EmailService] [FLOW-AUDIT] ABORTED: No email for professional status update`);
     return { success: false, error: 'Email não fornecido' };
   }
 
-  const message = approved 
+  const message = approved
     ? `
-      <h2 style="color: #10b981; margin-top: 0;">Perfil Aprovado!</h2>
-      <p>Parabéns, <strong>${name}</strong>! Seu perfil de fisioterapeuta foi revisado e aprovado com sucesso.</p>
-      <p>Agora você já pode aceitar solicitações de pacientes e gerenciar seus atendimentos.</p>
+      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#10b981; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Perfil Aprovado!</h2>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Parabéns, <strong>${escapeHtml(name)}</strong>! Seu perfil de fisioterapeuta foi revisado e aprovado com sucesso.</p>
+      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Agora você já pode aceitar solicitações de pacientes e gerenciar seus atendimentos.</p>
     `
     : `
-      <h2 style="color: #ef4444; margin-top: 0;">Perfil não aprovado</h2>
-      <p>Olá, <strong>${name}</strong>. Infelizmente seu perfil não pôde ser aprovado no momento.</p>
-      <p>Por favor, entre em contato com nosso suporte para mais detalhes.</p>
+      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#ef4444; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Perfil não aprovado</h2>
+      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${escapeHtml(name)}</strong>. Infelizmente seu perfil não pôde ser aprovado no momento.</p>
+      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Por favor, entre em contato com nosso suporte para mais detalhes.</p>
     `;
 
   const html = generateEmailHTML({
@@ -180,7 +197,7 @@ export const sendAppointmentStatusEmail = async (
   }
 ) => {
   if (!email) return { success: false, error: 'Email não fornecido' };
-  
+
   console.log(`[EmailService] [FLOW-AUDIT] Sending status update (${status}) to ${name} (${email})`);
 
   const statusMap: Record<string, string> = {
@@ -191,16 +208,18 @@ export const sendAppointmentStatusEmail = async (
   };
 
   const message = `
-    <h2 style="color: #2563eb; margin-top: 0;">Atualização de Agendamento</h2>
-    <p>Olá, <strong>${name}</strong>, o status do seu agendamento foi atualizado.</p>
-    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
-      <p><strong>Novo Status:</strong> <span style="font-weight: bold;">${statusMap[status] || status}</span></p>
-      <p><strong>Profissional:</strong> ${physioName}</p>
-      <p><strong>Data:</strong> ${details.date}</p>
-      <p><strong>Horário:</strong> ${details.time}</p>
-      ${details.service ? `<p><strong>Tipo:</strong> ${details.service}</p>` : ''}
-      ${details.reason ? `<p><strong>Motivo:</strong> ${details.reason}</p>` : ''}
-    </div>
+    <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Atualização de Agendamento</h2>
+    <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${escapeHtml(name)}</strong>, o status do seu agendamento foi atualizado.</p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f1f5f9; border-collapse:collapse; margin:20px 0;">
+      <tr><td style="padding:18px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#334155;">
+        <p style="margin:0 0 8px 0;"><strong>Novo Status:</strong> <span style="font-weight:bold;">${statusMap[status] || status}</span></p>
+        <p style="margin:0 0 8px 0;"><strong>Profissional:</strong> ${escapeHtml(physioName)}</p>
+        <p style="margin:0 0 8px 0;"><strong>Data:</strong> ${escapeHtml(details.date)}</p>
+        <p style="margin:0 0 8px 0;"><strong>Horário:</strong> ${escapeHtml(details.time)}</p>
+        ${details.service ? `<p style="margin:0 0 8px 0;"><strong>Tipo:</strong> ${escapeHtml(details.service)}</p>` : ''}
+        ${details.reason ? `<p style="margin:0;"><strong>Motivo:</strong> ${escapeHtml(details.reason)}</p>` : ''}
+      </td></tr>
+    </table>
   `;
 
   const html = generateEmailHTML({
@@ -249,14 +268,16 @@ export const sendAppointmentConfirmation = async (
   }
 
   const message = `
-    <h2 style="color: #2563eb; margin-top: 0;">Novo Agendamento Confirmado</h2>
-    <p>Olá, <strong>${details.patientName}</strong>, sua sessão de fisioterapia foi agendada com sucesso.</p>
-    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0;">
-      <p><strong>Profissional:</strong> ${details.physioName}</p>
-      <p><strong>Data:</strong> ${details.date}</p>
-      <p><strong>Horário:</strong> ${details.time}</p>
-      <p><strong>Tipo:</strong> ${details.service}</p>
-    </div>
+    <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Novo Agendamento Confirmado</h2>
+    <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${escapeHtml(details.patientName)}</strong>, sua sessão de fisioterapia foi agendada com sucesso.</p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f1f5f9; border-collapse:collapse; margin:20px 0;">
+      <tr><td style="padding:18px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#334155;">
+        <p style="margin:0 0 8px 0;"><strong>Profissional:</strong> ${escapeHtml(details.physioName)}</p>
+        <p style="margin:0 0 8px 0;"><strong>Data:</strong> ${escapeHtml(details.date)}</p>
+        <p style="margin:0 0 8px 0;"><strong>Horário:</strong> ${escapeHtml(details.time)}</p>
+        <p style="margin:0;"><strong>Tipo:</strong> ${escapeHtml(details.service)}</p>
+      </td></tr>
+    </table>
   `;
 
   const html = generateEmailHTML({
@@ -277,7 +298,7 @@ export const sendAppointmentConfirmation = async (
         subject: 'Novo Agendamento Recebido - FisioCareHub',
         html: generateEmailHTML({
           nome_do_usuario: details.physioName,
-          mensagem_principal_da_notificacao: `<p>Novo agendamento com ${details.patientName} em ${details.date} às ${details.time}.</p>`
+          mensagem_principal_da_notificacao: `<p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Novo agendamento com ${escapeHtml(details.patientName)} em ${escapeHtml(details.date)} às ${escapeHtml(details.time)}.</p>`
         })
       });
     }
