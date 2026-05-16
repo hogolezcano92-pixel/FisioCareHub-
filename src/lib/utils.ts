@@ -5,45 +5,50 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const ISO_DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+export const ISO_DATE_KEY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-const buildLocalNoonDate = (dateKey: string) => {
-  const match = dateKey.match(ISO_DATE_ONLY_RE);
-  if (!match) return null;
+export function normalizeDateKey(value?: string | null) {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const iso = raw.match(ISO_DATE_KEY_RE);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
 
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
+  const isoDateTime = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T\s]/);
+  if (isoDateTime) return `${isoDateTime[1]}-${isoDateTime[2]}-${isoDateTime[3]}`;
 
-  if (!year || !month || !day) return null;
+  const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
 
-  // Meio-dia local evita o bug clássico de fuso em datas puras YYYY-MM-DD.
-  return new Date(year, month - 1, day, 12, 0, 0);
-};
+  return '';
+}
+
+export function formatDateKeyBR(value?: string | null, fallback = 'Data não informada') {
+  const key = normalizeDateKey(value);
+  if (!key) return value ? String(value) : fallback;
+  const [year, month, day] = key.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+export function formatDateKeyLongBR(value?: string | null, fallback = 'Data não informada') {
+  const key = normalizeDateKey(value);
+  if (!key) return value ? String(value) : fallback;
+  const [year, month, day] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+export function formatTimeBR(value?: string | null, fallback = 'Horário não informado') {
+  if (!value) return fallback;
+  const raw = String(value).trim();
+  const time = raw.match(/(\d{2}):(\d{2})/);
+  if (time) return `${time[1]}:${time[2]}`;
+  return raw || fallback;
+}
 
 export function formatDate(date: any) {
   if (!date) return '';
-
-  if (typeof date === 'string') {
-    const value = date.trim();
-
-    if (ISO_DATE_ONLY_RE.test(value)) {
-      const localDate = buildLocalNoonDate(value);
-      if (!localDate) return value;
-
-      return localDate.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-  }
-
   const d = date.toDate ? date.toDate() : new Date(date);
-  if (Number.isNaN(d.getTime())) return String(date);
-
   return d.toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     day: '2-digit',
