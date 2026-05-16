@@ -21,26 +21,24 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import { cn, resolveStorageUrl } from '../lib/utils';
+import { cn, resolveStorageUrl, formatDateKeyBR, normalizeDateKey } from '../lib/utils';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { availabilityService, Slot, toDateKey } from '../services/availabilityService';
 
 const isIsoDateKey = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
 
-const parseLocalDateKey = (dateKey?: string) => {
-  if (!isIsoDateKey(dateKey)) return null;
-
-  const [year, month, day] = String(dateKey).split('-').map(Number);
-  if (!year || !month || !day) return null;
-
-  // Não use new Date('YYYY-MM-DD'): em fuso brasileiro isso pode exibir o dia anterior.
-  return new Date(year, month - 1, day, 12, 0, 0);
-};
-
 const formatDateLabel = (dateKey?: string, options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long' }) => {
-  const date = parseLocalDateKey(dateKey);
-  if (!date) return 'Data não selecionada';
+  const key = normalizeDateKey(dateKey);
+  if (!key) return 'Data não selecionada';
 
+  // Para evitar o bug de fuso no mobile, quando for formato curto não usamos Date.
+  if (options.day === '2-digit' && options.month === '2-digit' && !options.year) {
+    return formatDateKeyBR(key, 'Data não selecionada');
+  }
+
+  const [year, month, day] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  if (Number.isNaN(date.getTime())) return 'Data não selecionada';
   return date.toLocaleDateString('pt-BR', options);
 };
 
@@ -269,7 +267,7 @@ export default function ProfessionalProfile() {
       const selectedAvailableSlot = availableSlots.find(
         slot => slot.date === bookingData.data && slot.time === bookingData.hora
       );
-      const sqlDate = selectedAvailableSlot?.date || bookingData.data;
+      const sqlDate = normalizeDateKey(selectedAvailableSlot?.date || bookingData.data);
       const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora;
 
       if (!isIsoDateKey(sqlDate)) {

@@ -16,26 +16,16 @@ import {
   Crown,
   HelpCircle
 } from 'lucide-react';
-import { formatDate, cn } from '../lib/utils';
+import { formatDate, cn, formatDateKeyBR, formatTimeBR, normalizeDateKey } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
 import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import PaymentModal from '../components/PaymentModal';
 import { Wallet } from 'lucide-react';
 
-const formatAppointmentDateTime = (appointment: any) => {
-  if (appointment?.data && appointment?.hora) {
-    const value = String(appointment.data).trim();
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-    if (match) {
-      const [, year, month, day] = match;
-      return `${day}/${month}/${year}, ${String(appointment.hora).slice(0, 5)}`;
-    }
-  }
-
-  return formatDate(appointment?.data_servico || appointment?.data);
-};
+const getAppointmentDate = (app: any) => formatDateKeyBR(app?.data || app?.data_servico, 'Data não informada');
+const getAppointmentTime = (app: any) => formatTimeBR(app?.hora || app?.data_servico, 'Horário não informado');
+const formatAppointmentDateTime = (app: any) => `${getAppointmentDate(app)} às ${getAppointmentTime(app)}`;
 
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -400,7 +390,7 @@ export default function Appointments() {
       }
 
       // 1. Correção do Erro de Data ('Pattern mismatch')
-      const sqlDate = date; // YYYY-MM-DD
+      const sqlDate = normalizeDateKey(date); // YYYY-MM-DD sem conversão de fuso
       const sqlTime = time.length === 5 ? `${time}:00` : time; // HH:mm:ss
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
@@ -488,7 +478,7 @@ export default function Appointments() {
         .insert({
           user_id: targetId,
           titulo: `Agendamento ${statusText}`,
-          mensagem: `Seu agendamento para o dia ${new Date(app.data_servico).toLocaleDateString('pt-BR')} foi ${statusText}.`,
+          mensagem: `Seu agendamento para o dia ${getAppointmentDate(app)} foi ${statusText}.`,
           tipo: 'appointment',
           lida: false,
           link: '/appointments'
@@ -496,8 +486,8 @@ export default function Appointments() {
       
       // If confirmed or cancelled, send email
       if (status === 'confirmado' || status === 'cancelado') {
-        const formattedDate = new Date(app.data_servico).toLocaleDateString('pt-BR');
-        const formattedTime = new Date(app.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const formattedDate = getAppointmentDate(app);
+        const formattedTime = getAppointmentTime(app);
         const { sendAppointmentStatusEmail } = await import('../services/emailService');
 
         // Trigger WhatsApp Notification

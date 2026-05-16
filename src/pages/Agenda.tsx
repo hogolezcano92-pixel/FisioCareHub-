@@ -21,7 +21,7 @@ import {
   MessageSquare,
   HelpCircle
 } from 'lucide-react';
-import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl, formatDateKeyBR, formatTimeBR, normalizeDateKey } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
@@ -39,6 +39,32 @@ const WEEKDAYS = [
   { value: 6, label: 'Sábado' },
   { value: 0, label: 'Domingo' },
 ];
+
+const todayDateKey = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const getWeekdayLabel = (dateKey: string) => {
+  const normalized = normalizeDateKey(dateKey);
+  if (!normalized) return '';
+  const [year, month, day] = normalized.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  return date.toLocaleDateString('pt-BR', { weekday: 'long' });
+};
+
+const getShortMonth = (dateKey: string) => {
+  const normalized = normalizeDateKey(dateKey);
+  if (!normalized) return '';
+  const [year, month, day] = normalized.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  return date.toLocaleDateString('pt-BR', { month: 'short' });
+};
+
+const getDayNumber = (dateKey: string) => normalizeDateKey(dateKey).split('-')[2] || '';
 
 const createDefaultAvailabilityRules = (physioId: string): AvailabilityRule[] => WEEKDAYS.map(day => ({
   physio_id: physioId,
@@ -63,7 +89,7 @@ export default function Agenda() {
   const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(todayDateKey());
   const [view, setView] = useState<'daily' | 'all'>('daily');
   const [serviceSettings, setServiceSettings] = useState<any>(null);
   const [physioServices, setPhysioServices] = useState<any[]>([]);
@@ -72,7 +98,7 @@ export default function Agenda() {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [blockForm, setBlockForm] = useState({
-    block_date: new Date().toISOString().split('T')[0],
+    block_date: todayDateKey(),
     start_time: '',
     end_time: '',
     reason: ''
@@ -81,7 +107,7 @@ export default function Agenda() {
   // Form State
   const [formData, setFormData] = useState({
     paciente_id: '',
-    data: new Date().toISOString().split('T')[0],
+    data: todayDateKey(),
     hora: '08:00',
     tipo: '',
     local: '',
@@ -168,7 +194,7 @@ export default function Agenda() {
         reason: blockForm.reason || 'Indisponível',
       });
       setScheduleBlocks(prev => [block, ...prev]);
-      setBlockForm({ block_date: new Date().toISOString().split('T')[0], start_time: '', end_time: '', reason: '' });
+      setBlockForm({ block_date: todayDateKey(), start_time: '', end_time: '', reason: '' });
       toast.success('Bloqueio criado com sucesso!');
     } catch (err) {
       console.error('Erro ao criar bloqueio:', err);
@@ -418,7 +444,7 @@ export default function Agenda() {
       const currentPrice = formData.valor || 0;
 
       // 1. Correção do Erro de Data ('Pattern mismatch')
-      const sqlDate = formData.data; // YYYY-MM-DD
+      const sqlDate = normalizeDateKey(formData.data); // YYYY-MM-DD
       const sqlTime = formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora; // HH:mm:ss
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
@@ -620,9 +646,12 @@ export default function Agenda() {
   };
 
   const changeDate = (days: number) => {
-    const date = new Date(selectedDate);
+    const normalized = normalizeDateKey(selectedDate) || todayDateKey();
+    const [year, month, day] = normalized.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 12, 0, 0);
     date.setDate(date.getDate() + days);
-    setSelectedDate(date.toISOString().split('T')[0]);
+    const next = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    setSelectedDate(next);
   };
 
   return (
@@ -682,7 +711,7 @@ export default function Agenda() {
           </button>
           <div className="flex flex-col items-center">
             <span className="text-[8px] font-bold text-sky-400 uppercase tracking-widest mb-0.5">
-              {new Date(selectedDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' })}
+              {getWeekdayLabel(selectedDate)}
             </span>
             <input
               type="date"
@@ -835,7 +864,7 @@ export default function Agenda() {
             ) : scheduleBlocks.map(block => (
               <div key={block.id} className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-white text-xs font-black">{new Date(block.block_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                  <p className="text-white text-xs font-black">{formatDateKeyBR(block.block_date)}</p>
                   <p className="text-slate-500 text-[10px] font-bold">
                     {block.start_time && block.end_time ? `${block.start_time.slice(0, 5)} às ${block.end_time.slice(0, 5)}` : 'Dia inteiro'} • {block.reason || 'Indisponível'}
                   </p>
@@ -902,8 +931,8 @@ export default function Agenda() {
                   <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-sky-500/10 transition-colors border border-white/5">
                     {view === 'all' ? (
                       <>
-                        <span className="text-[7px] font-black text-sky-400 uppercase">{new Date(app.data + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short' })}</span>
-                        <span className="text-sm font-black leading-none">{new Date(app.data + 'T12:00:00').getDate()}</span>
+                        <span className="text-[7px] font-black text-sky-400 uppercase">{getShortMonth(app.data)}</span>
+                        <span className="text-sm font-black leading-none">{getDayNumber(app.data)}</span>
                         <span className="text-[7px] font-bold text-slate-500 mt-0.5">{app.hora?.slice(0, 5)}</span>
                       </>
                     ) : (

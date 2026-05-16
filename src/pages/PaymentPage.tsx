@@ -19,46 +19,11 @@ import {
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 
-import { cn } from '../lib/utils';
+import { cn, formatDateKeyBR, formatTimeBR } from '../lib/utils';
 
-const ISO_DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
-const BR_DATE_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const formatAppointmentDate = (rawDate?: string) => formatDateKeyBR(rawDate, 'Data não informada');
 
-const formatDateKeyBR = (dateKey: string) => {
-  const match = dateKey.match(ISO_DATE_ONLY_RE);
-  if (!match) return null;
-
-  const [, year, month, day] = match;
-  return `${day}/${month}/${year}`;
-};
-
-const formatAppointmentDate = (rawDate?: string) => {
-  if (!rawDate) return 'Data não informada';
-
-  const value = String(rawDate).trim();
-
-  // Datas puras do Supabase vêm como YYYY-MM-DD. Não use new Date('YYYY-MM-DD'),
-  // porque no mobile/Brasil isso pode voltar um dia por causa de UTC.
-  if (ISO_DATE_ONLY_RE.test(value)) {
-    return formatDateKeyBR(value) || value;
-  }
-
-  // Compatibilidade com algum registro antigo salvo como DD/MM/YYYY.
-  if (BR_DATE_RE.test(value)) {
-    return value;
-  }
-
-  // Se vier um timestamp ISO, aí sim podemos converter com fuso de São Paulo.
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-};
-
-const formatAppointmentTime = (rawTime?: string) => {
-  if (!rawTime) return 'Horário não informado';
-  return String(rawTime).slice(0, 5);
-};
+const formatAppointmentTime = (rawTime?: string) => formatTimeBR(rawTime, 'Horário não informado');
 
 export default function PaymentPage() {
   const { id } = useParams();
