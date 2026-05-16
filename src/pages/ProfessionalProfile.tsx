@@ -524,19 +524,22 @@ export default function ProfessionalProfile() {
       {/* Booking Modal */}
       <AnimatePresence>
         {showBookingModal && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-x-0 bottom-0 z-[9999] flex items-start justify-center px-4 pb-4 md:inset-0 md:items-center md:p-4"
+            style={{ top: 'calc(96px + env(safe-area-inset-top))' }}
+          >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowBookingModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-900/70 backdrop-blur-md"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 flex flex-col max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.96, y: 24 }}
+              className="relative z-[10000] w-full max-w-lg bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 flex flex-col max-h-full md:max-h-[90dvh]"
             >
               <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900 z-20">
                 <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">Agendar Consulta</h2>
@@ -707,7 +710,7 @@ export default function ProfessionalProfile() {
                 </form>
               </div>
 
-              <div className="p-6 md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20">
+              <div className="p-5 pb-[calc(20px+env(safe-area-inset-bottom))] md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20">
                 <div className="p-4 mb-6 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between">
                   <span className="text-xs font-bold text-blue-400">Total da Sessão:</span>
                   <span className="text-lg font-black text-blue-400">R$ {(bookingData.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
