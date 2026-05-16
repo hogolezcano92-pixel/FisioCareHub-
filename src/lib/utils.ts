@@ -5,9 +5,45 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const ISO_DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const buildLocalNoonDate = (dateKey: string) => {
+  const match = dateKey.match(ISO_DATE_ONLY_RE);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (!year || !month || !day) return null;
+
+  // Meio-dia local evita o bug clássico de fuso em datas puras YYYY-MM-DD.
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
 export function formatDate(date: any) {
   if (!date) return '';
+
+  if (typeof date === 'string') {
+    const value = date.trim();
+
+    if (ISO_DATE_ONLY_RE.test(value)) {
+      const localDate = buildLocalNoonDate(value);
+      if (!localDate) return value;
+
+      return localDate.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  }
+
   const d = date.toDate ? date.toDate() : new Date(date);
+  if (Number.isNaN(d.getTime())) return String(date);
+
   return d.toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     day: '2-digit',
