@@ -21,27 +21,38 @@ import { toast } from 'sonner';
 
 import { cn } from '../lib/utils';
 
+const ISO_DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const BR_DATE_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+const formatDateKeyBR = (dateKey: string) => {
+  const match = dateKey.match(ISO_DATE_ONLY_RE);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  return `${day}/${month}/${year}`;
+};
+
 const formatAppointmentDate = (rawDate?: string) => {
   if (!rawDate) return 'Data não informada';
 
   const value = String(rawDate).trim();
-  let normalized = value;
 
-  // Formato esperado vindo do agendamento novo: YYYY-MM-DD.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    normalized = `${value}T12:00:00`;
+  // Datas puras do Supabase vêm como YYYY-MM-DD. Não use new Date('YYYY-MM-DD'),
+  // porque no mobile/Brasil isso pode voltar um dia por causa de UTC.
+  if (ISO_DATE_ONLY_RE.test(value)) {
+    return formatDateKeyBR(value) || value;
   }
 
-  // Proteção para algum registro antigo salvo como DD/MM/YYYY.
-  const brMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (brMatch) {
-    normalized = `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}T12:00:00`;
+  // Compatibilidade com algum registro antigo salvo como DD/MM/YYYY.
+  if (BR_DATE_RE.test(value)) {
+    return value;
   }
 
-  const date = new Date(normalized);
+  // Se vier um timestamp ISO, aí sim podemos converter com fuso de São Paulo.
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleDateString('pt-BR');
+  return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 };
 
 const formatAppointmentTime = (rawTime?: string) => {

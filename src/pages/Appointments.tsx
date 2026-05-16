@@ -23,6 +23,20 @@ import { triggerWhatsAppNotification } from '../services/notificationService';
 import PaymentModal from '../components/PaymentModal';
 import { Wallet } from 'lucide-react';
 
+const formatAppointmentDateTime = (appointment: any) => {
+  if (appointment?.data && appointment?.hora) {
+    const value = String(appointment.data).trim();
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (match) {
+      const [, year, month, day] = match;
+      return `${day}/${month}/${year}, ${String(appointment.hora).slice(0, 5)}`;
+    }
+  }
+
+  return formatDate(appointment?.data_servico || appointment?.data);
+};
+
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -585,7 +599,7 @@ export default function Appointments() {
                 </div>
                 <div>
                   <div className="text-base font-black text-white">
-                    {formatDate(app.data_servico)}
+                    {formatAppointmentDateTime(app)}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <User size={12} />

@@ -18,6 +18,43 @@ import {
 import { toast } from 'sonner';
 import { resolveStorageUrl } from '../lib/utils';
 
+const ISO_DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const formatAppointmentDate = (appointment?: any) => {
+  const rawDate = appointment?.data;
+
+  if (typeof rawDate === 'string' && ISO_DATE_ONLY_RE.test(rawDate)) {
+    const [year, month, day] = rawDate.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  if (appointment?.data_servico) {
+    const date = new Date(appointment.data_servico);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    }
+  }
+
+  return 'Data não informada';
+};
+
+const formatAppointmentTime = (appointment?: any) => {
+  if (appointment?.hora) return String(appointment.hora).slice(0, 5);
+
+  if (appointment?.data_servico) {
+    const date = new Date(appointment.data_servico);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  }
+
+  return 'Horário não informado';
+};
+
 export default function ConfirmAppointment() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -109,7 +146,7 @@ export default function ConfirmAppointment() {
       await supabase.from('notificacoes').insert({
         user_id: appointmentData.paciente_id,
         titulo: 'Agendamento Confirmado',
-        mensagem: `Seu agendamento para o dia ${new Date(appointmentData.data_servico).toLocaleDateString('pt-BR')} foi confirmado pelo profissional.`,
+        mensagem: `Seu agendamento para o dia ${formatAppointmentDate(appointmentData)} foi confirmado pelo profissional.`,
         tipo: 'appointment',
         link: '/appointments'
       });
@@ -122,8 +159,8 @@ export default function ConfirmAppointment() {
         appointmentData.fisioterapeuta.nome_completo,
         'confirmado',
         {
-          date: new Date(appointmentData.data_servico).toLocaleDateString('pt-BR'),
-          time: new Date(appointmentData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          date: formatAppointmentDate(appointmentData),
+          time: formatAppointmentTime(appointmentData),
           service: appointmentData.servico || 'Consulta'
         }
       );
@@ -232,7 +269,7 @@ export default function ConfirmAppointment() {
                     <div>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data e Hora</p>
                       <p className="text-sm font-bold text-white">
-                        {new Date(appointmentData.data_servico).toLocaleDateString('pt-BR')} às {new Date(appointmentData.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {formatAppointmentDate(appointmentData)} às {formatAppointmentTime(appointmentData)}
                       </p>
                     </div>
                   </div>
@@ -320,11 +357,11 @@ export default function ConfirmAppointment() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                 <div>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</p>
-                  <p className="text-sm font-bold text-white">{new Date(appointmentData?.data_servico).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm font-bold text-white">{formatAppointmentDate(appointmentData)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora</p>
-                  <p className="text-sm font-bold text-white">{new Date(appointmentData?.data_servico).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-sm font-bold text-white">{formatAppointmentTime(appointmentData)}</p>
                 </div>
               </div>
             </div>

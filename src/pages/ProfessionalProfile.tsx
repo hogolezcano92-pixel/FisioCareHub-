@@ -27,10 +27,20 @@ import { availabilityService, Slot, toDateKey } from '../services/availabilitySe
 
 const isIsoDateKey = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
 
+const parseLocalDateKey = (dateKey?: string) => {
+  if (!isIsoDateKey(dateKey)) return null;
+
+  const [year, month, day] = String(dateKey).split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  // Não use new Date('YYYY-MM-DD'): em fuso brasileiro isso pode exibir o dia anterior.
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
 const formatDateLabel = (dateKey?: string, options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long' }) => {
-  if (!isIsoDateKey(dateKey)) return 'Data não selecionada';
-  const date = new Date(`${dateKey}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return 'Data não selecionada';
+  const date = parseLocalDateKey(dateKey);
+  if (!date) return 'Data não selecionada';
+
   return date.toLocaleDateString('pt-BR', options);
 };
 
