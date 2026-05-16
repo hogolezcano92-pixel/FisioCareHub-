@@ -25,6 +25,15 @@ import { cn, resolveStorageUrl } from '../lib/utils';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { availabilityService, Slot, toDateKey } from '../services/availabilityService';
 
+const isIsoDateKey = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+
+const formatDateLabel = (dateKey?: string, options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long' }) => {
+  if (!isIsoDateKey(dateKey)) return 'Data não selecionada';
+  const date = new Date(`${dateKey}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Data não selecionada';
+  return date.toLocaleDateString('pt-BR', options);
+};
+
 export default function ProfessionalProfile() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -245,8 +254,20 @@ export default function ProfessionalProfile() {
       }
 
       // 2. CRIAÇÃO DO AGENDAMENTO
-      const sqlDate = bookingData.data;
+      // Garante que a data enviada ao Supabase esteja no formato correto (YYYY-MM-DD).
+      // A tela de pagamento espera esse formato para exibir a data sem gerar "Invalid Date".
+      const selectedAvailableSlot = availableSlots.find(
+        slot => slot.date === bookingData.data && slot.time === bookingData.hora
+      );
+      const sqlDate = selectedAvailableSlot?.date || bookingData.data;
       const sqlTime = bookingData.hora.length === 5 ? `${bookingData.hora}:00` : bookingData.hora;
+
+      if (!isIsoDateKey(sqlDate)) {
+        toast.error('A data selecionada está inválida. Atualize os horários e selecione novamente.');
+        setBookingStep(2);
+        return;
+      }
+
       const sqlTimestamp = `${sqlDate}T${sqlTime}`;
 
       // Extract clean type name from composite value
@@ -322,7 +343,7 @@ export default function ProfessionalProfile() {
   const slotsForSelectedDate = availableSlots.filter(slot => slot.date === bookingData.data);
   const selectedSlot = availableSlots.find(slot => slot.date === bookingData.data && slot.time === bookingData.hora);
   const selectedDateLabel = bookingData.data
-    ? new Date(`${bookingData.data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+    ? formatDateLabel(bookingData.data)
     : 'Nenhuma data selecionada';
   const selectedTimeLabel = selectedSlot?.label || (bookingData.hora ? bookingData.hora : 'Nenhum horário selecionado');
   const [selectedTypePrefix, selectedTypeRest = ''] = (bookingData.tipo || '').split(':');
@@ -721,7 +742,7 @@ export default function ProfessionalProfile() {
                             >
                               {availableDates.map(date => (
                                 <option key={date} value={date} className="bg-slate-900">
-                                  {new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                                  {formatDateLabel(date, { weekday: 'long', day: '2-digit', month: '2-digit' })}
                                 </option>
                               ))}
                             </select>

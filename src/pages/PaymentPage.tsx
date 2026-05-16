@@ -21,6 +21,34 @@ import { toast } from 'sonner';
 
 import { cn } from '../lib/utils';
 
+const formatAppointmentDate = (rawDate?: string) => {
+  if (!rawDate) return 'Data não informada';
+
+  const value = String(rawDate).trim();
+  let normalized = value;
+
+  // Formato esperado vindo do agendamento novo: YYYY-MM-DD.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    normalized = `${value}T12:00:00`;
+  }
+
+  // Proteção para algum registro antigo salvo como DD/MM/YYYY.
+  const brMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) {
+    normalized = `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}T12:00:00`;
+  }
+
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString('pt-BR');
+};
+
+const formatAppointmentTime = (rawTime?: string) => {
+  if (!rawTime) return 'Horário não informado';
+  return String(rawTime).slice(0, 5);
+};
+
 export default function PaymentPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -245,7 +273,7 @@ export default function PaymentPage() {
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</span>
                   </div>
                   <p className="text-white font-black text-sm">
-                    {new Date(appointment.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    {formatAppointmentDate(appointment.data)}
                   </p>
                 </div>
                 <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5 space-y-1">
@@ -253,7 +281,7 @@ export default function PaymentPage() {
                     <Clock size={14} className="text-blue-400" />
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Horário</span>
                   </div>
-                  <p className="text-white font-black text-sm">{appointment.hora.substring(0, 5)}</p>
+                  <p className="text-white font-black text-sm">{formatAppointmentTime(appointment.hora)}</p>
                 </div>
               </div>
             )}
