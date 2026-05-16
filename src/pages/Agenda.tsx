@@ -27,6 +27,30 @@ import { toast } from 'sonner';
 import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { logActivity } from '../services/activityService';
+import { availabilityService, AvailabilityRule, ScheduleBlock } from '../services/availabilityService';
+
+
+const WEEKDAYS = [
+  { value: 1, label: 'Segunda' },
+  { value: 2, label: 'Terça' },
+  { value: 3, label: 'Quarta' },
+  { value: 4, label: 'Quinta' },
+  { value: 5, label: 'Sexta' },
+  { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' },
+];
+
+const createDefaultAvailabilityRules = (physioId: string): AvailabilityRule[] => WEEKDAYS.map(day => ({
+  physio_id: physioId,
+  weekday: day.value,
+  start_time: '08:00',
+  end_time: '18:00',
+  session_duration_minutes: 60,
+  buffer_minutes: 15,
+  min_notice_hours: 2,
+  cancellation_notice_hours: 24,
+  is_active: day.value >= 1 && day.value <= 5,
+}));
 
 export default function Agenda() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -44,6 +68,15 @@ export default function Agenda() {
   const [serviceSettings, setServiceSettings] = useState<any>(null);
   const [physioServices, setPhysioServices] = useState<any[]>([]);
   const [physioPackages, setPhysioPackages] = useState<any[]>([]);
+  const [availabilityRules, setAvailabilityRules] = useState<AvailabilityRule[]>([]);
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [blockForm, setBlockForm] = useState({
+    block_date: new Date().toISOString().split('T')[0],
+    start_time: '',
+    end_time: '',
+    reason: ''
+  });
   
   // Form State
   const [formData, setFormData] = useState({
@@ -72,7 +105,88 @@ export default function Agenda() {
     
     loadData();
     fetchServiceSettings();
+    loadAvailabilitySettings();
   }, [user, selectedDate, profile, authLoading, view]);
+
+  const loadAvailabilitySettings = async () => {
+    if (!user) return;
+    try {
+      const [rules, blocks] = await Promise.all([
+        availabilityService.getRules(user.id),
+        availabilityService.getBlocks(user.id),
+      ]);
+
+      setAvailabilityRules(rules.length > 0 ? rules : createDefaultAvailabilityRules(user.id));
+      setScheduleBlocks(blocks);
+    } catch (err) {
+      console.error('Erro ao carregar disponibilidade:', err);
+      setAvailabilityRules(createDefaultAvailabilityRules(user.id));
+      setScheduleBlocks([]);
+    }
+  };
+
+  const updateAvailabilityRule = (weekday: number, patch: Partial<AvailabilityRule>) => {
+    setAvailabilityRules(prev => {
+      const existing = prev.find(rule => rule.weekday === weekday);
+      if (!existing) {
+        return [...prev, { ...createDefaultAvailabilityRules(user?.id || '').find(rule => rule.weekday === weekday)!, ...patch }];
+      }
+      return prev.map(rule => rule.weekday === weekday ? { ...rule, ...patch } : rule);
+    });
+  };
+
+  const handleSaveAvailability = async () => {
+    if (!user) return;
+    setSavingAvailability(true);
+    try {
+      const saved = await availabilityService.replaceRules(user.id, availabilityRules);
+      setAvailabilityRules(saved.length > 0 ? saved : createDefaultAvailabilityRules(user.id));
+      toast.success('Disponibilidade salva com sucesso!');
+    } catch (err) {
+      console.error('Erro ao salvar disponibilidade:', err);
+      toast.error('Erro ao salvar disponibilidade');
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
+
+  const handleCreateBlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if ((blockForm.start_time && !blockForm.end_time) || (!blockForm.start_time && blockForm.end_time)) {
+      toast.error('Informe início e fim do bloqueio, ou deixe ambos vazios para bloquear o dia inteiro.');
+      return;
+    }
+
+    try {
+      const block = await availabilityService.createBlock({
+        physio_id: user.id,
+        block_date: blockForm.block_date,
+        start_time: blockForm.start_time || null,
+        end_time: blockForm.end_time || null,
+        reason: blockForm.reason || 'Indisponível',
+      });
+      setScheduleBlocks(prev => [block, ...prev]);
+      setBlockForm({ block_date: new Date().toISOString().split('T')[0], start_time: '', end_time: '', reason: '' });
+      toast.success('Bloqueio criado com sucesso!');
+    } catch (err) {
+      console.error('Erro ao criar bloqueio:', err);
+      toast.error('Erro ao criar bloqueio');
+    }
+  };
+
+  const handleDeleteBlock = async (blockId?: string) => {
+    if (!blockId) return;
+    try {
+      await availabilityService.deleteBlock(blockId);
+      setScheduleBlocks(prev => prev.filter(block => block.id !== blockId));
+      toast.success('Bloqueio removido.');
+    } catch (err) {
+      console.error('Erro ao remover bloqueio:', err);
+      toast.error('Erro ao remover bloqueio');
+    }
+  };
 
   const fetchServiceSettings = async () => {
     if (!user) return;
@@ -583,6 +697,162 @@ export default function Agenda() {
         </div>
       )}
 
+
+      <section className="grid xl:grid-cols-[1.4fr_1fr] gap-4 w-full">
+        <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-black text-white tracking-tight">Minha disponibilidade</h2>
+              <p className="text-slate-500 text-[10px] font-bold">Defina os dias e horários que aparecerão para o paciente.</p>
+            </div>
+            <button
+              onClick={handleSaveAvailability}
+              disabled={savingAvailability}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {savingAvailability ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              Salvar agenda
+            </button>
+          </div>
+
+          <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
+            {WEEKDAYS.map(day => {
+              const rule = availabilityRules.find(item => item.weekday === day.value) || createDefaultAvailabilityRules(user?.id || '').find(item => item.weekday === day.value)!;
+              return (
+                <div key={day.value} className="grid grid-cols-1 lg:grid-cols-[120px_1fr] gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl">
+                  <label className="flex items-center gap-2 text-white text-xs font-black">
+                    <input
+                      type="checkbox"
+                      checked={rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { is_active: e.target.checked })}
+                      className="accent-blue-600"
+                    />
+                    {day.label}
+                  </label>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                    <input
+                      type="time"
+                      value={rule.start_time.slice(0, 5)}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { start_time: e.target.value })}
+                      className="input-compact disabled:opacity-40"
+                    />
+                    <input
+                      type="time"
+                      value={rule.end_time.slice(0, 5)}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { end_time: e.target.value })}
+                      className="input-compact disabled:opacity-40"
+                    />
+                    <select
+                      value={rule.session_duration_minutes}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { session_duration_minutes: Number(e.target.value) })}
+                      className="input-compact disabled:opacity-40"
+                      title="Duração da sessão"
+                    >
+                      {[30, 45, 60, 90].map(value => <option key={value} value={value} className="bg-slate-900">{value} min</option>)}
+                    </select>
+                    <select
+                      value={rule.buffer_minutes}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { buffer_minutes: Number(e.target.value) })}
+                      className="input-compact disabled:opacity-40"
+                      title="Intervalo entre atendimentos"
+                    >
+                      {[0, 10, 15, 20, 30].map(value => <option key={value} value={value} className="bg-slate-900">+{value} min</option>)}
+                    </select>
+                    <select
+                      value={rule.min_notice_hours}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { min_notice_hours: Number(e.target.value) })}
+                      className="input-compact disabled:opacity-40"
+                      title="Antecedência mínima"
+                    >
+                      {[2, 6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">{value}h antes</option>)}
+                    </select>
+                    <select
+                      value={rule.cancellation_notice_hours}
+                      disabled={!rule.is_active}
+                      onChange={(e) => updateAvailabilityRule(day.value, { cancellation_notice_hours: Number(e.target.value) })}
+                      className="input-compact disabled:opacity-40"
+                      title="Cancelamento permitido até"
+                    >
+                      {[6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">Cancel. {value}h</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-2xl space-y-4">
+          <div>
+            <h2 className="text-sm font-black text-white tracking-tight">Bloqueios de agenda</h2>
+            <p className="text-slate-500 text-[10px] font-bold">Use para férias, feriados ou compromissos pontuais.</p>
+          </div>
+
+          <form onSubmit={handleCreateBlock} className="space-y-2">
+            <input
+              type="date"
+              required
+              value={blockForm.block_date}
+              onChange={(e) => setBlockForm({ ...blockForm, block_date: e.target.value })}
+              className="input-compact"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="time"
+                value={blockForm.start_time}
+                onChange={(e) => setBlockForm({ ...blockForm, start_time: e.target.value })}
+                className="input-compact"
+                placeholder="Início"
+              />
+              <input
+                type="time"
+                value={blockForm.end_time}
+                onChange={(e) => setBlockForm({ ...blockForm, end_time: e.target.value })}
+                className="input-compact"
+                placeholder="Fim"
+              />
+            </div>
+            <input
+              value={blockForm.reason}
+              onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+              className="input-compact"
+              placeholder="Motivo: férias, feriado, compromisso..."
+            />
+            <button className="w-full py-2 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all">
+              Criar bloqueio
+            </button>
+          </form>
+
+          <div className="space-y-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+            {scheduleBlocks.length === 0 ? (
+              <div className="p-4 bg-white/5 rounded-2xl text-center text-slate-500 text-xs font-bold">Nenhum bloqueio cadastrado.</div>
+            ) : scheduleBlocks.map(block => (
+              <div key={block.id} className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white text-xs font-black">{new Date(block.block_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                  <p className="text-slate-500 text-[10px] font-bold">
+                    {block.start_time && block.end_time ? `${block.start_time.slice(0, 5)} às ${block.end_time.slice(0, 5)}` : 'Dia inteiro'} • {block.reason || 'Indisponível'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteBlock(block.id)}
+                  className="p-2 text-red-400 bg-red-500/10 rounded-xl hover:bg-red-500/20 transition-all"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-[2rem] flex items-center gap-4 text-red-400 w-full">
           <AlertTriangle size={20} />
@@ -666,14 +936,14 @@ export default function Agenda() {
                   <span className={cn(
                     "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
                     app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                    app.status === 'agendado' || app.status === 'pendente' ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
+                    app.status === 'agendado' || app.status === 'pendente' || app.status === 'pago' ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
                     "bg-red-500/10 text-red-400 border border-red-500/20"
                   )}>
                     {app.status}
                   </span>
                   
                   <div className="flex gap-1.5">
-                    {(app.status === 'agendado' || app.status === 'pendente') && (
+                    {(app.status === 'agendado' || app.status === 'pendente' || app.status === 'pago') && (
                       <>
                         <button
                           onClick={(e) => {
@@ -788,7 +1058,7 @@ export default function Agenda() {
 
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    {(selectedAppointment.status === 'agendado' || selectedAppointment.status === 'pendente') && (
+                    {(selectedAppointment.status === 'agendado' || selectedAppointment.status === 'pendente' || selectedAppointment.status === 'pago') && (
                       <button
                         onClick={() => updateStatus(selectedAppointment.id, 'confirmado')}
                         className="flex-1 h-11 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2"

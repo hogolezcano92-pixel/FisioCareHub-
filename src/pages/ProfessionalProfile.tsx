@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { cn, resolveStorageUrl } from '../lib/utils';
 import { triggerWhatsAppNotification } from '../services/notificationService';
+import { availabilityService, Slot, toDateKey } from '../services/availabilityService';
 
 export default function ProfessionalProfile() {
   const { id } = useParams();
@@ -44,6 +45,48 @@ export default function ProfessionalProfile() {
   const [activeServices, setActiveServices] = useState<any[]>([]);
   const [activePackages, setActivePackages] = useState<any[]>([]);
   const [lowestPrice, setLowestPrice] = useState<number | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+
+
+  const loadAvailability = async (physioId: string) => {
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+
+    try {
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 30);
+      const startKey = toDateKey(today);
+      const endKey = toDateKey(endDate);
+
+      const [rules, blocks, bookedAppointments] = await Promise.all([
+        availabilityService.getRules(physioId),
+        availabilityService.getBlocks(physioId, startKey, endKey),
+        availabilityService.getBookedAppointments(physioId, startKey, endKey),
+      ]);
+
+      const slots = availabilityService.generateSlots(rules, blocks, bookedAppointments, 30);
+      setAvailableSlots(slots);
+
+      if (slots.length > 0) {
+        setBookingData(prev => {
+          const currentStillAvailable = slots.some(slot => slot.date === prev.data && slot.time === prev.hora);
+          if (currentStillAvailable) return prev;
+          return { ...prev, data: slots[0].date, hora: slots[0].time };
+        });
+      } else {
+        setBookingData(prev => ({ ...prev, data: '', hora: '' }));
+      }
+    } catch (err) {
+      console.error('Erro ao carregar disponibilidade do fisioterapeuta:', err);
+      setAvailabilityError('Este profissional ainda não configurou horários disponíveis.');
+      setAvailableSlots([]);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (searchParams.get('status') === 'canceled') {
@@ -70,6 +113,7 @@ export default function ProfessionalProfile() {
         }
         
         setPhysio(data);
+        loadAvailability(id);
 
         // Fetch service settings (pricing and specific availability)
         const { data: settings, error: settingsError } = await supabase
@@ -180,6 +224,12 @@ export default function ProfessionalProfile() {
       return;
     }
 
+    const slotStillAvailable = availableSlots.some(slot => slot.date === bookingData.data && slot.time === bookingData.hora);
+    if (!slotStillAvailable) {
+      toast.error('Selecione um horário disponível na agenda do profissional.');
+      return;
+    }
+
     setBookingLoading(true);
     try {
       // 1. BUSCA DE DADOS DO PACIENTE
@@ -266,6 +316,9 @@ export default function ProfessionalProfile() {
   }
 
   if (!physio) return null;
+
+  const availableDates = Array.from(new Set(availableSlots.map(slot => slot.date)));
+  const slotsForSelectedDate = availableSlots.filter(slot => slot.date === bookingData.data);
 
   // Formatting strings for labels
   const educationList = physio.formacao_academica || [];
@@ -494,27 +547,71 @@ export default function ProfessionalProfile() {
 
               <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
                 <form id="booking-form" onSubmit={handleConfirmarAgendamento} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4 items-end">
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                      <input 
-                        type="date"
-                        required
-                        value={bookingData.data}
-                        onChange={(e) => setBookingData({...bookingData, data: e.target.value})}
-                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
-                      />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data e horário disponíveis</label>
+                      <button
+                        type="button"
+                        onClick={() => id && loadAvailability(id)}
+                        className="text-[9px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300"
+                      >
+                        Atualizar
+                      </button>
                     </div>
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
-                      <input 
-                        type="time"
-                        required
-                        value={bookingData.hora}
-                        onChange={(e) => setBookingData({...bookingData, hora: e.target.value})}
-                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
-                      />
-                    </div>
+
+                    {availabilityLoading ? (
+                      <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 text-slate-400 text-xs font-bold">
+                        <Loader2 size={16} className="animate-spin" />
+                        Carregando horários disponíveis...
+                      </div>
+                    ) : availableSlots.length === 0 ? (
+                      <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold leading-relaxed">
+                        {availabilityError || 'Este profissional ainda não liberou horários para agendamento. Use “Enviar mensagem” para tirar dúvidas.'}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
+                          <select
+                            required
+                            value={bookingData.data}
+                            onChange={(e) => {
+                              const nextDate = e.target.value;
+                              const firstSlot = availableSlots.find(slot => slot.date === nextDate);
+                              setBookingData({ ...bookingData, data: nextDate, hora: firstSlot?.time || '' });
+                            }}
+                            className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                          >
+                            {availableDates.map(date => (
+                              <option key={date} value={date} className="bg-slate-900">
+                                {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Horários</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                            {slotsForSelectedDate.map(slot => (
+                              <button
+                                key={`${slot.date}-${slot.time}`}
+                                type="button"
+                                onClick={() => setBookingData({ ...bookingData, data: slot.date, hora: slot.time })}
+                                className={cn(
+                                  "p-3 rounded-2xl border text-xs font-black transition-all",
+                                  bookingData.hora === slot.time
+                                    ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/20"
+                                    : "bg-white/5 text-slate-300 border-white/10 hover:border-blue-500/40"
+                                )}
+                              >
+                                {slot.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -619,7 +716,7 @@ export default function ProfessionalProfile() {
                 <button 
                   type="submit"
                   form="booking-form"
-                  disabled={bookingLoading}
+                  disabled={bookingLoading || availableSlots.length === 0}
                   className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {bookingLoading ? <Loader2 className="animate-spin" /> : 'Confirmar Solicitação'}
