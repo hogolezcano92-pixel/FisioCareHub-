@@ -10,7 +10,7 @@ import {
   parseTransports,
   safeError,
   setChallengeCookie,
-} from '../../../src/server/webauthnShared';
+} from '../../../src/server/webauthnShared.js';
 
 type LoginOptionsBody = {
   email?: string;

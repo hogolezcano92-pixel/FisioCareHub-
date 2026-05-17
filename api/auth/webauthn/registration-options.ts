@@ -10,7 +10,7 @@ import {
   parseTransports,
   safeError,
   setChallengeCookie,
-} from '../../../src/server/webauthnShared';
+} from '../../../src/server/webauthnShared.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (assertMethod(req, res, ['GET']) !== true) return;

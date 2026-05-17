@@ -11,7 +11,7 @@ import {
   json,
   readChallengeCookie,
   safeError,
-} from '../../../src/server/webauthnShared';
+} from '../../../src/server/webauthnShared.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (assertMethod(req, res, ['POST']) !== true) return;

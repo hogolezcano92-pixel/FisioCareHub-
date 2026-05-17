@@ -11,7 +11,7 @@ import {
   parseTransports,
   readChallengeCookie,
   safeError,
-} from '../../../src/server/webauthnShared';
+} from '../../../src/server/webauthnShared.js';
 
 type VerifyLoginBody = {
   email?: string;
