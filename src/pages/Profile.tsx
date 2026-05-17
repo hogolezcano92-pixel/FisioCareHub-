@@ -28,6 +28,7 @@ import {
   Crown,
   Download,
   Palette,
+  Fingerprint,
 } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl, formatCPF, validateCPF } from '../lib/utils';
@@ -40,6 +41,7 @@ import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
+import { registerBiometrics, isBiometricsSupported } from '../lib/webauthn';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
@@ -61,6 +63,9 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+  const [biometricCount, setBiometricCount] = useState<number | null>(null);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   const navigate = useNavigate();
 
   type ProfessionalDocumentField =
@@ -222,6 +227,44 @@ export default function Profile() {
   };
 
   const isPro = profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+
+  useEffect(() => {
+    isBiometricsSupported()
+      .then(setIsBiometricSupported)
+      .catch(() => setIsBiometricSupported(false));
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setBiometricCount(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function fetchBiometricCount() {
+      const { count, error } = await supabase
+        .from('webauthn_credentials')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error('[BIOMETRIC_COUNT_ERROR]', error);
+        setBiometricCount(null);
+        return;
+      }
+
+      setBiometricCount(count ?? 0);
+    }
+
+    fetchBiometricCount();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab;
@@ -650,6 +693,31 @@ export default function Profile() {
       import('sonner').then(({ toast }) => toast.success("E-mail de redefinição de senha enviado!"));
     } catch (err: any) {
       import('sonner').then(({ toast }) => toast.error("Erro ao enviar e-mail: " + err.message));
+    }
+  };
+
+
+  const handleRegisterProfileBiometrics = async () => {
+    if (!user) return;
+
+    setBiometricLoading(true);
+    try {
+      const { toast } = await import('sonner');
+      await registerBiometrics();
+
+      const { count } = await supabase
+        .from('webauthn_credentials')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      setBiometricCount(count ?? 1);
+      toast.success('Biometria cadastrada com sucesso neste dispositivo.');
+    } catch (err: any) {
+      console.error('[REGISTER_PROFILE_BIOMETRICS_ERROR]', err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Não foi possível cadastrar a biometria neste dispositivo.');
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -1296,6 +1364,39 @@ export default function Profile() {
                           >
                             Redefinir Senha
                           </button>
+                        </div>
+
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="text-center md:text-left">
+                            <p className="text-lg font-black text-white flex items-center justify-center md:justify-start gap-2">
+                              <Fingerprint className="text-blue-400" size={22} />
+                              Face ID / Biometria
+                            </p>
+                            <p className="text-sm text-slate-400 font-medium max-w-xl">
+                              Cadastre este aparelho para entrar com Face ID, Touch ID ou bloqueio de tela. A biometria fica vinculada ao dispositivo e ao domínio atual.
+                            </p>
+                            {biometricCount !== null && biometricCount > 0 && (
+                              <p className="text-xs text-emerald-400 font-black uppercase tracking-widest mt-3">
+                                {biometricCount} credencial{biometricCount > 1 ? 'is' : ''} cadastrada{biometricCount > 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
+
+                          {isBiometricSupported ? (
+                            <button
+                              type="button"
+                              onClick={handleRegisterProfileBiometrics}
+                              disabled={biometricLoading}
+                              className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-sm flex items-center justify-center gap-3 disabled:opacity-50"
+                            >
+                              {biometricLoading ? <Loader2 className="animate-spin" size={18} /> : <Fingerprint size={18} />}
+                              {biometricCount && biometricCount > 0 ? 'Recadastrar Biometria' : 'Cadastrar Biometria'}
+                            </button>
+                          ) : (
+                            <span className="px-4 py-2 bg-white/5 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-center">
+                              Indisponível neste dispositivo
+                            </span>
+                          )}
                         </div>
 
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
