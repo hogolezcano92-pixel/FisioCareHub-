@@ -8,6 +8,24 @@ async function loadSwa() {
   return await import('@simplewebauthn/browser');
 }
 
+function normalizeBiometricError(err: any, fallback: string) {
+  const message = String(err?.message || '');
+
+  if (err?.name === 'NotAllowedError') {
+    return new Error('Operação cancelada ou não suportada neste dispositivo.');
+  }
+
+  if (message.includes('did not match the expected pattern')) {
+    return new Error('Não foi possível usar a biometria cadastrada. Entre com e-mail e senha e cadastre novamente o Face ID/Biometria neste dispositivo.');
+  }
+
+  if (message.toLowerCase().includes('no biometric credentials registered')) {
+    return new Error('Nenhuma biometria cadastrada para este e-mail. Entre com e-mail e senha para cadastrar.');
+  }
+
+  return new Error(message || fallback);
+}
+
 export async function registerBiometrics() {
   try {
     const swa = await loadSwa();
@@ -51,10 +69,7 @@ export async function registerBiometrics() {
     return await verifyRes.json();
   } catch (err: any) {
     console.error('WebAuthn Error:', err);
-    if (err.name === 'NotAllowedError') {
-      throw new Error('Operação cancelada ou não suportada.');
-    }
-    throw err;
+    throw normalizeBiometricError(err, 'Erro ao ativar biometria.');
   }
 }
 
@@ -101,10 +116,7 @@ export async function loginWithBiometrics(email: string) {
     return verificationResult;
   } catch (err: any) {
     console.error('WebAuthn Login Error:', err);
-    if (err.name === 'NotAllowedError') {
-      throw new Error('Operação cancelada ou não suportada.');
-    }
-    throw err;
+    throw normalizeBiometricError(err, 'Erro ao entrar com biometria.');
   }
 }
 
