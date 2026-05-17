@@ -8,22 +8,46 @@ async function loadSwa() {
   return await import('@simplewebauthn/browser');
 }
 
-function normalizeBiometricError(err: any, fallback: string) {
+async function readApiError(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+    return data?.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeBiometricError(err: any, mode: 'register' | 'login') {
   const message = String(err?.message || '');
 
   if (err?.name === 'NotAllowedError') {
-    return new Error('Operação cancelada ou não suportada neste dispositivo.');
+    return 'Operação cancelada ou não autorizada pelo dispositivo.';
   }
 
-  if (message.includes('did not match the expected pattern')) {
-    return new Error('Não foi possível usar a biometria cadastrada. Entre com e-mail e senha e cadastre novamente o Face ID/Biometria neste dispositivo.');
+  if (err?.name === 'InvalidStateError') {
+    return 'Este dispositivo já possui uma biometria cadastrada para esta conta. Use recadastrar ou remova a credencial antiga.';
   }
 
-  if (message.toLowerCase().includes('no biometric credentials registered')) {
-    return new Error('Nenhuma biometria cadastrada para este e-mail. Entre com e-mail e senha para cadastrar.');
+  if (
+    message.includes('No biometric credentials registered') ||
+    message.includes('Credential not found') ||
+    message.includes('The string did not match the expected pattern') ||
+    message.includes('Failed to execute')
+  ) {
+    return mode === 'login'
+      ? 'Não foi possível usar a biometria cadastrada. Entre com e-mail e senha e cadastre novamente o Face ID/Biometria neste dispositivo.'
+      : 'Não foi possível cadastrar a biometria neste dispositivo. Tente novamente após entrar com e-mail e senha.';
   }
 
-  return new Error(message || fallback);
+  if (message.includes('User not found')) {
+    return 'Não encontramos uma conta com este e-mail.';
+  }
+
+  if (message.includes('Challenge not found') || message.includes('Challenge expired')) {
+    return 'A validação expirou. Tente novamente.';
+  }
+
+  return message || (mode === 'login' ? 'Erro ao entrar com biometria.' : 'Erro ao cadastrar biometria.');
 }
 
 export async function registerBiometrics() {
@@ -42,8 +66,7 @@ export async function registerBiometrics() {
     });
     
     if (!optionsRes.ok) {
-      const err = await optionsRes.json();
-      throw new Error(err.error || 'Erro ao obter opções de registro');
+      throw new Error(await readApiError(optionsRes, 'Erro ao obter opções de registro'));
     }
     
     const options = await optionsRes.json();
@@ -62,14 +85,13 @@ export async function registerBiometrics() {
     });
 
     if (!verifyRes.ok) {
-      const err = await verifyRes.json();
-      throw new Error(err.error || 'Erro ao verificar registro biométrico');
+      throw new Error(await readApiError(verifyRes, 'Erro ao verificar registro biométrico'));
     }
 
     return await verifyRes.json();
   } catch (err: any) {
     console.error('WebAuthn Error:', err);
-    throw normalizeBiometricError(err, 'Erro ao ativar biometria.');
+    throw new Error(normalizeBiometricError(err, 'register'));
   }
 }
 
@@ -86,8 +108,7 @@ export async function loginWithBiometrics(email: string) {
     });
 
     if (!optionsRes.ok) {
-      const err = await optionsRes.json();
-      throw new Error(err.error || 'Erro ao obter opções de login');
+      throw new Error(await readApiError(optionsRes, 'Erro ao obter opções de login'));
     }
 
     const options = await optionsRes.json();
@@ -103,8 +124,7 @@ export async function loginWithBiometrics(email: string) {
     });
 
     if (!verifyRes.ok) {
-      const err = await verifyRes.json();
-      throw new Error(err.error || 'Erro na verificação biométrica');
+      throw new Error(await readApiError(verifyRes, 'Erro na verificação biométrica'));
     }
 
     const verificationResult = await verifyRes.json();
@@ -116,7 +136,7 @@ export async function loginWithBiometrics(email: string) {
     return verificationResult;
   } catch (err: any) {
     console.error('WebAuthn Login Error:', err);
-    throw normalizeBiometricError(err, 'Erro ao entrar com biometria.');
+    throw new Error(normalizeBiometricError(err, 'login'));
   }
 }
 
