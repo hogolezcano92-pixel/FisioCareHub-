@@ -662,21 +662,6 @@ async function startServer() {
 
   // --- WebAuthn (Biometric Auth) Implementation ---
   const challenges = new Map<string, string>();
-
-  const parseCredentialTransports = (transports?: string | string[] | null) => {
-    if (!transports) return undefined;
-    if (Array.isArray(transports)) return transports;
-
-    try {
-      const parsed = JSON.parse(transports);
-      return Array.isArray(parsed) ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
-  const isValidBase64URL = (value?: string | null) =>
-    typeof value === 'string' && value.length > 0 && /^[A-Za-z0-9_-]+$/.test(value);
   
   // Helper to get WebAuthn config dynamically from request
   const getWebAuthnConfig = (req: express.Request) => {
@@ -708,13 +693,11 @@ async function startServer() {
         userID: Buffer.from(user.id), // Ensure it's a Uint8Array
         userName: user.email || user.id,
         attestationType: 'none',
-        excludeCredentials: (credentials || [])
-          .filter(c => isValidBase64URL(c.credential_id))
-          .map(c => ({
-            id: c.credential_id,
-            type: 'public-key',
-            transports: parseCredentialTransports(c.transports),
-          })),
+        excludeCredentials: (credentials || []).map(c => ({
+          id: c.credential_id,
+          type: 'public-key',
+          transports: c.transports ? JSON.parse(c.transports) : undefined,
+        })),
         authenticatorSelection: {
           residentKey: 'preferred',
           userVerification: 'preferred',
@@ -754,34 +737,32 @@ async function startServer() {
       if (verification.verified && verification.registrationInfo) {
         const registrationInfo = verification.registrationInfo as any;
         const credential = registrationInfo.credential;
-
-        // @simplewebauthn/server v13 returns the credential data inside
-        // registrationInfo.credential. Keep a small fallback for older shapes so
-        // local/dev installs do not break while the package is being updated.
-        const credentialId = credential?.id || (
-          registrationInfo.credentialID
-            ? isoBase64URL.fromBuffer(registrationInfo.credentialID)
-            : undefined
-        );
+        const credentialId = credential?.id || registrationInfo.credentialID;
         const credentialPublicKey = credential?.publicKey || registrationInfo.credentialPublicKey;
         const counter = credential?.counter ?? registrationInfo.counter ?? 0;
         const transports = credential?.transports || body.response?.transports || [];
 
-        if (!credentialId || !credentialPublicKey || !isValidBase64URL(credentialId)) {
-          return res.status(400).json({
-            error: 'Não foi possível salvar a biometria. Tente cadastrar novamente neste dispositivo.',
-          });
+        if (!credentialId || !credentialPublicKey) {
+          throw new Error('Credencial biométrica inválida. Tente cadastrar a biometria novamente.');
         }
+
+        const normalizedCredentialId = typeof credentialId === 'string'
+          ? credentialId
+          : isoBase64URL.fromBuffer(credentialId);
+
+        const normalizedPublicKey = typeof credentialPublicKey === 'string'
+          ? credentialPublicKey
+          : isoBase64URL.fromBuffer(credentialPublicKey);
 
         const { error: dbError } = await getSupabaseAdmin()
           .from('webauthn_credentials')
-          .insert({
+          .upsert({
             user_id: user.id,
-            credential_id: credentialId,
-            public_key: isoBase64URL.fromBuffer(credentialPublicKey),
+            credential_id: normalizedCredentialId,
+            public_key: normalizedPublicKey,
             counter,
             transports: JSON.stringify(transports),
-          });
+          }, { onConflict: 'credential_id' });
 
         if (dbError) throw dbError;
         challenges.delete(user.id);
@@ -819,20 +800,12 @@ async function startServer() {
 
       const { rpID } = getWebAuthnConfig(req);
 
-      const validCredentials = credentials.filter(c => isValidBase64URL(c.credential_id));
-
-      if (validCredentials.length === 0) {
-        return res.status(400).json({
-          error: 'Sua biometria cadastrada está inválida. Entre com e-mail e senha e cadastre a biometria novamente.',
-        });
-      }
-
       const options = await generateAuthenticationOptions({
         rpID,
-        allowCredentials: validCredentials.map(c => ({
+        allowCredentials: credentials.map(c => ({
           id: c.credential_id,
           type: 'public-key',
-          transports: parseCredentialTransports(c.transports),
+          transports: c.transports ? JSON.parse(c.transports) : undefined,
         })),
         userVerification: 'preferred',
       });
@@ -870,12 +843,6 @@ async function startServer() {
 
       const { rpID, origin } = getWebAuthnConfig(req);
 
-      if (!isValidBase64URL(credential.credential_id) || !isValidBase64URL(credential.public_key)) {
-        return res.status(400).json({
-          error: 'Sua biometria cadastrada está inválida. Entre com e-mail e senha e cadastre a biometria novamente.',
-        });
-      }
-
       const verification = await verifyAuthenticationResponse({
         response: body,
         expectedChallenge,
@@ -885,7 +852,7 @@ async function startServer() {
           id: credential.credential_id,
           publicKey: isoBase64URL.toBuffer(credential.public_key),
           counter: Number(credential.counter),
-          transports: parseCredentialTransports(credential.transports),
+          transports: credential.transports ? JSON.parse(credential.transports) : undefined,
         },
       } as any);
 
