@@ -265,7 +265,7 @@ export default function Patients() {
               key={patient.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              onClick={() => navigate(`/patient/${patient.id}`)}
+              onClick={() => navigate(`/patients/${patient.id}`)}
               className="bg-slate-900/50 backdrop-blur-xl !p-6 rounded-[2.5rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-xl hover:shadow-sky-900/10 flex flex-col justify-between"
             >
               <div>

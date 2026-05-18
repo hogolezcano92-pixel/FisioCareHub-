@@ -36,7 +36,7 @@ export default function PhysioEvaluationsList() {
         .from('fichas_avaliacao')
         .select(`
           *,
-          paciente:pacientes(id, nome)
+          paciente:pacientes(id, nome_completo)
         `)
         .eq('fisioterapeuta_id', user?.id)
         .order('created_at', { ascending: false });
@@ -51,7 +51,7 @@ export default function PhysioEvaluationsList() {
   };
 
   const filteredEvaluations = evaluations.filter(ev => 
-    ev.paciente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ev.paciente?.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ev.diagnostico_fisio?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -134,7 +134,7 @@ export default function PhysioEvaluationsList() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-black text-white group-hover:text-sky-400 transition-colors flex items-center gap-2">
                       <User size={18} className="text-slate-600" />
-                      {ev.paciente?.nome}
+                      {ev.paciente?.nome_completo || 'Paciente sem nome'}
                     </h3>
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Diagnóstico Fisio.</p>

@@ -184,7 +184,7 @@ export default function PhysioEvaluationForm() {
         toast.success('Avaliação salva com integridade garantida!');
         if (data) {
           setFormData(data);
-          navigate(`/evaluation/${data.id}?pacienteId=${pacienteId}`, { replace: true });
+          navigate(`/physio/evaluation/${data.id}?pacienteId=${pacienteId}`, { replace: true });
         }
       }
     } catch (err: any) {
