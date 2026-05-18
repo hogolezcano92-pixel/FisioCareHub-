@@ -16,7 +16,7 @@ function getFriendlyWebAuthnError(err: any) {
   }
 
   if (message.includes('expected pattern')) {
-    return 'Não foi possível ativar a biometria neste domínio. Atualize a página e tente novamente.';
+    return 'O navegador recusou as opções de biometria deste domínio. Atualize a página e tente novamente.';
   }
 
   return message || 'Erro inesperado na biometria.';
@@ -46,15 +46,12 @@ export async function registerBiometrics() {
 
     /**
      * Segurança extra para Safari/iOS:
-     * se o servidor retornar rp.id com protocolo/caminho por configuração antiga,
-     * removemos aqui antes de chamar a API nativa do navegador.
+     * quando rp.id vem na resposta, alguns cenários com domínio customizado,
+     * www e proxy da Vercel podem gerar "The string did not match the expected pattern".
+     * Sem rp.id, o navegador usa automaticamente o domínio atual da página.
      */
     if (options?.rp?.id) {
-      options.rp.id = String(options.rp.id)
-        .replace(/^https?:\/\//i, '')
-        .split('/')[0]
-        .split(':')[0]
-        .toLowerCase();
+      delete options.rp.id;
     }
 
     // 2. Start WebAuthn ceremony
@@ -102,11 +99,7 @@ export async function loginWithBiometrics(email: string) {
     const options = await optionsRes.json();
 
     if (options?.rpId) {
-      options.rpId = String(options.rpId)
-        .replace(/^https?:\/\//i, '')
-        .split('/')[0]
-        .split(':')[0]
-        .toLowerCase();
+      delete options.rpId;
     }
 
     // 2. Start authentication ceremony
