@@ -25,7 +25,7 @@ dotenv.config();
 let groqInstance: Groq | null = null;
 const getGroqClient = () => {
   if (!groqInstance) {
-    const apiKey = process.env.VITE_GROQ_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
     if (!apiKey) return null;
     groqInstance = new Groq({ apiKey });
   }
@@ -1518,6 +1518,130 @@ async function startServer() {
     } catch (err: any) {
       console.error("[Asaas Library] Fatal Error:", err.response?.data || err.message);
       res.status(500).json({ error: err.response?.data?.errors?.[0]?.description || err.message });
+    }
+  });
+
+
+  // AI-assisted physiotherapy evaluation completion
+  // This only drafts fields for human review; it never saves the evaluation automatically.
+  app.post("/api/evaluations/complete-with-ai", async (req, res) => {
+    try {
+      const { accessToken, pacienteId, notes, currentForm, patient } = req.body || {};
+
+      if (!accessToken || !pacienteId) {
+        return res.status(400).json({ error: "Sessão ou paciente não informado." });
+      }
+
+      const client = getGroqClient();
+      if (!client) {
+        return res.status(500).json({ error: "GROQ_API_KEY não configurada no servidor." });
+      }
+
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (authError || !authData.user) {
+        return res.status(401).json({ error: "Sessão inválida ou expirada." });
+      }
+
+      const userId = authData.user.id;
+      const { data: profile } = await supabaseAdmin
+        .from('perfis')
+        .select('id, tipo_usuario, email')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const isAdmin = profile?.tipo_usuario === 'admin' || profile?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+
+      const { data: patientRecord, error: patientError } = await supabaseAdmin
+        .from('pacientes')
+        .select('id, nome_completo, data_nascimento, telefone, fisioterapeuta_id')
+        .eq('id', pacienteId)
+        .maybeSingle();
+
+      if (patientError || !patientRecord) {
+        return res.status(404).json({ error: "Paciente não encontrado." });
+      }
+
+      if (!isAdmin && patientRecord.fisioterapeuta_id !== userId) {
+        return res.status(403).json({ error: "Você não tem permissão para gerar ficha deste paciente." });
+      }
+
+      const fieldKeys = [
+        'queixa_principal', 'historia_doenca_atual', 'historico_medico', 'medicamentos',
+        'antecedentes_familiares', 'habitos_vida', 'nivel_funcional', 'independencia_funcional',
+        'marcha', 'postura', 'inspecao', 'palpacao', 'amplitude_movimento', 'forca_muscular',
+        'escala_dor', 'testes_especiais', 'diagnostico_fisio', 'objetivos_terapeuticos',
+        'prognostico', 'conduta', 'frequencia_sessoes', 'observacoes_finais'
+      ];
+
+      const cleanText = (value: any, max = 1800) => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
+      const safeCurrentForm = fieldKeys.reduce((acc: any, key) => {
+        acc[key] = key === 'escala_dor' ? Number(currentForm?.[key] || 0) : cleanText(currentForm?.[key], 1200);
+        return acc;
+      }, {});
+
+      const prompt = `
+Você é um assistente clínico para fisioterapeutas no Brasil.
+Organize uma ficha de avaliação fisioterapêutica a partir de texto livre e dados já preenchidos.
+
+REGRAS:
+- Não invente achados que não foram informados.
+- Quando algo não estiver claro, deixe vazio ou use "não informado".
+- Não dê diagnóstico médico fechado.
+- diagnostico_fisio deve ser uma hipótese/diagnóstico fisioterapêutico funcional para revisão.
+- conduta deve ser uma sugestão inicial segura, genérica e revisável.
+- Responda apenas em JSON válido, sem markdown.
+
+PACIENTE:
+${JSON.stringify({
+  nome_completo: patientRecord.nome_completo || patient?.nome_completo || '',
+  data_nascimento: patientRecord.data_nascimento || patient?.data_nascimento || '',
+  telefone: patientRecord.telefone || patient?.telefone || '',
+})}
+
+ANOTAÇÕES LIVRES:
+${cleanText(notes, 6000) || 'Sem anotações livres. Use apenas os campos já preenchidos, se existirem.'}
+
+CAMPOS JÁ PREENCHIDOS:
+${JSON.stringify(safeCurrentForm)}
+
+Retorne exatamente estes campos:
+${JSON.stringify(fieldKeys)}
+`;
+
+      const completion = await client.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "Você retorna somente JSON válido para preencher fichas fisioterapêuticas. Seja cauteloso e mantenha revisão humana obrigatória." },
+          { role: "user", content: prompt }
+        ]
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) return res.status(502).json({ error: "A IA retornou uma resposta vazia." });
+
+      const parsed = JSON.parse(content);
+      const fields = fieldKeys.reduce((acc: any, key) => {
+        if (key === 'escala_dor') {
+          const n = Number(parsed?.[key]);
+          acc[key] = Number.isFinite(n) ? Math.min(10, Math.max(0, Math.round(n))) : 0;
+        } else {
+          acc[key] = cleanText(parsed?.[key], 2500);
+        }
+        return acc;
+      }, {});
+
+      return res.json({
+        success: true,
+        fields,
+        warning: "Conteúdo gerado por IA. Revise todos os campos antes de salvar no prontuário."
+      });
+    } catch (err: any) {
+      console.error("[Evaluation AI API Error]", err);
+      return res.status(500).json({ error: err?.message || "Erro ao gerar ficha com IA." });
     }
   });
 
