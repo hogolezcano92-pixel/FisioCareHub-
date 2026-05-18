@@ -1,11 +1,62 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { Crown, Check, ShieldCheck, Zap, CreditCard, Key, Loader2, ArrowRight, Star } from 'lucide-react';
-import { supabase, invokeFunction } from '../lib/supabase';
+import { Crown, Check, ShieldCheck, Zap, Key, Loader2, ArrowRight, Star, Sparkles } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { config } from '../config/api';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+
+type PlanId = 'basic' | 'pro' | 'pro_semiannual' | 'pro_annual';
+type BillingCycle = 'monthly' | 'semiannual' | 'annual';
+
+const PLAN_CONFIG: Record<PlanId, {
+  stripePlan: 'basic' | 'pro';
+  planId: PlanId;
+  planVariant: PlanId;
+  billingCycle: BillingCycle;
+  amount: number;
+  serviceName: string;
+  durationDays: number;
+}> = {
+  basic: {
+    stripePlan: 'basic',
+    planId: 'basic',
+    planVariant: 'basic',
+    billingCycle: 'monthly',
+    amount: 19.99,
+    serviceName: 'Plano Basic Fisioterapeuta',
+    durationDays: 30,
+  },
+  pro: {
+    stripePlan: 'pro',
+    planId: 'pro',
+    planVariant: 'pro',
+    billingCycle: 'monthly',
+    amount: 49.99,
+    serviceName: 'Plano Pro Mensal Fisioterapeuta',
+    durationDays: 30,
+  },
+  pro_semiannual: {
+    stripePlan: 'pro',
+    planId: 'pro_semiannual',
+    planVariant: 'pro_semiannual',
+    billingCycle: 'semiannual',
+    amount: 269.90,
+    serviceName: 'Plano Pro Semestral Fisioterapeuta',
+    durationDays: 180,
+  },
+  pro_annual: {
+    stripePlan: 'pro',
+    planId: 'pro_annual',
+    planVariant: 'pro_annual',
+    billingCycle: 'annual',
+    amount: 499.90,
+    serviceName: 'Plano Pro Anual Fisioterapeuta',
+    durationDays: 365,
+  },
+};
+
 
 export default function Subscription() {
   const { profile, subscription, refreshProfile } = useAuth();
@@ -15,7 +66,9 @@ export default function Subscription() {
 
   const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.plan_type === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
 
-  const handleUpgrade = async (method: 'payment' | 'key', planType: 'basic' | 'pro' = 'pro') => {
+  const handleUpgrade = async (method: 'payment' | 'key', selectedPlan: PlanId = 'pro') => {
+    const planConfig = PLAN_CONFIG[selectedPlan];
+    const planType = planConfig.stripePlan;
     setLoading(true);
     try {
       if (method === 'key') {
@@ -35,9 +88,9 @@ export default function Subscription() {
             user_id: profile.id,
             plano: planType,
             status: 'ativo',
-            valor: planType === 'pro' ? 49.99 : 19.99,
+            valor: planConfig.amount,
             data_inicio: new Date().toISOString(),
-            data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            data_expiracao: new Date(Date.now() + planConfig.durationDays * 24 * 60 * 60 * 1000).toISOString()
           });
 
         if (error) throw error;
@@ -66,8 +119,8 @@ export default function Subscription() {
         throw new Error('Usuário não identificado. Por favor, faça login novamente para assinar.');
       }
 
-      const amount = planType === 'pro' ? 49.99 : 19.99;
-      const serviceName = planType === 'pro' ? 'Plano Pro Fisioterapeuta' : 'Plano Basic Fisioterapeuta';
+      const amount = planConfig.amount;
+      const serviceName = planConfig.serviceName;
 
       const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
       const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
@@ -83,6 +136,9 @@ export default function Subscription() {
           user_id: profile.id,
           email: profile.email,
           plan: planType,
+          plan_id: planConfig.planId,
+          plan_variant: planConfig.planVariant,
+          billing_cycle: planConfig.billingCycle,
           type: 'subscription',
           service_name: serviceName,
           amount: amount,
@@ -147,6 +203,8 @@ export default function Subscription() {
   }
 
   const proFeatures = [
+    "Captação de Pacientes Liberada",
+    "Perfil PRO no Marketplace",
     "Pacientes Ilimitados",
     "IA Completa (Análise e Sugestões)",
     "Relatórios de Evolução Detalhados",
@@ -184,7 +242,7 @@ export default function Subscription() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 items-stretch">
+      <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6 items-stretch">
         {/* Basic Plan */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -234,59 +292,110 @@ export default function Subscription() {
           )}
         </motion.div>
 
-        {/* Pro Plan */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className={cn(
-            "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border-2 border-sky-500 relative flex flex-col h-full shadow-2xl shadow-sky-950/20",
-            currentPlan === 'pro' && "bg-sky-500/5"
-          )}
-        >
-          <div className="absolute top-0 right-0 bg-sky-500 text-white px-6 py-1.5 rounded-bl-[1.5rem] font-black text-[10px] uppercase tracking-widest">
-            Mais Completo
-          </div>
-
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-black text-white px-4 py-1 bg-sky-500/20 text-sky-400 rounded-full inline-block flex items-center gap-2">
-                <Crown size={16} /> Plano PRO
-              </h3>
-              {currentPlan === 'pro' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tracking-tighter">R$ 49,99</span>
-              <span className="text-sm text-slate-500 font-bold">/mês</span>
-            </div>
-            <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
-              Acesso total e ilimitado para profissionais que desejam digitalizar a jornada do paciente.
-            </p>
-          </div>
-
-          <div className="flex-1 space-y-3 mb-8">
-            {proFeatures.map((feature, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/20">
-                  <Check size={12} />
-                </div>
-                <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => handleUpgrade('payment', 'pro')}
-            disabled={loading || currentPlan === 'pro'}
-            className="w-full py-4 bg-sky-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : (
-              <>
-                {currentPlan === 'pro' ? 'Assinatura Ativa' : (currentPlan === 'basic' ? 'Fazer Upgrade para PRO' : 'Assinar PRO')}
-                {!loading && currentPlan !== 'pro' && <ArrowRight size={16} />}
-              </>
+        {/* Pro Monthly */}
+        {[
+          {
+            id: 'pro' as PlanId,
+            title: 'Plano PRO Mensal',
+            price: 'R$ 49,99',
+            period: '/mês',
+            description: 'Acesso total para profissionais que querem liberar todos os recursos sem compromisso longo.',
+            badge: 'Mais Completo',
+            highlight: false,
+            economy: null,
+            buttonLabel: currentPlan === 'basic' ? 'Fazer Upgrade para PRO' : 'Assinar PRO Mensal',
+          },
+          {
+            id: 'pro_semiannual' as PlanId,
+            title: 'Plano PRO Semestral',
+            price: 'R$ 269,90',
+            period: '/semestre',
+            description: 'Todos os benefícios PRO por 6 meses, com economia em relação ao plano mensal.',
+            badge: 'Economize',
+            highlight: false,
+            economy: 'Equivale a R$ 44,98/mês',
+            buttonLabel: 'Assinar PRO Semestral',
+          },
+          {
+            id: 'pro_annual' as PlanId,
+            title: 'Plano PRO Anual',
+            price: 'R$ 499,90',
+            period: '/ano',
+            description: 'Melhor custo-benefício para fisioterapeutas que querem crescer no marketplace o ano todo.',
+            badge: 'Mais Vantajoso',
+            highlight: true,
+            economy: 'Equivale a R$ 41,66/mês',
+            buttonLabel: 'Assinar PRO Anual',
+          },
+        ].map((plan, index) => (
+          <motion.div
+            key={plan.id}
+            initial={{ opacity: 0, x: 20 + index * 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className={cn(
+              "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border-2 border-sky-500/70 relative flex flex-col h-full shadow-2xl shadow-sky-950/20",
+              plan.highlight && "border-emerald-400 shadow-emerald-950/30 bg-emerald-500/5",
+              currentPlan === 'pro' && "bg-sky-500/5"
             )}
-          </button>
-        </motion.div>
+          >
+            <div className={cn(
+              "absolute top-0 right-0 text-white px-5 py-1.5 rounded-bl-[1.5rem] font-black text-[10px] uppercase tracking-widest",
+              plan.highlight ? "bg-emerald-500" : "bg-sky-500"
+            )}>
+              {plan.badge}
+            </div>
+
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-black text-white px-4 py-1 bg-sky-500/20 text-sky-400 rounded-full inline-block flex items-center gap-2">
+                  {plan.highlight ? <Sparkles size={16} /> : <Crown size={16} />} {plan.title}
+                </h3>
+                {currentPlan === 'pro' && plan.id === 'pro' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-white tracking-tighter">{plan.price}</span>
+                <span className="text-sm text-slate-500 font-bold">{plan.period}</span>
+              </div>
+              {plan.economy && (
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider">
+                  {plan.economy}
+                </div>
+              )}
+              <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
+                {plan.description}
+              </p>
+            </div>
+
+            <div className="flex-1 space-y-3 mb-8">
+              {proFeatures.map((feature, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/20 shrink-0">
+                    <Check size={12} />
+                  </div>
+                  <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handleUpgrade('payment', plan.id)}
+              disabled={loading || currentPlan === 'pro'}
+              className={cn(
+                "w-full py-4 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50",
+                plan.highlight
+                  ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-900/20"
+                  : "bg-sky-500 hover:bg-sky-600 shadow-sky-900/20"
+              )}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : (
+                <>
+                  {currentPlan === 'pro' ? 'Assinatura Ativa' : plan.buttonLabel}
+                  {!loading && currentPlan !== 'pro' && <ArrowRight size={16} />}
+                </>
+              )}
+            </button>
+          </motion.div>
+        ))}
       </div>
 
       {/* Key Input Section */}
