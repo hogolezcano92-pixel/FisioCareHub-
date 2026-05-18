@@ -42,15 +42,14 @@ async function registrationOptions(req: VercelRequest, res: VercelResponse) {
     const { user, error: authError } = await getUserFromBearer(req);
     if (authError || !user) return json(res, 401, { error: authError || 'Usuário não autenticado.' });
 
-    const { rpName } = getWebAuthnConfig(req);
+    const { rpName, rpID } = getWebAuthnConfig(req);
 
     const options = await generateRegistrationOptions({
       rpName,
-      // Não enviamos rpID para o navegador: ele usa automaticamente o domínio atual.
-      // Isso evita erro do Safari/iOS quando o host vem diferente pelo proxy da Vercel.
+      rpID,
       userID: isoUint8Array.fromUTF8String(user.id),
-      userName: user.email || user.id,
-      userDisplayName: user.user_metadata?.nome || user.email || 'Usuário FisioCareHub',
+      userName: String(user.email || user.id),
+      userDisplayName: String(user.user_metadata?.nome || user.email || 'Usuário FisioCareHub'),
       attestationType: 'none',
 
       // Evita o erro "The string did not match the expected pattern" quando existe
@@ -178,9 +177,12 @@ async function loginOptions(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const { rpID } = getWebAuthnConfig(req);
+
     const options = await generateAuthenticationOptions({
+      rpID,
       allowCredentials: validCredentials.map((credential) => ({
-        id: credential.credential_id,
+        id: String(credential.credential_id),
         transports: parseTransports(credential.transports),
       })),
       userVerification: 'preferred',
@@ -251,7 +253,7 @@ async function verifyLogin(req: VercelRequest, res: VercelResponse) {
       expectedOrigin: origin,
       expectedRPID: rpID,
       credential: {
-        id: credential.credential_id,
+        id: String(credential.credential_id),
         publicKey: isoBase64URL.toBuffer(credential.public_key),
         counter: Number(credential.counter || 0),
         transports: parseTransports(credential.transports),
