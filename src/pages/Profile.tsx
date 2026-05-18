@@ -40,6 +40,7 @@ import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
+import { isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
@@ -61,6 +62,9 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [biometricsSupported, setBiometricsSupported] = useState(false);
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const [loadingBiometrics, setLoadingBiometrics] = useState(false);
   const navigate = useNavigate();
 
   type ProfessionalDocumentField =
@@ -450,24 +454,10 @@ export default function Profile() {
         }
       }
 
-      const syncedProfile = {
-        ...(userData || {}),
-        ...updatedProfile,
-        // Keep these fields explicitly synchronized in the UI/cache.
-        // They are the fields reported as not appearing saved in Minha Conta.
-        bio: updateData.bio,
-        observacoes_saude: Object.prototype.hasOwnProperty.call(updateData, 'observacoes_saude')
-          ? updateData.observacoes_saude
-          : updatedProfile.observacoes_saude,
-      };
-
-      setUserData(syncedProfile);
-
-      try {
-        localStorage.setItem('fch_profile_cache', JSON.stringify(syncedProfile));
-      } catch (cacheError) {
-        console.warn('Não foi possível atualizar o cache local do perfil:', cacheError);
-      }
+      setUserData((prev: any) => ({
+        ...prev,
+        ...updatedProfile
+      }));
 
       if (refreshProfile) await refreshProfile();
 
@@ -651,6 +641,91 @@ export default function Profile() {
     } finally {
       setUpdating(false);
       e.target.value = '';
+    }
+  };
+
+
+  const loadBiometricStatus = async () => {
+    if (!user) return;
+
+    try {
+      const supported = await isBiometricsSupported();
+      setBiometricsSupported(supported);
+
+      const { count, error } = await supabase
+        .from('webauthn_credentials')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setBiometricsEnabled((count || 0) > 0);
+    } catch (err) {
+      console.error('[BIOMETRICS_STATUS_ERROR]', err);
+      setBiometricsEnabled(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && activeTab === 'security') {
+      loadBiometricStatus();
+    }
+  }, [user, activeTab]);
+
+  const handleEnableBiometrics = async () => {
+    if (!user || loadingBiometrics) return;
+
+    setLoadingBiometrics(true);
+    try {
+      const supported = await isBiometricsSupported();
+      setBiometricsSupported(supported);
+
+      if (!supported) {
+        const { toast } = await import('sonner');
+        toast.error('Este dispositivo ou navegador não suporta biometria/Face ID.');
+        return;
+      }
+
+      await registerBiometrics();
+      await loadBiometricStatus();
+
+      const { toast } = await import('sonner');
+      toast.success('Biometria ativada com sucesso neste dispositivo!');
+    } catch (err: any) {
+      console.error('[ENABLE_BIOMETRICS_ERROR]', err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Não foi possível ativar a biometria.');
+    } finally {
+      setLoadingBiometrics(false);
+    }
+  };
+
+  const handleDisableBiometrics = async () => {
+    if (!user || loadingBiometrics) return;
+
+    const confirmed = window.confirm(
+      'Deseja remover a biometria cadastrada para esta conta? Você ainda poderá entrar com e-mail e senha.'
+    );
+
+    if (!confirmed) return;
+
+    setLoadingBiometrics(true);
+    try {
+      const { error } = await supabase
+        .from('webauthn_credentials')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setBiometricsEnabled(false);
+      const { toast } = await import('sonner');
+      toast.success('Biometria removida com sucesso.');
+    } catch (err: any) {
+      console.error('[DISABLE_BIOMETRICS_ERROR]', err);
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Não foi possível remover a biometria.');
+    } finally {
+      setLoadingBiometrics(false);
     }
   };
 
@@ -1310,6 +1385,54 @@ export default function Profile() {
                           >
                             Redefinir Senha
                           </button>
+                        </div>
+
+                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                          <div className="text-center lg:text-left max-w-2xl">
+                            <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
+                              <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center">
+                                <ShieldCheck className="text-blue-400" size={22} />
+                              </div>
+                              <div>
+                                <p className="text-lg font-black text-white">Face ID / Biometria</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">
+                                  {biometricsEnabled ? 'Ativa neste login' : 'Disponível para ativar'}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-slate-400 font-medium">
+                              Entre com mais rapidez usando Face ID, Touch ID ou a biometria do dispositivo. A biometria fica vinculada à sua conta e pode ser removida a qualquer momento.
+                            </p>
+                            {!biometricsSupported && (
+                              <p className="mt-3 text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-400/20 rounded-2xl px-4 py-3">
+                                Este navegador/dispositivo pode não oferecer suporte à biometria. No iPhone, teste pelo Safari com Face ID ativo.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                            <button
+                              type="button"
+                              onClick={handleEnableBiometrics}
+                              disabled={loadingBiometrics || biometricsEnabled}
+                              className="w-full lg:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {loadingBiometrics ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                              {biometricsEnabled ? 'Biometria Ativa' : 'Ativar Biometria'}
+                            </button>
+
+                            {biometricsEnabled && (
+                              <button
+                                type="button"
+                                onClick={handleDisableBiometrics}
+                                disabled={loadingBiometrics}
+                                className="w-full lg:w-auto px-8 py-4 bg-red-500/10 border border-red-400/20 text-red-300 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                              >
+                                {loadingBiometrics ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+                                Remover
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
