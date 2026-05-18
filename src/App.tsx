@@ -54,6 +54,7 @@ import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
 import LGPDModal from './components/LGPDModal';
 import ProGuard from './components/ProGuard';
+import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -735,6 +736,7 @@ function AppContent() {
       <ErrorBoundary>
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         <NotificationHandler />
+        <ProfileCompletionPrompt />
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
