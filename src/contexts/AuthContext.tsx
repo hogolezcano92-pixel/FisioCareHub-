@@ -93,8 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
-  const fetchProfile = async (userId: string, userMetadata?: any) => {
-    if (lastFetchedUserId.current === userId && profile && !isInitialMount.current) {
+  const fetchProfile = async (userId: string, userMetadata?: any, forceRefresh = false) => {
+    if (!forceRefresh && lastFetchedUserId.current === userId && profile && !isInitialMount.current) {
       return { profile, subscription };
     }
     
@@ -167,7 +167,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
-      const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata);
+      // Force a fresh Supabase read after profile edits. Without this, the local
+      // profile cache can make fields like bio/observacoes_saude appear unsaved.
+      const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata, true);
       setProfile(p);
       setSubscription(s);
     }
