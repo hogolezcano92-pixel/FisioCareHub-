@@ -15,7 +15,9 @@ import {
   Stethoscope,
   Brain,
   ClipboardList,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -81,12 +83,14 @@ export default function PhysioEvaluationForm() {
   const [searchParams] = useSearchParams();
   const pacienteId = searchParams.get('pacienteId');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   const [formData, setFormData] = useState<EvaluationForm>(initialForm);
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [aiNotes, setAiNotes] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   const isReadOnly = !!formData.integrity_hash;
 
@@ -136,6 +140,83 @@ export default function PhysioEvaluationForm() {
       toast.error('Erro ao carregar avaliação');
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  const handleCompleteWithAI = async () => {
+    if (aiLoading || isReadOnly) return;
+
+    const hasAnyManualData = Object.entries(formData).some(([key, value]) => {
+      if (key === 'paciente_id' || key === 'integrity_hash' || key === 'created_at') return false;
+      if (typeof value === 'number') return value > 0;
+      return Boolean(String(value || '').trim());
+    });
+
+    if (!aiNotes.trim() && !hasAnyManualData) {
+      toast.error('Digite a anamnese livre ou preencha algum campo antes de usar a IA.');
+      return;
+    }
+
+    if (!session?.access_token) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const response = await fetch('/api/evaluations/complete-with-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: session.access_token,
+          pacienteId: formData.paciente_id || pacienteId,
+          notes: aiNotes,
+          currentForm: formData,
+          patient,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Erro ao completar ficha com IA.');
+      }
+
+      const fields = result?.fields || {};
+
+      setFormData(prev => ({
+        ...prev,
+        queixa_principal: fields.queixa_principal || prev.queixa_principal,
+        historia_doenca_atual: fields.historia_doenca_atual || prev.historia_doenca_atual,
+        historico_medico: fields.historico_medico || prev.historico_medico,
+        medicamentos: fields.medicamentos || prev.medicamentos,
+        antecedentes_familiares: fields.antecedentes_familiares || prev.antecedentes_familiares,
+        habitos_vida: fields.habitos_vida || prev.habitos_vida,
+        nivel_funcional: fields.nivel_funcional || prev.nivel_funcional,
+        independencia_funcional: fields.independencia_funcional || prev.independencia_funcional,
+        marcha: fields.marcha || prev.marcha,
+        postura: fields.postura || prev.postura,
+        inspecao: fields.inspecao || prev.inspecao,
+        palpacao: fields.palpacao || prev.palpacao,
+        amplitude_movimento: fields.amplitude_movimento || prev.amplitude_movimento,
+        forca_muscular: fields.forca_muscular || prev.forca_muscular,
+        escala_dor: Number.isFinite(Number(fields.escala_dor)) ? Number(fields.escala_dor) : prev.escala_dor,
+        testes_especiais: fields.testes_especiais || prev.testes_especiais,
+        diagnostico_fisio: fields.diagnostico_fisio || prev.diagnostico_fisio,
+        objetivos_terapeuticos: fields.objetivos_terapeuticos || prev.objetivos_terapeuticos,
+        prognostico: fields.prognostico || prev.prognostico,
+        conduta: fields.conduta || prev.conduta,
+        frequencia_sessoes: fields.frequencia_sessoes || prev.frequencia_sessoes,
+        observacoes_finais: fields.observacoes_finais || prev.observacoes_finais,
+      }));
+
+      toast.success('Ficha preenchida com IA. Revise antes de salvar.');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Erro ao completar ficha com IA.');
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -337,6 +418,51 @@ export default function PhysioEvaluationForm() {
             </div>
           </div>
         </div>
+
+
+        {!isReadOnly && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-500/10 border border-sky-500/20 rounded-[2rem] p-6 shadow-2xl"
+          >
+            <div className="flex flex-col lg:flex-row gap-5 lg:items-start lg:justify-between">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-2xl bg-sky-500/15 border border-sky-400/20">
+                    <Sparkles className="text-sky-300" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white tracking-tight">Completar ficha com IA</h2>
+                    <p className="text-sm text-slate-400 font-medium">
+                      Cole a anamnese livre, achados do exame ou fale em texto corrido. A IA organiza os campos, mas você revisa antes de salvar.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 text-xs font-bold">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                  <span>Recurso assistivo: não substitui o raciocínio clínico nem salva automaticamente no prontuário.</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCompleteWithAI}
+                disabled={aiLoading}
+                className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-sky-500 text-white font-black hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 min-w-[210px]"
+              >
+                {aiLoading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                {aiLoading ? 'Gerando...' : 'Completar com IA'}
+              </button>
+            </div>
+
+            <textarea
+              value={aiNotes}
+              onChange={e => setAiNotes(e.target.value)}
+              placeholder="Ex: Paciente relata dor lombar há 3 semanas, piora ao ficar sentado, EVA 7/10, sem irradiação. Apresenta encurtamento de posteriores, fraqueza de glúteo médio e dificuldade para agachar..."
+              className="mt-5 w-full min-h-[150px] px-6 py-5 bg-slate-950/60 border border-white/10 rounded-3xl text-white outline-none focus:ring-2 focus:ring-sky-500 transition-all placeholder:text-slate-600 font-medium resize-y"
+            />
+          </motion.div>
+        )}
 
         <div className="space-y-8">
           {/* Seção 1: Anamnese */}

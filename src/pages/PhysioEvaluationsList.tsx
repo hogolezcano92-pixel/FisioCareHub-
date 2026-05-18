@@ -134,7 +134,7 @@ export default function PhysioEvaluationsList() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-black text-white group-hover:text-sky-400 transition-colors flex items-center gap-2">
                       <User size={18} className="text-slate-600" />
-                      {ev.paciente?.nome_completo || 'Paciente sem nome'}
+                      {ev.paciente?.nome_completo || 'Paciente não encontrado'}
                     </h3>
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Diagnóstico Fisio.</p>
