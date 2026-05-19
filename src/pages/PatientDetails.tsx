@@ -31,6 +31,44 @@ import { toast } from 'sonner';
 import { uploadPatientDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
 
+const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
+  if (!err) return fallback;
+
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+
+  if (typeof err === 'object') {
+    const anyErr = err as {
+      message?: string;
+      error_description?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+      statusCode?: string | number;
+      name?: string;
+    };
+
+    const parts = [
+      anyErr.message,
+      anyErr.error_description,
+      anyErr.details,
+      anyErr.hint,
+      anyErr.code ? `Código: ${anyErr.code}` : undefined,
+      anyErr.statusCode ? `Status: ${anyErr.statusCode}` : undefined,
+    ].filter(Boolean);
+
+    if (parts.length > 0) {
+      return parts.join(' | ');
+    }
+  }
+
+  if (typeof err === 'string') return err;
+
+  return fallback;
+};
+
+
 export default function PatientDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -189,8 +227,8 @@ export default function PatientDetails() {
       });
       fetchPatientData();
     } catch (err) {
-      console.error(err);
-      toast.error('Erro ao salvar evolução');
+      console.error('Erro ao salvar evolução:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao salvar evolução'));
     } finally {
       setSubmitting(false);
     }
@@ -227,8 +265,8 @@ export default function PatientDetails() {
       setArquivoForm({ tipo: 'Exame', file: null });
       fetchPatientData();
     } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar arquivo');
+      console.error('Erro ao enviar arquivo:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao enviar arquivo'));
     } finally {
       setSubmitting(false);
     }
@@ -254,8 +292,8 @@ export default function PatientDetails() {
       setPrescricaoForm({ exercicio_id: '', observacoes: '' });
       fetchPatientData();
     } catch (err) {
-      console.error(err);
-      toast.error('Erro ao prescrever exercício');
+      console.error('Erro ao prescrever exercício:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao prescrever exercício'));
     } finally {
       setSubmitting(false);
     }
