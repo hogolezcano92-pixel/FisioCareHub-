@@ -21,7 +21,7 @@ import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { generateMedicalRecord } from '../lib/groq';
 import ReactMarkdown from 'react-markdown';
 import { getUserName } from '../lib/user';
-import { uploadDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
+import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
 import { getPatientVisibleIds } from '../services/patientLinkService';
 
@@ -68,40 +68,47 @@ export default function Records() {
         const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
         const visiblePatientIds = isPhysio ? [] : await getPatientVisibleIds(user.id, user.email);
 
-        let recordsQuery = supabase
-          .from('prontuarios')
-          .select('*')
-          .order('data_registro', { ascending: false });
+        let recordsData: any[] = [];
 
-        recordsQuery = isPhysio
-          ? recordsQuery.eq('fisio_id', user.id)
-          : recordsQuery.in('paciente_id', visiblePatientIds);
+        if (isPhysio || visiblePatientIds.length > 0) {
+          let recordsQuery = supabase
+            .from('prontuarios')
+            .select('*')
+            .order('data_registro', { ascending: false });
 
-        const { data: recordsData, error: recordsError } = await recordsQuery;
+          recordsQuery = isPhysio
+            ? recordsQuery.eq('fisio_id', user.id)
+            : recordsQuery.in('paciente_id', visiblePatientIds);
 
-        if (recordsError) throw recordsError;
+          const { data, error: recordsError } = await recordsQuery;
+
+          if (recordsError) {
+            // Não deixa erro em prontuarios antigos impedir a exibição das avaliações/evoluções clínicas.
+            console.error('Erro ao buscar prontuários tradicionais:', recordsError);
+            recordsData = [];
+          } else {
+            recordsData = data || [];
+          }
+        }
 
         setRecords(recordsData || []);
 
-        if (!isPhysio) {
-          const clinicalOnlyIds = visiblePatientIds.filter((id) => id !== user.id);
-          const idsToSearch = clinicalOnlyIds.length > 0 ? clinicalOnlyIds : visiblePatientIds;
-
+        if (!isPhysio && visiblePatientIds.length > 0) {
           const [avaliacoesResult, evolucoesResult, arquivosResult] = await Promise.all([
             supabase
               .from('fichas_avaliacao')
               .select('*')
-              .in('paciente_id', idsToSearch)
+              .in('paciente_id', visiblePatientIds)
               .order('created_at', { ascending: false }),
             supabase
               .from('evolucoes')
               .select('*')
-              .in('paciente_id', idsToSearch)
+              .in('paciente_id', visiblePatientIds)
               .order('created_at', { ascending: false }),
             supabase
               .from('arquivos_paciente')
               .select('*')
-              .in('paciente_id', idsToSearch)
+              .in('paciente_id', visiblePatientIds)
               .order('created_at', { ascending: false }),
           ]);
 
@@ -197,7 +204,7 @@ export default function Records() {
             .order('data_triagem', { ascending: false });
           
           if (triagesData) setTriages(triagesData);
-        } else if (!isPhysio) {
+        } else if (!isPhysio && visiblePatientIds.length > 0) {
           const { data: triagesData } = await supabase
             .from('triagens')
             .select('*')
@@ -301,44 +308,16 @@ export default function Records() {
     }
   };
 
-
-  const cleanFileName = (value: unknown) => {
-    const raw = String(value || '');
-    if (!raw) return 'Arquivo';
-    try {
-      const withoutQuery = raw.split('?')[0];
-      const decoded = decodeURIComponent(withoutQuery);
-      return decoded.split('/').pop() || decoded;
-    } catch {
-      return raw.split('/').pop() || raw;
-    }
-  };
-
-  const openClinicalFile = async (file: any) => {
-    try {
-      const path = file.file_path || file.arquivo_url || file.url;
-      if (!path) {
-        const { toast } = await import('sonner');
-        toast.error('Arquivo sem caminho de acesso.');
-        return;
-      }
-
-      const url = String(path).startsWith('http')
-        ? path
-        : await getPrivateDocumentUrl(path);
-
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch (err: any) {
-      console.error('Erro ao abrir arquivo clínico:', err);
-      const { toast } = await import('sonner');
-      toast.error(err?.message || 'Erro ao abrir arquivo.');
-    }
-  };
-
-
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
+
+  const openClinicalFile = (file: any) => {
+    const path = file.arquivo_url || file.file_path || file.url;
+    if (!path) return;
+    const url = path.startsWith('http') ? path : resolveStorageUrl(path, 'documents');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="space-y-8">
@@ -458,12 +437,11 @@ export default function Records() {
         </section>
       )}
 
-
       {!isPhysio && clinicalFiles.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-xl font-black flex items-center gap-2 text-sky-400 tracking-tight">
             <Paperclip size={24} />
-            Exames, fotos e documentos clínicos
+            Exames e documentos clínicos
           </h2>
           <div className="grid gap-4">
             {clinicalFiles.map((file) => (
@@ -471,27 +449,24 @@ export default function Records() {
                 key={`arquivo-${file.id}`}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-xl"
               >
-                <div>
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                    {file.data_evento ? formatDate(file.data_evento) : 'Data não informada'}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      {file.created_at ? formatDate(file.created_at) : 'Data não informada'}
+                    </div>
+                    <h3 className="text-lg font-black text-white">{file.nome_arquivo || file.tipo || 'Documento clínico'}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{file.tipo || 'Documento'} vinculado ao prontuário.</p>
                   </div>
-                  <h3 className="text-lg font-black text-white">
-                    {file.tipo || 'Documento clínico'}
-                  </h3>
-                  <p className="text-sm text-slate-400 mt-1 break-all">
-                    {file.nome_arquivo || cleanFileName(file.file_path || file.arquivo_url)}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openClinicalFile(file)}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-200 rounded-xl border border-sky-500/20 text-xs font-black uppercase tracking-widest transition-all"
+                  >
+                    <Download size={14} /> Abrir / baixar
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => openClinicalFile(file)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
-                >
-                  <Download size={16} />
-                  Abrir / Baixar
-                </button>
               </motion.div>
             ))}
           </div>
