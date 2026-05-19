@@ -1,387 +1,404 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
-type PdfPatient = {
-  id?: string | null;
-  nome_completo?: string | null;
-  email?: string | null;
-  telefone?: string | null;
-  data_nascimento?: string | null;
-  diagnostico?: string | null;
-  observacoes?: string | null;
-  origem?: string | null;
-  tipo_paciente?: string | null;
+type AnyRecord = Record<string, any>;
+
+export type PremiumDocumentKind =
+  | 'ficha'
+  | 'avaliacao'
+  | 'evolucao'
+  | 'documento'
+  | 'soap';
+
+export interface PremiumPdfPayload {
+  kind: PremiumDocumentKind;
+  title?: string;
+  patient?: AnyRecord | null;
+  physiotherapist?: AnyRecord | null;
+  record?: AnyRecord | null;
+  fileName?: string;
+}
+
+const PAGE_WIDTH = 210;
+const PAGE_HEIGHT = 297;
+const NAVY = '#071B3A';
+const BLUE = '#2563EB';
+const BLUE_2 = '#0EA5E9';
+const TEXT = '#0F172A';
+const MUTED = '#64748B';
+const BORDER = '#D8E6F8';
+const SOFT = '#F6FAFF';
+const WHITE = '#FFFFFF';
+
+const value = (v: unknown, fallback = 'Não informado') => {
+  if (v === null || v === undefined || v === '') return fallback;
+  return String(v);
 };
 
-type PdfPhysio = {
-  nome_completo?: string | null;
-  crefito?: string | null;
-  email?: string | null;
-  telefone?: string | null;
+const dateBR = (input?: string | Date | null) => {
+  const d = input ? new Date(input) : new Date();
+  if (Number.isNaN(d.getTime())) return value(input);
+  return d.toLocaleDateString('pt-BR');
 };
 
-type PdfRecord = Record<string, any>;
-
-const NAVY: [number, number, number] = [7, 20, 50];
-const BLUE: [number, number, number] = [37, 99, 235];
-const SKY: [number, number, number] = [14, 165, 233];
-const SLATE: [number, number, number] = [51, 65, 85];
-const LIGHT: [number, number, number] = [239, 246, 255];
-const BORDER: [number, number, number] = [191, 219, 254];
-
-const safe = (value: any, fallback = 'Não informado') => {
-  if (value === null || value === undefined) return fallback;
-  const text = String(value).trim();
-  return text || fallback;
+const timeBR = (input?: string | Date | null) => {
+  const d = input ? new Date(input) : new Date();
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-const formatDateTime = (value?: string | null) => {
-  const date = value ? new Date(value) : new Date();
-  if (Number.isNaN(date.getTime())) return safe(value);
-  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const dateTimeBR = (input?: string | Date | null) => {
+  const d = input ? new Date(input) : new Date();
+  if (Number.isNaN(d.getTime())) return `${dateBR()} ${timeBR()}`;
+  return d.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
-const formatDate = (value?: string | null) => {
-  if (!value) return 'Não informada';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return safe(value);
-  return date.toLocaleDateString('pt-BR');
-};
+const shortId = (prefix: string) =>
+  `${prefix}-${Math.random().toString(16).slice(2, 10).toUpperCase()}`;
 
-const fileName = (title: string, patient?: PdfPatient | null) => {
-  const clean = `${title}-${safe(patient?.nome_completo, 'paciente')}`
+const safeName = (name: string) =>
+  name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase();
-  return `${clean}.pdf`;
-};
+    .replace(/[^\w.-]+/g, '_')
+    .replace(/_+/g, '_');
 
-const documentId = (prefix: string, record?: PdfRecord) => {
-  const raw = record?.id || crypto?.randomUUID?.() || `${Date.now()}`;
-  return `${prefix}-${String(raw).slice(0, 8).toUpperCase()}`;
-};
+const patientName = (patient?: AnyRecord | null) =>
+  value(patient?.nome_completo || patient?.nome || patient?.name, 'Paciente');
 
-const addWrapped = (doc: jsPDF, text: any, x: number, y: number, width: number, lineHeight = 5) => {
-  const lines = doc.splitTextToSize(safe(text), width);
-  doc.text(lines, x, y);
-  return y + Math.max(lines.length * lineHeight, lineHeight);
-};
+const physioName = (physio?: AnyRecord | null) =>
+  value(
+    physio?.nome_completo ||
+      physio?.nome ||
+      physio?.name ||
+      physio?.display_name ||
+      physio?.full_name,
+    'Fisioterapeuta'
+  );
 
-const checkPage = (doc: jsPDF, y: number, minSpace = 34) => {
-  if (y > doc.internal.pageSize.getHeight() - minSpace) {
-    doc.addPage();
-    addPageFrame(doc);
-    return 22;
+const physioCrefito = (physio?: AnyRecord | null) =>
+  value(physio?.crefito || physio?.registro_profissional || physio?.professional_id, 'Não informado');
+
+function rounded(doc: jsPDF, x: number, y: number, w: number, h: number, r = 3, stroke = BORDER, fill = WHITE) {
+  doc.setDrawColor(stroke);
+  doc.setFillColor(fill);
+  doc.roundedRect(x, y, w, h, r, r, 'FD');
+}
+
+function text(doc: jsPDF, str: string, x: number, y: number, opts: AnyRecord = {}) {
+  const {
+    size = 10,
+    color = TEXT,
+    weight = 'normal',
+    maxWidth,
+    align,
+    lineHeightFactor = 1.18,
+  } = opts;
+
+  doc.setFont('helvetica', weight);
+  doc.setFontSize(size);
+  doc.setTextColor(color);
+
+  if (maxWidth) {
+    const lines = doc.splitTextToSize(str, maxWidth);
+    doc.text(lines, x, y, { align, lineHeightFactor });
+    return lines.length * size * 0.36 * lineHeightFactor;
   }
-  return y;
-};
 
-const addPageFrame = (doc: jsPDF) => {
-  const w = doc.internal.pageSize.getWidth();
-  const h = doc.internal.pageSize.getHeight();
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(6, 6, w - 12, h - 12, 2, 2, 'S');
-  doc.setFillColor(248, 250, 252);
-  doc.rect(0, 0, w, h, 'F');
-};
+  doc.text(str, x, y, { align });
+  return size * 0.36;
+}
 
-const addHeader = (doc: jsPDF, title: string, kind: string, issuedAt?: string | null) => {
-  const w = doc.internal.pageSize.getWidth();
+function labelValue(
+  doc: jsPDF,
+  label: string,
+  val: string,
+  x: number,
+  y: number,
+  w: number,
+  iconLetter = ''
+) {
+  rounded(doc, x, y, w, 17, 3.5, '#E2EAF6', WHITE);
+  doc.setFillColor('#EAF3FF');
+  doc.circle(x + 8, y + 8.5, 4.5, 'F');
+  if (iconLetter) text(doc, iconLetter, x + 8, y + 10, { size: 6, color: BLUE, weight: 'bold', align: 'center' });
+  text(doc, label, x + 16, y + 6, { size: 6.5, color: BLUE, weight: 'bold' });
+  text(doc, val, x + 16, y + 12.5, { size: 8.5, color: TEXT, weight: 'bold', maxWidth: w - 20 });
+}
 
-  doc.setFillColor(248, 250, 252);
-  doc.rect(0, 0, w, 297, 'F');
+function sectionHeader(doc: jsPDF, title: string, x: number, y: number, w = 170) {
+  text(doc, title.toUpperCase(), x, y, { size: 8.5, color: TEXT, weight: 'bold' });
+  doc.setDrawColor(BLUE);
+  doc.setLineWidth(0.8);
+  doc.line(x, y + 2.2, x + w, y + 2.2);
+}
 
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(0, 0, 38, 32, 0, 0, 'F');
-  doc.setFillColor(...BLUE);
-  doc.circle(18, 16, 7, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('FCH', 18, 17.5, { align: 'center' });
+function wrapBlock(doc: jsPDF, title: string, body: string, x: number, y: number, w: number, minH = 18) {
+  const bodyLines = doc.splitTextToSize(body || 'Não informado', w - 14);
+  const h = Math.max(minH, 12 + bodyLines.length * 4.4);
+  rounded(doc, x, y, w, h, 3, '#DFEAF7', WHITE);
+  doc.setFillColor(NAVY);
+  doc.circle(x + 7, y + 7, 4.2, 'F');
+  text(doc, title.toUpperCase(), x + 14, y + 7.5, { size: 8, color: NAVY, weight: 'bold' });
+  doc.setDrawColor(BLUE);
+  doc.setLineWidth(0.35);
+  doc.line(x + 14, y + 10, x + w - 7, y + 10);
+  text(doc, body || 'Não informado', x + 7, y + 16, { size: 8.5, color: TEXT, maxWidth: w - 14 });
+  return h;
+}
 
-  doc.setTextColor(...NAVY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(25);
-  doc.text('FisioCareHub', 45, 17);
-  doc.setTextColor(100, 116, 139);
-  doc.setFontSize(8.5);
-  doc.setCharSpace(1.5);
-  doc.text('REABILITAÇÃO & PERFORMANCE', 45, 24);
-  doc.setCharSpace(0);
+function premiumHeader(doc: jsPDF, title: string, subtitle?: string) {
+  doc.setFillColor(WHITE);
+  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(w - 78, 8, 72, 18, 9, 9, 'F');
-  doc.setTextColor(219, 234, 254);
-  doc.setFontSize(7.5);
-  doc.text('DATA E HORA DE EMISSÃO', w - 42, 14, { align: 'center' });
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
-  doc.text(formatDateTime(issuedAt || new Date().toISOString()), w - 42, 21, { align: 'center' });
+  doc.setFillColor(NAVY);
+  doc.rect(0, 0, 39, 31, 'F');
+  doc.setFillColor(BLUE);
+  doc.circle(20, 16, 7.5, 'F');
+  text(doc, 'FCH', 20, 18.2, { size: 8, color: WHITE, weight: 'bold', align: 'center' });
 
-  doc.setTextColor(...NAVY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
-  doc.text(title, 14, 52);
-  doc.setDrawColor(...BLUE);
-  doc.setLineWidth(1.5);
-  doc.line(14, 58, 30, 58);
-
-  doc.setTextColor(...BLUE);
-  doc.setFontSize(8);
-  doc.text(kind.toUpperCase(), w - 14, 46, { align: 'right' });
-};
-
-const addFooter = (doc: jsPDF, id: string, physio?: PdfPhysio | null) => {
-  const pages = doc.getNumberOfPages();
-  const w = doc.internal.pageSize.getWidth();
-  const h = doc.internal.pageSize.getHeight();
-
-  for (let i = 1; i <= pages; i += 1) {
-    doc.setPage(i);
-    doc.setFillColor(...NAVY);
-    doc.rect(0, h - 14, w, 14, 'F');
-    doc.setTextColor(226, 232, 240);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text('Documento gerado oficialmente via FisioCareHub', 14, h - 6);
-    doc.text(`Página ${i} de ${pages}`, w - 14, h - 6, { align: 'right' });
-
-    doc.setDrawColor(203, 213, 225);
-    doc.line(14, h - 30, w - 14, h - 30);
-    doc.setTextColor(...BLUE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.text('ID DO DOCUMENTO', 14, h - 24);
-    doc.setTextColor(...SLATE);
-    doc.setFont('helvetica', 'normal');
-    doc.text(id, 14, h - 19);
-
-    doc.setTextColor(...BLUE);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALIDAÇÃO', 76, h - 24);
-    doc.setTextColor(...SLATE);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Hash e registro de emissão preservados no FisioCareHub.', 76, h - 19);
-
-    doc.setTextColor(...BLUE);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FISIOTERAPEUTA RESPONSÁVEL', w - 14, h - 24, { align: 'right' });
-    doc.setTextColor(...NAVY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(safe(physio?.nome_completo, 'Profissional responsável'), w - 14, h - 19, { align: 'right' });
-  }
-};
-
-const addPatientHero = (doc: jsPDF, patient?: PdfPatient | null, physio?: PdfPhysio | null, meta?: Array<[string, string]>) => {
-  const w = doc.internal.pageSize.getWidth();
-  let y = 68;
-
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...BORDER);
-  doc.roundedRect(14, y, w - 28, 32, 4, 4, 'FD');
-
-  doc.setFillColor(219, 234, 254);
-  doc.circle(29, y + 16, 10, 'F');
-  doc.setTextColor(...BLUE);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text('P', 29, y + 18, { align: 'center' });
-
-  doc.setTextColor(...BLUE);
-  doc.setFontSize(7.5);
-  doc.text('PACIENTE', 43, y + 12);
-  doc.setTextColor(...NAVY);
-  doc.setFontSize(18);
-  doc.text(safe(patient?.nome_completo || patient?.email, 'Paciente'), 43, y + 22);
-
-  doc.setDrawColor(203, 213, 225);
-  doc.line(w / 2 + 10, y + 7, w / 2 + 10, y + 25);
-
-  doc.setFillColor(...BLUE);
-  doc.circle(w / 2 + 25, y + 16, 6, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
-  doc.text('+', w / 2 + 25, y + 19, { align: 'center' });
-  doc.setTextColor(...BLUE);
-  doc.setFontSize(7.5);
-  doc.text('FISIOTERAPEUTA', w / 2 + 36, y + 12);
-  doc.setTextColor(...NAVY);
-  doc.setFontSize(12);
-  doc.text(safe(physio?.nome_completo, 'Fisioterapeuta'), w / 2 + 36, y + 21);
-
-  y += 42;
-  if (meta?.length) {
-    const cardWidth = (w - 28 - 6 * (meta.length - 1)) / meta.length;
-    meta.forEach(([label, value], idx) => {
-      const x = 14 + idx * (cardWidth + 6);
-      doc.setFillColor(...LIGHT);
-      doc.setDrawColor(...BORDER);
-      doc.roundedRect(x, y, cardWidth, 18, 3, 3, 'FD');
-      doc.setTextColor(...BLUE);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.8);
-      doc.text(label.toUpperCase(), x + 4, y + 7);
-      doc.setTextColor(...NAVY);
-      doc.setFontSize(9);
-      doc.text(safe(value), x + 4, y + 14, { maxWidth: cardWidth - 8 });
-    });
-    y += 27;
-  }
-  return y;
-};
-
-const addSection = (doc: jsPDF, title: string, value: any, y: number, icon = '•') => {
-  y = checkPage(doc, y, 42);
-  const w = doc.internal.pageSize.getWidth();
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(219, 234, 254);
-  doc.roundedRect(14, y, w - 28, 24, 4, 4, 'FD');
-  doc.setFillColor(...BLUE);
-  doc.circle(23, y + 12, 5, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text(icon, 23, y + 14, { align: 'center' });
-  doc.setTextColor(...NAVY);
-  doc.setFontSize(10.5);
-  doc.text(title.toUpperCase(), 34, y + 9);
-  doc.setDrawColor(...BLUE);
-  doc.setLineWidth(0.4);
-  doc.line(34, y + 12, w - 18, y + 12);
-  doc.setTextColor(...SLATE);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  const newY = addWrapped(doc, value, 34, y + 18, w - 52, 4.5);
-  return Math.max(y + 30, newY + 4);
-};
-
-const addInfoGrid = (doc: jsPDF, rows: Array<[string, any]>, y: number) => {
-  const w = doc.internal.pageSize.getWidth();
-  const colW = (w - 34) / 2;
-  rows.forEach(([label, value], idx) => {
-    y = checkPage(doc, y, 28);
-    const x = idx % 2 === 0 ? 14 : 20 + colW;
-    if (idx % 2 === 0 && idx > 0) y += 2;
-    const cy = y + Math.floor(idx / 2) * 0;
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(x, cy, colW, 18, 3, 3, 'FD');
-    doc.setFillColor(219, 234, 254);
-    doc.circle(x + 8, cy + 9, 5, 'F');
-    doc.setTextColor(...BLUE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.text(label, x + 17, cy + 7);
-    doc.setTextColor(...NAVY);
-    doc.setFontSize(8.5);
-    doc.text(safe(value), x + 17, cy + 13, { maxWidth: colW - 21 });
-    if (idx % 2 === 1) y += 21;
+  text(doc, 'FisioCareHub', 47, 14, { size: 18, color: NAVY, weight: 'bold' });
+  text(doc, 'R E A B I L I T A Ç Ã O   &   P E R F O R M A N C E', 47, 22, {
+    size: 7,
+    color: MUTED,
+    weight: 'bold',
   });
-  if (rows.length % 2 === 1) y += 21;
-  return y + 4;
-};
 
-export const downloadFichaClinicaPremiumPdf = (patient?: PdfPatient | null, physio?: PdfPhysio | null) => {
-  const id = documentId('FCH-FICHA');
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  addHeader(doc, 'Ficha clínica', 'Resumo clínico', new Date().toISOString());
-  let y = addPatientHero(doc, patient, physio, [
-    ['ID paciente', safe(patient?.id, 'FCH paciente')],
-    ['Origem', safe(patient?.origem || patient?.tipo_paciente)],
-    ['Emissão', formatDateTime()],
-  ]);
-  doc.setTextColor(...NAVY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('INFORMAÇÕES DO PACIENTE', 14, y);
-  doc.setDrawColor(...BLUE);
-  doc.line(61, y - 1, 196, y - 1);
-  y += 7;
-  y = addInfoGrid(doc, [
-    ['Nome', patient?.nome_completo],
-    ['Telefone', patient?.telefone],
-    ['E-mail', patient?.email],
-    ['Nascimento', formatDate(patient?.data_nascimento)],
-    ['Diagnóstico', patient?.diagnostico],
-    ['Observações', patient?.observacoes],
-  ], y);
-  y = addSection(doc, 'Fisioterapeuta responsável', `${safe(physio?.nome_completo)}\nCREFITO: ${safe(physio?.crefito)}`, y + 4, '+');
-  addFooter(doc, id, physio);
-  doc.save(fileName('ficha-clinica-premium', patient));
-};
+  doc.setFillColor(NAVY);
+  doc.roundedRect(132, 7, 62, 17, 7, 7, 'F');
+  text(doc, 'DATA E HORA DE EMISSÃO', 163, 13, { size: 5.8, color: WHITE, weight: 'bold', align: 'center' });
+  text(doc, dateTimeBR(), 163, 19, { size: 7.5, color: WHITE, weight: 'bold', align: 'center' });
 
-export const downloadAvaliacaoPremiumPdf = (evaluation: PdfRecord, patient?: PdfPatient | null, physio?: PdfPhysio | null) => {
-  const id = documentId('FCH-AVF', evaluation);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  addHeader(doc, 'Avaliação fisioterapêutica', 'Avaliação', evaluation.created_at);
-  let y = addPatientHero(doc, patient, physio, [
-    ['Data da avaliação', formatDate(evaluation.created_at)],
-    ['Paciente', safe(patient?.nome_completo)],
-    ['Dor', evaluation.escala_dor !== undefined && evaluation.escala_dor !== null ? `${evaluation.escala_dor}/10` : 'Não informado'],
-  ]);
-  y = addSection(doc, 'Queixa principal', evaluation.queixa_principal, y, '1');
-  y = addSection(doc, 'História da doença atual', evaluation.historia_doenca_atual, y, '2');
-  y = addSection(doc, 'Diagnóstico fisioterapêutico', evaluation.diagnostico_fisio, y, '3');
-  y = addSection(doc, 'Objetivos terapêuticos', evaluation.objetivos_terapeuticos, y, '4');
-  y = addSection(doc, 'Conduta', evaluation.conduta, y, '5');
-  y = addSection(doc, 'Prognóstico', evaluation.prognostico, y, '6');
-  y = addSection(doc, 'Observações finais', evaluation.observacoes_finais, y, '7');
-  addFooter(doc, id, physio);
-  doc.save(fileName('avaliacao-fisioterapeutica-premium', patient));
-};
+  text(doc, title, 18, 48, { size: 20, color: NAVY, weight: 'bold' });
+  doc.setFillColor(BLUE);
+  doc.roundedRect(18, 53, 16, 1.5, 0.7, 0.7, 'F');
 
-export const downloadEvolucaoPremiumPdf = (evolution: PdfRecord, patient?: PdfPatient | null, physio?: PdfPhysio | null) => {
-  const id = documentId('FCH-EVOL', evolution);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  addHeader(doc, 'Evolução clínica', 'Evolução', evolution.created_at);
-  let y = addPatientHero(doc, patient, physio, [
-    ['Data da sessão', formatDate(evolution.created_at)],
-    ['Horário', formatDateTime(evolution.created_at).split(',').pop()?.trim() || 'Não informado'],
-    ['Dor', evolution.dor_escala !== undefined && evolution.dor_escala !== null ? `${evolution.dor_escala}/10` : 'Não informado'],
-  ]);
-  y = addSection(doc, 'Descrição', evolution.descricao, y, 'D');
-  y = addSection(doc, 'Exercícios realizados', evolution.exercicios_realizados, y, 'E');
-  y = addSection(doc, 'Observações', evolution.observacoes, y, 'O');
-  y = addSection(doc, 'Plano terapêutico', evolution.plano, y, 'P');
-  const resumo = `Paciente em acompanhamento fisioterapêutico. Registro de dor: ${safe(evolution.dor_escala, '-')}/10. Conduta e progressão descritas conforme evolução clínica.`;
-  y = addSection(doc, 'Resumo da evolução', resumo, y, 'R');
-  addFooter(doc, id, physio);
-  doc.save(fileName('evolucao-clinica-premium', patient));
-};
+  if (subtitle) {
+    text(doc, subtitle.toUpperCase(), 178, 47, { size: 6, color: BLUE, weight: 'bold', align: 'right' });
+  }
+}
 
-export const downloadGeneratedDocumentPremiumPdf = (documentData: PdfRecord, physio?: PdfPhysio | null) => {
-  const patient: PdfPatient = { nome_completo: documentData.patient_name, email: documentData.patient_email };
-  const id = documentId('FCH-DOC', documentData);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  addHeader(doc, safe(documentData.type, 'Documento'), 'Documento clínico', documentData.criado_em || documentData.created_at);
-  let y = addPatientHero(doc, patient, { nome_completo: documentData.physio_name || physio?.nome_completo, crefito: physio?.crefito }, [
-    ['Tipo', safe(documentData.type, 'Documento')],
-    ['Paciente', safe(documentData.patient_name)],
-    ['Emissão', formatDateTime(documentData.criado_em || documentData.created_at)],
-  ]);
-  const content = safe(documentData.content || documentData.conteudo || documentData.texto, 'Documento sem conteúdo textual.');
-  y = addSection(doc, 'Conteúdo do documento', content, y, 'DOC');
-  addFooter(doc, id, { nome_completo: documentData.physio_name || physio?.nome_completo, crefito: physio?.crefito });
-  doc.save(fileName(`${safe(documentData.type, 'documento')}-premium`, patient));
-};
+function premiumFooter(doc: jsPDF, id: string, physio?: AnyRecord | null) {
+  doc.setDrawColor('#CFDAEA');
+  doc.line(18, 268, 192, 268);
 
-export const downloadSoapEvolutionPremiumPdf = (record: PdfRecord, patient?: PdfPatient | null, physio?: PdfPhysio | null) => {
-  const id = documentId('FCH-SOAP', record);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  addHeader(doc, 'Relatório de evolução SOAP', 'SOAP', record.created_at);
-  let y = addPatientHero(doc, patient, physio, [
-    ['Data', formatDate(record.created_at)],
-    ['Paciente', safe(patient?.nome_completo)],
-    ['Profissional', safe(physio?.nome_completo)],
-  ]);
-  y = addSection(doc, 'S - Subjetivo', record.subjective || record.raw_text, y, 'S');
-  y = addSection(doc, 'O - Objetivo', record.objective, y, 'O');
-  y = addSection(doc, 'A - Avaliação', record.assessment, y, 'A');
-  y = addSection(doc, 'P - Plano', record.plan, y, 'P');
-  addFooter(doc, id, physio);
-  doc.save(fileName('relatorio-evolucao-soap-premium', patient));
-};
+  text(doc, 'ID DO DOCUMENTO', 18, 274, { size: 6.2, color: BLUE, weight: 'bold' });
+  text(doc, id, 18, 280, { size: 7, color: TEXT });
+
+  text(doc, 'VALIDAÇÃO', 78, 274, { size: 6.2, color: BLUE, weight: 'bold' });
+  text(doc, 'Hash e registro de emissão preservados no FisioCareHub.', 78, 280, {
+    size: 5.5,
+    color: MUTED,
+    maxWidth: 58,
+  });
+
+  text(doc, 'FISIOTERAPEUTA RESPONSÁVEL', 152, 274, { size: 6.2, color: BLUE, weight: 'bold' });
+  text(doc, physioName(physio), 192, 280, { size: 7, color: TEXT, align: 'right' });
+
+  doc.setFillColor(NAVY);
+  doc.rect(0, 287, PAGE_WIDTH, 10, 'F');
+  text(doc, 'Documento gerado oficialmente via FisioCareHub', 18, 293, { size: 6.5, color: WHITE });
+  text(doc, 'Página 1 de 1', 192, 293, { size: 6.5, color: WHITE, align: 'right' });
+}
+
+function generateFicha(doc: jsPDF, payload: PremiumPdfPayload) {
+  const p = payload.patient || {};
+  const f = payload.physiotherapist || {};
+  const id = shortId('FCH-FICHA');
+
+  premiumHeader(doc, 'Ficha clínica', 'Resumo clínico');
+
+  // Main patient card, fixed and aligned
+  rounded(doc, 18, 66, 174, 31, 4.5, '#BBD7FF', WHITE);
+  doc.setFillColor('#E8F2FF');
+  doc.circle(32, 81.5, 9.5, 'F');
+  text(doc, 'P', 32, 84, { size: 9, color: BLUE, weight: 'bold', align: 'center' });
+
+  text(doc, 'PACIENTE', 45, 76, { size: 6, color: BLUE, weight: 'bold' });
+  text(doc, patientName(p), 45, 84.5, { size: 13, color: NAVY, weight: 'bold' });
+
+  doc.setDrawColor('#CBD5E1');
+  doc.setLineWidth(0.8);
+  doc.line(110, 70, 110, 93);
+
+  doc.setFillColor(BLUE);
+  doc.circle(124, 81.5, 6.2, 'F');
+  text(doc, '+', 124, 83.8, { size: 9, color: WHITE, weight: 'bold', align: 'center' });
+
+  text(doc, 'FISIOTERAPEUTA', 138, 76, { size: 6, color: BLUE, weight: 'bold' });
+  text(doc, physioName(f), 138, 84.2, { size: 10, color: NAVY, weight: 'bold', maxWidth: 46 });
+
+  const chipY = 106;
+  labelValue(doc, 'ID PACIENTE', value(p.id || p.paciente_clinico_id, id), 18, chipY, 54, '#');
+  labelValue(doc, 'ORIGEM', value(p.origem), 77, chipY, 54, 'O');
+  labelValue(doc, 'EMISSÃO', dateTimeBR(), 136, chipY, 56, 'D');
+
+  sectionHeader(doc, 'Informações do paciente', 18, 132, 174);
+
+  const leftX = 18;
+  const rightX = 108;
+  let y = 140;
+  labelValue(doc, 'Nome', patientName(p), leftX, y, 84, 'N');
+  labelValue(doc, 'Telefone', value(p.telefone || p.phone), rightX, y, 84, 'T');
+
+  y += 22;
+  labelValue(doc, 'E-mail', value(p.email), leftX, y, 84, '@');
+  labelValue(doc, 'Nascimento', value(p.data_nascimento || p.birthdate, 'Não informada'), rightX, y, 84, 'D');
+
+  y += 22;
+  labelValue(doc, 'Diagnóstico', value(p.diagnostico || p.diagnostico_clinico), leftX, y, 84, 'D');
+  labelValue(doc, 'Observações', value(p.observacoes || p.observacoes_iniciais), rightX, y, 84, 'O');
+
+  y += 28;
+  rounded(doc, 18, y, 174, 26, 4, '#D3E7FF', WHITE);
+  doc.setFillColor(BLUE);
+  doc.circle(28, y + 13, 5.5, 'F');
+  text(doc, '+', 28, y + 15.3, { size: 8, color: WHITE, weight: 'bold', align: 'center' });
+  text(doc, 'FISIOTERAPEUTA RESPONSÁVEL', 38, y + 9, { size: 9, color: NAVY, weight: 'bold' });
+  doc.setDrawColor(BLUE);
+  doc.setLineWidth(0.35);
+  doc.line(38, y + 12, 186, y + 12);
+  text(doc, physioName(f), 38, y + 18, { size: 8.5, color: TEXT, weight: 'bold' });
+  text(doc, `CREFITO: ${physioCrefito(f)}`, 38, y + 23, { size: 7, color: MUTED });
+
+  premiumFooter(doc, id, f);
+}
+
+function generateAvaliacao(doc: jsPDF, payload: PremiumPdfPayload) {
+  const r = payload.record || {};
+  const p = payload.patient || {};
+  const f = payload.physiotherapist || {};
+  const id = shortId('FCH-AVAL');
+
+  premiumHeader(doc, 'Avaliação fisioterapêutica', 'Avaliação');
+  rounded(doc, 18, 66, 174, 24, 4, '#CFE3FF', SOFT);
+  text(doc, 'Paciente', 28, 76, { size: 6.5, color: BLUE, weight: 'bold' });
+  text(doc, patientName(p), 28, 84, { size: 11, color: NAVY, weight: 'bold' });
+  text(doc, 'Fisioterapeuta', 104, 76, { size: 6.5, color: BLUE, weight: 'bold' });
+  text(doc, physioName(f), 104, 84, { size: 11, color: NAVY, weight: 'bold' });
+  doc.setFillColor(NAVY);
+  doc.roundedRect(156, 73, 28, 10, 5, 5, 'F');
+  text(doc, `Dor: ${value(r.dor_escala || r.escala_dor, '-')}/10`, 170, 80, { size: 8, color: WHITE, weight: 'bold', align: 'center' });
+
+  let y = 102;
+  y += wrapBlock(doc, 'Queixa principal', value(r.queixa_principal), 18, y, 174, 20) + 7;
+  y += wrapBlock(doc, 'História da doença atual', value(r.historia_doenca_atual), 18, y, 174, 20) + 7;
+  y += wrapBlock(doc, 'Diagnóstico fisioterapêutico', value(r.diagnostico_fisio), 18, y, 174, 20) + 7;
+  y += wrapBlock(doc, 'Objetivos terapêuticos', value(r.objetivos_terapeuticos), 18, y, 174, 20) + 7;
+  y += wrapBlock(doc, 'Conduta', value(r.conduta), 18, y, 174, 20) + 7;
+  y += wrapBlock(doc, 'Prognóstico', value(r.prognostico), 18, y, 174, 16) + 5;
+
+  premiumFooter(doc, id, f);
+}
+
+function generateEvolucao(doc: jsPDF, payload: PremiumPdfPayload) {
+  const r = payload.record || {};
+  const p = payload.patient || {};
+  const f = payload.physiotherapist || {};
+  const id = shortId('FCH-EVOL');
+
+  premiumHeader(doc, 'Evolução clínica', 'Evolução');
+  rounded(doc, 18, 66, 174, 31, 4, '#CFE3FF', WHITE);
+  text(doc, 'PACIENTE', 32, 76, { size: 6, color: BLUE, weight: 'bold' });
+  text(doc, patientName(p), 32, 84, { size: 12, color: NAVY, weight: 'bold' });
+  text(doc, 'FISIOTERAPEUTA', 112, 76, { size: 6, color: BLUE, weight: 'bold' });
+  text(doc, physioName(f), 112, 84, { size: 12, color: NAVY, weight: 'bold', maxWidth: 55 });
+
+  doc.setFillColor(NAVY);
+  doc.roundedRect(152, 86, 31, 10, 5, 5, 'F');
+  text(doc, `Dor: ${value(r.dor_escala || r.nivel_dor || r.dor_nivel, '-')}/10`, 167.5, 93, {
+    size: 8,
+    color: WHITE,
+    weight: 'bold',
+    align: 'center',
+  });
+
+  const data = dateBR(r.created_at || r.data || r.data_registro);
+  const hora = timeBR(r.created_at || r.data || r.data_registro);
+  labelValue(doc, 'Data da sessão', data, 18, 105, 54, 'D');
+  labelValue(doc, 'Horário', hora || 'Não informado', 78, 105, 54, 'H');
+
+  let y = 132;
+  const h1 = wrapBlock(doc, 'Descrição', value(r.descricao), 18, y, 78, 35);
+  const h2 = wrapBlock(doc, 'Exercícios realizados', value(r.exercicios_realizados), 103, y, 89, 35);
+  y += Math.max(h1, h2) + 8;
+  y += wrapBlock(doc, 'Observações', value(r.observacoes), 18, y, 174, 22) + 7;
+  y += wrapBlock(doc, 'Plano terapêutico', value(r.plano), 18, y, 174, 22) + 7;
+  y += wrapBlock(
+    doc,
+    'Resumo da evolução',
+    `Registro clínico de evolução do paciente ${patientName(p)}, com escala de dor ${
+      r.dor_escala || r.nivel_dor || r.dor_nivel || 'não informada'
+    }/10.`,
+    18,
+    y,
+    174,
+    24
+  );
+
+  premiumFooter(doc, id, f);
+}
+
+function generateDocumento(doc: jsPDF, payload: PremiumPdfPayload) {
+  const r = payload.record || {};
+  const p = payload.patient || {};
+  const f = payload.physiotherapist || {};
+  const id = shortId('FCH-DOC');
+
+  premiumHeader(doc, payload.title || 'Documento clínico', value(r.tipo || 'Documento'));
+  rounded(doc, 18, 66, 174, 35, 4, '#CFE3FF', WHITE);
+  text(doc, 'PACIENTE', 30, 78, { size: 6.5, color: BLUE, weight: 'bold' });
+  text(doc, patientName(p), 30, 88, { size: 13, color: NAVY, weight: 'bold' });
+  text(doc, 'FISIOTERAPEUTA', 116, 78, { size: 6.5, color: BLUE, weight: 'bold' });
+  text(doc, physioName(f), 116, 88, { size: 11, color: NAVY, weight: 'bold', maxWidth: 60 });
+
+  let y = 118;
+  y += wrapBlock(doc, 'Arquivo', value(r.nome_arquivo || r.fileName || payload.fileName), 18, y, 174, 22) + 7;
+  y += wrapBlock(doc, 'Tipo', value(r.tipo || r.document_type || 'Documento'), 18, y, 174, 18) + 7;
+  y += wrapBlock(doc, 'Descrição', value(r.descricao || r.observacoes), 18, y, 174, 35);
+
+  premiumFooter(doc, id, f);
+}
+
+export function generatePremiumPdf(payload: PremiumPdfPayload) {
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  if (payload.kind === 'ficha') generateFicha(doc, payload);
+  else if (payload.kind === 'avaliacao') generateAvaliacao(doc, payload);
+  else if (payload.kind === 'evolucao') generateEvolucao(doc, payload);
+  else generateDocumento(doc, payload);
+
+  const nameBase =
+    payload.fileName ||
+    `${payload.kind}_${patientName(payload.patient)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+  doc.save(safeName(nameBase));
+}
+
+export function openPremiumPdf(payload: PremiumPdfPayload) {
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  if (payload.kind === 'ficha') generateFicha(doc, payload);
+  else if (payload.kind === 'avaliacao') generateAvaliacao(doc, payload);
+  else if (payload.kind === 'evolucao') generateEvolucao(doc, payload);
+  else generateDocumento(doc, payload);
+
+  const url = doc.output('bloburl');
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+export function createPremiumPdfBlob(payload: PremiumPdfPayload): Blob {
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  if (payload.kind === 'ficha') generateFicha(doc, payload);
+  else if (payload.kind === 'avaliacao') generateAvaliacao(doc, payload);
+  else if (payload.kind === 'evolucao') generateEvolucao(doc, payload);
+  else generateDocumento(doc, payload);
+
+  return doc.output('blob');
+}
