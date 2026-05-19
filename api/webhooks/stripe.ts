@@ -38,6 +38,66 @@ const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
   return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
 };
 
+const ensureClinicalPatientForAppointment = async (supabase: any, appointment: any) => {
+  const patientProfileId = appointment.paciente_id;
+  const physioId = appointment.fisio_id || appointment.fisioterapeuta_id;
+
+  if (!patientProfileId || !physioId) {
+    console.warn('[Stripe Webhook] Sem paciente_id ou fisio_id no agendamento:', appointment?.id);
+    return null;
+  }
+
+  const { data: existingPatient, error: existingError } = await supabase
+    .from('pacientes')
+    .select('id')
+    .eq('perfil_id', patientProfileId)
+    .eq('fisioterapeuta_id', physioId)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error('[Stripe Webhook] Erro ao buscar paciente clínico vinculado:', existingError);
+  }
+
+  if (existingPatient?.id) {
+    return existingPatient.id;
+  }
+
+  const { data: profile } = await supabase
+    .from('perfis')
+    .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
+    .eq('id', patientProfileId)
+    .maybeSingle();
+
+  const payload: Record<string, any> = {
+    perfil_id: patientProfileId,
+    fisioterapeuta_id: physioId,
+    nome_completo: profile?.nome_completo || appointment.nome_paciente || 'Paciente',
+    email: profile?.email || appointment.email_paciente || null,
+    telefone: profile?.telefone || appointment.telefone_paciente || null,
+    data_nascimento: profile?.data_nascimento || null,
+    foto_url: profile?.foto_url || profile?.avatar_url || null,
+    avatar_url: profile?.avatar_url || profile?.foto_url || null,
+    tipo_paciente: 'externo',
+    origem: 'agendamento',
+    status: 'ativo',
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: createdPatient, error: createError } = await supabase
+    .from('pacientes')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (createError) {
+    console.error('[Stripe Webhook] Erro ao criar paciente clínico vinculado:', createError);
+    return null;
+  }
+
+  return createdPatient?.id || null;
+};
+
+
 const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.Session) => {
   const appointmentId = getAppointmentIdFromSession(session);
   if (!appointmentId) return false;
@@ -59,18 +119,16 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     ? session.amount_total / 100
     : Number(appointment.valor || 0);
 
-  const { error: updateError } = await supabase
+  const clinicalPatientId = await ensureClinicalPatientForAppointment(supabase, appointment);
+
+  await supabase
     .from('agendamentos')
     .update({
       status: 'pendente',
       status_pagamento: 'pago',
+      updated_at: new Date().toISOString(),
     })
     .eq('id', appointmentId);
-
-  if (updateError) {
-    console.error('[Stripe Webhook] Erro ao atualizar pagamento do agendamento:', updateError);
-    throw updateError;
-  }
 
   const externalId = String(session.payment_intent || session.id);
   await supabase
@@ -114,7 +172,7 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     {
       user_id: appointment.paciente_id,
       titulo: 'Pagamento confirmado',
-      mensagem: 'Pagamento recebido. Seu agendamento agora aguarda confirmação do fisioterapeuta.',
+      mensagem: 'Recebemos seu pagamento. O agendamento agora aguarda confirmação do fisioterapeuta.',
       tipo: 'payment',
       lida: false,
       link: '/appointments',
@@ -122,14 +180,14 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     {
       user_id: appointment.fisio_id,
       titulo: 'Nova consulta paga',
-      mensagem: 'Um paciente pagou por um serviço e aguarda sua confirmação do atendimento.',
+      mensagem: 'Um paciente pagou o serviço e aguarda sua confirmação de atendimento.',
       tipo: 'appointment',
       lida: false,
       link: '/agenda',
     },
   ]);
 
-  console.log('[Stripe Webhook] Pagamento de agendamento confirmado, aguardando aceite do fisio:', appointmentId);
+  console.log('[Stripe Webhook] Pagamento de agendamento confirmado; aguardando confirmação do fisio:', appointmentId, clinicalPatientId);
   return true;
 };
 
