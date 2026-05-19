@@ -60,6 +60,18 @@ const getEnv = (key: string, fallback = '') => {
   return trimmed;
 };
 
+const normalizeSupabaseUrl = (value: string) => {
+  const raw = value.trim().replace(/\/+$/, '');
+  if (!raw) return '';
+
+  // Aceita tanto a URL completa quanto apenas o Project Ref do Supabase.
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
+  if (/^[a-z0-9-]+\.supabase\.co$/i.test(raw)) return `https://${raw}`;
+
+  return raw;
+};
+
 const sanitizeText = (value: unknown, maxLength = 1800) => {
   if (typeof value !== 'string') return '';
   return value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -90,7 +102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Sessão ou paciente não informado.' });
     }
 
-    const supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co');
+    const supabaseUrl = normalizeSupabaseUrl(
+      getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co')
+    );
     const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
     const groqApiKey = getEnv('GROQ_API_KEY') || getEnv('VITE_GROQ_API_KEY');
 
@@ -102,7 +116,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'GROQ_API_KEY não configurada no servidor.' });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    } catch (error) {
+      console.error('[Evaluation AI API] Invalid Supabase URL:', supabaseUrl, error);
+      return res.status(500).json({
+        error: 'URL do Supabase inválida. Configure VITE_SUPABASE_URL/SUPABASE_URL como https://exciqetztunqgxbwwodo.supabase.co',
+      });
+    }
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (authError || !authData.user) {
