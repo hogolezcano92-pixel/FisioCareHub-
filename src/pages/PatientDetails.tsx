@@ -782,7 +782,21 @@ export default function PatientDetails() {
 
               <form onSubmit={handleCreateEvolucao} className="space-y-6 overflow-y-auto pr-2">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Vincular ao Atendimento <span className="text-slate-600 normal-case tracking-normal">(opcional)</span></label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Vincular ao Paciente</label>
+                  <select
+                    value={id || ''}
+                    disabled
+                    className="w-full min-h-[56px] p-4 bg-white/5 border border-white/10 rounded-2xl outline-none transition-all text-white opacity-90 cursor-not-allowed"
+                  >
+                    <option value={id || ''} className="bg-slate-900">
+                      {patient?.nome_completo || patient?.nome || 'Paciente cadastrado'}
+                    </option>
+                  </select>
+                  <p className="text-[11px] font-bold text-slate-500 ml-1">A evolução será salva no prontuário deste paciente cadastrado.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Vincular ao Atendimento Realizado <span className="text-slate-600 normal-case tracking-normal">(opcional)</span></label>
                   <select
                     value={evolucaoForm.atendimento_id}
                     onChange={(e) => setEvolucaoForm({...evolucaoForm, atendimento_id: e.target.value})}
@@ -794,7 +808,7 @@ export default function PatientDetails() {
                     ))}
                   </select>
                   {agendamentos.length === 0 && (
-                    <p className="text-[11px] font-bold text-slate-500 ml-1">Nenhum atendimento com status realizado foi encontrado. Você pode salvar a evolução sem vincular a um atendimento.</p>
+                    <p className="text-[11px] font-bold text-slate-500 ml-1">Nenhum atendimento realizado foi encontrado. O vínculo com o paciente acima continua ativo.</p>
                   )}
                 </div>
 

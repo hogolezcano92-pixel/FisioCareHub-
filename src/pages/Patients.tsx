@@ -18,13 +18,10 @@ import {
   Trash2,
   Edit2,
   ChevronRight,
-  Camera,
-  Download,
-  Send
+  Camera
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
-import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 
 export default function Patients() {
   const { user, profile, subscription } = useAuth();
@@ -34,6 +31,8 @@ export default function Patients() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<any | null>(null);
+  const [menuPatientId, setMenuPatientId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
   // Form State
@@ -90,7 +89,7 @@ export default function Patients() {
     // Check for create=true param to auto-open modal
     const params = new URLSearchParams(window.location.search);
     if (params.get('create') === 'true') {
-      setShowModal(true);
+      openCreatePatientModal();
     }
   }, [user, profile]);
 
@@ -122,88 +121,129 @@ export default function Patients() {
     }
   };
 
-  const handleGeneratePrescriptionPdf = async (patient: any, shareWhatsApp = false) => {
-    try {
-      await downloadPrescriptionPdf({ patientId: patient.id, physioProfile: profile });
-      toast.success('PDF gerado com sucesso!');
-      if (shareWhatsApp) {
-        openWhatsAppShare({ patientName: patient.nome_completo, phone: patient.telefone });
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || 'Não foi possível gerar o PDF da prescrição');
-    }
+  const resetPatientForm = () => {
+    setFormData({
+      nome: '',
+      email: '',
+      telefone: '',
+      data_nascimento: '',
+      diagnostico: '',
+      observacoes: '',
+      foto_url: ''
+    });
+    setEditingPatient(null);
+    setMenuPatientId(null);
+  };
+
+  const openCreatePatientModal = () => {
+    resetPatientForm();
+    setShowModal(true);
+  };
+
+  const openEditPatientModal = (patient: any) => {
+    setEditingPatient(patient);
+    setMenuPatientId(null);
+    setFormData({
+      nome: patient.nome_completo || patient.nome || '',
+      email: patient.email || '',
+      telefone: patient.telefone || '',
+      data_nascimento: patient.data_nascimento || '',
+      diagnostico: patient.diagnostico || '',
+      observacoes: patient.observacoes || '',
+      foto_url: patient.foto_url || ''
+    });
+    setShowModal(true);
+  };
+
+  const closePatientModal = () => {
+    setShowModal(false);
+    resetPatientForm();
   };
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    const userPlan = profile?.plan_type || profile?.plano || 'basic';
-    const isPro = userPlan === 'pro' || profile?.plano === 'admin' || subscription?.status === 'ativo';
+    if (!editingPatient) {
+      const userPlan = profile?.plan_type || profile?.plano || 'basic';
+      const isPro = userPlan === 'pro' || profile?.plano === 'admin' || subscription?.status === 'ativo';
 
-    if (!isPro && patients.length >= 10) {
-      toast.error('Limite do Plano Basic atingido', {
-        description: 'Faça upgrade para o plano PRO para cadastrar pacientes ilimitados.'
-      });
-      setShowModal(false);
-      navigate('/subscription');
-      return;
+      if (!isPro && patients.length >= 10) {
+        toast.error('Limite do Plano Basic atingido', {
+          description: 'Faça upgrade para o plano PRO para cadastrar pacientes ilimitados.'
+        });
+        setShowModal(false);
+        navigate('/subscription');
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
-      // Diagnóstico inicial solicitado pelo usuário
-      console.log('DEBUG: Iniciando cadastro de paciente');
-      console.log('DEBUG: Usuário autenticado:', user);
-      
       if (!user?.id) {
-        throw new Error('Usuário não identificado para o cadastro.');
+        throw new Error('Usuário não identificado para salvar o paciente.');
       }
 
-      // Garantir que campos vazios sejam enviados como NULL para o Supabase,
-      // evitando erros do tipo 'invalid input syntax for type date: ""'
-      const dataToInsert = {
+      const payload = {
         nome_completo: formData.nome.trim(),
-        data_nascimento: formData.data_nascimento || null,
-        observacoes: formData.observacoes.trim() || null,
-        fisioterapeuta_id: user.id,
         email: formData.email.trim() || null,
         telefone: formData.telefone.trim() || null,
-        origem: 'manual',
-        tipo_paciente: 'interno',
-        perfil_id: null
+        data_nascimento: formData.data_nascimento || null,
+        diagnostico: formData.diagnostico.trim() || null,
+        observacoes: formData.observacoes.trim() || null,
+        foto_url: formData.foto_url || null,
+        fisioterapeuta_id: user.id
       };
 
-      console.log('DEBUG: Payload enviado para pacientes:', dataToInsert);
+      if (editingPatient?.id) {
+        const { error: updateError } = await supabase
+          .from('pacientes')
+          .update(payload)
+          .eq('id', editingPatient.id)
+          .eq('fisioterapeuta_id', user.id);
 
-      const { error: insertError, data: resultData } = await supabase
-        .from('pacientes')
-        .insert([dataToInsert])
-        .select();
+        if (updateError) throw updateError;
+        toast.success('Paciente atualizado com sucesso!');
+      } else {
+        const { error: insertError } = await supabase
+          .from('pacientes')
+          .insert([payload]);
 
-      if (insertError) {
-        console.error('DEBUG: Erro COMPLETO do Supabase no INSERT:', insertError);
-        throw insertError;
+        if (insertError) throw insertError;
+        toast.success('Paciente cadastrado com sucesso!');
       }
 
-      console.log('DEBUG: Resultado do insert:', resultData);
-
-      toast.success('Paciente cadastrado com sucesso!');
-      setShowModal(false);
-      setFormData({
-        nome: '',
-        email: '',
-        telefone: '',
-        data_nascimento: '',
-        diagnostico: '',
-        observacoes: '',
-        foto_url: ''
-      });
+      closePatientModal();
       fetchPatients();
-    } catch (err) {
-      console.error('Erro ao criar paciente:', err);
-      toast.error('Erro ao cadastrar paciente');
+    } catch (err: any) {
+      console.error('Erro ao salvar paciente:', err);
+      toast.error(err?.message || 'Erro ao salvar paciente');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePatient = async (patient: any) => {
+    if (!user || !patient?.id) return;
+
+    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    setSubmitting(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from('pacientes')
+        .delete()
+        .eq('id', patient.id)
+        .eq('fisioterapeuta_id', user.id);
+
+      if (deleteError) throw deleteError;
+      toast.success('Paciente apagado com sucesso!');
+      setMenuPatientId(null);
+      fetchPatients();
+    } catch (err: any) {
+      console.error('Erro ao apagar paciente:', err);
+      toast.error(err?.message || 'Erro ao apagar paciente. Verifique se existem registros vinculados.');
     } finally {
       setSubmitting(false);
     }
@@ -247,7 +287,7 @@ export default function Patients() {
           <p className="text-slate-400 font-medium text-xs">Gerencie sua base de pacientes e prontuários.</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreatePatientModal}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
         >
           <Plus size={16} />
@@ -285,7 +325,7 @@ export default function Patients() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => navigate(`/patients/${patient.id}`)}
-              className="bg-slate-900/50 backdrop-blur-xl !p-6 rounded-[2.5rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-xl hover:shadow-sky-900/10 flex flex-col justify-between"
+              className="relative bg-slate-900/50 backdrop-blur-xl !p-6 rounded-[2.5rem] border border-white/10 group cursor-pointer hover:border-sky-500/30 transition-all shadow-xl hover:shadow-sky-900/10 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between mb-5">
@@ -309,8 +349,47 @@ export default function Patients() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-2 text-slate-600 hover:bg-white/5 rounded-xl transition-all">
-                    <MoreVertical size={18} />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuPatientId(menuPatientId === patient.id ? null : patient.id);
+                      }}
+                      className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                      aria-label="Abrir opções do paciente"
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+
+                    <AnimatePresence>
+                      {menuPatientId === patient.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-11 z-50 w-44 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl overflow-hidden p-1"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openEditPatientModal(patient)}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-xs font-black text-slate-200 hover:bg-white/10 rounded-xl transition-all"
+                          >
+                            <Edit2 size={14} className="text-sky-400" />
+                            Editar dados
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePatient(patient)}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-xs font-black text-red-300 hover:bg-red-500/10 rounded-xl transition-all"
+                          >
+                            <Trash2 size={14} />
+                            Apagar paciente
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -337,30 +416,13 @@ export default function Patients() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-white/5 gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGeneratePrescriptionPdf(patient);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all"
-                    title="Gerar PDF da última prescrição"
-                  >
-                    <Download size={13} /> PDF
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGeneratePrescriptionPdf(patient, true);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600/30 transition-all"
-                    title="Gerar PDF e abrir WhatsApp"
-                  >
-                    <Send size={13} /> WhatsApp
-                  </button>
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                <div className="flex -space-x-1.5">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[7px] font-bold text-slate-500">
+                      {i}
+                    </div>
+                  ))}
                 </div>
                 <div className="flex items-center gap-1 text-[10px] font-black text-sky-400 uppercase tracking-widest group-hover:gap-2 transition-all">
                   Ver Prontuário
@@ -380,7 +442,7 @@ export default function Patients() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowModal(false)}
+              onClick={closePatientModal}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
             <motion.div
@@ -390,8 +452,8 @@ export default function Patients() {
               className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">CADASTRO NOVO PACIENTE</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">{editingPatient ? 'EDITAR PACIENTE' : 'CADASTRO NOVO PACIENTE'}</h2>
+                <button onClick={closePatientModal} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
                   <X size={18} />
                 </button>
               </div>
@@ -494,7 +556,7 @@ export default function Patients() {
                   disabled={submitting}
                   className="w-full py-3 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Paciente'}
+                  {submitting ? <Loader2 className="animate-spin" /> : editingPatient ? 'Atualizar Paciente' : 'Salvar Paciente'}
                 </button>
               </form>
             </motion.div>
