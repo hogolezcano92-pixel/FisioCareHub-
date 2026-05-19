@@ -25,6 +25,15 @@ const formatAppointmentDate = (rawDate?: string) => formatDateKeyBR(rawDate, 'Da
 
 const formatAppointmentTime = (rawTime?: string) => formatTimeBR(rawTime, 'Horário não informado');
 
+const onlyDigits = (value?: string) => (value || '').replace(/\D/g, '');
+
+const normalizeAsaasError = (data: any) => {
+  const firstError = Array.isArray(data?.errors) ? data.errors[0]?.description : undefined;
+  const firstDetail = Array.isArray(data?.details?.errors) ? data.details.errors[0]?.description : undefined;
+  const detailDescription = Array.isArray(data?.details) ? data.details[0]?.description : undefined;
+  return firstError || firstDetail || detailDescription || data?.error || data?.message || 'Erro ao gerar pagamento Asaas.';
+};
+
 export default function PaymentPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -37,6 +46,7 @@ export default function PaymentPage() {
   const [asaasMethod, setAsaasMethod] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
   const [installments, setInstallments] = useState(1);
   const [cpf, setCpf] = useState('');
+  const [asaasPixPayment, setAsaasPixPayment] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,6 +98,7 @@ export default function PaymentPage() {
     if (!appointment || !user || !physio) return;
 
     setPaymentLoading(true);
+    setAsaasPixPayment(null);
     try {
       // 1. Get user profile for necessary info
       const { data: profile, error: profileError } = await supabase
@@ -151,19 +162,24 @@ export default function PaymentPage() {
 
       } else {
         // Asaas Logic (Server API)
+        const cleanCpf = onlyDigits(cpf);
+        if (!cleanCpf || cleanCpf.length < 11) {
+          throw new Error('Informe o CPF do paciente para gerar o pagamento via Asaas.');
+        }
+
         const payload = {
           name: profile.nome_completo,
           email: profile.email,
           value: Number(appointment.valor),
           appointmentId: appointment.id,
           phone: profile.telefone,
-          user_id: user.id, // kept for internal tracking if needed
+          user_id: user.id,
           billingType: asaasMethod,
-          cpf: cpf,
+          cpf: cleanCpf,
           installments: asaasMethod === 'CREDIT_CARD' ? installments : 1
         };
 
-        console.log("Dados enviados para Asaas:", payload);
+        console.log('Dados enviados para Asaas:', payload);
 
         const response = await fetch('/api/asaas/create-payment', {
           method: 'POST',
@@ -171,19 +187,31 @@ export default function PaymentPage() {
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-          const detail = data.details?.[0]?.description || data.error;
-          throw new Error(detail || 'Erro ao gerar pagamento Asaas.');
+          throw new Error(normalizeAsaasError(data));
         }
 
-        const redirectUrl = data.invoiceUrl || data.bankSlipUrl || data.url;
+        const redirectUrl = data.invoiceUrl || data.bankSlipUrl || data.url || data.paymentUrl;
+        const pixPayload = data.pixCopyPaste || data.pixPayload || data.payload;
+        const pixImage = data.pixEncodedImage || data.encodedImage || data.pixQrCode;
+
+        if (asaasMethod === 'PIX' && (pixPayload || pixImage)) {
+          setAsaasPixPayment({
+            ...data,
+            pixCopyPaste: pixPayload,
+            pixEncodedImage: pixImage,
+            invoiceUrl: redirectUrl,
+          });
+          toast.success('PIX gerado. Copie o código ou escaneie o QR Code.');
+          return;
+        }
 
         if (redirectUrl) {
           toast.success('Redirecionando para o pagamento via Asaas...');
           window.location.href = redirectUrl;
         } else {
-          throw new Error('URL de pagamento Asaas não retornada.');
+          throw new Error('O Asaas criou a cobrança, mas não retornou link nem QR Code. Verifique os logs da API.');
         }
       }
 
@@ -401,6 +429,70 @@ export default function PaymentPage() {
             <p className="text-slate-500 text-center text-[10px] font-medium italic">Ambiente seguro e processamento imediato.</p>
           </div>
 
+
+            {paymentMethod === 'asaas' && asaasMethod === 'PIX' && asaasPixPayment && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/30 space-y-4"
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 size={20} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-emerald-300 font-black text-sm uppercase tracking-widest">PIX gerado</p>
+                    <p className="text-slate-300 text-xs font-medium mt-1">
+                      Após o pagamento, o Asaas enviará a confirmação pelo webhook. O agendamento ficará pago e aguardando confirmação do fisioterapeuta.
+                    </p>
+                  </div>
+                </div>
+
+                {asaasPixPayment.pixEncodedImage && (
+                  <div className="flex justify-center">
+                    <img
+                      src={`data:image/png;base64,${asaasPixPayment.pixEncodedImage}`}
+                      alt="QR Code PIX"
+                      className="w-52 h-52 bg-white p-3 rounded-2xl object-contain"
+                    />
+                  </div>
+                )}
+
+                {asaasPixPayment.pixCopyPaste && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PIX copia e cola</p>
+                    <textarea
+                      readOnly
+                      value={asaasPixPayment.pixCopyPaste}
+                      className="w-full h-24 bg-slate-950/70 border border-white/10 rounded-2xl p-3 text-slate-200 text-xs font-mono resize-none focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(asaasPixPayment.pixCopyPaste);
+                          toast.success('Código PIX copiado');
+                        } catch {
+                          toast.error('Não foi possível copiar automaticamente. Selecione e copie o código.');
+                        }
+                      }}
+                      className="w-full py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all"
+                    >
+                      Copiar código PIX
+                    </button>
+                  </div>
+                )}
+
+                {asaasPixPayment.invoiceUrl && (
+                  <button
+                    type="button"
+                    onClick={() => { window.location.href = asaasPixPayment.invoiceUrl; }}
+                    className="w-full py-3 bg-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/15 transition-all border border-white/10"
+                  >
+                    Abrir cobrança no Asaas
+                  </button>
+                )}
+              </motion.div>
+            )}
+
           {/* Action Button */}
           <div className="space-y-3">
             <button 
@@ -431,7 +523,7 @@ export default function PaymentPage() {
            <div className="flex items-center justify-center gap-3 p-6 bg-white/5 rounded-[2rem] border border-white/5 text-center">
              <AlertCircle size={20} className="text-blue-500 flex-shrink-0" />
              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-               O agendamento será confirmado automaticamente após a compensação do pagamento.
+               Após o pagamento, o fisioterapeuta receberá o agendamento pago para confirmar o atendimento.
              </p>
            </div>
         </div>
