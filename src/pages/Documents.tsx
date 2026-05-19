@@ -9,10 +9,10 @@ import {
   Stethoscope,
   Loader2,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { getLinkedClinicalPatients } from '@/services/patientLinkService';
-import { generatePremiumPdf, openPremiumPdf } from '@/services/premiumPdfService';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { generatePremiumPdf, openPremiumPdf } from '../services/premiumPdfService';
 
 type ClinicalPatient = {
   id: string;
