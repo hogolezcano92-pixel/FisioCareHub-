@@ -166,6 +166,7 @@ serve(async (req) => {
 
       mode = "payment"
       metadata.type = "appointment"
+      metadata.appointment_id = appointment_id
       metadata.appointmentId = appointment_id
     } else if (
       (["material", "library"].includes(finalType) || ["material", "library"].includes(type)) &&
@@ -236,12 +237,20 @@ serve(async (req) => {
       metadata.plan = plan || "pro_fisioterapeuta"
     }
 
+    const successPath = appointment_id
+      ? `/appointments?status=success&payment=appointment&session_id={CHECKOUT_SESSION_ID}`
+      : `/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}${plan === "pro" ? "&plan_id=pro" : ""}`
+
+    const cancelPath = appointment_id
+      ? `/pagamento/${appointment_id}?status=canceled`
+      : `/subscription`
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items,
       mode,
-      success_url: `${APP_URL}/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_URL}/subscription`,
+      success_url: `${APP_URL}${successPath}`,
+      cancel_url: `${APP_URL}${cancelPath}`,
       customer_email: finalEmail,
       client_reference_id: finalUserId,
       metadata,
