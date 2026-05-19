@@ -10,11 +10,13 @@ const getEnv = (key: string, fallback = ''): string => {
   return trimmed;
 };
 
-const getSupabaseAdmin = (): any => {
-  const supabaseUrl = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co'));
-  const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
-  return createClient(supabaseUrl, supabaseServiceRoleKey);
-};
+const supabaseUrl = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co'));
+const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+const supabase: any = createClient<any>(supabaseUrl, supabaseServiceRoleKey);
+
+const APP_URL = (getEnv('APP_URL', getEnv('NEXT_PUBLIC_APP_URL', getEnv('VITE_APP_URL', 'https://fisiocarehub.company')))).replace(/\/$/, '');
+const RESEND_API_KEY = getEnv('RESEND_API_KEY');
+const RESEND_FROM = getEnv('RESEND_FROM', 'FisioCareHub <onboarding@resend.dev>');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-12-18.acacia' as any,
@@ -33,12 +35,133 @@ const buffer = (req: any) => new Promise<Buffer>((resolve, reject) => {
   req.on('error', reject);
 });
 
-const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
-  const metadata = session.metadata || {};
-  return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
+const escapeHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+const formatDateBR = (value: any) => {
+  if (!value) return 'Data não informada';
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
+  return String(value);
 };
 
-const ensureClinicalPatientForAppointment = async (supabase: any, appointment: any) => {
+const formatTimeBR = (appointment: any) => {
+  if (appointment?.hora) return String(appointment.hora).slice(0, 5);
+  const source = appointment?.data_servico || appointment?.data;
+  if (!source) return 'Horário não informado';
+  const date = new Date(source);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  return 'Horário não informado';
+};
+
+const formatMoneyBR = (value: any) => {
+  const amount = Number(value || 0);
+  return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const getAppointmentDate = (appointment: any) => appointment?.data_servico || appointment?.data || appointment?.created_at;
+
+const buildEmailLayout = (title: string, content: string) => `
+  <div style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;">
+      <tr>
+        <td align="center" style="padding:28px 14px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;border-collapse:collapse;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="background:#0f172a;padding:26px 24px;text-align:center;">
+                <h1 style="margin:0;color:#38bdf8;font-size:28px;line-height:34px;font-weight:900;">FisioCareHub</h1>
+                <p style="margin:8px 0 0;color:#cbd5e1;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">Reabilitação & Performance</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 24px;">
+                <h2 style="margin:0 0 18px;color:#0f172a;font-size:24px;line-height:30px;">${escapeHtml(title)}</h2>
+                ${content}
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#f1f5f9;padding:18px 24px;text-align:center;color:#64748b;font-size:12px;line-height:18px;">
+                Documento automático gerado pelo FisioCareHub.<br/>
+                Suporte: suporte@fisiocarehub.company
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+`;
+
+const sendEmail = async (to: string | null | undefined, subject: string, html: string) => {
+  if (!to) {
+    console.warn('[Stripe Webhook] E-mail não enviado: destinatário vazio.');
+    return { ok: false, reason: 'missing_to' };
+  }
+
+  if (!RESEND_API_KEY) {
+    console.warn('[Stripe Webhook] RESEND_API_KEY ausente na Vercel. Notificação interna foi criada, mas e-mail real não foi enviado.');
+    return { ok: false, reason: 'missing_resend_key' };
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to,
+        subject,
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('[Stripe Webhook] Erro Resend:', text);
+      return { ok: false, reason: text };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error('[Stripe Webhook] Falha ao enviar e-mail:', error);
+    return { ok: false, reason: error };
+  }
+};
+
+const getProfilesForAppointment = async (appointment: any) => {
+  const patientId = appointment?.paciente_id;
+  const physioId = appointment?.fisio_id || appointment?.fisioterapeuta_id;
+  const ids = [patientId, physioId].filter(Boolean).map(String);
+
+  if (ids.length === 0) return { patient: null, physio: null };
+
+  const { data, error } = await supabase
+    .from('perfis')
+    .select('id, nome_completo, email, telefone')
+    .in('id', ids);
+
+  if (error) console.error('[Stripe Webhook] Erro ao buscar perfis:', error);
+
+  const profiles = Array.isArray(data) ? data : [];
+  const findProfile = (id: any) => profiles.find((p: any) => String(p.id) === String(id)) || null;
+
+  return {
+    patient: findProfile(patientId),
+    physio: findProfile(physioId),
+  };
+};
+
+const ensureClinicalPatientForAppointment = async (appointment: any) => {
   const patientProfileId = appointment.paciente_id;
   const physioId = appointment.fisio_id || appointment.fisioterapeuta_id;
 
@@ -54,13 +177,8 @@ const ensureClinicalPatientForAppointment = async (supabase: any, appointment: a
     .eq('fisioterapeuta_id', physioId)
     .maybeSingle();
 
-  if (existingError) {
-    console.error('[Stripe Webhook] Erro ao buscar paciente clínico vinculado:', existingError);
-  }
-
-  if (existingPatient?.id) {
-    return existingPatient.id;
-  }
+  if (existingError) console.error('[Stripe Webhook] Erro ao buscar paciente clínico vinculado:', existingError);
+  if (existingPatient?.id) return existingPatient.id;
 
   const { data: profile } = await supabase
     .from('perfis')
@@ -68,24 +186,22 @@ const ensureClinicalPatientForAppointment = async (supabase: any, appointment: a
     .eq('id', patientProfileId)
     .maybeSingle();
 
-  const payload: Record<string, any> = {
-    perfil_id: patientProfileId,
-    fisioterapeuta_id: physioId,
-    nome_completo: profile?.nome_completo || appointment.nome_paciente || 'Paciente',
-    email: profile?.email || appointment.email_paciente || null,
-    telefone: profile?.telefone || appointment.telefone_paciente || null,
-    data_nascimento: profile?.data_nascimento || null,
-    foto_url: profile?.foto_url || profile?.avatar_url || null,
-    avatar_url: profile?.avatar_url || profile?.foto_url || null,
-    tipo_paciente: 'externo',
-    origem: 'agendamento',
-    status: 'ativo',
-    updated_at: new Date().toISOString(),
-  };
-
   const { data: createdPatient, error: createError } = await supabase
     .from('pacientes')
-    .insert(payload)
+    .insert({
+      perfil_id: patientProfileId,
+      fisioterapeuta_id: physioId,
+      nome_completo: profile?.nome_completo || appointment.nome_paciente || 'Paciente',
+      email: profile?.email || appointment.email_paciente || null,
+      telefone: profile?.telefone || appointment.telefone_paciente || null,
+      data_nascimento: profile?.data_nascimento || null,
+      foto_url: profile?.foto_url || profile?.avatar_url || null,
+      avatar_url: profile?.avatar_url || profile?.foto_url || null,
+      tipo_paciente: 'externo',
+      origem: 'agendamento',
+      status: 'ativo',
+      updated_at: new Date().toISOString(),
+    })
     .select('id')
     .single();
 
@@ -97,8 +213,102 @@ const ensureClinicalPatientForAppointment = async (supabase: any, appointment: a
   return createdPatient?.id || null;
 };
 
+const notifyAfterPaidAppointment = async (appointment: any, paymentInfo: { id: string; value: number; method: string }) => {
+  const { patient, physio } = await getProfilesForAppointment(appointment);
 
-const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.Session) => {
+  const appointmentId = String(appointment.id);
+  const confirmLink = `${APP_URL}/agendamento/confirmar?id=${encodeURIComponent(appointmentId)}`;
+  const patientName = patient?.nome_completo || appointment.nome_paciente || 'Paciente';
+  const physioName = physio?.nome_completo || 'Fisioterapeuta';
+  const serviceName = appointment.servico || appointment.tipo || 'Sessão de fisioterapia';
+  const date = formatDateBR(getAppointmentDate(appointment));
+  const time = formatTimeBR(appointment);
+  const amount = formatMoneyBR(paymentInfo.value || appointment.valor);
+
+  await supabase.from('notificacoes').insert([
+    {
+      user_id: appointment.paciente_id,
+      titulo: 'Pagamento recebido',
+      mensagem: 'Recebemos seu pagamento. O agendamento agora aguarda confirmação do fisioterapeuta.',
+      tipo: 'payment',
+      lida: false,
+      link: '/appointments',
+    },
+    {
+      user_id: appointment.fisio_id || appointment.fisioterapeuta_id,
+      titulo: 'Nova consulta paga',
+      mensagem: 'Um paciente pagou o serviço e aguarda sua confirmação de atendimento.',
+      tipo: 'appointment',
+      lida: false,
+      link: `/agendamento/confirmar?id=${appointmentId}`,
+    },
+  ]);
+
+  const physioHtml = buildEmailLayout(
+    'Novo agendamento pago aguardando confirmação',
+    `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(physioName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Um paciente realizou o pagamento por Stripe e aguarda sua confirmação.</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
+        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
+          <p style="margin:0 0 8px;"><strong>Paciente:</strong> ${escapeHtml(patientName)}</p>
+          <p style="margin:0 0 8px;"><strong>Serviço:</strong> ${escapeHtml(serviceName)}</p>
+          <p style="margin:0 0 8px;"><strong>Data:</strong> ${escapeHtml(date)}</p>
+          <p style="margin:0 0 8px;"><strong>Horário:</strong> ${escapeHtml(time)}</p>
+          <p style="margin:0;"><strong>Valor pago:</strong> ${escapeHtml(amount)}</p>
+        </td></tr>
+      </table>
+      <p style="margin:22px 0;text-align:center;">
+        <a href="${confirmLink}" style="display:inline-block;background:#0284c7;color:#ffffff;text-decoration:none;font-weight:800;padding:14px 20px;border-radius:12px;">Confirmar atendimento</a>
+      </p>
+      <p style="margin:0;color:#64748b;font-size:13px;line-height:20px;">Caso o botão não funcione, acesse: ${escapeHtml(confirmLink)}</p>
+    `
+  );
+
+  const patientHtml = buildEmailLayout(
+    'Pagamento recebido',
+    `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(patientName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Recebemos seu pagamento pelo Stripe. Seu agendamento agora aguarda confirmação do fisioterapeuta.</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
+        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
+          <p style="margin:0 0 8px;"><strong>Fisioterapeuta:</strong> ${escapeHtml(physioName)}</p>
+          <p style="margin:0 0 8px;"><strong>Serviço:</strong> ${escapeHtml(serviceName)}</p>
+          <p style="margin:0 0 8px;"><strong>Data:</strong> ${escapeHtml(date)}</p>
+          <p style="margin:0 0 8px;"><strong>Horário:</strong> ${escapeHtml(time)}</p>
+          <p style="margin:0;"><strong>Valor pago:</strong> ${escapeHtml(amount)}</p>
+        </td></tr>
+      </table>
+      <p style="margin:0;color:#475569;font-size:16px;line-height:25px;">Você será notificado quando o fisioterapeuta confirmar o atendimento.</p>
+    `
+  );
+
+  const physioEmailResult = await sendEmail(
+    physio?.email,
+    'Novo agendamento pago aguardando confirmação - FisioCareHub',
+    physioHtml
+  );
+
+  const patientEmailResult = await sendEmail(
+    patient?.email,
+    'Pagamento recebido - FisioCareHub',
+    patientHtml
+  );
+
+  console.log('[Stripe Webhook] Resultado e-mails:', {
+    physioEmail: physio?.email,
+    physioEmailResult,
+    patientEmail: patient?.email,
+    patientEmailResult,
+  });
+};
+
+const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
+  const metadata = session.metadata || {};
+  return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
+};
+
+const upsertAppointmentPayment = async (session: Stripe.Checkout.Session) => {
   const appointmentId = getAppointmentIdFromSession(session);
   if (!appointmentId) return false;
 
@@ -119,9 +329,9 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     ? session.amount_total / 100
     : Number(appointment.valor || 0);
 
-  const clinicalPatientId = await ensureClinicalPatientForAppointment(supabase, appointment);
+  const clinicalPatientId = await ensureClinicalPatientForAppointment(appointment);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('agendamentos')
     .update({
       status: 'pendente',
@@ -130,8 +340,13 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     })
     .eq('id', appointmentId);
 
+  if (updateError) {
+    console.error('[Stripe Webhook] Erro ao atualizar pagamento do agendamento:', updateError);
+    throw updateError;
+  }
+
   const externalId = String(session.payment_intent || session.id);
-  await supabase
+  const { error: paymentError } = await supabase
     .from('pagamentos')
     .upsert({
       external_id: externalId,
@@ -144,6 +359,8 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
       confirmed_at: new Date().toISOString(),
     }, { onConflict: 'external_id' });
 
+  if (paymentError) console.error('[Stripe Webhook] Erro ao registrar pagamento:', paymentError);
+
   const { data: existingSessions } = await supabase
     .from('sessoes')
     .select('id')
@@ -152,42 +369,33 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
 
   const sessionPayload: Record<string, any> = {
     paciente_id: appointment.paciente_id,
-    fisioterapeuta_id: appointment.fisio_id,
+    fisioterapeuta_id: appointment.fisio_id || appointment.fisioterapeuta_id,
     agendamento_id: appointmentId,
-    data: appointment.data,
-    hora: appointment.hora,
+    data: appointment.data || appointment.data_servico || null,
+    hora: appointment.hora || formatTimeBR(appointment),
     valor_sessao: amountPaid || Number(appointment.valor || 0),
     status_pagamento: 'pago_app',
-    stripe_payment_intent: String(session.payment_intent || session.id),
+    stripe_payment_intent: externalId,
     status_repasse: 'pendente',
   };
 
   if (existingSessions && existingSessions.length > 0) {
-    await supabase.from('sessoes').update(sessionPayload).eq('id', existingSessions[0].id);
+    const { error: sessionUpdateError } = await supabase.from('sessoes').update(sessionPayload).eq('id', existingSessions[0].id);
+    if (sessionUpdateError) console.error('[Stripe Webhook] Erro ao atualizar sessão:', sessionUpdateError);
   } else {
-    await supabase.from('sessoes').insert(sessionPayload);
+    const { error: sessionInsertError } = await supabase.from('sessoes').insert(sessionPayload);
+    if (sessionInsertError) console.error('[Stripe Webhook] Erro ao criar sessão:', sessionInsertError);
   }
 
-  await supabase.from('notificacoes').insert([
-    {
-      user_id: appointment.paciente_id,
-      titulo: 'Pagamento confirmado',
-      mensagem: 'Recebemos seu pagamento. O agendamento agora aguarda confirmação do fisioterapeuta.',
-      tipo: 'payment',
-      lida: false,
-      link: '/appointments',
-    },
-    {
-      user_id: appointment.fisio_id,
-      titulo: 'Nova consulta paga',
-      mensagem: 'Um paciente pagou o serviço e aguarda sua confirmação de atendimento.',
-      tipo: 'appointment',
-      lida: false,
-      link: '/agenda',
-    },
-  ]);
+  console.log('[Stripe Webhook] Paciente clínico vinculado:', clinicalPatientId);
 
-  console.log('[Stripe Webhook] Pagamento de agendamento confirmado; aguardando confirmação do fisio:', appointmentId, clinicalPatientId);
+  await notifyAfterPaidAppointment(appointment, {
+    id: externalId,
+    value: amountPaid,
+    method: 'credit_card',
+  });
+
+  console.log('[Stripe Webhook] Pagamento de agendamento confirmado, aguardando aceite do fisio:', appointmentId);
   return true;
 };
 
@@ -211,14 +419,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  const supabase: any = getSupabaseAdmin();
-
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
       if (getAppointmentIdFromSession(session)) {
-        await upsertAppointmentPayment(supabase, session);
+        await upsertAppointmentPayment(session);
         return res.status(200).json({ received: true, type: 'appointment' });
       }
 
