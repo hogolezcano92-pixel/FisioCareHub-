@@ -10,7 +10,7 @@ const getEnv = (key: string, fallback = ''): string => {
   return trimmed;
 };
 
-const getSupabaseAdmin = () => {
+const getSupabaseAdmin = (): any => {
   const supabaseUrl = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co'));
   const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
   return createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -38,20 +38,22 @@ const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
   return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
 };
 
-const upsertAppointmentPayment = async (supabase: ReturnType<typeof createClient>, session: Stripe.Checkout.Session) => {
+const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.Session) => {
   const appointmentId = getAppointmentIdFromSession(session);
   if (!appointmentId) return false;
 
-  const { data: appointment, error: appError } = await supabase
+  const { data: appointmentRaw, error: appError } = await supabase
     .from('agendamentos')
     .select('*')
     .eq('id', appointmentId)
     .maybeSingle();
 
-  if (appError || !appointment) {
+  if (appError || !appointmentRaw) {
     console.error('[Stripe Webhook] Agendamento não encontrado:', appointmentId, appError);
     return false;
   }
+
+  const appointment = appointmentRaw as any;
 
   const amountPaid = typeof session.amount_total === 'number'
     ? session.amount_total / 100
@@ -82,10 +84,10 @@ const upsertAppointmentPayment = async (supabase: ReturnType<typeof createClient
     .eq('agendamento_id', appointmentId)
     .limit(1);
 
-  const sessionPayload = {
+  const sessionPayload: Record<string, any> = {
     paciente_id: appointment.paciente_id,
     fisioterapeuta_id: appointment.fisio_id,
-    agendamento_id: Number(appointmentId),
+    agendamento_id: appointmentId,
     data: appointment.data,
     hora: appointment.hora,
     valor_sessao: amountPaid || Number(appointment.valor || 0),
@@ -143,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase: any = getSupabaseAdmin();
 
   try {
     if (event.type === 'checkout.session.completed') {
