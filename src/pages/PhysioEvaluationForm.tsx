@@ -176,6 +176,7 @@ export default function PhysioEvaluationForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: 'evaluation_complete_with_ai',
           accessToken: session.access_token,
           pacienteId: selectedPacienteId,
           notes: aiNotes,
