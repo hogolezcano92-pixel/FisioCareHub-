@@ -23,6 +23,7 @@ import ReactMarkdown from 'react-markdown';
 import { getUserName } from '../lib/user';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
+import { getPatientVisibleIds } from '../services/patientLinkService';
 
 export default function Records() {
   const navigate = useNavigate();
@@ -63,13 +64,18 @@ export default function Records() {
 
       try {
         const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
-        const userIdField = isPhysio ? 'fisio_id' : 'paciente_id';
+        const visiblePatientIds = isPhysio ? [user.id] : await getPatientVisibleIds(user.id, user.email);
 
-        const { data: recordsData, error: recordsError } = await supabase
+        let recordsQuery = supabase
           .from('prontuarios')
           .select('*')
-          .eq(userIdField, user.id)
           .order('data_registro', { ascending: false });
+
+        recordsQuery = isPhysio
+          ? recordsQuery.eq('fisio_id', user.id)
+          : recordsQuery.in('paciente_id', visiblePatientIds);
+
+        const { data: recordsData, error: recordsError } = await recordsQuery;
 
         if (recordsError) throw recordsError;
 

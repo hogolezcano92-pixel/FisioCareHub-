@@ -20,6 +20,7 @@ import {
   Accessibility
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { getPatientVisibleIds } from '../services/patientLinkService';
 
 interface ProtocolItem {
   id: string;
@@ -55,18 +56,86 @@ export default function PatientExercises() {
   }, [user]);
 
   const fetchProtocols = async () => {
+    if (!user) return;
+
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const visiblePatientIds = await getPatientVisibleIds(user.id, user.email);
+
+      const { data: protocolData, error: protocolError } = await supabase
         .from('protocolos_prescricao')
         .select('*')
-        .eq('paciente_id', user?.id)
+        .in('paciente_id', visiblePatientIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setProtocols(data || []);
-      if (data && data.length > 0) {
-        handleSelectProtocol(data[0]);
+      if (protocolError) throw protocolError;
+
+      // Prescrições rápidas feitas pela aba "Meus Pacientes" ficam em exercicios_paciente.
+      // Elas também precisam aparecer para o paciente com conta ativa.
+      const clinicalPatientIds = visiblePatientIds.filter((patientId) => patientId !== user.id);
+
+      let directProtocol: any | null = null;
+      if (clinicalPatientIds.length > 0) {
+        const { data: prescriptionsData, error: prescriptionsError } = await supabase
+          .from('exercicios_paciente')
+          .select('*')
+          .in('paciente_id', clinicalPatientIds)
+          .eq('status', 'ativo')
+          .order('created_at', { ascending: false });
+
+        if (prescriptionsError) {
+          console.error('Erro ao buscar exercícios prescritos diretamente:', prescriptionsError);
+        }
+
+        const exerciseIds = Array.from(new Set((prescriptionsData || []).map((item: any) => item.exercicio_id).filter(Boolean)));
+
+        let exerciseMap: Record<string, any> = {};
+        if (exerciseIds.length > 0) {
+          const { data: exercisesData, error: exercisesError } = await supabase
+            .from('exercicios')
+            .select('*')
+            .in('id', exerciseIds);
+
+          if (exercisesError) {
+            console.error('Erro ao buscar detalhes dos exercícios prescritos:', exercisesError);
+          } else {
+            exerciseMap = (exercisesData || []).reduce((acc: Record<string, any>, exercise: any) => {
+              acc[exercise.id] = exercise;
+              return acc;
+            }, {});
+          }
+        }
+
+        const directItems = (prescriptionsData || []).map((prescription: any) => ({
+          id: prescription.id,
+          exercicio: exerciseMap[prescription.exercicio_id] || null,
+          series: prescription.series || '',
+          repeticoes: prescription.repeticoes || '',
+          carga: prescription.carga || '',
+          frequencia: prescription.frequencia || '',
+          observacoes_especificas: prescription.observacoes || prescription.observacoes_especificas || '',
+          created_at: prescription.created_at,
+        })).filter((item: any) => item.exercicio);
+
+        if (directItems.length > 0) {
+          directProtocol = {
+            id: 'direct-prescriptions',
+            titulo: 'Exercícios prescritos pelo fisioterapeuta',
+            created_at: directItems[0]?.created_at || new Date().toISOString(),
+            source: 'direct',
+            items: directItems,
+          };
+        }
+      }
+
+      const allProtocols = directProtocol ? [directProtocol, ...(protocolData || [])] : (protocolData || []);
+      setProtocols(allProtocols);
+
+      if (allProtocols.length > 0) {
+        handleSelectProtocol(allProtocols[0]);
+      } else {
+        setProtocolItems([]);
+        setSelectedProtocol(null);
       }
     } catch (err) {
       console.error('Erro ao buscar protocolos:', err);
@@ -79,6 +148,11 @@ export default function PatientExercises() {
     setSelectedProtocol(protocol);
     setIsLoading(true);
     try {
+      if (protocol?.source === 'direct') {
+        setProtocolItems(protocol.items || []);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('protocolo_itens')
         .select(`

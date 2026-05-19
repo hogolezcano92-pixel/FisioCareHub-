@@ -28,6 +28,7 @@ import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
 import ProGuard from '../components/ProGuard';
+import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -107,11 +108,30 @@ export default function Documents() {
       }
 
       try {
-        const { data, error } = await supabase
+        let documentsQuery = supabase
           .from('documentos_gerados')
           .select('*')
-          .eq(isPhysio ? 'physio_id' : 'patient_email', isPhysio ? user.id : user.email)
           .order('criado_em', { ascending: false });
+
+        if (isPhysio) {
+          documentsQuery = documentsQuery.eq('physio_id', user.id);
+        } else {
+          const linkedPatients = await getLinkedClinicalPatients(user.id, user.email);
+          const emails = Array.from(
+            new Set([
+              user.email?.trim().toLowerCase(),
+              ...linkedPatients.map((patient) => patient.email?.trim().toLowerCase()),
+            ].filter(Boolean))
+          );
+
+          if (emails.length > 0) {
+            documentsQuery = documentsQuery.in('patient_email', emails);
+          } else {
+            documentsQuery = documentsQuery.eq('patient_email', user.email || '');
+          }
+        }
+
+        const { data, error } = await documentsQuery;
 
         if (error) throw error;
         setDocuments(data || []);
