@@ -402,3 +402,80 @@ export function createPremiumPdfBlob(payload: PremiumPdfPayload): Blob {
 
   return doc.output('blob');
 }
+
+
+// Compatibilidade com Records.tsx antigo/atual
+// Mantém os nomes que a página de Prontuários já importa.
+export function downloadFichaClinicaPremiumPdf(patient: Record<string, any>, physiotherapist?: Record<string, any> | null) {
+  generatePremiumPdf({
+    kind: 'ficha',
+    patient,
+    physiotherapist: physiotherapist || patient?.fisioterapeuta || patient?.physiotherapist || null,
+    fileName: `ficha_clinica_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
+
+export function downloadAvaliacaoPremiumPdf(
+  evaluation: Record<string, any>,
+  patient?: Record<string, any> | null,
+  physiotherapist?: Record<string, any> | null
+) {
+  generatePremiumPdf({
+    kind: 'avaliacao',
+    patient: patient || evaluation?.paciente || null,
+    physiotherapist: physiotherapist || evaluation?.fisioterapeuta || null,
+    record: evaluation,
+    fileName: `avaliacao_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
+
+export function downloadEvolucaoPremiumPdf(
+  evolution: Record<string, any>,
+  patient?: Record<string, any> | null,
+  physiotherapist?: Record<string, any> | null
+) {
+  generatePremiumPdf({
+    kind: 'evolucao',
+    patient: patient || evolution?.paciente || null,
+    physiotherapist: physiotherapist || evolution?.fisioterapeuta || null,
+    record: evolution,
+    fileName: `evolucao_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
+
+export function openFichaClinicaPremiumPdf(patient: Record<string, any>, physiotherapist?: Record<string, any> | null) {
+  openPremiumPdf({
+    kind: 'ficha',
+    patient,
+    physiotherapist: physiotherapist || patient?.fisioterapeuta || patient?.physiotherapist || null,
+    fileName: `ficha_clinica_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
+
+export function openAvaliacaoPremiumPdf(
+  evaluation: Record<string, any>,
+  patient?: Record<string, any> | null,
+  physiotherapist?: Record<string, any> | null
+) {
+  openPremiumPdf({
+    kind: 'avaliacao',
+    patient: patient || evaluation?.paciente || null,
+    physiotherapist: physiotherapist || evaluation?.fisioterapeuta || null,
+    record: evaluation,
+    fileName: `avaliacao_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
+
+export function openEvolucaoPremiumPdf(
+  evolution: Record<string, any>,
+  patient?: Record<string, any> | null,
+  physiotherapist?: Record<string, any> | null
+) {
+  openPremiumPdf({
+    kind: 'evolucao',
+    patient: patient || evolution?.paciente || null,
+    physiotherapist: physiotherapist || evolution?.fisioterapeuta || null,
+    record: evolution,
+    fileName: `evolucao_${patient?.nome_completo || patient?.nome || 'paciente'}.pdf`,
+  });
+}
