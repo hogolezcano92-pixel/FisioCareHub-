@@ -27,6 +27,38 @@ const getAppointmentDate = (app: any) => formatDateKeyBR(app?.data || app?.data_
 const getAppointmentTime = (app: any) => formatTimeBR(app?.hora || app?.data_servico, 'Horário não informado');
 const formatAppointmentDateTime = (app: any) => `${getAppointmentDate(app)} às ${getAppointmentTime(app)}`;
 
+const normalizeId = (value: any) => value == null ? '' : String(value);
+const isPaidAppointment = (app: any, sessions: any[] = []) => {
+  const status = String(app?.status || '').toLowerCase();
+  if (['confirmado', 'pago', 'concluido'].includes(status)) return true;
+  return sessions.some(s => {
+    const sessionStatus = String(s?.status_pagamento || '').toLowerCase();
+    const sameAppointment = normalizeId(s?.agendamento_id) === normalizeId(app?.id);
+    const samePairAndDate = normalizeId(s?.paciente_id) === normalizeId(app?.paciente_id)
+      && normalizeId(s?.fisioterapeuta_id) === normalizeId(app?.fisio_id)
+      && String(s?.data || '') === String(app?.data || '');
+    return (sameAppointment || samePairAndDate) && ['pago_app', 'pago_manual', 'paid', 'pago'].includes(sessionStatus);
+  });
+};
+const getAppointmentUiStatus = (app: any, sessions: any[] = []) => {
+  const status = String(app?.status || '').toLowerCase();
+  if (status === 'cancelado' || status === 'recusado') return 'cancelado';
+  if (isPaidAppointment(app, sessions)) return 'confirmado';
+  if (status === 'pendente_pagamento') return 'pendente_pagamento';
+  if (status === 'pendente') return 'pendente';
+  return status || 'pendente';
+};
+const getAppointmentStatusLabel = (status: string) => {
+  switch (status) {
+    case 'confirmado': return 'Confirmado / Pago';
+    case 'pendente_pagamento': return 'Aguardando Pagamento';
+    case 'pendente': return 'Pendente';
+    case 'cancelado': return 'Cancelado';
+    case 'concluido': return 'Concluído';
+    default: return 'Pendente';
+  }
+};
+
 export default function Appointments() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -251,76 +283,67 @@ export default function Appointments() {
       const isPhysio = currentProfile.tipo_usuario === 'fisioterapeuta';
       let query = supabase
         .from('agendamentos')
-        .select(`
-          *,
-          paciente:perfis(id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url),
-          fisioterapeuta:perfis(id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url)
-        `)
+        .select('*')
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
       if (isPhysio) {
+        // O fisioterapeuta só vê consultas que já foram pagas/confirmadas ou criadas manualmente.
         query = query.neq('status', 'pendente_pagamento');
       }
 
-      const { data, error } = await query;
+      const { data: basicData, error } = await query
+        .order('data', { ascending: false })
+        .order('hora', { ascending: false });
 
-      if (error) {
-        console.error("Erro ao buscar agendamentos com join:", error);
-        
-        // Fallback: fetch without join and then fetch profiles manually
-        let fallbackQuery = supabase
-          .from('agendamentos')
-          .select('*')
-          .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
+      if (error) throw error;
 
-        if (isPhysio) {
-          fallbackQuery = fallbackQuery.neq('status', 'pendente_pagamento');
-        }
-
-        const { data: basicData, error: basicError } = await fallbackQuery;
-        
-        if (basicError) throw basicError;
-        
-        if (basicData && basicData.length > 0) {
-          const patientIds = [...new Set(basicData.map(a => a.paciente_id))];
-          const physioIds = [...new Set(basicData.map(a => a.fisio_id))];
-          const allIds = [...new Set([...patientIds, ...physioIds])];
-          
-          const { data: profilesData } = await supabase
-            .from('perfis')
-            .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url')
-            .in('id', allIds);
-          
-          const profilesMap = (profilesData || []).reduce((acc: any, p: any) => {
-            acc[p.id] = p;
-            return acc;
-          }, {});
-          
-          const enrichedData = basicData.map(a => ({
-            ...a,
-            paciente: profilesMap[a.paciente_id] || { nome_completo: 'Usuário não encontrado', email: '' },
-            fisioterapeuta: profilesMap[a.fisio_id] || { nome_completo: 'Usuário não encontrado', email: '' }
-          }));
-          
-          setAppointments(enrichedData);
-        } else {
-          setAppointments([]);
-        }
-      } else {
-        setAppointments(data || []);
+      const rows = basicData || [];
+      if (rows.length === 0) {
+        setAppointments([]);
+        return;
       }
-      
+
+      const allIds = Array.from(new Set(
+        rows.flatMap((a: any) => [a.paciente_id, a.fisio_id]).filter(Boolean).map(String)
+      ));
+
+      let profilesMap: Record<string, any> = {};
+      if (allIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('perfis')
+          .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url')
+          .in('id', allIds);
+
+        if (profilesError) {
+          console.warn('Erro ao carregar perfis dos agendamentos:', profilesError);
+        }
+
+        profilesMap = (profilesData || []).reduce((acc: Record<string, any>, p: any) => {
+          acc[String(p.id)] = p;
+          return acc;
+        }, {});
+      }
+
+      const enrichedData = rows.map((a: any) => ({
+        ...a,
+        paciente: profilesMap[String(a.paciente_id)] || { nome_completo: 'Paciente não encontrado', email: '' },
+        fisioterapeuta: profilesMap[String(a.fisio_id)] || { nome_completo: 'Fisioterapeuta não encontrado', email: '' }
+      }));
+
+      setAppointments(enrichedData);
+
       // Check for ID in URL
       const params = new URLSearchParams(window.location.search);
       const appId = params.get('id');
       if (appId && isPhysio) {
-        const appToConfirm = (data || []).find(a => a.id === appId);
+        const appToConfirm = enrichedData.find((a: any) => String(a.id) === String(appId));
         if (appToConfirm && appToConfirm.status === 'pendente') {
           setSelectedAppId(appId);
         }
       }
     } catch (error) {
       console.error("Erro ao buscar agendamentos:", error);
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -571,7 +594,10 @@ export default function Appointments() {
             <p className="text-slate-400 mt-1 text-sm font-medium">Suas sessões aparecerão aqui.</p>
           </div>
         ) : (
-          appointments.map((app) => (
+          appointments.map((app) => {
+            const uiStatus = getAppointmentUiStatus(app, sessions);
+            const paid = isPaidAppointment(app, sessions);
+            return (
             <motion.div
               key={app.id}
               initial={{ opacity: 0, x: -20 }}
@@ -601,18 +627,15 @@ export default function Appointments() {
               <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                  app.status === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
-                  app.status === 'pendente' || app.status === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
-                  app.status === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
+                  uiStatus === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
+                  uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
+                  uiStatus === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
                   "bg-slate-800 text-slate-600"
                 )}>
-                  {app.status === 'pendente' ? 'Pendente' : 
-                   app.status === 'pendente_pagamento' ? 'Aguardando Pagamento' :
-                   app.status === 'confirmado' ? 'Confirmado' : 
-                   app.status === 'cancelado' ? 'Cancelado' : 'Concluído'}
+                  {getAppointmentStatusLabel(uiStatus)}
                 </span>
 
-                {(app.status === 'pendente' || app.status === 'pendente_pagamento') && !isPhysio && (
+                {(uiStatus === 'pendente' || uiStatus === 'pendente_pagamento') && !isPhysio && !paid && (
                   <button
                     onClick={() => navigate(`/pagamento/${app.id}`)}
                     className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg shadow-sky-900/20"
@@ -622,26 +645,14 @@ export default function Appointments() {
                   </button>
                 )}
 
-                {app.status === 'confirmado' && !isPhysio && (
-                  (() => {
-                    const session = sessions.find(s => 
-                      s.agendamento_id === app.id || 
-                      (s.paciente_id === app.paciente_id && s.fisioterapeuta_id === app.fisio_id && s.data === app.data)
-                    );
-                    
-                    if (session && (session.status_pagamento === 'pago_app' || session.status_pagamento === 'pago_manual')) {
-                      return (
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-500/20">
-                          <Check size={12} />
-                          Pago
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()
+                {paid && !isPhysio && (
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-500/20">
+                    <Check size={12} />
+                    Pago
+                  </span>
                 )}
 
-                {app.status === 'pendente' && (
+                {uiStatus === 'pendente' && (
                   <div className="flex gap-1.5">
                     {isPhysio && (
                       <button
@@ -663,7 +674,8 @@ export default function Appointments() {
                 )}
               </div>
             </motion.div>
-          ))
+            );
+          })
         )}
       </div>
 
