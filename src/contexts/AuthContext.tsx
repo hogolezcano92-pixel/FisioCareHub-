@@ -145,12 +145,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         finalProfile = { ...finalProfile, tipo_usuario: 'admin', plano: 'admin', plan_type: 'pro' };
       }
 
-      // Fetch subscription in parallel if profile exists
-      const subPromise = finalProfile 
-        ? supabase.from('assinaturas').select('*').eq('user_id', userId).eq('status', 'ativo').maybeSingle()
-        : Promise.resolve({ data: null });
+      // Fetch subscription in parallel if profile exists.
+      // Usamos limit(1) para evitar o erro do PostgREST:
+      // "Cannot coerce the result to a single JSON object" quando há mais de uma assinatura ativa.
+      const subPromise = finalProfile
+        ? supabase
+            .from('assinaturas')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'ativo')
+            .order('data_inicio', { ascending: false })
+            .limit(1)
+        : Promise.resolve({ data: [] });
 
-      const { data: subData } = await subPromise;
+      const { data: subRows } = await subPromise;
+      const subData = Array.isArray(subRows) ? subRows[0] || null : null;
       
       // Update cache
       if (finalProfile) {
