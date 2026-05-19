@@ -29,6 +29,37 @@ const getAppointmentTime = (appointment?: any) => {
   return formatTimeBR(appointment?.hora || appointment?.data_servico, 'Horário não informado');
 };
 
+
+const notifyPatientAppointmentConfirmed = async (appointmentId: string) => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Sessão não encontrada para enviar confirmação ao paciente.');
+  }
+
+  const response = await fetch('/api/webhooks/asaas', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      event: 'APPOINTMENT_CONFIRMED_BY_PHYSIO',
+      appointmentId,
+    }),
+  });
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(result?.error || 'Falha ao enviar e-mail de confirmação ao paciente.');
+  }
+
+  return result;
+};
+
+
 export default function ConfirmAppointment() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -149,25 +180,14 @@ export default function ConfirmAppointment() {
         link: '/appointments'
       });
 
-      // Enviar e-mail de confirmação para o paciente.
+      // Enviar e-mail de confirmação para o paciente via API Vercel/Resend.
       // A confirmação do agendamento não deve ser desfeita caso o envio de e-mail falhe.
       try {
-        if (appointmentData?.paciente?.email) {
-          const { sendAppointmentStatusEmail } = await import('../services/emailService');
-          await sendAppointmentStatusEmail(
-            appointmentData.paciente.email,
-            appointmentData.paciente.nome_completo || 'Paciente',
-            appointmentData.fisioterapeuta?.nome_completo || 'Fisioterapeuta',
-            'confirmado',
-            {
-              date: getAppointmentDate(appointmentData),
-              time: getAppointmentTime(appointmentData),
-              service: appointmentData.servico || appointmentData.tipo || 'Consulta'
-            }
-          );
-        }
+        const emailResult = await notifyPatientAppointmentConfirmed(appointmentId);
+        console.log('E-mail de confirmação ao paciente processado:', emailResult);
       } catch (emailError) {
         console.error('Agendamento confirmado, mas houve erro ao enviar e-mail ao paciente:', emailError);
+        toast.warning('Agendamento confirmado, mas o e-mail do paciente não pôde ser enviado. Verifique os logs.');
       }
 
       setStatus('success');
