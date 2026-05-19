@@ -89,6 +89,8 @@ export default function PatientDetails() {
   const [showEvolucaoModal, setShowEvolucaoModal] = useState(false);
   const [showArquivoModal, setShowArquivoModal] = useState(false);
   const [showPrescricaoModal, setShowPrescricaoModal] = useState(false);
+  const [showEditPrescricaoModal, setShowEditPrescricaoModal] = useState(false);
+  const [editingPrescricao, setEditingPrescricao] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form States
@@ -500,6 +502,89 @@ export default function PatientDetails() {
     } catch (err) {
       console.error('Erro ao prescrever exercício:', err);
       toast.error(getSupabaseErrorMessage(err, 'Erro ao prescrever exercício'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEditPrescricao = (prescricao: any) => {
+    setEditingPrescricao(prescricao);
+    setPrescricaoForm({
+      exercicio_id: prescricao.exercicio_id || '',
+      observacoes: prescricao.observacoes || ''
+    });
+    setShowEditPrescricaoModal(true);
+  };
+
+  const handleUpdatePrescricao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !editingPrescricao || submitting) return;
+
+    setSubmitting(true);
+    try {
+      const { data: updatedData, error } = await supabase
+        .from('exercicios_paciente')
+        .update({
+          exercicio_id: prescricaoForm.exercicio_id,
+          observacoes: prescricaoForm.observacoes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingPrescricao.id)
+        .eq('paciente_id', id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const selectedExercise = bibliotecaExercicios.find((ex) => ex.id === prescricaoForm.exercicio_id) || null;
+
+      setPrescricoes((current) =>
+        current.map((pres) =>
+          pres.id === editingPrescricao.id
+            ? { ...pres, ...updatedData, exercicio: selectedExercise }
+            : pres
+        )
+      );
+
+      toast.success('Prescrição atualizada!');
+      setShowEditPrescricaoModal(false);
+      setEditingPrescricao(null);
+      setPrescricaoForm({ exercicio_id: '', observacoes: '' });
+      fetchPatientData();
+    } catch (err) {
+      console.error('Erro ao atualizar prescrição:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao atualizar prescrição'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePrescricao = async (prescricaoId: string) => {
+    if (!id || submitting) return;
+
+    const confirmar = window.confirm('Deseja remover este exercício prescrito do paciente?');
+    if (!confirmar) return;
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('exercicios_paciente')
+        .delete()
+        .eq('id', prescricaoId)
+        .eq('paciente_id', id);
+
+      if (error) throw error;
+
+      setPrescricoes((current) => current.filter((pres) => pres.id !== prescricaoId));
+      if (editingPrescricao?.id === prescricaoId) {
+        setShowEditPrescricaoModal(false);
+        setEditingPrescricao(null);
+        setPrescricaoForm({ exercicio_id: '', observacoes: '' });
+      }
+      toast.success('Exercício removido!');
+    } catch (err) {
+      console.error('Erro ao apagar prescrição:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao apagar prescrição'));
     } finally {
       setSubmitting(false);
     }
@@ -939,14 +1024,20 @@ export default function PatientDetails() {
                   </div>
                 ) : (
                   prescricoes.map((pres) => (
-                    <div key={pres.id} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl flex items-center gap-6 hover:border-blue-500/30 transition-all">
-                      <div className="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-600/20">
+                    <button
+                      key={pres.id}
+                      type="button"
+                      onClick={() => handleOpenEditPrescricao(pres)}
+                      className="w-full text-left bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl flex items-center gap-6 hover:border-blue-500/40 hover:bg-slate-900/70 transition-all"
+                    >
+                      <div className="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-600/20 shrink-0">
                         <Activity size={32} />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <h4 className="text-lg font-black text-white">{pres.exercicio?.nome || 'Exercício prescrito'}</h4>
-                        <p className="text-sm text-slate-400 font-medium line-clamp-1">{pres.observacoes || 'Sem observações adicionais'}</p>
-                        <div className="flex gap-2 mt-2">
+                        <p className="text-sm text-slate-400 font-medium line-clamp-2">{pres.observacoes || 'Sem observações adicionais'}</p>
+                        <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-2">Toque para editar observações</p>
+                        <div className="flex gap-2 mt-2 flex-wrap">
                           <span className="text-[9px] font-black bg-white/5 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest border border-white/5">
                             {pres.exercicio?.categoria || pres.exercicio?.categoria_principal || 'Sem categoria'}
                           </span>
@@ -955,10 +1046,26 @@ export default function PatientDetails() {
                           </span>
                         </div>
                       </div>
-                      <button className="p-2 text-slate-600 hover:text-red-500 transition-colors">
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeletePrescricao(pres.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleDeletePrescricao(pres.id);
+                          }
+                        }}
+                        className="p-3 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-colors shrink-0"
+                        aria-label="Apagar exercício prescrito"
+                      >
                         <Trash2 size={20} />
-                      </button>
-                    </div>
+                      </span>
+                    </button>
                   ))
                 )}
               </div>
@@ -1011,6 +1118,65 @@ export default function PatientDetails() {
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : 'Prescrever'}
                 </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+        {showEditPrescricaoModal && editingPrescricao && (
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowEditPrescricaoModal(false); setEditingPrescricao(null); setPrescricaoForm({ exercicio_id: '', observacoes: '' }); }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col border border-white/10">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Editar Prescrição</h2>
+                  <p className="text-xs font-bold text-slate-500 mt-1">Altere o exercício ou adicione observações.</p>
+                </div>
+                <button onClick={() => { setShowEditPrescricaoModal(false); setEditingPrescricao(null); setPrescricaoForm({ exercicio_id: '', observacoes: '' }); }} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all"><X size={24} /></button>
+              </div>
+
+              <form onSubmit={handleUpdatePrescricao} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Exercício Prescrito</label>
+                  <select
+                    required
+                    value={prescricaoForm.exercicio_id}
+                    onChange={(e) => setPrescricaoForm({...prescricaoForm, exercicio_id: e.target.value})}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                  >
+                    <option value="" className="bg-slate-900">Selecione da biblioteca...</option>
+                    {bibliotecaExercicios.map(ex => (
+                      <option key={ex.id} value={ex.id} className="bg-slate-900">{ex.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Observações / Orientações</label>
+                  <textarea
+                    value={prescricaoForm.observacoes}
+                    onChange={(e) => setPrescricaoForm({...prescricaoForm, observacoes: e.target.value})}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all h-36 resize-none text-white"
+                    placeholder="Ex: 3 séries de 12 repetições, carga leve, evitar dor..."
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => handleDeletePrescricao(editingPrescricao.id)}
+                    className="px-5 py-4 bg-red-500/10 text-red-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all border border-red-500/20 disabled:opacity-50"
+                  >
+                    Apagar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Alterações'}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
