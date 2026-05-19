@@ -132,7 +132,7 @@ const getProfilesForAppointment = async (appointment: any) => {
 
   const { data, error } = await supabase
     .from('perfis')
-    .select('id, nome_completo, nome, email, telefone')
+    .select('id, nome_completo, email, telefone')
     .in('id', ids);
 
   if (error) {
@@ -174,7 +174,7 @@ const ensureClinicalPatientForAppointment = async (appointment: any) => {
 
   const { data: profile } = await supabase
     .from('perfis')
-    .select('id, nome_completo, nome, email, telefone, data_nascimento, avatar_url, foto_url')
+    .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
     .eq('id', patientProfileId)
     .maybeSingle();
 
@@ -183,7 +183,7 @@ const ensureClinicalPatientForAppointment = async (appointment: any) => {
     .insert({
       perfil_id: patientProfileId,
       fisioterapeuta_id: physioId,
-      nome_completo: profile?.nome_completo || profile?.nome || appointment.nome_paciente || 'Paciente',
+      nome_completo: profile?.nome_completo || appointment.nome_paciente || 'Paciente',
       email: profile?.email || appointment.email_paciente || null,
       telefone: profile?.telefone || appointment.telefone_paciente || null,
       data_nascimento: profile?.data_nascimento || null,
@@ -210,8 +210,8 @@ const notifyAfterPaidAppointment = async (appointment: any, payment: any) => {
 
   const appointmentId = String(appointment.id);
   const confirmLink = `${APP_URL}/agendamento/confirmar?id=${encodeURIComponent(appointmentId)}`;
-  const patientName = patient?.nome_completo || patient?.nome || appointment.nome_paciente || 'Paciente';
-  const physioName = physio?.nome_completo || physio?.nome || 'Fisioterapeuta';
+  const patientName = patient?.nome_completo || appointment.nome_paciente || 'Paciente';
+  const physioName = physio?.nome_completo || 'Fisioterapeuta';
   const serviceName = appointment.servico || appointment.tipo || 'Sessão de fisioterapia';
   const date = formatDateBR(getAppointmentDate(appointment));
   const time = formatTimeBR(appointment);
