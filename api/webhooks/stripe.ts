@@ -59,10 +59,18 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     ? session.amount_total / 100
     : Number(appointment.valor || 0);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('agendamentos')
-    .update({ status: 'confirmado' })
+    .update({
+      status: 'pendente',
+      status_pagamento: 'pago',
+    })
     .eq('id', appointmentId);
+
+  if (updateError) {
+    console.error('[Stripe Webhook] Erro ao atualizar pagamento do agendamento:', updateError);
+    throw updateError;
+  }
 
   const externalId = String(session.payment_intent || session.id);
   await supabase
@@ -106,7 +114,7 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     {
       user_id: appointment.paciente_id,
       titulo: 'Pagamento confirmado',
-      mensagem: 'Seu agendamento foi confirmado após o pagamento.',
+      mensagem: 'Pagamento recebido. Seu agendamento agora aguarda confirmação do fisioterapeuta.',
       tipo: 'payment',
       lida: false,
       link: '/appointments',
@@ -114,14 +122,14 @@ const upsertAppointmentPayment = async (supabase: any, session: Stripe.Checkout.
     {
       user_id: appointment.fisio_id,
       titulo: 'Nova consulta paga',
-      mensagem: 'Um paciente pagou e confirmou um agendamento com você.',
+      mensagem: 'Um paciente pagou por um serviço e aguarda sua confirmação do atendimento.',
       tipo: 'appointment',
       lida: false,
       link: '/agenda',
     },
   ]);
 
-  console.log('[Stripe Webhook] Agendamento confirmado:', appointmentId);
+  console.log('[Stripe Webhook] Pagamento de agendamento confirmado, aguardando aceite do fisio:', appointmentId);
   return true;
 };
 

@@ -9,10 +9,18 @@ const upsertSessionForAppointment = async (appointment: any, payment: any) => {
   const agendamentoId = String(appointment.id);
   const amountPaid = Number(payment.value || appointment.valor || 0);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('agendamentos')
-    .update({ status: 'confirmado' })
+    .update({
+      status: 'pendente',
+      status_pagamento: 'pago',
+    })
     .eq('id', agendamentoId);
+
+  if (updateError) {
+    console.error('[Asaas Webhook] Erro ao atualizar pagamento do agendamento:', updateError);
+    throw updateError;
+  }
 
   await supabase
     .from('pagamentos')
@@ -36,7 +44,7 @@ const upsertSessionForAppointment = async (appointment: any, payment: any) => {
   const sessionPayload = {
     paciente_id: appointment.paciente_id,
     fisioterapeuta_id: appointment.fisio_id,
-    agendamento_id: Number(agendamentoId),
+    agendamento_id: agendamentoId,
     data: appointment.data,
     hora: appointment.hora,
     valor_sessao: amountPaid,
@@ -55,7 +63,7 @@ const upsertSessionForAppointment = async (appointment: any, payment: any) => {
     {
       user_id: appointment.paciente_id,
       titulo: 'Pagamento confirmado',
-      mensagem: 'Seu agendamento foi confirmado após o pagamento.',
+      mensagem: 'Pagamento recebido. Seu agendamento agora aguarda confirmação do fisioterapeuta.',
       tipo: 'payment',
       lida: false,
       link: '/appointments',
@@ -63,7 +71,7 @@ const upsertSessionForAppointment = async (appointment: any, payment: any) => {
     {
       user_id: appointment.fisio_id,
       titulo: 'Nova consulta paga',
-      mensagem: 'Um paciente pagou e confirmou um agendamento com você.',
+      mensagem: 'Um paciente pagou por um serviço e aguarda sua confirmação do atendimento.',
       tipo: 'appointment',
       lida: false,
       link: '/agenda',
@@ -104,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       await upsertSessionForAppointment(appointment, payment);
-      console.log(`[Asaas Webhook] Appointment ${agendamentoId} processed successfully.`);
+      console.log(`[Asaas Webhook] Pagamento do agendamento ${agendamentoId} processado; aguardando confirmação do fisioterapeuta.`);
     } catch (err) {
       console.error('[Asaas Webhook] Internal Error:', err);
       return res.status(200).json({ received: true, error: 'Internal Error' });
