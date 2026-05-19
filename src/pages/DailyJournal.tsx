@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { getLinkedClinicalPatients, type LinkedClinicalPatient } from '../services/patientLinkService';
 import { 
   LineChart, 
   Line, 
@@ -77,6 +78,7 @@ export default function DailyJournal() {
   const [history, setHistory] = useState<JournalEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'journal' | 'progress'>('journal');
   const [physioName, setPhysioName] = useState<string | null>(null);
+  const [clinicalPatient, setClinicalPatient] = useState<LinkedClinicalPatient | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -99,31 +101,51 @@ export default function DailyJournal() {
     }
   };
 
+  const resolveClinicalPatient = async () => {
+    if (!user?.id) return null;
+
+    const linkedPatients = await getLinkedClinicalPatients(user.id, user.email);
+    const primaryPatient = linkedPatients[0] || null;
+    setClinicalPatient(primaryPatient);
+    return primaryPatient;
+  };
+
   const fetchPhysioInfo = async () => {
     try {
-      const { data: pacienteData } = await supabase
-        .from('pacientes')
-        .select(`
-          fisioterapeuta_id,
-          fisioterapeutas:fisioterapeuta_id (nome_completo)
-        `)
-        .eq('email', user?.email)
-        .single();
-      
-      if (pacienteData?.fisioterapeutas) {
-        setPhysioName((pacienteData.fisioterapeutas as any).nome_completo);
+      const linkedPatient = clinicalPatient || await resolveClinicalPatient();
+
+      if (!linkedPatient?.fisioterapeuta_id) {
+        setPhysioName(null);
+        return;
       }
+
+      const { data: physioProfile, error } = await supabase
+        .from('perfis')
+        .select('nome_completo')
+        .eq('id', linkedPatient.fisioterapeuta_id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setPhysioName(physioProfile?.nome_completo || null);
     } catch (err) {
-      console.log('Fisioterapeuta não encontrado ou não vinculado');
+      console.log('Fisioterapeuta não encontrado ou não vinculado', err);
     }
-  }
+  };
 
   const fetchExercises = async () => {
     try {
+      if (!user?.id) return;
+
+      const linkedPatient = clinicalPatient || await resolveClinicalPatient();
+      const clinicalPatientId = linkedPatient?.id;
+
+      const nextExercises: ExerciseItem[] = [];
+
+      // Fluxo antigo: protocolos vinculados diretamente à conta do paciente
       const { data: protocols } = await supabase
         .from('protocolos_prescricao')
         .select('id')
-        .eq('paciente_id', user?.id)
+        .eq('paciente_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -138,13 +160,44 @@ export default function DailyJournal() {
           .order('ordem');
 
         if (items) {
-          setExercises(items.map(item => ({
+          nextExercises.push(...items.map((item: any) => ({
             id: item.id,
-            name: (item.exercicio as any).nome,
+            name: item.exercicio?.nome || 'Exercício',
             completed: false
           })));
         }
       }
+
+      // Fluxo novo: prescrições feitas em Meus Pacientes pelo fisioterapeuta
+      if (clinicalPatientId) {
+        const { data: prescribedExercises, error: prescribedError } = await supabase
+          .from('exercicios_paciente')
+          .select(`
+            id,
+            observacoes,
+            exercicio:exercicios (nome)
+          `)
+          .eq('paciente_id', clinicalPatientId)
+          .order('created_at', { ascending: false });
+
+        if (prescribedError) {
+          console.error('Erro ao buscar exercícios prescritos:', prescribedError);
+        }
+
+        if (prescribedExercises) {
+          nextExercises.push(...prescribedExercises.map((item: any) => ({
+            id: item.id,
+            name: item.exercicio?.nome || item.observacoes || 'Exercício prescrito',
+            completed: false
+          })));
+        }
+      }
+
+      const uniqueExercises = Array.from(
+        new Map(nextExercises.map((item) => [item.id, item])).values()
+      );
+
+      setExercises(uniqueExercises);
     } catch (err) {
       console.error('Erro ao buscar exercícios:', err);
     }
@@ -152,10 +205,15 @@ export default function DailyJournal() {
 
   const fetchHistory = async () => {
     try {
+      if (!user?.id) return;
+
+      const linkedPatient = clinicalPatient || await resolveClinicalPatient();
+      const patientIds = Array.from(new Set([user.id, linkedPatient?.id].filter(Boolean))) as string[];
+
       const { data, error } = await supabase
         .from('registros_paciente')
         .select('*')
-        .eq('paciente_id', user?.id)
+        .in('paciente_id', patientIds)
         .order('data_registro', { ascending: false });
 
       if (error) throw error;
@@ -163,10 +221,10 @@ export default function DailyJournal() {
 
       // Se houver registro hoje, preencher os campos (opcional, para edição)
       const today = new Date().toISOString().split('T')[0];
-      const todayEntry = data?.find(e => e.data_registro === today);
+      const todayEntry = data?.find((e: any) => e.data_registro === today);
       if (todayEntry) {
         setPainLevel(todayEntry.nivel_dor);
-        setExercises(todayEntry.exercicios_concluidos);
+        setExercises(Array.isArray(todayEntry.exercicios_concluidos) ? todayEntry.exercicios_concluidos : []);
         setNotes(todayEntry.notas || '');
       }
     } catch (err) {
@@ -192,15 +250,24 @@ export default function DailyJournal() {
 
     setSaving(true);
     try {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado.');
+      }
+
+      const linkedPatient = clinicalPatient || await resolveClinicalPatient();
+      const patientIdToSave = linkedPatient?.id || user.id;
+
       const today = new Date().toISOString().split('T')[0];
       const entryData = {
-        paciente_id: user?.id,
+        paciente_id: patientIdToSave,
+        fisioterapeuta_id: linkedPatient?.fisioterapeuta_id || null,
         nivel_dor: painLevel,
         exercicios_concluidos: exercises,
         total_exercicios: exercises.length,
         concluidos_count: completedCount,
         notas: notes,
-        data_registro: today
+        data_registro: today,
+        updated_at: new Date().toISOString()
       };
 
       // Tenta Upsert (se já existir hoje, atualiza)
@@ -214,7 +281,7 @@ export default function DailyJournal() {
       fetchHistory();
     } catch (err) {
       console.error('Erro ao salvar diário:', err);
-      toast.error('Erro ao salvar o diário. Tente novamente.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar o diário. Tente novamente.');
     } finally {
       setSaving(false);
     }
