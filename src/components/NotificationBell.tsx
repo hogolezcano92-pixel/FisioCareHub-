@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function NotificationBell() {
   const { user } = useAuth();
@@ -12,6 +12,7 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
@@ -67,35 +68,57 @@ export default function NotificationBell() {
   const filteredNotifications = filter === 'all' ? notifications : notifications.filter(n => !n.lida);
 
   const markAsRead = async (id: string) => {
+    if (!user?.id) return false;
+
     try {
       const { error } = await supabase
         .from('notificacoes')
         .update({ lida: true })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
       
       if (error) throw error;
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+      return true;
     } catch (err) {
       console.error("Error marking notification as read:", err);
+      return false;
     }
   };
 
   const markAllAsRead = async () => {
     const unread = notifications.filter(n => !n.lida);
-    if (unread.length === 0) return;
+    if (unread.length === 0 || !user?.id) return false;
 
     try {
       const { error } = await supabase
         .from('notificacoes')
         .update({ lida: true })
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('lida', false);
       
       if (error) throw error;
       setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+      return true;
     } catch (err) {
       console.error("Error marking all as read:", err);
+      return false;
     }
+  };
+
+  const openNotification = async (notification: any) => {
+    await markAsRead(notification.id);
+    setIsOpen(false);
+
+    const link = typeof notification.link === 'string' ? notification.link.trim() : '';
+    if (!link) return;
+
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      window.location.href = link;
+      return;
+    }
+
+    navigate(link.startsWith('/') ? link : `/${link}`);
   };
 
   const getIcon = (tipo: string) => {
@@ -244,13 +267,7 @@ export default function NotificationBell() {
                   {filteredNotifications.map((n) => (
                     <div 
                       key={n.id}
-                      onClick={() => {
-                        if (n.link) {
-                          markAsRead(n.id);
-                          setIsOpen(false);
-                          window.location.href = n.link;
-                        }
-                      }}
+                      onClick={() => openNotification(n)}
                       className={cn(
                         "p-4 flex gap-3 transition-colors relative group cursor-pointer",
                         !n.lida ? "bg-blue-500/5" : "hover:bg-white/5"
@@ -319,14 +336,26 @@ export default function NotificationBell() {
               )}
             </div>
 
-            <div className="p-3 bg-white/5 border-t border-white/5 text-center">
-              <Link 
-                to="/profile" 
-                onClick={() => setIsOpen(false)}
+            <div className="p-3 bg-white/5 border-t border-white/5 text-center flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
                 className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-300 tracking-widest"
               >
-                Ver todas as notificações
-              </Link>
+                Mostrar todas
+              </button>
+              {unreadCount > 0 && (
+                <>
+                  <span className="text-slate-700 text-xs">•</span>
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    className="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-widest"
+                  >
+                    Marcar lidas
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}
