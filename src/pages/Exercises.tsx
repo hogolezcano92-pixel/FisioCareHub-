@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 import { 
   OBJETIVOS_TERAPEUTICOS, 
   CONTEXTOS_FUNCIONAIS, 
@@ -124,7 +125,7 @@ export default function Exercises() {
       if (!user) return;
       const { data, error } = await supabase
         .from('pacientes')
-        .select('id, nome_completo')
+        .select('id, nome_completo, telefone, email, tipo_paciente, perfil_id')
         .eq('fisioterapeuta_id', user.id)
         .order('nome_completo');
       if (error) throw error;
@@ -188,21 +189,19 @@ export default function Exercises() {
 
       if (iError) throw iError;
 
-      // 3. (Opcional) Também salvar na tabela legado exercicios_paciente para garantir retrocompatibilidade se houver outras telas usando
-      const legacyItems = prescriptionCart.map(item => ({
-        paciente_id: selectedPatientId,
-        exercicio_id: item.id,
-        observacoes: `Séries: ${item.customSeries}, Repetições: ${item.customReps}. ${item.customObs || ''}`
-      }));
-      await supabase.from('exercicios_paciente').insert(legacyItems);
+      const selectedPatient = patients.find(p => p.id === selectedPatientId);
+      await downloadPrescriptionPdf({ patientId: selectedPatientId, protocolId: protocol.id, physioProfile: profile });
+      openWhatsAppShare({ patientName: selectedPatient?.nome_completo, phone: selectedPatient?.telefone });
 
-      toast.success('Protocolo enviado com sucesso!');
+      toast.success('Protocolo salvo e PDF gerado!', {
+        description: 'O WhatsApp foi aberto para você enviar a prescrição ao paciente.'
+      });
       setPrescriptionCart([]);
       setIsPrescriptionMode(false);
       setShowPrescriptionReview(false);
     } catch (err: any) {
       console.error(err);
-      toast.error('Erro ao enviar protocolo. Verifique se as tabelas foram criadas via SQL.');
+      toast.error(err?.message || 'Erro ao salvar protocolo e gerar PDF.');
     } finally {
       setSubmitting(false);
     }
@@ -667,7 +666,7 @@ export default function Exercises() {
                   {submitting ? <Loader2 className="animate-spin" /> : (
                     <>
                       <Send size={24} />
-                      Enviar para o Paciente
+                      Salvar PDF / WhatsApp
                     </>
                   )}
                 </button>

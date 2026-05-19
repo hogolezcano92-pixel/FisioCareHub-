@@ -18,10 +18,13 @@ import {
   Trash2,
   Edit2,
   ChevronRight,
-  Camera
+  Camera,
+  Download,
+  Send
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
+import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 
 export default function Patients() {
   const { user, profile, subscription } = useAuth();
@@ -119,6 +122,19 @@ export default function Patients() {
     }
   };
 
+  const handleGeneratePrescriptionPdf = async (patient: any, shareWhatsApp = false) => {
+    try {
+      await downloadPrescriptionPdf({ patientId: patient.id, physioProfile: profile });
+      toast.success('PDF gerado com sucesso!');
+      if (shareWhatsApp) {
+        openWhatsAppShare({ patientName: patient.nome_completo, phone: patient.telefone });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Não foi possível gerar o PDF da prescrição');
+    }
+  };
+
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -151,9 +167,12 @@ export default function Patients() {
         nome_completo: formData.nome.trim(),
         data_nascimento: formData.data_nascimento || null,
         observacoes: formData.observacoes.trim() || null,
-        fisioterapeuta_id: user.id
-        // Removidos email, telefone, diagnostico e foto_url baseado na lista do usuário
-        // Caso essas colunas existam, elas podem ser reativadas, mas o foco é no erro de insert
+        fisioterapeuta_id: user.id,
+        email: formData.email.trim() || null,
+        telefone: formData.telefone.trim() || null,
+        origem: 'manual',
+        tipo_paciente: 'interno',
+        perfil_id: null
       };
 
       console.log('DEBUG: Payload enviado para pacientes:', dataToInsert);
@@ -318,13 +337,30 @@ export default function Patients() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                <div className="flex -space-x-1.5">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[7px] font-bold text-slate-500">
-                      {i}
-                    </div>
-                  ))}
+              <div className="flex items-center justify-between pt-4 border-t border-white/5 gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGeneratePrescriptionPdf(patient);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all"
+                    title="Gerar PDF da última prescrição"
+                  >
+                    <Download size={13} /> PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGeneratePrescriptionPdf(patient, true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600/30 transition-all"
+                    title="Gerar PDF e abrir WhatsApp"
+                  >
+                    <Send size={13} /> WhatsApp
+                  </button>
                 </div>
                 <div className="flex items-center gap-1 text-[10px] font-black text-sky-400 uppercase tracking-widest group-hover:gap-2 transition-all">
                   Ver Prontuário

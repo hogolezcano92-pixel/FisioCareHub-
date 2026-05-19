@@ -30,6 +30,7 @@ import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
+import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 
 export default function PatientDetails() {
   const { id } = useParams();
@@ -70,6 +71,10 @@ export default function PatientDetails() {
 
   const [prescricaoForm, setPrescricaoForm] = useState({
     exercicio_id: '',
+    series: '3',
+    repeticoes: '12',
+    carga: '',
+    frequencia: '1x ao dia',
     observacoes: ''
   });
 
@@ -121,11 +126,20 @@ export default function PatientDetails() {
         .order('data', { ascending: false });
       setAgendamentos(atData || []);
 
-      // Fetch Prescrições
-      const { data: preData } = await supabase
-        .from('exercicios_paciente')
-        .select('*, exercicio:exercicio_id(*)')
-        .eq('paciente_id', id);
+      // Fetch Prescrições por protocolo. Paciente manual não tem conta no app,
+      // então a entrega principal será por PDF/WhatsApp.
+      const { data: preData, error: preError } = await supabase
+        .from('protocolos_prescricao')
+        .select(`
+          *,
+          itens:protocolo_itens (
+            *,
+            exercicio:exercicios (*)
+          )
+        `)
+        .eq('paciente_id', id)
+        .order('created_at', { ascending: false });
+      if (preError) throw preError;
       setPrescricoes(preData || []);
 
       // Fetch Avaliações
@@ -148,6 +162,7 @@ export default function PatientDetails() {
       const { data: bibData } = await supabase
         .from('exercicios')
         .select('*')
+        .or(`fisio_id.is.null,fisio_id.eq.${user?.id}`)
         .order('nome');
       setBibliotecaExercicios(bibData || []);
 
@@ -217,28 +232,88 @@ export default function PatientDetails() {
 
   const handlePrescreverExercicio = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || submitting) return;
+    if (!id || submitting || !user) return;
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('exercicios_paciente')
+      const selectedExercise = bibliotecaExercicios.find(ex => ex.id === prescricaoForm.exercicio_id);
+
+      const { data: protocolo, error: protocoloError } = await supabase
+        .from('protocolos_prescricao')
         .insert({
-          ...prescricaoForm,
-          paciente_id: id
+          fisioterapeuta_id: user.id,
+          paciente_id: id,
+          titulo: selectedExercise?.nome ? `Prescrição - ${selectedExercise.nome}` : `Prescrição - ${new Date().toLocaleDateString('pt-BR')}`,
+          observacoes_gerais: prescricaoForm.observacoes || null,
+          status: 'ativo'
+        })
+        .select()
+        .single();
+
+      if (protocoloError) throw protocoloError;
+
+      const { error: itemError } = await supabase
+        .from('protocolo_itens')
+        .insert({
+          protocolo_id: protocolo.id,
+          exercicio_id: prescricaoForm.exercicio_id,
+          series: prescricaoForm.series || null,
+          repeticoes: prescricaoForm.repeticoes || null,
+          carga: prescricaoForm.carga || null,
+          frequencia: prescricaoForm.frequencia || null,
+          observacoes_especificas: prescricaoForm.observacoes || null,
+          ordem: 0
         });
 
-      if (error) throw error;
+      if (itemError) throw itemError;
 
-      toast.success('Exercício prescrito!');
+      toast.success('Exercício prescrito!', {
+        description: 'Agora você pode gerar o PDF e enviar pelo WhatsApp.'
+      });
       setShowPrescricaoModal(false);
-      setPrescricaoForm({ exercicio_id: '', observacoes: '' });
+      setPrescricaoForm({ exercicio_id: '', series: '3', repeticoes: '12', carga: '', frequencia: '1x ao dia', observacoes: '' });
       fetchPatientData();
     } catch (err) {
       console.error(err);
       toast.error('Erro ao prescrever exercício');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDownloadLatestPrescriptionPdf = async () => {
+    if (!id) return;
+
+    try {
+      await downloadPrescriptionPdf({ patientId: id, physioProfile: profile });
+      toast.success('PDF gerado com sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao gerar PDF da prescrição');
+    }
+  };
+
+  const handleDownloadProtocolPdf = async (protocolId: string) => {
+    if (!id) return;
+
+    try {
+      await downloadPrescriptionPdf({ patientId: id, protocolId, physioProfile: profile });
+      toast.success('PDF gerado com sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao gerar PDF da prescrição');
+    }
+  };
+
+  const handleWhatsAppLatestPrescription = async () => {
+    if (!id) return;
+
+    try {
+      await downloadPrescriptionPdf({ patientId: id, physioProfile: profile });
+      openWhatsAppShare({ patientName: patient?.nome_completo, phone: patient?.telefone });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao preparar PDF para WhatsApp');
     }
   };
 
@@ -288,6 +363,13 @@ export default function PatientDetails() {
               <Send size={18} /> Liberar Acesso
             </button>
           </ProGuard>
+          <button
+            onClick={handleWhatsAppLatestPrescription}
+            className="p-4 bg-emerald-600/20 text-emerald-400 rounded-2xl hover:bg-emerald-600/30 transition-all border border-emerald-600/20"
+            title="Baixar PDF e abrir WhatsApp"
+          >
+            <Send size={24} />
+          </button>
           <button className="p-4 bg-white/5 text-slate-500 rounded-2xl hover:bg-white/10 transition-all border border-white/5">
             <Trash2 size={24} />
           </button>
@@ -675,28 +757,50 @@ export default function PatientDetails() {
                     <p className="text-slate-500 font-bold">Nenhum exercício prescrito para este paciente.</p>
                   </div>
                 ) : (
-                  prescricoes.map((pres) => (
-                    <div key={pres.id} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl flex items-center gap-6 hover:border-blue-500/30 transition-all">
-                      <div className="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-600/20">
-                        <Activity size={32} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-lg font-black text-white">{pres.exercicio?.nome}</h4>
-                        <p className="text-sm text-slate-400 font-medium line-clamp-1">{pres.observacoes || 'Sem observações adicionais'}</p>
-                        <div className="flex gap-2 mt-2">
-                          <span className="text-[9px] font-black bg-white/5 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest border border-white/5">
-                            {pres.exercicio?.series} Séries
-                          </span>
-                          <span className="text-[9px] font-black bg-white/5 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest border border-white/5">
-                            {pres.exercicio?.repeticoes} Reps
-                          </span>
+                  prescricoes.map((pres) => {
+                    const totalItens = pres.itens?.length || 0;
+                    const primeiroItem = pres.itens?.[0];
+                    return (
+                      <div key={pres.id} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl flex items-center gap-6 hover:border-blue-500/30 transition-all">
+                        <div className="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-3xl flex items-center justify-center border border-blue-600/20">
+                          <Activity size={32} />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-black text-white line-clamp-1">{pres.titulo}</h4>
+                          <p className="text-sm text-slate-400 font-medium line-clamp-1">
+                            {totalItens} exercício{totalItens === 1 ? '' : 's'} • {pres.status || 'ativo'}
+                          </p>
+                          {primeiroItem?.exercicio?.nome && (
+                            <p className="text-xs text-slate-500 font-bold mt-1 line-clamp-1">
+                              Primeiro exercício: {primeiroItem.exercicio.nome}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadProtocolPdf(pres.id)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all"
+                            >
+                              <Download size={14} /> PDF
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await handleDownloadProtocolPdf(pres.id);
+                                openWhatsAppShare({ patientName: patient?.nome_completo, phone: patient?.telefone });
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-600/20 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600/30 transition-all"
+                            >
+                              <Send size={14} /> WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                        <button className="p-2 text-slate-600 hover:text-red-500 transition-colors">
+                          <Trash2 size={20} />
+                        </button>
                       </div>
-                      <button className="p-2 text-slate-600 hover:text-red-500 transition-colors">
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>
@@ -729,6 +833,45 @@ export default function PatientDetails() {
                       <option key={ex.id} value={ex.id} className="bg-slate-900">{ex.nome}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Séries</label>
+                    <input
+                      value={prescricaoForm.series}
+                      onChange={(e) => setPrescricaoForm({...prescricaoForm, series: e.target.value})}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                      placeholder="3"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Repetições</label>
+                    <input
+                      value={prescricaoForm.repeticoes}
+                      onChange={(e) => setPrescricaoForm({...prescricaoForm, repeticoes: e.target.value})}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                      placeholder="12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Carga</label>
+                    <input
+                      value={prescricaoForm.carga}
+                      onChange={(e) => setPrescricaoForm({...prescricaoForm, carga: e.target.value})}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                      placeholder="Sem carga"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Frequência</label>
+                    <input
+                      value={prescricaoForm.frequencia}
+                      onChange={(e) => setPrescricaoForm({...prescricaoForm, frequencia: e.target.value})}
+                      className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                      placeholder="1x ao dia"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
