@@ -122,6 +122,75 @@ export const uploadDocument = async (
   return path;
 };
 
+
+export const uploadPatientDocument = async (
+  userId: string,
+  patientId: string,
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  if (!userId) {
+    throw new Error('Usuário não autenticado. Faça login novamente.');
+  }
+
+  if (!patientId) {
+    throw new Error('Paciente inválido. Abra o paciente novamente e tente enviar o arquivo.');
+  }
+
+  if (!file) {
+    throw new Error('Selecione um arquivo antes de iniciar o upload.');
+  }
+
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+  const isAllowedType = allowedTypes.includes(file.type) || file.type.startsWith('image/');
+  if (!isAllowedType) {
+    throw new Error('Formato inválido. Envie PDF ou imagem.');
+  }
+
+  const maxSizeMb = 15;
+  if (file.size > maxSizeMb * 1024 * 1024) {
+    throw new Error(`Arquivo muito grande. O limite é ${maxSizeMb} MB.`);
+  }
+
+  const safeName = sanitizeFileName(file.name || 'documento');
+  const fileName = `${Date.now()}-${safeName}`;
+  // O primeiro nível da pasta precisa ser o auth.uid() para bater com as policies do Storage.
+  const path = `${userId}/pacientes/${patientId}/${fileName}`;
+  const bucket = DOCUMENTS_BUCKET;
+  const supabase = getSupabase();
+
+  onProgress?.(10);
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream',
+      cacheControl: '3600',
+    });
+
+  if (error) {
+    console.error('Erro no upload de documento do paciente:', error);
+
+    if (error.message === 'Bucket not found') {
+      throw new Error(`O bucket "${bucket}" não existe no Supabase Storage.`);
+    }
+
+    if (error.message?.includes('row-level security') || error.message?.includes('RLS') || error.message?.includes('policy')) {
+      throw new Error(`Sem permissão para enviar arquivo no bucket "${bucket}". Rode o SQL de policies do Storage.`);
+    }
+
+    if (error.message === 'Load failed' || error.message?.includes('fetch') || error.message?.includes('NetworkError')) {
+      throw new Error('Falha de conexão ao enviar arquivo. Verifique a internet e tente novamente.');
+    }
+
+    throw new Error(error.message || 'Erro ao enviar arquivo para o Storage.');
+  }
+
+  onProgress?.(100);
+  return path;
+};
+
 export const uploadPhysioDocument = async (
   userId: string,
   file: File,
