@@ -31,6 +31,7 @@ const getAppointmentTime = (appointment?: any) => {
 export default function ConfirmAppointment() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const appointmentId = searchParams.get('id');
   const [status, setStatus] = useState<'loading' | 'pending' | 'confirming' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -44,52 +45,71 @@ export default function ConfirmAppointment() {
         return;
       }
 
+      if (!user?.id) return;
+
       try {
-        // Buscar o agendamento com os dados do paciente e do fisioterapeuta
         const { data: appointment, error: fetchError } = await supabase
           .from('agendamentos')
-          .select(`
-            *,
-            paciente:perfis!paciente_id (
-              id,
-              nome_completo,
-              email,
-              avatar_url,
-              telefone,
-              endereco,
-              cidade,
-              estado,
-              cep,
-              data_nascimento,
-              observacoes_saude,
-              plano
-            ),
-            fisioterapeuta:perfis!fisio_id (
-              nome_completo,
-              email
-            )
-          `)
+          .select('*')
           .eq('id', appointmentId)
-          .single();
+          .maybeSingle();
 
-        if (fetchError || !appointment) {
+        if (fetchError) {
           console.error('Erro ao buscar agendamento:', fetchError);
+          setStatus('error');
+          setMessage(fetchError.message || 'Erro ao carregar agendamento.');
+          return;
+        }
+
+        if (!appointment) {
           setStatus('error');
           setMessage('Agendamento não encontrado. Verifique o link e tente novamente.');
           return;
         }
 
-        setAppointmentData(appointment);
+        const physioId = appointment.fisio_id || appointment.fisioterapeuta_id;
+        if (physioId && String(physioId) !== String(user.id)) {
+          setStatus('error');
+          setMessage('Este agendamento pertence a outro fisioterapeuta. Entre com a conta profissional correta.');
+          return;
+        }
+
+        const profileIds = [appointment.paciente_id, physioId].filter(Boolean).map(String);
+        let profiles: any[] = [];
+
+        if (profileIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('perfis')
+            .select('*')
+            .in('id', profileIds);
+
+          if (profilesError) {
+            console.error('Erro ao buscar perfis do agendamento:', profilesError);
+          } else {
+            profiles = Array.isArray(profilesData) ? profilesData : [];
+          }
+        }
+
+        const paciente = profiles.find((profile) => String(profile.id) === String(appointment.paciente_id)) || null;
+        const fisioterapeuta = profiles.find((profile) => String(profile.id) === String(physioId)) || null;
+
+        const normalizedAppointment = {
+          ...appointment,
+          paciente,
+          fisioterapeuta,
+        };
+
+        setAppointmentData(normalizedAppointment);
 
         if (appointment.status === 'confirmado') {
           setStatus('success');
           setMessage('Este agendamento já foi confirmado anteriormente.');
-        } else if (appointment.status === 'pendente_pagamento') {
-          setStatus('error');
-          setMessage('Este agendamento ainda aguarda a confirmação do pagamento pelo paciente. O profissional será notificado automaticamente assim que o pagamento for processado.');
         } else if (appointment.status === 'cancelado') {
           setStatus('error');
           setMessage('Este agendamento foi cancelado e não pode ser confirmado.');
+        } else if (appointment.status === 'pendente_pagamento' || appointment.status_pagamento === 'pendente') {
+          setStatus('error');
+          setMessage('O pagamento deste agendamento ainda não foi confirmado.');
         } else {
           setStatus('pending');
         }
@@ -101,7 +121,7 @@ export default function ConfirmAppointment() {
     };
 
     fetchData();
-  }, [appointmentId]);
+  }, [appointmentId, user?.id]);
 
   const handleConfirm = async () => {
     if (!appointmentId) return;
@@ -110,7 +130,11 @@ export default function ConfirmAppointment() {
     try {
       const { error: updateError } = await supabase
         .from('agendamentos')
-        .update({ status: 'confirmado' })
+        .update({
+          status: 'confirmado',
+          status_pagamento: 'pago',
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', appointmentId);
 
       if (updateError) throw updateError;
@@ -124,19 +148,26 @@ export default function ConfirmAppointment() {
         link: '/appointments'
       });
 
-      // Enviar e-mail de confirmação para o paciente
-      const { sendAppointmentStatusEmail } = await import('../services/emailService');
-      await sendAppointmentStatusEmail(
-        appointmentData.paciente.email,
-        appointmentData.paciente.nome_completo,
-        appointmentData.fisioterapeuta.nome_completo,
-        'confirmado',
-        {
-          date: getAppointmentDate(appointmentData),
-          time: getAppointmentTime(appointmentData),
-          service: appointmentData.servico || 'Consulta'
+      // Enviar e-mail de confirmação para o paciente.
+      // A confirmação do agendamento não deve ser desfeita caso o envio de e-mail falhe.
+      try {
+        if (appointmentData?.paciente?.email) {
+          const { sendAppointmentStatusEmail } = await import('../services/emailService');
+          await sendAppointmentStatusEmail(
+            appointmentData.paciente.email,
+            appointmentData.paciente.nome_completo || 'Paciente',
+            appointmentData.fisioterapeuta?.nome_completo || 'Fisioterapeuta',
+            'confirmado',
+            {
+              date: getAppointmentDate(appointmentData),
+              time: getAppointmentTime(appointmentData),
+              service: appointmentData.servico || appointmentData.tipo || 'Consulta'
+            }
+          );
         }
-      );
+      } catch (emailError) {
+        console.error('Agendamento confirmado, mas houve erro ao enviar e-mail ao paciente:', emailError);
+      }
 
       setStatus('success');
       setMessage('Agendamento confirmado com sucesso! O paciente foi notificado.');

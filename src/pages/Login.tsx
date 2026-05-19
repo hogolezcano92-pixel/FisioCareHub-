@@ -25,9 +25,33 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const normalizeRedirect = (value: string | null | undefined) => {
+    if (!value || !value.startsWith('/') || value.startsWith('//')) return '';
+    if (value.startsWith('/login')) return '';
+    return value;
+  };
+
+  const urlParams = new URLSearchParams(location.search);
+  const urlRedirect = normalizeRedirect(urlParams.get('redirectTo'));
+  let storedRedirect = '';
+  try {
+    storedRedirect = normalizeRedirect(sessionStorage.getItem('pendingRedirect'));
+  } catch {
+    storedRedirect = '';
+  }
+
+  const from = normalizeRedirect(location.state?.from?.pathname || '/dashboard') || '/dashboard';
   const search = location.state?.from?.search || '';
-  const fullRedirect = from + search;
+  const stateRedirect = normalizeRedirect(from + search);
+  const fullRedirect = urlRedirect || storedRedirect || stateRedirect || '/dashboard';
+
+  const clearPendingRedirect = () => {
+    try {
+      sessionStorage.removeItem('pendingRedirect');
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && user && !isAuthenticating) {
@@ -43,12 +67,15 @@ export default function Login() {
         const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
         const isApproved = profileData?.status_aprovacao === 'aprovado';
 
-        if (isAdmin) {
+        if (isAdmin && fullRedirect === '/dashboard') {
+          clearPendingRedirect();
           navigate('/admin', { replace: true });
         } else if (isPhysio && !isApproved) {
+          clearPendingRedirect();
           navigate('/aguardando-aprovacao', { replace: true });
         } else {
-          navigate('/dashboard', { replace: true });
+          clearPendingRedirect();
+          navigate(fullRedirect || '/dashboard', { replace: true });
         }
       };
       checkRoleAndRedirect();
@@ -99,9 +126,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const redirectUrl = fullRedirect !== '/dashboard' 
-        ? `${window.location.origin}${fullRedirect}`
-        : `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}${fullRedirect || '/dashboard'}`;
 
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -210,19 +235,17 @@ export default function Login() {
       const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
       const isApproved = profileData?.status_aprovacao === 'aprovado';
 
-      // Check for redirect in URL or state
-      const params = new URLSearchParams(window.location.search);
-      const urlRedirect = params.get('redirectTo');
-      
-      if (urlRedirect) {
-        navigate(urlRedirect, { replace: true });
-      } else if (fullRedirect !== '/dashboard') {
+      if (isPhysio && !isApproved) {
+        clearPendingRedirect();
+        navigate('/aguardando-aprovacao', { replace: true });
+      } else if (fullRedirect && fullRedirect !== '/dashboard') {
+        clearPendingRedirect();
         navigate(fullRedirect, { replace: true });
       } else if (isAdmin) {
+        clearPendingRedirect();
         navigate('/admin', { replace: true });
-      } else if (isPhysio && !isApproved) {
-        navigate('/aguardando-aprovacao', { replace: true });
       } else {
+        clearPendingRedirect();
         navigate('/dashboard', { replace: true });
       }
     } catch (err: any) {
