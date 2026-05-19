@@ -237,120 +237,235 @@ export default function PatientDetails() {
     if (!patient) return;
 
     try {
-      toast.info('Gerando prontuário em PDF...');
+      toast.info('Gerando prontuário profissional em PDF...');
 
       const { jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 14;
-      let y = 16;
+      let y = 18;
 
       const safeText = (value: unknown, fallback = 'Não informado') => {
         if (value === null || value === undefined || value === '') return fallback;
         return String(value);
       };
 
-      const addSectionTitle = (title: string) => {
-        if (y > 260) {
-          doc.addPage();
-          y = 16;
+      const cleanFileName = (value: unknown) => {
+        const raw = safeText(value, '-');
+        if (raw === '-') return raw;
+        try {
+          const withoutQuery = raw.split('?')[0];
+          const decoded = decodeURIComponent(withoutQuery);
+          return decoded.split('/').pop() || decoded;
+        } catch {
+          return raw.split('/').pop() || raw;
         }
+      };
+
+      const formatLongDate = (value: unknown) => {
+        if (!value) return '-';
+        try {
+          return new Date(String(value)).toLocaleString('pt-BR');
+        } catch {
+          return String(value);
+        }
+      };
+
+      const physioName = safeText(
+        profile?.nome_completo || profile?.nome || profile?.full_name || user?.email,
+        'Fisioterapeuta responsável'
+      );
+      const physioCrefito = safeText(profile?.crefito || profile?.registro_profissional || profile?.numero_crefito, 'Não informado');
+      const physioEmail = safeText(profile?.email || user?.email, 'Não informado');
+      const physioPhone = safeText(profile?.telefone || profile?.whatsapp, 'Não informado');
+      const clinicName = safeText(profile?.clinica || profile?.nome_clinica || 'FisioCareHub', 'FisioCareHub');
+
+      const checkPage = (needed = 24) => {
+        if (y + needed > pageHeight - 24) {
+          doc.addPage();
+          y = 18;
+        }
+      };
+
+      const addHeader = () => {
+        doc.setFillColor(14, 165, 233);
+        doc.rect(0, 0, pageWidth, 19, 'F');
+        doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.text(title, margin, y);
-        y += 7;
-      };
-
-      const addParagraph = (text: string) => {
+        doc.setFontSize(15);
+        doc.text('FisioCareHub', margin, 12);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        const lines = doc.splitTextToSize(text || 'Não informado', pageWidth - margin * 2);
-        if (y + lines.length * 5 > 280) {
-          doc.addPage();
-          y = 16;
-        }
-        doc.text(lines, margin, y);
-        y += lines.length * 5 + 4;
+        doc.text('Prontuário Fisioterapêutico', pageWidth - margin, 12, { align: 'right' });
+        doc.setTextColor(15, 23, 42);
       };
 
+      const addFooter = () => {
+        const pages = doc.getNumberOfPages();
+        for (let i = 1; i <= pages; i += 1) {
+          doc.setPage(i);
+          doc.setDrawColor(226, 232, 240);
+          doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139);
+          doc.text(
+            'Documento gerado pelo FisioCareHub com base nos registros cadastrados pelo profissional.',
+            margin,
+            pageHeight - 8
+          );
+          doc.text(`Página ${i} de ${pages}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+        }
+        doc.setTextColor(15, 23, 42);
+      };
+
+      const addSectionTitle = (title: string, color: [number, number, number] = [2, 132, 199]) => {
+        checkPage(18);
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.roundedRect(margin, y, pageWidth - margin * 2, 8, 1.5, 1.5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(title, margin + 3, y + 5.5);
+        doc.setTextColor(15, 23, 42);
+        y += 12;
+      };
+
+      const addParagraph = (textValue: string, fallback = 'Não informado') => {
+        checkPage(16);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+        const lines = doc.splitTextToSize(textValue || fallback, pageWidth - margin * 2);
+        checkPage(lines.length * 4.5 + 6);
+        doc.text(lines, margin, y);
+        y += lines.length * 4.5 + 5;
+        doc.setTextColor(15, 23, 42);
+      };
+
+      const addKeyValueTable = (rows: Array<[string, string]>, headColor: [number, number, number] = [20, 184, 166]) => {
+        checkPage(30);
+        autoTable(doc, {
+          startY: y,
+          theme: 'grid',
+          styles: { fontSize: 8.5, cellPadding: 2.2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: headColor, textColor: 255, fontStyle: 'bold' },
+          columnStyles: { 0: { cellWidth: 48, fontStyle: 'bold' }, 1: { cellWidth: pageWidth - margin * 2 - 48 } },
+          margin: { left: margin, right: margin },
+          head: [['Campo', 'Informação']],
+          body: rows,
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      };
+
+      addHeader();
+      y = 28;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
       doc.text('Prontuário Fisioterapêutico', margin, y);
-      y += 8;
-
+      y += 6;
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
       doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, y);
       y += 10;
+      doc.setTextColor(15, 23, 42);
 
-      addSectionTitle('Dados do paciente');
-      autoTable(doc, {
-        startY: y,
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 2 },
-        head: [['Campo', 'Informação']],
-        body: [
-          ['Nome', safeText(patient.nome_completo)],
-          ['Data de nascimento', patient.data_nascimento ? formatOnlyDateBR(patient.data_nascimento) : 'Não informado'],
-          ['Telefone', safeText(patient.telefone)],
-          ['E-mail', safeText(patient.email)],
-          ['Diagnóstico clínico', safeText(patient.diagnostico)],
-          ['Observações', safeText(patient.observacoes)],
-        ],
-      });
-      y = (doc as any).lastAutoTable.finalY + 10;
+      addSectionTitle('1. Identificação do paciente', [20, 184, 166]);
+      addKeyValueTable([
+        ['Nome', safeText(patient.nome_completo)],
+        ['Data de nascimento', patient.data_nascimento ? formatOnlyDateBR(patient.data_nascimento) : 'Não informado'],
+        ['Telefone/WhatsApp', safeText(patient.telefone)],
+        ['E-mail', safeText(patient.email)],
+        ['Diagnóstico clínico informado', safeText(patient.diagnostico)],
+        ['Observações iniciais', safeText(patient.observacoes)],
+      ], [20, 184, 166]);
 
-      addSectionTitle('Avaliações');
+      addSectionTitle('2. Profissional responsável', [37, 99, 235]);
+      addKeyValueTable([
+        ['Nome', physioName],
+        ['CREFITO', physioCrefito],
+        ['E-mail', physioEmail],
+        ['Telefone/WhatsApp', physioPhone],
+        ['Serviço/Clínica', clinicName],
+      ], [37, 99, 235]);
+
+      addSectionTitle('3. Avaliações fisioterapêuticas', [2, 132, 199]);
       if (avaliacoes.length === 0) {
-        addParagraph('Nenhuma avaliação registrada.');
+        addParagraph('Nenhuma avaliação fisioterapêutica registrada.');
       } else {
-        autoTable(doc, {
-          startY: y,
-          theme: 'striped',
-          styles: { fontSize: 8, cellPadding: 2 },
-          head: [['Data', 'Diagnóstico fisioterapêutico', 'Objetivos']],
-          body: avaliacoes.map((ava) => [
-            ava.created_at ? formatDateBR(ava.created_at) : '-',
-            safeText(ava.diagnostico_fisio, '-'),
-            safeText(ava.objetivos_terapeuticos, '-'),
-          ]),
+        avaliacoes.forEach((ava, index) => {
+          checkPage(40);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text(`Avaliação ${index + 1} — ${ava.created_at ? formatLongDate(ava.created_at) : 'Data não informada'}`, margin, y);
+          y += 5;
+          addKeyValueTable([
+            ['Queixa principal', safeText(ava.queixa_principal)],
+            ['História da doença atual', safeText(ava.historia_doenca_atual)],
+            ['Escala de dor', ava.escala_dor !== undefined && ava.escala_dor !== null ? `${ava.escala_dor}/10` : 'Não informado'],
+            ['Limitações / nível funcional', safeText(ava.nivel_funcional || ava.limitacoes_funcionais)],
+            ['Marcha', safeText(ava.marcha)],
+            ['Postura', safeText(ava.postura)],
+            ['Inspeção', safeText(ava.inspecao)],
+            ['Palpação', safeText(ava.palpacao)],
+            ['Amplitude de movimento', safeText(ava.amplitude_movimento)],
+            ['Força muscular', safeText(ava.forca_muscular)],
+            ['Testes especiais', safeText(ava.testes_especiais)],
+            ['Diagnóstico fisioterapêutico', safeText(ava.diagnostico_fisio)],
+            ['Objetivos terapêuticos', safeText(ava.objetivos_terapeuticos)],
+            ['Conduta inicial', safeText(ava.conduta)],
+            ['Prognóstico', safeText(ava.prognostico)],
+            ['Observações finais', safeText(ava.observacoes_finais)],
+          ], [2, 132, 199]);
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      addSectionTitle('Evoluções');
+      addSectionTitle('4. Evoluções de atendimento', [14, 165, 233]);
       if (evolucoes.length === 0) {
         addParagraph('Nenhuma evolução registrada.');
       } else {
         autoTable(doc, {
           startY: y,
           theme: 'striped',
-          styles: { fontSize: 8, cellPadding: 2 },
-          head: [['Data', 'Dor', 'Descrição', 'Exercícios', 'Plano']],
+          styles: { fontSize: 7.8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' },
+          margin: { left: margin, right: margin },
+          head: [['Data', 'Dor', 'Descrição da sessão', 'Exercícios/condutas', 'Plano/próximos passos']],
           body: evolucoes.map((ev) => [
-            ev.created_at ? formatDateBR(ev.created_at) : '-',
-            safeText(ev.dor_escala, '0'),
+            ev.created_at ? formatLongDate(ev.created_at) : '-',
+            ev.dor_escala !== undefined && ev.dor_escala !== null ? `${ev.dor_escala}/10` : '-',
             safeText(ev.descricao, '-'),
             safeText(ev.exercicios_realizados, '-'),
-            safeText(ev.plano, '-'),
+            safeText(ev.plano || ev.observacoes, '-'),
           ]),
+          columnStyles: {
+            0: { cellWidth: 28 },
+            1: { cellWidth: 13 },
+            2: { cellWidth: 48 },
+            3: { cellWidth: 50 },
+            4: { cellWidth: pageWidth - margin * 2 - 139 },
+          },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      addSectionTitle('Prescrições de exercícios');
+      addSectionTitle('5. Prescrições de exercícios', [79, 70, 229]);
       if (prescricoes.length === 0) {
         addParagraph('Nenhum exercício prescrito.');
       } else {
         autoTable(doc, {
           startY: y,
           theme: 'striped',
-          styles: { fontSize: 8, cellPadding: 2 },
-          head: [['Data', 'Exercício', 'Categoria', 'Dificuldade', 'Observações']],
+          styles: { fontSize: 7.8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+          margin: { left: margin, right: margin },
+          head: [['Data', 'Exercício', 'Categoria', 'Dificuldade', 'Orientações/observações']],
           body: prescricoes.map((pres) => [
-            pres.created_at ? formatDateBR(pres.created_at) : '-',
+            pres.created_at ? formatLongDate(pres.created_at) : '-',
             safeText(pres.exercicio?.nome, 'Exercício não encontrado'),
             safeText(pres.exercicio?.categoria || pres.exercicio?.categoria_principal, '-'),
             safeText(pres.exercicio?.dificuldade || pres.exercicio?.nivel, '-'),
@@ -360,22 +475,41 @@ export default function PatientDetails() {
         y = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      addSectionTitle('Arquivos anexados');
+      addSectionTitle('6. Arquivos anexados', [100, 116, 139]);
       if (arquivos.length === 0) {
         addParagraph('Nenhum arquivo anexado.');
       } else {
         autoTable(doc, {
           startY: y,
           theme: 'striped',
-          styles: { fontSize: 8, cellPadding: 2 },
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: [100, 116, 139], textColor: 255, fontStyle: 'bold' },
+          margin: { left: margin, right: margin },
           head: [['Data', 'Tipo', 'Arquivo']],
           body: arquivos.map((arq) => [
-            arq.created_at ? formatDateBR(arq.created_at) : '-',
+            arq.created_at ? formatLongDate(arq.created_at) : '-',
             safeText(arq.tipo, '-'),
-            safeText(arq.nome_arquivo || arq.file_path || arq.arquivo_url, '-'),
+            cleanFileName(arq.nome_arquivo || arq.file_path || arq.arquivo_url),
           ]),
         });
+        y = (doc as any).lastAutoTable.finalY + 10;
       }
+
+      addSectionTitle('7. Observações e validação', [15, 23, 42]);
+      addParagraph('Este prontuário reúne os registros cadastrados no FisioCareHub pelo profissional responsável. As informações devem ser interpretadas dentro do contexto clínico e não substituem a avaliação presencial e o raciocínio fisioterapêutico.');
+
+      checkPage(36);
+      y += 8;
+      doc.setDrawColor(15, 23, 42);
+      doc.line(margin, y, margin + 75, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(physioName, margin, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`CREFITO: ${physioCrefito}`, margin, y + 10);
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, y + 15);
+
+      addFooter();
 
       const filename = `prontuario_${safeText(patient.nome_completo, 'paciente')}`
         .normalize('NFD')
@@ -384,7 +518,7 @@ export default function PatientDetails() {
         .toLowerCase();
 
       doc.save(`${filename}.pdf`);
-      toast.success('Prontuário gerado em PDF!');
+      toast.success('Prontuário profissional gerado em PDF!');
     } catch (err) {
       console.error('Erro ao gerar prontuário:', err);
       toast.error(getSupabaseErrorMessage(err, 'Erro ao gerar prontuário em PDF'));
@@ -449,6 +583,10 @@ export default function PatientDetails() {
         .insert({
           paciente_id: id,
           arquivo_url: url,
+          file_path: url,
+          nome_arquivo: arquivoForm.file.name,
+          mime_type: arquivoForm.file.type || 'application/octet-stream',
+          tamanho_bytes: arquivoForm.file.size,
           tipo: arquivoForm.tipo
         });
 
