@@ -4,12 +4,103 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET")
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL")
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
+
+const getAppointmentIdFromSession = (session: any) => {
+  const metadata = session?.metadata || {}
+  return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null
+}
+
+const upsertAppointmentPayment = async (supabase: any, session: any) => {
+  const appointmentId = getAppointmentIdFromSession(session)
+  if (!appointmentId) return false
+
+  const { data: appointment, error: appError } = await supabase
+    .from('agendamentos')
+    .select('*')
+    .eq('id', appointmentId)
+    .maybeSingle()
+
+  if (appError || !appointment) {
+    console.error('[Stripe Webhook] Agendamento não encontrado:', appointmentId, appError)
+    return false
+  }
+
+  const amountPaid = typeof session.amount_total === 'number'
+    ? session.amount_total / 100
+    : Number(appointment.valor || 0)
+
+  await supabase
+    .from('agendamentos')
+    .update({ status: 'confirmado' })
+    .eq('id', appointmentId)
+
+  const externalId = String(session.payment_intent || session.id)
+
+  await supabase
+    .from('pagamentos')
+    .upsert({
+      external_id: externalId,
+      user_id: appointment.paciente_id,
+      external_reference: String(appointmentId),
+      amount: amountPaid,
+      status: 'paid',
+      gateway: 'stripe',
+      method: 'credit_card',
+      confirmed_at: new Date().toISOString(),
+    }, { onConflict: 'external_id' })
+
+  const { data: existingSessions } = await supabase
+    .from('sessoes')
+    .select('id')
+    .eq('agendamento_id', appointmentId)
+    .limit(1)
+
+  const sessionPayload = {
+    paciente_id: appointment.paciente_id,
+    fisioterapeuta_id: appointment.fisio_id,
+    agendamento_id: Number(appointmentId),
+    data: appointment.data,
+    hora: appointment.hora,
+    valor_sessao: amountPaid || Number(appointment.valor || 0),
+    status_pagamento: 'pago_app',
+    stripe_payment_intent: String(session.payment_intent || session.id),
+    status_repasse: 'pendente',
+  }
+
+  if (existingSessions && existingSessions.length > 0) {
+    await supabase.from('sessoes').update(sessionPayload).eq('id', existingSessions[0].id)
+  } else {
+    await supabase.from('sessoes').insert(sessionPayload)
+  }
+
+  await supabase.from('notificacoes').insert([
+    {
+      user_id: appointment.paciente_id,
+      titulo: 'Pagamento confirmado',
+      mensagem: 'Seu agendamento foi confirmado após o pagamento.',
+      tipo: 'payment',
+      lida: false,
+      link: '/appointments',
+    },
+    {
+      user_id: appointment.fisio_id,
+      titulo: 'Nova consulta paga',
+      mensagem: 'Um paciente pagou e confirmou um agendamento com você.',
+      tipo: 'appointment',
+      lida: false,
+      link: '/agenda',
+    },
+  ])
+
+  console.log('[Stripe Webhook] Agendamento confirmado:', appointmentId)
+  return true
 }
 
 serve(async (req) => {
@@ -19,8 +110,8 @@ serve(async (req) => {
 
   const sig = req.headers.get("stripe-signature")
 
-  if (!sig || !STRIPE_WEBHOOK_SECRET || !STRIPE_SECRET_KEY) {
-    return new Response("Webhook Error: Missing signature or secret", { status: 400 })
+  if (!sig || !STRIPE_WEBHOOK_SECRET || !STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response("Webhook Error: Missing signature, secret or Supabase config", { status: 400 })
   }
 
   const stripe = new Stripe(STRIPE_SECRET_KEY, {
@@ -28,7 +119,7 @@ serve(async (req) => {
     httpClient: Stripe.createFetchHttpClient(),
   })
 
-  let event
+  let event: any
 
   try {
     const body = await req.text()
@@ -40,88 +131,53 @@ serve(async (req) => {
 
   console.log(`[Stripe Webhook] Event received: ${event.type}`)
 
-  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   try {
-    if (event.type === "checkout.session.completed" || event.type === "invoice.paid") {
+    if (event.type === "checkout.session.completed") {
       const session = event.data.object as any
-      
-      // No caso de invoice.paid, o user_id pode estar no metadata da invoice, 
-      // no metadata da subscription ou no customer metadata
-      let user_id = session.metadata?.user_id || session.client_reference_id
-      
-      // Se for invoice.paid e não temos user_id, tentamos buscar na subscription
-      if (!user_id && session.subscription && event.type === "invoice.paid") {
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-        user_id = subscription.metadata?.user_id
+
+      // Agendamentos precisam ser processados antes de assinatura.
+      // Caso contrário, o pagamento de consulta vira PRO por engano.
+      if (getAppointmentIdFromSession(session)) {
+        await upsertAppointmentPayment(supabase, session)
+        return new Response(JSON.stringify({ received: true, type: 'appointment' }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        })
       }
 
-      // Se ainda não temos, tentamos buscar no customer do Stripe
-      if (!user_id && session.customer) {
-        const customer = await stripe.customers.retrieve(session.customer as string) as Stripe.Customer
-        user_id = customer.metadata?.user_id
+      const user_id = session.metadata?.user_id || session.client_reference_id
+
+      if (session.metadata?.type === 'material' || session.metadata?.type === 'library_purchase' || session.metadata?.type === 'library_purchase_bulk') {
+        const materialIdsString = session.metadata.material_ids || session.metadata.product_id
+        if (!user_id || !materialIdsString) {
+          return new Response(JSON.stringify({ received: true, ignored: true }), { status: 200 })
+        }
+
+        const materialIds = materialIdsString.split(',').filter(Boolean)
+        const purchaseRecords = materialIds.map((id: string) => ({
+          patient_id: user_id,
+          material_id: id,
+          purchased_at: new Date().toISOString()
+        }))
+
+        await supabase.from('material_purchases').insert(purchaseRecords)
+        return new Response(JSON.stringify({ received: true, type: 'material' }), { status: 200 })
       }
 
-      if (user_id) {
-        console.log(`[Stripe Webhook] Verificando existência do usuário: ${user_id}`)
-        
-        // Verificar se o usuário existe
-        const { data: existingUser, error: checkError } = await supabase
-          .from('perfis')
-          .select('id')
-          .eq('id', user_id)
-          .maybeSingle()
-
-        if (checkError || !existingUser) {
-          console.error(`[Stripe Webhook] Erro: Usuário ${user_id} não encontrado na tabela perfis.`)
-          return new Response(JSON.stringify({ error: "User not found" }), { status: 404 })
-        }
-
-        console.log(`[Stripe Webhook] Processando pagamento para usuário: ${user_id}`)
-        
-        // Se for compra de material (Biblioteca)
-        if (session.metadata?.type === 'material' || session.metadata?.type === 'library_purchase' || session.metadata?.type === 'library_purchase_bulk') {
-          const materialIdsString = session.metadata.material_ids || session.metadata.product_id;
-          if (!materialIdsString) {
-             console.warn(`[Stripe Webhook] No material IDs found in metadata`);
-             return new Response(JSON.stringify({ received: true }), { status: 200 });
-          }
-
-          const materialIds = materialIdsString.split(',').filter(Boolean);
-          
-          const purchaseRecords = materialIds.map((id: string) => ({
-            patient_id: user_id,
-            material_id: id,
-            purchased_at: new Date().toISOString()
-          }));
-
-          const { error: purchaseError } = await supabase
-            .from('material_purchases') // New table
-            .insert(purchaseRecords);
-          
-          if (purchaseError) {
-            console.error(`[Stripe Webhook] Erro ao registrar compra de material:`, purchaseError);
-          } else {
-            console.log(`[Stripe Webhook] Sucesso: Materiais ${materialIdsString} adquiridos por ${user_id}`);
-          }
-          return new Response(JSON.stringify({ received: true }), { status: 200 });
-        }
-
-        // 1. Atualizar a tabela perfis
+      const isSubscription = session.mode === 'subscription' || session.metadata?.plan === 'pro' || session.metadata?.type === 'subscription'
+      if (isSubscription && user_id) {
         const { error: profileError } = await supabase
           .from('perfis')
-          .update({ 
-            is_pro: true, 
-            plano: 'pro' 
+          .update({
+            is_pro: true,
+            plano: 'pro'
           })
           .eq('id', user_id)
 
-        if (profileError) {
-          console.error(`[Stripe Webhook] Erro ao atualizar perfil:`, profileError)
-          throw profileError
-        }
+        if (profileError) throw profileError
 
-        // 2. Atualizar ou criar registro na tabela assinaturas
         const { error: subError } = await supabase
           .from('assinaturas')
           .upsert({
@@ -130,17 +186,10 @@ serve(async (req) => {
             status: 'ativo',
             valor: 49.99,
             data_inicio: new Date().toISOString(),
-            data_expiracao: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString() // 32 dias para margem
+            data_expiracao: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString()
           }, { onConflict: 'user_id' })
 
-        if (subError) {
-          console.error(`[Stripe Webhook] Erro ao atualizar assinaturas:`, subError)
-          // Não lançamos erro aqui para não dar falha no Stripe se o perfil já foi atualizado
-        }
-
-        console.log(`[Stripe Webhook] Sucesso: Usuário ${user_id} agora é PRO.`)
-      } else {
-        console.warn(`[Stripe Webhook] Aviso: user_id não encontrado no evento ${event.type}`)
+        if (subError) console.error(`[Stripe Webhook] Erro ao atualizar assinaturas:`, subError)
       }
     }
   } catch (err: any) {
