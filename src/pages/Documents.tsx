@@ -32,6 +32,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Bord
 import { saveAs } from 'file-saver';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
+import { downloadGeneratedDocumentPremiumPdf, downloadSoapEvolutionPremiumPdf } from '../services/premiumPdfService';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -123,24 +124,6 @@ export default function Documents() {
           const linkedEmails = Array.from(new Set([user.email, ...linkedPatients.map((p) => p.email)].filter(Boolean).map((email: any) => String(email).toLowerCase())));
           const linkedPatientIds = linkedPatients.map((p) => p.id).filter(Boolean);
 
-          const physioIds = Array.from(new Set(linkedPatients.map((p) => p.fisioterapeuta_id).filter(Boolean)));
-          const physioNameById = new Map<string, string>();
-
-          if (physioIds.length > 0) {
-            const { data: physios, error: physioError } = await supabase
-              .from('perfis')
-              .select('id, nome_completo, email')
-              .in('id', physioIds);
-
-            if (physioError) {
-              console.error('Erro ao buscar fisioterapeutas dos documentos:', physioError);
-            } else {
-              (physios || []).forEach((physio: any) => {
-                physioNameById.set(String(physio.id), physio.nome_completo || physio.email || 'Fisioterapeuta');
-              });
-            }
-          }
-
           let generatedDocs: any[] = [];
           if (linkedEmails.length > 0) {
             const { data, error } = await supabase
@@ -150,12 +133,7 @@ export default function Documents() {
               .order('criado_em', { ascending: false });
 
             if (error) throw error;
-            generatedDocs = (data || []).map((doc: any) => ({
-              ...doc,
-              display_title: doc.type || 'Documento gerado',
-              physio_name: doc.physio_name || 'Fisioterapeuta',
-              isClinicalFile: false,
-            }));
+            generatedDocs = data || [];
           }
 
           let clinicalFiles: any[] = [];
@@ -169,27 +147,17 @@ export default function Documents() {
             if (fileError) {
               console.error('Erro ao buscar arquivos clínicos do paciente:', fileError);
             } else {
-              clinicalFiles = (fileData || []).map((file: any) => {
-                const linkedPatient = linkedPatients.find((p: any) => String(p.id) === String(file.paciente_id));
-                const physioId = file.fisioterapeuta_id || linkedPatient?.fisioterapeuta_id;
-                const filename = file.nome_arquivo || file.file_name || 'Documento clínico';
-
-                return {
-                  id: `arquivo-${file.id}`,
-                  original_id: file.id,
-                  type: file.tipo || 'Documento',
-                  display_title: filename,
-                  nome_arquivo: filename,
-                  patient_name: linkedPatient?.nome_completo || profile?.nome_completo || 'Paciente',
-                  physio_name: physioId ? (physioNameById.get(String(physioId)) || 'Fisioterapeuta') : 'Fisioterapeuta',
-                  content: file.observacoes || file.descricao || '',
-                  criado_em: file.created_at,
-                  arquivo_url: file.arquivo_url,
-                  file_path: file.file_path || file.arquivo_url,
-                  mime_type: file.mime_type,
-                  isClinicalFile: true,
-                };
-              });
+              clinicalFiles = (fileData || []).map((file: any) => ({
+                id: `arquivo-${file.id}`,
+                type: file.tipo || 'Arquivo do prontuário',
+                patient_name: profile?.nome_completo || 'Paciente',
+                physio_name: 'Fisioterapeuta',
+                content: file.nome_arquivo ? `Arquivo anexado pelo fisioterapeuta: ${file.nome_arquivo}` : 'Arquivo anexado pelo fisioterapeuta.',
+                criado_em: file.created_at,
+                arquivo_url: file.arquivo_url,
+                file_path: file.file_path,
+                isClinicalFile: true,
+              }));
             }
           }
 
@@ -455,19 +423,16 @@ export default function Documents() {
   };
 
 
-  const getClinicalFileUrl = async (doc: any) => {
-    const pathOrUrl = doc.file_path || doc.arquivo_url;
-    if (!pathOrUrl) {
-      throw new Error('Arquivo sem caminho para visualização.');
-    }
-
-    const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
-    return isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
-  };
-
   const openClinicalFile = async (doc: any) => {
     try {
-      const url = await getClinicalFileUrl(doc);
+      const pathOrUrl = doc.file_path || doc.arquivo_url;
+      if (!pathOrUrl) {
+        import('sonner').then(({ toast }) => toast.error('Arquivo sem caminho para visualização.'));
+        return;
+      }
+
+      const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
+      const url = isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       console.error('Erro ao abrir arquivo clínico:', err);
@@ -475,158 +440,37 @@ export default function Documents() {
     }
   };
 
-  const downloadClinicalFile = async (doc: any) => {
-    try {
-      const url = await getClinicalFileUrl(doc);
-      const filename = doc.nome_arquivo || doc.file_name || `${doc.type || 'documento'}.pdf`;
-
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Falha ao baixar arquivo.');
-        const blob = await response.blob();
-        saveAs(blob, filename);
-      } catch {
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = filename;
-        anchor.target = '_blank';
-        anchor.rel = 'noopener noreferrer';
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-      }
-    } catch (err: any) {
-      console.error('Erro ao baixar arquivo clínico:', err);
-      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao baixar arquivo.'));
-    }
-  };
-
   const handleExportFromTable = async (doc: any) => {
-    const tempDiv = document.createElement('div');
-    const docId = `export-temp-${doc.id}`;
-    tempDiv.id = docId;
-    tempDiv.style.position = 'fixed';
-    tempDiv.style.left = '-10000px';
-    tempDiv.style.top = '0';
-    tempDiv.style.width = '800px';
-    tempDiv.style.padding = '60px';
-    tempDiv.style.background = 'white';
-    tempDiv.style.color = 'black';
-    tempDiv.className = 'prose prose-slate max-w-none';
-    
-    document.body.appendChild(tempDiv);
-    
-    const root = createRoot(tempDiv);
-    root.render(
-      <div style={{ padding: '20px', backgroundColor: '#ffffff', color: '#000000', minHeight: '1000px' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#000000', fontWeight: '900', fontSize: '24px' }}>{doc.type}</h1>
-        <p style={{ marginBottom: '20px', color: '#000000', fontSize: '14px' }}><strong>Paciente:</strong> {doc.patient_name}</p>
-        <div style={{ color: '#000000', fontSize: '14px' }}>
-          <ReactMarkdown>{doc.content}</ReactMarkdown>
-        </div>
-        <div style={{ marginTop: '100px', paddingTop: '20px', borderTop: '2px solid #000', textAlign: 'center', fontSize: '12px', color: '#000' }}>
-          Documento oficial gerado via FisioCareHub em {new Date(doc.criado_em).toLocaleString('pt-BR')}
-        </div>
-      </div>
-    );
+    if (doc?.isClinicalFile) {
+      await openClinicalFile(doc);
+      return;
+    }
 
-    // Give more time for heavy JS based components to render
-    setTimeout(async () => {
-      await exportToPDF(docId, `${doc.type}-${doc.patient_name}`);
-      // Only remove after a short delay to ensure process finished
-      setTimeout(() => {
-        document.body.removeChild(tempDiv);
-      }, 500);
-    }, 1000);
+    try {
+      await downloadGeneratedDocumentPremiumPdf(doc, {
+        nome_completo: profile?.nome_completo || 'Fisioterapeuta',
+        crefito: profile?.crefito || null,
+        email: profile?.email || null,
+      });
+      import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
+    } catch (err) {
+      console.error('Erro ao gerar PDF premium:', err);
+      import('sonner').then(({ toast }) => toast.error('Erro ao gerar PDF premium.'));
+    }
   };
 
   const generateEvolutionReportPDF = async (record: any) => {
     try {
-      const { jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
-
-      const doc = new jsPDF();
       const patient = patients.find(p => p.id === record.patient_id);
-      
-      // Add Logo
-      try {
-        doc.addImage('/logo512.png', 'PNG', 20, 10, 20, 20);
-      } catch (e) {
-        console.warn("Logo not found for PDF");
-      }
-
-      // Title
-      doc.setFontSize(18);
-      doc.setTextColor(0, 102, 204);
-      doc.text("RELATÓRIO DE EVOLUÇÃO CLÍNICA", 50, 25);
-      
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(`ID_DOC: ${record.id}`, 160, 15);
-      doc.setTextColor(100);
-      doc.text(`Gerado em: ${new Date().toLocaleString()}`, 160, 20);
-
-      // Header Info Table
-      autoTable(doc, {
-        startY: 40,
-        head: [['INFORMAÇÕES DO ATENDIMENTO', '']],
-        body: [
-          ['Paciente', patient?.nome_completo || 'N/A'],
-          ['Data do Registro', new Date(record.created_at).toLocaleString('pt-BR')],
-          ['Profissional Responsável', profile?.nome_completo || 'N/A'],
-          ['CREFITO', profile?.crefito || 'Não informado']
-        ],
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 2 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 100 } },
-        margin: { left: 20 }
+      await downloadSoapEvolutionPremiumPdf(record, patient, {
+        nome_completo: profile?.nome_completo || 'Fisioterapeuta',
+        crefito: profile?.crefito || null,
+        email: profile?.email || null,
       });
-
-      // SOAP Content
-      const currentY = (doc as any).lastAutoTable.finalY + 10;
-      
-      autoTable(doc, {
-        startY: currentY,
-        head: [['ESTRUTURA S.O.A.P.', 'CONTEÚDO DETALHADO']],
-        body: [
-          ['SUBJETIVO', record.subjective],
-          ['OBJETIVO', record.objective],
-          ['AVALIAÇÃO', record.assessment],
-          ['PLANO', record.plan]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [0, 71, 171] },
-        styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 }, 1: { cellWidth: 110 } },
-        margin: { left: 20 }
-      });
-
-      // Footer with Hash
-      const finalY = (doc as any).lastAutoTable.finalY + 20;
-      
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text("__________________________________________", 105, finalY + 15, { align: 'center' });
-      doc.text(`${profile?.nome_completo || 'Fisioterapeuta'}`, 105, finalY + 22, { align: 'center' });
-      doc.text(`CREFITO: ${profile?.crefito || '____________'}`, 105, finalY + 27, { align: 'center' });
-
-      // Legal Integrity Footer
-      const pageHeight = doc.internal.pageSize.getHeight();
-      doc.setFillColor(245, 245, 245);
-      doc.rect(0, pageHeight - 30, 210, 30, 'F');
-      
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.setFont("courier", "normal");
-      doc.text("VERIFICAÇÃO DE INTEGRIDADE JURÍDICA", 20, pageHeight - 20);
-      doc.text(`HASH SHA-256: ${record.integrity_hash || 'DOCUMENTO_NÃO_HASHADO'}`, 20, pageHeight - 15);
-      doc.text("Este documento possui validade jurídica e integridade garantida por hash criptográfico.", 20, pageHeight - 10);
-      
-      doc.save(`evolucao_${patient?.nome_completo || 'registro'}.pdf`);
-      import('sonner').then(({ toast }) => toast.success("Relatório de evolução gerado com sucesso!"));
+      import('sonner').then(({ toast }) => toast.success('Relatório premium gerado com sucesso!'));
     } catch (err) {
       console.error(err);
-      import('sonner').then(({ toast }) => toast.error("Erro ao gerar relatório PDF."));
+      import('sonner').then(({ toast }) => toast.error('Erro ao gerar relatório PDF.'));
     }
   };
 
@@ -737,10 +581,7 @@ export default function Documents() {
                         <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
                           <FileText size={16} />
                         </div>
-                        <div>
-                          <p className="font-black text-white leading-tight">{doc.display_title || doc.nome_arquivo || doc.type}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mt-1">{doc.type || 'Documento'}</p>
-                        </div>
+                        <span className="font-bold text-white">{doc.type}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-400 font-medium">{isPhysio ? doc.patient_name : (doc.physio_name || 'Fisioterapeuta')}</td>
@@ -750,13 +591,7 @@ export default function Documents() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button 
-                          onClick={() => {
-                            if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
-                              openClinicalFile(doc);
-                              return;
-                            }
-                            setViewingDoc(doc);
-                          }}
+                          onClick={() => setViewingDoc(doc)}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Visualizar"
                         >
@@ -765,13 +600,13 @@ export default function Documents() {
                         <button 
                           onClick={() => {
                             if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
-                              downloadClinicalFile(doc);
+                              openClinicalFile(doc);
                               return;
                             }
                             handleExportFromTable(doc);
                           }}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
-                          title={doc.isClinicalFile ? 'Baixar arquivo' : 'Baixar PDF'}
+                          title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                         >
                           <Download size={18} />
                         </button>

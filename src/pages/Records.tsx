@@ -16,12 +16,12 @@ import {
   Stethoscope,
   User,
 } from 'lucide-react';
-import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn, formatDate } from '../lib/utils';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { downloadAvaliacaoPremiumPdf, downloadEvolucaoPremiumPdf, downloadFichaClinicaPremiumPdf } from '../services/premiumPdfService';
 
 type SectionKey = 'resumo' | 'avaliacoes' | 'evolucoes' | 'documentos' | 'dor';
 
@@ -126,48 +126,6 @@ const downloadClinicalFile = async (file: any) => {
   }
 };
 
-const addPdfLine = (doc: jsPDF, label: string, value: any, y: number) => {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 16;
-  const labelText = `${label}: `;
-  doc.setFont('helvetica', 'bold');
-  doc.text(labelText, margin, y);
-  const labelWidth = doc.getTextWidth(labelText);
-  doc.setFont('helvetica', 'normal');
-  const lines = doc.splitTextToSize(safeText(value), pageWidth - margin * 2 - labelWidth);
-  doc.text(lines, margin + labelWidth, y);
-  return y + Math.max(lines.length * 7, 9);
-};
-
-const downloadClinicalPdf = (title: string, patient: ClinicalPatient | null, rows: Array<[string, any]>) => {
-  const doc = new jsPDF();
-  let y = 18;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('FisioCareHub', 16, y);
-  y += 9;
-  doc.setFontSize(14);
-  doc.text(title, 16, y);
-  y += 10;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`Paciente: ${safeText(patient?.nome_completo || patient?.email)}`, 16, y);
-  y += 7;
-  doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 16, y);
-  y += 10;
-
-  doc.setFontSize(11);
-  rows.forEach(([label, value]) => {
-    if (y > 270) {
-      doc.addPage();
-      y = 18;
-    }
-    y = addPdfLine(doc, label, value, y);
-  });
-
-  const filename = `${title.replace(/[^a-zA-Z0-9À-ÿ]+/g, '-').replace(/-+/g, '-')}.pdf`;
-  doc.save(filename);
-};
 
 export default function Records() {
   const navigate = useNavigate();
@@ -362,15 +320,7 @@ export default function Records() {
                   <h3 className="text-2xl font-black text-white">{safeText(patient.nome_completo || profile?.nome_completo || user?.email)}</h3>
                 </div>
                 <button
-                  onClick={() => downloadClinicalPdf('Ficha clínica', patient, [
-                    ['Nome', patient.nome_completo],
-                    ['E-mail', patient.email],
-                    ['Telefone', patient.telefone],
-                    ['Data de nascimento', formatDateOnly(patient.data_nascimento)],
-                    ['Diagnóstico', patient.diagnostico],
-                    ['Observações', patient.observacoes],
-                    ['Origem', patient.origem],
-                  ])}
+                  onClick={() => downloadFichaClinicaPremiumPdf(patient)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[10px] font-black uppercase tracking-widest"
                 >
                   <Download size={14} /> PDF
@@ -398,16 +348,7 @@ export default function Records() {
               title={`Avaliação fisioterapêutica #${evaluations.length - index}`}
               date={evaluation.created_at || evaluation.updated_at}
               badge="Ficha de avaliação"
-              onDownload={() => downloadClinicalPdf('Avaliação fisioterapêutica', primaryPatient, [
-                ['Queixa principal', evaluation.queixa_principal],
-                ['História da doença atual', evaluation.historia_doenca_atual],
-                ['Escala de dor', evaluation.escala_dor],
-                ['Diagnóstico fisioterapêutico', evaluation.diagnostico_fisio],
-                ['Objetivos terapêuticos', evaluation.objetivos_terapeuticos],
-                ['Conduta', evaluation.conduta],
-                ['Prognóstico', evaluation.prognostico],
-                ['Observações finais', evaluation.observacoes_finais],
-              ])}
+              onDownload={() => downloadAvaliacaoPremiumPdf(evaluation, primaryPatient)}
             >
               <InfoGrid rows={[
                 ['Queixa principal', evaluation.queixa_principal],
@@ -433,14 +374,7 @@ export default function Records() {
               title={`Evolução clínica #${evolutions.length - index}`}
               date={evolution.created_at}
               badge={evolution.dor_escala !== undefined && evolution.dor_escala !== null ? `Dor ${evolution.dor_escala}/10` : 'Evolução'}
-              onDownload={() => downloadClinicalPdf('Evolução clínica', primaryPatient, [
-                ['Data', formatDate(evolution.created_at)],
-                ['Escala de dor', evolution.dor_escala],
-                ['Descrição', evolution.descricao],
-                ['Exercícios realizados', evolution.exercicios_realizados],
-                ['Observações', evolution.observacoes],
-                ['Plano terapêutico', evolution.plano],
-              ])}
+              onDownload={() => downloadEvolucaoPremiumPdf(evolution, primaryPatient)}
             >
               <InfoGrid rows={[
                 ['Escala de dor', evolution.dor_escala !== undefined && evolution.dor_escala !== null ? `${evolution.dor_escala}/10` : null],
