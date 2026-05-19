@@ -147,6 +147,13 @@ export default function PhysioEvaluationForm() {
   const handleCompleteWithAI = async () => {
     if (aiLoading || isReadOnly) return;
 
+    const selectedPacienteId = formData.paciente_id || pacienteId || '';
+
+    if (!selectedPacienteId) {
+      toast.error('Selecione um paciente antes de usar a IA.');
+      return;
+    }
+
     const hasAnyManualData = Object.entries(formData).some(([key, value]) => {
       if (key === 'paciente_id' || key === 'integrity_hash' || key === 'created_at') return false;
       if (typeof value === 'number') return value > 0;
@@ -170,14 +177,17 @@ export default function PhysioEvaluationForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: session.access_token,
-          pacienteId: formData.paciente_id || pacienteId,
+          pacienteId: selectedPacienteId,
           notes: aiNotes,
           currentForm: formData,
           patient,
         }),
       });
 
-      const result = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const result = contentType.includes('application/json')
+        ? await response.json()
+        : { error: await response.text() };
 
       if (!response.ok) {
         throw new Error(result?.error || 'Erro ao completar ficha com IA.');
