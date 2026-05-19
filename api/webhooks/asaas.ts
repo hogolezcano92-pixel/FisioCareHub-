@@ -149,7 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ received: true, ignored: true });
   }
 
-  if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED' || event === 'RECEIVED') {
+  if (['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED', 'PAYMENT_APPROVED', 'RECEIVED'].includes(event)) {
     const agendamentoId = payment.externalReference;
 
     if (!agendamentoId) {
