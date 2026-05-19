@@ -28,9 +28,9 @@ import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import { createRoot } from 'react-dom/client';
 import ProGuard from '../components/ProGuard';
-import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
+import { getLinkedClinicalPatients } from '../services/patientLinkService';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -108,33 +108,59 @@ export default function Documents() {
       }
 
       try {
-        let documentsQuery = supabase
-          .from('documentos_gerados')
-          .select('*')
-          .order('criado_em', { ascending: false });
-
         if (isPhysio) {
-          documentsQuery = documentsQuery.eq('physio_id', user.id);
+          const { data, error } = await supabase
+            .from('documentos_gerados')
+            .select('*')
+            .eq('physio_id', user.id)
+            .order('criado_em', { ascending: false });
+
+          if (error) throw error;
+          setDocuments(data || []);
         } else {
           const linkedPatients = await getLinkedClinicalPatients(user.id, user.email);
-          const emails = Array.from(
-            new Set([
-              user.email?.trim().toLowerCase(),
-              ...linkedPatients.map((patient) => patient.email?.trim().toLowerCase()),
-            ].filter(Boolean))
-          );
+          const linkedEmails = Array.from(new Set([user.email, ...linkedPatients.map((p) => p.email)].filter(Boolean).map((email: any) => String(email).toLowerCase())));
+          const linkedPatientIds = linkedPatients.map((p) => p.id).filter(Boolean);
 
-          if (emails.length > 0) {
-            documentsQuery = documentsQuery.in('patient_email', emails);
-          } else {
-            documentsQuery = documentsQuery.eq('patient_email', user.email || '');
+          let generatedDocs: any[] = [];
+          if (linkedEmails.length > 0) {
+            const { data, error } = await supabase
+              .from('documentos_gerados')
+              .select('*')
+              .in('patient_email', linkedEmails)
+              .order('criado_em', { ascending: false });
+
+            if (error) throw error;
+            generatedDocs = data || [];
           }
+
+          let clinicalFiles: any[] = [];
+          if (linkedPatientIds.length > 0) {
+            const { data: fileData, error: fileError } = await supabase
+              .from('arquivos_paciente')
+              .select('*')
+              .in('paciente_id', linkedPatientIds)
+              .order('created_at', { ascending: false });
+
+            if (fileError) {
+              console.error('Erro ao buscar arquivos clínicos do paciente:', fileError);
+            } else {
+              clinicalFiles = (fileData || []).map((file: any) => ({
+                id: `arquivo-${file.id}`,
+                type: file.tipo || 'Arquivo do prontuário',
+                patient_name: profile?.nome_completo || 'Paciente',
+                physio_name: 'Fisioterapeuta',
+                content: file.nome_arquivo ? `Arquivo anexado pelo fisioterapeuta: ${file.nome_arquivo}` : 'Arquivo anexado pelo fisioterapeuta.',
+                criado_em: file.created_at,
+                arquivo_url: file.arquivo_url,
+                file_path: file.file_path,
+                isClinicalFile: true,
+              }));
+            }
+          }
+
+          setDocuments([...generatedDocs, ...clinicalFiles].sort((a, b) => new Date(b.criado_em || 0).getTime() - new Date(a.criado_em || 0).getTime()));
         }
-
-        const { data, error } = await documentsQuery;
-
-        if (error) throw error;
-        setDocuments(data || []);
       } catch (err) {
         console.error("Erro ao buscar documentos:", err);
       } finally {
@@ -647,9 +673,15 @@ export default function Documents() {
                           <Eye size={18} />
                         </button>
                         <button 
-                          onClick={() => handleExportFromTable(doc)}
+                          onClick={() => {
+                            if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
+                              window.open(doc.arquivo_url || doc.file_path, '_blank');
+                              return;
+                            }
+                            handleExportFromTable(doc);
+                          }}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
-                          title="Baixar PDF"
+                          title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                         >
                           <Download size={18} />
                         </button>

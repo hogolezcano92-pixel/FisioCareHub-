@@ -33,6 +33,7 @@ export default function Records() {
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
+  const [clinicalRecords, setClinicalRecords] = useState<any[]>([]);
   
   // New Record Form
   const [patients, setPatients] = useState<any[]>([]);
@@ -64,7 +65,7 @@ export default function Records() {
 
       try {
         const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
-        const visiblePatientIds = isPhysio ? [user.id] : await getPatientVisibleIds(user.id, user.email);
+        const visiblePatientIds = isPhysio ? [] : await getPatientVisibleIds(user.id, user.email);
 
         let recordsQuery = supabase
           .from('prontuarios')
@@ -80,6 +81,47 @@ export default function Records() {
         if (recordsError) throw recordsError;
 
         setRecords(recordsData || []);
+
+        if (!isPhysio) {
+          const [avaliacoesResult, evolucoesResult] = await Promise.all([
+            supabase
+              .from('fichas_avaliacao')
+              .select('*')
+              .in('paciente_id', visiblePatientIds)
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('evolucoes')
+              .select('*')
+              .in('paciente_id', visiblePatientIds)
+              .order('created_at', { ascending: false }),
+          ]);
+
+          if (avaliacoesResult.error) {
+            console.error('Erro ao buscar avaliações do paciente:', avaliacoesResult.error);
+          }
+
+          if (evolucoesResult.error) {
+            console.error('Erro ao buscar evoluções do paciente:', evolucoesResult.error);
+          }
+
+          const avaliacoes = (avaliacoesResult.data || []).map((item: any) => ({
+            ...item,
+            origem_clinica: 'avaliacao',
+            data_evento: item.created_at || item.updated_at,
+          }));
+
+          const evolucoes = (evolucoesResult.data || []).map((item: any) => ({
+            ...item,
+            origem_clinica: 'evolucao',
+            data_evento: item.created_at || item.updated_at,
+          }));
+
+          setClinicalRecords([...avaliacoes, ...evolucoes].sort((a, b) => {
+            return new Date(b.data_evento || 0).getTime() - new Date(a.data_evento || 0).getTime();
+          }));
+        } else {
+          setClinicalRecords([]);
+        }
         
         // Resolve names in bulk
         const otherRoleField = isPhysio ? 'paciente_id' : 'fisio_id';
@@ -140,7 +182,7 @@ export default function Records() {
           const { data: triagesData } = await supabase
             .from('triagens')
             .select('*')
-            .eq('paciente_id', user.id)
+            .in('paciente_id', visiblePatientIds)
             .order('data_triagem', { ascending: false });
           
           if (triagesData) setTriages(triagesData);
@@ -290,6 +332,63 @@ export default function Records() {
                   </div>
                 )}
               </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!isPhysio && clinicalRecords.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-black flex items-center gap-2 text-emerald-400 tracking-tight">
+            <FileText size={24} />
+            Registros do Fisioterapeuta
+          </h2>
+          <div className="grid gap-4">
+            {clinicalRecords.map((record) => (
+              <motion.div
+                key={`${record.origem_clinica}-${record.id}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-xl"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      {record.data_evento ? formatDate(record.data_evento) : 'Data não informada'}
+                    </div>
+                    <h3 className="text-lg font-black text-white">
+                      {record.origem_clinica === 'avaliacao' ? 'Avaliação fisioterapêutica' : 'Evolução clínica'}
+                    </h3>
+                  </div>
+                  <span className={cn(
+                    'text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border',
+                    record.origem_clinica === 'avaliacao'
+                      ? 'bg-blue-500/10 text-blue-300 border-blue-500/20'
+                      : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                  )}>
+                    {record.origem_clinica === 'avaliacao' ? 'Avaliação' : 'Evolução'}
+                  </span>
+                </div>
+
+                {record.origem_clinica === 'avaliacao' ? (
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    {record.queixa_principal && <p className="text-slate-300"><strong className="text-white">Queixa principal:</strong> {record.queixa_principal}</p>}
+                    {record.escala_dor !== undefined && record.escala_dor !== null && <p className="text-slate-300"><strong className="text-white">Dor:</strong> {record.escala_dor}/10</p>}
+                    {record.diagnostico_fisio && <p className="text-slate-300 md:col-span-2"><strong className="text-white">Diagnóstico fisioterapêutico:</strong> {record.diagnostico_fisio}</p>}
+                    {record.objetivos_terapeuticos && <p className="text-slate-300 md:col-span-2"><strong className="text-white">Objetivos:</strong> {record.objetivos_terapeuticos}</p>}
+                    {record.conduta && <p className="text-slate-300 md:col-span-2"><strong className="text-white">Conduta:</strong> {record.conduta}</p>}
+                    {record.observacoes_finais && <p className="text-slate-400 md:col-span-2"><strong className="text-white">Observações:</strong> {record.observacoes_finais}</p>}
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-sm">
+                    {record.descricao && <p className="text-slate-300"><strong className="text-white">Descrição:</strong> {record.descricao}</p>}
+                    {record.dor_escala !== undefined && record.dor_escala !== null && <p className="text-slate-300"><strong className="text-white">Dor:</strong> {record.dor_escala}/10</p>}
+                    {record.exercicios_realizados && <p className="text-slate-300"><strong className="text-white">Exercícios realizados:</strong> {record.exercicios_realizados}</p>}
+                    {record.plano && <p className="text-slate-300"><strong className="text-white">Plano:</strong> {record.plano}</p>}
+                    {record.observacoes && <p className="text-slate-400"><strong className="text-white">Observações:</strong> {record.observacoes}</p>}
+                  </div>
+                )}
+              </motion.div>
             ))}
           </div>
         </section>
