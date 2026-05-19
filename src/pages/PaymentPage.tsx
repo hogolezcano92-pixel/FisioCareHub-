@@ -49,7 +49,7 @@ export default function PaymentPage() {
           .from('agendamentos')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (appError || !appData) {
           throw new Error('Agendamento não encontrado.');
@@ -66,9 +66,10 @@ export default function PaymentPage() {
           .from('perfis')
           .select('nome_completo, especialidade')
           .eq('id', appData.fisio_id)
-          .single();
+          .maybeSingle();
 
         if (physioError) throw physioError;
+        if (!physioData) throw new Error('Fisioterapeuta não encontrado para este agendamento.');
         setPhysio(physioData);
 
       } catch (err: any) {
@@ -105,19 +106,22 @@ export default function PaymentPage() {
         const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
         const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token || config.supabaseAnonKey;
+
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': config.supabaseAnonKey,
-            'Authorization': `Bearer ${config.supabaseAnonKey}`
+            'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
             user_id: user.id,
             email: profile.email,
             plan: 'appointment',
             type: 'appointment',
-            service_name: appointment.tipo || 'Atendimento de Fisioterapia',
+            service_name: appointment.servico || appointment.tipo || 'Atendimento de Fisioterapia',
             amount: Number(appointment.valor),
             appointment_id: appointment.id
           })
@@ -127,16 +131,18 @@ export default function PaymentPage() {
         if (!response.ok) throw new Error(data.error || 'Erro ao gerar checkout Stripe.');
         
         if (data.url) {
-          // Record pending payment for Stripe
-          await supabase.from('pagamentos').upsert({
-            external_id: data.id || data.session_id,
-            user_id: user.id,
-            external_reference: appointment.id,
-            amount: Number(appointment.valor),
-            status: 'pending',
-            gateway: 'stripe',
-            method: 'credit_card'
-          }, { onConflict: 'external_id' });
+          // Registro pendente opcional. O webhook continua sendo a fonte confiável do pagamento.
+          if (data.session_id) {
+            await supabase.from('pagamentos').upsert({
+              external_id: data.session_id,
+              user_id: user.id,
+              external_reference: String(appointment.id),
+              amount: Number(appointment.valor),
+              status: 'pending',
+              gateway: 'stripe',
+              method: 'credit_card'
+            }, { onConflict: 'external_id' });
+          }
           
           window.location.href = data.url;
         } else {

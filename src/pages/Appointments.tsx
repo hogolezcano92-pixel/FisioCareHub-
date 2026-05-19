@@ -28,30 +28,40 @@ const getAppointmentTime = (app: any) => formatTimeBR(app?.hora || app?.data_ser
 const formatAppointmentDateTime = (app: any) => `${getAppointmentDate(app)} às ${getAppointmentTime(app)}`;
 
 const normalizeId = (value: any) => value == null ? '' : String(value);
+const PAID_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+
 const isPaidAppointment = (app: any, sessions: any[] = []) => {
-  const status = String(app?.status || '').toLowerCase();
-  if (['confirmado', 'pago', 'concluido'].includes(status)) return true;
+  const paymentStatus = String(app?.status_pagamento || '').toLowerCase();
+  if (PAID_PAYMENT_STATUSES.includes(paymentStatus)) return true;
+
   return sessions.some(s => {
     const sessionStatus = String(s?.status_pagamento || '').toLowerCase();
     const sameAppointment = normalizeId(s?.agendamento_id) === normalizeId(app?.id);
     const samePairAndDate = normalizeId(s?.paciente_id) === normalizeId(app?.paciente_id)
       && normalizeId(s?.fisioterapeuta_id) === normalizeId(app?.fisio_id)
       && String(s?.data || '') === String(app?.data || '');
-    return (sameAppointment || samePairAndDate) && ['pago_app', 'pago_manual', 'paid', 'pago'].includes(sessionStatus);
+    return (sameAppointment || samePairAndDate) && PAID_PAYMENT_STATUSES.includes(sessionStatus);
   });
 };
+
 const getAppointmentUiStatus = (app: any, sessions: any[] = []) => {
   const status = String(app?.status || '').toLowerCase();
+  const paid = isPaidAppointment(app, sessions);
+
   if (status === 'cancelado' || status === 'recusado') return 'cancelado';
-  if (isPaidAppointment(app, sessions)) return 'confirmado';
+  if (status === 'concluido') return 'concluido';
+  if (status === 'confirmado') return 'confirmado';
+  if (paid && (status === 'pendente' || status === 'pendente_pagamento' || !status)) return 'aguardando_confirmacao';
   if (status === 'pendente_pagamento') return 'pendente_pagamento';
   if (status === 'pendente') return 'pendente';
   return status || 'pendente';
 };
+
 const getAppointmentStatusLabel = (status: string) => {
   switch (status) {
-    case 'confirmado': return 'Confirmado / Pago';
-    case 'pendente_pagamento': return 'Aguardando Pagamento';
+    case 'confirmado': return 'Confirmado';
+    case 'aguardando_confirmacao': return 'Pago — aguardando confirmação';
+    case 'pendente_pagamento': return 'Aguardando pagamento';
     case 'pendente': return 'Pendente';
     case 'cancelado': return 'Cancelado';
     case 'concluido': return 'Concluído';
@@ -435,7 +445,8 @@ export default function Appointments() {
           data: sqlDate,
           hora: sqlTime,
           data_servico: sqlTimestamp,
-          status: 'pendente_pagamento',
+          status: isPatient && currentPrice > 0 ? 'pendente_pagamento' : 'pendente',
+          status_pagamento: isPatient && currentPrice > 0 ? 'pendente' : 'pago_manual',
           observacoes: notes,
           servico: finalService,
           valor: currentPrice
@@ -607,8 +618,9 @@ export default function Appointments() {
               <div className="flex items-center gap-4">
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center",
-                  app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
-                  app.status === 'pendente' ? "bg-amber-500/10 text-amber-400" :
+                  uiStatus === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
+                  uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/10 text-blue-400" :
+                  uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/10 text-amber-400" :
                   "bg-slate-800 text-slate-600"
                 )}>
                   <CalendarCheck size={24} />
@@ -628,6 +640,7 @@ export default function Appointments() {
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                   uiStatus === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
+                  uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/20 text-blue-400 border border-blue-500/20" :
                   uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
                   uiStatus === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
                   "bg-slate-800 text-slate-600"
@@ -645,14 +658,14 @@ export default function Appointments() {
                   </button>
                 )}
 
-                {paid && !isPhysio && (
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-500/20">
+                {paid && !isPhysio && uiStatus !== 'confirmado' && (
+                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-blue-500/20">
                     <Check size={12} />
                     Pago
                   </span>
                 )}
 
-                {uiStatus === 'pendente' && (
+                {(uiStatus === 'pendente' || uiStatus === 'aguardando_confirmacao') && (
                   <div className="flex gap-1.5">
                     {isPhysio && (
                       <button
