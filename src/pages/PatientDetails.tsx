@@ -30,7 +30,7 @@ import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { uploadDocument } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
-import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
+import { downloadPatientRecordPdf, downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 
 export default function PatientDetails() {
   const { id } = useParams();
@@ -53,6 +53,7 @@ export default function PatientDetails() {
   const [showArquivoModal, setShowArquivoModal] = useState(false);
   const [showPrescricaoModal, setShowPrescricaoModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [generatingRecordPdf, setGeneratingRecordPdf] = useState(false);
 
   // Form States
   const [evolucaoForm, setEvolucaoForm] = useState({
@@ -317,6 +318,30 @@ export default function PatientDetails() {
     }
   };
 
+
+  const handleDownloadCompleteRecordPdf = async () => {
+    if (!id || generatingRecordPdf) return;
+
+    setGeneratingRecordPdf(true);
+    try {
+      toast.info('Exportação PRO', {
+        description: 'Prontuário completo sendo gerado em PDF...'
+      });
+
+      await downloadPatientRecordPdf({
+        patientId: id,
+        physioProfile: profile
+      });
+
+      toast.success('Prontuário exportado em PDF!');
+    } catch (err: any) {
+      console.error('Erro ao exportar prontuário completo:', err);
+      toast.error(err?.message || 'Erro ao gerar PDF do prontuário');
+    } finally {
+      setGeneratingRecordPdf(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-sky-500" size={48} /></div>;
   if (!patient) return <div className="text-center py-20 font-black text-2xl">Paciente não encontrado</div>;
 
@@ -375,11 +400,12 @@ export default function PatientDetails() {
           </button>
           <ProGuard variant="inline">
             <button 
-              onClick={() => toast.info("Exportação PRO", { description: "Prontuário completo sendo gerado em PDF..." })}
-              className="p-4 bg-blue-600/20 text-blue-400 rounded-2xl hover:bg-blue-600/30 transition-all border border-blue-600/20"
+              onClick={handleDownloadCompleteRecordPdf}
+              disabled={generatingRecordPdf}
+              className="p-4 bg-blue-600/20 text-blue-400 rounded-2xl hover:bg-blue-600/30 transition-all border border-blue-600/20 disabled:opacity-60 disabled:cursor-not-allowed"
               title="Exportar Prontuário Completo (PRO)"
             >
-              <FileText size={24} />
+              {generatingRecordPdf ? <Loader2 size={24} className="animate-spin" /> : <FileText size={24} />}
             </button>
           </ProGuard>
         </div>
