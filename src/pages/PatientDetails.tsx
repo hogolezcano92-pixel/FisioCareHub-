@@ -211,12 +211,27 @@ export default function PatientDetails() {
       setAvaliacoes(avaData || []);
 
       // Fetch Daily Journals
-      const { data: journalData } = await supabase
+      // registros_paciente.paciente_id referencia perfis.id.
+      // Pacientes externos aparecem em Meus Pacientes como pacientes.id,
+      // mas o diário é salvo pela conta do paciente em pacientes.perfil_id.
+      let journalQuery = supabase
         .from('registros_paciente')
         .select('*')
-        .eq('paciente_id', id)
         .order('data_registro', { ascending: false });
-      setDailyJournals(journalData || []);
+
+      if (patientData?.perfil_id) {
+        journalQuery = journalQuery.or(`paciente_id.eq.${id},paciente_id.eq.${patientData.perfil_id}`);
+      } else {
+        journalQuery = journalQuery.eq('paciente_id', id);
+      }
+
+      const { data: journalData, error: journalError } = await journalQuery;
+      if (journalError) {
+        console.error('Erro ao buscar diário de dor:', journalError);
+        setDailyJournals([]);
+      } else {
+        setDailyJournals(journalData || []);
+      }
 
       // Fetch Biblioteca de Exercícios
       const { data: bibData } = await supabase
