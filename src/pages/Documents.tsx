@@ -77,76 +77,18 @@ export default function Documents() {
     }
   }, [selectedPatientId]);
 
-  const normalizeSoapRecord = (record: any, source: 'soap_notes' | 'prontuarios') => {
-    if (source === 'soap_notes') {
-      return {
-        ...record,
-        source,
-        created_at: record.created_at,
-        subjective: record.subjective || '',
-        objective: record.objective || '',
-        assessment: record.assessment || '',
-        plan: record.plan || '',
-      };
-    }
-
-    const content = record.conteudo || {};
-    return {
-      id: `prontuario-${record.id}`,
-      source,
-      original_id: record.id,
-      created_at: record.data_registro || record.created_at,
-      integrity_hash: record.integrity_hash,
-      subjective: content.subjective || content.subjetivo || content.S || content.raw || '',
-      objective: content.objective || content.objetivo || content.O || '',
-      assessment: content.assessment || content.avaliacao || content.A || record.evolucao || '',
-      plan: content.plan || content.plano || content.P || '',
-      raw: content.raw || '',
-    };
-  };
-
   const fetchPatientRecords = async (pid: string) => {
     setLoadingRecords(true);
     try {
-      const [soapResult, prontuarioResult] = await Promise.all([
-        supabase
-          .from('soap_notes')
-          .select('*')
-          .eq('patient_id', pid)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('prontuarios')
-          .select('*')
-          .eq('paciente_id', pid)
-          .order('data_registro', { ascending: false }),
-      ]);
-
-      if (soapResult.error) {
-        console.warn('Erro ao buscar soap_notes:', soapResult.error);
-      }
-
-      if (prontuarioResult.error) {
-        console.warn('Erro ao buscar prontuarios:', prontuarioResult.error);
-      }
-
-      const soapRows = (soapResult.data || []).map((record: any) => normalizeSoapRecord(record, 'soap_notes'));
-      const prontuarioRows = (prontuarioResult.data || [])
-        .filter((record: any) => {
-          const type = record.tipo_atendimento || record.conteudo?.type || record.conteudo?.tipo;
-          return !type || String(type).toUpperCase().includes('SOAP');
-        })
-        .map((record: any) => normalizeSoapRecord(record, 'prontuarios'));
-
-      const recordsByKey = new Map<string, any>();
-      [...soapRows, ...prontuarioRows].forEach((record: any) => {
-        const key = record.integrity_hash || `${record.source}-${record.id}`;
-        recordsByKey.set(key, record);
-      });
-
-      setPatientRecords(Array.from(recordsByKey.values()).sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()));
+      const { data } = await supabase
+        .from('soap_notes')
+        .select('*')
+        .eq('patient_id', pid)
+        .order('created_at', { ascending: false });
+      
+      setPatientRecords(data || []);
     } catch (err) {
-      console.error('Erro ao buscar registros SOAP:', err);
-      setPatientRecords([]);
+      console.error(err);
     } finally {
       setLoadingRecords(false);
     }
@@ -181,6 +123,24 @@ export default function Documents() {
           const linkedEmails = Array.from(new Set([user.email, ...linkedPatients.map((p) => p.email)].filter(Boolean).map((email: any) => String(email).toLowerCase())));
           const linkedPatientIds = linkedPatients.map((p) => p.id).filter(Boolean);
 
+          const physioIds = Array.from(new Set(linkedPatients.map((p) => p.fisioterapeuta_id).filter(Boolean)));
+          const physioNameById = new Map<string, string>();
+
+          if (physioIds.length > 0) {
+            const { data: physios, error: physioError } = await supabase
+              .from('perfis')
+              .select('id, nome_completo, email')
+              .in('id', physioIds);
+
+            if (physioError) {
+              console.error('Erro ao buscar fisioterapeutas dos documentos:', physioError);
+            } else {
+              (physios || []).forEach((physio: any) => {
+                physioNameById.set(String(physio.id), physio.nome_completo || physio.email || 'Fisioterapeuta');
+              });
+            }
+          }
+
           let generatedDocs: any[] = [];
           if (linkedEmails.length > 0) {
             const { data, error } = await supabase
@@ -190,7 +150,12 @@ export default function Documents() {
               .order('criado_em', { ascending: false });
 
             if (error) throw error;
-            generatedDocs = data || [];
+            generatedDocs = (data || []).map((doc: any) => ({
+              ...doc,
+              display_title: doc.type || 'Documento gerado',
+              physio_name: doc.physio_name || 'Fisioterapeuta',
+              isClinicalFile: false,
+            }));
           }
 
           let clinicalFiles: any[] = [];
@@ -204,17 +169,27 @@ export default function Documents() {
             if (fileError) {
               console.error('Erro ao buscar arquivos clínicos do paciente:', fileError);
             } else {
-              clinicalFiles = (fileData || []).map((file: any) => ({
-                id: `arquivo-${file.id}`,
-                type: file.tipo || 'Arquivo do prontuário',
-                patient_name: profile?.nome_completo || 'Paciente',
-                physio_name: 'Fisioterapeuta',
-                content: file.nome_arquivo ? `Arquivo anexado pelo fisioterapeuta: ${file.nome_arquivo}` : 'Arquivo anexado pelo fisioterapeuta.',
-                criado_em: file.created_at,
-                arquivo_url: file.arquivo_url,
-                file_path: file.file_path,
-                isClinicalFile: true,
-              }));
+              clinicalFiles = (fileData || []).map((file: any) => {
+                const linkedPatient = linkedPatients.find((p: any) => String(p.id) === String(file.paciente_id));
+                const physioId = file.fisioterapeuta_id || linkedPatient?.fisioterapeuta_id;
+                const filename = file.nome_arquivo || file.file_name || 'Documento clínico';
+
+                return {
+                  id: `arquivo-${file.id}`,
+                  original_id: file.id,
+                  type: file.tipo || 'Documento',
+                  display_title: filename,
+                  nome_arquivo: filename,
+                  patient_name: linkedPatient?.nome_completo || profile?.nome_completo || 'Paciente',
+                  physio_name: physioId ? (physioNameById.get(String(physioId)) || 'Fisioterapeuta') : 'Fisioterapeuta',
+                  content: file.observacoes || file.descricao || '',
+                  criado_em: file.created_at,
+                  arquivo_url: file.arquivo_url,
+                  file_path: file.file_path || file.arquivo_url,
+                  mime_type: file.mime_type,
+                  isClinicalFile: true,
+                };
+              });
             }
           }
 
@@ -480,20 +455,49 @@ export default function Documents() {
   };
 
 
+  const getClinicalFileUrl = async (doc: any) => {
+    const pathOrUrl = doc.file_path || doc.arquivo_url;
+    if (!pathOrUrl) {
+      throw new Error('Arquivo sem caminho para visualização.');
+    }
+
+    const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
+    return isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
+  };
+
   const openClinicalFile = async (doc: any) => {
     try {
-      const pathOrUrl = doc.file_path || doc.arquivo_url;
-      if (!pathOrUrl) {
-        import('sonner').then(({ toast }) => toast.error('Arquivo sem caminho para visualização.'));
-        return;
-      }
-
-      const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
-      const url = isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
+      const url = await getClinicalFileUrl(doc);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       console.error('Erro ao abrir arquivo clínico:', err);
       import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao abrir arquivo.'));
+    }
+  };
+
+  const downloadClinicalFile = async (doc: any) => {
+    try {
+      const url = await getClinicalFileUrl(doc);
+      const filename = doc.nome_arquivo || doc.file_name || `${doc.type || 'documento'}.pdf`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Falha ao baixar arquivo.');
+        const blob = await response.blob();
+        saveAs(blob, filename);
+      } catch {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      }
+    } catch (err: any) {
+      console.error('Erro ao baixar arquivo clínico:', err);
+      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao baixar arquivo.'));
     }
   };
 
@@ -733,7 +737,10 @@ export default function Documents() {
                         <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
                           <FileText size={16} />
                         </div>
-                        <span className="font-bold text-white">{doc.type}</span>
+                        <div>
+                          <p className="font-black text-white leading-tight">{doc.display_title || doc.nome_arquivo || doc.type}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mt-1">{doc.type || 'Documento'}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-400 font-medium">{isPhysio ? doc.patient_name : (doc.physio_name || 'Fisioterapeuta')}</td>
@@ -743,7 +750,13 @@ export default function Documents() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button 
-                          onClick={() => setViewingDoc(doc)}
+                          onClick={() => {
+                            if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
+                              openClinicalFile(doc);
+                              return;
+                            }
+                            setViewingDoc(doc);
+                          }}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Visualizar"
                         >
@@ -752,13 +765,13 @@ export default function Documents() {
                         <button 
                           onClick={() => {
                             if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
-                              openClinicalFile(doc);
+                              downloadClinicalFile(doc);
                               return;
                             }
                             handleExportFromTable(doc);
                           }}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
-                          title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
+                          title={doc.isClinicalFile ? 'Baixar arquivo' : 'Baixar PDF'}
                         >
                           <Download size={18} />
                         </button>
