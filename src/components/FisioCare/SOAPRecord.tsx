@@ -267,38 +267,58 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
         contentStr
       );
 
-      // First try to save to soap_notes as requested
-      const { error } = await supabase
-        .from('soap_notes')
-        .insert({
-          patient_id: finalPacienteId,
-          therapist_id: profile.id,
-          subjective: typeof soapData.subjective === 'string' ? soapData.subjective : JSON.stringify(soapData.subjective),
-          objective: typeof soapData.objective === 'string' ? soapData.objective : JSON.stringify(soapData.objective),
-          assessment: typeof soapData.assessment === 'string' ? soapData.assessment : JSON.stringify(soapData.assessment),
-          plan: typeof soapData.plan === 'string' ? soapData.plan : JSON.stringify(soapData.plan),
-          created_at: now,
-          integrity_hash: integrityHash
-        });
+      const soapPayload = {
+        patient_id: finalPacienteId,
+        therapist_id: profile.id,
+        subjective: typeof soapData.subjective === 'string' ? soapData.subjective : JSON.stringify(soapData.subjective),
+        objective: typeof soapData.objective === 'string' ? soapData.objective : JSON.stringify(soapData.objective),
+        assessment: typeof soapData.assessment === 'string' ? soapData.assessment : JSON.stringify(soapData.assessment),
+        plan: typeof soapData.plan === 'string' ? soapData.plan : JSON.stringify(soapData.plan),
+        raw_text: rawText,
+        created_at: now,
+        integrity_hash: integrityHash
+      };
 
-      if (error) {
-        // Fallback to prontuarios if soap_notes doesn't exist
-        console.warn("soap_notes table not found, falling back to prontuarios table");
-        const { error: fallbackError } = await supabase
-          .from('prontuarios')
-          .insert({
-            paciente_id: finalPacienteId,
-            fisio_id: profile.id,
-            data_registro: now,
-            conteudo: {
-              type: 'SOAP',
-              ...soapData,
-              raw: rawText
-            },
-            integrity_hash: integrityHash
-          });
-        
-        if (fallbackError) throw fallbackError;
+      const prontuarioPayload = {
+        paciente_id: finalPacienteId,
+        fisio_id: profile.id,
+        data_registro: now,
+        tipo_atendimento: 'SOAP',
+        evolucao: soapPayload.assessment,
+        conteudo: {
+          type: 'SOAP',
+          subjective: soapPayload.subjective,
+          objective: soapPayload.objective,
+          assessment: soapPayload.assessment,
+          plan: soapPayload.plan,
+          raw: rawText
+        },
+        integrity_hash: integrityHash
+      };
+
+      const saveErrors: any[] = [];
+
+      const { error: soapError } = await supabase
+        .from('soap_notes')
+        .insert(soapPayload);
+
+      if (soapError) {
+        console.warn('[SOAPRecord] Erro ao salvar em soap_notes:', soapError);
+        saveErrors.push(soapError);
+      }
+
+      const { error: prontuarioError } = await supabase
+        .from('prontuarios')
+        .insert(prontuarioPayload);
+
+      if (prontuarioError) {
+        console.warn('[SOAPRecord] Erro ao salvar em prontuarios:', prontuarioError);
+        saveErrors.push(prontuarioError);
+      }
+
+      if (soapError && prontuarioError) {
+        const message = prontuarioError.message || soapError.message || 'Erro ao salvar prontuário.';
+        throw new Error(message);
       }
 
       toast.success('Prontuário salvo com segurança jurídica!');
@@ -321,9 +341,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           }
         }
       );
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao salvar prontuário.');
+    } catch (error: any) {
+      console.error('[SOAPRecord] Erro ao salvar prontuário:', error);
+      toast.error(error?.message || 'Erro ao salvar prontuário.');
     } finally {
       setIsSaving(false);
       setShowPatientSelector(false);
