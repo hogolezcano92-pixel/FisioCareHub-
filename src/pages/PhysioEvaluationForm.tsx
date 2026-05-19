@@ -125,19 +125,25 @@ export default function PhysioEvaluationForm() {
   const fetchEvaluation = async () => {
     try {
       setLoading(true);
+
+      // Busca a ficha sem join para evitar erro quando o relacionamento/FK
+      // ainda não está atualizado no schema cache do Supabase/PostgREST.
       const { data, error } = await supabase
         .from('fichas_avaliacao')
-        .select('*, paciente:pacientes(id, nome_completo, data_nascimento, telefone)')
+        .select('*')
         .eq('id', id)
         .single();
       
       if (error) throw error;
       
-      setFormData(data);
-      setPatient(data.paciente);
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao carregar avaliação');
+      setFormData({ ...initialForm, ...data });
+
+      if (data?.paciente_id) {
+        await fetchPatient(data.paciente_id);
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar avaliação:', err);
+      toast.error(`Erro ao carregar avaliação: ${err?.message || 'verifique os dados da ficha'}`);
     } finally {
       setLoading(false);
     }
@@ -276,7 +282,7 @@ export default function PhysioEvaluationForm() {
         toast.success('Avaliação salva com integridade garantida!');
         if (data) {
           setFormData(data);
-          navigate(`/physio/evaluation/${data.id}?pacienteId=${pacienteId}`, { replace: true });
+          navigate(`/physio/evaluation/${data.id}?pacienteId=${data.paciente_id || formData.paciente_id}`, { replace: true });
         }
       }
     } catch (err: any) {
