@@ -75,12 +75,20 @@ const normalizeFile = (file: any): PatientFile => ({
   file_path: file.file_path || file.path || file.arquivo_url || null,
   mime_type: file.mime_type || null,
   created_at: file.created_at || file.updated_at || null,
-  fisioterapeuta_id: file.fisioterapeuta_id || file.fisio_id || null,
-  fisio_id: file.fisio_id || file.fisioterapeuta_id || null,
+  fisioterapeuta_id: file.fisioterapeuta_id || file.fisio_id || extractUuidFromPath(file.file_path || file.arquivo_url) || null,
+  fisio_id: file.fisio_id || file.fisioterapeuta_id || extractUuidFromPath(file.file_path || file.arquivo_url) || null,
   source: 'arquivo',
 });
 
 const isAbsoluteUrl = (value?: string | null) => !!value && /^https?:\/\//i.test(value);
+
+const extractUuidFromPath = (value?: string | null) => {
+  if (!value || isAbsoluteUrl(value)) return null;
+  const firstPart = String(value).split('/')[0];
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(firstPart) ? firstPart : null;
+};
+
 
 const Documents: React.FC = () => {
   const { user } = useAuth();
@@ -129,8 +137,11 @@ const Documents: React.FC = () => {
           new Set([
             ...linked.map((p: any) => p.fisioterapeuta_id || p.fisio_id).filter(Boolean),
             ...normalized.map((d) => d.fisioterapeuta_id || d.fisio_id).filter(Boolean),
+            ...normalized.map((d) => extractUuidFromPath(d.file_path || d.arquivo_url)).filter(Boolean),
           ])
         );
+
+        const profileMap: Record<string, PhysioProfile> = {};
 
         if (physioIds.length > 0) {
           const { data: profiles, error: profileError } = await supabase
@@ -139,15 +150,39 @@ const Documents: React.FC = () => {
             .in('id', physioIds);
 
           if (profileError) {
-            console.warn('[Documents] Não foi possível carregar nomes dos fisioterapeutas:', profileError);
+            console.warn('[Documents] Não foi possível carregar perfis diretamente:', profileError);
           } else {
-            const map: Record<string, PhysioProfile> = {};
             (profiles || []).forEach((profile: any) => {
-              map[profile.id] = profile;
+              profileMap[profile.id] = profile;
             });
-            setPhysios(map);
           }
         }
+
+        // Fallback importante: alguns arquivos não salvam fisioterapeuta_id.
+        // Nesse caso usamos o vínculo pacientes.fisioterapeuta_id e tentamos
+        // carregar o nome pelo relacionamento usado em outras áreas do app.
+        if (patientIds.length > 0) {
+          const { data: linkedWithPhysios, error: linkedPhysiosError } = await supabase
+            .from('pacientes')
+            .select('id, fisioterapeuta_id, fisio_id, fisioterapeutas:fisioterapeuta_id(id, nome_completo, nome, crefito, registro_profissional)')
+            .in('id', patientIds);
+
+          if (!linkedPhysiosError) {
+            (linkedWithPhysios || []).forEach((patient: any) => {
+              const rawProfile = Array.isArray(patient.fisioterapeutas)
+                ? patient.fisioterapeutas[0]
+                : patient.fisioterapeutas;
+              const physioId = patient.fisioterapeuta_id || patient.fisio_id || rawProfile?.id;
+              if (physioId && rawProfile?.nome_completo) {
+                profileMap[physioId] = rawProfile;
+              }
+            });
+          } else {
+            console.warn('[Documents] Fallback de fisioterapeuta pelo vínculo falhou:', linkedPhysiosError);
+          }
+        }
+
+        setPhysios(profileMap);
       } finally {
         setLoading(false);
       }
@@ -157,7 +192,7 @@ const Documents: React.FC = () => {
   }, [user?.id]);
 
   const getPhysioForDocument = (document: PatientFile) => {
-    const explicitId = document.fisioterapeuta_id || document.fisio_id;
+    const explicitId = document.fisioterapeuta_id || document.fisio_id || extractUuidFromPath(document.file_path || document.arquivo_url);
     if (explicitId && physios[explicitId]) return physios[explicitId];
 
     const patient = patients.find((p) => p.id === document.paciente_id);
