@@ -160,11 +160,45 @@ export default function PatientDetails() {
       setAgendamentos(atData || []);
 
       // Fetch Prescrições
-      const { data: preData } = await supabase
+      // Busca em 2 etapas para não depender de foreign key/cache do Supabase.
+      // Sem isso, o insert pode dar sucesso, mas a lista continuar vazia quando o join falha.
+      const { data: preData, error: preError } = await supabase
         .from('exercicios_paciente')
-        .select('*, exercicio:exercicio_id(*)')
-        .eq('paciente_id', id);
-      setPrescricoes(preData || []);
+        .select('*')
+        .eq('paciente_id', id)
+        .order('created_at', { ascending: false });
+
+      if (preError) {
+        console.error('Erro ao buscar prescrições:', preError);
+        setPrescricoes([]);
+      } else {
+        const exercicioIds = Array.from(
+          new Set((preData || []).map((pres: any) => pres.exercicio_id).filter(Boolean))
+        );
+
+        let exerciciosMap: Record<string, any> = {};
+
+        if (exercicioIds.length > 0) {
+          const { data: exerciciosData, error: exerciciosError } = await supabase
+            .from('exercicios')
+            .select('*')
+            .in('id', exercicioIds);
+
+          if (exerciciosError) {
+            console.error('Erro ao buscar dados dos exercícios:', exerciciosError);
+          } else {
+            exerciciosMap = (exerciciosData || []).reduce((acc: Record<string, any>, exercicio: any) => {
+              acc[exercicio.id] = exercicio;
+              return acc;
+            }, {});
+          }
+        }
+
+        setPrescricoes((preData || []).map((pres: any) => ({
+          ...pres,
+          exercicio: exerciciosMap[pres.exercicio_id] || null
+        })));
+      }
 
       // Fetch Avaliações
       const { data: avaData } = await supabase
@@ -194,6 +228,164 @@ export default function PatientDetails() {
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportProntuario = async () => {
+    if (!patient) return;
+
+    try {
+      toast.info('Gerando prontuário em PDF...');
+
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 14;
+      let y = 16;
+
+      const safeText = (value: unknown, fallback = 'Não informado') => {
+        if (value === null || value === undefined || value === '') return fallback;
+        return String(value);
+      };
+
+      const addSectionTitle = (title: string) => {
+        if (y > 260) {
+          doc.addPage();
+          y = 16;
+        }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.text(title, margin, y);
+        y += 7;
+      };
+
+      const addParagraph = (text: string) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(text || 'Não informado', pageWidth - margin * 2);
+        if (y + lines.length * 5 > 280) {
+          doc.addPage();
+          y = 16;
+        }
+        doc.text(lines, margin, y);
+        y += lines.length * 5 + 4;
+      };
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('Prontuário Fisioterapêutico', margin, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, y);
+      y += 10;
+
+      addSectionTitle('Dados do paciente');
+      autoTable(doc, {
+        startY: y,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 2 },
+        head: [['Campo', 'Informação']],
+        body: [
+          ['Nome', safeText(patient.nome_completo)],
+          ['Data de nascimento', patient.data_nascimento ? formatOnlyDateBR(patient.data_nascimento) : 'Não informado'],
+          ['Telefone', safeText(patient.telefone)],
+          ['E-mail', safeText(patient.email)],
+          ['Diagnóstico clínico', safeText(patient.diagnostico)],
+          ['Observações', safeText(patient.observacoes)],
+        ],
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      addSectionTitle('Avaliações');
+      if (avaliacoes.length === 0) {
+        addParagraph('Nenhuma avaliação registrada.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          head: [['Data', 'Diagnóstico fisioterapêutico', 'Objetivos']],
+          body: avaliacoes.map((ava) => [
+            ava.created_at ? formatDateBR(ava.created_at) : '-',
+            safeText(ava.diagnostico_fisio, '-'),
+            safeText(ava.objetivos_terapeuticos, '-'),
+          ]),
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      addSectionTitle('Evoluções');
+      if (evolucoes.length === 0) {
+        addParagraph('Nenhuma evolução registrada.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          head: [['Data', 'Dor', 'Descrição', 'Exercícios', 'Plano']],
+          body: evolucoes.map((ev) => [
+            ev.created_at ? formatDateBR(ev.created_at) : '-',
+            safeText(ev.dor_escala, '0'),
+            safeText(ev.descricao, '-'),
+            safeText(ev.exercicios_realizados, '-'),
+            safeText(ev.plano, '-'),
+          ]),
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      addSectionTitle('Prescrições de exercícios');
+      if (prescricoes.length === 0) {
+        addParagraph('Nenhum exercício prescrito.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          head: [['Data', 'Exercício', 'Categoria', 'Dificuldade', 'Observações']],
+          body: prescricoes.map((pres) => [
+            pres.created_at ? formatDateBR(pres.created_at) : '-',
+            safeText(pres.exercicio?.nome, 'Exercício não encontrado'),
+            safeText(pres.exercicio?.categoria || pres.exercicio?.categoria_principal, '-'),
+            safeText(pres.exercicio?.dificuldade || pres.exercicio?.nivel, '-'),
+            safeText(pres.observacoes, '-'),
+          ]),
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      addSectionTitle('Arquivos anexados');
+      if (arquivos.length === 0) {
+        addParagraph('Nenhum arquivo anexado.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          head: [['Data', 'Tipo', 'Arquivo']],
+          body: arquivos.map((arq) => [
+            arq.created_at ? formatDateBR(arq.created_at) : '-',
+            safeText(arq.tipo, '-'),
+            safeText(arq.nome_arquivo || arq.file_path || arq.arquivo_url, '-'),
+          ]),
+        });
+      }
+
+      const filename = `prontuario_${safeText(patient.nome_completo, 'paciente')}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .toLowerCase();
+
+      doc.save(`${filename}.pdf`);
+      toast.success('Prontuário gerado em PDF!');
+    } catch (err) {
+      console.error('Erro ao gerar prontuário:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao gerar prontuário em PDF'));
     }
   };
 
@@ -278,14 +470,28 @@ export default function PatientDetails() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('exercicios_paciente')
         .insert({
           ...prescricaoForm,
           paciente_id: id
-        });
+        })
+        .select('*')
+        .single();
 
       if (error) throw error;
+
+      const selectedExercise = bibliotecaExercicios.find((ex) => ex.id === prescricaoForm.exercicio_id) || null;
+
+      if (insertedData) {
+        setPrescricoes((current) => [
+          {
+            ...insertedData,
+            exercicio: selectedExercise
+          },
+          ...current
+        ]);
+      }
 
       toast.success('Exercício prescrito!');
       setShowPrescricaoModal(false);
@@ -350,9 +556,9 @@ export default function PatientDetails() {
           </button>
           <ProGuard variant="inline">
             <button 
-              onClick={() => toast.info("Exportação PRO", { description: "Prontuário completo sendo gerado em PDF..." })}
+              onClick={handleExportProntuario}
               className="p-4 bg-blue-600/20 text-blue-400 rounded-2xl hover:bg-blue-600/30 transition-all border border-blue-600/20"
-              title="Exportar Prontuário Completo (PRO)"
+              title="Exportar prontuário em PDF"
             >
               <FileText size={24} />
             </button>
@@ -738,14 +944,14 @@ export default function PatientDetails() {
                         <Activity size={32} />
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-lg font-black text-white">{pres.exercicio?.nome}</h4>
+                        <h4 className="text-lg font-black text-white">{pres.exercicio?.nome || 'Exercício prescrito'}</h4>
                         <p className="text-sm text-slate-400 font-medium line-clamp-1">{pres.observacoes || 'Sem observações adicionais'}</p>
                         <div className="flex gap-2 mt-2">
                           <span className="text-[9px] font-black bg-white/5 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest border border-white/5">
-                            {pres.exercicio?.series} Séries
+                            {pres.exercicio?.categoria || pres.exercicio?.categoria_principal || 'Sem categoria'}
                           </span>
                           <span className="text-[9px] font-black bg-white/5 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest border border-white/5">
-                            {pres.exercicio?.repeticoes} Reps
+                            {pres.exercicio?.dificuldade || pres.exercicio?.nivel || 'Sem nível'}
                           </span>
                         </div>
                       </div>
