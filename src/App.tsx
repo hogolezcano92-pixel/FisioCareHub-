@@ -223,7 +223,23 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const redirectTarget = `${location.pathname}${location.search || ''}`;
+
+    try {
+      if (redirectTarget && redirectTarget !== '/login') {
+        sessionStorage.setItem('pendingRedirect', redirectTarget);
+      }
+    } catch {
+      // sessionStorage can be unavailable in some embedded browsers.
+    }
+
+    return (
+      <Navigate
+        to={`/login?redirectTo=${encodeURIComponent(redirectTarget)}`}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   const userRole = profile?.tipo_usuario;
