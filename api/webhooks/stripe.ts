@@ -2,22 +2,22 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const getEnv = (key: string, fallback: string): string => {
+const getEnv = (key: string, fallback = ''): string => {
   const value = process.env[key];
   if (!value) return fallback;
   const trimmed = value.trim();
-  if (trimmed === "undefined" || trimmed === "null" || trimmed === "") return fallback;
+  if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return fallback;
   return trimmed;
 };
 
 const getSupabaseAdmin = () => {
-  const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
-  const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+  const supabaseUrl = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co'));
+  const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
   return createClient(supabaseUrl, supabaseServiceRoleKey);
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-12-18.acacia" as any,
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2024-12-18.acacia' as any,
 });
 
 export const config = {
@@ -26,13 +26,101 @@ export const config = {
   },
 };
 
-const buffer = (req: any) => {
-  return new Promise<Buffer>((resolve, reject) => {
-    const chunks: any[] = [];
-    req.on('data', (chunk: any) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
+const buffer = (req: any) => new Promise<Buffer>((resolve, reject) => {
+  const chunks: any[] = [];
+  req.on('data', (chunk: any) => chunks.push(chunk));
+  req.on('end', () => resolve(Buffer.concat(chunks)));
+  req.on('error', reject);
+});
+
+const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
+  const metadata = session.metadata || {};
+  return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
+};
+
+const upsertAppointmentPayment = async (supabase: ReturnType<typeof createClient>, session: Stripe.Checkout.Session) => {
+  const appointmentId = getAppointmentIdFromSession(session);
+  if (!appointmentId) return false;
+
+  const { data: appointment, error: appError } = await supabase
+    .from('agendamentos')
+    .select('*')
+    .eq('id', appointmentId)
+    .maybeSingle();
+
+  if (appError || !appointment) {
+    console.error('[Stripe Webhook] Agendamento não encontrado:', appointmentId, appError);
+    return false;
+  }
+
+  const amountPaid = typeof session.amount_total === 'number'
+    ? session.amount_total / 100
+    : Number(appointment.valor || 0);
+
+  await supabase
+    .from('agendamentos')
+    .update({ status: 'confirmado' })
+    .eq('id', appointmentId);
+
+  const externalId = String(session.payment_intent || session.id);
+  await supabase
+    .from('pagamentos')
+    .upsert({
+      external_id: externalId,
+      user_id: appointment.paciente_id,
+      external_reference: String(appointmentId),
+      amount: amountPaid,
+      status: 'paid',
+      gateway: 'stripe',
+      method: 'credit_card',
+      confirmed_at: new Date().toISOString(),
+    }, { onConflict: 'external_id' });
+
+  const { data: existingSessions } = await supabase
+    .from('sessoes')
+    .select('id')
+    .eq('agendamento_id', appointmentId)
+    .limit(1);
+
+  const sessionPayload = {
+    paciente_id: appointment.paciente_id,
+    fisioterapeuta_id: appointment.fisio_id,
+    agendamento_id: Number(appointmentId),
+    data: appointment.data,
+    hora: appointment.hora,
+    valor_sessao: amountPaid || Number(appointment.valor || 0),
+    status_pagamento: 'pago_app',
+    stripe_payment_intent: String(session.payment_intent || session.id),
+    status_repasse: 'pendente',
+  };
+
+  if (existingSessions && existingSessions.length > 0) {
+    await supabase.from('sessoes').update(sessionPayload).eq('id', existingSessions[0].id);
+  } else {
+    await supabase.from('sessoes').insert(sessionPayload);
+  }
+
+  await supabase.from('notificacoes').insert([
+    {
+      user_id: appointment.paciente_id,
+      titulo: 'Pagamento confirmado',
+      mensagem: 'Seu agendamento foi confirmado após o pagamento.',
+      tipo: 'payment',
+      lida: false,
+      link: '/appointments',
+    },
+    {
+      user_id: appointment.fisio_id,
+      titulo: 'Nova consulta paga',
+      mensagem: 'Um paciente pagou e confirmou um agendamento com você.',
+      tipo: 'appointment',
+      lida: false,
+      link: '/agenda',
+    },
+  ]);
+
+  console.log('[Stripe Webhook] Agendamento confirmado:', appointmentId);
+  return true;
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -57,35 +145,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabaseAdmin();
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
 
-    if (session.metadata?.type === 'library_purchase_bulk') {
-      const userId = session.metadata.user_id;
-      const materialIdsString = session.metadata.material_ids;
-
-      if (userId && materialIdsString) {
-        const materialIds = materialIdsString.split(',');
-        const purchaseRecords = materialIds.map(id => ({
-          patient_id: userId,
-          material_id: id,
-          purchased_at: new Date().toISOString()
-        }));
-
-        await supabase.from('material_purchases').insert(purchaseRecords);
+      if (getAppointmentIdFromSession(session)) {
+        await upsertAppointmentPayment(supabase, session);
+        return res.status(200).json({ received: true, type: 'appointment' });
       }
-    } else if (session.metadata?.type === 'library_purchase') {
+
+      if (session.metadata?.type === 'library_purchase_bulk') {
+        const userId = session.metadata.user_id;
+        const materialIdsString = session.metadata.material_ids;
+
+        if (userId && materialIdsString) {
+          const materialIds = materialIdsString.split(',').filter(Boolean);
+          const purchaseRecords = materialIds.map(id => ({
+            patient_id: userId,
+            material_id: id,
+            purchased_at: new Date().toISOString(),
+          }));
+
+          await supabase.from('material_purchases').insert(purchaseRecords);
+        }
+      } else if (session.metadata?.type === 'library_purchase') {
         const userId = session.metadata.user_id;
         const materialId = session.metadata.material_id;
         if (userId && materialId) {
-            await supabase.from('material_purchases').insert({
-                patient_id: userId,
-                material_id: materialId,
-                purchased_at: new Date().toISOString()
-            });
+          await supabase.from('material_purchases').insert({
+            patient_id: userId,
+            material_id: materialId,
+            purchased_at: new Date().toISOString(),
+          });
         }
+      }
     }
+  } catch (err: any) {
+    console.error('[Stripe Webhook] Internal Error:', err);
+    return res.status(200).json({ received: true, error: err.message || 'Internal error' });
   }
 
-  res.status(200).json({ received: true });
+  return res.status(200).json({ received: true });
 }

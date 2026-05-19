@@ -1,10 +1,75 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Admin (or just use client if safety allows, but Admin is better for webhooks)
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''; // Use service role for webhooks
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const upsertSessionForAppointment = async (appointment: any, payment: any) => {
+  const agendamentoId = String(appointment.id);
+  const amountPaid = Number(payment.value || appointment.valor || 0);
+
+  await supabase
+    .from('agendamentos')
+    .update({ status: 'confirmado' })
+    .eq('id', agendamentoId);
+
+  await supabase
+    .from('pagamentos')
+    .upsert({
+      external_id: payment.id,
+      user_id: appointment.paciente_id,
+      external_reference: agendamentoId,
+      amount: amountPaid,
+      status: 'paid',
+      gateway: 'asaas',
+      method: payment.billingType,
+      confirmed_at: new Date().toISOString(),
+    }, { onConflict: 'external_id' });
+
+  const { data: existingSessions } = await supabase
+    .from('sessoes')
+    .select('id')
+    .eq('agendamento_id', agendamentoId)
+    .limit(1);
+
+  const sessionPayload = {
+    paciente_id: appointment.paciente_id,
+    fisioterapeuta_id: appointment.fisio_id,
+    agendamento_id: Number(agendamentoId),
+    data: appointment.data,
+    hora: appointment.hora,
+    valor_sessao: amountPaid,
+    status_pagamento: 'pago_app',
+    stripe_payment_intent: payment.id,
+    status_repasse: 'pendente',
+  };
+
+  if (existingSessions && existingSessions.length > 0) {
+    await supabase.from('sessoes').update(sessionPayload).eq('id', existingSessions[0].id);
+  } else {
+    await supabase.from('sessoes').insert(sessionPayload);
+  }
+
+  await supabase.from('notificacoes').insert([
+    {
+      user_id: appointment.paciente_id,
+      titulo: 'Pagamento confirmado',
+      mensagem: 'Seu agendamento foi confirmado após o pagamento.',
+      tipo: 'payment',
+      lida: false,
+      link: '/appointments',
+    },
+    {
+      user_id: appointment.fisio_id,
+      titulo: 'Nova consulta paga',
+      mensagem: 'Um paciente pagou e confirmou um agendamento com você.',
+      tipo: 'appointment',
+      lida: false,
+      link: '/agenda',
+    },
+  ]);
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -14,12 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { event, payment } = req.body;
   console.log(`[Asaas Webhook] Event: ${event}`, payment?.id);
 
-  // Ignore events that don't indicate success to avoid noise/500s
   if (event === 'PAYMENT_CREATED') {
     return res.status(200).json({ received: true, ignored: true });
   }
 
-  // Handle confirmed payments
   if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED' || event === 'RECEIVED') {
     const agendamentoId = payment.externalReference;
 
@@ -29,42 +92,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-      // 1. Fetch Appointment 
       const { data: appointment, error: appError } = await supabase
         .from('agendamentos')
-        .select('*, fisio:perfis!fisio_id(*), paciente:perfis!paciente_id(*)')
+        .select('*')
         .eq('id', agendamentoId)
-        .single();
+        .maybeSingle();
 
       if (appError || !appointment) {
-        console.warn('[Asaas Webhook] Appointment not found:', agendamentoId);
+        console.warn('[Asaas Webhook] Appointment not found:', agendamentoId, appError);
         return res.status(200).json({ received: true, error: 'Appointment not found' });
       }
 
-      // 2. Update status to 'pago'
-      await supabase
-        .from('agendamentos')
-        .update({ status: 'pago' })
-        .eq('id', agendamentoId);
-
-      // Record payment
-      await supabase
-        .from('pagamentos')
-        .upsert({
-          external_id: payment.id,
-          user_id: appointment.paciente_id,
-          external_reference: agendamentoId,
-          amount: payment.value,
-          status: 'paid',
-          gateway: 'asaas',
-          method: payment.billingType,
-          confirmed_at: new Date().toISOString()
-        }, { onConflict: 'external_id' });
-
+      await upsertSessionForAppointment(appointment, payment);
       console.log(`[Asaas Webhook] Appointment ${agendamentoId} processed successfully.`);
     } catch (err) {
       console.error('[Asaas Webhook] Internal Error:', err);
-      // Still return 200 but we logged the error
       return res.status(200).json({ received: true, error: 'Internal Error' });
     }
   }
