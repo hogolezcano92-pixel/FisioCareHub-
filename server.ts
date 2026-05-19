@@ -345,11 +345,25 @@ const getEnv = (key: string, fallback: string): string => {
   return trimmed;
 };
 
+const normalizeSupabaseUrl = (value: string): string => {
+  const raw = value.trim().replace(/\/+$/, '');
+  if (!raw) return '';
+
+  // Aceita tanto a URL completa quanto apenas o Project Ref do Supabase.
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
+  if (/^[a-z0-9-]+\.supabase\.co$/i.test(raw)) return `https://${raw}`;
+
+  return raw;
+};
+
 let supabaseAdminInstance: any = null;
 
 const getSupabaseAdmin = () => {
   if (!supabaseAdminInstance) {
-    const supabaseUrl = getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co");
+    const supabaseUrl = normalizeSupabaseUrl(
+      getEnv("SUPABASE_URL", getEnv("VITE_SUPABASE_URL", "https://exciqetztunqgxbwwodo.supabase.co"))
+    );
     const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     
     console.log("[Supabase Admin] Initializing with URL:", supabaseUrl);
@@ -365,7 +379,7 @@ const getSupabaseAdmin = () => {
       console.log("[Supabase Admin] Client created successfully");
     } catch (err) {
       console.error("Failed to initialize Supabase Admin:", err);
-      throw new Error("Failed to initialize Supabase client. Check your configuration.");
+      throw new Error("URL do Supabase inválida. Configure VITE_SUPABASE_URL/SUPABASE_URL como https://exciqetztunqgxbwwodo.supabase.co");
     }
   }
   return supabaseAdminInstance;
