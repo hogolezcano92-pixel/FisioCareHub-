@@ -295,6 +295,87 @@ const notifyAfterPaidAppointment = async (appointment: any, payment: any) => {
   });
 };
 
+
+const notifyAfterPhysioConfirmedAppointment = async (appointment: any, confirmedByUserId?: string) => {
+  const appointmentId = String(appointment.id);
+  const physioId = appointment.fisio_id || appointment.fisioterapeuta_id;
+
+  if (confirmedByUserId && physioId && String(confirmedByUserId) !== String(physioId)) {
+    throw new Error('Usuário autenticado não é o fisioterapeuta deste agendamento.');
+  }
+
+  const { patient, physio } = await getProfilesForAppointment(appointment);
+
+  const patientName = patient?.nome_completo || appointment.nome_paciente || 'Paciente';
+  const patientEmail = patient?.email || appointment.email_paciente;
+  const physioName = physio?.nome_completo || 'Fisioterapeuta';
+  const serviceName = appointment.servico || appointment.tipo || 'Sessão de fisioterapia';
+  const date = formatDateBR(getAppointmentDate(appointment));
+  const time = formatTimeBR(appointment);
+  const amount = formatMoneyBR(appointment.valor);
+  const appointmentsLink = `${APP_URL}/appointments`;
+
+  await supabase.from('notificacoes').insert({
+    user_id: appointment.paciente_id,
+    titulo: 'Agendamento confirmado',
+    mensagem: `Seu agendamento de ${serviceName} foi confirmado pelo fisioterapeuta.`,
+    tipo: 'appointment',
+    lida: false,
+    link: '/appointments',
+  });
+
+  const patientHtml = buildEmailLayout(
+    'Agendamento confirmado pelo fisioterapeuta',
+    `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(patientName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Seu agendamento foi confirmado pelo fisioterapeuta. Confira os dados abaixo:</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
+        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
+          <p style="margin:0 0 8px;"><strong>Status:</strong> Confirmado</p>
+          <p style="margin:0 0 8px;"><strong>Fisioterapeuta:</strong> ${escapeHtml(physioName)}</p>
+          <p style="margin:0 0 8px;"><strong>Serviço:</strong> ${escapeHtml(serviceName)}</p>
+          <p style="margin:0 0 8px;"><strong>Data:</strong> ${escapeHtml(date)}</p>
+          <p style="margin:0 0 8px;"><strong>Horário:</strong> ${escapeHtml(time)}</p>
+          <p style="margin:0;"><strong>Valor pago:</strong> ${escapeHtml(amount)}</p>
+        </td></tr>
+      </table>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">No dia e horário combinados, acompanhe sua agenda pelo FisioCareHub.</p>
+      <p style="margin:22px 0;text-align:center;">
+        <a href="${appointmentsLink}" style="display:inline-block;background:#0284c7;color:#ffffff;text-decoration:none;font-weight:800;padding:14px 20px;border-radius:12px;">Ver minha agenda</a>
+      </p>
+      <p style="margin:0;color:#64748b;font-size:13px;line-height:20px;">Caso o botão não funcione, acesse: ${escapeHtml(appointmentsLink)}</p>
+    `
+  );
+
+  const patientEmailResult = await sendEmail(
+    patientEmail,
+    'Agendamento confirmado pelo fisioterapeuta - FisioCareHub',
+    patientHtml
+  );
+
+  console.log('[Asaas Webhook] Resultado e-mail confirmação do paciente:', {
+    appointmentId,
+    patientEmail,
+    patientEmailResult,
+  });
+
+  return { patientEmailResult, patientEmail };
+};
+
+const validateUserFromAuthorization = async (authorization?: string) => {
+  const token = authorization?.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    throw new Error('Token de autenticação ausente.');
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    throw new Error('Token de autenticação inválido.');
+  }
+
+  return data.user;
+};
+
 const upsertSessionForAppointment = async (appointment: any, payment: any) => {
   const agendamentoId = String(appointment.id);
   const amountPaid = Number(payment.value || appointment.valor || 0);
@@ -367,8 +448,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { event, payment } = req.body || {};
-  console.log(`[Asaas Webhook] Event: ${event}`, payment?.id);
+  const { event, payment, appointmentId } = req.body || {};
+  console.log(`[Asaas Webhook] Event: ${event}`, payment?.id || appointmentId);
+
+
+  if (event === 'APPOINTMENT_CONFIRMED_BY_PHYSIO') {
+    try {
+      const authenticatedUser = await validateUserFromAuthorization(req.headers.authorization);
+      const agendamentoId = appointmentId || payment?.externalReference;
+
+      if (!agendamentoId) {
+        return res.status(400).json({ received: false, error: 'appointmentId ausente' });
+      }
+
+      const { data: appointment, error: appError } = await supabase
+        .from('agendamentos')
+        .select('*')
+        .eq('id', agendamentoId)
+        .maybeSingle();
+
+      if (appError || !appointment) {
+        return res.status(404).json({ received: false, error: 'Agendamento não encontrado' });
+      }
+
+      await notifyAfterPhysioConfirmedAppointment(appointment, authenticatedUser.id);
+      return res.status(200).json({ received: true, email: 'patient_confirmation_attempted' });
+    } catch (err: any) {
+      console.error('[Asaas Webhook] Erro ao enviar confirmação ao paciente:', err);
+      return res.status(400).json({ received: false, error: err?.message || 'Erro ao enviar confirmação' });
+    }
+  }
 
   if (event === 'PAYMENT_CREATED') {
     return res.status(200).json({ received: true, ignored: true });
