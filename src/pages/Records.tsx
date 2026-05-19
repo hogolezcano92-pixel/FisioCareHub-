@@ -21,7 +21,7 @@ import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { generateMedicalRecord } from '../lib/groq';
 import ReactMarkdown from 'react-markdown';
 import { getUserName } from '../lib/user';
-import { uploadDocument } from '../services/supabaseStorage';
+import { uploadDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
 import { getPatientVisibleIds } from '../services/patientLinkService';
 
@@ -34,6 +34,7 @@ export default function Records() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [clinicalRecords, setClinicalRecords] = useState<any[]>([]);
+  const [clinicalFiles, setClinicalFiles] = useState<any[]>([]);
   
   // New Record Form
   const [patients, setPatients] = useState<any[]>([]);
@@ -83,16 +84,24 @@ export default function Records() {
         setRecords(recordsData || []);
 
         if (!isPhysio) {
-          const [avaliacoesResult, evolucoesResult] = await Promise.all([
+          const clinicalOnlyIds = visiblePatientIds.filter((id) => id !== user.id);
+          const idsToSearch = clinicalOnlyIds.length > 0 ? clinicalOnlyIds : visiblePatientIds;
+
+          const [avaliacoesResult, evolucoesResult, arquivosResult] = await Promise.all([
             supabase
               .from('fichas_avaliacao')
               .select('*')
-              .in('paciente_id', visiblePatientIds)
+              .in('paciente_id', idsToSearch)
               .order('created_at', { ascending: false }),
             supabase
               .from('evolucoes')
               .select('*')
-              .in('paciente_id', visiblePatientIds)
+              .in('paciente_id', idsToSearch)
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('arquivos_paciente')
+              .select('*')
+              .in('paciente_id', idsToSearch)
               .order('created_at', { ascending: false }),
           ]);
 
@@ -102,6 +111,10 @@ export default function Records() {
 
           if (evolucoesResult.error) {
             console.error('Erro ao buscar evoluções do paciente:', evolucoesResult.error);
+          }
+
+          if (arquivosResult.error) {
+            console.error('Erro ao buscar arquivos clínicos do paciente:', arquivosResult.error);
           }
 
           const avaliacoes = (avaliacoesResult.data || []).map((item: any) => ({
@@ -119,8 +132,14 @@ export default function Records() {
           setClinicalRecords([...avaliacoes, ...evolucoes].sort((a, b) => {
             return new Date(b.data_evento || 0).getTime() - new Date(a.data_evento || 0).getTime();
           }));
+
+          setClinicalFiles((arquivosResult.data || []).map((item: any) => ({
+            ...item,
+            data_evento: item.created_at || item.updated_at,
+          })));
         } else {
           setClinicalRecords([]);
+          setClinicalFiles([]);
         }
         
         // Resolve names in bulk
@@ -282,6 +301,41 @@ export default function Records() {
     }
   };
 
+
+  const cleanFileName = (value: unknown) => {
+    const raw = String(value || '');
+    if (!raw) return 'Arquivo';
+    try {
+      const withoutQuery = raw.split('?')[0];
+      const decoded = decodeURIComponent(withoutQuery);
+      return decoded.split('/').pop() || decoded;
+    } catch {
+      return raw.split('/').pop() || raw;
+    }
+  };
+
+  const openClinicalFile = async (file: any) => {
+    try {
+      const path = file.file_path || file.arquivo_url || file.url;
+      if (!path) {
+        const { toast } = await import('sonner');
+        toast.error('Arquivo sem caminho de acesso.');
+        return;
+      }
+
+      const url = String(path).startsWith('http')
+        ? path
+        : await getPrivateDocumentUrl(path);
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      console.error('Erro ao abrir arquivo clínico:', err);
+      const { toast } = await import('sonner');
+      toast.error(err?.message || 'Erro ao abrir arquivo.');
+    }
+  };
+
+
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
@@ -404,8 +458,48 @@ export default function Records() {
         </section>
       )}
 
+
+      {!isPhysio && clinicalFiles.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-black flex items-center gap-2 text-sky-400 tracking-tight">
+            <Paperclip size={24} />
+            Exames, fotos e documentos clínicos
+          </h2>
+          <div className="grid gap-4">
+            {clinicalFiles.map((file) => (
+              <motion.div
+                key={`arquivo-${file.id}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    {file.data_evento ? formatDate(file.data_evento) : 'Data não informada'}
+                  </div>
+                  <h3 className="text-lg font-black text-white">
+                    {file.tipo || 'Documento clínico'}
+                  </h3>
+                  <p className="text-sm text-slate-400 mt-1 break-all">
+                    {file.nome_arquivo || cleanFileName(file.file_path || file.arquivo_url)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openClinicalFile(file)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  <Download size={16} />
+                  Abrir / Baixar
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="grid gap-6">
-        {records.length === 0 && clinicalRecords.length === 0 ? (
+        {records.length === 0 && clinicalRecords.length === 0 && clinicalFiles.length === 0 ? (
           <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[2.5rem] border border-white/10 text-center shadow-2xl">
             <div className="w-20 h-20 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
               <FileText size={40} />
