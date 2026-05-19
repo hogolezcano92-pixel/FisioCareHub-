@@ -31,6 +31,7 @@ import ProGuard from '../components/ProGuard';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -420,6 +421,24 @@ export default function Documents() {
     }
   };
 
+
+  const openClinicalFile = async (doc: any) => {
+    try {
+      const pathOrUrl = doc.file_path || doc.arquivo_url;
+      if (!pathOrUrl) {
+        import('sonner').then(({ toast }) => toast.error('Arquivo sem caminho para visualização.'));
+        return;
+      }
+
+      const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
+      const url = isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      console.error('Erro ao abrir arquivo clínico:', err);
+      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao abrir arquivo.'));
+    }
+  };
+
   const handleExportFromTable = async (doc: any) => {
     const tempDiv = document.createElement('div');
     const docId = `export-temp-${doc.id}`;
@@ -675,7 +694,7 @@ export default function Documents() {
                         <button 
                           onClick={() => {
                             if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
-                              window.open(doc.arquivo_url || doc.file_path, '_blank');
+                              openClinicalFile(doc);
                               return;
                             }
                             handleExportFromTable(doc);
@@ -685,13 +704,15 @@ export default function Documents() {
                         >
                           <Download size={18} />
                         </button>
-                        <button 
-                          onClick={() => exportToWord(doc)}
-                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
-                          title="Baixar Word"
-                        >
-                          <FileText size={18} />
-                        </button>
+                        {!doc.isClinicalFile && (
+                          <button 
+                            onClick={() => exportToWord(doc)}
+                            className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
+                            title="Baixar Word"
+                          >
+                            <FileText size={18} />
+                          </button>
+                        )}
                         {isPhysio && (
                           <button 
                             onClick={() => setDocToDelete(doc.id)}

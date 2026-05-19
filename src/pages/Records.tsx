@@ -360,14 +360,24 @@ export default function Records() {
                       {record.origem_clinica === 'avaliacao' ? 'Avaliação fisioterapêutica' : 'Evolução clínica'}
                     </h3>
                   </div>
-                  <span className={cn(
-                    'text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border',
-                    record.origem_clinica === 'avaliacao'
-                      ? 'bg-blue-500/10 text-blue-300 border-blue-500/20'
-                      : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                  )}>
-                    {record.origem_clinica === 'avaliacao' ? 'Avaliação' : 'Evolução'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border',
+                      record.origem_clinica === 'avaliacao'
+                        ? 'bg-blue-500/10 text-blue-300 border-blue-500/20'
+                        : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                    )}>
+                      {record.origem_clinica === 'avaliacao' ? 'Avaliação' : 'Evolução'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => exportClinicalRecordPdf(record)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-200 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest transition-all"
+                      title="Baixar este registro em PDF"
+                    >
+                      <Download size={13} /> PDF
+                    </button>
+                  </div>
                 </div>
 
                 {record.origem_clinica === 'avaliacao' ? (
@@ -395,7 +405,7 @@ export default function Records() {
       )}
 
       <div className="grid gap-6">
-        {records.length === 0 ? (
+        {records.length === 0 && clinicalRecords.length === 0 ? (
           <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[2.5rem] border border-white/10 text-center shadow-2xl">
             <div className="w-20 h-20 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
               <FileText size={40} />

@@ -517,8 +517,37 @@ export default function PatientDetails() {
         .replace(/[^a-zA-Z0-9_-]/g, '_')
         .toLowerCase();
 
-      doc.save(`${filename}.pdf`);
-      toast.success('Prontuário profissional gerado em PDF!');
+      const pdfFileName = `${filename}.pdf`;
+      const pdfBlob = doc.output('blob');
+      doc.save(pdfFileName);
+
+      if (user?.id && id) {
+        try {
+          const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+          const uploadedPath = await uploadPatientDocument(user.id, id, pdfFile);
+
+          const { error: arquivoError } = await supabase
+            .from('arquivos_paciente')
+            .insert({
+              paciente_id: id,
+              arquivo_url: uploadedPath,
+              file_path: uploadedPath,
+              nome_arquivo: pdfFileName,
+              mime_type: 'application/pdf',
+              tamanho_bytes: pdfBlob.size,
+              tipo: 'Prontuário completo'
+            });
+
+          if (arquivoError) throw arquivoError;
+          toast.success('Prontuário gerado, baixado e salvo para o paciente!');
+          fetchPatientData();
+        } catch (saveErr) {
+          console.error('Prontuário baixado, mas não foi salvo para o paciente:', saveErr);
+          toast.warning('PDF baixado. Não foi possível salvar automaticamente em Documentos do paciente.');
+        }
+      } else {
+        toast.success('Prontuário profissional gerado em PDF!');
+      }
     } catch (err) {
       console.error('Erro ao gerar prontuário:', err);
       toast.error(getSupabaseErrorMessage(err, 'Erro ao gerar prontuário em PDF'));
