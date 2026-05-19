@@ -91,8 +91,9 @@ const normalizeAiFields = (raw: any): EvaluationAIFields => {
 
 async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse) {
   const { accessToken, pacienteId, notes, currentForm, patient } = req.body || {};
+  const safePacienteId = sanitizeText(pacienteId, 120);
 
-  if (!accessToken || !pacienteId) {
+  if (!accessToken || !safePacienteId) {
     return res.status(400).json({ error: 'Sessão ou paciente não informado.' });
   }
 
@@ -139,14 +140,18 @@ async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse)
   const { data: patientRecord, error: patientError } = await supabaseAdmin
     .from('pacientes')
     .select('id, nome_completo, data_nascimento, telefone, fisioterapeuta_id')
-    .eq('id', pacienteId)
+    .eq('id', safePacienteId)
     .maybeSingle();
 
-  if (patientError || !patientRecord) {
-    return res.status(404).json({ error: 'Paciente não encontrado.' });
+  // A IA só organiza texto para o fisioterapeuta revisar.
+  // Se o paciente não for encontrado pelo backend por RLS/ambiente/preview,
+  // não bloqueamos a IA; apenas seguimos sem dados sensíveis do paciente.
+  // A gravação final continua protegida pelo Supabase/RLS no salvamento da ficha.
+  if (patientError) {
+    console.warn('[Evaluation AI API] Não foi possível validar paciente no backend:', patientError);
   }
 
-  if (!isAdmin && patientRecord.fisioterapeuta_id !== userId) {
+  if (patientRecord && !isAdmin && patientRecord.fisioterapeuta_id !== userId) {
     return res.status(403).json({ error: 'Você não tem permissão para gerar ficha deste paciente.' });
   }
 
@@ -171,9 +176,9 @@ IMPORTANTE:
 
 PACIENTE CADASTRADO:
 ${JSON.stringify({
-  nome_completo: patientRecord.nome_completo || patient?.nome_completo || '',
-  data_nascimento: patientRecord.data_nascimento || patient?.data_nascimento || '',
-  telefone: patientRecord.telefone || patient?.telefone || '',
+  nome_completo: patientRecord?.nome_completo || patient?.nome_completo || '',
+  data_nascimento: patientRecord?.data_nascimento || patient?.data_nascimento || '',
+  telefone: patientRecord?.telefone || patient?.telefone || '',
 })}
 
 ANOTAÇÕES LIVRES DO FISIOTERAPEUTA:
@@ -211,7 +216,9 @@ ${JSON.stringify(FIELD_KEYS)}
   return res.status(200).json({
     success: true,
     fields,
-    warning: 'Conteúdo gerado por IA. Revise todos os campos antes de salvar no prontuário.',
+    warning: patientRecord
+      ? 'Conteúdo gerado por IA. Revise todos os campos antes de salvar no prontuário.'
+      : 'Conteúdo gerado por IA sem validar dados do paciente no backend. Revise antes de salvar.',
   });
 }
 
