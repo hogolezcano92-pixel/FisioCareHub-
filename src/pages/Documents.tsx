@@ -40,9 +40,7 @@ type PatientFile = {
 type PhysioProfile = {
   id: string;
   nome_completo?: string | null;
-  nome?: string | null;
-  crefito?: string | null;
-  registro_profissional?: string | null;
+  email?: string | null;
 };
 
 const DOCUMENTS_BUCKET = 'documents';
@@ -81,6 +79,15 @@ const normalizeFile = (file: any): PatientFile => ({
 });
 
 const isAbsoluteUrl = (value?: string | null) => !!value && /^https?:\/\//i.test(value);
+
+const extractPhysioIdFromPath = (path?: string | null) => {
+  if (!path || /^https?:\/\//i.test(path)) return null;
+  const first = path.split('/')[0];
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(first)
+    ? first
+    : null;
+};
+
 
 const extractUuidFromPath = (value?: string | null) => {
   if (!value || isAbsoluteUrl(value)) return null;
@@ -136,7 +143,9 @@ const Documents: React.FC = () => {
         const physioIds = Array.from(
           new Set([
             ...linked.map((p: any) => p.fisioterapeuta_id || p.fisio_id).filter(Boolean),
-            ...normalized.map((d) => d.fisioterapeuta_id || d.fisio_id).filter(Boolean),
+            ...normalized
+              .map((d) => d.fisioterapeuta_id || d.fisio_id || extractPhysioIdFromPath(d.file_path || d.arquivo_url))
+              .filter(Boolean),
             ...normalized.map((d) => extractUuidFromPath(d.file_path || d.arquivo_url)).filter(Boolean),
           ])
         );
@@ -146,7 +155,7 @@ const Documents: React.FC = () => {
         if (physioIds.length > 0) {
           const { data: profiles, error: profileError } = await supabase
             .from('perfis')
-            .select('id, nome_completo, nome, crefito, registro_profissional')
+            .select('id, nome_completo, email')
             .in('id', physioIds);
 
           if (profileError) {
@@ -204,7 +213,7 @@ const Documents: React.FC = () => {
 
   const getPhysioName = (document: PatientFile) => {
     const profile = getPhysioForDocument(document);
-    return profile?.nome_completo || profile?.nome || 'Fisioterapeuta';
+    return profile?.nome_completo || 'Fisioterapeuta';
   };
 
   const getDocumentPath = (document: PatientFile) => {
