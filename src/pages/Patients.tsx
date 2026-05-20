@@ -243,7 +243,9 @@ export default function Patients() {
       'prontuarios',
       'avaliacoes',
       'diario_dor',
-      'documentos_gerados'
+      'documentos_gerados',
+      'fichas_avaliacao',
+      'registros_paciente'
     ];
 
     for (const table of linkedTables) {

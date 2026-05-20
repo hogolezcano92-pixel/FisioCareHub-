@@ -92,6 +92,8 @@ export default function PatientDetails() {
   const [showEditPrescricaoModal, setShowEditPrescricaoModal] = useState(false);
   const [editingPrescricao, setEditingPrescricao] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [patientAccessStatus, setPatientAccessStatus] = useState<'checking' | 'active' | 'inactive' | 'no_email'>('checking');
+  const [invitingPatientAccess, setInvitingPatientAccess] = useState(false);
 
   // Form States
   const [evolucaoForm, setEvolucaoForm] = useState({
@@ -125,6 +127,166 @@ export default function PatientDetails() {
     }
   }, [id, user, profile]);
 
+  const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
+
+  const checkPatientAccessStatus = async (patientData: any) => {
+    const patientEmail = normalizeEmail(patientData?.email);
+    const possibleProfileIds = [
+      patientData?.perfil_id,
+      patientData?.profile_id,
+      patientData?.user_id,
+      patientData?.auth_user_id,
+      patientData?.paciente_id,
+    ].filter(Boolean).map(String);
+
+    if (!patientEmail && possibleProfileIds.length === 0) {
+      setPatientAccessStatus('no_email');
+      return;
+    }
+
+    try {
+      let profileFound = false;
+
+      if (possibleProfileIds.length > 0) {
+        const { data: profilesById, error: profilesByIdError } = await supabase
+          .from('perfis')
+          .select('id, email, tipo_usuario, role')
+          .in('id', possibleProfileIds)
+          .limit(1);
+
+        if (profilesByIdError) {
+          console.warn('Erro ao verificar perfil do paciente por ID:', profilesByIdError);
+        }
+
+        profileFound = Array.isArray(profilesById) && profilesById.length > 0;
+      }
+
+      if (!profileFound && patientEmail) {
+        const { data: profileByEmail, error: profileByEmailError } = await supabase
+          .from('perfis')
+          .select('id, email, tipo_usuario, role')
+          .ilike('email', patientEmail)
+          .maybeSingle();
+
+        if (profileByEmailError) {
+          console.warn('Erro ao verificar perfil do paciente por e-mail:', profileByEmailError);
+        }
+
+        profileFound = Boolean(profileByEmail?.id);
+      }
+
+      setPatientAccessStatus(profileFound ? 'active' : 'inactive');
+    } catch (error) {
+      console.error('Erro ao verificar acesso ativo do paciente:', error);
+      setPatientAccessStatus(patientEmail ? 'inactive' : 'no_email');
+    }
+  };
+
+  const handleInvitePatientAccess = async () => {
+    if (!patient?.id || invitingPatientAccess || patientAccessStatus === 'active') return;
+
+    if (!patient?.email) {
+      toast.error('Este paciente não possui e-mail cadastrado.');
+      setPatientAccessStatus('no_email');
+      return;
+    }
+
+    setInvitingPatientAccess(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-patient-access', {
+        body: {
+          patientId: patient.id,
+          pacienteId: patient.id,
+          email: patient.email,
+        },
+      });
+
+      if (error) throw error;
+
+      const message =
+        data?.message ||
+        (data?.alreadyActive
+          ? 'Paciente já possui acesso ativo.'
+          : 'Convite de acesso enviado com sucesso.');
+
+      toast.success(message);
+
+      await checkPatientAccessStatus(patient);
+    } catch (err: any) {
+      console.error('Erro ao liberar acesso do paciente:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Não foi possível liberar acesso para este paciente.'));
+    } finally {
+      setInvitingPatientAccess(false);
+    }
+  };
+
+  const ignoreMissingRelationError = (error: any) => {
+    const message = String(error?.message || error?.details || error?.hint || '').toLowerCase();
+    return (
+      message.includes('does not exist') ||
+      message.includes('could not find') ||
+      message.includes('schema cache') ||
+      message.includes('relation') ||
+      message.includes('column')
+    );
+  };
+
+  const deletePatientLinkedRows = async (patientId: string) => {
+    const linkedTables = [
+      'exercicios_paciente',
+      'evolucoes',
+      'arquivos_paciente',
+      'triagens',
+      'prontuarios',
+      'avaliacoes',
+      'diario_dor',
+      'documentos_gerados',
+      'fichas_avaliacao',
+      'registros_paciente'
+    ];
+
+    for (const table of linkedTables) {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('paciente_id', patientId);
+
+      if (error && !ignoreMissingRelationError(error)) {
+        throw error;
+      }
+    }
+  };
+
+  const handleDeletePatient = async () => {
+    if (!user || !patient?.id) return;
+
+    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    setSubmitting(true);
+
+    try {
+      await deletePatientLinkedRows(patient.id);
+
+      const { error: deleteError } = await supabase
+        .from('pacientes')
+        .delete()
+        .eq('id', patient.id)
+        .eq('fisioterapeuta_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success('Paciente apagado com sucesso!');
+      navigate('/patients');
+    } catch (err: any) {
+      console.error('Erro ao apagar paciente:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao apagar paciente. Verifique se existem registros vinculados.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const fetchPatientData = async () => {
     try {
       // Fetch Patient
@@ -135,6 +297,7 @@ export default function PatientDetails() {
         .single();
       if (pError) throw pError;
       setPatient(patientData);
+      await checkPatientAccessStatus(patientData);
 
       // Fetch Evoluções
       const { data: evData } = await supabase
@@ -230,69 +393,6 @@ export default function PatientDetails() {
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const ignoreMissingRelationError = (error: any) => {
-    const message = String(error?.message || error?.details || error?.hint || '').toLowerCase();
-    return (
-      message.includes('does not exist') ||
-      message.includes('could not find') ||
-      message.includes('schema cache') ||
-      message.includes('relation') ||
-      message.includes('column')
-    );
-  };
-
-  const deletePatientLinkedRows = async (patientId: string) => {
-    const linkedTables = [
-      'exercicios_paciente',
-      'evolucoes',
-      'arquivos_paciente',
-      'triagens',
-      'prontuarios',
-      'avaliacoes',
-      'diario_dor',
-      'documentos_gerados'
-    ];
-
-    for (const table of linkedTables) {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('paciente_id', patientId);
-
-      if (error && !ignoreMissingRelationError(error)) {
-        throw error;
-      }
-    }
-  };
-
-  const handleDeletePatient = async () => {
-    if (!user || !patient?.id) return;
-
-    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação não pode ser desfeita.`);
-    if (!confirmed) return;
-
-    setSubmitting(true);
-    try {
-      await deletePatientLinkedRows(patient.id);
-
-      const { error: deleteError } = await supabase
-        .from('pacientes')
-        .delete()
-        .eq('id', patient.id)
-        .eq('fisioterapeuta_id', user.id);
-
-      if (deleteError) throw deleteError;
-
-      toast.success('Paciente apagado com sucesso!');
-      navigate('/patients');
-    } catch (err: any) {
-      console.error('Erro ao apagar paciente:', err);
-      toast.error(err?.message || 'Erro ao apagar paciente. Verifique se existem registros vinculados.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -859,12 +959,43 @@ export default function PatientDetails() {
         </div>
         <div className="flex gap-2">
           <ProGuard variant="inline">
-            <button 
-              onClick={() => toast.info("Funcionalidade de Convite enviada!", { description: `Um convite foi enviado para ${patient.email}` })}
-              className="px-6 py-2 bg-emerald-600/20 text-emerald-400 rounded-2xl hover:bg-emerald-600/30 transition-all border border-emerald-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2"
-            >
-              <Send size={18} /> Liberar Acesso
-            </button>
+            {patientAccessStatus === 'active' ? (
+              <button
+                type="button"
+                disabled
+                className="px-6 py-2 bg-emerald-600/20 text-emerald-300 rounded-2xl border border-emerald-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2 cursor-default"
+                title="Paciente já possui conta ativa no FisioCareHub"
+              >
+                <CheckCircle2 size={18} /> Acesso Ativo
+              </button>
+            ) : patientAccessStatus === 'checking' ? (
+              <button
+                type="button"
+                disabled
+                className="px-6 py-2 bg-white/5 text-slate-400 rounded-2xl border border-white/5 font-black text-xs uppercase tracking-widest flex items-center gap-2"
+              >
+                <Loader2 size={18} className="animate-spin" /> Verificando
+              </button>
+            ) : patientAccessStatus === 'no_email' ? (
+              <button
+                type="button"
+                disabled
+                className="px-6 py-2 bg-white/5 text-slate-400 rounded-2xl border border-white/5 font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                title="Cadastre um e-mail para enviar convite de acesso"
+              >
+                <AlertCircle size={18} /> Sem E-mail
+              </button>
+            ) : (
+              <button 
+                type="button"
+                onClick={handleInvitePatientAccess}
+                disabled={invitingPatientAccess}
+                className="px-6 py-2 bg-emerald-600/20 text-emerald-400 rounded-2xl hover:bg-emerald-600/30 transition-all border border-emerald-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2 disabled:opacity-60"
+              >
+                {invitingPatientAccess ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                Liberar Acesso
+              </button>
+            )}
           </ProGuard>
           <button
             type="button"
