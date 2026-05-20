@@ -683,7 +683,8 @@ export default function Documents() {
         doc.setFontSize(8.5);
         doc.setTextColor(...colors.navy);
         const lines = doc.splitTextToSize(value, w - 10);
-        doc.text(lines.slice(0, 1), x + 5, y + 12);
+        const firstLine = Array.isArray(lines) ? String(lines[0] || '') : String(lines || '');
+        doc.text(firstLine, x + 5, y + 12, { maxWidth: w - 10 });
       };
 
       const drawSoapSection = (
@@ -744,28 +745,26 @@ export default function Documents() {
 
       doc.setFillColor(...colors.white);
       doc.setDrawColor(...colors.border);
-      doc.roundedRect(margin, y, contentWidth, 46, 6, 6, 'FD');
+      doc.roundedRect(margin, y, contentWidth, 64, 6, 6, 'FD');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(...colors.blue);
       doc.text('INFORMAÇÕES DO ATENDIMENTO', margin + 7, y + 10);
 
-      drawInfoPill('Paciente', safeText(patient?.nome_completo, 'Paciente não identificado'), margin + 7, y + 16, 78);
-      drawInfoPill('Data do registro', formatDateTime(record.created_at), margin + 91, y + 16, 74);
-      drawInfoPill('CREFITO', safeText(profile?.crefito, 'Não informado'), margin + 170, y + 16, contentWidth - 177);
+      // Grade 2x2 para evitar corte lateral em A4/mobile.
+      // Antes o CREFITO ficava na terceira coluna e podia sair da página.
+      const infoGap = 8;
+      const infoColWidth = (contentWidth - 14 - infoGap) / 2;
+      const infoX1 = margin + 7;
+      const infoX2 = infoX1 + infoColWidth + infoGap;
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
-      doc.text('PROFISSIONAL RESPONSÁVEL', margin + 7, y + 40);
+      drawInfoPill('Paciente', safeText(patient?.nome_completo, 'Paciente não identificado'), infoX1, y + 16, infoColWidth);
+      drawInfoPill('Data do registro', formatDateTime(record.created_at), infoX2, y + 16, infoColWidth);
+      drawInfoPill('Profissional responsável', safeText(profile?.nome_completo, 'Fisioterapeuta'), infoX1, y + 38, infoColWidth);
+      drawInfoPill('CREFITO', safeText(profile?.crefito, 'Não informado'), infoX2, y + 38, infoColWidth);
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...colors.navy);
-      doc.text(safeText(profile?.nome_completo, 'Fisioterapeuta'), margin + 55, y + 40);
-
-      y += 58;
+      y += 76;
 
       y = drawSoapSection('S', 'Subjetivo', record.subjective, y, colors.blue);
       y = drawSoapSection('O', 'Objetivo', record.objective, y, colors.sky);
