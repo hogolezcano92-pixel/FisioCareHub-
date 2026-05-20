@@ -284,7 +284,29 @@ export default function Profile() {
     if (!user) return;
     setLoadingEarnings(true);
     try {
-      // Fetch completed appointments for balance
+      // Taxa da plataforma: FisioCareHub retém 12% e o fisioterapeuta recebe 88%.
+      // Mantém fallback em 12 caso a tabela system_settings não exista ou não tenha esse registro.
+      let commissionRate = 12;
+      try {
+        const { data: settings } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'commission_rate')
+          .maybeSingle();
+
+        const parsedRate = Number(settings?.value);
+        if (!Number.isNaN(parsedRate) && parsedRate >= 0 && parsedRate <= 100) {
+          commissionRate = parsedRate;
+        }
+      } catch (settingsError) {
+        console.warn('Não foi possível carregar commission_rate. Usando 12%.', settingsError);
+      }
+
+      const netFactor = (100 - commissionRate) / 100;
+      const getGrossAmount = (appointment: any) => Number(appointment?.valor_cobrado ?? appointment?.valor ?? 0) || 0;
+      const getNetAmount = (appointment: any) => getGrossAmount(appointment) * netFactor;
+
+      // Atendimentos concluídos entram como saldo líquido do fisioterapeuta.
       const { data: completed } = await supabase
         .from('agendamentos')
         .select('*')
@@ -292,7 +314,7 @@ export default function Profile() {
         .eq('status', 'concluido')
         .order('data', { ascending: false });
 
-      // Fetch paid withdrawals to calculate actual available balance
+      // Saques já pagos saem do saldo disponível.
       const { data: withdrawals } = await supabase
         .from('solicitacoes_saque')
         .select('valor')
@@ -301,35 +323,36 @@ export default function Profile() {
 
       const totalPaidWithdrawals = withdrawals?.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0) || 0;
 
-      // Fetch pending/confirmed for pending balance
+      // A receber também precisa ser líquido, não bruto.
       const { data: pending } = await supabase
         .from('agendamentos')
         .select('valor, valor_cobrado')
         .eq('fisio_id', user.id)
         .in('status', ['pendente', 'confirmado']);
 
-      const grossBalance = completed?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
-      const netBalance = grossBalance - totalPaidWithdrawals;
-      const totalPending = pending?.reduce((acc, curr) => acc + (Number(curr.valor_cobrado || curr.valor) || 0), 0) || 0;
+      const netCompleted = completed?.reduce((acc, curr) => acc + getNetAmount(curr), 0) || 0;
+      const availableBalance = netCompleted - totalPaidWithdrawals;
+      const netPending = pending?.reduce((acc, curr) => acc + getNetAmount(curr), 0) || 0;
 
       setEarningsStats({
-        balance: Math.max(0, netBalance),
-        pending: totalPending
+        balance: Math.max(0, availableBalance),
+        pending: Math.max(0, netPending)
       });
 
       if (completed) {
-        // Fetch patient names for the list
-        const patientIds = Array.from(new Set(completed.map(a => a.paciente_id)));
-        const { data: patients } = await supabase
-          .from('perfis')
-          .select('id, nome_completo, avatar_url')
-          .in('id', patientIds);
+        const patientIds = Array.from(new Set(completed.map(a => a.paciente_id))).filter(Boolean);
+        const { data: patients } = patientIds.length > 0
+          ? await supabase
+              .from('perfis')
+              .select('id, nome_completo, avatar_url')
+              .in('id', patientIds)
+          : { data: [] as any[] };
 
         const list = completed.map(a => ({
           patient: patients?.find(p => p.id === a.paciente_id)?.nome_completo || 'Paciente',
           avatar: patients?.find(p => p.id === a.paciente_id)?.avatar_url,
           date: new Date(a.data).toLocaleDateString('pt-BR'),
-          val: Number(a.valor_cobrado || a.valor) || 0
+          val: getNetAmount(a)
         }));
         setEarningsList(list);
       }
