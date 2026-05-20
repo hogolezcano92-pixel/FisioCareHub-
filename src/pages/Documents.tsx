@@ -1221,7 +1221,7 @@ export default function Documents() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-white/10 mt-20"
             >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="px-4 py-3 sm:p-5 border-b border-white/5 flex items-center justify-between gap-3 bg-white/5 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
                     {selectedTemplate ? <selectedTemplate.icon size={20} /> : <FileText size={20} />}
@@ -1349,7 +1349,7 @@ export default function Documents() {
       {/* View Modal */}
       <AnimatePresence>
         {viewingDoc && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4">
+          <div className="fixed left-0 right-0 bottom-0 top-[132px] sm:inset-0 z-[9999] flex items-stretch sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1361,7 +1361,7 @@ export default function Documents() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative z-[10000] bg-slate-900 w-full h-[100dvh] sm:h-auto sm:max-w-4xl sm:max-h-[92vh] rounded-none sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
+              className="relative z-[10000] bg-slate-900 w-full h-full sm:h-auto sm:max-w-4xl sm:max-h-[92vh] rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1509,7 +1509,7 @@ export default function Documents() {
                         )}
                       </div>
                     ) : (
-                      <div className="h-[calc(100dvh-190px)] sm:h-[60vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
+                      <div className="h-[calc(100dvh-190px)] sm:h-[calc(100%-92px)] sm:h-[60vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
                         <FileText className="text-blue-400 mb-4" size={42} />
                         <p className="text-white font-black">Não foi possível carregar a prévia.</p>
                         <button
