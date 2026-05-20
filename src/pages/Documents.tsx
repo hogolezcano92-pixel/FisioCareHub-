@@ -1380,7 +1380,6 @@ export default function Documents() {
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
 {!viewingDoc.isClinicalFile && (
-{!viewingDoc.isClinicalFile && (
                   <button 
                     onClick={() => {
                       const printContent = document.getElementById('view-content');
