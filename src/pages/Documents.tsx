@@ -1349,7 +1349,7 @@ export default function Documents() {
       {/* View Modal */}
       <AnimatePresence>
         {viewingDoc && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1361,7 +1361,7 @@ export default function Documents() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-slate-900 w-full h-[100dvh] sm:h-auto sm:max-w-4xl sm:max-h-[92vh] rounded-none sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
+              className="relative z-[10000] bg-slate-900 w-full h-[100dvh] sm:h-auto sm:max-w-4xl sm:max-h-[92vh] rounded-none sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
