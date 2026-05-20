@@ -223,79 +223,50 @@ export default function Patients() {
     }
   };
 
-  const isIgnorableDeleteError = (error: any) => {
+  const ignoreMissingRelationError = (error: any) => {
     const message = String(error?.message || error?.details || error?.hint || '').toLowerCase();
     return (
       message.includes('does not exist') ||
       message.includes('could not find') ||
       message.includes('schema cache') ||
-      message.includes('column') ||
-      message.includes('relation')
+      message.includes('relation') ||
+      message.includes('column')
     );
   };
 
-  const safeDeleteMany = async (table: string, column: string, ids: string[]) => {
-    if (ids.length === 0) return;
+  const deletePatientLinkedRows = async (patientId: string) => {
+    const linkedTables = [
+      'exercicios_paciente',
+      'evolucoes',
+      'arquivos_paciente',
+      'triagens',
+      'prontuarios',
+      'avaliacoes',
+      'diario_dor',
+      'documentos_gerados'
+    ];
 
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .in(column, ids);
+    for (const table of linkedTables) {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('paciente_id', patientId);
 
-    if (error && !isIgnorableDeleteError(error)) {
-      console.warn(`[Patients] Falha ao limpar ${table}.${column}:`, error);
+      if (error && !ignoreMissingRelationError(error)) {
+        throw error;
+      }
     }
-  };
-
-  const cleanupPatientRelations = async (patient: any) => {
-    const patientIds = Array.from(
-      new Set(
-        [
-          patient?.id,
-          patient?.perfil_id,
-          patient?.paciente_id,
-          patient?.user_id,
-        ]
-          .filter(Boolean)
-          .map(String)
-      )
-    );
-
-    if (patientIds.length === 0) return;
-
-    // Dados clínicos ligados ao paciente da área "Meus Pacientes".
-    await safeDeleteMany('exercicios_paciente', 'paciente_id', patientIds);
-    await safeDeleteMany('patient_exercises', 'paciente_id', patientIds);
-    await safeDeleteMany('evolucoes', 'paciente_id', patientIds);
-    await safeDeleteMany('arquivos_paciente', 'paciente_id', patientIds);
-    await safeDeleteMany('fichas_avaliacao', 'paciente_id', patientIds);
-    await safeDeleteMany('registros_paciente', 'paciente_id', patientIds);
-    await safeDeleteMany('diario_dor', 'paciente_id', patientIds);
-    await safeDeleteMany('avaliacoes', 'paciente_id', patientIds);
-    await safeDeleteMany('prontuarios', 'paciente_id', patientIds);
-    await safeDeleteMany('soap_notes', 'paciente_id', patientIds);
-    await safeDeleteMany('documentos_gerados', 'paciente_id', patientIds);
-
-    // Dados de agenda/pagamento que podem usar id do perfil do paciente.
-    await safeDeleteMany('agendamentos', 'paciente_id', patientIds);
-    await safeDeleteMany('sessoes', 'paciente_id', patientIds);
-    await safeDeleteMany('pagamentos', 'paciente_id', patientIds);
-    await safeDeleteMany('notificacoes', 'user_id', patientIds);
   };
 
   const handleDeletePatient = async (patient: any) => {
     if (!user || !patient?.id) return;
 
-    const confirmed = window.confirm(
-      `Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação remove o paciente da sua lista e apaga os registros clínicos vinculados a ele.`
-    );
+    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação não pode ser desfeita.`);
     if (!confirmed) return;
 
     setSubmitting(true);
-    setMenuPatientId(null);
-
     try {
-      await cleanupPatientRelations(patient);
+      await deletePatientLinkedRows(patient.id);
 
       const { error: deleteError } = await supabase
         .from('pacientes')
@@ -307,6 +278,7 @@ export default function Patients() {
 
       setPatients((current) => current.filter((item) => item.id !== patient.id));
       toast.success('Paciente apagado com sucesso!');
+      setMenuPatientId(null);
       fetchPatients();
     } catch (err: any) {
       console.error('Erro ao apagar paciente:', err);
