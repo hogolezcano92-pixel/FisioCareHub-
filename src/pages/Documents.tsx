@@ -1443,7 +1443,6 @@ export default function Documents() {
                     <Printer size={18} />
                   </button>
                   )}
-                  )}
                   <button 
                     onClick={() => handleDownloadDocument(viewingDoc)}
                     className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
