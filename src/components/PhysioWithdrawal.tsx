@@ -25,7 +25,36 @@ interface WithdrawalRequest {
   valor: number;
   status: 'pendente' | 'pago' | 'recusado';
   created_at: string;
+  updated_at?: string | null;
+  pago_em?: string | null;
 }
+
+const formatDateTimeBR = (date?: string | null) => {
+  if (!date) return '—';
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '—';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(parsedDate);
+};
+
+const getWithdrawalDisplayDate = (request: WithdrawalRequest) => {
+  if (request.status === 'pago') {
+    return request.pago_em || request.updated_at || request.created_at;
+  }
+
+  return request.created_at;
+};
 
 export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }: PhysioWithdrawalProps) {
   const [loading, setLoading] = useState(true);
@@ -41,14 +70,14 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
   const checkCpfAndFetchHistory = async () => {
     try {
       setLoading(true);
-      
+
       // Check for CPF
       const { data: profile } = await supabase
         .from('perfis')
         .select('cpf_cnpj')
         .eq('id', userId)
         .single();
-      
+
       setHasCpf(!!profile?.cpf_cnpj);
 
       await fetchWithdrawalHistory();
@@ -132,7 +161,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
 
       toast.success('Solicitação de saque enviada com sucesso!');
       toast.info('O pagamento será realizado manualmente após análise');
-      
+
       await fetchWithdrawalHistory();
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -171,7 +200,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Saldo para Retirada</p>
             <p className="text-xl font-black text-white">R$ {availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           </div>
-          
+
           <button
             onClick={handleRequestWithdrawal}
             disabled={submitting || availableBalance <= 0 || !!pendingRequest}
@@ -252,7 +281,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
                   <div>
                     <p className="text-sm font-black text-white">R$ {request.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                      {new Date(request.created_at).toLocaleDateString('pt-BR')} às {new Date(request.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTimeBR(getWithdrawalDisplayDate(request))}
                     </p>
                   </div>
                 </div>
