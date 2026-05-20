@@ -569,10 +569,30 @@ export default function Agenda() {
       const app = appointments.find(a => a.id === id);
       if (!app) return;
 
-      const { error } = await supabase
+      const updatePayload: any = { status };
+
+      if (status === 'concluido') {
+        updatePayload.concluido_em = new Date().toISOString();
+      }
+
+      let { error } = await supabase
         .from('agendamentos')
-        .update({ status })
+        .update(updatePayload)
         .eq('id', id);
+
+      // Se a coluna concluido_em ainda não existir, conclui apenas mudando o status.
+      if (
+        error &&
+        status === 'concluido' &&
+        String(error.message || '').toLowerCase().includes('concluido_em')
+      ) {
+        const fallback = await supabase
+          .from('agendamentos')
+          .update({ status })
+          .eq('id', id);
+
+        error = fallback.error;
+      }
 
       if (error) throw error;
 
@@ -607,42 +627,59 @@ export default function Agenda() {
 
         if (patientEmail && profile) {
           const { sendAppointmentStatusEmail } = await import('../services/emailService');
-          
-              if (status === 'confirmado') {
-                sendAppointmentStatusEmail(
-                  patientEmail,
-                  patientName || 'Paciente',
-                  profile.nome_completo,
-                  'confirmado',
-                  {
-                    date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
-                    time: app.hora || formatHourBR(app.data_servico),
-                    service: app.tipo || app.servico || 'Consulta'
-                  }
-                );
-              } else if (status === 'cancelado') {
-                sendAppointmentStatusEmail(
-                  patientEmail,
-                  patientName || 'Paciente',
-                  profile.nome_completo,
-                  'cancelado',
-                  {
-                    date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
-                    time: app.hora || formatHourBR(app.data_servico),
-                    service: app.tipo || app.servico || 'Consulta'
-                  }
-                );
+
+          if (status === 'confirmado') {
+            sendAppointmentStatusEmail(
+              patientEmail,
+              patientName || 'Paciente',
+              profile.nome_completo,
+              'confirmado',
+              {
+                date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
+                time: app.hora || formatHourBR(app.data_servico),
+                service: app.tipo || app.servico || 'Consulta'
               }
+            );
+          } else if (status === 'cancelado') {
+            sendAppointmentStatusEmail(
+              patientEmail,
+              patientName || 'Paciente',
+              profile.nome_completo,
+              'cancelado',
+              {
+                date: app.data ? formatOnlyDateBR(app.data) : formatDateBR(app.data_servico),
+                time: app.hora || formatHourBR(app.data_servico),
+                service: app.tipo || app.servico || 'Consulta'
+              }
+            );
+          }
         }
       }
 
-      toast.success(`Status atualizado para ${status}`);
+      toast.success(
+        status === 'concluido'
+          ? 'Atendimento concluído. O valor líquido foi liberado em Saldo Disponível.'
+          : `Status atualizado para ${status}`
+      );
+
       setShowDetailsModal(false);
       fetchAppointments();
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
       toast.error('Erro ao atualizar status');
     }
+  };
+
+  const handleCompleteAppointment = async (appointment: any) => {
+    if (!appointment?.id) return;
+
+    const confirmed = window.confirm(
+      'Deseja concluir este atendimento? Após concluir, o valor líquido será liberado em Saldo Disponível para saque.'
+    );
+
+    if (!confirmed) return;
+
+    await updateStatus(appointment.id, 'concluido');
   };
 
   const changeDate = (days: number) => {
@@ -964,7 +1001,8 @@ export default function Agenda() {
                 <div className="flex items-center justify-between md:justify-end gap-3">
                   <span className={cn(
                     "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
-                    app.status === 'confirmado' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                    app.status === 'concluido' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20" :
+                    app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
                     app.status === 'agendado' || app.status === 'pendente' || app.status === 'pago' ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
                     "bg-red-500/10 text-red-400 border border-red-500/20"
                   )}>
@@ -995,6 +1033,18 @@ export default function Agenda() {
                           <XCircle size={16} />
                         </button>
                       </>
+                    )}
+                    {app.status === 'confirmado' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompleteAppointment(app);
+                        }}
+                        className="p-1.5 bg-emerald-500/10 text-emerald-300 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                        title="Concluir atendimento"
+                      >
+                        <Check size={16} />
+                      </button>
                     )}
                     <button 
                       onClick={(e) => {
@@ -1096,7 +1146,16 @@ export default function Agenda() {
                         Confirmar
                       </button>
                     )}
-                    {selectedAppointment.status !== 'cancelado' && (
+                    {selectedAppointment.status === 'confirmado' && (
+                      <button
+                        onClick={() => handleCompleteAppointment(selectedAppointment)}
+                        className="flex-1 h-11 bg-emerald-600/20 text-emerald-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600/30 transition-all flex items-center justify-center gap-2 border border-emerald-500/20"
+                      >
+                        <Check size={16} />
+                        Concluir
+                      </button>
+                    )}
+                    {selectedAppointment.status !== 'cancelado' && selectedAppointment.status !== 'concluido' && (
                       <button
                         onClick={() => updateStatus(selectedAppointment.id, 'cancelado')}
                         className="flex-1 h-11 bg-white/5 text-red-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-2 border border-white/10"
