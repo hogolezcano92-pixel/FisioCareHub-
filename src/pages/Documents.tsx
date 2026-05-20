@@ -1120,7 +1120,7 @@ export default function Documents() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-slate-900 w-full max-w-2xl max-h-[80vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
             >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="px-4 py-3 sm:p-5 border-b border-white/5 flex items-center justify-between gap-3 bg-white/5 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-lg">
                     <FileSearch size={24} />
@@ -1131,7 +1131,7 @@ export default function Documents() {
                   </div>
                 </div>
                 <button onClick={() => setIsEvolutionModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400">
-                  <X size={24} />
+                  <X size={22} />
                 </button>
               </div>
 
@@ -1361,24 +1361,25 @@ export default function Documents() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-slate-900 w-full max-w-3xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-white/10 mt-20"
+              className="relative bg-slate-900 w-full h-[100dvh] sm:h-auto sm:max-w-4xl sm:max-h-[92vh] rounded-none sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-white/10"
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shrink-0">
                     <FileText size={20} />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-black text-white tracking-tight">{getDocumentTitle(viewingDoc)}</h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-xl font-black text-white tracking-tight leading-tight line-clamp-2 break-words">{getDocumentTitle(viewingDoc)}</h2>
+                    <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest line-clamp-1">
                       {viewingDoc.patient_name ? `Paciente: ${viewingDoc.patient_name}` : 'Documento clínico'}
                     </p>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                    <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest line-clamp-1">
                       {viewingDoc.physio_name ? `Fisioterapeuta: ${viewingDoc.physio_name}` : ''}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+{!viewingDoc.isClinicalFile && (
 {!viewingDoc.isClinicalFile && (
                   <button 
                     onClick={() => {
@@ -1440,15 +1441,16 @@ export default function Documents() {
                     className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
                     title="Imprimir"
                   >
-                    <Printer size={20} />
+                    <Printer size={18} />
                   </button>
+                  )}
                   )}
                   <button 
                     onClick={() => handleDownloadDocument(viewingDoc)}
                     className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
                     title={viewingDoc.isClinicalFile ? 'Baixar arquivo original' : 'Baixar PDF'}
                   >
-                    <Download size={20} />
+                    <Download size={18} />
                   </button>
                   {!viewingDoc.isClinicalFile && (
                     <button 
@@ -1468,42 +1470,48 @@ export default function Documents() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950">
+              <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-slate-950">
                 {viewingDoc.isClinicalFile ? (
                   <div className="max-w-5xl mx-auto">
-                    <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-white font-black text-lg">{getDocumentTitle(viewingDoc)}</p>
-                      <p className="text-slate-400 text-sm mt-1">
+                    <div className="mb-3 rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
+                      <p className="text-white font-black text-base sm:text-lg leading-tight break-words">{getDocumentTitle(viewingDoc)}</p>
+                      <p className="text-slate-400 text-xs sm:text-sm mt-1">
                         {viewingDoc.physio_name ? `Fisioterapeuta: ${viewingDoc.physio_name}` : 'Fisioterapeuta'}
                       </p>
-                      <p className="text-slate-500 text-xs font-bold mt-1">
+                      <p className="text-slate-500 text-[11px] sm:text-xs font-bold mt-1">
                         {new Date(viewingDoc.criado_em || viewingDoc.created_at).toLocaleString('pt-BR')}
                       </p>
                     </div>
 
                     {loadingPreviewFile ? (
-                      <div className="h-[70vh] flex items-center justify-center rounded-2xl border border-white/10 bg-slate-900">
+                      <div className="h-[calc(100dvh-190px)] sm:h-[72vh] flex items-center justify-center rounded-2xl border border-white/10 bg-slate-900">
                         <Loader2 className="animate-spin text-blue-400" size={36} />
                       </div>
                     ) : viewingFileUrl ? (
-                      <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden">
+                      <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden h-[calc(100dvh-190px)] sm:h-[72vh]">
                         {String(getDocumentTitle(viewingDoc)).toLowerCase().match(/\.(png|jpg|jpeg|webp|gif|heic|heif)$/) ||
                         String(viewingDoc.mime_type || '').startsWith('image/') ? (
                           <img
                             src={viewingFileUrl}
                             alt={getDocumentTitle(viewingDoc)}
-                            className="w-full max-h-[75vh] object-contain bg-black"
+                            className="w-full h-full object-contain bg-black"
                           />
                         ) : (
-                          <iframe
-                            src={viewingFileUrl}
-                            title={getDocumentTitle(viewingDoc)}
-                            className="w-full h-[75vh] bg-white"
-                          />
+                          <object
+                            data={`${viewingFileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                            type="application/pdf"
+                            className="w-full h-full bg-white"
+                          >
+                            <iframe
+                              src={`${viewingFileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                              title={getDocumentTitle(viewingDoc)}
+                              className="w-full h-full bg-white"
+                            />
+                          </object>
                         )}
                       </div>
                     ) : (
-                      <div className="h-[60vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
+                      <div className="h-[calc(100dvh-190px)] sm:h-[60vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
                         <FileText className="text-blue-400 mb-4" size={42} />
                         <p className="text-white font-black">Não foi possível carregar a prévia.</p>
                         <button
@@ -1518,7 +1526,7 @@ export default function Documents() {
                 ) : (
                   <div 
                     id="view-content" 
-                    className="bg-white p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate max-w-[800px] mx-auto min-h-[1100px]"
+                    className="bg-white p-5 sm:p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate w-full max-w-[800px] mx-auto min-h-[80vh] sm:min-h-[1100px] overflow-hidden"
                     style={{ color: '#000000', backgroundColor: '#ffffff' }}
                   >
                     <style>{`
