@@ -53,6 +53,8 @@ export default function Documents() {
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [viewingDoc, setViewingDoc] = useState<any>(null);
+  const [viewingFileUrl, setViewingFileUrl] = useState<string | null>(null);
+  const [loadingPreviewFile, setLoadingPreviewFile] = useState(false);
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
   const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -146,21 +148,62 @@ export default function Documents() {
             if (fileError) {
               console.error('Erro ao buscar arquivos clínicos do paciente:', fileError);
             } else {
-              clinicalFiles = (fileData || []).map((file: any) => ({
-                id: `arquivo-${file.id}`,
-                type: file.tipo || 'Arquivo do prontuário',
-                patient_name: profile?.nome_completo || 'Paciente',
-                physio_name: 'Fisioterapeuta',
-                content: file.nome_arquivo ? `Arquivo anexado pelo fisioterapeuta: ${file.nome_arquivo}` : 'Arquivo anexado pelo fisioterapeuta.',
-                criado_em: file.created_at,
-                arquivo_url: file.arquivo_url,
-                file_path: file.file_path,
-                isClinicalFile: true,
-              }));
+              const patientById = new Map(linkedPatients.map((patient: any) => [String(patient.id), patient]));
+              const physioIds = Array.from(
+                new Set(
+                  linkedPatients
+                    .map((patient: any) => patient.fisioterapeuta_id)
+                    .filter(Boolean)
+                    .map(String)
+                )
+              );
+
+              let physioById = new Map<string, any>();
+              if (physioIds.length > 0) {
+                const { data: physioProfiles, error: physioError } = await supabase
+                  .from('perfis')
+                  .select('id, nome_completo, email')
+                  .in('id', physioIds);
+
+                if (physioError) {
+                  console.error('Erro ao buscar fisioterapeutas dos documentos:', physioError);
+                } else {
+                  physioById = new Map((physioProfiles || []).map((physio: any) => [String(physio.id), physio]));
+                }
+              }
+
+              clinicalFiles = (fileData || []).map((file: any) => {
+                const linkedPatient = patientById.get(String(file.paciente_id));
+                const physioId = linkedPatient?.fisioterapeuta_id || file.fisioterapeuta_id || file.physio_id || file.fisio_id;
+                const physio = physioId ? physioById.get(String(physioId)) : null;
+                const fileName =
+                  file.nome_arquivo ||
+                  file.nome ||
+                  file.titulo ||
+                  file.name ||
+                  file.file_name ||
+                  file.filename ||
+                  'Documento clínico';
+
+                return {
+                  id: `arquivo-${file.id}`,
+                  type: fileName,
+                  document_name: fileName,
+                  document_category: file.tipo || file.categoria || 'Arquivo do prontuário',
+                  patient_name: linkedPatient?.nome_completo || profile?.nome_completo || 'Paciente',
+                  physio_name: physio?.nome_completo || file.nome_fisioterapeuta || 'Fisioterapeuta',
+                  content: file.observacoes || file.descricao || '',
+                  criado_em: file.created_at || file.criado_em,
+                  arquivo_url: file.arquivo_url,
+                  file_path: file.file_path,
+                  mime_type: file.mime_type || file.tipo_arquivo || '',
+                  isClinicalFile: true,
+                };
+              });
             }
           }
 
-          setDocuments([...generatedDocs, ...clinicalFiles].sort((a, b) => new Date(b.criado_em || 0).getTime() - new Date(a.criado_em || 0).getTime()));
+          setDocuments([...generatedDocs, ...clinicalFiles].sort((a, b) => new Date(b.criado_em || b.created_at || 0).getTime() - new Date(a.criado_em || a.created_at || 0).getTime()));
         }
       } catch (err) {
         console.error("Erro ao buscar documentos:", err);
@@ -439,6 +482,61 @@ export default function Documents() {
     }
   };
 
+  const getDocumentTitle = (doc: any) =>
+    doc?.document_name ||
+    doc?.nome_arquivo ||
+    doc?.titulo ||
+    doc?.type ||
+    'Documento';
+
+  const getClinicalFileUrl = async (doc: any) => {
+    const pathOrUrl = doc?.file_path || doc?.arquivo_url;
+    if (!pathOrUrl) throw new Error('Arquivo sem caminho para visualização.');
+
+    const isUrl = /^https?:\/\//i.test(String(pathOrUrl));
+    return isUrl ? String(pathOrUrl) : await getPrivateDocumentUrl(String(pathOrUrl));
+  };
+
+  const handleViewDocument = async (doc: any) => {
+    setViewingDoc(doc);
+    setViewingFileUrl(null);
+
+    if (!doc?.isClinicalFile) return;
+
+    setLoadingPreviewFile(true);
+    try {
+      const url = await getClinicalFileUrl(doc);
+      setViewingFileUrl(url);
+    } catch (err: any) {
+      console.error('Erro ao preparar visualização do arquivo clínico:', err);
+      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao preparar visualização do documento.'));
+    } finally {
+      setLoadingPreviewFile(false);
+    }
+  };
+
+  const handleDownloadDocument = async (doc: any) => {
+    if (!doc?.isClinicalFile) {
+      handleExportFromTable(doc);
+      return;
+    }
+
+    try {
+      const url = await getClinicalFileUrl(doc);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.download = getDocumentTitle(doc);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      console.error('Erro ao baixar arquivo clínico:', err);
+      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao baixar documento.'));
+    }
+  };
+
   const handleExportFromTable = async (doc: any) => {
     const tempDiv = document.createElement('div');
     const docId = `export-temp-${doc.id}`;
@@ -470,7 +568,7 @@ export default function Documents() {
 
     // Give more time for heavy JS based components to render
     setTimeout(async () => {
-      await exportToPDF(docId, `${doc.type}-${doc.patient_name}`);
+      await exportToPDF(docId, `${getDocumentTitle(doc)}-${doc.patient_name}`);
       // Only remove after a short delay to ensure process finished
       setTimeout(() => {
         document.body.removeChild(tempDiv);
@@ -807,7 +905,7 @@ export default function Documents() {
 
                     <div className="min-w-0 flex-1">
                       <p className="text-white font-black leading-tight truncate">
-                        {doc.type || 'Documento'}
+                        {getDocumentTitle(doc)}
                       </p>
                       <p className="text-slate-400 text-sm font-bold mt-1 truncate">
                         {isPhysio ? (doc.patient_name || 'Paciente') : (doc.physio_name || 'Fisioterapeuta')}
@@ -820,7 +918,7 @@ export default function Documents() {
 
                   <div className="grid grid-cols-3 gap-2">
                     <button 
-                      onClick={() => setViewingDoc(doc)}
+                      onClick={() => handleViewDocument(doc)}
                       className="h-12 text-white bg-white/5 hover:bg-blue-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
                       title="Visualizar"
                       aria-label="Visualizar documento"
@@ -828,13 +926,7 @@ export default function Documents() {
                       <Eye size={19} />
                     </button>
                     <button 
-                      onClick={() => {
-                        if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
-                          openClinicalFile(doc);
-                          return;
-                        }
-                        handleExportFromTable(doc);
-                      }}
+                      onClick={() => handleDownloadDocument(doc)}
                       className="h-12 text-white bg-white/5 hover:bg-emerald-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
                       title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                       aria-label={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
@@ -911,7 +1003,7 @@ export default function Documents() {
                         <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
                           <FileText size={16} />
                         </div>
-                        <span className="font-bold text-white">{doc.type || 'Documento'}</span>
+                        <span className="font-bold text-white">{getDocumentTitle(doc)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-400 font-medium">
@@ -923,7 +1015,7 @@ export default function Documents() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button 
-                          onClick={() => setViewingDoc(doc)}
+                          onClick={() => handleViewDocument(doc)}
                           className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
                           title="Visualizar"
                         >
@@ -1262,7 +1354,7 @@ export default function Documents() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setViewingDoc(null)}
+              onClick={() => { setViewingDoc(null); setViewingFileUrl(null); setLoadingPreviewFile(false); }}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
             />
             <motion.div
@@ -1277,11 +1369,17 @@ export default function Documents() {
                     <FileText size={20} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-white tracking-tight">{viewingDoc.type}</h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Paciente: {viewingDoc.patient_name}</p>
+                    <h2 className="text-xl font-black text-white tracking-tight">{getDocumentTitle(viewingDoc)}</h2>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                      {viewingDoc.patient_name ? `Paciente: ${viewingDoc.patient_name}` : 'Documento clínico'}
+                    </p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                      {viewingDoc.physio_name ? `Fisioterapeuta: ${viewingDoc.physio_name}` : ''}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+{!viewingDoc.isClinicalFile && (
                   <button 
                     onClick={() => {
                       const printContent = document.getElementById('view-content');
@@ -1344,22 +1442,25 @@ export default function Documents() {
                   >
                     <Printer size={20} />
                   </button>
+                  )}
                   <button 
-                    onClick={() => exportToPDF('view-content', `${viewingDoc.type}-${viewingDoc.patient_name}`)}
+                    onClick={() => handleDownloadDocument(viewingDoc)}
                     className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
-                    title="Baixar PDF"
+                    title={viewingDoc.isClinicalFile ? 'Baixar arquivo original' : 'Baixar PDF'}
                   >
                     <Download size={20} />
                   </button>
+                  {!viewingDoc.isClinicalFile && (
+                    <button 
+                      onClick={() => exportToWord(viewingDoc)}
+                      className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                      title="Baixar Word"
+                    >
+                      <FileText size={20} />
+                    </button>
+                  )}
                   <button 
-                    onClick={() => exportToWord(viewingDoc)}
-                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
-                    title="Baixar Word"
-                  >
-                    <FileText size={20} />
-                  </button>
-                  <button 
-                    onClick={() => setViewingDoc(null)}
+                    onClick={() => { setViewingDoc(null); setViewingFileUrl(null); setLoadingPreviewFile(false); }}
                     className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400"
                   >
                     <X size={24} />
@@ -1367,27 +1468,76 @@ export default function Documents() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12 bg-slate-950">
-                <div 
-                  id="view-content" 
-                  className="bg-white p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate max-w-[800px] mx-auto min-h-[1100px]"
-                  style={{ color: '#000000', backgroundColor: '#ffffff' }}
-                >
-                  <style>{`
-                    #view-content * { color: #000000 !important; }
-                    #view-content h1, #view-content h2, #view-content h3 { color: #000000 !important; font-weight: 800; }
-                    #view-content p, #view-content li, #view-content td, #view-content th { color: #1a202c !important; }
-                  `}</style>
-                  <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{viewingDoc.type}</h1>
-                  <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
-                  <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.criado_em).toLocaleString('pt-BR')}</p>
-                  <div style={{ color: '#000000' }}>
-                    <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950">
+                {viewingDoc.isClinicalFile ? (
+                  <div className="max-w-5xl mx-auto">
+                    <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <p className="text-white font-black text-lg">{getDocumentTitle(viewingDoc)}</p>
+                      <p className="text-slate-400 text-sm mt-1">
+                        {viewingDoc.physio_name ? `Fisioterapeuta: ${viewingDoc.physio_name}` : 'Fisioterapeuta'}
+                      </p>
+                      <p className="text-slate-500 text-xs font-bold mt-1">
+                        {new Date(viewingDoc.criado_em || viewingDoc.created_at).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+
+                    {loadingPreviewFile ? (
+                      <div className="h-[70vh] flex items-center justify-center rounded-2xl border border-white/10 bg-slate-900">
+                        <Loader2 className="animate-spin text-blue-400" size={36} />
+                      </div>
+                    ) : viewingFileUrl ? (
+                      <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden">
+                        {String(getDocumentTitle(viewingDoc)).toLowerCase().match(/\.(png|jpg|jpeg|webp|gif|heic|heif)$/) ||
+                        String(viewingDoc.mime_type || '').startsWith('image/') ? (
+                          <img
+                            src={viewingFileUrl}
+                            alt={getDocumentTitle(viewingDoc)}
+                            className="w-full max-h-[75vh] object-contain bg-black"
+                          />
+                        ) : (
+                          <iframe
+                            src={viewingFileUrl}
+                            title={getDocumentTitle(viewingDoc)}
+                            className="w-full h-[75vh] bg-white"
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="h-[60vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
+                        <FileText className="text-blue-400 mb-4" size={42} />
+                        <p className="text-white font-black">Não foi possível carregar a prévia.</p>
+                        <button
+                          onClick={() => handleDownloadDocument(viewingDoc)}
+                          className="mt-5 px-6 py-3 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest"
+                        >
+                          Abrir/Baixar documento
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-16 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>
-                    Documento gerado oficialmente via FisioCareHub
+                ) : (
+                  <div 
+                    id="view-content" 
+                    className="bg-white p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate max-w-[800px] mx-auto min-h-[1100px]"
+                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                  >
+                    <style>{`
+                      #view-content * { color: #000000 !important; }
+                      #view-content h1, #view-content h2, #view-content h3 { color: #000000 !important; font-weight: 800; }
+                      #view-content p, #view-content li, #view-content td, #view-content th { color: #1a202c !important; }
+                    `}</style>
+                    <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{getDocumentTitle(viewingDoc)}</h1>
+                    <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
+                    <p className="mb-0 font-bold" style={{ color: '#000000' }}>Fisioterapeuta: {viewingDoc.physio_name || 'Fisioterapeuta'}</p>
+                    <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.criado_em).toLocaleString('pt-BR')}</p>
+                    <div style={{ color: '#000000' }}>
+                      <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
+                    </div>
+                    <div className="mt-16 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>
+                      Documento gerado oficialmente via FisioCareHub
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </motion.div>
           </div>
