@@ -1,15 +1,16 @@
 /* FisioCareHub Service Worker
- * Corrige falhas de cache/PWA quando a internet cai ou quando um deploy novo
- * deixa o app com chunks antigos em cache.
+ * Versão segura para PWA/offline.
+ * Corrige:
+ * - erro "text/html is not a valid JavaScript MIME type";
+ * - cache antigo após deploy;
+ * - imagens de fundo do onboarding afetadas pelo cache.
  */
 
-const CACHE_NAME = 'fisiocarehub-runtime-v2026-05-20-2';
+const CACHE_NAME = 'fisiocarehub-runtime-v2026-05-20-3';
 
 const APP_SHELL = [
   '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/manifest.json'
+  '/index.html'
 ];
 
 const isOk = (response) => response && response.ok;
@@ -38,6 +39,10 @@ const isCss = (response) => {
 
 const isJson = (response) => {
   return getContentType(response).includes('application/json');
+};
+
+const isImage = (response) => {
+  return getContentType(response).startsWith('image/');
 };
 
 async function safeCachePut(request, response) {
@@ -109,7 +114,7 @@ function createOfflineHtmlResponse() {
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 32px;
         padding: 32px;
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(15, 23, 42, 0.88);
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
       }
 
@@ -226,14 +231,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
+  // Não intercepta API.
   if (url.pathname.startsWith('/api/')) {
     return;
   }
 
+  // Navegação principal do app.
   if (request.mode === 'navigate') {
     event.respondWith(
       networkFirst(request, (response) => isOk(response) && isHtml(response))
@@ -245,6 +248,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // JavaScript: nunca permitir HTML como JS.
   if (request.destination === 'script' || request.destination === 'worker') {
     event.respondWith(
       networkFirst(request, (response) => isOk(response) && isJavaScript(response))
@@ -253,6 +257,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CSS: rede primeiro, cache só se cair.
   if (request.destination === 'style') {
     event.respondWith(
       networkFirst(request, (response) => isOk(response) && isCss(response))
@@ -268,6 +273,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Imagens: rede primeiro para não afetar fundos do onboarding.
+  // Se a internet cair, usa cache. Se não tiver cache, deixa a requisição normal falhar.
+  if (request.destination === 'image') {
+    event.respondWith(
+      fetch(request)
+        .then(async (response) => {
+          if (isOk(response) && isImage(response)) {
+            await safeCachePut(request, response);
+          }
+
+          return response;
+        })
+        .catch(async () => {
+          const cachedImage = await caches.match(request);
+
+          if (cachedImage && isImage(cachedImage)) {
+            return cachedImage;
+          }
+
+          throw new Error('Imagem indisponível offline');
+        })
+    );
+    return;
+  }
+
+  // JSON/locales: rede primeiro.
   if (
     request.destination === '' &&
     (url.pathname.endsWith('.json') || url.pathname.includes('/locales/'))
@@ -286,8 +317,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Manifest/fontes: cache first é seguro.
   if (
-    request.destination === 'image' ||
     request.destination === 'font' ||
     request.destination === 'manifest'
   ) {
@@ -297,6 +328,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Outros arquivos do próprio app.
   event.respondWith(
     networkFirst(request, (response) => isOk(response))
       .catch(async () => {
