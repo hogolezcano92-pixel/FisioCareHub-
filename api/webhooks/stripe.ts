@@ -331,14 +331,47 @@ const upsertAppointmentPayment = async (session: Stripe.Checkout.Session) => {
 
   const clinicalPatientId = await ensureClinicalPatientForAppointment(appointment);
 
-  const { error: updateError } = await supabase
-    .from('agendamentos')
-    .update({
+  const paidAt = new Date().toISOString();
+
+  // Atualização principal do agendamento.
+  // O primeiro payload é o ideal. Os fallbacks evitam que o webhook pare caso
+  // alguma coluna opcional ainda não exista em algum ambiente.
+  const appointmentUpdateAttempts = [
+    {
       status: 'pendente',
       status_pagamento: 'pago',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', appointmentId);
+      updated_at: paidAt,
+    },
+    {
+      status: 'pendente',
+      status_pagamento: 'pago',
+    },
+    {
+      status: 'pendente',
+    },
+  ];
+
+  let updateError: any = null;
+
+  for (const payload of appointmentUpdateAttempts) {
+    const result = await supabase
+      .from('agendamentos')
+      .update(payload)
+      .eq('id', appointmentId);
+
+    updateError = result.error;
+
+    if (!updateError) {
+      updateError = null;
+      break;
+    }
+
+    console.warn('[Stripe Webhook] Tentativa de atualizar agendamento falhou. Tentando fallback...', {
+      appointmentId,
+      payload,
+      error: updateError,
+    });
+  }
 
   if (updateError) {
     console.error('[Stripe Webhook] Erro ao atualizar pagamento do agendamento:', updateError);
@@ -456,7 +489,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (err: any) {
     console.error('[Stripe Webhook] Internal Error:', err);
-    return res.status(200).json({ received: true, error: err.message || 'Internal error' });
+    // Retorna 500 para o Stripe tentar novamente quando o processamento interno falhar.
+    // Isso evita pagamento aprovado sem atualizar agendamento/notificações.
+    return res.status(500).json({ received: false, error: err.message || 'Internal error' });
   }
 
   return res.status(200).json({ received: true });
