@@ -776,17 +776,112 @@ export default function Documents() {
 
       {/* Recent Documents */}
       <section className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Library size={20} className="text-blue-400" />
+        <div className="p-5 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+            <Library size={20} className="text-blue-400 shrink-0" />
             BIBLIOTECA DE DOCUMENTOS
           </h2>
-          <button className="text-blue-400 text-sm font-black uppercase tracking-widest hover:text-blue-300 flex items-center gap-1 transition-colors">
+          <button className="text-blue-400 text-xs sm:text-sm font-black uppercase tracking-widest hover:text-blue-300 flex items-center gap-1 transition-colors">
             VER BIBLIOTECA COMPLETA <ChevronRight size={16} />
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+
+        {/* Mobile: cards, sem tabela horizontal */}
+        <div className="md:hidden">
+          {loading ? (
+            <div className="px-6 py-12 text-center">
+              <Loader2 className="animate-spin mx-auto text-blue-400" size={32} />
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="px-6 py-12 text-center text-slate-500 font-medium">
+              Nenhum documento encontrado.
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {documents.map((doc) => (
+                <div key={doc.id} className="p-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20 shrink-0">
+                      <FileText size={20} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-black leading-tight truncate">
+                        {doc.type || 'Documento'}
+                      </p>
+                      <p className="text-slate-400 text-sm font-bold mt-1 truncate">
+                        {isPhysio ? (doc.patient_name || 'Paciente') : (doc.physio_name || 'Fisioterapeuta')}
+                      </p>
+                      <p className="text-slate-500 text-xs font-black mt-2">
+                        {new Date(doc.criado_em || doc.created_at).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <button 
+                      onClick={() => setViewingDoc(doc)}
+                      className="h-12 text-white bg-white/5 hover:bg-blue-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                      title="Visualizar"
+                      aria-label="Visualizar documento"
+                    >
+                      <Eye size={19} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (doc.isClinicalFile && (doc.arquivo_url || doc.file_path)) {
+                          openClinicalFile(doc);
+                          return;
+                        }
+                        handleExportFromTable(doc);
+                      }}
+                      className="h-12 text-white bg-white/5 hover:bg-emerald-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                      title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
+                      aria-label={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
+                    >
+                      <Download size={19} />
+                    </button>
+                    {!doc.isClinicalFile ? (
+                      <button 
+                        onClick={() => exportToWord(doc)}
+                        className="h-12 text-white bg-white/5 hover:bg-indigo-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                        title="Baixar Word"
+                        aria-label="Baixar Word"
+                      >
+                        <FileText size={19} />
+                      </button>
+                    ) : isPhysio ? (
+                      <button 
+                        onClick={() => setDocToDelete(doc.id)}
+                        className="h-12 text-white bg-white/5 hover:bg-rose-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                        title="Excluir"
+                        aria-label="Excluir documento"
+                      >
+                        <Trash2 size={19} />
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+
+                  {isPhysio && !doc.isClinicalFile && (
+                    <button 
+                      onClick={() => setDocToDelete(doc.id)}
+                      className="w-full h-11 text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 cursor-pointer rounded-2xl transition-colors border border-rose-500/20 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest"
+                      title="Excluir"
+                    >
+                      <Trash2 size={16} /> Excluir
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop/tablet: tabela completa */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left">
             <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
               <tr>
                 <th className="px-6 py-4">Documento</th>
@@ -816,12 +911,14 @@ export default function Documents() {
                         <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
                           <FileText size={16} />
                         </div>
-                        <span className="font-bold text-white">{doc.type}</span>
+                        <span className="font-bold text-white">{doc.type || 'Documento'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-400 font-medium">{isPhysio ? doc.patient_name : (doc.physio_name || 'Fisioterapeuta')}</td>
+                    <td className="px-6 py-4 text-slate-400 font-medium">
+                      {isPhysio ? (doc.patient_name || 'Paciente') : (doc.physio_name || 'Fisioterapeuta')}
+                    </td>
                     <td className="px-6 py-4 text-slate-500 text-xs font-bold">
-                      {new Date(doc.criado_em).toLocaleString('pt-BR')}
+                      {new Date(doc.criado_em || doc.created_at).toLocaleString('pt-BR')}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
