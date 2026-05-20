@@ -309,7 +309,7 @@ function Navbar() {
       // Items for Physiotherapists
       ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
-        { name: t('nav.agenda'), path: '/agenda', icon: CalendarIcon },
+        { name: 'Minha Agenda', path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
         { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
