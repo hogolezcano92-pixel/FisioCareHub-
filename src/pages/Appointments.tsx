@@ -495,18 +495,53 @@ export default function Appointments() {
       const app = appointments.find(a => a.id === id);
       if (!app || !profile) return;
 
-      const { error } = await supabase
+      const updatePayload: any = { status };
+
+      if (status === 'concluido') {
+        updatePayload.concluido_em = new Date().toISOString();
+      }
+
+      let { error } = await supabase
         .from('agendamentos')
-        .update({ status })
+        .update(updatePayload)
         .eq('id', id);
 
+      // Caso a coluna concluido_em ainda não exista no Supabase, conclui usando apenas o status.
+      if (
+        error &&
+        status === 'concluido' &&
+        String(error.message || '').toLowerCase().includes('concluido_em')
+      ) {
+        const fallback = await supabase
+          .from('agendamentos')
+          .update({ status })
+          .eq('id', id);
+
+        error = fallback.error;
+      }
+
       if (error) throw error;
-      
+
+      setAppointments((current) =>
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status,
+                ...(status === 'concluido' ? { concluido_em: updatePayload.concluido_em } : {}),
+              }
+            : item
+        )
+      );
+
       // Create notification for the other party
       const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
       const targetId = isPhysio ? app.paciente_id : app.fisio_id;
-      const statusText = status === 'confirmado' ? 'confirmado' : 'cancelado';
-      
+      const statusText =
+        status === 'confirmado' ? 'confirmado' :
+        status === 'concluido' ? 'concluído' :
+        'cancelado';
+
       await supabase
         .from('notificacoes')
         .insert({
@@ -517,7 +552,7 @@ export default function Appointments() {
           lida: false,
           link: '/appointments'
         });
-      
+
       // If confirmed or cancelled, send email
       if (status === 'confirmado' || status === 'cancelado') {
         const formattedDate = getAppointmentDate(app);
@@ -544,7 +579,7 @@ export default function Appointments() {
         } else if (status === 'cancelado') {
           const targetEmail = isPhysio ? app.paciente.email : app.fisioterapeuta.email;
           const targetName = isPhysio ? app.paciente.nome_completo : app.fisioterapeuta.nome_completo;
-          
+
           sendAppointmentStatusEmail(
             targetEmail,
             targetName,
@@ -558,12 +593,30 @@ export default function Appointments() {
           );
         }
       }
-      import('sonner').then(({ toast }) => toast.success(`Status atualizado para ${status}`));
+
+      const successMessage =
+        status === 'concluido'
+          ? 'Atendimento concluído. O valor líquido foi liberado em Saldo Disponível.'
+          : `Status atualizado para ${status}`;
+
+      import('sonner').then(({ toast }) => toast.success(successMessage));
       setSelectedAppId(null);
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
       import('sonner').then(({ toast }) => toast.error("Erro ao atualizar status."));
     }
+  };
+
+  const handleCompleteAppointment = async (app: any) => {
+    if (!app?.id) return;
+
+    const confirmed = window.confirm(
+      'Deseja concluir este atendimento? Após concluir, o valor líquido deste agendamento será liberado em Saldo Disponível para saque.'
+    );
+
+    if (!confirmed) return;
+
+    await updateStatus(app.id, 'concluido');
   };
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
@@ -618,6 +671,7 @@ export default function Appointments() {
               <div className="flex items-center gap-4">
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center",
+                  uiStatus === 'concluido' ? "bg-emerald-500/10 text-emerald-300" :
                   uiStatus === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
                   uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/10 text-blue-400" :
                   uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/10 text-amber-400" :
@@ -639,6 +693,7 @@ export default function Appointments() {
               <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                  uiStatus === 'concluido' ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/20" :
                   uiStatus === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
                   uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/20 text-blue-400 border border-blue-500/20" :
                   uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
@@ -663,6 +718,17 @@ export default function Appointments() {
                     <Check size={12} />
                     Pago
                   </span>
+                )}
+
+                {isPhysio && uiStatus === 'confirmado' && (
+                  <button
+                    onClick={() => handleCompleteAppointment(app)}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                    title="Concluir atendimento e liberar saldo"
+                  >
+                    <Check size={14} />
+                    Concluir atendimento
+                  </button>
                 )}
 
                 {(uiStatus === 'pendente' || uiStatus === 'aguardando_confirmacao') && (
