@@ -45,6 +45,43 @@ interface PhysiotherapistService {
   is_active: boolean;
 }
 
+type PriceField =
+  | 'avaliacao_inicial'
+  | 'sessao_fisioterapia'
+  | 'reabilitacao'
+  | 'rpg'
+  | 'pilates'
+  | 'domiciliar';
+
+type PriceFormData = Record<PriceField, string>;
+
+const parseCurrencyValue = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+
+  const cleaned = value
+    .replace(/R\$/g, '')
+    .replace(/\s/g, '');
+
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned;
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const normalizeCurrencyInput = (value: string): string => {
+  return value
+    .replace(/[^0-9,.]/g, '')
+    .replace(/(,.*),/g, '$1');
+};
+
+const toCurrencyInputValue = (value: unknown): string => {
+  const numberValue = parseCurrencyValue(value as any);
+  return numberValue > 0 ? String(numberValue).replace('.', ',') : '';
+};
+
 export default function FinanceServiceSettings() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -59,13 +96,13 @@ export default function FinanceServiceSettings() {
   const [editingPackage, setEditingPackage] = useState<Partial<ServicePackage> | null>(null);
   const [packageSaving, setPackageSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    avaliacao_inicial: 0,
-    sessao_fisioterapia: 0,
-    reabilitacao: 0,
-    rpg: 0,
-    pilates: 0,
-    domiciliar: 0
+  const [formData, setFormData] = useState<PriceFormData>({
+    avaliacao_inicial: '',
+    sessao_fisioterapia: '',
+    reabilitacao: '',
+    rpg: '',
+    pilates: '',
+    domiciliar: ''
   });
 
   useEffect(() => {
@@ -103,12 +140,12 @@ export default function FinanceServiceSettings() {
         console.log('No services found, initializing defaults...');
         // Initialize with default services if empty
         const defaultServices = [
-          { name: 'Avaliação Inicial', base_price: formData.avaliacao_inicial || 0 },
-          { name: 'Sessão de Fisioterapia', base_price: formData.sessao_fisioterapia || 0 },
-          { name: 'Reabilitação', base_price: formData.reabilitacao || 0 },
-          { name: 'RPG', base_price: formData.rpg || 0 },
-          { name: 'Pilates', base_price: formData.pilates || 0 },
-          { name: 'Fisioterapia Domiciliar', base_price: formData.domiciliar || 0 },
+          { name: 'Avaliação Inicial', base_price: parseCurrencyValue(formData.avaliacao_inicial) },
+          { name: 'Sessão de Fisioterapia', base_price: parseCurrencyValue(formData.sessao_fisioterapia) },
+          { name: 'Reabilitação', base_price: parseCurrencyValue(formData.reabilitacao) },
+          { name: 'RPG', base_price: parseCurrencyValue(formData.rpg) },
+          { name: 'Pilates', base_price: parseCurrencyValue(formData.pilates) },
+          { name: 'Fisioterapia Domiciliar', base_price: parseCurrencyValue(formData.domiciliar) },
         ].map(s => ({ ...s, physiotherapist_id: user.id, is_active: true }));
 
         const { data: inserted, error: insertErr } = await supabase
@@ -215,14 +252,30 @@ export default function FinanceServiceSettings() {
 
   const updateFormData = (data: any) => {
     setFormData({
-      avaliacao_inicial: data.avaliacao_inicial || 0,
-      sessao_fisioterapia: data.sessao_fisioterapia || 0,
-      reabilitacao: data.reabilitacao || 0,
-      rpg: data.rpg || 0,
-      pilates: data.pilates || 0,
-      domiciliar: data.domiciliar || 0
+      avaliacao_inicial: toCurrencyInputValue(data.avaliacao_inicial),
+      sessao_fisioterapia: toCurrencyInputValue(data.sessao_fisioterapia),
+      reabilitacao: toCurrencyInputValue(data.reabilitacao),
+      rpg: toCurrencyInputValue(data.rpg),
+      pilates: toCurrencyInputValue(data.pilates),
+      domiciliar: toCurrencyInputValue(data.domiciliar)
     });
   };
+
+  const handlePriceChange = (field: PriceField, value: string) => {
+    setFormData((current) => ({
+      ...current,
+      [field]: normalizeCurrencyInput(value)
+    }));
+  };
+
+  const numericFormData = () => ({
+    avaliacao_inicial: parseCurrencyValue(formData.avaliacao_inicial),
+    sessao_fisioterapia: parseCurrencyValue(formData.sessao_fisioterapia),
+    reabilitacao: parseCurrencyValue(formData.reabilitacao),
+    rpg: parseCurrencyValue(formData.rpg),
+    pilates: parseCurrencyValue(formData.pilates),
+    domiciliar: parseCurrencyValue(formData.domiciliar)
+  });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,22 +283,24 @@ export default function FinanceServiceSettings() {
 
     setSaving(true);
     try {
+      const valuesToSave = numericFormData();
+
       // 1. Update legacy configuracao_servicos
       const { error: configError } = await supabase
         .from('configuracao_servicos')
-        .update(formData)
+        .update(valuesToSave)
         .eq('physio_id', user.id);
 
       if (configError) throw configError;
 
       // 2. Sync with new physiotherapist_services table
       const syncPromises = [
-        { name: 'Avaliação Inicial', price: formData.avaliacao_inicial },
-        { name: 'Sessão de Fisioterapia', price: formData.sessao_fisioterapia },
-        { name: 'Reabilitação', price: formData.reabilitacao },
-        { name: 'RPG', price: formData.rpg },
-        { name: 'Pilates', price: formData.pilates },
-        { name: 'Fisioterapia Domiciliar', price: formData.domiciliar },
+        { name: 'Avaliação Inicial', price: valuesToSave.avaliacao_inicial },
+        { name: 'Sessão de Fisioterapia', price: valuesToSave.sessao_fisioterapia },
+        { name: 'Reabilitação', price: valuesToSave.reabilitacao },
+        { name: 'RPG', price: valuesToSave.rpg },
+        { name: 'Pilates', price: valuesToSave.pilates },
+        { name: 'Fisioterapia Domiciliar', price: valuesToSave.domiciliar },
       ].map(s => {
         return supabase
           .from('physiotherapist_services')
@@ -408,10 +463,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.avaliacao_inicial}
-                    onChange={(e) => setFormData({...formData, avaliacao_inicial: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('avaliacao_inicial', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -429,10 +484,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.sessao_fisioterapia}
-                    onChange={(e) => setFormData({...formData, sessao_fisioterapia: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('sessao_fisioterapia', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-blue-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -450,10 +505,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.reabilitacao}
-                    onChange={(e) => setFormData({...formData, reabilitacao: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('reabilitacao', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-purple-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -471,10 +526,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.rpg}
-                    onChange={(e) => setFormData({...formData, rpg: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('rpg', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-amber-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -492,10 +547,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.pilates}
-                    onChange={(e) => setFormData({...formData, pilates: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('pilates', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-rose-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -513,10 +568,10 @@ export default function FinanceServiceSettings() {
                 <div className="relative">
                   <div className="absolute pointer-events-none z-20 font-black" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R$</div>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.domiciliar}
-                    onChange={(e) => setFormData({...formData, domiciliar: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => handlePriceChange('domiciliar', e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 text-white font-black focus:outline-none focus:border-sky-500/50 transition-all !pl-[60px]"
                     placeholder="0,00"
                   />
@@ -704,11 +759,10 @@ export default function FinanceServiceSettings() {
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Preço Total (R$)</label>
                     <input
                       required
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
                       value={editingPackage.total_price || ''}
-                      onChange={(e) => setEditingPackage({ ...editingPackage, total_price: e.target.value === '' ? '' as any : parseFloat(e.target.value) })}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, total_price: e.target.value === '' ? '' as any : parseCurrencyValue(e.target.value) })}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white font-black focus:outline-none focus:border-emerald-500/50 transition-all border-emerald-500/30"
                       placeholder="0,00"
                     />
