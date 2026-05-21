@@ -234,8 +234,14 @@ export default function PhysioDashboard() {
         <div className="flex flex-col gap-6 bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1">
-              <h1 className="text-3xl font-black text-white tracking-tight">Dashboard do Profissional</h1>
-              <p className="text-slate-400 font-medium">Gerencie solicitações, agenda, reputação e histórico em um só lugar.</p>
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                {activeTab === 'avaliacoes' ? 'Reputação Profissional' : 'Dashboard do Profissional'}
+              </h1>
+              <p className="text-slate-400 font-medium">
+                {activeTab === 'avaliacoes'
+                  ? 'Veja as avaliações recebidas dos pacientes, sua nota média e os comentários reais sobre seus atendimentos.'
+                  : 'Gerencie solicitações, agenda, reputação e histórico em um só lugar.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 sm:flex p-1.5 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto">
@@ -268,7 +274,8 @@ export default function PhysioDashboard() {
           </div>
 
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeTab !== 'avaliacoes' && (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <QuickActionCard
               icon={<Users size={34} />}
               label="Pacientes"
@@ -302,9 +309,10 @@ export default function PhysioDashboard() {
               badge={reviews.length > 0 ? String(reviews.length) : undefined}
               onClick={() => navigate('/dashboard/fisio?tab=avaliacoes')}
             />
-          </div>
+            </div>
+          )}
 
-          {reviews.length > 0 && (
+          {activeTab !== 'avaliacoes' && reviews.length > 0 && (
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-5 rounded-[2rem] bg-white/5 border border-white/10">
                 <div className="flex items-center gap-3 mb-3">
