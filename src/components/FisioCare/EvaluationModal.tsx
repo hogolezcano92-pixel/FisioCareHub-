@@ -4,12 +4,13 @@ import { Star, MessageSquare, Send, X, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import { logActivity } from '../../services/activityService';
+import { sendEvaluationReceivedEmail } from '../../services/emailService';
 
 interface EvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
   appointment: {
-    id: number;
+    id: string;
     fisio_id: string;
     fisio_nome?: string;
   };
@@ -35,7 +36,7 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
     setError(null);
 
     try {
-      const { error: submitError } = await supabase
+      const { data: insertedEvaluation, error: submitError } = await supabase
         .from('avaliacoes')
         .insert({
           paciente_id: userId,
@@ -44,9 +45,50 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
           nota_profissional: ratingPhysio,
           nota_plataforma: ratingPlatform,
           comentario: comment || null
-        });
+        })
+        .select('id')
+        .single();
 
       if (submitError) throw submitError;
+
+      const [{ data: patientProfile }, { data: physioProfile }, { data: appointmentDetails }] = await Promise.all([
+        supabase
+          .from('perfis')
+          .select('nome_completo, email')
+          .eq('id', userId)
+          .maybeSingle(),
+        supabase
+          .from('perfis')
+          .select('nome_completo, email')
+          .eq('id', appointment.fisio_id)
+          .maybeSingle(),
+        supabase
+          .from('agendamentos')
+          .select('data, hora, data_servico')
+          .eq('id', appointment.id)
+          .maybeSingle()
+      ]);
+
+      const patientName = patientProfile?.nome_completo || 'Paciente';
+      const physioName = physioProfile?.nome_completo || appointment.fisio_nome || 'Profissional';
+
+      // E-mail para o fisioterapeuta. Não bloqueia o envio da avaliação se o e-mail falhar.
+      if (physioProfile?.email) {
+        sendEvaluationReceivedEmail(physioProfile.email, physioName, {
+          patientName,
+          ratingPhysio,
+          ratingPlatform,
+          comment: comment || null,
+          appointmentDate: appointmentDetails?.data
+            ? new Date(appointmentDetails.data).toLocaleDateString('pt-BR')
+            : null,
+          appointmentTime: appointmentDetails?.hora
+            ? String(appointmentDetails.hora).slice(0, 5)
+            : null
+        }).catch((emailError) => {
+          console.warn('[EvaluationModal] Falha ao enviar e-mail de avaliação:', emailError);
+        });
+      }
 
       // Log activity
       await logActivity(
@@ -61,9 +103,9 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
       await logActivity(
         appointment.fisio_id,
         'fisio',
-        'avaliacao_enviada',
-        `Um paciente enviou uma avaliação para o seu atendimento`,
-        appointment.id.toString()
+        'avaliacao_recebida',
+        `Você recebeu uma avaliação de ${patientName} com nota ${ratingPhysio}/5`,
+        insertedEvaluation?.id || appointment.id.toString()
       );
 
       setSubmitted(true);
@@ -73,7 +115,11 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
       }, 2000);
     } catch (err: any) {
       console.error('Erro ao enviar avaliação:', err);
-      setError('Não foi possível enviar sua avaliação agora. Tente mais tarde.');
+      setError(
+        err?.message
+          ? `Não foi possível enviar sua avaliação: ${err.message}`
+          : 'Não foi possível enviar sua avaliação agora. Tente mais tarde.'
+      );
     } finally {
       setLoading(false);
     }
