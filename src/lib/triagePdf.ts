@@ -39,6 +39,13 @@ const normalize = (value: any, fallback = 'Não informado') => {
   return String(value);
 };
 
+const fixPortugueseTypos = (text: string) =>
+  text
+    .replace(/\bmedico\b/gi, (match) => (match[0] === 'M' ? 'Médico' : 'médico'))
+    .replace(/Musculoesquelétic\s+o/gi, 'Musculoesquelético')
+    .replace(/Musculoesqueletico/gi, 'Musculoesquelético')
+    .replace(/\bmedio\b/gi, (match) => (match[0] === 'M' ? 'Médio' : 'médio'));
+
 const safeFileName = (name: string) =>
   name
     .normalize('NFD')
@@ -48,7 +55,7 @@ const safeFileName = (name: string) =>
     .replace(/^_|_$/g, '');
 
 const stripMarkdown = (text: string) =>
-  normalize(text, '')
+  fixPortugueseTypos(normalize(text, ''))
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
@@ -56,6 +63,30 @@ const stripMarkdown = (text: string) =>
     .replace(/^\s*[-*]\s+/gm, '• ')
     .replace(/^\s*\d+\.\s+/gm, '• ')
     .trim();
+
+const formatDateBR = (dateValue?: string | Date) => {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(validDate);
+};
+
+const localDateForFileName = (dateValue?: string | Date) => {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(validDate);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value || '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+};
 
 const getMainReport = (input: TriagePdfInput) =>
   stripMarkdown(input.triage?.relatorio || input.analysis?.relatorio || '');
@@ -74,42 +105,54 @@ const extractSection = (report: string, title: string) => {
   return match?.[1]?.trim() || '';
 };
 
-const getRedFlagsLabel = (input: TriagePdfInput) => {
-  const triage = input.triage || {};
-  const form = input.formData || {};
-  if (triage.red_flags) return normalize(triage.red_flags);
-  if (triage.red_flag) return 'Sinais de alerta identificados';
-  const flags = form.red_flags || {};
-  const active = Object.entries(flags)
-    .filter(([, value]) => Boolean(value))
-    .map(([key]) => key.replace(/_/g, ' '));
-  return active.length ? active.join(', ') : 'Não identificadas';
+const extractRedFlagsFromReport = (report: string) => {
+  const riskSection = extractSection(report, 'Triagem de Risco');
+  const source = riskSection || report;
+  const match = source.match(/Red\s*Flags?\s*:\s*([^\n]+)/i);
+  return match?.[1]?.replace(/[.;]+$/g, '').trim() || '';
 };
 
-const addWrappedText = (
-  doc: jsPDF,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  options?: {
-    size?: number;
-    color?: string;
-    fontStyle?: 'normal' | 'bold' | 'italic';
-    lineHeight?: number;
-    maxLines?: number;
-  }
-) => {
-  const size = options?.size ?? 10;
-  const lineHeight = options?.lineHeight ?? size * 0.43 + 3.4;
-  doc.setFont('helvetica', options?.fontStyle || 'normal');
-  doc.setFontSize(size);
-  doc.setTextColor(options?.color || COLORS.slate);
-  const lines = doc.splitTextToSize(stripMarkdown(text), maxWidth);
-  const finalLines = options?.maxLines ? lines.slice(0, options.maxLines) : lines;
-  doc.text(finalLines, x, y);
-  return y + finalLines.length * lineHeight;
+const humanizeFlagKey = (key: string) => {
+  const labels: Record<string, string> = {
+    fraqueza_muscular: 'Fraqueza muscular presente',
+    perda_forca: 'Perda de força presente',
+    dormencia: 'Dormência ou alteração de sensibilidade',
+    formigamento: 'Formigamento ou alteração neurológica',
+    febre: 'Febre associada ao quadro',
+    trauma: 'Histórico de trauma',
+    perda_peso: 'Perda de peso inexplicada',
+    dor_noturna: 'Dor noturna importante',
+    incontinencia: 'Alteração urinária ou intestinal',
+    tontura: 'Tontura associada ao quadro',
+  };
+  return labels[key] || key.replace(/_/g, ' ');
 };
+
+const getRedFlagsLabel = (input: TriagePdfInput, report = '') => {
+  const triage = input.triage || {};
+  const form = input.formData || {};
+  const fromReport = extractRedFlagsFromReport(report);
+
+  if (fromReport && !/sinais de alerta identificados/i.test(fromReport)) {
+    return fixPortugueseTypos(fromReport);
+  }
+
+  if (triage.red_flags && !/sinais de alerta identificados/i.test(normalize(triage.red_flags))) {
+    return fixPortugueseTypos(normalize(triage.red_flags));
+  }
+
+  const flags = form.red_flags || triage.red_flags_map || {};
+  const active = Object.entries(flags)
+    .filter(([, value]) => Boolean(value))
+    .map(([key]) => humanizeFlagKey(key));
+
+  if (active.length) return active.join(', ');
+  if (triage.red_flag) return 'Sinais de alerta identificados';
+  return 'Não identificadas';
+};
+
+const getPatientName = (input: TriagePdfInput) =>
+  normalize(input.patientName || input.triage?.paciente?.nome_completo || input.triage?.paciente_nome || 'Paciente');
 
 const ensurePage = (doc: jsPDF, y: number, needed = 40) => {
   if (y + needed <= PAGE.height - PAGE.margin) return y;
@@ -129,11 +172,11 @@ const addPageBackground = (doc: jsPDF) => {
 };
 
 const addHeader = (doc: jsPDF, input: TriagePdfInput) => {
-  const patientName = normalize(input.patientName || input.triage?.paciente?.nome_completo || input.triage?.paciente_nome || 'Paciente');
-  const date = input.generatedAt || input.triage?.created_at || input.triage?.data_triagem || new Date().toISOString();
+  const patientName = getPatientName(input);
+  const generatedDate = input.generatedAt || new Date().toISOString();
 
   doc.setFillColor(COLORS.navy);
-  doc.roundedRect(PAGE.margin, 12, PAGE.width - PAGE.margin * 2, 42, 7, 7, 'F');
+  doc.roundedRect(PAGE.margin, 12, PAGE.width - PAGE.margin * 2, 44, 7, 7, 'F');
 
   doc.setFillColor(COLORS.blue);
   doc.roundedRect(22, 20, 18, 18, 5, 5, 'F');
@@ -151,18 +194,53 @@ const addHeader = (doc: jsPDF, input: TriagePdfInput) => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor('#93c5fd');
-  doc.text(`Paciente: ${patientName}`, 46, 43);
-  doc.text(`Gerado em: ${new Date(date).toLocaleDateString('pt-BR')}`, 128, 43);
+  doc.text(`Paciente: ${patientName}`, 46, 44);
+  doc.text(`Gerado em: ${formatDateBR(generatedDate)}`, 128, 44);
 
   doc.setFillColor(COLORS.cyan);
   doc.circle(180, 27, 3, 'F');
   doc.setDrawColor(COLORS.cyan);
   doc.setLineWidth(0.8);
-  doc.line(160, 35, 166, 35);
-  doc.line(166, 35, 169, 30);
-  doc.line(169, 30, 174, 40);
-  doc.line(174, 40, 178, 35);
-  doc.line(178, 35, 190, 35);
+  doc.line(160, 36, 166, 36);
+  doc.line(166, 36, 169, 31);
+  doc.line(169, 31, 174, 41);
+  doc.line(174, 41, 178, 36);
+  doc.line(178, 36, 190, 36);
+};
+
+const drawSummaryCard = (
+  doc: jsPDF,
+  card: { label: string; value: string; color: string },
+  x: number,
+  y: number,
+  w: number,
+  h: number
+) => {
+  doc.setFillColor('#ffffff');
+  doc.roundedRect(x, y, w, h, 5, 5, 'F');
+  doc.setDrawColor('#e2e8f0');
+  doc.roundedRect(x, y, w, h, 5, 5, 'S');
+
+  doc.setFillColor(card.color);
+  doc.roundedRect(x + 5, y + 6, 3.2, h - 12, 1.6, 1.6, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.muted);
+  doc.text(card.label.toUpperCase(), x + 12, y + 10);
+
+  const value = stripMarkdown(card.value);
+  doc.setFont('helvetica', 'bold');
+  let fontSize = 11;
+  doc.setFontSize(fontSize);
+  const maxTextWidth = w - 18;
+  while (doc.getTextWidth(value) > maxTextWidth && fontSize > 8) {
+    fontSize -= 0.5;
+    doc.setFontSize(fontSize);
+  }
+  doc.setTextColor(COLORS.navy);
+  const lines = doc.splitTextToSize(value, maxTextWidth).slice(0, 2);
+  doc.text(lines, x + 12, y + 19);
 };
 
 const addSummaryCards = (doc: jsPDF, input: TriagePdfInput, y: number) => {
@@ -172,7 +250,7 @@ const addSummaryCards = (doc: jsPDF, input: TriagePdfInput, y: number) => {
   const region = normalize(triage.regiao_dor || form.regiao_dor);
   const pain = normalize(triage.escala_dor ?? form.escala_dor, '—');
   const severity = normalize(triage.gravidade || analysis.gravidade, 'Não classificada');
-  const classification = normalize(triage.classificacao || analysis.classificacao, 'Não classificada');
+  const classification = fixPortugueseTypos(normalize(triage.classificacao || analysis.classificacao, 'Não classificada'));
 
   const cards = [
     { label: 'Região', value: region, color: COLORS.blue },
@@ -181,27 +259,17 @@ const addSummaryCards = (doc: jsPDF, input: TriagePdfInput, y: number) => {
     { label: 'Classificação', value: classification, color: COLORS.purple },
   ];
 
-  const gap = 5;
-  const cardW = (PAGE.width - PAGE.margin * 2 - gap * 3) / 4;
+  const gap = 6;
+  const cardW = (PAGE.width - PAGE.margin * 2 - gap) / 2;
+  const cardH = 26;
   cards.forEach((card, index) => {
-    const x = PAGE.margin + index * (cardW + gap);
-    doc.setFillColor('#ffffff');
-    doc.roundedRect(x, y, cardW, 24, 4, 4, 'F');
-    doc.setDrawColor('#e2e8f0');
-    doc.roundedRect(x, y, cardW, 24, 4, 4, 'S');
-
-    doc.setFillColor(card.color);
-    doc.roundedRect(x + 4, y + 5, 3, 14, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.setTextColor(COLORS.muted);
-    doc.text(card.label.toUpperCase(), x + 10, y + 9);
-    doc.setFontSize(9);
-    doc.setTextColor(COLORS.navy);
-    const lines = doc.splitTextToSize(card.value, cardW - 13);
-    doc.text(lines.slice(0, 2), x + 10, y + 16);
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const x = PAGE.margin + col * (cardW + gap);
+    const cardY = y + row * (cardH + gap);
+    drawSummaryCard(doc, card, x, cardY, cardW, cardH);
   });
-  return y + 32;
+  return y + cardH * 2 + gap + 10;
 };
 
 const addSection = (
@@ -217,8 +285,8 @@ const addSection = (
   const x = PAGE.margin;
   const w = PAGE.width - PAGE.margin * 2;
   const cleanBody = stripMarkdown(body);
-  const lines = doc.splitTextToSize(cleanBody, w - 18);
-  const h = Math.max(22, 18 + lines.length * 5.2);
+  const lines = doc.splitTextToSize(cleanBody, w - 22);
+  const h = Math.max(26, 20 + lines.length * 5.2);
 
   y = ensurePage(doc, y, h + 8);
   doc.setFillColor(options?.warning ? '#fff1f2' : '#ffffff');
@@ -227,16 +295,16 @@ const addSection = (
   doc.roundedRect(x, y, w, h, 5, 5, 'S');
 
   doc.setFillColor(options?.accent || COLORS.blue);
-  doc.roundedRect(x + 5, y + 6, 4, 11, 2, 2, 'F');
+  doc.roundedRect(x + 6, y + 6, 4, 12, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(10.5);
   doc.setTextColor(options?.warning ? COLORS.red : COLORS.navy);
-  doc.text(title, x + 13, y + 14);
+  doc.text(title, x + 15, y + 14.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(COLORS.slate);
-  doc.text(lines, x + 13, y + 24);
+  doc.text(lines, x + 15, y + 25);
   return y + h + 8;
 };
 
@@ -258,7 +326,7 @@ const splitReportIntoSections = (report: string) => {
   return [{ title: 'Relatório Clínico', body: report }];
 };
 
-const addFooter = (doc: jsPDF) => {
+const addFooter = (doc: jsPDF, generatedAt?: string) => {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i += 1) {
     doc.setPage(i);
@@ -267,30 +335,39 @@ const addFooter = (doc: jsPDF) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(COLORS.muted);
-    doc.text('FisioCareHub • Documento gerado automaticamente. Não substitui avaliação clínica presencial.', PAGE.margin, PAGE.height - 8);
+    doc.text(`FisioCareHub • Triagem inteligente • Gerado em ${formatDateBR(generatedAt || new Date().toISOString())}`, PAGE.margin, PAGE.height - 8);
     doc.text(`${i}/${pageCount}`, PAGE.width - PAGE.margin - 8, PAGE.height - 8);
   }
 };
 
 export const generateTriagePdf = (input: TriagePdfInput) => {
+  const generatedAt = input.generatedAt || new Date().toISOString();
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   addPageBackground(doc);
-  addHeader(doc, input);
+  addHeader(doc, { ...input, generatedAt });
 
-  let y = 64;
+  let y = 66;
   y = addSummaryCards(doc, input, y);
 
   const report = getMainReport(input);
   const triage = input.triage || {};
   const form = input.formData || {};
-  const redFlags = getRedFlagsLabel(input);
-  const hasRedFlags = Boolean(triage.red_flag || (form.red_flags && Object.values(form.red_flags).some(Boolean)) || (redFlags && redFlags !== 'Não identificadas'));
+  const redFlags = getRedFlagsLabel(input, report);
+  const hasRedFlags = Boolean(
+    triage.red_flag ||
+    (form.red_flags && Object.values(form.red_flags).some(Boolean)) ||
+    (redFlags && redFlags !== 'Não identificadas')
+  );
 
   if (hasRedFlags) {
+    const redFlagText = redFlags === 'Sinais de alerta identificados'
+      ? 'Sinais de alerta identificados. Priorizar avaliação clínica e investigar possíveis critérios de encaminhamento.'
+      : `Red flag identificada: ${redFlags}. Priorizar avaliação clínica e considerar encaminhamento médico se houver piora, déficit neurológico progressivo ou sinais associados.`;
+
     y = addSection(
       doc,
       'Atenção: Red Flags Detectadas',
-      `Sinais de alerta: ${redFlags}. Esta triagem identificou informações que podem exigir prioridade na avaliação e, se necessário, encaminhamento para avaliação médica.`,
+      redFlagText,
       y,
       { accent: COLORS.red, warning: true }
     );
@@ -309,17 +386,17 @@ export const generateTriagePdf = (input: TriagePdfInput) => {
   });
 
   y = ensurePage(doc, y, 38);
-  y = addSection(
+  addSection(
     doc,
     'Observação Profissional',
-    'Este documento organiza a triagem inicial e deve ser interpretado pelo fisioterapeuta junto à avaliação física, anamnese completa e evolução clínica do paciente.',
+    'Este documento organiza a triagem inicial e deve ser interpretado pelo fisioterapeuta junto à avaliação física, anamnese completa e evolução clínica do paciente. Não substitui avaliação presencial nem diagnóstico médico.',
     y,
     { accent: COLORS.cyan }
   );
 
-  addFooter(doc);
+  addFooter(doc, generatedAt);
 
   const patient = normalize(input.patientName || input.triage?.paciente?.nome_completo || 'paciente', 'paciente');
-  const date = new Date(input.generatedAt || input.triage?.created_at || new Date()).toISOString().slice(0, 10);
+  const date = localDateForFileName(generatedAt);
   doc.save(`triagem_${safeFileName(patient)}_${date}.pdf`);
 };
