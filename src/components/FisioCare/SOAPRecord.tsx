@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { BrainCircuit, Save, Sparkles, Loader2, CheckCircle2, AlertCircle, User, FileSearch, Check, Search, Mic, MicOff, Waves } from 'lucide-react';
@@ -45,6 +45,8 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [historySummary, setHistorySummary] = useState<string | null>(null);
   const [savedHash, setSavedHash] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const finalTranscriptRef = useRef('');
+  const shouldProcessVoiceRef = useRef(false);
 
   // Patient details state
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
@@ -95,53 +97,144 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
+  const getSpeechErrorMessage = (error?: string) => {
+    switch (error) {
+      case 'not-allowed':
+      case 'service-not-allowed':
+        return 'Permita o uso do microfone no navegador e tente novamente.';
+      case 'audio-capture':
+        return 'Não consegui acessar o microfone. Verifique a permissão do navegador.';
+      case 'no-speech':
+        return 'Não detectei fala. Tente falar mais perto do microfone.';
+      case 'network':
+        return 'Falha de conexão no reconhecimento de voz. Tente novamente.';
+      case 'aborted':
+        return 'Gravação interrompida.';
+      default:
+        return 'Erro na captura de voz. Tente novamente.';
+    }
+  };
+
+  const requestMicrophonePermission = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) return true;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    } catch (error) {
+      console.error('[SOAPRecord] Microphone permission error:', error);
+      toast.error('Não foi possível acessar o microfone. Libere a permissão no navegador.');
+      return false;
+    }
+  };
+
   // Initialize Speech Recognition
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'pt-BR';
-
-      recognitionInstance.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        setRawText(transcript);
-      };
-
-      recognitionInstance.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsRecording(false);
-        toast.error('Erro na captura de voz. Tente novamente.');
-      };
-
-      recognitionInstance.onend = () => {
-        setIsRecording(false);
-      };
-
-      setRecognition(recognitionInstance);
+    if (!SpeechRecognition) {
+      setRecognition(null);
+      return;
     }
+
+    const recognitionInstance = new SpeechRecognition();
+    const isIOS = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+
+    // continuous=true costuma falhar no iPhone/iPad. No iOS, deixamos uma captura curta e estável.
+    recognitionInstance.continuous = !isIOS;
+    recognitionInstance.interimResults = true;
+    recognitionInstance.lang = 'pt-BR';
+    recognitionInstance.maxAlternatives = 1;
+
+    recognitionInstance.onstart = () => {
+      setIsRecording(true);
+      toast.info('Gravando áudio... toque novamente para parar.');
+    };
+
+    recognitionInstance.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = finalTranscriptRef.current;
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0]?.transcript || '';
+        if (event.results[i].isFinal) {
+          finalTranscript += `${transcript} `;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      finalTranscriptRef.current = finalTranscript;
+      setRawText(`${finalTranscript}${interimTranscript}`.trim());
+    };
+
+    recognitionInstance.onerror = (event: any) => {
+      console.error('[SOAPRecord] Speech recognition error:', event.error, event);
+      shouldProcessVoiceRef.current = false;
+      setIsRecording(false);
+      toast.error(getSpeechErrorMessage(event.error));
+    };
+
+    recognitionInstance.onend = () => {
+      setIsRecording(false);
+
+      if (shouldProcessVoiceRef.current) {
+        shouldProcessVoiceRef.current = false;
+        setTimeout(() => {
+          processVoiceToSOAP();
+        }, 350);
+      }
+    };
+
+    setRecognition(recognitionInstance);
+
+    return () => {
+      try {
+        recognitionInstance.onstart = null;
+        recognitionInstance.onresult = null;
+        recognitionInstance.onerror = null;
+        recognitionInstance.onend = null;
+        recognitionInstance.abort?.();
+      } catch {
+        // Não precisa bloquear a tela se o navegador não permitir abortar.
+      }
+    };
   }, []);
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
+    if (isReadOnly || isVoiceProcessing) return;
+
+    if (!recognition) {
+      toast.error('Seu navegador não suporta captura de voz. No iPhone, teste pelo Safari ou digite o relato manualmente.');
+      return;
+    }
+
     if (isRecording) {
-      recognition?.stop();
-      // Wait a bit for the last result to be set before processing
-      setTimeout(() => {
-        processVoiceToSOAP();
-      }, 500);
-    } else {
-      if (!recognition) {
-        toast.error('Seu navegador não suporta reconhecimento de voz.');
-        return;
+      shouldProcessVoiceRef.current = true;
+      try {
+        recognition.stop();
+      } catch (error) {
+        console.warn('[SOAPRecord] Erro ao parar gravação:', error);
+        setIsRecording(false);
       }
-      setRawText('');
+      return;
+    }
+
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) return;
+
+    finalTranscriptRef.current = '';
+    shouldProcessVoiceRef.current = false;
+    setRawText('');
+
+    try {
       recognition.start();
-      setIsRecording(true);
-      toast.info('Gravando áudio...');
+    } catch (error) {
+      console.error('[SOAPRecord] Erro ao iniciar reconhecimento de voz:', error);
+      setIsRecording(false);
+      toast.error('Não consegui iniciar a gravação. Feche a página, abra novamente e tente pelo Safari no iPhone.');
     }
   };
 
