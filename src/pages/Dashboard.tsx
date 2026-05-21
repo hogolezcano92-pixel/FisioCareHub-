@@ -37,6 +37,7 @@ import { motion } from 'motion/react';
 import { cn, formatDate } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
+import { getPatientVisibleIds } from '../services/patientLinkService';
 
 // New FisioCare Components
 import { PainDiary, ExerciseChecklist } from '../components/FisioCare/PatientCare';
@@ -62,7 +63,8 @@ export default function Dashboard() {
     appointments: 0,
     patients: 0,
     records: 0,
-    pendingTriages: 0
+    pendingTriages: 0,
+    workouts: 0
   });
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [recentTriages, setRecentTriages] = useState<any[]>([]);
@@ -96,6 +98,51 @@ export default function Dashboard() {
       navigate('/dashboard', { replace: true });
     }
   }, [searchParams, refreshProfile, navigate]);
+
+  const fetchPatientWorkoutCount = useCallback(async (patientProfile: any) => {
+    const visiblePatientIds = await getPatientVisibleIds(patientProfile.id, patientProfile.email);
+
+    if (visiblePatientIds.length === 0) return 0;
+
+    const { data: protocolsData, error: protocolsError } = await supabase
+      .from('protocolos_prescricao')
+      .select('id')
+      .in('paciente_id', visiblePatientIds);
+
+    if (protocolsError) {
+      console.error('Erro ao contar protocolos do paciente no dashboard:', protocolsError);
+    }
+
+    const protocolIds = (protocolsData || []).map((protocol: any) => protocol.id).filter(Boolean);
+    let protocolItemsCount = 0;
+
+    if (protocolIds.length > 0) {
+      const { count, error } = await supabase
+        .from('protocolo_itens')
+        .select('id', { count: 'exact', head: true })
+        .in('protocolo_id', protocolIds);
+
+      if (error) {
+        console.error('Erro ao contar itens de protocolo no dashboard:', error);
+      } else {
+        protocolItemsCount = count || 0;
+      }
+    }
+
+    // A aba Treinos também mostra prescrições rápidas feitas em "Meus Pacientes",
+    // salvas em exercicios_paciente. O Dashboard precisa contar a mesma origem.
+    const { count: directPrescriptionsCount, error: directPrescriptionsError } = await supabase
+      .from('exercicios_paciente')
+      .select('id', { count: 'exact', head: true })
+      .in('paciente_id', visiblePatientIds)
+      .eq('status', 'ativo');
+
+    if (directPrescriptionsError) {
+      console.error('Erro ao contar exercícios prescritos diretamente no dashboard:', directPrescriptionsError);
+    }
+
+    return protocolItemsCount + (directPrescriptionsCount || 0);
+  }, []);
 
   const fetchDashboardData = useCallback(async (data: any) => {
     if (!data) return;
@@ -178,14 +225,17 @@ export default function Dashboard() {
             appointments: res[0].count || 0,
             patients: res[1].count || 0,
             records: res[2].count || 0,
-            pendingTriages: res[3].count || 0
+            pendingTriages: res[3].count || 0,
+            workouts: 0
           });
         } else {
+          const workoutsCount = await fetchPatientWorkoutCount(data);
           setStats({
             appointments: res[0].count || 0,
             patients: 1,
             records: res[1].count || 0,
-            pendingTriages: res[2].count || 0
+            pendingTriages: res[2].count || 0,
+            workouts: workoutsCount
           });
         }
       }
@@ -211,7 +261,7 @@ export default function Dashboard() {
       setStatsLoading(false);
       setApptsLoading(false);
     }
-  }, []);
+  }, [fetchPatientWorkoutCount]);
 
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(() => ({
     isPhysio: profile?.tipo_usuario === 'fisioterapeuta',
@@ -609,7 +659,7 @@ export default function Dashboard() {
             </div>
             <div className="w-px h-8 bg-white/10 relative z-10" />
             <div className="text-center relative z-10">
-              <p className="text-2xl font-black text-white">{stats.records > 0 ? '12' : '0'}</p>
+              <p className="text-2xl font-black text-white">{stats.workouts}</p>
               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Treinos</p>
             </div>
           </div>
