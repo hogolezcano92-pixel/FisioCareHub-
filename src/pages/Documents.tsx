@@ -460,6 +460,11 @@ export default function Documents() {
       if (error) throw error;
 
       setDocuments(documents.filter(d => d.id !== id));
+      if (viewingDoc?.id === id) {
+        setViewingDoc(null);
+        setViewingFileUrl(null);
+        setLoadingPreviewFile(false);
+      }
       import('sonner').then(({ toast }) => toast.success("Documento excluído com sucesso."));
     } catch (err) {
       console.error("Erro ao excluir documento:", err);
@@ -1190,8 +1195,8 @@ export default function Documents() {
               <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
                 <Trash2 size={32} />
               </div>
-              <h3 className="text-xl font-black text-white mb-2 tracking-tight">Excluir Documento?</h3>
-              <p className="text-slate-400 mb-8 font-medium">Esta ação não pode ser desfeita. O documento será removido permanentemente.</p>
+              <h3 className="text-xl font-black text-white mb-2 tracking-tight">Excluir documento?</h3>
+              <p className="text-slate-400 mb-8 font-medium">Esta ação não pode ser desfeita. O documento será removido permanentemente da biblioteca.</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setDocToDelete(null)}
@@ -1611,6 +1616,16 @@ export default function Documents() {
                       title="Baixar Word"
                     >
                       <FileText size={20} />
+                    </button>
+                  )}
+                  {isPhysio && (
+                    <button 
+                      onClick={() => setDocToDelete(viewingDoc.id)}
+                      className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+                      title="Excluir documento"
+                      aria-label="Excluir documento"
+                    >
+                      <Trash2 size={18} />
                     </button>
                   )}
                   <button 
