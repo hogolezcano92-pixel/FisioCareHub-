@@ -3,45 +3,64 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error('Elemento root não encontrado.');
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        // Procura atualização do service worker a cada abertura do app/PWA.
-        registration.update().catch(() => undefined);
+/**
+ * FisioCareHub
+ *
+ * Correção segura para restaurar as imagens/vídeos de fundo do onboarding.
+ *
+ * O service worker antigo estava interceptando arquivos estáticos do próprio app
+ * e podia manter imagens/vídeos/chunks antigos em cache, principalmente no iPhone.
+ * Por isso, neste momento deixamos o app SEM PWA/cache ativo.
+ *
+ * Resultado:
+ * - onboarding volta a carregar imagens e vídeos direto da rede, como antes;
+ * - remove service workers antigos;
+ * - limpa caches antigos;
+ * - evita o erro de MIME type causado por cache antigo entregando HTML como JS.
+ */
+async function cleanupServiceWorkersAndCaches() {
+  if (typeof window === 'undefined') return;
 
-        // Se um service worker novo ficar esperando, ativa sem exigir ação do usuário.
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
 
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
+      await Promise.all(
+        registrations.map((registration) => registration.unregister()),
+      );
+    }
 
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-            }
-          });
-        });
-      })
-      .catch((error) => {
-        console.warn('[FisioCareHub PWA] Falha ao registrar service worker:', error);
-      });
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
 
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      refreshing = true;
+      await Promise.all(
+        cacheNames.map((cacheName) => caches.delete(cacheName)),
+      );
+    }
+
+    const alreadyReloaded = sessionStorage.getItem(
+      'fisiocarehub-pwa-cache-cleaned-v2',
+    );
+
+    if (!alreadyReloaded) {
+      sessionStorage.setItem('fisiocarehub-pwa-cache-cleaned-v2', 'true');
       window.location.reload();
-    });
-  });
+    }
+  } catch (error) {
+    console.warn('[FisioCareHub] Falha ao limpar PWA/cache antigo:', error);
+  }
 }
+
+cleanupServiceWorkersAndCaches();
