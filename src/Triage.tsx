@@ -31,6 +31,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { generateTriagePdf } from '../lib/triagePdf';
 
 const STEPS = [
   { id: 'basic', title: 'Dados Básicos', icon: User },
@@ -229,13 +230,18 @@ export default function Triage() {
 
   const downloadReport = () => {
     if (!analysis?.relatorio) return;
-    const element = document.createElement("a");
-    const file = new Blob([analysis.relatorio], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `triagem_${formatDate(new Date().toISOString())}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    toast.success("Relatório baixado!");
+    try {
+      generateTriagePdf({
+        analysis,
+        formData,
+        patientName: profile?.nome_completo || user?.email || 'Paciente',
+        generatedAt: new Date().toISOString(),
+      });
+      toast.success("PDF premium baixado!");
+    } catch (err) {
+      console.error('Erro ao gerar PDF da triagem:', err);
+      toast.error('Erro ao gerar PDF. Tente novamente.');
+    }
   };
 
   const shareWithPhysio = async () => {
