@@ -21,7 +21,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { cn, formatDate } from '../lib/utils';
+import { cn, formatDate, resolveStorageUrl } from '../lib/utils';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { downloadAvaliacaoPremiumPdf, downloadEvolucaoPremiumPdf, downloadFichaClinicaPremiumPdf } from '../services/premiumPdfService';
 
@@ -40,6 +40,8 @@ type ClinicalPatient = {
   perfil_id?: string | null;
   tipo_paciente?: string | null;
   origem?: string | null;
+  foto_url?: string | null;
+  avatar_url?: string | null;
 };
 
 const safeText = (value: any, fallback = 'Não informado') => {
@@ -50,6 +52,11 @@ const safeText = (value: any, fallback = 'Não informado') => {
 
 const getPatientName = (patient?: ClinicalPatient | null) => {
   return safeText(patient?.nome_completo || patient?.nome, 'Paciente sem nome');
+};
+
+const getPatientPhoto = (patient?: ClinicalPatient | null) => {
+  const raw = patient?.foto_url || patient?.avatar_url || '';
+  return raw ? resolveStorageUrl(raw) : '';
 };
 
 const formatDateOnly = (value?: string | null) => {
@@ -171,7 +178,37 @@ export default function Records() {
 
           if (patientsError) warnings.push(`Pacientes: ${patientsError.message}`);
 
-          const patients = (physioPatients || []) as ClinicalPatient[];
+          let patients = (physioPatients || []) as ClinicalPatient[];
+
+          const linkedProfileIds = patients
+            .map((patient) => patient.perfil_id)
+            .filter(Boolean) as string[];
+
+          if (linkedProfileIds.length > 0) {
+            const { data: linkedProfiles, error: profilesError } = await supabase
+              .from('perfis')
+              .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
+              .in('id', linkedProfileIds);
+
+            if (!profilesError && linkedProfiles) {
+              const profilesById = new Map(linkedProfiles.map((item: any) => [item.id, item]));
+
+              patients = patients.map((patient) => {
+                const linkedProfile = patient.perfil_id ? profilesById.get(patient.perfil_id) : null;
+
+                return {
+                  ...patient,
+                  nome_completo: patient.nome_completo || patient.nome || linkedProfile?.nome_completo || null,
+                  email: patient.email || linkedProfile?.email || null,
+                  telefone: patient.telefone || linkedProfile?.telefone || null,
+                  data_nascimento: patient.data_nascimento || linkedProfile?.data_nascimento || null,
+                  avatar_url: patient.avatar_url || linkedProfile?.avatar_url || null,
+                  foto_url: patient.foto_url || linkedProfile?.foto_url || null,
+                };
+              });
+            }
+          }
+
           setClinicalPatients(patients);
 
           const clinicalIds = patients.map((p) => p.id).filter(Boolean);
@@ -222,7 +259,7 @@ export default function Records() {
             setLegacyRecords([]);
           }
 
-          setSelectedPatientId((current) => current || patients[0]?.id || '');
+          setSelectedPatientId((current) => patients.some((patient) => patient.id === current) ? current : '');
           return;
         }
 
@@ -309,7 +346,7 @@ export default function Records() {
   }, [patientSearch, patientStats]);
 
   const selectedPatient = useMemo(() => {
-    return clinicalPatients.find((patient) => patient.id === selectedPatientId) || clinicalPatients[0] || null;
+    return clinicalPatients.find((patient) => patient.id === selectedPatientId) || null;
   }, [clinicalPatients, selectedPatientId]);
 
   const scopedPatientId = isPhysio ? selectedPatient?.id : null;
@@ -418,10 +455,14 @@ export default function Records() {
                   >
                     <div className="flex items-center gap-3">
                       <div className={cn(
-                        'w-11 h-11 rounded-2xl flex items-center justify-center border',
+                        'w-11 h-11 rounded-2xl flex items-center justify-center border overflow-hidden',
                         selected ? 'bg-sky-500 text-white border-sky-400/40' : 'bg-slate-950/50 text-sky-400 border-white/10'
                       )}>
-                        <User size={20} />
+                        {getPatientPhoto(patient) ? (
+                          <img src={getPatientPhoto(patient)} alt={getPatientName(patient)} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={20} />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-black text-white truncate">{getPatientName(patient)}</h3>
@@ -445,16 +486,20 @@ export default function Records() {
             {!selectedPatient ? (
               <div className="bg-slate-900/50 backdrop-blur-xl p-16 rounded-[2.5rem] border border-white/10 text-center shadow-2xl">
                 <FolderOpen size={54} className="text-slate-700 mx-auto mb-4" />
-                <h3 className="text-2xl font-black text-white">Nenhum paciente cadastrado</h3>
-                <p className="text-slate-400 mt-2 font-medium">Cadastre pacientes em “Meus Pacientes” para começar a montar os prontuários.</p>
+                <h3 className="text-2xl font-black text-white">Selecione um paciente</h3>
+                <p className="text-slate-400 mt-2 font-medium">Clique em um paciente na lista para abrir ficha clínica, avaliações, evoluções, arquivos e registros.</p>
               </div>
             ) : (
               <>
                 <div className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
-                        <User size={28} />
+                      <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 overflow-hidden">
+                        {getPatientPhoto(selectedPatient) ? (
+                          <img src={getPatientPhoto(selectedPatient)} alt={getPatientName(selectedPatient)} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={28} />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-widest text-sky-400">Prontuário selecionado</p>
