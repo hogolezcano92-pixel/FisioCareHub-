@@ -167,7 +167,7 @@ export default function Records() {
             .from('pacientes')
             .select('*')
             .eq('fisioterapeuta_id', user.id)
-            .order('nome');
+            .order('nome_completo', { ascending: true });
 
           if (patientsError) warnings.push(`Pacientes: ${patientsError.message}`);
 
