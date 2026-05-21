@@ -316,3 +316,72 @@ export const sendAppointmentConfirmation = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Sends an email to the physiotherapist when a patient submits an evaluation.
+ */
+export const sendEvaluationReceivedEmail = async (
+  email: string | undefined,
+  name: string,
+  details: {
+    patientName: string;
+    ratingPhysio: number;
+    ratingPlatform: number;
+    comment?: string | null;
+    appointmentDate?: string | null;
+    appointmentTime?: string | null;
+  }
+) => {
+  if (!email) return { success: false, error: 'Email do fisioterapeuta não fornecido' };
+
+  const stars = '★'.repeat(Math.max(1, Math.min(5, Number(details.ratingPhysio || 0)))) +
+    '☆'.repeat(Math.max(0, 5 - Math.max(1, Math.min(5, Number(details.ratingPhysio || 0)))));
+
+  const appointmentInfo = details.appointmentDate || details.appointmentTime
+    ? `
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f1f5f9; border-collapse:collapse; margin:20px 0;">
+        <tr><td style="padding:18px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#334155;">
+          ${details.appointmentDate ? `<p style="margin:0 0 8px 0;"><strong>Data:</strong> ${escapeHtml(details.appointmentDate)}</p>` : ''}
+          ${details.appointmentTime ? `<p style="margin:0;"><strong>Horário:</strong> ${escapeHtml(details.appointmentTime)}</p>` : ''}
+        </td></tr>
+      </table>
+    `
+    : '';
+
+  const commentBlock = details.comment
+    ? `<div style="background-color:#eff6ff; border-left:4px solid #2563eb; padding:16px; margin:20px 0; font-family:Arial, Helvetica, sans-serif; color:#334155; font-size:15px; line-height:24px;">
+        “${escapeHtml(details.comment)}”
+      </div>`
+    : `<p style="margin:16px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#64748b;">O paciente não deixou comentário adicional.</p>`;
+
+  const message = `
+    <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Nova avaliação recebida</h2>
+    <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${escapeHtml(name)}</strong>. Você recebeu uma nova avaliação no <strong>FisioCareHub</strong>.</p>
+    <p style="margin:0 0 12px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;"><strong>Paciente:</strong> ${escapeHtml(details.patientName || 'Paciente')}</p>
+    <p style="margin:0 0 12px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;"><strong>Nota do profissional:</strong> <span style="color:#f59e0b; font-size:20px; letter-spacing:2px;">${stars}</span> (${Number(details.ratingPhysio || 0)}/5)</p>
+    <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;"><strong>Nota da plataforma:</strong> ${Number(details.ratingPlatform || 0)}/5</p>
+    ${appointmentInfo}
+    ${commentBlock}
+    <p style="margin:20px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#475569;">Acesse o FisioCareHub para acompanhar sua reputação e seus atendimentos.</p>
+  `;
+
+  const html = generateEmailHTML({
+    nome_do_usuario: name,
+    mensagem_principal_da_notificacao: message
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: `Nova avaliação recebida - FisioCareHub`,
+      html
+    });
+
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Evaluation email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[EmailService] [FLOW-AUDIT] FAILED to send evaluation email:', error);
+    return { success: false, error };
+  }
+};
+
