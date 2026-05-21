@@ -32,6 +32,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Bord
 import { saveAs } from 'file-saver';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
+import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -517,7 +518,16 @@ export default function Documents() {
 
   const handleDownloadDocument = async (doc: any) => {
     if (!doc?.isClinicalFile) {
-      handleExportFromTable(doc);
+      try {
+        generateLegalDocumentPDF(doc, {
+          profile,
+          fileName: `${getDocumentTitle(doc)}-${doc.patient_name || 'paciente'}`,
+        });
+        import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
+      } catch (err) {
+        console.error('Erro ao gerar PDF premium:', err);
+        import('sonner').then(({ toast }) => toast.error('Erro ao gerar PDF premium. Tente novamente.'));
+      }
       return;
     }
 
