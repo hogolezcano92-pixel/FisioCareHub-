@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  BrainCircuit, 
-  ChevronRight, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  Calendar,
-  Sparkles,
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import {
+  AlertTriangle,
   ArrowUpRight,
+  BrainCircuit,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
   Loader2,
-  Users,
-  FileText,
+  MessageSquare,
+  RefreshCw,
+  Sparkles,
   TrendingUp,
-  MessageSquare
+  Users
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -24,157 +24,496 @@ interface ClinicalAssistantProps {
   isPhysio: boolean;
 }
 
+type AnyRecord = Record<string, any>;
+
+type ClinicalInsights = {
+  statusDay: string;
+  alerts: string[];
+  suggestions: string[];
+  nextPatientSummary?: string;
+  daySummary?: string;
+};
+
+type PatientInfo = {
+  id: string;
+  name: string;
+  email?: string | null;
+  avatarUrl?: string | null;
+};
+
+const ACTIVE_APPOINTMENT_STATUSES = new Set([
+  'agendado',
+  'confirmado',
+  'pago',
+  'pendente',
+  'pendente_pagamento'
+]);
+
+const FAILURE_STATUSES = new Set(['cancelado', 'cancelada', 'falta', 'faltou', 'no_show']);
+
+const normalizeStatus = (status?: string | null) => String(status || '').toLowerCase().trim();
+
+const formatDateOnly = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatTime = (appointment: AnyRecord) => {
+  const rawTime = appointment.hora || appointment.data_servico || appointment.data;
+
+  if (!rawTime) return 'Horário não informado';
+
+  if (typeof rawTime === 'string' && /^\d{2}:\d{2}/.test(rawTime)) {
+    return rawTime.slice(0, 5);
+  }
+
+  const parsed = new Date(rawTime);
+  if (Number.isNaN(parsed.getTime())) return String(rawTime).slice(0, 5);
+
+  return parsed.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const getAppointmentDate = (appointment: AnyRecord) => {
+  const source = appointment.data_servico || appointment.data || appointment.created_at;
+  const date = source ? new Date(source) : null;
+  return date && !Number.isNaN(date.getTime()) ? date : null;
+};
+
+const getPatientNameFromRecord = (record?: AnyRecord | null) => {
+  if (!record) return null;
+  return (
+    record.nome_completo ||
+    record.nome ||
+    record.name ||
+    record.full_name ||
+    record.email ||
+    null
+  );
+};
+
+const unique = <T,>(items: T[]) => Array.from(new Set(items.filter(Boolean)));
+
 export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [insights, setInsights] = useState<{
-    statusDay: string;
-    alerts: string[];
-    suggestions: string[];
-    nextPatientSummary?: string;
-    daySummary?: string;
-  } | null>(null);
+  const [insights, setInsights] = useState<ClinicalInsights | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [assistantQuestion, setAssistantQuestion] = useState('');
+  const [assistantAnswer, setAssistantAnswer] = useState<string | null>(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
 
-  const fetchClinicalDataAndGenerateInsights = async () => {
-    if (!user || !isPhysio) return;
+  const fetchPatientMaps = useCallback(async (patientIds: string[]) => {
+    const ids = unique(patientIds);
+    const patientMap = new Map<string, PatientInfo>();
+
+    if (ids.length === 0) return patientMap;
+
+    const [profilePatientsResult, internalPatientsResult] = await Promise.allSettled([
+      supabase.from('perfis').select('*').in('id', ids),
+      supabase.from('pacientes').select('*').in('id', ids)
+    ]);
+
+    if (profilePatientsResult.status === 'fulfilled') {
+      const { data } = profilePatientsResult.value;
+      (data || []).forEach((patient: AnyRecord) => {
+        patientMap.set(patient.id, {
+          id: patient.id,
+          name: getPatientNameFromRecord(patient) || 'Paciente sem nome',
+          email: patient.email,
+          avatarUrl: patient.avatar_url || patient.foto_url || null
+        });
+      });
+    }
+
+    if (internalPatientsResult.status === 'fulfilled') {
+      const { data } = internalPatientsResult.value;
+      (data || []).forEach((patient: AnyRecord) => {
+        patientMap.set(patient.id, {
+          id: patient.id,
+          name: getPatientNameFromRecord(patient) || 'Paciente sem nome',
+          email: patient.email,
+          avatarUrl: patient.avatar_url || patient.foto_url || null
+        });
+      });
+    }
+
+    return patientMap;
+  }, []);
+
+  const buildLocalInsights = useCallback((params: {
+    todayAppointments: AnyRecord[];
+    nextAppointment?: AnyRecord | null;
+    recentFailures: AnyRecord[];
+    completedWithoutEvolution: AnyRecord[];
+    totalPatients: number;
+    patientMap: Map<string, PatientInfo>;
+  }): ClinicalInsights => {
+    const {
+      todayAppointments,
+      nextAppointment,
+      recentFailures,
+      completedWithoutEvolution,
+      totalPatients,
+      patientMap
+    } = params;
+
+    const activeToday = todayAppointments.filter((appointment) => {
+      const status = normalizeStatus(appointment.status);
+      return status !== 'cancelado' && status !== 'cancelada';
+    });
+
+    const remainingToday = activeToday.filter((appointment) => normalizeStatus(appointment.status) !== 'concluido');
+    const alerts: string[] = [];
+    const suggestions: string[] = [];
+
+    const statusDay = activeToday.length === 0
+      ? 'Nenhum atendimento agendado para hoje.'
+      : activeToday.length === 1
+        ? `Você tem 1 atendimento hoje, às ${formatTime(activeToday[0])}.`
+        : `Você tem ${activeToday.length} atendimentos hoje. ${remainingToday.length} ainda ${remainingToday.length === 1 ? 'está pendente' : 'estão pendentes'}.`;
+
+    const missingByPatient = completedWithoutEvolution.reduce<Record<string, number>>((acc, appointment) => {
+      const patientId = appointment.paciente_id;
+      if (!patientId) return acc;
+      acc[patientId] = (acc[patientId] || 0) + 1;
+      return acc;
+    }, {});
+
+    Object.entries(missingByPatient)
+      .filter(([, count]) => count >= 1)
+      .slice(0, 3)
+      .forEach(([patientId, count]) => {
+        const patientName = patientMap.get(patientId)?.name || 'paciente vinculado';
+        alerts.push(
+          count >= 2
+            ? `Alerta de prontuário: ${count} atendimentos concluídos sem evolução registrada para ${patientName}.`
+            : `Alerta de prontuário: 1 atendimento concluído sem evolução registrada para ${patientName}.`
+        );
+        suggestions.push(`Revisar prontuário de ${patientName} e registrar evolução clínica.`);
+      });
+
+    const failuresByPatient = recentFailures.reduce<Record<string, number>>((acc, appointment) => {
+      const patientId = appointment.paciente_id;
+      if (!patientId) return acc;
+      acc[patientId] = (acc[patientId] || 0) + 1;
+      return acc;
+    }, {});
+
+    Object.entries(failuresByPatient)
+      .filter(([, count]) => count >= 2)
+      .slice(0, 2)
+      .forEach(([patientId, count]) => {
+        const patientName = patientMap.get(patientId)?.name || 'paciente vinculado';
+        alerts.push(`Alerta de comparecimento: ${patientName} teve ${count} cancelamentos ou faltas recentes.`);
+        suggestions.push(`Entrar em contato com ${patientName} para confirmar adesão ao tratamento.`);
+      });
+
+    if (activeToday.length === 0) {
+      suggestions.push('Usar a janela livre para revisar prontuários, evoluções pendentes ou entrar em contato com pacientes inativos.');
+    } else if (totalPatients >= 3 && activeToday.length <= 1) {
+      suggestions.push('Avaliar oportunidades de preencher horários livres com retornos ou pacientes em acompanhamento.');
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push('Agenda sem pendências críticas. Mantenha os prontuários atualizados ao final de cada atendimento.');
+    }
+
+    const nextPatient = nextAppointment?.paciente_id
+      ? patientMap.get(nextAppointment.paciente_id)
+      : null;
+
+    const nextPatientSummary = nextAppointment && nextPatient
+      ? `Próxima consulta: ${nextPatient.name}, às ${formatTime(nextAppointment)}${nextAppointment.servico ? ` — ${nextAppointment.servico}` : ''}.`
+      : 'Sem próximo paciente agendado.';
+
+    return {
+      statusDay,
+      alerts,
+      suggestions: unique(suggestions).slice(0, 4),
+      nextPatientSummary,
+      daySummary: activeToday.length > 0
+        ? `Dia com ${activeToday.length} atendimento(s) e ${alerts.length} alerta(s) clínico(s).`
+        : 'Dia sem atendimentos agendados.'
+    };
+  }, []);
+
+  const fetchClinicalDataAndGenerateInsights = useCallback(async () => {
+    if (!user || !isPhysio) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const now = new Date().toISOString();
+      const now = new Date();
+      const today = formatDateOnly(now);
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date(startOfToday);
+      endOfToday.setDate(endOfToday.getDate() + 1);
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // 1. Fetch Today's Appointments
-      const { data: todayAppts } = await supabase
+      // A tabela agendamentos já apareceu no projeto com data_servico, data e hora.
+      // A busca principal usa data_servico; se o banco estiver com dados antigos, cai para data.
+      let todayAppointments: AnyRecord[] = [];
+      const todayByServiceDate = await supabase
         .from('agendamentos')
-        .select(`
-          *,
-          paciente:perfis!paciente_id(id, nome_completo, avatar_url)
-        `)
-        .eq('fisio_id', user.id)
-        .eq('data', today)
-        .order('hora', { ascending: true });
-
-      // 2. Fetch Next Appointment
-      const { data: nextAppt } = await supabase
-        .from('agendamentos')
-        .select(`
-          *,
-          paciente:perfis!paciente_id(id, nome_completo, avatar_url, bio, observacoes_saude)
-        `)
-        .eq('fisio_id', user.id)
-        .gte('data_servico', now)
-        .order('data_servico', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      // 3. Fetch Recent Failures (Faltas/Cancelamentos)
-      const { data: recentFailures } = await supabase
-        .from('agendamentos')
-        .select('paciente_id, status, data')
-        .eq('fisio_id', user.id)
-        .in('status', ['cancelado', 'pendente'])
-        .lt('data_servico', now)
-        .order('data_servico', { ascending: false })
-        .limit(20);
-
-      // 4. Fetch Missing Evolutions
-      // Get completed appts from the last 7 days
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: completedAppts } = await supabase
-        .from('agendamentos')
-        .select('id, data, paciente_id')
-        .eq('fisio_id', user.id)
-        .eq('status', 'concluido')
-        .gte('data_servico', sevenDaysAgo);
-
-      // 5. Fetch Patients
-      const { data: totalPatients } = await supabase
-        .from('pacientes')
         .select('*')
-        .eq('fisioterapeuta_id', user.id);
+        .eq('fisio_id', user.id)
+        .gte('data_servico', startOfToday.toISOString())
+        .lt('data_servico', endOfToday.toISOString())
+        .order('data_servico', { ascending: true });
 
-      // Format data for AI
-      const clinicalContext = {
-        professionalName: profile?.nome_completo,
-        todayStats: {
-          total: todayAppts?.length || 0,
-          remaining: todayAppts?.filter(a => a.status !== 'concluido').length || 0,
-          next: nextAppt ? {
-            time: nextAppt.hora,
-            patient: nextAppt.paciente?.nome_completo,
-            details: nextAppt.paciente?.observacoes_saude
-          } : null
-        },
-        recentActivity: {
-          failures: recentFailures || [],
-          completedWithoutEvolution: completedAppts || [], // Simplification for context
-          totalPatients: totalPatients?.length || 0
-        },
-        timestamp: now
-      };
+      if (!todayByServiceDate.error && todayByServiceDate.data) {
+        todayAppointments = todayByServiceDate.data;
+      } else {
+        const todayByDate = await supabase
+          .from('agendamentos')
+          .select('*')
+          .eq('fisio_id', user.id)
+          .eq('data', today)
+          .order('hora', { ascending: true });
 
-      // Call AI Service
-      const aiInsights = await kineAIService.generateClinicalInsights(clinicalContext);
-      setInsights(aiInsights);
+        if (todayByDate.error) throw todayByDate.error;
+        todayAppointments = todayByDate.data || [];
+      }
 
+      const [{ data: upcomingAppointments }, { data: recentFailures }, { data: completedAppts }, { data: totalPatients }] = await Promise.all([
+        supabase
+          .from('agendamentos')
+          .select('*')
+          .eq('fisio_id', user.id)
+          .gte('data_servico', now.toISOString())
+          .order('data_servico', { ascending: true })
+          .limit(10),
+        supabase
+          .from('agendamentos')
+          .select('*')
+          .eq('fisio_id', user.id)
+          .in('status', Array.from(FAILURE_STATUSES))
+          .gte('data_servico', sevenDaysAgo.toISOString())
+          .order('data_servico', { ascending: false })
+          .limit(30),
+        supabase
+          .from('agendamentos')
+          .select('*')
+          .eq('fisio_id', user.id)
+          .eq('status', 'concluido')
+          .gte('data_servico', sevenDaysAgo.toISOString())
+          .order('data_servico', { ascending: false })
+          .limit(30),
+        supabase
+          .from('pacientes')
+          .select('id', { count: 'exact' })
+          .eq('fisioterapeuta_id', user.id)
+      ]);
+
+      const activeUpcoming = (upcomingAppointments || []).filter((appointment) => {
+        const status = normalizeStatus(appointment.status);
+        return ACTIVE_APPOINTMENT_STATUSES.has(status);
+      });
+      const nextAppointment = activeUpcoming[0] || null;
+
+      const allPatientIds = unique([
+        ...todayAppointments.map((appointment) => appointment.paciente_id),
+        ...activeUpcoming.map((appointment) => appointment.paciente_id),
+        ...(recentFailures || []).map((appointment) => appointment.paciente_id),
+        ...(completedAppts || []).map((appointment) => appointment.paciente_id)
+      ]);
+
+      const patientMap = await fetchPatientMaps(allPatientIds);
+
+      let prontuarios: AnyRecord[] = [];
+      if (allPatientIds.length > 0) {
+        const prontuariosResult = await supabase
+          .from('prontuarios')
+          .select('*')
+          .eq('fisio_id', user.id)
+          .in('paciente_id', allPatientIds)
+          .gte('data_registro', sevenDaysAgo.toISOString());
+
+        if (!prontuariosResult.error) prontuarios = prontuariosResult.data || [];
+      }
+
+      let evolucoes: AnyRecord[] = [];
+      const completedIds = unique((completedAppts || []).map((appointment) => appointment.id));
+      if (completedIds.length > 0) {
+        const evolucoesResult = await supabase
+          .from('evolucoes')
+          .select('*')
+          .in('atendimento_id', completedIds);
+
+        if (!evolucoesResult.error) evolucoes = evolucoesResult.data || [];
+      }
+
+      const completedWithoutEvolution = (completedAppts || []).filter((appointment) => {
+        const appointmentDate = getAppointmentDate(appointment);
+        const hasEvolutionByAppointment = evolucoes.some((evolution) => String(evolution.atendimento_id) === String(appointment.id));
+        const hasProntuarioAfterAppointment = prontuarios.some((record) => {
+          if (record.paciente_id !== appointment.paciente_id) return false;
+          if (!appointmentDate) return true;
+          const recordDate = new Date(record.data_registro || record.created_at);
+          return !Number.isNaN(recordDate.getTime()) && recordDate >= appointmentDate;
+        });
+
+        return !hasEvolutionByAppointment && !hasProntuarioAfterAppointment;
+      });
+
+      const localInsights = buildLocalInsights({
+        todayAppointments,
+        nextAppointment,
+        recentFailures: recentFailures || [],
+        completedWithoutEvolution,
+        totalPatients: totalPatients?.length || 0,
+        patientMap
+      });
+
+      // A IA entra como camada extra, mas a tela não depende dela para funcionar.
+      // Isso evita alertas ruins com UUID do paciente quando a IA não tem nome suficiente.
+      try {
+        const clinicalContext = {
+          professionalName: profile?.nome_completo,
+          todayStats: {
+            total: todayAppointments.length,
+            remaining: todayAppointments.filter((appointment) => normalizeStatus(appointment.status) !== 'concluido').length,
+            appointments: todayAppointments.map((appointment) => ({
+              time: formatTime(appointment),
+              status: appointment.status,
+              patient: patientMap.get(appointment.paciente_id)?.name || 'Paciente sem nome',
+              service: appointment.servico || appointment.tipo || null
+            })),
+            next: nextAppointment ? {
+              time: formatTime(nextAppointment),
+              patient: patientMap.get(nextAppointment.paciente_id)?.name || 'Paciente sem nome',
+              service: nextAppointment.servico || nextAppointment.tipo || null
+            } : null
+          },
+          recentActivity: {
+            failures: (recentFailures || []).map((appointment) => ({
+              patient: patientMap.get(appointment.paciente_id)?.name || 'Paciente sem nome',
+              status: appointment.status,
+              date: appointment.data_servico || appointment.data
+            })),
+            completedWithoutEvolution: completedWithoutEvolution.map((appointment) => ({
+              patient: patientMap.get(appointment.paciente_id)?.name || 'Paciente sem nome',
+              date: appointment.data_servico || appointment.data
+            })),
+            totalPatients: totalPatients?.length || 0
+          },
+          localInsights,
+          timestamp: now.toISOString()
+        };
+
+        const aiInsights = await kineAIService.generateClinicalInsights(clinicalContext);
+        setInsights({
+          statusDay: aiInsights?.statusDay || localInsights.statusDay,
+          alerts: Array.isArray(aiInsights?.alerts) && aiInsights.alerts.length > 0 ? aiInsights.alerts : localInsights.alerts,
+          suggestions: Array.isArray(aiInsights?.suggestions) && aiInsights.suggestions.length > 0 ? aiInsights.suggestions : localInsights.suggestions,
+          nextPatientSummary: aiInsights?.nextPatientSummary || localInsights.nextPatientSummary,
+          daySummary: aiInsights?.daySummary || localInsights.daySummary
+        });
+      } catch {
+        setInsights(localInsights);
+      }
     } catch (err) {
-      console.error("Erro ao gerar insights clínicos:", err);
-      setError("Não foi possível carregar os insights clínicos no momento.");
+      console.error('Erro ao gerar insights clínicos:', err);
+      setError('Não foi possível carregar os insights clínicos no momento.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildLocalInsights, fetchPatientMaps, isPhysio, profile?.nome_completo, user]);
 
   useEffect(() => {
-    if (isPhysio) {
-      fetchClinicalDataAndGenerateInsights();
+    fetchClinicalDataAndGenerateInsights();
+  }, [fetchClinicalDataAndGenerateInsights]);
+
+  const visibleAlerts = useMemo(() => insights?.alerts?.filter(Boolean) || [], [insights?.alerts]);
+  const visibleSuggestions = useMemo(() => insights?.suggestions?.filter(Boolean) || [], [insights?.suggestions]);
+
+  const handleAssistantSubmit = async () => {
+    const question = assistantQuestion.trim();
+    if (!question || assistantLoading) return;
+
+    setAssistantLoading(true);
+    setAssistantAnswer(null);
+
+    try {
+      const contextMessage = `Contexto real do painel do fisioterapeuta: ${JSON.stringify(insights || {})}\n\nPergunta do profissional: ${question}`;
+      const response = await kineAIService.chat(contextMessage);
+      setAssistantAnswer(response);
+    } catch {
+      setAssistantAnswer('Não consegui responder agora. Tente novamente em alguns instantes.');
+    } finally {
+      setAssistantLoading(false);
     }
-  }, [isPhysio]);
+  };
 
   if (!isPhysio) return null;
 
   return (
-    <motion.div 
+    <motion.div
       layout
       className={cn(
-        "bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500",
-        isExpanded ? "p-8" : "p-6 cursor-pointer"
+        'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
+        isExpanded ? 'p-8' : 'p-6 cursor-pointer'
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-blue-400/10 animate-pulse pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
-      
+
       <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner group-hover:rotate-12 transition-transform">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner group-hover:rotate-12 transition-transform shrink-0">
               <BrainCircuit size={24} className="animate-pulse" />
             </div>
-            <div>
-              <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
+            <div className="min-w-0">
+              <h3 className="text-xl font-black tracking-tight flex items-center gap-2 flex-wrap">
                 Assistente <span className="text-blue-200">Clínico</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
               </h3>
-              <p className="text-blue-100/70 text-[10px] font-black uppercase tracking-widest">Inteligência de Dados Real</p>
+              <p className="text-blue-100/70 text-[10px] font-black uppercase tracking-widest">Inteligência de dados reais</p>
             </div>
           </div>
-          {isExpanded && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(false);
-              }}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
-            >
-              <ChevronRight size={20} className="rotate-90" />
-            </button>
-          )}
+
+          <div className="flex items-center gap-2 shrink-0">
+            {isExpanded && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fetchClinicalDataAndGenerateInsights();
+                }}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                aria-label="Atualizar assistente clínico"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              </button>
+            )}
+            {isExpanded && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(false);
+                }}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                aria-label="Recolher assistente clínico"
+              >
+                <ChevronRight size={20} className="rotate-90" />
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -189,15 +528,12 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
           </div>
         ) : (
           <div className="space-y-6">
-            {/* 1. Status do Dia (Always Visible) */}
             <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 space-y-3">
               <div className="flex items-center gap-2 text-blue-200">
                 <CheckCircle2 size={16} />
                 <span className="text-[10px] font-black uppercase tracking-widest">Status do Dia</span>
               </div>
-              <p className="text-sm font-medium leading-relaxed">
-                {insights?.statusDay}
-              </p>
+              <p className="text-sm font-medium leading-relaxed">{insights?.statusDay}</p>
             </div>
 
             <AnimatePresence>
@@ -208,25 +544,28 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                   exit={{ opacity: 0, height: 0 }}
                   className="space-y-6 overflow-hidden"
                 >
-                  {/* 2. Alertas Inteligentes */}
-                  {insights?.alerts && insights.alerts.length > 0 && (
+                  {visibleAlerts.length > 0 ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-amber-300">
                         <AlertTriangle size={16} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Alertas Inteligentes</span>
                       </div>
                       <div className="grid gap-2">
-                        {insights.alerts.map((alert, idx) => (
-                          <div key={idx} className="flex gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-medium text-rose-100">
+                        {visibleAlerts.map((alert, idx) => (
+                          <div key={`${alert}-${idx}`} className="flex gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-medium text-rose-100 leading-relaxed">
                             <span className="shrink-0">⚠️</span>
-                            {alert}
+                            <span>{alert}</span>
                           </div>
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <div className="flex gap-3 p-3 bg-emerald-500/10 border border-emerald-400/20 rounded-xl text-xs font-medium text-emerald-100 leading-relaxed">
+                      <CheckCircle2 size={16} className="shrink-0 text-emerald-300" />
+                      Nenhum alerta crítico encontrado agora.
+                    </div>
                   )}
 
-                  {/* 4. Pré-resumo do próximo paciente */}
                   {insights?.nextPatientSummary && (
                     <div className="p-5 bg-black/20 backdrop-blur-xl rounded-[2rem] border border-white/10 space-y-4">
                       <div className="flex items-center justify-between">
@@ -236,23 +575,21 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                         </div>
                         <Sparkles size={16} className="text-sky-400 animate-pulse" />
                       </div>
-                      <p className="text-xs text-white/90 leading-relaxed italic whitespace-pre-wrap">
-                        {insights.nextPatientSummary}
-                      </p>
+                      <p className="text-xs text-white/90 leading-relaxed italic whitespace-pre-wrap">{insights.nextPatientSummary}</p>
                     </div>
                   )}
 
-                  {/* 3. Sugestões de Ação */}
-                  {insights?.suggestions && insights.suggestions.length > 0 && (
+                  {visibleSuggestions.length > 0 && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-emerald-300">
                         <TrendingUp size={16} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Sugestões de Ação</span>
                       </div>
                       <div className="flex flex-col gap-2">
-                        {insights.suggestions.map((suggestion, idx) => (
-                          <button 
-                            key={idx}
+                        {visibleSuggestions.map((suggestion, idx) => (
+                          <button
+                            type="button"
+                            key={`${suggestion}-${idx}`}
                             className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all text-left"
                           >
                             <span className="flex-1">{suggestion}</span>
@@ -263,19 +600,37 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                     </div>
                   )}
 
-                  {/* Chat / Interaction */}
-                  <div className="flex gap-2 pt-4 border-t border-white/10">
-                    <div className="flex-1 relative">
-                      <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
-                      <input 
-                        type="text" 
-                        placeholder="Pedir evolução resumida..." 
-                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-xs placeholder-white/30 outline-none focus:ring-2 focus:ring-blue-400 transition-all font-medium"
-                      />
+                  <div className="space-y-3 pt-4 border-t border-white/10">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                        <input
+                          type="text"
+                          value={assistantQuestion}
+                          onChange={(event) => setAssistantQuestion(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') handleAssistantSubmit();
+                          }}
+                          placeholder="Pergunte sobre agenda, evolução ou alertas..."
+                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-xs placeholder-white/30 outline-none focus:ring-2 focus:ring-blue-400 transition-all font-medium"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAssistantSubmit}
+                        disabled={assistantLoading || !assistantQuestion.trim()}
+                        className="p-3 bg-white text-blue-900 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                        aria-label="Enviar pergunta para assistente clínico"
+                      >
+                        {assistantLoading ? <Loader2 size={20} className="animate-spin" /> : <ArrowUpRight size={20} />}
+                      </button>
                     </div>
-                    <button className="p-3 bg-white text-blue-900 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all">
-                      <ArrowUpRight size={20} />
-                    </button>
+
+                    {assistantAnswer && (
+                      <div className="p-3 bg-white/10 border border-white/10 rounded-xl text-xs text-blue-50 leading-relaxed whitespace-pre-wrap">
+                        {assistantAnswer}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -283,16 +638,12 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
 
             {!isExpanded && (
               <div className="flex items-center justify-between pt-2">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-6 h-6 rounded-full border-2 border-blue-600 bg-white/10 backdrop-blur-md" />
-                  ))}
-                  <div className="w-6 h-6 rounded-full border-2 border-blue-600 bg-blue-500 flex items-center justify-center text-[8px] font-black">
-                    +
-                  </div>
+                <div className="flex items-center gap-2 text-[10px] font-black text-blue-200 uppercase tracking-widest">
+                  <Calendar size={14} />
+                  Dados do dia
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-200 uppercase tracking-widest">
-                  Ver Detalhes
+                  Ver detalhes
                   <ChevronRight size={12} />
                 </div>
               </div>
