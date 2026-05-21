@@ -41,6 +41,87 @@ const FAVORITE_TEMPLATES = [
   { id: 'laudo', name: 'Laudo/Relatório', icon: FileSearch, color: 'text-purple-600', bg: 'bg-purple-50' },
 ];
 
+type DocumentField = {
+  key: string;
+  label: string;
+  placeholder?: string;
+  type?: 'text' | 'number' | 'date' | 'time' | 'select' | 'textarea';
+  options?: string[];
+  required?: boolean;
+  cols?: 'full' | 'half';
+};
+
+const CONTRACT_FIELDS: DocumentField[] = [
+  { key: 'tipoServico', label: 'Tipo de serviço', type: 'select', required: true, options: ['Avaliação fisioterapêutica', 'Sessão domiciliar', 'Reabilitação ortopédica', 'Reabilitação neurológica', 'Reabilitação cardiorrespiratória', 'Pilates terapêutico', 'Atendimento pós-operatório', 'Outro'] },
+  { key: 'valorSessao', label: 'Valor por sessão', placeholder: 'Ex: R$ 120,00', required: true },
+  { key: 'numeroSessoes', label: 'Número de sessões', placeholder: 'Ex: 10 sessões', required: true },
+  { key: 'frequencia', label: 'Frequência', type: 'select', required: true, options: ['1x por semana', '2x por semana', '3x por semana', 'Semanal', 'Quinzenal', 'Mensal', 'Conforme evolução clínica'] },
+  { key: 'duracaoSessao', label: 'Duração da sessão', type: 'select', required: true, options: ['30 minutos', '45 minutos', '50 minutos', '60 minutos', '90 minutos'] },
+  { key: 'localAtendimento', label: 'Local do atendimento', type: 'select', required: true, options: ['Domiciliar', 'Clínica', 'Online', 'Hospitalar', 'Academia/Studio', 'Outro'] },
+  { key: 'formaPagamento', label: 'Forma de pagamento', type: 'select', required: true, options: ['Pix', 'Cartão', 'Dinheiro', 'Transferência bancária', 'Mensal', 'Pacote antecipado'] },
+  { key: 'vigencia', label: 'Vigência', placeholder: 'Ex: 60 dias ou até finalizar o pacote', required: true },
+  { key: 'cancelamento', label: 'Política de cancelamento', type: 'select', required: true, options: ['24h de antecedência', '12h de antecedência', '48h de antecedência', 'Sem cobrança com aviso prévio', 'Conforme acordo entre as partes'] },
+  { key: 'objetivoTratamento', label: 'Objetivo do tratamento', type: 'textarea', cols: 'full', placeholder: 'Ex: Reabilitação cervical, controle da dor e melhora da mobilidade funcional.' },
+];
+
+const ATTESTATION_FIELDS: DocumentField[] = [
+  { key: 'dataAtendimento', label: 'Data do atendimento', type: 'date', required: true },
+  { key: 'horaInicio', label: 'Horário de início', type: 'time', required: true },
+  { key: 'horaFim', label: 'Horário de término', type: 'time' },
+  { key: 'localAtendimento', label: 'Local/modalidade', type: 'select', required: true, options: ['Clínica', 'Domiciliar', 'Online', 'Hospitalar', 'Outro'] },
+  { key: 'finalidade', label: 'Finalidade', type: 'select', options: ['Comprovação de comparecimento', 'Acompanhamento fisioterapêutico', 'Justificativa administrativa', 'Outro'] },
+  { key: 'observacaoAtestado', label: 'Observações do atestado', type: 'textarea', cols: 'full', placeholder: 'Ex: Evitar informar diagnóstico quando não for necessário.' },
+];
+
+const IMAGE_AUTH_FIELDS: DocumentField[] = [
+  { key: 'usoClinico', label: 'Uso clínico no prontuário', type: 'select', required: true, options: ['Autorizado', 'Não autorizado'] },
+  { key: 'usoEducativo', label: 'Uso educativo/científico', type: 'select', required: true, options: ['Autorizado sem identificação', 'Autorizado com identificação', 'Não autorizado'] },
+  { key: 'usoMarketing', label: 'Uso em divulgação/marketing', type: 'select', required: true, options: ['Não autorizado', 'Autorizado sem identificação', 'Autorizado com identificação'] },
+  { key: 'canais', label: 'Canais permitidos', placeholder: 'Ex: prontuário, app, site, Instagram, materiais educativos' },
+  { key: 'prazoAutorizacao', label: 'Prazo da autorização', type: 'select', options: ['Até revogação por escrito', '6 meses', '12 meses', '24 meses'] },
+  { key: 'observacaoImagem', label: 'Observações da autorização', type: 'textarea', cols: 'full', placeholder: 'Ex: Paciente autoriza apenas imagens sem identificação facial.' },
+];
+
+const REPORT_FIELDS: DocumentField[] = [
+  { key: 'tipoRelatorio', label: 'Tipo de relatório', type: 'select', required: true, options: ['Laudo fisioterapêutico', 'Relatório de evolução', 'Relatório funcional', 'Relatório para encaminhamento', 'Relatório para convênio'] },
+  { key: 'queixaPrincipal', label: 'Queixa principal', placeholder: 'Ex: Dor cervical há 2 semanas', required: true },
+  { key: 'avaliacaoFuncional', label: 'Avaliação funcional', type: 'textarea', cols: 'full', placeholder: 'Ex: Limitação de ADM, dor ao movimento, alterações posturais, testes funcionais.' },
+  { key: 'conduta', label: 'Conduta realizada', type: 'textarea', cols: 'full', placeholder: 'Ex: Terapia manual, exercícios terapêuticos, orientações domiciliares.' },
+  { key: 'evolucao', label: 'Evolução clínica', type: 'textarea', cols: 'full', placeholder: 'Ex: Paciente evoluiu com redução da dor e melhora funcional.' },
+  { key: 'recomendacoes', label: 'Recomendações', type: 'textarea', cols: 'full', placeholder: 'Ex: Manter exercícios, retorno em X dias, reavaliação.' },
+];
+
+const GENERIC_FIELDS: DocumentField[] = [
+  { key: 'objetivoDocumento', label: 'Objetivo do documento', type: 'textarea', cols: 'full', placeholder: 'Descreva o que precisa constar no documento.' },
+];
+
+const getFieldsForTemplate = (templateId?: string): DocumentField[] => {
+  if (templateId === 'contrato') return CONTRACT_FIELDS;
+  if (templateId === 'atestado') return ATTESTATION_FIELDS;
+  if (templateId === 'autorizacao') return IMAGE_AUTH_FIELDS;
+  if (templateId === 'laudo') return REPORT_FIELDS;
+  return GENERIC_FIELDS;
+};
+
+const getInitialDocumentFields = (templateId?: string) =>
+  getFieldsForTemplate(templateId).reduce<Record<string, string>>((acc, field) => {
+    acc[field.key] = '';
+    return acc;
+  }, {});
+
+const formatDocumentFieldsForAI = (templateId: string | undefined, fields: Record<string, string>, extraInfo: string) => {
+  const fieldLines = getFieldsForTemplate(templateId)
+    .map((field) => `- ${field.label}: ${fields[field.key]?.trim() || 'A definir antes da assinatura'}`)
+    .join('\n');
+
+  return `DADOS ESTRUTURADOS DO DOCUMENTO:\n${fieldLines}\n\nOBSERVAÇÕES ADICIONAIS DO PROFISSIONAL:\n${extraInfo?.trim() || 'Nenhuma observação adicional.'}`;
+};
+
+const getMissingRequiredDocumentFields = (templateId: string | undefined, fields: Record<string, string>) =>
+  getFieldsForTemplate(templateId)
+    .filter((field) => field.required && !fields[field.key]?.trim())
+    .map((field) => field.label);
+
 export default function Documents() {
   const { user, profile, loading: authLoading } = useAuth();
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
@@ -51,6 +132,7 @@ export default function Documents() {
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
+  const [documentFields, setDocumentFields] = useState<Record<string, string>>(getInitialDocumentFields());
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [viewingDoc, setViewingDoc] = useState<any>(null);
@@ -222,8 +304,16 @@ export default function Documents() {
     setPatientName('');
     setPatientEmail('');
     setAdditionalInfo('');
+    setDocumentFields(getInitialDocumentFields(template?.id));
     setIsModalOpen(true);
   };
+
+  const updateDocumentField = (key: string, value: string) => {
+    setDocumentFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const selectedTemplateId = selectedTemplate?.id as string | undefined;
+  const currentDocumentFields = getFieldsForTemplate(selectedTemplateId);
 
   const generateWithAI = async () => {
     if (!patientName) {
@@ -231,12 +321,21 @@ export default function Documents() {
       return;
     }
 
+    const missingRequired = getMissingRequiredDocumentFields(selectedTemplateId, documentFields);
+    if (selectedTemplateId === 'contrato' && missingRequired.length > 0) {
+      import('sonner').then(({ toast }) =>
+        toast.error(`Complete os dados obrigatórios do contrato: ${missingRequired.slice(0, 3).join(', ')}${missingRequired.length > 3 ? '...' : ''}`)
+      );
+      return;
+    }
+
     setGenerating(true);
     try {
+      const structuredInfo = formatDocumentFieldsForAI(selectedTemplateId, documentFields, additionalInfo);
       const content = await generateDocument(
         selectedTemplate?.name || 'Documento Geral',
         patientName,
-        additionalInfo
+        structuredInfo
       );
       
       if (!content || content.trim().length === 0) {
@@ -1250,38 +1349,84 @@ export default function Documents() {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 grid md:grid-cols-2 gap-8">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8 grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-3xl border border-blue-500/20 bg-blue-500/10 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-1">Documento inteligente</p>
+                    <p className="text-sm text-slate-300 font-semibold leading-relaxed">
+                      Preencha os campos principais. A IA usa esses dados para gerar um documento mais completo, evitando rascunhos com “A definir”.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Paciente</label>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome do Paciente <span className="text-rose-400">*</span></label>
                       <input 
                         type="text"
                         value={patientName}
                         onChange={(e) => setPatientName(e.target.value)}
                         placeholder="Ex: João da Silva"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white placeholder:text-slate-600"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">E-mail do Paciente</label>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail do Paciente</label>
                       <input 
                         type="email"
                         value={patientEmail}
                         onChange={(e) => setPatientEmail(e.target.value)}
                         placeholder="paciente@email.com"
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white placeholder:text-slate-600"
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {currentDocumentFields.map((field) => (
+                      <div key={field.key} className={`space-y-2 ${field.cols === 'full' || field.type === 'textarea' ? 'sm:col-span-2' : ''}`}>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                          {field.label} {field.required && <span className="text-rose-400">*</span>}
+                        </label>
+                        {field.type === 'select' ? (
+                          <select
+                            value={documentFields[field.key] || ''}
+                            onChange={(e) => updateDocumentField(field.key, e.target.value)}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                          >
+                            <option value="" className="bg-slate-900">Selecionar...</option>
+                            {field.options?.map((option) => (
+                              <option key={option} value={option} className="bg-slate-900">{option}</option>
+                            ))}
+                          </select>
+                        ) : field.type === 'textarea' ? (
+                          <textarea
+                            rows={3}
+                            value={documentFields[field.key] || ''}
+                            onChange={(e) => updateDocumentField(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white placeholder:text-slate-600 resize-none"
+                          />
+                        ) : (
+                          <input
+                            type={field.type || 'text'}
+                            value={documentFields[field.key] || ''}
+                            onChange={(e) => updateDocumentField(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white placeholder:text-slate-600"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Informações Adicionais (Opcional)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observações para a IA</label>
                     <textarea 
                       rows={4}
                       value={additionalInfo}
                       onChange={(e) => setAdditionalInfo(e.target.value)}
-                      placeholder="Ex: Motivo do atestado, detalhes do contrato, etc."
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white resize-none"
+                      placeholder="Ex: detalhe especial do caso, preferência de texto, orientação ao paciente ou condição combinada."
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white placeholder:text-slate-600 resize-none"
                     />
                   </div>
                   <button 
