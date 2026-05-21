@@ -251,7 +251,7 @@ export default function PhysioDashboard() {
                 <Calendar size={16} /> Minha Agenda
               </button>
               <button onClick={() => navigate('/dashboard/fisio?tab=avaliacoes')} className={tabButtonClass('avaliacoes')}>
-                <Star size={16} /> Avaliações
+                <Star size={16} /> Reputação
                 {reviews.length > 0 && (
                   <span className="ml-1 w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black">
                     {reviews.length}
@@ -265,6 +265,43 @@ export default function PhysioDashboard() {
                 <Activity size={16} /> Histórico
               </button>
             </div>
+          </div>
+
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <QuickActionCard
+              icon={<Users size={34} />}
+              label="Pacientes"
+              onClick={() => navigate('/patients')}
+            />
+            <QuickActionCard
+              icon={<Calendar size={34} />}
+              label="Agenda"
+              onClick={() => navigate('/dashboard/fisio?tab=agenda')}
+            />
+            <QuickActionCard
+              icon={<Activity size={34} />}
+              label="Exercícios"
+              onClick={() => navigate('/exercises')}
+            />
+            <QuickActionCard
+              icon={<ClipboardList size={34} />}
+              label="Prontuários"
+              onClick={() => navigate('/records')}
+            />
+            <QuickActionCard
+              icon={<DollarSign size={34} />}
+              label="Financeiro"
+              onClick={() => navigate('/dashboard/fisio?tab=financeiro')}
+            />
+            <QuickActionCard
+              icon={<Star size={34} />}
+              label="Reputação"
+              description={reviews.length > 0 ? `${reviewStats.averageProfessional.toFixed(1)} ★ • ${reviews.length} avaliações` : 'Avaliações dos pacientes'}
+              highlight
+              badge={reviews.length > 0 ? String(reviews.length) : undefined}
+              onClick={() => navigate('/dashboard/fisio?tab=avaliacoes')}
+            />
           </div>
 
           {reviews.length > 0 && (
@@ -351,6 +388,56 @@ export default function PhysioDashboard() {
       <FloatingHelpMenu />
       {showWelcome && <ApprovalWelcomeModal onClose={() => setShowWelcome(false)} />}
     </div>
+  );
+}
+
+
+function QuickActionCard({
+  icon,
+  label,
+  description,
+  badge,
+  highlight = false,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  description?: string;
+  badge?: string;
+  highlight?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group relative min-h-[132px] rounded-[2rem] border p-5 text-left transition-all active:scale-[0.98] overflow-hidden',
+        highlight
+          ? 'bg-amber-500/10 border-amber-400/30 hover:bg-amber-500/15 hover:border-amber-300/60 shadow-lg shadow-amber-950/10'
+          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-blue-400/30'
+      )}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      {badge ? (
+        <span className="absolute right-4 top-4 min-w-7 h-7 px-2 rounded-full bg-white text-blue-600 text-xs font-black flex items-center justify-center shadow-lg">
+          {badge}
+        </span>
+      ) : null}
+      <div className={cn('relative mb-4', highlight ? 'text-amber-300' : 'text-slate-400 group-hover:text-blue-300')}>
+        {icon}
+      </div>
+      <div className="relative space-y-1">
+        <p className="text-sm sm:text-base font-black uppercase tracking-[0.22em] text-white">
+          {label}
+        </p>
+        {description ? (
+          <p className="text-xs font-bold text-slate-400 leading-relaxed">
+            {description}
+          </p>
+        ) : null}
+      </div>
+    </button>
   );
 }
 
