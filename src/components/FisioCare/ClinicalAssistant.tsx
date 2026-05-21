@@ -600,38 +600,43 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                     </div>
                   )}
 
-                  <div className="space-y-3 pt-4 border-t border-white/10">
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                  <form
+                    className="space-y-3 pt-4 border-t border-white/10"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      handleAssistantSubmit();
+                    }}
+                  >
+                    <div className="grid grid-cols-[minmax(0,1fr)_3rem] gap-2 sm:grid-cols-[minmax(0,1fr)_3.25rem]">
+                      <div className="relative min-w-0">
+                        <MessageSquare
+                          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
+                          size={16}
+                        />
                         <input
                           type="text"
                           value={assistantQuestion}
                           onChange={(event) => setAssistantQuestion(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') handleAssistantSubmit();
-                          }}
                           placeholder="Pergunte sobre agenda, evolução ou alertas..."
-                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-xs placeholder-white/30 outline-none focus:ring-2 focus:ring-blue-400 transition-all font-medium"
+                          className="block h-12 w-full min-w-0 truncate rounded-2xl border border-white/15 bg-white/10 pl-11 pr-3 text-[12px] font-semibold text-white outline-none placeholder:text-white/45 focus:border-sky-300/70 focus:bg-white/15 focus:ring-2 focus:ring-sky-300/30 sm:text-sm"
                         />
                       </div>
                       <button
-                        type="button"
-                        onClick={handleAssistantSubmit}
+                        type="submit"
                         disabled={assistantLoading || !assistantQuestion.trim()}
-                        className="p-3 bg-white text-blue-900 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-900 shadow-lg shadow-black/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                         aria-label="Enviar pergunta para assistente clínico"
                       >
-                        {assistantLoading ? <Loader2 size={20} className="animate-spin" /> : <ArrowUpRight size={20} />}
+                        {assistantLoading ? <Loader2 size={20} className="animate-spin" /> : <ArrowUpRight size={22} />}
                       </button>
                     </div>
 
                     {assistantAnswer && (
-                      <div className="p-3 bg-white/10 border border-white/10 rounded-xl text-xs text-blue-50 leading-relaxed whitespace-pre-wrap">
+                      <div className="max-h-[22rem] overflow-y-auto rounded-2xl border border-white/10 bg-white/10 p-4 pb-6 text-sm leading-relaxed text-blue-50 whitespace-pre-wrap shadow-inner shadow-black/10">
                         {assistantAnswer}
                       </div>
                     )}
-                  </div>
+                  </form>
                 </motion.div>
               )}
             </AnimatePresence>
