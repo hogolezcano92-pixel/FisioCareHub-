@@ -607,11 +607,10 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                       handleAssistantSubmit();
                     }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="relative min-w-0 flex-1">
+                    <div className="flex w-full items-center gap-3">
+                      <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 transition-all focus-within:border-sky-300/70 focus-within:bg-white/15 focus-within:ring-2 focus-within:ring-sky-300/30">
                         <MessageSquare
-                          className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-white/40"
-                          size={17}
+                          className="pointer-events-none h-4 w-4 shrink-0 text-white/35"
                           aria-hidden="true"
                         />
                         <input
@@ -619,13 +618,13 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                           value={assistantQuestion}
                           onChange={(event) => setAssistantQuestion(event.target.value)}
                           placeholder="Pergunte sobre agenda, evolução ou alertas..."
-                          className="block h-13 w-full min-w-0 rounded-2xl border border-white/15 bg-white/10 py-0 pl-14 pr-4 text-[12px] font-semibold leading-none text-white outline-none placeholder:block placeholder:truncate placeholder:text-white/45 focus:border-sky-300/70 focus:bg-white/15 focus:ring-2 focus:ring-sky-300/30 sm:h-14 sm:text-sm"
+                          className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white outline-none placeholder:block placeholder:truncate placeholder:text-white/45 sm:text-sm"
                         />
                       </div>
                       <button
                         type="submit"
                         disabled={assistantLoading || !assistantQuestion.trim()}
-                        className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-900 shadow-lg shadow-black/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 sm:h-14 sm:w-14"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-900 shadow-lg shadow-black/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                         aria-label="Enviar pergunta para assistente clínico"
                       >
                         {assistantLoading ? <Loader2 size={20} className="animate-spin" /> : <ArrowUpRight size={22} />}
