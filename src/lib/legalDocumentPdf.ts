@@ -87,8 +87,10 @@ const getAccent = (title: string): Rgb => {
 
 const getShortId = (payload: PdfDocumentPayload) => {
   const base = safe(payload.id, `FCH-${Date.now()}`);
-  const clean = base.replace(/[^a-zA-Z0-9-]/g, '');
-  return clean.length > 14 ? clean.slice(0, 14) : clean;
+  const clean = base.replace(/[^a-zA-Z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const parts = clean.split('-').filter(Boolean);
+  if (parts.length >= 2) return `${parts[0]}-${parts[1]}`.slice(0, 17).replace(/-$/g, '');
+  return clean.length > 16 ? clean.slice(0, 16).replace(/-$/g, '') : clean;
 };
 
 const getPhysioName = (payload: PdfDocumentPayload, profile?: AnyRecord | null) =>
@@ -198,6 +200,41 @@ function extractField(content: string, labels: string[], fallback = 'A definir a
   return fallback;
 }
 
+
+function cleanExtractedValue(value: string) {
+  let text = safe(value, 'A definir antes da assinatura')
+    .replace(/^(é|e|será|sera|foi|ficou)\s+/i, '')
+    .replace(/^o\s+tipo\s+de\s+servi[cç]o\s+a\s+ser\s+prestado\s+(é|e)\s*:?\s*/i, '')
+    .replace(/^a\s+forma\s+de\s+pagamento\s+(é|e)\s*:?\s*/i, '')
+    .replace(/^o\s+valor\s+(por\s+sess[aã]o\s+)?(é|e)\s*:?\s*/i, '')
+    .replace(/^a\s+frequ[eê]ncia\s+(das\s+sessões|das\s+sessoes)?\s*(é|e)\s*:?\s*/i, '')
+    .replace(/^o\s+local\s+do\s+atendimento\s+(é|e)\s*:?\s*/i, '')
+    .replace(/^a\s+dura[cç][aã]o\s+da\s+sess[aã]o\s+(é|e)\s*:?\s*/i, '')
+    .replace(/[.;]+$/g, '')
+    .trim();
+  return text || 'A definir antes da assinatura';
+}
+
+function contractField(content: string, labels: string[], fallback = 'A definir antes da assinatura') {
+  return cleanExtractedValue(extractField(content, labels, fallback));
+}
+
+function moneyLabel(value: string) {
+  const text = cleanExtractedValue(value);
+  if (text === 'A definir antes da assinatura' || /^r\$/i.test(text)) return text;
+  if (/^\d+(?:[.,]\d{1,2})?$/.test(text.trim())) return `R$ ${text.trim()}`;
+  return text;
+}
+
+function estimateContractTotal(sessionValue: string, sessions: string) {
+  const valueNumber = Number(String(sessionValue).replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'));
+  const sessionNumber = Number(String(sessions).match(/\d+/)?.[0] || '');
+  if (!Number.isFinite(valueNumber) || !Number.isFinite(sessionNumber) || valueNumber <= 0 || sessionNumber <= 0) {
+    return 'Conforme sessões efetivamente realizadas/contratadas';
+  }
+  return valueNumber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ` para ${sessionNumber} sessões`;
+}
+
 function hasContractRequiredMissing(content: string) {
   const required = [
     extractField(content, ['Tipo de serviço', 'Tipo de servico', 'Serviço contratado', 'Servico contratado']),
@@ -255,7 +292,6 @@ function drawTitleBlock(doc: jsPDF, payload: PdfDocumentPayload, profile: AnyRec
   doc.text(title, MARGIN, y);
 
   if (isDraft) drawStatusPill(doc, 'RASCUNHO • DADOS PENDENTES', PAGE_W - MARGIN - 48, y - 5.7, COLORS.amber);
-  else drawStatusPill(doc, 'PRONTO PARA REVISÃO', PAGE_W - MARGIN - 39, y - 5.7, COLORS.emerald);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
@@ -267,7 +303,7 @@ function drawTitleBlock(doc: jsPDF, payload: PdfDocumentPayload, profile: AnyRec
   doc.setFontSize(7.4);
   const subtitle = isDraft
     ? 'Modelo preliminar gerado automaticamente. Complete os campos pendentes antes de assinatura ou envio.'
-    : 'Modelo gerado para apoio administrativo. Revise todos os dados antes de assinatura ou envio.';
+    : 'Documento gerado para apoio administrativo fisioterapêutico.';
   doc.text(subtitle, MARGIN, y + 13, { maxWidth: CONTENT_W });
 
   y += 23;
@@ -335,8 +371,16 @@ function drawSection(doc: jsPDF, title: string, body: string, y: number, payload
 }
 
 function drawMiniTable(doc: jsPDF, title: string, rows: Array<[string, string]>, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, accent: Rgb, documentId: string) {
-  const rowH = 9.5;
-  const h = 16 + rows.length * rowH;
+  const labelW = 60;
+  const valueW = CONTENT_W - labelW - 16;
+  const preparedRows = rows.map(([label, value]) => {
+    const cleanValue = safe(value, 'A definir antes da assinatura');
+    const valueLines = doc.splitTextToSize(cleanValue, valueW).slice(0, 3);
+    const rowH = Math.max(9.5, 5 + valueLines.length * 4.2);
+    return { label, value: cleanValue, valueLines, rowH };
+  });
+
+  const h = 16 + preparedRows.reduce((sum, row) => sum + row.rowH, 0);
   y = ensureSpace(doc, y, h + 8, payload, profile, documentId);
 
   setColor(doc, COLORS.white, 'fill');
@@ -349,22 +393,21 @@ function drawMiniTable(doc: jsPDF, title: string, rows: Array<[string, string]>,
   doc.text(title, MARGIN + 6, y + 9.5);
 
   let rowY = y + 16;
-  rows.forEach(([label, value], index) => {
+  preparedRows.forEach((row, index) => {
     if (index % 2 === 0) {
       setColor(doc, [248, 250, 252], 'fill');
-      doc.rect(MARGIN + 1, rowY - 6.3, CONTENT_W - 2, rowH, 'F');
+      doc.rect(MARGIN + 1, rowY - 6.3, CONTENT_W - 2, row.rowH, 'F');
     }
     setColor(doc, COLORS.muted);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.6);
-    doc.text(label, MARGIN + 6, rowY);
+    doc.text(row.label, MARGIN + 6, rowY);
 
-    setColor(doc, isMissing(value) || value.includes('A definir') ? COLORS.amber : COLORS.navy);
+    setColor(doc, isMissing(row.value) || row.value.includes('A definir') ? COLORS.amber : COLORS.navy);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.8);
-    const v = doc.splitTextToSize(value, CONTENT_W - 74)[0];
-    doc.text(v, MARGIN + 72, rowY, { maxWidth: CONTENT_W - 78 });
-    rowY += rowH;
+    doc.text(row.valueLines, MARGIN + labelW + 6, rowY, { maxWidth: valueW });
+    rowY += row.rowH;
   });
 
   return y + h + 8;
@@ -410,13 +453,25 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
   const patient = safe(payload.patient_name);
   const patientEmail = safe(payload.patient_email, 'A definir antes da assinatura');
 
+  const serviceType = contractField(cleanContent, ['Tipo de serviço', 'Tipo de servico', 'Serviço contratado', 'Servico contratado']);
+  const location = contractField(cleanContent, ['Local do atendimento', 'Local de atendimento', 'Modalidade']);
+  const duration = contractField(cleanContent, ['Duração da sessão', 'Duracao da sessao', 'Tempo de sessão']);
+  const sessions = contractField(cleanContent, ['Número de Sessões', 'Numero de Sessoes', 'Quantidade de Sessões']);
+  const frequency = contractField(cleanContent, ['Frequência das Sessões', 'Frequencia das Sessoes', 'Frequência']);
+  const sessionValue = moneyLabel(contractField(cleanContent, ['Valor da Sessão', 'Valor por Sessão', 'Valor da Sessao']));
+  const payment = contractField(cleanContent, ['Forma de Pagamento', 'Pagamento']);
+  const validity = contractField(cleanContent, ['Vigência', 'Vigencia', 'Período de vigência']);
+  const cancellation = contractField(cleanContent, ['Política de cancelamento', 'Politica de cancelamento', 'Cancelamento'], '24 horas de antecedência');
+  const objective = contractField(cleanContent, ['Objetivo do tratamento', 'Objetivo terapêutico', 'Objetivo terapeutico'], 'Avaliação, tratamento, prevenção, reabilitação funcional e acompanhamento fisioterapêutico conforme necessidade clínica do paciente.');
+  const estimatedTotal = estimateContractTotal(sessionValue, sessions);
+
   y = drawMiniTable(
     doc,
     '1. Identificação das Partes',
     [
       ['Paciente', patient],
       ['E-mail do paciente', patientEmail],
-      ['Fisioterapeuta', physio],
+      ['Fisioterapeuta responsável', physio],
       ['Registro profissional', crefito],
     ],
     y,
@@ -429,7 +484,7 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
   y = drawSection(
     doc,
     '2. Objeto do Contrato',
-    'Prestação de serviços de fisioterapia, incluindo avaliação funcional, planejamento terapêutico, execução de condutas fisioterapêuticas, orientações domiciliares e acompanhamento da evolução clínica conforme necessidade do paciente e critérios técnicos do profissional.',
+    `O presente contrato tem por objeto a prestação de serviços fisioterapêuticos na modalidade "${serviceType}", incluindo avaliação funcional, planejamento terapêutico, execução de condutas fisioterapêuticas, orientações domiciliares, acompanhamento da evolução clínica e registros profissionais necessários. Objetivo terapêutico informado: ${objective}`,
     y,
     payload,
     profile,
@@ -439,17 +494,14 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
 
   y = drawMiniTable(
     doc,
-    '3. Plano de Atendimento, Valores e Pagamento',
+    '3. Plano de Atendimento',
     [
-      ['Tipo de serviço', extractField(cleanContent, ['Tipo de serviço', 'Tipo de servico', 'Serviço contratado', 'Servico contratado'])],
-      ['Local do atendimento', extractField(cleanContent, ['Local do atendimento', 'Local de atendimento', 'Modalidade'])],
-      ['Duração da sessão', extractField(cleanContent, ['Duração da sessão', 'Duracao da sessao', 'Tempo de sessão'])],
-      ['Número de sessões', extractField(cleanContent, ['Número de Sessões', 'Numero de Sessoes', 'Quantidade de Sessões'])],
-      ['Frequência das sessões', extractField(cleanContent, ['Frequência das Sessões', 'Frequencia das Sessoes', 'Frequência'])],
-      ['Valor por sessão', extractField(cleanContent, ['Valor da Sessão', 'Valor por Sessão', 'Valor da Sessao'])],
-      ['Forma de pagamento', extractField(cleanContent, ['Forma de Pagamento', 'Pagamento'])],
-      ['Vigência', extractField(cleanContent, ['Vigência', 'Vigencia', 'Período de vigência'])],
-      ['Política de cancelamento', extractField(cleanContent, ['Política de cancelamento', 'Politica de cancelamento', 'Cancelamento'])],
+      ['Tipo de serviço', serviceType],
+      ['Local/modalidade', location],
+      ['Duração da sessão', duration],
+      ['Número de sessões', sessions],
+      ['Frequência das sessões', frequency],
+      ['Vigência', validity],
     ],
     y,
     payload,
@@ -458,17 +510,120 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
     documentId,
   );
 
-  const relevantSections = parseSections(cleanContent).filter((section) => !/sessões|sessoes|valores|pagamento|identificação|identificacao|objeto|assinatura/i.test(section.title));
-  if (relevantSections.length > 0) {
-    relevantSections.forEach((section, index) => {
-      y = drawSection(doc, `${index + 4}. ${section.title}`, section.body, y, payload, profile, accent, documentId);
-    });
-  } else {
-    y = drawSection(doc, '4. Cancelamento e Reagendamento', 'Cancelamentos ou reagendamentos devem ser comunicados com antecedência mínima acordada entre as partes. Na ausência de regra específica, recomenda-se antecedência mínima de 24 horas.', y, payload, profile, accent, documentId);
-    y = drawSection(doc, '5. Responsabilidades das Partes', 'O fisioterapeuta compromete-se a atuar com ética, zelo técnico e sigilo profissional. O paciente compromete-se a fornecer informações verdadeiras, comparecer às sessões e seguir as orientações recebidas.', y, payload, profile, accent, documentId);
-    y = drawSection(doc, '6. LGPD e Confidencialidade', 'Os dados pessoais e dados de saúde serão tratados apenas para fins assistenciais, administrativos e de registro clínico, observando confidencialidade, segurança e finalidade adequada.', y, payload, profile, accent, documentId);
-    y = drawSection(doc, '7. Não Garantia de Resultado', 'A fisioterapia é uma prestação de serviço técnico-assistencial. A evolução depende de fatores clínicos, adesão do paciente, frequência, condição de saúde e resposta individual ao tratamento, não havendo promessa de cura ou resultado específico.', y, payload, profile, accent, documentId);
-  }
+  y = drawMiniTable(
+    doc,
+    '4. Valores, Pagamento e Condições Comerciais',
+    [
+      ['Valor por sessão', sessionValue],
+      ['Estimativa do pacote', estimatedTotal],
+      ['Forma de pagamento', payment],
+      ['Vencimento/condição', 'Conforme combinado entre as partes e registrado pelo profissional responsável'],
+    ],
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '5. Cancelamento, Faltas e Reagendamento',
+    `Cancelamentos e reagendamentos deverão ser comunicados com antecedência mínima de ${cancellation}. Quando houver ausência sem comunicação prévia dentro do prazo acordado, a sessão poderá ser considerada realizada para fins administrativos, conforme alinhamento entre as partes. Reagendamentos dependerão da disponibilidade de agenda do fisioterapeuta.`,
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '6. Responsabilidades do Fisioterapeuta',
+    'O fisioterapeuta compromete-se a prestar atendimento com zelo, ética, diligência técnica, respeito à autonomia do paciente, sigilo profissional e observância das normas aplicáveis à fisioterapia. Também deverá orientar o paciente sobre objetivos, limites, riscos previsíveis, benefícios esperados e condutas propostas.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '7. Responsabilidades do Paciente',
+    'O paciente compromete-se a fornecer informações verdadeiras sobre seu estado de saúde, histórico clínico, medicações, exames, dor, limitações e intercorrências; comparecer aos atendimentos agendados; seguir as orientações recebidas; comunicar piora, novos sintomas ou impedimentos; e efetuar os pagamentos conforme acordado.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '8. Consentimento, Segurança e Limites do Atendimento',
+    'O paciente declara estar ciente de que o atendimento fisioterapêutico envolve avaliação funcional, procedimentos terapêuticos, exercícios, orientações e acompanhamento clínico-funcional. O fisioterapeuta poderá ajustar a conduta conforme evolução, tolerância, resposta ao tratamento e critérios técnicos. Havendo sinais de alerta, piora clínica ou necessidade de investigação complementar, poderá ser recomendado encaminhamento para avaliação médica ou outro profissional de saúde.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '9. LGPD, Confidencialidade e Registro Clínico',
+    'As informações pessoais e dados de saúde serão tratados com confidencialidade e utilizados para fins assistenciais, administrativos, registro clínico, comunicação com o paciente e cumprimento de obrigações legais/profissionais. O acesso aos dados deverá observar segurança, finalidade, necessidade e demais princípios aplicáveis à proteção de dados.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '10. Não Garantia de Resultado',
+    'A fisioterapia constitui prestação de serviço técnico-assistencial e não promessa de cura ou resultado específico. A evolução depende de fatores individuais, condição clínica, adesão ao tratamento, frequência, hábitos, resposta biológica e continuidade das orientações.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '11. Comunicação e Documentos',
+    'As partes poderão utilizar meios eletrônicos para agendamento, confirmação de horários, envio de orientações, documentos, recibos e comunicações administrativas. Quando necessário, documentos complementares poderão ser emitidos pelo FisioCareHub ou pelo profissional responsável.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '12. Foro e Solução de Conflitos',
+    'Eventuais dúvidas ou divergências deverão ser resolvidas preferencialmente por diálogo e negociação direta entre as partes. Persistindo o conflito, será utilizado o foro competente conforme a legislação brasileira aplicável.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = drawSection(
+    doc,
+    '13. Declaração Final',
+    'As partes declaram que leram, compreenderam e concordam com as condições deste contrato, autorizando a prestação dos serviços fisioterapêuticos nos termos aqui estabelecidos.',
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
 
   return y;
 }
@@ -520,18 +675,18 @@ export function generateLegalDocumentPDF(payload: PdfDocumentPayload, options: P
   let y = drawTitleBlock(doc, payload, options.profile, accent, isDraft);
 
   if (isContract) {
-    y = addNoticeBox(
-      doc,
-      y,
-      payload,
-      options.profile,
-      accent,
-      isDraft ? 'Atenção: contrato em rascunho' : 'Checklist antes da assinatura',
-      isDraft
-        ? 'Este contrato possui dados obrigatórios pendentes. Complete tipo de serviço, local, duração, número de sessões, valor, pagamento, frequência, vigência e política de cancelamento antes de coletar assinatura.'
-        : 'Revise identificação das partes, CREFITO, objeto, valores, forma de pagamento, política de cancelamento, vigência, LGPD e assinaturas. O documento não deve prometer cura ou resultado garantido.',
-      documentId,
-    );
+    if (isDraft) {
+      y = addNoticeBox(
+        doc,
+        y,
+        payload,
+        options.profile,
+        accent,
+        'Atenção: contrato em rascunho',
+        'Este contrato possui dados obrigatórios pendentes. Complete tipo de serviço, local, duração, número de sessões, valor, pagamento, frequência, vigência e política de cancelamento antes de coletar assinatura.',
+        documentId,
+      );
+    }
     y = drawContractBody(doc, y, payload, options.profile, accent, documentId, cleanContent);
   } else {
     y = addNoticeBox(

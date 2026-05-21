@@ -92,9 +92,10 @@ REGRAS IMPORTANTES:
 - Não invente CREFITO, CPF, endereço, valores, datas ou forma de pagamento.
 - Se algum dado obrigatório não foi informado, escreva exatamente: "A definir antes da assinatura".
 - Não use placeholders com colchetes, como [Nome] ou [Valor].
-- Não repita área de assinatura; deixe no máximo uma seção final simples se necessário.
+- Não crie área de assinatura para contrato, autorização, atestado ou laudo; o sistema adicionará uma área de assinatura profissional no PDF.
+- Para contrato, gere cláusulas robustas, mas sem repetir assinatura e sem escrever status como "pronto para revisão".
 - Não prometa cura, resultado garantido ou diagnóstico médico definitivo.
-- Para contrato, inclua obrigatoriamente: identificação das partes, objeto, tipo de serviço, local, duração da sessão, número de sessões, frequência, vigência, valor por sessão, forma de pagamento, política de cancelamento/reagendamento, responsabilidades, LGPD/confidencialidade, não garantia de resultado e foro/solução de conflitos.
+- Para contrato, inclua obrigatoriamente: identificação das partes, objeto, plano de atendimento, tipo de serviço, local, duração da sessão, número de sessões, frequência, vigência, valor por sessão, forma de pagamento, política de cancelamento/reagendamento, responsabilidades do fisioterapeuta, responsabilidades do paciente, consentimento informado, LGPD/confidencialidade, não garantia de resultado, comunicação/documentos e foro/solução de conflitos.
 - Para atestado, inclua data, horário, local/modalidade e finalidade, mas evite expor diagnóstico desnecessário.
 - Para autorização de imagem, separe claramente uso clínico, uso educativo/científico e uso comercial/publicitário; mencione canais permitidos, prazo e possibilidade de revogação por escrito.
 - Para laudo/relatório, use linguagem fisioterapêutica: avaliação funcional, achados, conduta, evolução e recomendações. Não declare diagnóstico médico definitivo.
