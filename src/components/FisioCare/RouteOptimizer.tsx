@@ -27,17 +27,10 @@ interface RoutePatient {
 
 const ROUTE_STATUSES = ['confirmado', 'pago', 'agendado'];
 
-const formatDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
 const formatAppointmentTime = (appointment: any) => {
   if (appointment?.hora) return String(appointment.hora).slice(0, 5);
 
-  const source = appointment?.data_servico || appointment?.data_hora;
+  const source = appointment?.data_servico || appointment?.data;
   if (!source) return 'Horário não informado';
 
   const date = new Date(source);
@@ -133,8 +126,9 @@ export const RouteOptimizer = () => {
         const end = new Date();
         end.setHours(23, 59, 59, 999);
 
-        const todayKey = formatDateKey(start);
-        const appointmentColumns = 'id, paciente_id, data, hora, data_hora, data_servico, status, tipo, servico';
+        // Atenção: a tabela agendamentos não possui a coluna data_hora.
+        // Mantemos somente as colunas reais usadas no FisioCareHub.
+        const appointmentColumns = 'id, paciente_id, data, hora, data_servico, status, tipo, servico';
 
         const { data: byServiceDate, error: serviceDateError } = await supabase
           .from('agendamentos')
@@ -152,7 +146,8 @@ export const RouteOptimizer = () => {
           .select(appointmentColumns)
           .eq('fisio_id', profile.id)
           .in('status', ROUTE_STATUSES)
-          .eq('data', todayKey)
+          .gte('data', start.toISOString())
+          .lte('data', end.toISOString())
           .order('hora', { ascending: true });
 
         if (dateColumnError) {
@@ -180,11 +175,11 @@ export const RouteOptimizer = () => {
         const [profilesResult, internalPatientsResult] = await Promise.all([
           supabase
             .from('perfis')
-            .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, localizacao, avatar_url')
+            .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, avatar_url, foto_url')
             .in('id', patientIds),
           supabase
             .from('pacientes')
-            .select('id, nome, email, telefone, endereco, foto_url')
+            .select('id, nome_completo, email, telefone, endereco, cidade, estado, cep, foto_url')
             .in('id', patientIds)
         ]);
 
@@ -215,7 +210,6 @@ export const RouteOptimizer = () => {
             appointmentId: String(appointment.id),
             name:
               normalizeText(patient?.nome_completo) ||
-              normalizeText(patient?.nome) ||
               normalizeText(patient?.email) ||
               'Paciente sem nome',
             address: address || 'Endereço não informado',
