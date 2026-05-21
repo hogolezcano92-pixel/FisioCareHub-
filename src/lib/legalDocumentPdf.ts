@@ -226,13 +226,58 @@ function moneyLabel(value: string) {
   return text;
 }
 
+function parseBRLCurrency(value: string) {
+  const raw = String(value || '').trim();
+  if (!raw || raw === 'A definir antes da assinatura') return NaN;
+
+  const normalized = raw
+    .replace(/R\$|BRL/gi, '')
+    .replace(/\s/g, '')
+    .replace(/[^\d,.-]/g, '');
+
+  if (!normalized) return NaN;
+
+  const hasComma = normalized.includes(',');
+  const hasDot = normalized.includes('.');
+
+  let numericText = normalized;
+
+  if (hasComma && hasDot) {
+    // pt-BR: 1.250,00 -> 1250.00
+    numericText = normalized.replace(/\./g, '').replace(',', '.');
+  } else if (hasComma) {
+    // pt-BR decimal: 250,00 -> 250.00
+    numericText = normalized.replace(',', '.');
+  } else if (hasDot) {
+    const parts = normalized.split('.');
+    const last = parts[parts.length - 1];
+    // Treat 1.250 as thousands, but 250.50 as decimal.
+    numericText = last.length === 3 && parts.length > 1 ? normalized.replace(/\./g, '') : normalized;
+  }
+
+  const parsed = Number(numericText);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function parseSessionCount(value: string) {
+  const match = String(value || '').match(/\d+/);
+  return match ? Number(match[0]) : NaN;
+}
+
+function formatCurrencyBRL(value: number) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 function estimateContractTotal(sessionValue: string, sessions: string) {
-  const valueNumber = Number(String(sessionValue).replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'));
-  const sessionNumber = Number(String(sessions).match(/\d+/)?.[0] || '');
+  const valueNumber = parseBRLCurrency(sessionValue);
+  const sessionNumber = parseSessionCount(sessions);
+
   if (!Number.isFinite(valueNumber) || !Number.isFinite(sessionNumber) || valueNumber <= 0 || sessionNumber <= 0) {
     return 'Conforme sessões efetivamente realizadas/contratadas';
   }
-  return valueNumber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ` para ${sessionNumber} sessões`;
+
+  const total = valueNumber * sessionNumber;
+  return `${formatCurrencyBRL(total)} no total para ${sessionNumber} sessões (${sessionNumber} x ${formatCurrencyBRL(valueNumber)})`;
 }
 
 function hasContractRequiredMissing(content: string) {
