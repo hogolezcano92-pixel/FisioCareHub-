@@ -116,7 +116,7 @@ export default function PhysioTriages() {
         triage,
         patientName: triage.paciente?.nome_completo || 'Paciente',
         professionalName: profile?.nome_completo || user?.email || 'Fisioterapeuta',
-        generatedAt: triage.created_at || triage.data_triagem || new Date().toISOString(),
+        generatedAt: new Date().toISOString(),
       });
       toast.success("PDF premium baixado!");
     } catch (err) {
