@@ -374,12 +374,53 @@ export default function PatientDetails() {
       setAvaliacoes(avaData || []);
 
       // Fetch Daily Journals
-      const { data: journalData } = await supabase
-        .from('registros_paciente')
-        .select('*')
-        .eq('paciente_id', id)
-        .order('data_registro', { ascending: false });
-      setDailyJournals(journalData || []);
+      // O diário do paciente é salvo usando o ID da conta real do paciente
+      // (perfis.id/auth.uid). Já o prontuário do fisioterapeuta usa o ID
+      // clínico da tabela pacientes. Por isso buscamos pelos dois vínculos.
+      const journalPatientIds = Array.from(new Set([
+        patientData.id,
+        patientData.perfil_id,
+        patientData.profile_id,
+        patientData.user_id,
+        patientData.auth_user_id,
+        patientData.paciente_id,
+      ].filter(Boolean).map(String)));
+
+      const patientEmail = normalizeEmail(patientData.email);
+      if (patientEmail) {
+        const { data: linkedProfile, error: linkedProfileError } = await supabase
+          .from('perfis')
+          .select('id')
+          .ilike('email', patientEmail)
+          .maybeSingle();
+
+        if (linkedProfileError) {
+          console.warn('Erro ao buscar perfil vinculado ao diário:', linkedProfileError);
+        }
+
+        if (linkedProfile?.id) {
+          journalPatientIds.push(String(linkedProfile.id));
+        }
+      }
+
+      const uniqueJournalPatientIds = Array.from(new Set(journalPatientIds));
+
+      if (uniqueJournalPatientIds.length > 0) {
+        const { data: journalData, error: journalError } = await supabase
+          .from('registros_paciente')
+          .select('*')
+          .in('paciente_id', uniqueJournalPatientIds)
+          .order('data_registro', { ascending: false });
+
+        if (journalError) {
+          console.error('Erro ao buscar diário do paciente:', journalError);
+          setDailyJournals([]);
+        } else {
+          setDailyJournals(journalData || []);
+        }
+      } else {
+        setDailyJournals([]);
+      }
 
       // Fetch Biblioteca de Exercícios
       const { data: bibData } = await supabase
