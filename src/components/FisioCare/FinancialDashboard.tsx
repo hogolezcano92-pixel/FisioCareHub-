@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, ArrowDownRight, Loader2, Settings, BarChart2, DollarSign } from 'lucide-react';
+import { TrendingUp, Wallet, CreditCard, Calendar, ArrowUpRight, Loader2, Settings } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
@@ -24,60 +24,98 @@ export const FinancialDashboard = () => {
     const fetchFinancialData = async () => {
       if (!profile) return;
       setLoading(true);
+
+      const getGrossAmount = (appointment: any) =>
+        Number(appointment?.valor_cobrado ?? appointment?.valor ?? appointment?.valor_sessao ?? 0) || 0;
+
       try {
-        // Fetch commission rate
-        const { data: settings } = await supabase
-          .from('system_settings')
-          .select('value')
-          .eq('key', 'commission_rate')
-          .single();
-        
-        const rate = settings ? Number(settings.value) : 12;
+        // Usa a mesma regra da área financeira do profissional:
+        // valor líquido = valor bruto - comissão da plataforma.
+        let rate = 12;
+        try {
+          const { data: settings } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'commission_rate')
+            .maybeSingle();
 
-        // Real financial data based on completed payments (sessoes table stores net amount)
-        const { data: payedSessions, error: sessionError } = await supabase
-          .from('sessoes')
-          .select('id, data, valor_sessao')
-          .eq('fisioterapeuta_id', profile.id)
-          .eq('status_pagamento', 'pago_app');
+          const parsedRate = Number(settings?.value);
+          if (!Number.isNaN(parsedRate) && parsedRate >= 0 && parsedRate <= 100) {
+            rate = parsedRate;
+          }
+        } catch (settingsError) {
+          console.warn('Não foi possível carregar commission_rate. Usando 12%.', settingsError);
+        }
 
-        if (sessionError) throw sessionError;
+        const netFactor = (100 - rate) / 100;
+        const getNetAmount = (appointment: any) => getGrossAmount(appointment) * netFactor;
 
-        const totalEarnings = payedSessions?.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0) || 0;
-        
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const monthlySessions = payedSessions?.filter(s => s.data >= startOfMonth) || [];
-        const monthlyEarnings = monthlySessions.reduce((acc, curr) => acc + (Number(curr.valor_sessao) || 0), 0);
-
-        // Forecast from agendamentos (confirmed but not yet in sessoes as net)
-        const { data: pendingAppts } = await supabase
+        // Saldo disponível: somente atendimentos concluídos, menos saques já pagos.
+        // Isso evita mostrar como saldo valores apenas pagos/confirmados, mas ainda não concluídos.
+        const { data: completedAppointments, error: completedError } = await supabase
           .from('agendamentos')
-          .select('valor')
+          .select('id, data, data_servico, valor, valor_cobrado, status')
           .eq('fisio_id', profile.id)
-          .in('status', ['confirmado']);
-        
-        // For forecast, we calculate what the net will be
-        const rateFactor = (100 - rate) / 100;
-        const forecast = pendingAppts?.reduce((acc, curr) => acc + (Number(curr.valor) * rateFactor || 0), 0) || 0;
+          .eq('status', 'concluido')
+          .order('data', { ascending: false });
+
+        if (completedError) throw completedError;
+
+        const { data: withdrawals, error: withdrawalsError } = await supabase
+          .from('solicitacoes_saque')
+          .select('valor')
+          .eq('user_id', profile.id)
+          .eq('status', 'pago');
+
+        if (withdrawalsError) {
+          console.warn('Não foi possível carregar saques pagos:', withdrawalsError);
+        }
+
+        const totalCompletedNet = (completedAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
+        const totalPaidWithdrawals = (withdrawals || []).reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
+        const availableBalance = Math.max(0, totalCompletedNet - totalPaidWithdrawals);
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthlyEarnings = (completedAppointments || []).reduce((acc, curr) => {
+          const rawDate = curr.data || curr.data_servico;
+          if (!rawDate) return acc;
+          const appointmentDate = new Date(rawDate);
+          return appointmentDate >= startOfMonth ? acc + getNetAmount(curr) : acc;
+        }, 0);
+
+        // Previsão: agendamentos já pagos/confirmados, mas ainda não concluídos.
+        const { data: forecastAppointments, error: forecastError } = await supabase
+          .from('agendamentos')
+          .select('id, valor, valor_cobrado, status')
+          .eq('fisio_id', profile.id)
+          .in('status', ['confirmado', 'pago', 'pago_app', 'agendado']);
+
+        if (forecastError) {
+          console.warn('Não foi possível carregar previsão de recebimento:', forecastError);
+        }
+
+        const forecast = (forecastAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
 
         setFinancialStats({
-          balance: totalEarnings, 
-          monthlyEarnings: monthlyEarnings,
-          forecast: forecast,
+          balance: availableBalance,
+          monthlyEarnings,
+          forecast,
           growth: 0,
           commissionRate: rate
         });
 
-        // Calculate real weekly data
+        // Produtividade semanal baseada nos atendimentos concluídos.
         const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const weekCounts = new Array(7).fill(0);
-        
+
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        
-        payedSessions?.forEach(s => {
-          const date = new Date(s.data);
+
+        (completedAppointments || []).forEach((appointment) => {
+          const rawDate = appointment.data || appointment.data_servico;
+          if (!rawDate) return;
+          const date = new Date(rawDate);
           if (date >= oneWeekAgo) {
             weekCounts[date.getDay()]++;
           }
@@ -89,10 +127,11 @@ export const FinancialDashboard = () => {
           count: weekCounts[i],
           height: `h-${Math.round((weekCounts[i] / maxCount) * 100)}`
         }));
-        
+
         setWeeklyData(transformedWeeklyData);
       } catch (err) {
         console.error("Erro ao carregar dados financeiros:", err);
+        toast.error('Não foi possível carregar os dados financeiros do dashboard.');
       } finally {
         setLoading(false);
       }
@@ -119,6 +158,12 @@ export const FinancialDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <Loader2 size={12} className="animate-spin" />
+          Atualizando financeiro...
+        </div>
+      )}
       <div className="space-y-5 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {stats.map((stat, i) => (
