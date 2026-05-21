@@ -94,10 +94,12 @@ REGRAS IMPORTANTES:
 - Não use placeholders com colchetes, como [Nome] ou [Valor].
 - Não repita área de assinatura; deixe no máximo uma seção final simples se necessário.
 - Não prometa cura, resultado garantido ou diagnóstico médico definitivo.
-- Para contrato, inclua: identificação das partes, objeto, plano de atendimento, valores/pagamento, cancelamento, responsabilidades, LGPD/confidencialidade, não garantia de resultado e foro/solução de conflitos.
-- Para atestado, evite expor diagnóstico desnecessário.
-- Para autorização de imagem, separe uso clínico de uso comercial/publicitário e mencione revogação.
-- Use Markdown com títulos curtos e listas objetivas.`
+- Para contrato, inclua obrigatoriamente: identificação das partes, objeto, tipo de serviço, local, duração da sessão, número de sessões, frequência, vigência, valor por sessão, forma de pagamento, política de cancelamento/reagendamento, responsabilidades, LGPD/confidencialidade, não garantia de resultado e foro/solução de conflitos.
+- Para atestado, inclua data, horário, local/modalidade e finalidade, mas evite expor diagnóstico desnecessário.
+- Para autorização de imagem, separe claramente uso clínico, uso educativo/científico e uso comercial/publicitário; mencione canais permitidos, prazo e possibilidade de revogação por escrito.
+- Para laudo/relatório, use linguagem fisioterapêutica: avaliação funcional, achados, conduta, evolução e recomendações. Não declare diagnóstico médico definitivo.
+- Use os dados estruturados recebidos do usuário. Se um campo estiver preenchido, copie exatamente o valor informado.
+- Use Markdown com títulos curtos, cláusulas numeradas e listas objetivas.`
         },
         {
           role: "user",

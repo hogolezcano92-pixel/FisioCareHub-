@@ -200,10 +200,15 @@ function extractField(content: string, labels: string[], fallback = 'A definir a
 
 function hasContractRequiredMissing(content: string) {
   const required = [
+    extractField(content, ['Tipo de serviço', 'Tipo de servico', 'Serviço contratado', 'Servico contratado']),
     extractField(content, ['Número de Sessões', 'Numero de Sessoes', 'Quantidade de Sessões']),
     extractField(content, ['Valor da Sessão', 'Valor por Sessão', 'Valor da Sessao']),
     extractField(content, ['Forma de Pagamento', 'Pagamento']),
     extractField(content, ['Frequência das Sessões', 'Frequencia das Sessoes', 'Frequência']),
+    extractField(content, ['Duração da sessão', 'Duracao da sessao', 'Tempo de sessão']),
+    extractField(content, ['Local do atendimento', 'Local de atendimento', 'Modalidade']),
+    extractField(content, ['Vigência', 'Vigencia', 'Período de vigência']),
+    extractField(content, ['Política de cancelamento', 'Politica de cancelamento', 'Cancelamento']),
   ];
   return required.some((value) => value === 'A definir antes da assinatura' || isMissing(value));
 }
@@ -436,11 +441,15 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
     doc,
     '3. Plano de Atendimento, Valores e Pagamento',
     [
+      ['Tipo de serviço', extractField(cleanContent, ['Tipo de serviço', 'Tipo de servico', 'Serviço contratado', 'Servico contratado'])],
+      ['Local do atendimento', extractField(cleanContent, ['Local do atendimento', 'Local de atendimento', 'Modalidade'])],
+      ['Duração da sessão', extractField(cleanContent, ['Duração da sessão', 'Duracao da sessao', 'Tempo de sessão'])],
       ['Número de sessões', extractField(cleanContent, ['Número de Sessões', 'Numero de Sessoes', 'Quantidade de Sessões'])],
+      ['Frequência das sessões', extractField(cleanContent, ['Frequência das Sessões', 'Frequencia das Sessoes', 'Frequência'])],
       ['Valor por sessão', extractField(cleanContent, ['Valor da Sessão', 'Valor por Sessão', 'Valor da Sessao'])],
       ['Forma de pagamento', extractField(cleanContent, ['Forma de Pagamento', 'Pagamento'])],
-      ['Frequência das sessões', extractField(cleanContent, ['Frequência das Sessões', 'Frequencia das Sessoes', 'Frequência'])],
       ['Vigência', extractField(cleanContent, ['Vigência', 'Vigencia', 'Período de vigência'])],
+      ['Política de cancelamento', extractField(cleanContent, ['Política de cancelamento', 'Politica de cancelamento', 'Cancelamento'])],
     ],
     y,
     payload,
@@ -519,7 +528,7 @@ export function generateLegalDocumentPDF(payload: PdfDocumentPayload, options: P
       accent,
       isDraft ? 'Atenção: contrato em rascunho' : 'Checklist antes da assinatura',
       isDraft
-        ? 'Este contrato possui dados obrigatórios pendentes. Complete número de sessões, valor, forma de pagamento, frequência, vigência e política de cancelamento antes de coletar assinatura.'
+        ? 'Este contrato possui dados obrigatórios pendentes. Complete tipo de serviço, local, duração, número de sessões, valor, pagamento, frequência, vigência e política de cancelamento antes de coletar assinatura.'
         : 'Revise identificação das partes, CREFITO, objeto, valores, forma de pagamento, política de cancelamento, vigência, LGPD e assinaturas. O documento não deve prometer cura ou resultado garantido.',
       documentId,
     );
