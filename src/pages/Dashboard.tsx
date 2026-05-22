@@ -53,6 +53,51 @@ import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 
+const getAppointmentDateSource = (appointment: any): string | null => {
+  const value = appointment?.data || appointment?.data_servico || appointment?.created_at || appointment?.criado_em;
+  if (!value) return null;
+  return String(value);
+};
+
+const getAppointmentDayLabel = (appointment: any): string => {
+  const raw = getAppointmentDateSource(appointment);
+  if (!raw) return '--';
+
+  const isoDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) return isoDate[3];
+
+  const brDate = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (brDate) return brDate[1];
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return '--';
+
+  return String(parsed.getDate()).padStart(2, '0');
+};
+
+const getAppointmentTimeLabel = (appointment: any): string => {
+  const raw = appointment?.hora || appointment?.data_servico || appointment?.data;
+  if (!raw) return '--:--';
+
+  const value = String(raw).trim();
+  const time = value.match(/(\d{2}):(\d{2})/);
+  if (time) return `${time[1]}:${time[2]}`;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '--:--';
+
+  return parsed.toLocaleTimeString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const getAppointmentStatusLabel = (status?: string | null): string => {
+  if (!status) return 'Sem status';
+  return String(status).replace(/_/g, ' ');
+};
+
 export default function Dashboard() {
   const { user, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -220,8 +265,9 @@ export default function Dashboard() {
             fisioterapeuta:perfis(id, nome_completo, avatar_url)
           `)
           .eq(roleField, data.id)
-          .order('data', { ascending: false })
-          .order('hora', { ascending: false })
+          .order('data_servico', { ascending: false, nullsFirst: false })
+          .order('data', { ascending: false, nullsFirst: false })
+          .order('hora', { ascending: false, nullsFirst: false })
           .limit(5),
         supabase
           .from('triagens')
@@ -822,7 +868,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-black text-xs border border-blue-500/20">
-                          {new Date(appt.data + 'T12:00:00').getDate()}
+                          {getAppointmentDayLabel(appt)}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -831,7 +877,7 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                             <span className="flex items-center gap-1">
                               <Clock size={9} /> 
-                              {appt.hora || formatHourBR(appt.data_servico)}
+                              {getAppointmentTimeLabel(appt)}
                             </span>
                             <span className="w-0.5 h-0.5 bg-white/10 rounded-full"></span>
                             <span className={cn(
@@ -840,7 +886,7 @@ export default function Dashboard() {
                               appt.status === 'pendente' ? 'bg-amber-500/20 text-amber-400' :
                               'bg-slate-500/20 text-slate-400'
                             )}>
-                              {appt.status}
+                              {getAppointmentStatusLabel(appt.status)}
                             </span>
                           </div>
                         </div>
