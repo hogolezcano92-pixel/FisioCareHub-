@@ -48,6 +48,48 @@ const todayDateKey = () => {
   return `${y}-${m}-${d}`;
 };
 
+const parseCurrencyToNumber = (value: string | number) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+
+  const normalized = String(value || '')
+    .replace(/\s/g, '')
+    .replace(/R\$/gi, '')
+    .replace(/[^0-9,.-]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatCurrencyBR = (value: string | number) =>
+  parseCurrencyToNumber(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const getDateInputValue = (value: string) => normalizeDateKey(value) || todayDateKey();
+
+const getTimeInputValue = (value: string) => {
+  const match = String(value || '').match(/\d{2}:\d{2}/);
+  return match?.[0] || '08:00';
+};
+
+const getMobileDateDisplay = (value: string) => {
+  const normalized = normalizeDateKey(value);
+  if (!normalized) return '';
+  const [year, month, day] = normalized.split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const getMobileTimeDisplay = (value: string) => getTimeInputValue(value);
+
+const getNativePickerButtonClass = (value: string) =>
+  cn(
+    'absolute left-0 top-0 h-full w-full cursor-pointer opacity-0',
+    !value && 'opacity-0'
+  );
+
 const getWeekdayLabel = (dateKey: string) => {
   const normalized = normalizeDateKey(dateKey);
   if (!normalized) return '';
@@ -115,6 +157,7 @@ export default function Agenda() {
     observacoes: '',
     valor: 0
   });
+  const [valorInput, setValorInput] = useState('');
 
   useEffect(() => {
     if (authLoading) return;
@@ -268,11 +311,13 @@ export default function Agenda() {
       
       if (finalServices.length > 0 && !formData.tipo) {
         const defaultSvc = finalServices.find(s => s.name.toLowerCase().includes('avaliação')) || finalServices[0];
+        const defaultPrice = Number(defaultSvc.base_price) || 0;
         setFormData(prev => ({ 
           ...prev, 
           tipo: `service:${defaultSvc.name}`,
-          valor: Number(defaultSvc.base_price) || 0
+          valor: defaultPrice
         }));
+        setValorInput(formatCurrencyBR(defaultPrice));
       }
     } catch (err) {
       console.error('Erro ao buscar configurações de serviços:', err);
@@ -1423,6 +1468,7 @@ export default function Agenda() {
                         tipo: value,
                         valor: valor
                       });
+                      setValorInput(formatCurrencyBR(valor));
                     }}
                     className="input-compact"
                   >
@@ -1459,38 +1505,55 @@ export default function Agenda() {
                       <HelpCircle size={10} />
                     </button>
                   </label>
-                  <div className="relative">
-                    <span className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontWeight: 'bold', fontSize: '10px' }}>R$</span>
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <span className="absolute pointer-events-none z-20 left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
                     <input
-                      type="number"
-                      value={formData.valor}
-                      onChange={(e) => setFormData({...formData, valor: parseFloat(e.target.value) || 0})}
-                      className="input-compact !pl-[60px]"
-                      placeholder="0,00"
+                      type="text"
+                      inputMode="decimal"
+                      value={valorInput}
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9,.]/g, '');
+                        setValorInput(raw);
+                        setFormData({ ...formData, valor: parseCurrencyToNumber(raw) });
+                      }}
+                      onBlur={() => setValorInput(valorInput ? formatCurrencyBR(valorInput) : '')}
+                      className={`${agendaFieldClass} !pl-14`}
+                      placeholder="25,00"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                  <div className="space-y-1 min-w-0">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.data}
-                      onChange={(e) => setFormData({...formData, data: e.target.value})}
-                      className="input-compact"
-                    />
+                    <div className={`${agendaFieldClass} relative flex items-center overflow-hidden`}>
+                      <span className="pointer-events-none truncate text-white">
+                        {getMobileDateDisplay(formData.data)}
+                      </span>
+                      <input
+                        type="date"
+                        required
+                        value={getDateInputValue(formData.data)}
+                        onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                        className={getNativePickerButtonClass(formData.data)}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
-                    <input
-                      type="time"
-                      required
-                      value={formData.hora}
-                      onChange={(e) => setFormData({...formData, hora: e.target.value})}
-                      className="input-compact"
-                    />
+                    <div className={`${agendaFieldClass} relative flex items-center overflow-hidden`}>
+                      <span className="pointer-events-none truncate text-white">
+                        {getMobileTimeDisplay(formData.hora)}
+                      </span>
+                      <input
+                        type="time"
+                        required
+                        value={getTimeInputValue(formData.hora)}
+                        onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+                        className={getNativePickerButtonClass(formData.hora)}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1501,7 +1564,7 @@ export default function Agenda() {
                     type="text"
                     value={formData.local}
                     onChange={(e) => setFormData({...formData, local: e.target.value})}
-                    className="input-compact"
+                    className={agendaFieldClass}
                     placeholder="Ex: Clínica Central"
                   />
                 </div>
@@ -1511,7 +1574,7 @@ export default function Agenda() {
                   <textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    className="input-compact h-16 resize-none"
+                    className="input-compact min-h-20 resize-none box-border !rounded-2xl !bg-white/[0.06] border-white/10"
                     placeholder="Notas..."
                   />
                 </div>
