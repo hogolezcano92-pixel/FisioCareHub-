@@ -709,6 +709,8 @@ export default function Agenda() {
     availabilityRules.find((rule) => rule.weekday === selectedAvailabilityWeekday) ||
     createDefaultAvailabilityRules(user?.id || '').find((rule) => rule.weekday === selectedAvailabilityWeekday)!;
 
+  const agendaFieldClass = 'input-compact h-12 min-w-0 max-w-full box-border appearance-none !rounded-2xl !bg-white/[0.06] border-white/10';
+
   const getPatientName = (app: any) => app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente';
   const getPatientInitials = (name: string) => {
     const parts = String(name || 'Paciente').trim().split(/\s+/).filter(Boolean);
@@ -903,78 +905,102 @@ export default function Agenda() {
           })}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 space-y-3">
+        <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.035] p-4 space-y-4 overflow-hidden">
           <div className="flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-white text-sm font-black">
-              <input
-                type="checkbox"
-                checked={activeAvailabilityRule.is_active}
-                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { is_active: e.target.checked })}
-                className="accent-blue-600"
-              />
-              {WEEKDAYS.find(day => day.value === selectedAvailabilityWeekday)?.label}
+            <label className="flex items-center gap-3 text-white text-sm font-black">
+              <span className={cn(
+                'w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 transition-all',
+                activeAvailabilityRule.is_active
+                  ? 'bg-blue-600 text-white border-blue-400/40'
+                  : 'bg-white/5 text-slate-400 border-white/10'
+              )}>
+                {activeAvailabilityRule.is_active ? <Check size={18} /> : <Clock size={18} />}
+              </span>
+              <span>{WEEKDAYS.find(day => day.value === selectedAvailabilityWeekday)?.label}</span>
             </label>
-            <span className={cn(
-              'px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border',
-              activeAvailabilityRule.is_active
-                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                : 'bg-white/5 text-slate-400 border-white/10'
-            )}>
+            <button
+              type="button"
+              onClick={() => updateAvailabilityRule(selectedAvailabilityWeekday, { is_active: !activeAvailabilityRule.is_active })}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all',
+                activeAvailabilityRule.is_active
+                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                  : 'bg-white/5 text-slate-400 border-white/10'
+              )}
+            >
               {activeAvailabilityRule.is_active ? 'Ativo' : 'Inativo'}
-            </span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-            <input
-              type="time"
-              value={activeAvailabilityRule.start_time.slice(0, 5)}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { start_time: e.target.value })}
-              className="input-compact disabled:opacity-40"
-            />
-            <input
-              type="time"
-              value={activeAvailabilityRule.end_time.slice(0, 5)}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { end_time: e.target.value })}
-              className="input-compact disabled:opacity-40"
-            />
-            <select
-              value={activeAvailabilityRule.session_duration_minutes}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { session_duration_minutes: Number(e.target.value) })}
-              className="input-compact disabled:opacity-40"
-              title="Duração da sessão"
-            >
-              {[30, 45, 60, 90].map(value => <option key={value} value={value} className="bg-slate-900">{value} min</option>)}
-            </select>
-            <select
-              value={activeAvailabilityRule.buffer_minutes}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { buffer_minutes: Number(e.target.value) })}
-              className="input-compact disabled:opacity-40"
-              title="Intervalo entre atendimentos"
-            >
-              {[0, 10, 15, 20, 30].map(value => <option key={value} value={value} className="bg-slate-900">+{value} min</option>)}
-            </select>
-            <select
-              value={activeAvailabilityRule.min_notice_hours}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { min_notice_hours: Number(e.target.value) })}
-              className="input-compact disabled:opacity-40"
-              title="Antecedência mínima"
-            >
-              {[2, 6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">{value}h antes</option>)}
-            </select>
-            <select
-              value={activeAvailabilityRule.cancellation_notice_hours}
-              disabled={!activeAvailabilityRule.is_active}
-              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { cancellation_notice_hours: Number(e.target.value) })}
-              className="input-compact disabled:opacity-40"
-              title="Cancelamento permitido até"
-            >
-              {[6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">Cancel. {value}h</option>)}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Início</label>
+              <input
+                type="time"
+                value={activeAvailabilityRule.start_time.slice(0, 5)}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { start_time: e.target.value })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Fim</label>
+              <input
+                type="time"
+                value={activeAvailabilityRule.end_time.slice(0, 5)}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { end_time: e.target.value })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Sessão</label>
+              <select
+                value={activeAvailabilityRule.session_duration_minutes}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { session_duration_minutes: Number(e.target.value) })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+                title="Duração da sessão"
+              >
+                {[30, 45, 60, 90].map(value => <option key={value} value={value} className="bg-slate-900">{value} min</option>)}
+              </select>
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Intervalo</label>
+              <select
+                value={activeAvailabilityRule.buffer_minutes}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { buffer_minutes: Number(e.target.value) })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+                title="Intervalo entre atendimentos"
+              >
+                {[0, 10, 15, 20, 30].map(value => <option key={value} value={value} className="bg-slate-900">+{value} min</option>)}
+              </select>
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Antecedência</label>
+              <select
+                value={activeAvailabilityRule.min_notice_hours}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { min_notice_hours: Number(e.target.value) })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+                title="Antecedência mínima"
+              >
+                {[2, 6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">{value}h antes</option>)}
+              </select>
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Cancelamento</label>
+              <select
+                value={activeAvailabilityRule.cancellation_notice_hours}
+                disabled={!activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { cancellation_notice_hours: Number(e.target.value) })}
+                className={`${agendaFieldClass} disabled:opacity-40`}
+                title="Cancelamento permitido até"
+              >
+                {[6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">Até {value}h</option>)}
+              </select>
+            </div>
           </div>
         </div>
       </section>
@@ -992,37 +1018,51 @@ export default function Agenda() {
           </div>
         </div>
 
-        <form onSubmit={handleCreateBlock} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[170px_120px_120px_1fr_150px] gap-2">
-          <input
-            type="date"
-            required
-            value={blockForm.block_date}
-            onChange={(e) => setBlockForm({ ...blockForm, block_date: e.target.value })}
-            className="input-compact"
-          />
-          <input
-            type="time"
-            value={blockForm.start_time}
-            onChange={(e) => setBlockForm({ ...blockForm, start_time: e.target.value })}
-            className="input-compact"
-            placeholder="Início"
-          />
-          <input
-            type="time"
-            value={blockForm.end_time}
-            onChange={(e) => setBlockForm({ ...blockForm, end_time: e.target.value })}
-            className="input-compact"
-            placeholder="Fim"
-          />
-          <input
-            value={blockForm.reason}
-            onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
-            className="input-compact"
-            placeholder="Motivo: férias, feriado, compromisso..."
-          />
-          <button className="px-4 py-2 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all">
-            Novo bloqueio
-          </button>
+        <form onSubmit={handleCreateBlock} className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Data</label>
+            <input
+              type="date"
+              required
+              value={blockForm.block_date}
+              onChange={(e) => setBlockForm({ ...blockForm, block_date: e.target.value })}
+              className={agendaFieldClass}
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Início</label>
+            <input
+              type="time"
+              value={blockForm.start_time}
+              onChange={(e) => setBlockForm({ ...blockForm, start_time: e.target.value })}
+              className={agendaFieldClass}
+              placeholder="Início"
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Fim</label>
+            <input
+              type="time"
+              value={blockForm.end_time}
+              onChange={(e) => setBlockForm({ ...blockForm, end_time: e.target.value })}
+              className={agendaFieldClass}
+              placeholder="Fim"
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Motivo</label>
+            <input
+              value={blockForm.reason}
+              onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+              className={agendaFieldClass}
+              placeholder="Férias, feriado, compromisso..."
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <button className="w-full h-12 bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all">
+              Novo bloqueio
+            </button>
+          </div>
         </form>
 
         <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
