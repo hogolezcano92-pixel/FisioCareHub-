@@ -33,6 +33,9 @@ interface ProtocolItem {
     precaucoes: string;
     objetivo_principal: string;
     categoria_principal: string;
+    series?: string | null;
+    repeticoes?: string | null;
+    frequencia?: string | null;
   };
   series: string;
   repeticoes: string;
@@ -40,6 +43,63 @@ interface ProtocolItem {
   frequencia: string;
   observacoes_especificas: string;
 }
+
+const cleanPrescriptionValue = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  if (!text || text === 'null' || text === 'undefined') return '';
+  return text;
+};
+
+const firstPrescriptionValue = (...values: unknown[]) => {
+  for (const value of values) {
+    const text = cleanPrescriptionValue(value);
+    if (text) return text;
+  }
+  return '';
+};
+
+const normalizeProtocolItem = (item: any): ProtocolItem => {
+  const exercise = item?.exercicio || {};
+
+  return {
+    ...item,
+    exercicio: exercise,
+    series: firstPrescriptionValue(
+      item?.series,
+      item?.serie,
+      item?.qtd_series,
+      item?.quantidade_series,
+      item?.exercicio_series,
+      exercise?.series,
+      '3'
+    ),
+    repeticoes: firstPrescriptionValue(
+      item?.repeticoes,
+      item?.repeticao,
+      item?.reps,
+      item?.qtd_repeticoes,
+      item?.quantidade_repeticoes,
+      item?.exercicio_repeticoes,
+      exercise?.repeticoes,
+      '10 a 12'
+    ),
+    carga: firstPrescriptionValue(item?.carga, item?.peso, ''),
+    frequencia: firstPrescriptionValue(
+      item?.frequencia,
+      item?.frequency,
+      item?.periodicidade,
+      exercise?.frequencia,
+      '1x ao dia'
+    ),
+    observacoes_especificas: firstPrescriptionValue(
+      item?.observacoes_especificas,
+      item?.observacoes,
+      item?.nota,
+      ''
+    ),
+  };
+};
+
 
 export default function PatientExercises() {
   const { user } = useAuth();
@@ -106,16 +166,18 @@ export default function PatientExercises() {
           }
         }
 
-        const directItems = (prescriptionsData || []).map((prescription: any) => ({
-          id: prescription.id,
-          exercicio: exerciseMap[prescription.exercicio_id] || null,
-          series: prescription.series || '',
-          repeticoes: prescription.repeticoes || '',
-          carga: prescription.carga || '',
-          frequencia: prescription.frequencia || '',
-          observacoes_especificas: prescription.observacoes || prescription.observacoes_especificas || '',
-          created_at: prescription.created_at,
-        })).filter((item: any) => item.exercicio);
+        const directItems = (prescriptionsData || [])
+          .map((prescription: any) => normalizeProtocolItem({
+            id: prescription.id,
+            exercicio: exerciseMap[prescription.exercicio_id] || null,
+            series: prescription.series,
+            repeticoes: prescription.repeticoes,
+            carga: prescription.carga,
+            frequencia: prescription.frequencia,
+            observacoes_especificas: prescription.observacoes || prescription.observacoes_especificas,
+            created_at: prescription.created_at,
+          }))
+          .filter((item: any) => item.exercicio);
 
         if (directItems.length > 0) {
           directProtocol = {
@@ -149,7 +211,7 @@ export default function PatientExercises() {
     setIsLoading(true);
     try {
       if (protocol?.source === 'direct') {
-        setProtocolItems(protocol.items || []);
+        setProtocolItems((protocol.items || []).map(normalizeProtocolItem));
         return;
       }
 
@@ -163,7 +225,7 @@ export default function PatientExercises() {
         .order('ordem');
 
       if (error) throw error;
-      setProtocolItems(data || []);
+      setProtocolItems((data || []).map(normalizeProtocolItem));
     } catch (err) {
       console.error('Erro ao buscar itens do protocolo:', err);
     } finally {
@@ -319,11 +381,11 @@ export default function PatientExercises() {
                 <div className="grid grid-cols-2 gap-4">
                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Prescrição</p>
-                     <p className="text-xl font-black text-white">{selectedItemDetail.series} x {selectedItemDetail.repeticoes}</p>
+                     <p className="text-xl font-black text-white">{selectedItemDetail.series || '3'} x {selectedItemDetail.repeticoes || '10 a 12'}</p>
                    </div>
                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Freqüência</p>
-                     <p className="text-sm font-black text-white">{selectedItemDetail.frequencia}</p>
+                     <p className="text-sm font-black text-white">{selectedItemDetail.frequencia || '1x ao dia'}</p>
                    </div>
                 </div>
 
