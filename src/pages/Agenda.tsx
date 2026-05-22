@@ -103,6 +103,7 @@ export default function Agenda() {
     end_time: '',
     reason: ''
   });
+  const [selectedAvailabilityWeekday, setSelectedAvailabilityWeekday] = useState(new Date().getDay());
   
   // Form State
   const [formData, setFormData] = useState({
@@ -691,231 +692,364 @@ export default function Agenda() {
     setSelectedDate(next);
   };
 
+
+  const selectedDateSafe = normalizeDateKey(selectedDate) || todayDateKey();
+  const selectedWeekdayLabel = getWeekdayLabel(selectedDateSafe);
+  const selectedDateLabel = formatDateKeyBR(selectedDateSafe);
+  const appointmentsForSelectedDate = appointments.filter((app) => normalizeDateKey(app.data || app.data_servico) === selectedDateSafe);
+  const visibleAppointments = appointments;
+  const summaryAppointments = view === 'daily' ? appointments : appointmentsForSelectedDate;
+  const pendingCount = visibleAppointments.filter((app) => ['pendente', 'agendado', 'pago'].includes(String(app.status || '').toLowerCase())).length;
+  const confirmedCount = visibleAppointments.filter((app) => ['confirmado', 'concluido', 'realizado'].includes(String(app.status || '').toLowerCase())).length;
+  const blocksToday = scheduleBlocks.filter((block) => normalizeDateKey(block.block_date) === selectedDateSafe).length;
+  const nextAppointment = [...summaryAppointments]
+    .filter((app) => !['cancelado', 'concluido', 'realizado'].includes(String(app.status || '').toLowerCase()))
+    .sort((a, b) => String(a.hora || '').localeCompare(String(b.hora || '')))[0];
+  const activeAvailabilityRule =
+    availabilityRules.find((rule) => rule.weekday === selectedAvailabilityWeekday) ||
+    createDefaultAvailabilityRules(user?.id || '').find((rule) => rule.weekday === selectedAvailabilityWeekday)!;
+
+  const getPatientName = (app: any) => app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente';
+  const getPatientInitials = (name: string) => {
+    const parts = String(name || 'Paciente').trim().split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || 'P') + (parts[1]?.[0] || '')).toUpperCase();
+  };
+  const getStatusLabel = (status: string) => {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized === 'concluido' || normalized === 'realizado') return 'Concluído';
+    if (normalized === 'confirmado') return 'Confirmado';
+    if (['agendado', 'pendente', 'pago'].includes(normalized)) return 'Pendente';
+    if (normalized === 'cancelado') return 'Cancelado';
+    return status || 'Pendente';
+  };
+  const getStatusClass = (status: string) => {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized === 'concluido' || normalized === 'realizado') return 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20';
+    if (normalized === 'confirmado') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    if (['agendado', 'pendente', 'pago'].includes(normalized)) return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
+    return 'bg-red-500/10 text-red-400 border border-red-500/20';
+  };
+
   return (
     <div className="space-y-5 w-full box-border overflow-wrap-break-word">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-black text-white tracking-tight">Minha Agenda</h1>
-            <button 
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', { 
-                detail: { search: 'agenda', profile: 'fisioterapeuta' } 
-              }))}
-              className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 hover:bg-blue-600/20 transition-all"
-            >
-              Precisa de ajuda?
-            </button>
+      <header className="space-y-4 w-full">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Minha Agenda</h1>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('toggle-help-center', {
+                  detail: { search: 'agenda', profile: 'fisioterapeuta' }
+                }))}
+                className="text-[9px] font-black text-blue-300 uppercase tracking-[0.18em] bg-blue-600/10 px-3 py-1 rounded-full border border-blue-500/20 hover:bg-blue-600/20 transition-all"
+              >
+                Precisa de ajuda?
+              </button>
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Organize sua disponibilidade, solicitações e atendimentos em uma visão clara.</p>
           </div>
-          <p className="text-slate-400 text-xs font-medium">Controle seus agendamentos e solicitações.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-white/5 p-1 rounded-xl flex items-center gap-1 border border-white/10">
-            <button
-              onClick={() => setView('daily')}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-[8px] font-black transition-all",
-                view === 'daily' ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-400"
-              )}
-            >
-              Agenda Diária
-            </button>
-            <button
-              onClick={() => setView('all')}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-[8px] font-black transition-all",
-                view === 'all' ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-400"
-              )}
-            >
-              Todas Solicitações
-            </button>
-          </div>
+
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.18em] hover:from-blue-500 hover:to-sky-400 transition-all shadow-xl shadow-blue-900/30"
           >
-            <Plus size={14} />
+            <Plus size={16} />
             Novo
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 rounded-[1.35rem] bg-white/[0.04] border border-white/10 p-1 shadow-2xl shadow-black/10 overflow-hidden">
+          <button
+            onClick={() => setView('daily')}
+            className={cn(
+              'flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black transition-all',
+              view === 'daily'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            )}
+          >
+            <CalendarIcon size={16} /> Hoje
+          </button>
+          <button
+            onClick={() => setView('all')}
+            className={cn(
+              'flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black transition-all',
+              view === 'all'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            )}
+          >
+            <AlertTriangle size={16} /> Solicitações
+            {pendingCount > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">{pendingCount}</span>}
           </button>
         </div>
       </header>
 
-      {/* Seletor de Data - Só aparece na visão diária */}
-      {view === 'daily' && (
-        <div className="bg-slate-900/50 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-2xl flex items-center justify-between w-full">
-          <button onClick={() => changeDate(-1)} className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-500">
-            <ChevronLeft size={16} />
-          </button>
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] font-bold text-sky-400 uppercase tracking-widest mb-0.5">
-              {getWeekdayLabel(selectedDate)}
-            </span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-sm font-black text-white outline-none bg-transparent text-center cursor-pointer"
-            />
-          </div>
-          <button onClick={() => changeDate(1)} className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-500">
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
-
-
-      <section className="grid xl:grid-cols-[1.4fr_1fr] gap-4 w-full">
-        <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-2xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-blue-600/15 border border-blue-500/20 text-blue-300 flex items-center justify-center">
+              <CalendarIcon size={20} />
+            </div>
             <div>
-              <h2 className="text-sm font-black text-white tracking-tight">Minha disponibilidade</h2>
-              <p className="text-slate-500 text-[10px] font-bold">Defina os dias e horários que aparecerão para o paciente.</p>
+              <h2 className="text-xl font-black text-white tracking-tight">Resumo do dia</h2>
+              <p className="text-xs text-slate-400 font-bold capitalize">{selectedWeekdayLabel} • {selectedDateLabel}</p>
             </div>
-            <button
-              onClick={handleSaveAvailability}
-              disabled={savingAvailability}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {savingAvailability ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              Salvar agenda
-            </button>
           </div>
 
-          <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
-            {WEEKDAYS.map(day => {
-              const rule = availabilityRules.find(item => item.weekday === day.value) || createDefaultAvailabilityRules(user?.id || '').find(item => item.weekday === day.value)!;
-              return (
-                <div key={day.value} className="grid grid-cols-1 lg:grid-cols-[120px_1fr] gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl">
-                  <label className="flex items-center gap-2 text-white text-xs font-black">
-                    <input
-                      type="checkbox"
-                      checked={rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { is_active: e.target.checked })}
-                      className="accent-blue-600"
-                    />
-                    {day.label}
-                  </label>
+          {view === 'daily' && (
+            <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-2xl p-1">
+              <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white/5 rounded-xl transition-all text-slate-400">
+                <ChevronLeft size={16} />
+              </button>
+              <input
+                type="date"
+                value={selectedDateSafe}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-[125px] text-xs font-black text-white outline-none bg-transparent text-center cursor-pointer"
+              />
+              <button onClick={() => changeDate(1)} className="p-2 hover:bg-white/5 rounded-xl transition-all text-slate-400">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-                    <input
-                      type="time"
-                      value={rule.start_time.slice(0, 5)}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { start_time: e.target.value })}
-                      className="input-compact disabled:opacity-40"
-                    />
-                    <input
-                      type="time"
-                      value={rule.end_time.slice(0, 5)}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { end_time: e.target.value })}
-                      className="input-compact disabled:opacity-40"
-                    />
-                    <select
-                      value={rule.session_duration_minutes}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { session_duration_minutes: Number(e.target.value) })}
-                      className="input-compact disabled:opacity-40"
-                      title="Duração da sessão"
-                    >
-                      {[30, 45, 60, 90].map(value => <option key={value} value={value} className="bg-slate-900">{value} min</option>)}
-                    </select>
-                    <select
-                      value={rule.buffer_minutes}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { buffer_minutes: Number(e.target.value) })}
-                      className="input-compact disabled:opacity-40"
-                      title="Intervalo entre atendimentos"
-                    >
-                      {[0, 10, 15, 20, 30].map(value => <option key={value} value={value} className="bg-slate-900">+{value} min</option>)}
-                    </select>
-                    <select
-                      value={rule.min_notice_hours}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { min_notice_hours: Number(e.target.value) })}
-                      className="input-compact disabled:opacity-40"
-                      title="Antecedência mínima"
-                    >
-                      {[2, 6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">{value}h antes</option>)}
-                    </select>
-                    <select
-                      value={rule.cancellation_notice_hours}
-                      disabled={!rule.is_active}
-                      onChange={(e) => updateAvailabilityRule(day.value, { cancellation_notice_hours: Number(e.target.value) })}
-                      className="input-compact disabled:opacity-40"
-                      title="Cancelamento permitido até"
-                    >
-                      {[6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">Cancel. {value}h</option>)}
-                    </select>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-[10px] text-blue-200 font-black uppercase tracking-widest">Consultas</span>
+              <CalendarIcon size={18} className="text-blue-300" />
+            </div>
+            <p className="text-3xl font-black text-white">{summaryAppointments.length}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">{view === 'daily' ? 'no dia' : 'na lista'}</p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-[10px] text-amber-200 font-black uppercase tracking-widest">Pendentes</span>
+              <Clock size={18} className="text-amber-300" />
+            </div>
+            <p className="text-3xl font-black text-white">{pendingCount}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">aguardando</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-[10px] text-emerald-200 font-black uppercase tracking-widest">Confirmadas</span>
+              <Check size={18} className="text-emerald-300" />
+            </div>
+            <p className="text-3xl font-black text-white">{confirmedCount}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">ativas/concluídas</p>
+          </div>
+
+          <div className="rounded-2xl border border-purple-400/20 bg-purple-500/10 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-[10px] text-purple-200 font-black uppercase tracking-widest">Próxima</span>
+              <Clock size={18} className="text-purple-300" />
+            </div>
+            <p className="text-3xl font-black text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-sky-600/15 border border-sky-500/20 text-sky-300 flex items-center justify-center">
+              <Clock size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-white tracking-tight">Disponibilidade</h2>
+              <p className="text-xs text-slate-400 font-bold">Configure um dia por vez, sem poluir a tela.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSaveAvailability}
+            disabled={savingAvailability}
+            className="px-4 py-2.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+          >
+            {savingAvailability ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            Salvar agenda
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+          {WEEKDAYS.map((day) => {
+            const rule = availabilityRules.find(item => item.weekday === day.value) || createDefaultAvailabilityRules(user?.id || '').find(item => item.weekday === day.value)!;
+            const active = selectedAvailabilityWeekday === day.value;
+            return (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => setSelectedAvailabilityWeekday(day.value)}
+                className={cn(
+                  'rounded-2xl border p-3 text-left transition-all min-h-[78px]',
+                  active
+                    ? 'bg-blue-600 text-white border-blue-400 shadow-lg shadow-blue-900/25'
+                    : rule.is_active
+                      ? 'bg-white/[0.04] text-white border-white/10 hover:bg-white/[0.07]'
+                      : 'bg-white/[0.025] text-slate-500 border-white/5'
+                )}
+              >
+                <span className="block text-sm font-black">{day.label.slice(0, 3)}</span>
+                <span className={cn('block text-[10px] font-bold mt-1 leading-tight', active ? 'text-blue-100' : 'text-slate-400')}>
+                  {rule.is_active ? `${rule.start_time.slice(0, 5)} – ${rule.end_time.slice(0, 5)}` : 'Inativo'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-white text-sm font-black">
+              <input
+                type="checkbox"
+                checked={activeAvailabilityRule.is_active}
+                onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { is_active: e.target.checked })}
+                className="accent-blue-600"
+              />
+              {WEEKDAYS.find(day => day.value === selectedAvailabilityWeekday)?.label}
+            </label>
+            <span className={cn(
+              'px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border',
+              activeAvailabilityRule.is_active
+                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                : 'bg-white/5 text-slate-400 border-white/10'
+            )}>
+              {activeAvailabilityRule.is_active ? 'Ativo' : 'Inativo'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+            <input
+              type="time"
+              value={activeAvailabilityRule.start_time.slice(0, 5)}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { start_time: e.target.value })}
+              className="input-compact disabled:opacity-40"
+            />
+            <input
+              type="time"
+              value={activeAvailabilityRule.end_time.slice(0, 5)}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { end_time: e.target.value })}
+              className="input-compact disabled:opacity-40"
+            />
+            <select
+              value={activeAvailabilityRule.session_duration_minutes}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { session_duration_minutes: Number(e.target.value) })}
+              className="input-compact disabled:opacity-40"
+              title="Duração da sessão"
+            >
+              {[30, 45, 60, 90].map(value => <option key={value} value={value} className="bg-slate-900">{value} min</option>)}
+            </select>
+            <select
+              value={activeAvailabilityRule.buffer_minutes}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { buffer_minutes: Number(e.target.value) })}
+              className="input-compact disabled:opacity-40"
+              title="Intervalo entre atendimentos"
+            >
+              {[0, 10, 15, 20, 30].map(value => <option key={value} value={value} className="bg-slate-900">+{value} min</option>)}
+            </select>
+            <select
+              value={activeAvailabilityRule.min_notice_hours}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { min_notice_hours: Number(e.target.value) })}
+              className="input-compact disabled:opacity-40"
+              title="Antecedência mínima"
+            >
+              {[2, 6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">{value}h antes</option>)}
+            </select>
+            <select
+              value={activeAvailabilityRule.cancellation_notice_hours}
+              disabled={!activeAvailabilityRule.is_active}
+              onChange={(e) => updateAvailabilityRule(selectedAvailabilityWeekday, { cancellation_notice_hours: Number(e.target.value) })}
+              className="input-compact disabled:opacity-40"
+              title="Cancelamento permitido até"
+            >
+              {[6, 12, 24, 48].map(value => <option key={value} value={value} className="bg-slate-900">Cancel. {value}h</option>)}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-purple-600/15 border border-purple-500/20 text-purple-300 flex items-center justify-center">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-white tracking-tight">Bloqueios de agenda</h2>
+              <p className="text-xs text-slate-400 font-bold">Férias, feriados ou compromissos pontuais.</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-2xl space-y-4">
-          <div>
-            <h2 className="text-sm font-black text-white tracking-tight">Bloqueios de agenda</h2>
-            <p className="text-slate-500 text-[10px] font-bold">Use para férias, feriados ou compromissos pontuais.</p>
-          </div>
+        <form onSubmit={handleCreateBlock} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[170px_120px_120px_1fr_150px] gap-2">
+          <input
+            type="date"
+            required
+            value={blockForm.block_date}
+            onChange={(e) => setBlockForm({ ...blockForm, block_date: e.target.value })}
+            className="input-compact"
+          />
+          <input
+            type="time"
+            value={blockForm.start_time}
+            onChange={(e) => setBlockForm({ ...blockForm, start_time: e.target.value })}
+            className="input-compact"
+            placeholder="Início"
+          />
+          <input
+            type="time"
+            value={blockForm.end_time}
+            onChange={(e) => setBlockForm({ ...blockForm, end_time: e.target.value })}
+            className="input-compact"
+            placeholder="Fim"
+          />
+          <input
+            value={blockForm.reason}
+            onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+            className="input-compact"
+            placeholder="Motivo: férias, feriado, compromisso..."
+          />
+          <button className="px-4 py-2 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all">
+            Novo bloqueio
+          </button>
+        </form>
 
-          <form onSubmit={handleCreateBlock} className="space-y-2">
-            <input
-              type="date"
-              required
-              value={blockForm.block_date}
-              onChange={(e) => setBlockForm({ ...blockForm, block_date: e.target.value })}
-              className="input-compact"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="time"
-                value={blockForm.start_time}
-                onChange={(e) => setBlockForm({ ...blockForm, start_time: e.target.value })}
-                className="input-compact"
-                placeholder="Início"
-              />
-              <input
-                type="time"
-                value={blockForm.end_time}
-                onChange={(e) => setBlockForm({ ...blockForm, end_time: e.target.value })}
-                className="input-compact"
-                placeholder="Fim"
-              />
-            </div>
-            <input
-              value={blockForm.reason}
-              onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
-              className="input-compact"
-              placeholder="Motivo: férias, feriado, compromisso..."
-            />
-            <button className="w-full py-2 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all">
-              Criar bloqueio
-            </button>
-          </form>
-
-          <div className="space-y-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
-            {scheduleBlocks.length === 0 ? (
-              <div className="p-4 bg-white/5 rounded-2xl text-center text-slate-500 text-xs font-bold">Nenhum bloqueio cadastrado.</div>
-            ) : scheduleBlocks.map(block => (
-              <div key={block.id} className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-white text-xs font-black">{formatDateKeyBR(block.block_date)}</p>
-                  <p className="text-slate-500 text-[10px] font-bold">
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+          {scheduleBlocks.length === 0 ? (
+            <div className="p-4 bg-white/5 rounded-2xl text-center text-slate-500 text-xs font-bold">Nenhum bloqueio cadastrado.</div>
+          ) : scheduleBlocks.slice(0, 4).map(block => (
+            <div key={block.id} className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center justify-center shrink-0">
+                  <CalendarIcon size={16} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white text-xs font-black truncate">{formatDateKeyBR(block.block_date)}</p>
+                  <p className="text-slate-500 text-[10px] font-bold truncate">
                     {block.start_time && block.end_time ? `${block.start_time.slice(0, 5)} às ${block.end_time.slice(0, 5)}` : 'Dia inteiro'} • {block.reason || 'Indisponível'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteBlock(block.id)}
-                  className="p-2 text-red-400 bg-red-500/10 rounded-xl hover:bg-red-500/20 transition-all"
-                >
-                  <X size={14} />
-                </button>
               </div>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => handleDeleteBlock(block.id)}
+                className="p-2 text-red-400 bg-red-500/10 rounded-xl hover:bg-red-500/20 transition-all shrink-0"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -926,7 +1060,7 @@ export default function Agenda() {
             <h3 className="font-black text-sm">Erro ao carregar agenda</h3>
             <p className="text-xs font-medium opacity-80">{error}</p>
           </div>
-          <button 
+          <button
             onClick={loadData}
             className="ml-auto px-3 py-1.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all"
           >
@@ -935,134 +1069,134 @@ export default function Agenda() {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4 w-full">
-          <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
-          <p className="text-slate-500 font-bold animate-pulse text-sm">Carregando agenda...</p>
-        </div>
-      ) : (
-        <div className="space-y-3 w-full">
-          {appointments.length === 0 ? (
-            <div className="bg-slate-900 p-10 rounded-[2.5rem] border border-white/5 text-center w-full shadow-2xl">
-              <div className="w-14 h-14 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CalendarIcon size={28} />
-              </div>
-              <h3 className="text-lg font-black text-white">Nenhum atendimento</h3>
-              <p className="text-slate-500 mt-1 text-xs font-medium">
-                {view === 'daily' ? 'Você não tem compromissos para este dia.' : 'Você não possui solicitações registradas.'}
-              </p>
+      <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-blue-600/15 border border-blue-500/20 text-blue-300 flex items-center justify-center">
+              <Stethoscope size={20} />
             </div>
-          ) : (
-            appointments.map((app) => (
-              <motion.div
-                key={app.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => {
-                  setSelectedAppointment(app);
-                  setShowDetailsModal(true);
-                }}
-                className="premium-card !p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-blue-500/30 transition-all w-full cursor-pointer group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl text-white group-hover:bg-sky-500/10 transition-colors border border-white/5">
-                    {view === 'all' ? (
-                      <>
-                        <span className="text-[7px] font-black text-sky-400 uppercase">{getShortMonth(app.data)}</span>
-                        <span className="text-sm font-black leading-none">{getDayNumber(app.data)}</span>
-                        <span className="text-[7px] font-bold text-slate-500 mt-0.5">{app.hora?.slice(0, 5)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock size={12} className="text-sky-400 mb-0.5" />
-                        <span className="text-sm font-black">{app.hora?.slice(0, 5) || '--:--'}</span>
-                      </>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white group-hover:text-sky-400 transition-colors">
-                      {app.nome_paciente || app.paciente?.nome_completo || 'Paciente'}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 mt-0.5">
-                      <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-                        <Stethoscope size={10} className="text-sky-400" />
-                        {app.tipo || app.servico}
-                      </div>
-                      {app.local && (
-                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-                          <MapPin size={10} className="text-sky-400" />
-                          {app.local}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            <div>
+              <h2 className="text-xl font-black text-white tracking-tight">{view === 'daily' ? 'Consultas de hoje' : 'Solicitações e histórico'}</h2>
+              <p className="text-xs text-slate-400 font-bold">{view === 'daily' ? 'Atendimentos organizados por horário.' : 'Todos os agendamentos recentes.'}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setView(view === 'daily' ? 'all' : 'daily')}
+            className="text-xs text-blue-300 font-black hover:text-blue-200 transition-colors"
+          >
+            {view === 'daily' ? 'Ver todas' : 'Ver hoje'}
+          </button>
+        </div>
 
-                <div className="flex items-center justify-between md:justify-end gap-3">
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
-                    app.status === 'concluido' || app.status === 'realizado' ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20" :
-                    app.status === 'confirmado' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                    app.status === 'agendado' || app.status === 'pendente' || app.status === 'pago' ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" :
-                    "bg-red-500/10 text-red-400 border border-red-500/20"
-                  )}>
-                    {app.status}
-                  </span>
-                  
-                  <div className="flex gap-1.5">
-                    {(app.status === 'agendado' || app.status === 'pendente' || app.status === 'pago') && (
-                      <>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-4 w-full">
+            <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
+            <p className="text-slate-500 font-bold animate-pulse text-sm">Carregando agenda...</p>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="bg-white/[0.035] p-10 rounded-[2rem] border border-white/5 text-center w-full">
+            <div className="w-14 h-14 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CalendarIcon size={28} />
+            </div>
+            <h3 className="text-lg font-black text-white">Nenhum atendimento</h3>
+            <p className="text-slate-500 mt-1 text-xs font-medium">
+              {view === 'daily' ? 'Você não tem compromissos para este dia.' : 'Você não possui solicitações registradas.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5 w-full">
+            {appointments.map((app) => {
+              const patientName = getPatientName(app);
+              const status = String(app.status || 'pendente').toLowerCase();
+              return (
+                <motion.div
+                  key={app.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={() => {
+                    setSelectedAppointment(app);
+                    setShowDetailsModal(true);
+                  }}
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 hover:bg-white/[0.07] hover:border-blue-500/30 transition-all w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 shrink-0 text-left">
+                      <p className="text-lg font-black text-blue-300 leading-none">{app.hora?.slice(0, 5) || '--:--'}</p>
+                      <p className="text-[10px] text-slate-500 font-bold mt-1">{view === 'all' ? `${getShortMonth(app.data)} ${getDayNumber(app.data)}` : '60 min'}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0">
+                      {getPatientInitials(patientName)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-black text-white group-hover:text-sky-300 transition-colors truncate">{patientName}</h3>
+                      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-0.5">
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium min-w-0">
+                          <Stethoscope size={11} className="text-sky-400 shrink-0" />
+                          <span className="truncate">{app.tipo || app.servico || 'Atendimento'}</span>
+                        </div>
+                        {app.local && (
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium min-w-0">
+                            <MapPin size={11} className="text-sky-400 shrink-0" />
+                            <span className="truncate">{app.local}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={cn('hidden sm:inline-flex px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest', getStatusClass(status))}>
+                        {getStatusLabel(status)}
+                      </span>
+
+                      {(status === 'agendado' || status === 'pendente' || status === 'pago') && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStatus(app.id, 'confirmado');
                           }}
-                          className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all"
+                          className="hidden md:flex p-2 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all"
                           title="Confirmar"
                         >
                           <Check size={16} />
                         </button>
+                      )}
+                      {status === 'confirmado' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            updateStatus(app.id, 'cancelado');
+                            handleCompleteAppointment(app);
                           }}
-                          className="p-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all"
-                          title="Recusar"
+                          className="hidden md:flex p-2 bg-emerald-500/10 text-emerald-300 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                          title="Concluir atendimento"
                         >
-                          <XCircle size={16} />
+                          <Check size={16} />
                         </button>
-                      </>
-                    )}
-                    {app.status === 'confirmado' && (
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCompleteAppointment(app);
+                          setSelectedAppointment(app);
+                          setShowDetailsModal(true);
                         }}
-                        className="p-1.5 bg-emerald-500/10 text-emerald-300 rounded-lg hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
-                        title="Concluir atendimento"
+                        className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                       >
-                        <Check size={16} />
+                        <MoreVertical size={16} />
                       </button>
-                    )}
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedAppointment(app);
-                        setShowDetailsModal(true);
-                      }}
-                      className="p-1.5 text-slate-600 hover:bg-white/5 rounded-lg transition-all"
-                    >
-                      <MoreVertical size={16} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
-      )}
+                  <div className="sm:hidden mt-3 flex items-center justify-between gap-2">
+                    <span className={cn('inline-flex px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest', getStatusClass(status))}>
+                      {getStatusLabel(status)}
+                    </span>
+                    <ChevronRight size={16} className="text-slate-500" />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Modal de Detalhes */}
       <AnimatePresence>
