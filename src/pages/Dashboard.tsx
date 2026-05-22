@@ -53,50 +53,68 @@ import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 
-const getAppointmentDateSource = (appointment: any): string | null => {
-  const value = appointment?.data || appointment?.data_servico || appointment?.created_at || appointment?.criado_em;
-  if (!value) return null;
-  return String(value);
+
+const parseAppointmentDateTime = (appointment: any): Date | null => {
+  const raw = appointment?.data_servico || appointment?.data || appointment?.data_agendamento || appointment?.created_at || appointment?.criado_em;
+  if (!raw) return null;
+
+  if (raw instanceof Date) {
+    return Number.isNaN(raw.getTime()) ? null : raw;
+  }
+
+  const rawText = String(raw).trim();
+  if (!rawText || rawText.toLowerCase() === 'invalid date' || rawText.toLowerCase() === 'nan') return null;
+
+  const directDate = new Date(rawText);
+  if (!Number.isNaN(directDate.getTime())) return directDate;
+
+  const datePart = rawText.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (!datePart) return null;
+
+  let timePart = String(appointment?.hora || '').trim();
+  if (/^\d{2}:\d{2}$/.test(timePart)) timePart = `${timePart}:00`;
+  if (!/^\d{2}:\d{2}:\d{2}$/.test(timePart)) timePart = '12:00:00';
+
+  const composedDate = new Date(`${datePart}T${timePart}`);
+  return Number.isNaN(composedDate.getTime()) ? null : composedDate;
 };
 
-const getAppointmentDayLabel = (appointment: any): string => {
-  const raw = getAppointmentDateSource(appointment);
-  if (!raw) return '--';
+const getUpcomingAppointment = (appointments: any[]) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
 
-  const isoDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoDate) return isoDate[3];
-
-  const brDate = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (brDate) return brDate[1];
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return '--';
-
-  return String(parsed.getDate()).padStart(2, '0');
+  return appointments
+    .map((appointment) => ({ appointment, date: parseAppointmentDateTime(appointment) }))
+    .filter((item): item is { appointment: any; date: Date } => Boolean(item.date) && item.date >= startOfToday)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())[0]?.appointment || null;
 };
 
-const getAppointmentTimeLabel = (appointment: any): string => {
-  const raw = appointment?.hora || appointment?.data_servico || appointment?.data;
-  if (!raw) return '--:--';
-
-  const value = String(raw).trim();
-  const time = value.match(/(\d{2}):(\d{2})/);
-  if (time) return `${time[1]}:${time[2]}`;
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '--:--';
-
-  return parsed.toLocaleTimeString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+const formatAppointmentMonth = (appointment: any) => {
+  const date = parseAppointmentDateTime(appointment);
+  if (!date) return '--';
+  return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short' }).replace('.', '');
 };
 
-const getAppointmentStatusLabel = (status?: string | null): string => {
-  if (!status) return 'Sem status';
-  return String(status).replace(/_/g, ' ');
+const formatAppointmentDay = (appointment: any) => {
+  const date = parseAppointmentDateTime(appointment);
+  if (!date) return '--';
+  return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit' });
 };
+
+const formatAppointmentTime = (appointment: any) => {
+  const rawTime = String(appointment?.hora || '').trim();
+  if (/^\d{2}:\d{2}/.test(rawTime)) return rawTime.slice(0, 5);
+
+  const date = parseAppointmentDateTime(appointment);
+  if (!date) return '--:--';
+  return date.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+};
+
+const getAppointmentProviderName = (appointment: any) =>
+  appointment?.nome_fisioterapeuta ||
+  appointment?.fisioterapeuta?.nome_completo ||
+  appointment?.fisioterapeuta?.nome ||
+  'Fisioterapeuta';
 
 export default function Dashboard() {
   const { user, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
@@ -265,9 +283,8 @@ export default function Dashboard() {
             fisioterapeuta:perfis(id, nome_completo, avatar_url)
           `)
           .eq(roleField, data.id)
-          .order('data_servico', { ascending: false, nullsFirst: false })
-          .order('data', { ascending: false, nullsFirst: false })
-          .order('hora', { ascending: false, nullsFirst: false })
+          .order('data', { ascending: false })
+          .order('hora', { ascending: false })
           .limit(5),
         supabase
           .from('triagens')
@@ -339,6 +356,8 @@ export default function Dashboard() {
     isPro: profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo',
     isAdmin: profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'
   }), [profile, subscription, user?.email]);
+
+  const nextPatientAppointment = !isPhysio ? getUpcomingAppointment(recentAppointments) : null;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -629,20 +648,20 @@ export default function Dashboard() {
 
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recentAppointments.filter(a => new Date(a.data_servico) >= new Date()).length > 0 ? (
+            {nextPatientAppointment ? (
               <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
-                    <span className="text-[9px] font-black uppercase opacity-80">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico + 'T12:00:00').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short' })}</span>
-                    <span className="text-xl font-black">{new Date(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico + 'T12:00:00').getDate()}</span>
+                    <span className="text-[9px] font-black uppercase opacity-80">{formatAppointmentMonth(nextPatientAppointment)}</span>
+                    <span className="text-xl font-black">{formatAppointmentDay(nextPatientAppointment)}</span>
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em] mb-0.5">Próxima Consulta</p>
                     <p className="text-lg font-black text-white tracking-tight">
-                      {recentAppointments.find(a => new Date(a.data_servico) >= new Date()).fisioterapeuta?.nome_completo}
+                      {getAppointmentProviderName(nextPatientAppointment)}
                     </p>
                     <p className="text-xs text-slate-400 font-bold">
-                      {formatHourBR(recentAppointments.find(a => new Date(a.data_servico) >= new Date()).data_servico)} • <span className="text-sky-400">Presencial</span>
+                      {formatAppointmentTime(nextPatientAppointment)} • <span className="text-sky-400">Presencial</span>
                     </p>
                   </div>
                 </div>
@@ -868,7 +887,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-black text-xs border border-blue-500/20">
-                          {getAppointmentDayLabel(appt)}
+                          {new Date(appt.data + 'T12:00:00').getDate()}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -877,7 +896,7 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                             <span className="flex items-center gap-1">
                               <Clock size={9} /> 
-                              {getAppointmentTimeLabel(appt)}
+                              {appt.hora || formatHourBR(appt.data_servico)}
                             </span>
                             <span className="w-0.5 h-0.5 bg-white/10 rounded-full"></span>
                             <span className={cn(
@@ -886,7 +905,7 @@ export default function Dashboard() {
                               appt.status === 'pendente' ? 'bg-amber-500/20 text-amber-400' :
                               'bg-slate-500/20 text-slate-400'
                             )}>
-                              {getAppointmentStatusLabel(appt.status)}
+                              {appt.status}
                             </span>
                           </div>
                         </div>
