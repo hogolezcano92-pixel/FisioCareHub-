@@ -887,7 +887,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-lg flex items-center justify-center font-black text-xs border border-blue-500/20">
-                          {new Date(appt.data + 'T12:00:00').getDate()}
+                          {formatAppointmentDay(appt)}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -896,7 +896,7 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                             <span className="flex items-center gap-1">
                               <Clock size={9} /> 
-                              {appt.hora || formatHourBR(appt.data_servico)}
+                              {formatAppointmentTime(appt)}
                             </span>
                             <span className="w-0.5 h-0.5 bg-white/10 rounded-full"></span>
                             <span className={cn(
