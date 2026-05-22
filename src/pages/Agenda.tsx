@@ -68,6 +68,19 @@ const formatCurrencyBR = (value: string | number) =>
     maximumFractionDigits: 2,
   });
 
+const sanitizeCurrencyInput = (value: string) => {
+  const clean = String(value || '').replace(/[^0-9,]/g, '');
+  const [integer = '', decimal = ''] = clean.split(',');
+  const integerPart = integer.replace(/^0+(?=\d)/, '') || '';
+  const decimalPart = decimal.slice(0, 2);
+
+  if (clean.includes(',')) {
+    return `${integerPart || '0'},${decimalPart}`;
+  }
+
+  return integerPart;
+};
+
 const getDateInputValue = (value: string) => normalizeDateKey(value) || todayDateKey();
 
 const getTimeInputValue = (value: string) => {
@@ -487,7 +500,7 @@ export default function Agenda() {
 
     setSubmitting(true);
     try {
-      const currentPrice = formData.valor || 0;
+      const currentPrice = parseCurrencyToNumber(valorInput || formData.valor || 0);
 
       // 1. Correção do Erro de Data ('Pattern mismatch')
       const sqlDate = normalizeDateKey(formData.data); // YYYY-MM-DD
@@ -755,6 +768,7 @@ export default function Agenda() {
     createDefaultAvailabilityRules(user?.id || '').find((rule) => rule.weekday === selectedAvailabilityWeekday)!;
 
   const agendaFieldClass = 'input-compact h-12 min-w-0 max-w-full box-border appearance-none !rounded-2xl !bg-white/[0.06] border-white/10';
+  const modalFieldClass = 'input-compact h-12 min-w-0 w-full max-w-full box-border appearance-none !rounded-2xl !bg-white/[0.06] border-white/10 text-base leading-none';
 
   const getPatientName = (app: any) => app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente';
   const getPatientInitials = (name: string) => {
@@ -1437,7 +1451,7 @@ export default function Agenda() {
                     required
                     value={formData.paciente_id}
                     onChange={(e) => setFormData({...formData, paciente_id: e.target.value})}
-                    className="input-compact"
+                    className={modalFieldClass}
                   >
                     <option value="" className="bg-slate-900">Selecione um paciente...</option>
                     {patients.map(p => (
@@ -1470,7 +1484,7 @@ export default function Agenda() {
                       });
                       setValorInput(formatCurrencyBR(valor));
                     }}
-                    className="input-compact"
+                    className={modalFieldClass}
                   >
                     <option value="" className="bg-slate-900">Selecione o tipo...</option>
                     <optgroup label="Sessões Avulsas" className="bg-slate-900">
@@ -1505,55 +1519,56 @@ export default function Agenda() {
                       <HelpCircle size={10} />
                     </button>
                   </label>
-                  <div className="relative overflow-hidden rounded-2xl">
-                    <span className="absolute pointer-events-none z-20 left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                  <div className="relative w-full min-w-0 overflow-hidden rounded-2xl">
+                    <span className="absolute pointer-events-none z-20 left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">R$</span>
                     <input
                       type="text"
                       inputMode="decimal"
                       value={valorInput}
-                      onFocus={(e) => e.currentTarget.select()}
+                      onFocus={(e) => {
+                        if (parseCurrencyToNumber(e.currentTarget.value) === 0) {
+                          setValorInput('');
+                          setFormData({ ...formData, valor: 0 });
+                        } else {
+                          e.currentTarget.select();
+                        }
+                      }}
                       onChange={(e) => {
-                        const raw = e.target.value.replace(/[^0-9,.]/g, '');
+                        const raw = sanitizeCurrencyInput(e.target.value);
                         setValorInput(raw);
                         setFormData({ ...formData, valor: parseCurrencyToNumber(raw) });
                       }}
-                      onBlur={() => setValorInput(valorInput ? formatCurrencyBR(valorInput) : '')}
-                      className={`${agendaFieldClass} !pl-14`}
+                      onBlur={() => {
+                        const parsed = parseCurrencyToNumber(valorInput);
+                        setFormData({ ...formData, valor: parsed });
+                        setValorInput(parsed > 0 ? formatCurrencyBR(parsed) : '');
+                      }}
+                      className={`${modalFieldClass} !pl-14 pr-4`}
                       placeholder="25,00"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                <div className="grid grid-cols-1 gap-3 min-w-0">
                   <div className="space-y-1 min-w-0">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Data</label>
-                    <div className={`${agendaFieldClass} relative flex items-center overflow-hidden`}>
-                      <span className="pointer-events-none truncate text-white">
-                        {getMobileDateDisplay(formData.data)}
-                      </span>
-                      <input
-                        type="date"
-                        required
-                        value={getDateInputValue(formData.data)}
-                        onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                        className={getNativePickerButtonClass(formData.data)}
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      required
+                      value={getDateInputValue(formData.data)}
+                      onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                      className={`${modalFieldClass} [color-scheme:dark]`}
+                    />
                   </div>
                   <div className="space-y-1 min-w-0">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora</label>
-                    <div className={`${agendaFieldClass} relative flex items-center overflow-hidden`}>
-                      <span className="pointer-events-none truncate text-white">
-                        {getMobileTimeDisplay(formData.hora)}
-                      </span>
-                      <input
-                        type="time"
-                        required
-                        value={getTimeInputValue(formData.hora)}
-                        onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
-                        className={getNativePickerButtonClass(formData.hora)}
-                      />
-                    </div>
+                    <input
+                      type="time"
+                      required
+                      value={getTimeInputValue(formData.hora)}
+                      onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+                      className={`${modalFieldClass} [color-scheme:dark]`}
+                    />
                   </div>
                 </div>
 
@@ -1564,7 +1579,7 @@ export default function Agenda() {
                     type="text"
                     value={formData.local}
                     onChange={(e) => setFormData({...formData, local: e.target.value})}
-                    className={agendaFieldClass}
+                    className={modalFieldClass}
                     placeholder="Ex: Clínica Central"
                   />
                 </div>
@@ -1574,7 +1589,7 @@ export default function Agenda() {
                   <textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    className="input-compact min-h-20 resize-none box-border !rounded-2xl !bg-white/[0.06] border-white/10"
+                    className="input-compact min-h-20 w-full min-w-0 max-w-full resize-none box-border !rounded-2xl !bg-white/[0.06] border-white/10"
                     placeholder="Notas..."
                   />
                 </div>
