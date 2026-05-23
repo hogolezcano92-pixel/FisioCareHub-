@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   CalendarDays,
   CheckCircle2,
   Clock,
   ExternalLink,
-  KeyRound,
   Loader2,
   MapPin,
   Navigation,
-  Route
+  Route,
+  ShieldCheck
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { supabase } from '../../lib/supabase';
@@ -26,8 +26,30 @@ interface RoutePatient {
   hasAddress: boolean;
 }
 
+interface RouteStop extends RoutePatient {
+  lat: number;
+  lng: number;
+}
+
+interface RouteSummary {
+  distanceKm: number;
+  durationMinutes: number;
+}
+
+type LatLngTuple = [number, number];
+
+declare global {
+  interface Window {
+    L?: any;
+    __fisioCareHubLeafletPromise?: Promise<any>;
+  }
+}
+
 const ROUTE_STATUSES = ['confirmado', 'pago', 'agendado'];
-const GOOGLE_MAPS_API_KEY = String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+const ORS_API_KEY = String(import.meta.env.VITE_OPENROUTESERVICE_API_KEY || '').trim();
+const LEAFLET_CSS_ID = 'fisio-leaflet-css';
+const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
 const formatAppointmentTime = (appointment: any) => {
   if (appointment?.hora) return String(appointment.hora).slice(0, 5);
@@ -76,74 +98,187 @@ const buildAddress = (patient: any) => {
   return fullAddress || localizacao || '';
 };
 
-const mapsSearchUrl = (address: string) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+const openStreetMapSearchUrl = (address: string) =>
+  `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`;
 
-const mapsRouteUrl = (patients: RoutePatient[]) => {
-  const validStops = patients.filter((patient) => patient.hasAddress);
-  if (validStops.length === 0) return '';
+const openStreetMapRouteUrl = (stops: RouteStop[]) => {
+  if (stops.length === 0) return '';
+  if (stops.length === 1) return `https://www.openstreetmap.org/?mlat=${stops[0].lat}&mlon=${stops[0].lng}#map=16/${stops[0].lat}/${stops[0].lng}`;
 
-  if (validStops.length === 1) return mapsSearchUrl(validStops[0].address);
-
-  const destination = validStops[validStops.length - 1];
-  const waypoints = validStops.slice(0, -1).map((patient) => patient.address).join('|');
-
-  const params = new URLSearchParams({
-    api: '1',
-    travelmode: 'driving',
-    destination: destination.address
-  });
-
-  if (waypoints) params.set('waypoints', waypoints);
-
-  return `https://www.google.com/maps/dir/?${params.toString()}`;
+  const route = stops.map((stop) => `${stop.lat},${stop.lng}`).join(';');
+  return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${route}`;
 };
 
-const googleMapsEmbedUrl = (patients: RoutePatient[]) => {
-  if (!GOOGLE_MAPS_API_KEY) return '';
+const loadLeaflet = () => {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Leaflet só pode carregar no navegador.'));
+  if (window.L) return Promise.resolve(window.L);
 
-  const validStops = patients.filter((patient) => patient.hasAddress);
-  if (validStops.length === 0) return '';
-
-  if (validStops.length === 1) {
-    const params = new URLSearchParams({
-      key: GOOGLE_MAPS_API_KEY,
-      q: validStops[0].address
-    });
-
-    return `https://www.google.com/maps/embed/v1/place?${params.toString()}`;
+  if (!document.getElementById(LEAFLET_CSS_ID)) {
+    const link = document.createElement('link');
+    link.id = LEAFLET_CSS_ID;
+    link.rel = 'stylesheet';
+    link.href = LEAFLET_CSS_URL;
+    document.head.appendChild(link);
   }
 
-  const origin = validStops[0];
-  const destination = validStops[validStops.length - 1];
-  const waypoints = validStops.slice(1, -1).map((patient) => patient.address).join('|');
+  if (!window.__fisioCareHubLeafletPromise) {
+    window.__fisioCareHubLeafletPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = LEAFLET_JS_URL;
+      script.async = true;
+      script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error('Não foi possível carregar o Leaflet.'));
+      document.body.appendChild(script);
+    });
+  }
+
+  return window.__fisioCareHubLeafletPromise;
+};
+
+const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+  if (!ORS_API_KEY || !address) return null;
 
   const params = new URLSearchParams({
-    key: GOOGLE_MAPS_API_KEY,
-    origin: origin.address,
-    destination: destination.address,
-    mode: 'driving'
+    api_key: ORS_API_KEY,
+    text: address,
+    'boundary.country': 'BR',
+    size: '1'
   });
 
-  if (waypoints) params.set('waypoints', waypoints);
+  const response = await fetch(`https://api.openrouteservice.org/geocode/search?${params.toString()}`);
+  if (!response.ok) throw new Error('OpenRouteService não conseguiu localizar um endereço.');
 
-  return `https://www.google.com/maps/embed/v1/directions?${params.toString()}`;
+  const payload = await response.json();
+  const coordinates = payload?.features?.[0]?.geometry?.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+
+  return { lng: Number(coordinates[0]), lat: Number(coordinates[1]) };
+};
+
+const fetchRouteGeometry = async (stops: RouteStop[]) => {
+  if (!ORS_API_KEY || stops.length < 2) return { geometry: [] as LatLngTuple[], summary: null as RouteSummary | null };
+
+  const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+    method: 'POST',
+    headers: {
+      Authorization: ORS_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      coordinates: stops.map((stop) => [stop.lng, stop.lat])
+    })
+  });
+
+  if (!response.ok) throw new Error('OpenRouteService não conseguiu calcular a rota.');
+
+  const payload = await response.json();
+  const feature = payload?.features?.[0];
+  const coordinates = feature?.geometry?.coordinates || [];
+  const summary = feature?.properties?.summary;
+
+  return {
+    geometry: coordinates.map(([lng, lat]: number[]) => [lat, lng] as LatLngTuple),
+    summary: summary
+      ? {
+          distanceKm: Number(summary.distance || 0) / 1000,
+          durationMinutes: Number(summary.duration || 0) / 60
+        }
+      : null
+  };
+};
+
+const OpenStreetRouteMap = ({
+  stops,
+  routeGeometry
+}: {
+  stops: RouteStop[];
+  routeGeometry: LatLngTuple[];
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any>(null);
+  const layerRef = useRef<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const renderMap = async () => {
+      if (!containerRef.current || stops.length === 0) return;
+
+      const L = await loadLeaflet();
+      if (cancelled || !containerRef.current) return;
+
+      if (!mapRef.current) {
+        mapRef.current = L.map(containerRef.current, {
+          zoomControl: true,
+          attributionControl: true
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapRef.current);
+      }
+
+      if (layerRef.current) {
+        layerRef.current.remove();
+      }
+
+      const layerGroup = L.layerGroup().addTo(mapRef.current);
+      layerRef.current = layerGroup;
+
+      stops.forEach((stop, index) => {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="width:30px;height:30px;border-radius:999px;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;font-weight:900;border:2px solid rgba(255,255,255,.9);box-shadow:0 8px 18px rgba(37,99,235,.35);font-size:12px;">${index + 1}</div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+
+        L.marker([stop.lat, stop.lng], { icon })
+          .bindPopup(`<strong>${stop.name}</strong><br/>${stop.time}<br/>${stop.address}`)
+          .addTo(layerGroup);
+      });
+
+      if (routeGeometry.length > 1) {
+        L.polyline(routeGeometry, {
+          weight: 5,
+          opacity: 0.9,
+          color: '#3b82f6'
+        }).addTo(layerGroup);
+      }
+
+      const boundsPoints = routeGeometry.length > 1 ? routeGeometry : stops.map((stop) => [stop.lat, stop.lng]);
+      const bounds = L.latLngBounds(boundsPoints);
+      mapRef.current.fitBounds(bounds, { padding: [28, 28], maxZoom: stops.length === 1 ? 16 : 14 });
+      setTimeout(() => mapRef.current?.invalidateSize(), 120);
+    };
+
+    renderMap().catch((error) => console.error('Erro ao renderizar mapa OSM:', error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeGeometry, stops]);
+
+  return <div ref={containerRef} className="h-64 w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950 sm:h-80" />;
 };
 
 export const RouteOptimizer = () => {
   const { profile } = useAuth();
   const [patients, setPatients] = useState<RoutePatient[]>([]);
+  const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
+  const [routeGeometry, setRouteGeometry] = useState<LatLngTuple[]>([]);
+  const [routeSummary, setRouteSummary] = useState<RouteSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [routeLoading, setRouteLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [routeErrorMessage, setRouteErrorMessage] = useState('');
   const [routeOpened, setRouteOpened] = useState(false);
 
   const patientsWithAddress = useMemo(
     () => patients.filter((patient) => patient.hasAddress),
     [patients]
   );
-
-  const embeddedMapUrl = useMemo(() => googleMapsEmbedUrl(patients), [patients]);
-  const hasGoogleMapsKey = Boolean(GOOGLE_MAPS_API_KEY);
 
   useEffect(() => {
     const fetchTodayRoute = async () => {
@@ -269,8 +404,66 @@ export const RouteOptimizer = () => {
     fetchTodayRoute();
   }, [profile?.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const prepareOpenStreetRoute = async () => {
+      setRouteStops([]);
+      setRouteGeometry([]);
+      setRouteSummary(null);
+      setRouteErrorMessage('');
+
+      if (patientsWithAddress.length === 0 || !ORS_API_KEY) return;
+
+      setRouteLoading(true);
+
+      try {
+        const geocodedStops: RouteStop[] = [];
+
+        for (const patient of patientsWithAddress) {
+          const coordinates = await geocodeAddress(patient.address);
+          if (cancelled) return;
+
+          if (coordinates) {
+            geocodedStops.push({ ...patient, ...coordinates });
+          }
+        }
+
+        if (geocodedStops.length === 0) {
+          setRouteErrorMessage('Não consegui localizar os endereços informados. Revise rua, número, cidade e estado.');
+          return;
+        }
+
+        const route = await fetchRouteGeometry(geocodedStops);
+        if (cancelled) return;
+
+        setRouteStops(geocodedStops);
+        setRouteGeometry(route.geometry);
+        setRouteSummary(route.summary);
+      } catch (err: any) {
+        console.error('Erro ao montar rota com OpenRouteService:', err);
+        if (!cancelled) {
+          setRouteErrorMessage(err?.message || 'Não foi possível calcular a rota pelo OpenRouteService.');
+        }
+      } finally {
+        if (!cancelled) setRouteLoading(false);
+      }
+    };
+
+    prepareOpenStreetRoute();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [patientsWithAddress]);
+
   const openFullRoute = () => {
-    const url = mapsRouteUrl(patients);
+    const url = routeStops.length > 0
+      ? openStreetMapRouteUrl(routeStops)
+      : patientsWithAddress.length > 0
+        ? openStreetMapSearchUrl(patientsWithAddress[0].address)
+        : '';
+
     if (!url) return;
     setRouteOpened(true);
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -285,7 +478,7 @@ export const RouteOptimizer = () => {
             Organização de Rota
           </h3>
           <p className="text-slate-400 text-[9px] font-medium">
-            Mapa dos atendimentos domiciliares de hoje, com paradas em ordem de horário.
+            OpenStreetMap + Leaflet + OpenRouteService para atendimentos domiciliares.
           </p>
         </div>
 
@@ -294,8 +487,8 @@ export const RouteOptimizer = () => {
           disabled={loading || patientsWithAddress.length === 0}
           className="w-full sm:w-auto px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
-          Abrir rota no Maps
+          {loading || routeLoading ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
+          Abrir rota no OSM
         </button>
       </div>
 
@@ -318,33 +511,6 @@ export const RouteOptimizer = () => {
         </div>
       )}
 
-      {!loading && !errorMessage && patients.length > 0 && patientsWithAddress.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 shadow-inner">
-          {embeddedMapUrl ? (
-            <iframe
-              title="Mapa da rota dos atendimentos"
-              src={embeddedMapUrl}
-              className="h-64 w-full sm:h-80"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          ) : (
-            <div className="h-64 sm:h-80 flex flex-col items-center justify-center gap-3 px-5 text-center bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.20),_transparent_45%),linear-gradient(135deg,_rgba(15,23,42,0.98),_rgba(30,41,59,0.95))]">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-400/20 flex items-center justify-center">
-                <KeyRound className="text-blue-300" size={22} />
-              </div>
-              <div className="space-y-1.5 max-w-sm">
-                <p className="text-white text-[12px] font-black">Mapa embutido pronto para ativar</p>
-                <p className="text-slate-300 text-[10px] font-semibold leading-relaxed">
-                  Adicione a variável <span className="text-blue-200 font-black">VITE_GOOGLE_MAPS_API_KEY</span> na Vercel para o mapa aparecer dentro do FisioCareHub. Enquanto isso, o botão “Abrir rota no Maps” continua funcionando.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="space-y-2.5">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
@@ -362,58 +528,100 @@ export const RouteOptimizer = () => {
             <MapPin className="mx-auto mb-3 text-slate-600" size={24} />
             <p className="text-slate-400 text-[10px] font-bold">Nenhum atendimento confirmado para hoje.</p>
             <p className="text-slate-500 text-[9px] mt-1">
-              Quando houver atendimento agendado, confirmado ou pago, a rota aparecerá aqui.
+              O mapa OSM já está integrado. Quando houver atendimento agendado, confirmado ou pago, a rota aparecerá aqui.
             </p>
           </div>
         ) : (
-          patients.map((patient, index) => (
-            <motion.div
-              key={`${patient.appointmentId}-${patient.id}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`p-3 rounded-xl border flex items-center justify-between gap-3 group transition-all ${
-                patient.hasAddress
-                  ? 'bg-blue-500/10 border-blue-500/20'
-                  : 'bg-amber-500/10 border-amber-500/20'
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-blue-300 font-black border border-white/5 text-[10px] shrink-0">
-                  {index + 1}
-                </div>
-
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <p className="font-black text-white text-[11px] truncate">{patient.name}</p>
-                    <span className="text-[7px] uppercase tracking-widest font-black px-1.5 py-0.5 rounded-full bg-white/10 text-slate-300 shrink-0">
-                      {patient.status}
-                    </span>
-                  </div>
-
-                  <p className="text-slate-300 text-[9px] font-bold flex items-center gap-1.5">
-                    <Clock size={10} className="text-blue-300" />
-                    {patient.time}
-                    {patient.service ? <span className="text-slate-500">• {patient.service}</span> : null}
+          <>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/50">
+              {!ORS_API_KEY ? (
+                <div className="p-5 text-center bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+                  <ShieldCheck className="mx-auto mb-3 text-blue-300" size={24} />
+                  <p className="text-white text-[11px] font-black">Mapa OpenStreetMap pronto para ativar</p>
+                  <p className="text-slate-300 text-[9px] mt-1 leading-relaxed">
+                    Adicione <span className="font-black text-blue-200">VITE_OPENROUTESERVICE_API_KEY</span> na Vercel para geocodificar endereços, mostrar marcadores, distância e tempo estimado.
                   </p>
+                </div>
+              ) : routeLoading ? (
+                <div className="h-64 flex flex-col items-center justify-center gap-3 bg-slate-950 rounded-2xl border border-white/10">
+                  <Loader2 className="animate-spin text-blue-400" size={22} />
+                  <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">Calculando rota OSM...</p>
+                </div>
+              ) : routeStops.length > 0 ? (
+                <OpenStreetRouteMap stops={routeStops} routeGeometry={routeGeometry} />
+              ) : (
+                <div className="p-5 text-center bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                  <AlertCircle className="mx-auto mb-3 text-amber-300" size={24} />
+                  <p className="text-white text-[11px] font-black">Endereços ainda não localizados</p>
+                  <p className="text-slate-300 text-[9px] mt-1 leading-relaxed">
+                    {routeErrorMessage || 'Revise se os pacientes têm rua, número, cidade, estado e CEP cadastrados.'}
+                  </p>
+                </div>
+              )}
+            </div>
 
-                  <div className="flex items-center gap-1.5 text-slate-400 text-[8px] font-medium line-clamp-1">
-                    <MapPin size={9} className={patient.hasAddress ? 'text-emerald-400' : 'text-amber-300'} />
-                    {patient.address}
-                  </div>
+            {routeSummary && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 px-3 py-2">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-blue-200">Distância</p>
+                  <p className="text-sm font-black text-white">{routeSummary.distanceKm.toFixed(1)} km</p>
+                </div>
+                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-emerald-200">Tempo estimado</p>
+                  <p className="text-sm font-black text-white">{Math.round(routeSummary.durationMinutes)} min</p>
                 </div>
               </div>
+            )}
 
-              <button
-                onClick={() => patient.hasAddress && window.open(mapsSearchUrl(patient.address), '_blank', 'noopener,noreferrer')}
-                disabled={!patient.hasAddress}
-                className="p-2 bg-slate-800 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                title={patient.hasAddress ? 'Abrir endereço no Maps' : 'Endereço não informado'}
+            {patients.map((patient, index) => (
+              <motion.div
+                key={`${patient.appointmentId}-${patient.id}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-3 group transition-all ${
+                  patient.hasAddress
+                    ? 'bg-blue-500/10 border-blue-500/20'
+                    : 'bg-amber-500/10 border-amber-500/20'
+                }`}
               >
-                <ExternalLink size={14} />
-              </button>
-            </motion.div>
-          ))
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-blue-300 font-black border border-white/5 text-[10px] shrink-0">
+                    {index + 1}
+                  </div>
+
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <p className="font-black text-white text-[11px] truncate">{patient.name}</p>
+                      <span className="text-[7px] uppercase tracking-widest font-black px-1.5 py-0.5 rounded-full bg-white/10 text-slate-300 shrink-0">
+                        {patient.status}
+                      </span>
+                    </div>
+
+                    <p className="text-slate-300 text-[9px] font-bold flex items-center gap-1.5">
+                      <Clock size={10} className="text-blue-300" />
+                      {patient.time}
+                      {patient.service ? <span className="text-slate-500">• {patient.service}</span> : null}
+                    </p>
+
+                    <div className="flex items-center gap-1.5 text-slate-400 text-[8px] font-medium line-clamp-1">
+                      <MapPin size={9} className={patient.hasAddress ? 'text-emerald-400' : 'text-amber-300'} />
+                      {patient.address}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => patient.hasAddress && window.open(openStreetMapSearchUrl(patient.address), '_blank', 'noopener,noreferrer')}
+                  disabled={!patient.hasAddress}
+                  className="p-2 bg-slate-800 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  title={patient.hasAddress ? 'Abrir endereço no OpenStreetMap' : 'Endereço não informado'}
+                >
+                  <ExternalLink size={14} />
+                </button>
+              </motion.div>
+            ))}
+          </>
         )}
       </div>
 
@@ -425,14 +633,14 @@ export const RouteOptimizer = () => {
             </div>
             <div className="min-w-0">
               <p className="font-black text-white text-[10px]">
-                {routeOpened ? 'Rota enviada para o Maps' : 'Rota pronta por ordem de horário'}
+                {routeOpened ? 'Rota enviada para o OpenStreetMap' : 'Rota pronta por ordem de horário'}
               </p>
               <p className="text-[9px] font-medium text-slate-400">
                 {patientsWithAddress.length === 0
                   ? 'Cadastre o endereço dos pacientes para liberar o mapa.'
-                  : hasGoogleMapsKey
-                    ? 'O mapa aparece no app e o botão abre a navegação completa no Google Maps.'
-                    : 'Ao adicionar a chave do Google Maps, o mapa aparecerá dentro do FisioCareHub.'}
+                  : ORS_API_KEY
+                    ? 'OpenRouteService calcula distância e tempo estimado usando dados do OpenStreetMap.'
+                    : 'Adicione a chave do OpenRouteService na Vercel para ativar o mapa embutido.'}
               </p>
             </div>
           </div>
