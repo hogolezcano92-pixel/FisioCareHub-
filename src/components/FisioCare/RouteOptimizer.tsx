@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  KeyRound,
   Loader2,
   MapPin,
   Navigation,
@@ -26,6 +27,7 @@ interface RoutePatient {
 }
 
 const ROUTE_STATUSES = ['confirmado', 'pago', 'agendado'];
+const GOOGLE_MAPS_API_KEY = String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
 
 const formatAppointmentTime = (appointment: any) => {
   if (appointment?.hora) return String(appointment.hora).slice(0, 5);
@@ -97,6 +99,37 @@ const mapsRouteUrl = (patients: RoutePatient[]) => {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 };
 
+const googleMapsEmbedUrl = (patients: RoutePatient[]) => {
+  if (!GOOGLE_MAPS_API_KEY) return '';
+
+  const validStops = patients.filter((patient) => patient.hasAddress);
+  if (validStops.length === 0) return '';
+
+  if (validStops.length === 1) {
+    const params = new URLSearchParams({
+      key: GOOGLE_MAPS_API_KEY,
+      q: validStops[0].address
+    });
+
+    return `https://www.google.com/maps/embed/v1/place?${params.toString()}`;
+  }
+
+  const origin = validStops[0];
+  const destination = validStops[validStops.length - 1];
+  const waypoints = validStops.slice(1, -1).map((patient) => patient.address).join('|');
+
+  const params = new URLSearchParams({
+    key: GOOGLE_MAPS_API_KEY,
+    origin: origin.address,
+    destination: destination.address,
+    mode: 'driving'
+  });
+
+  if (waypoints) params.set('waypoints', waypoints);
+
+  return `https://www.google.com/maps/embed/v1/directions?${params.toString()}`;
+};
+
 export const RouteOptimizer = () => {
   const { profile } = useAuth();
   const [patients, setPatients] = useState<RoutePatient[]>([]);
@@ -108,6 +141,9 @@ export const RouteOptimizer = () => {
     () => patients.filter((patient) => patient.hasAddress),
     [patients]
   );
+
+  const embeddedMapUrl = useMemo(() => googleMapsEmbedUrl(patients), [patients]);
+  const hasGoogleMapsKey = Boolean(GOOGLE_MAPS_API_KEY);
 
   useEffect(() => {
     const fetchTodayRoute = async () => {
@@ -249,7 +285,7 @@ export const RouteOptimizer = () => {
             Organização de Rota
           </h3>
           <p className="text-slate-400 text-[9px] font-medium">
-            Monte a rota dos atendimentos domiciliares de hoje.
+            Mapa dos atendimentos domiciliares de hoje, com paradas em ordem de horário.
           </p>
         </div>
 
@@ -279,6 +315,33 @@ export const RouteOptimizer = () => {
               {patientsWithAddress.length} parada{patientsWithAddress.length === 1 ? '' : 's'}
             </p>
           </div>
+        </div>
+      )}
+
+      {!loading && !errorMessage && patients.length > 0 && patientsWithAddress.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 shadow-inner">
+          {embeddedMapUrl ? (
+            <iframe
+              title="Mapa da rota dos atendimentos"
+              src={embeddedMapUrl}
+              className="h-64 w-full sm:h-80"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          ) : (
+            <div className="h-64 sm:h-80 flex flex-col items-center justify-center gap-3 px-5 text-center bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.20),_transparent_45%),linear-gradient(135deg,_rgba(15,23,42,0.98),_rgba(30,41,59,0.95))]">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-400/20 flex items-center justify-center">
+                <KeyRound className="text-blue-300" size={22} />
+              </div>
+              <div className="space-y-1.5 max-w-sm">
+                <p className="text-white text-[12px] font-black">Mapa embutido pronto para ativar</p>
+                <p className="text-slate-300 text-[10px] font-semibold leading-relaxed">
+                  Adicione a variável <span className="text-blue-200 font-black">VITE_GOOGLE_MAPS_API_KEY</span> na Vercel para o mapa aparecer dentro do FisioCareHub. Enquanto isso, o botão “Abrir rota no Maps” continua funcionando.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -367,7 +430,9 @@ export const RouteOptimizer = () => {
               <p className="text-[9px] font-medium text-slate-400">
                 {patientsWithAddress.length === 0
                   ? 'Cadastre o endereço dos pacientes para liberar o mapa.'
-                  : 'O Google Maps ajusta o melhor caminho entre as paradas.'}
+                  : hasGoogleMapsKey
+                    ? 'O mapa aparece no app e o botão abre a navegação completa no Google Maps.'
+                    : 'Ao adicionar a chave do Google Maps, o mapa aparecerá dentro do FisioCareHub.'}
               </p>
             </div>
           </div>
