@@ -51,6 +51,49 @@ const LEAFLET_CSS_ID = 'fisio-leaflet-css';
 const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
+const toLocalDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTodayDateValue = () => toLocalDateInputValue(new Date());
+
+const getTomorrowDateValue = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return toLocalDateInputValue(date);
+};
+
+const getDateRangeFromValue = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const start = new Date(year, (month || 1) - 1, day || 1);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
+
+const formatSelectedDateLabel = (value: string) => {
+  const today = getTodayDateValue();
+  const tomorrow = getTomorrowDateValue();
+
+  if (value === today) return 'Hoje';
+  if (value === tomorrow) return 'Amanhã';
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, (month || 1) - 1, day || 1);
+  if (Number.isNaN(date.getTime())) return 'Data selecionada';
+
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short'
+  });
+};
+
 const formatAppointmentTime = (appointment: any) => {
   if (appointment?.hora) return String(appointment.hora).slice(0, 5);
 
@@ -271,6 +314,8 @@ export const RouteOptimizer = () => {
   const [routeSummary, setRouteSummary] = useState<RouteSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => getTodayDateValue());
+  const [showCustomDate, setShowCustomDate] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [routeErrorMessage, setRouteErrorMessage] = useState('');
   const [routeOpened, setRouteOpened] = useState(false);
@@ -280,8 +325,12 @@ export const RouteOptimizer = () => {
     [patients]
   );
 
+  const selectedDateLabel = useMemo(() => formatSelectedDateLabel(selectedDate), [selectedDate]);
+  const todayDateValue = useMemo(() => getTodayDateValue(), []);
+  const tomorrowDateValue = useMemo(() => getTomorrowDateValue(), []);
+
   useEffect(() => {
-    const fetchTodayRoute = async () => {
+    const fetchRouteByDate = async () => {
       if (!profile?.id) {
         setLoading(false);
         return;
@@ -289,13 +338,10 @@ export const RouteOptimizer = () => {
 
       setLoading(true);
       setErrorMessage('');
+      setRouteOpened(false);
 
       try {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+        const { start, end } = getDateRangeFromValue(selectedDate);
 
         // Atenção: a tabela agendamentos não possui a coluna data_hora.
         // Mantemos somente as colunas reais usadas no FisioCareHub.
@@ -393,16 +439,16 @@ export const RouteOptimizer = () => {
 
         setPatients(routePatients);
       } catch (err: any) {
-        console.error('Erro ao carregar rota do dia:', err);
-        setErrorMessage(err?.message || 'Não foi possível carregar os atendimentos de hoje.');
+        console.error('Erro ao carregar rota da data selecionada:', err);
+        setErrorMessage(err?.message || 'Não foi possível carregar os atendimentos da data selecionada.');
         setPatients([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTodayRoute();
-  }, [profile?.id]);
+    fetchRouteByDate();
+  }, [profile?.id, selectedDate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -492,10 +538,66 @@ export const RouteOptimizer = () => {
         </button>
       </div>
 
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDate(todayDateValue);
+            setShowCustomDate(false);
+          }}
+          className={`rounded-xl border px-3 py-2 text-[10px] font-black transition-all ${
+            selectedDate === todayDateValue
+              ? 'border-blue-400 bg-blue-500/20 text-white shadow-lg shadow-blue-950/20'
+              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+          }`}
+        >
+          Hoje
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDate(tomorrowDateValue);
+            setShowCustomDate(false);
+          }}
+          className={`rounded-xl border px-3 py-2 text-[10px] font-black transition-all ${
+            selectedDate === tomorrowDateValue
+              ? 'border-blue-400 bg-blue-500/20 text-white shadow-lg shadow-blue-950/20'
+              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+          }`}
+        >
+          Amanhã
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowCustomDate((current) => !current)}
+          className={`rounded-xl border px-3 py-2 text-[10px] font-black transition-all ${
+            showCustomDate && selectedDate !== todayDateValue && selectedDate !== tomorrowDateValue
+              ? 'border-blue-400 bg-blue-500/20 text-white shadow-lg shadow-blue-950/20'
+              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+          }`}
+        >
+          Escolher data
+        </button>
+      </div>
+
+      {showCustomDate && (
+        <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+          <label className="mb-1 block text-[8px] font-black uppercase tracking-widest text-slate-500">
+            Data da rota
+          </label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(event) => setSelectedDate(event.target.value || getTodayDateValue())}
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-[11px] font-bold text-white outline-none focus:border-blue-400"
+          />
+        </div>
+      )}
+
       {patients.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-            <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Hoje</p>
+            <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">{selectedDateLabel}</p>
             <p className="text-sm font-black text-white flex items-center gap-1.5">
               <CalendarDays size={13} className="text-blue-400" />
               {patients.length} atendimento{patients.length === 1 ? '' : 's'}
@@ -526,7 +628,7 @@ export const RouteOptimizer = () => {
         ) : patients.length === 0 ? (
           <div className="p-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">
             <MapPin className="mx-auto mb-3 text-slate-600" size={24} />
-            <p className="text-slate-400 text-[10px] font-bold">Nenhum atendimento confirmado para hoje.</p>
+            <p className="text-slate-400 text-[10px] font-bold">Nenhum atendimento para {selectedDateLabel.toLowerCase()}.</p>
             <p className="text-slate-500 text-[9px] mt-1">
               O mapa OSM já está integrado. Quando houver atendimento agendado, confirmado ou pago, a rota aparecerá aqui.
             </p>
