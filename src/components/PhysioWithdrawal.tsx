@@ -130,33 +130,51 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
 
     try {
       setSubmitting(true);
-      const { error } = await supabase
+      const { data: withdrawalRequest, error } = await supabase
         .from('solicitacoes_saque')
         .insert({
           user_id: userId,
           valor: availableBalance,
           status: 'pendente'
-        });
+        })
+        .select('id, user_id, valor, status, created_at')
+        .single();
 
       if (error) throw error;
 
-      // 1. Fetch all admins to notify them
-      const { data: admins } = await supabase
+      // Notificação complementar para contas admin que usam a tabela pública de notificações.
+      // A notificação principal e mais confiável deve ser criada no Supabase por trigger
+      // em notificacoes_admin, pois RLS pode bloquear inserts do profissional para outros usuários.
+      const { data: admins, error: adminsError } = await supabase
         .from('perfis')
         .select('id')
-        .eq('tipo_usuario', 'admin');
+        .or('tipo_usuario.eq.admin,role.eq.admin');
+
+      if (adminsError) {
+        console.warn('Não foi possível buscar admins para notificação de saque:', adminsError);
+      }
 
       if (admins && admins.length > 0) {
         const notifications = admins.map(admin => ({
           user_id: admin.id,
-          titulo: 'Solicitação de Saque',
-          mensagem: `Nova solicitação de R$ ${availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+          titulo: 'Solicitação de saque',
+          mensagem: `Nova solicitação de saque de R$ ${availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
           tipo: 'withdrawal_request',
-          link: '/admin',
-          metadata: { user_id: userId }
+          link: '/admin/support?tab=saques',
+          metadata: {
+            user_id: userId,
+            saque_id: withdrawalRequest?.id || null,
+            valor: availableBalance
+          }
         }));
 
-        await supabase.from('notificacoes').insert(notifications);
+        const { error: notificationError } = await supabase
+          .from('notificacoes')
+          .insert(notifications);
+
+        if (notificationError) {
+          console.warn('Saque criado, mas a notificação direta para admins foi bloqueada/falhou:', notificationError);
+        }
       }
 
       toast.success('Solicitação de saque enviada com sucesso!');
