@@ -66,6 +66,30 @@ const getTomorrowDateValue = () => {
   return toLocalDateInputValue(date);
 };
 
+const addDaysToDateValue = (value: string, days: number) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, (month || 1) - 1, day || 1);
+  date.setDate(date.getDate() + days);
+  return toLocalDateInputValue(date);
+};
+
+const getAppointmentDateValue = (appointment: any) => {
+  // Prioriza a coluna `data`, porque ela representa o dia escolhido pelo usuário.
+  // Evita o bug de fuso horário em que um atendimento de 25/05 aparece também em 24/05
+  // quando `data_servico` vem em UTC.
+  const rawDate = String(appointment?.data || '').trim();
+  const rawDateMatch = rawDate.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (rawDateMatch?.[1]) return rawDateMatch[1];
+
+  const rawServiceDate = String(appointment?.data_servico || '').trim();
+  if (rawServiceDate) {
+    const serviceDate = new Date(rawServiceDate);
+    if (!Number.isNaN(serviceDate.getTime())) return toLocalDateInputValue(serviceDate);
+  }
+
+  return '';
+};
+
 const getDateRangeFromValue = (value: string) => {
   const [year, month, day] = value.split('-').map(Number);
   const start = new Date(year, (month || 1) - 1, day || 1);
@@ -342,6 +366,7 @@ export const RouteOptimizer = () => {
 
       try {
         const { start, end } = getDateRangeFromValue(selectedDate);
+        const nextDateValue = addDaysToDateValue(selectedDate, 1);
 
         // Atenção: a tabela agendamentos não possui a coluna data_hora.
         // Mantemos somente as colunas reais usadas no FisioCareHub.
@@ -353,7 +378,7 @@ export const RouteOptimizer = () => {
           .eq('fisio_id', profile.id)
           .in('status', ROUTE_STATUSES)
           .gte('data_servico', start.toISOString())
-          .lte('data_servico', end.toISOString())
+          .lt('data_servico', new Date(end.getTime() + 1).toISOString())
           .order('data_servico', { ascending: true });
 
         if (serviceDateError) throw serviceDateError;
@@ -363,8 +388,8 @@ export const RouteOptimizer = () => {
           .select(appointmentColumns)
           .eq('fisio_id', profile.id)
           .in('status', ROUTE_STATUSES)
-          .gte('data', start.toISOString())
-          .lte('data', end.toISOString())
+          .gte('data', selectedDate)
+          .lt('data', nextDateValue)
           .order('hora', { ascending: true });
 
         if (dateColumnError) {
@@ -376,9 +401,9 @@ export const RouteOptimizer = () => {
           appointmentMap.set(String(appointment.id), appointment);
         });
 
-        const appointments = Array.from(appointmentMap.values()).sort(
-          (a, b) => getAppointmentTimestamp(a) - getAppointmentTimestamp(b)
-        );
+        const appointments = Array.from(appointmentMap.values())
+          .filter((appointment: any) => getAppointmentDateValue(appointment) === selectedDate)
+          .sort((a, b) => getAppointmentTimestamp(a) - getAppointmentTimestamp(b));
 
         const patientIds = Array.from(
           new Set(appointments.map((appointment: any) => appointment.paciente_id).filter(Boolean))
