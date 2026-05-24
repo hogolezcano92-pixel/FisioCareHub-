@@ -106,7 +106,7 @@ export default function HealthLibrary() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch materials - Wrap in try-catch to handle missing tables
       const { data: materialsData, error: materialsError } = await supabase
         .from('library_materials')
@@ -179,86 +179,204 @@ export default function HealthLibrary() {
   const generatePDF = async (material: LibraryMaterial) => {
     try {
       setIsGeneratingPDF(true);
+
       const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
+      const doc = new jsPDF('p', 'mm', 'a4');
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 18;
+      const maxWidth = pageWidth - margin * 2;
       let yPos = 20;
 
-      // Title
-      doc.setFontSize(22);
-      doc.setTextColor(30, 41, 59); // slate-800
-      doc.text(material.title, 20, yPos);
-      yPos += 15;
+      const safeText = (value: unknown, fallback = '') => {
+        if (value === null || value === undefined) return fallback;
+        return String(value);
+      };
 
-      // Category & Metadata
-      doc.setFontSize(10);
-      doc.setTextColor(100, 116, 139); // slate-500
-      doc.text(`${material.category.toUpperCase()} | Nível: ${material.level} | Tipo: ${material.type}`, 20, yPos);
-      yPos += 5;
-      doc.line(20, yPos, 190, yPos);
-      yPos += 15;
+      const translateLevel = (level?: string) => {
+        if (level === 'beginner') return 'Iniciante';
+        if (level === 'intermediate') return 'Intermediário';
+        if (level === 'advanced') return 'Avançado';
+        return 'Não informado';
+      };
 
-      // Objective
-      if (material.clinical_objective) {
-        doc.setFontSize(12);
-        doc.setTextColor(30, 41, 59);
-        doc.text("Objetivo Clínico:", 20, yPos);
-        yPos += 8;
-        doc.setFontSize(10);
-        doc.setTextColor(71, 85, 105);
-        const splitObjective = doc.splitTextToSize(material.clinical_objective, 170);
-        doc.text(splitObjective, 20, yPos);
-        yPos += (splitObjective.length * 6) + 10;
-      }
+      const translateType = (type?: string) => {
+        if (type === 'educational') return 'Educativo';
+        if (type === 'exercise') return 'Exercício';
+        if (type === 'alert') return 'Alerta';
+        return 'Não informado';
+      };
 
-      // Sections
-      material.sections.forEach((section) => {
-        if (yPos > 270) {
+      const ensureSpace = (needed = 20) => {
+        if (yPos + needed > pageHeight - 18) {
           doc.addPage();
           yPos = 20;
         }
+      };
 
-        if (section.type === 'text') {
-          doc.setFontSize(14);
-          doc.setTextColor(51, 65, 85);
-          doc.text(section.content.title || "Informações", 20, yPos);
-          yPos += 8;
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139);
-          const splitBody = doc.splitTextToSize(section.content.body || "", 170);
-          doc.text(splitBody, 20, yPos);
-          yPos += (splitBody.length * 6) + 12;
-        } else if (section.type === 'step-by-step') {
-          doc.setFontSize(14);
-          doc.setTextColor(51, 65, 85);
-          doc.text("Guia de Execução", 20, yPos);
-          yPos += 8;
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139);
-          section.content.steps.forEach((step: string, idx: number) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            const splitStep = doc.splitTextToSize(`${idx + 1}. ${step}`, 160);
-            doc.text(splitStep, 25, yPos);
-            yPos += (splitStep.length * 6) + 2;
-          });
-          yPos += 10;
-        } else if (section.type === 'alert') {
-          doc.setFillColor(254, 242, 242); // bg-red-50
-          doc.rect(15, yPos - 5, 180, 20, 'F');
-          doc.setFontSize(11);
-          doc.setTextColor(185, 28, 28); // text-red-700
-          doc.text("⚠️ Alerta Clínico:", 20, yPos);
-          yPos += 8;
-          doc.setFontSize(10);
-          const splitAlert = doc.splitTextToSize(section.content.message || "", 170);
-          doc.text(splitAlert, 20, yPos);
-          yPos += (splitAlert.length * 6) + 15;
+      const addWrappedText = (
+        text: unknown,
+        options?: {
+          fontSize?: number;
+          fontStyle?: 'normal' | 'bold' | 'italic';
+          color?: [number, number, number];
+          gap?: number;
         }
-      });
+      ) => {
+        const {
+          fontSize = 10,
+          fontStyle = 'normal',
+          color = [71, 85, 105],
+          gap = 6,
+        } = options || {};
 
-      doc.save(`Material_Saude_${material.title.replace(/\s+/g, '_')}.pdf`);
+        const value = safeText(text).trim();
+        if (!value) return;
+
+        doc.setFont('helvetica', fontStyle);
+        doc.setFontSize(fontSize);
+        doc.setTextColor(color[0], color[1], color[2]);
+
+        const lines = doc.splitTextToSize(value, maxWidth);
+
+        lines.forEach((line: string) => {
+          ensureSpace(8);
+          doc.text(line, margin, yPos);
+          yPos += gap;
+        });
+      };
+
+      const addSectionTitle = (title: string) => {
+        ensureSpace(16);
+        yPos += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(30, 41, 59);
+        doc.text(title, margin, yPos);
+        yPos += 8;
+      };
+
+      // Cabeçalho
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(14, 165, 233);
+      const titleLines = doc.splitTextToSize(
+        safeText(material.title, 'Material de Saúde'),
+        maxWidth
+      );
+      doc.text(titleLines, margin, yPos);
+      yPos += titleLines.length * 8 + 4;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('FisioCareHub - Biblioteca de Saúde', margin, yPos);
+      yPos += 6;
+
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPos);
+      yPos += 8;
+
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 12;
+
+      // Dados principais
+      addSectionTitle('Informações do material');
+      addWrappedText(`Categoria: ${safeText(material.category, 'Não informada')}`);
+      addWrappedText(`Nível: ${translateLevel(material.level)}`);
+      addWrappedText(`Tipo: ${translateType(material.type)}`);
+
+      if (material.description) {
+        addSectionTitle('Descrição');
+        addWrappedText(material.description);
+      }
+
+      if (material.clinical_objective) {
+        addSectionTitle('Objetivo clínico');
+        addWrappedText(material.clinical_objective, {
+          fontSize: 11,
+          fontStyle: 'italic',
+          color: [30, 41, 59],
+        });
+      }
+
+      // Sections seguras
+      const sections = Array.isArray(material.sections) ? material.sections : [];
+
+      if (sections.length > 0) {
+        sections.forEach((section, idx) => {
+          const content = section?.content || {};
+
+          if (section.type === 'text') {
+            addSectionTitle(safeText(content.title, `Conteúdo ${idx + 1}`));
+            addWrappedText(content.body || content.text || content.description || '');
+          }
+
+          if (section.type === 'step-by-step') {
+            addSectionTitle(safeText(content.title, 'Guia de execução'));
+
+            const steps = Array.isArray(content.steps) ? content.steps : [];
+
+            if (steps.length === 0) {
+              addWrappedText('Nenhuma etapa cadastrada.');
+            } else {
+              steps.forEach((step: string, stepIndex: number) => {
+                addWrappedText(`${stepIndex + 1}. ${step}`);
+              });
+            }
+          }
+
+          if (section.type === 'alert') {
+            addSectionTitle('Atenção');
+            addWrappedText(content.message || content.body || '', {
+              color: [185, 28, 28],
+              fontStyle: 'bold',
+            });
+          }
+        });
+      } else {
+        addSectionTitle('Conteúdo');
+        addWrappedText(
+          'Este material foi liberado na Biblioteca de Saúde. Use a visualização na tela para consultar o conteúdo completo.'
+        );
+      }
+
+      // Link externo, se existir
+      if (material.file_url) {
+        addSectionTitle('Material externo complementar');
+        addWrappedText(material.file_url, {
+          fontSize: 9,
+          color: [14, 165, 233],
+        });
+      }
+
+      // Rodapé
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `FisioCareHub • Página ${i} de ${totalPages}`,
+          margin,
+          pageHeight - 10
+        );
+      }
+
+      const safeFileName = safeText(material.title, 'material')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      doc.save(`biblioteca-saude-${safeFileName || 'material'}.pdf`);
+
       toast.success('PDF gerado com sucesso!');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Erro ao gerar PDF do material:', error);
       toast.error('Erro ao gerar o PDF');
     } finally {
       setIsGeneratingPDF(false);
