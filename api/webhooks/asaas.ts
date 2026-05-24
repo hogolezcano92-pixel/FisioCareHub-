@@ -376,6 +376,80 @@ const validateUserFromAuthorization = async (authorization?: string) => {
   return data.user;
 };
 
+
+const upsertLibraryPurchaseFromAsaas = async (payment: any) => {
+  const externalReference = String(payment?.externalReference || '');
+
+  if (!externalReference.startsWith('library:')) {
+    return false;
+  }
+
+  const [, userId, materialIdsText] = externalReference.split(':');
+
+  if (!userId || !materialIdsText) {
+    console.warn('[Asaas Webhook Biblioteca] externalReference inválido:', externalReference);
+    return true;
+  }
+
+  const materialIds = materialIdsText.split(',').map(id => id.trim()).filter(Boolean);
+
+  if (materialIds.length === 0) {
+    console.warn('[Asaas Webhook Biblioteca] Nenhum material em externalReference:', externalReference);
+    return true;
+  }
+
+  const purchaseRecords = materialIds.map(materialId => ({
+    patient_id: userId,
+    material_id: materialId,
+    purchased_at: new Date().toISOString(),
+  }));
+
+  const { error: purchaseError } = await supabase
+    .from('material_purchases')
+    .insert(purchaseRecords);
+
+  if (purchaseError && purchaseError.code !== '23505') {
+    console.error('[Asaas Webhook Biblioteca] Erro ao liberar materiais:', purchaseError);
+  }
+
+  const { error: paymentError } = await supabase
+    .from('pagamentos')
+    .upsert({
+      external_id: payment.id,
+      user_id: userId,
+      external_reference: externalReference,
+      amount: Number(payment.value || 0),
+      status: 'paid',
+      gateway: 'asaas',
+      method: payment.billingType,
+      confirmed_at: new Date().toISOString(),
+    }, { onConflict: 'external_id' });
+
+  if (paymentError) {
+    console.error('[Asaas Webhook Biblioteca] Erro ao registrar pagamento:', paymentError);
+  }
+
+  await supabase.from('notificacoes').insert({
+    user_id: userId,
+    titulo: 'Material liberado',
+    mensagem: materialIds.length > 1
+      ? 'Seu pagamento foi confirmado e os materiais da Biblioteca de Saúde foram liberados.'
+      : 'Seu pagamento foi confirmado e o material da Biblioteca de Saúde foi liberado.',
+    tipo: 'payment',
+    lida: false,
+    link: '/patient/library',
+  });
+
+  console.log('[Asaas Webhook Biblioteca] Materiais liberados:', {
+    userId,
+    materialIds,
+    paymentId: payment?.id,
+  });
+
+  return true;
+};
+
+
 const upsertSessionForAppointment = async (appointment: any, payment: any) => {
   const agendamentoId = String(appointment.id);
   const amountPaid = Number(payment.value || appointment.valor || 0);
@@ -484,14 +558,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED', 'PAYMENT_APPROVED', 'RECEIVED'].includes(event)) {
-    const agendamentoId = payment?.externalReference;
+    const externalReference = payment?.externalReference;
 
-    if (!agendamentoId) {
+    if (!externalReference) {
       console.warn('[Asaas Webhook] No externalReference found');
       return res.status(200).json({ received: true, error: 'Missing externalReference' });
     }
 
     try {
+      const libraryProcessed = await upsertLibraryPurchaseFromAsaas(payment);
+      if (libraryProcessed) {
+        return res.status(200).json({ received: true, type: 'library' });
+      }
+
+      const agendamentoId = externalReference;
+
       const { data: appointment, error: appError } = await supabase
         .from('agendamentos')
         .select('*')
