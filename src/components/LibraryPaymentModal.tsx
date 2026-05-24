@@ -91,15 +91,16 @@ export default function LibraryPaymentModal({
 
         const responseText = await response.text();
         let data: any = {};
+
         try {
           data = responseText ? JSON.parse(responseText) : {};
         } catch {
-          data = { error: responseText || 'Resposta inválida do servidor.' };
+          data = { error: responseText || 'Resposta inválida do servidor' };
         }
 
-        if (!response.ok) throw new Error(data.error || `Erro ao criar checkout Asaas (${response.status})`);
+        if (!response.ok) throw new Error(data.error || `Erro HTTP ${response.status} ao criar checkout Asaas`);
 
-        const redirectUrl = data.invoiceUrl || data.paymentUrl || data.url || data.bankSlipUrl;
+        const redirectUrl = data.invoiceUrl || data.url || data.bankSlipUrl;
 
         if (redirectUrl && typeof redirectUrl === 'string') {
           toast.success('Redirecionando para o pagamento via Asaas...');
