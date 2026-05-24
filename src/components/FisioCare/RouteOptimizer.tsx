@@ -176,6 +176,42 @@ const openStreetMapRouteUrl = (stops: RouteStop[]) => {
   return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${route}`;
 };
 
+
+const googleMapsSearchUrl = (address: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+const googleMapsRouteUrl = (stops: RouteStop[], fallbackAddresses: RoutePatient[] = []) => {
+  if (stops.length > 0) {
+    const destination = `${stops[stops.length - 1].lat},${stops[stops.length - 1].lng}`;
+
+    if (stops.length === 1) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`;
+    }
+
+    const waypoints = stops
+      .slice(0, -1)
+      .map((stop) => `${stop.lat},${stop.lng}`)
+      .join('|');
+
+    return `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}`;
+  }
+
+  const addresses = fallbackAddresses.filter((patient) => patient.hasAddress && patient.address);
+  if (addresses.length === 0) return '';
+
+  const destination = addresses[addresses.length - 1].address;
+
+  if (addresses.length === 1) {
+    return googleMapsSearchUrl(destination);
+  }
+
+  const waypoints = addresses
+    .slice(0, -1)
+    .map((patient) => patient.address)
+    .join('|');
+
+  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}`;
+};
 const loadLeaflet = () => {
   if (typeof window === 'undefined') return Promise.reject(new Error('Leaflet só pode carregar no navegador.'));
   if (window.L) return Promise.resolve(window.L);
@@ -540,6 +576,14 @@ export const RouteOptimizer = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const openGoogleMapsRoute = () => {
+    const url = googleMapsRouteUrl(routeStops, patientsWithAddress);
+
+    if (!url) return;
+    setRouteOpened(true);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -553,14 +597,25 @@ export const RouteOptimizer = () => {
           </p>
         </div>
 
-        <button
-          onClick={openFullRoute}
-          disabled={loading || patientsWithAddress.length === 0}
-          className="w-full sm:w-auto px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading || routeLoading ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
-          Abrir rota no OSM
-        </button>
+        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
+          <button
+            onClick={openFullRoute}
+            disabled={loading || patientsWithAddress.length === 0}
+            className="w-full px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading || routeLoading ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
+            Abrir rota no OSM
+          </button>
+
+          <button
+            onClick={openGoogleMapsRoute}
+            disabled={loading || patientsWithAddress.length === 0}
+            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-950/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ExternalLink size={14} />
+            Abrir no Google Maps
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -738,14 +793,25 @@ export const RouteOptimizer = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => patient.hasAddress && window.open(openStreetMapSearchUrl(patient.address), '_blank', 'noopener,noreferrer')}
-                  disabled={!patient.hasAddress}
-                  className="p-2 bg-slate-800 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                  title={patient.hasAddress ? 'Abrir endereço no OpenStreetMap' : 'Endereço não informado'}
-                >
-                  <ExternalLink size={14} />
-                </button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    onClick={() => patient.hasAddress && window.open(openStreetMapSearchUrl(patient.address), '_blank', 'noopener,noreferrer')}
+                    disabled={!patient.hasAddress}
+                    className="p-2 bg-slate-800 text-blue-400 rounded-lg border border-white/5 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={patient.hasAddress ? 'Abrir endereço no OpenStreetMap' : 'Endereço não informado'}
+                  >
+                    <ExternalLink size={14} />
+                  </button>
+
+                  <button
+                    onClick={() => patient.hasAddress && window.open(googleMapsSearchUrl(patient.address), '_blank', 'noopener,noreferrer')}
+                    disabled={!patient.hasAddress}
+                    className="p-2 bg-slate-800 text-emerald-400 rounded-lg border border-white/5 hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={patient.hasAddress ? 'Abrir endereço no Google Maps' : 'Endereço não informado'}
+                  >
+                    <Navigation size={14} />
+                  </button>
+                </div>
               </motion.div>
             ))}
           </>
@@ -760,7 +826,7 @@ export const RouteOptimizer = () => {
             </div>
             <div className="min-w-0">
               <p className="font-black text-white text-[10px]">
-                {routeOpened ? 'Rota enviada para o OpenStreetMap' : 'Rota pronta por ordem de horário'}
+                {routeOpened ? 'Rota aberta no app de mapas' : 'Rota pronta por ordem de horário'}
               </p>
               <p className="text-[9px] font-medium text-slate-400">
                 {patientsWithAddress.length === 0
