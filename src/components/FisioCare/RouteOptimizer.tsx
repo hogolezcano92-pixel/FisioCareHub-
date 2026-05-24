@@ -661,7 +661,7 @@ export const RouteOptimizer = () => {
       </div>
 
       {showCustomDate && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+        <div className="max-w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 p-2">
           <label className="mb-1 block text-[8px] font-black uppercase tracking-widest text-slate-500">
             Data da rota
           </label>
@@ -669,7 +669,8 @@ export const RouteOptimizer = () => {
             type="date"
             value={selectedDate}
             onChange={(event) => setSelectedDate(event.target.value || getTodayDateValue())}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-[11px] font-bold text-white outline-none focus:border-blue-400"
+            className="block w-full min-w-0 max-w-full appearance-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-[11px] font-bold text-white outline-none focus:border-blue-400"
+            style={{ WebkitAppearance: 'none' }}
           />
         </div>
       )}
