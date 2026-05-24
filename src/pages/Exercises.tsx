@@ -41,7 +41,7 @@ import {
 } from '../constants/exerciseCategories';
 
 interface Exercise {
-  id: number;
+  id: string | number;
   nome: string;
   descricao: string;
   objetivo_principal: string;
@@ -56,6 +56,7 @@ interface Exercise {
   video_url?: string;
   series?: string;
   repeticoes?: string;
+  fisio_id?: string | null;
 }
 
 interface PrescriptionItem extends Exercise {
@@ -204,6 +205,43 @@ export default function Exercises() {
       toast.error(err?.message || 'Erro ao salvar protocolo e gerar PDF.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+
+  const handleDeleteExercise = async (exercise: Exercise) => {
+    if (!user?.id) {
+      toast.error('Sessão não encontrada. Faça login novamente.');
+      return;
+    }
+
+    if (exercise.fisio_id !== user.id) {
+      toast.error('Você só pode apagar exercícios criados por você.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Apagar o exercício "${exercise.nome}" da sua Biblioteca Clínica?`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('exercicios')
+        .delete()
+        .eq('id', exercise.id)
+        .eq('fisio_id', user.id);
+
+      if (error) throw error;
+
+      setExercises(prev => prev.filter(item => item.id !== exercise.id));
+      setPrescriptionCart(prev => prev.filter(item => item.id !== exercise.id));
+      if (selectedExerciseDetail?.id === exercise.id) {
+        setSelectedExerciseDetail(null);
+      }
+
+      toast.success('Exercício apagado da Biblioteca Clínica.');
+    } catch (err: any) {
+      console.error('Erro ao apagar exercício:', err);
+      toast.error(err?.message || 'Erro ao apagar exercício.');
     }
   };
 
@@ -399,20 +437,34 @@ export default function Exercises() {
                        ))}
                     </div>
 
-                    <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                      <button
-                        onClick={() => setSelectedExerciseDetail(ex)}
-                        className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-black text-xs uppercase tracking-widest"
-                      >
-                        <Info size={16} />
-                        Detalhes
-                      </button>
+                    <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setSelectedExerciseDetail(ex)}
+                          className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-black text-xs uppercase tracking-widest"
+                        >
+                          <Info size={16} />
+                          Detalhes
+                        </button>
+
+                        {ex.fisio_id === user?.id && (
+                          <button
+                            onClick={() => handleDeleteExercise(ex)}
+                            className="flex items-center gap-2 text-rose-400 hover:text-rose-300 font-black text-xs uppercase tracking-widest"
+                            title="Apagar exercício"
+                            aria-label={`Apagar exercício ${ex.nome}`}
+                          >
+                            <Trash2 size={16} />
+                            Apagar
+                          </button>
+                        )}
+                      </div>
 
                       {isPrescriptionMode && (
                         <button
                           onClick={() => toggleExerciseInPrescription(ex)}
                           className={cn(
-                            "p-3 rounded-2xl transition-all flex items-center gap-2",
+                            "p-3 rounded-2xl transition-all flex items-center gap-2 shrink-0",
                             isInCart 
                               ? "bg-amber-500 text-white" 
                               : "bg-white/5 text-slate-400 border border-white/10 hover:bg-sky-500 hover:text-white hover:border-sky-500"
