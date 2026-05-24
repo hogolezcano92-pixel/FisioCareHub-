@@ -34,6 +34,8 @@ export default function Exercises() {
   const [patients, setPatients] = useState<any[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [exerciseToDelete, setExerciseToDelete] = useState<any>(null);
+  const [deletingExerciseId, setDeletingExerciseId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -153,6 +155,46 @@ export default function Exercises() {
     }
   };
 
+  const canDeleteExercise = (exercise: any) => Boolean(user?.id && exercise?.fisio_id === user.id);
+
+  const handleRequestDeleteExercise = (exercise: any) => {
+    if (!canDeleteExercise(exercise)) {
+      toast.error('Você só pode apagar exercícios criados por você.');
+      return;
+    }
+    setExerciseToDelete(exercise);
+  };
+
+  const handleDeleteExercise = async () => {
+    if (!exerciseToDelete || !user?.id) return;
+
+    if (!canDeleteExercise(exerciseToDelete)) {
+      toast.error('Você só pode apagar exercícios criados por você.');
+      setExerciseToDelete(null);
+      return;
+    }
+
+    setDeletingExerciseId(exerciseToDelete.id);
+    try {
+      const { error } = await supabase
+        .from('exercicios')
+        .delete()
+        .eq('id', exerciseToDelete.id)
+        .eq('fisio_id', user.id);
+
+      if (error) throw error;
+
+      setExercises((current) => current.filter((exercise) => exercise.id !== exerciseToDelete.id));
+      toast.success('Exercício apagado com sucesso!');
+      setExerciseToDelete(null);
+    } catch (err) {
+      console.error('Erro ao apagar exercício:', err);
+      toast.error('Erro ao apagar exercício');
+    } finally {
+      setDeletingExerciseId(null);
+    }
+  };
+
   const filteredExercises = exercises.filter(ex => 
     ex.nome.toLowerCase().includes(search.toLowerCase()) ||
     ex.descricao?.toLowerCase().includes(search.toLowerCase())
@@ -248,9 +290,17 @@ export default function Exercises() {
                     >
                       <Send size={18} />
                     </button>
-                    <button className="text-slate-600 hover:text-red-500 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
+                    {canDeleteExercise(ex) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRequestDeleteExercise(ex)}
+                        disabled={deletingExerciseId === ex.id}
+                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50"
+                        title="Apagar exercício"
+                      >
+                        {deletingExerciseId === ex.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -346,6 +396,56 @@ export default function Exercises() {
                   {submitting ? <Loader2 className="animate-spin" /> : 'Salvar Exercício'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AnimatePresence>
+        {exerciseToDelete && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => deletingExerciseId ? null : setExerciseToDelete(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              className="relative w-full max-w-md bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 border border-white/10"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-5">
+                <Trash2 size={26} />
+              </div>
+
+              <h2 className="text-2xl font-black text-white tracking-tight mb-3">Apagar exercício?</h2>
+              <p className="text-slate-400 font-medium leading-relaxed mb-6">
+                O exercício <span className="text-white font-black">{exerciseToDelete.nome}</span> será removido da sua biblioteca. Essa ação não pode ser desfeita.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setExerciseToDelete(null)}
+                  disabled={Boolean(deletingExerciseId)}
+                  className="flex-1 py-4 px-5 bg-white/5 text-slate-300 rounded-2xl font-black hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteExercise}
+                  disabled={Boolean(deletingExerciseId)}
+                  className="flex-1 py-4 px-5 bg-red-500 text-white rounded-2xl font-black hover:bg-red-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deletingExerciseId ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />}
+                  Apagar
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
