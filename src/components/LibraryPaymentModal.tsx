@@ -75,7 +75,7 @@ export default function LibraryPaymentModal({
            // Actually, Asaas requires CPF for almost everything now
         }
 
-        const response = await fetch('/api/asaas/create-library-payment', {
+        const response = await fetch('/api/asaas/create-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -89,10 +89,17 @@ export default function LibraryPaymentModal({
           })
         });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Erro ao criar checkout Asaas');
+        const responseText = await response.text();
+        let data: any = {};
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          data = { error: responseText || 'Resposta inválida do servidor.' };
+        }
 
-        const redirectUrl = data.invoiceUrl || data.url || data.bankSlipUrl;
+        if (!response.ok) throw new Error(data.error || `Erro ao criar checkout Asaas (${response.status})`);
+
+        const redirectUrl = data.invoiceUrl || data.paymentUrl || data.url || data.bankSlipUrl;
 
         if (redirectUrl && typeof redirectUrl === 'string') {
           toast.success('Redirecionando para o pagamento via Asaas...');
