@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   BookOpen, 
   Search, 
@@ -53,6 +53,7 @@ interface Purchase {
 
 export default function HealthLibrary() {
   const { user } = useAuth();
+  const location = useLocation();
   const [materials, setMaterials] = useState<LibraryMaterial[]>([]);
   const [purchases, setPurchases] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -78,6 +79,29 @@ export default function HealthLibrary() {
     document.title = "Biblioteca de Saúde - FisioCareHub";
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get('checkout') === 'success') {
+      toast.success('Pagamento aprovado! Seu material aparecerá em Minha biblioteca de saúde.');
+      fetchData();
+
+      // O webhook do Stripe/Asaas pode levar alguns segundos para gravar em material_purchases.
+      // Fazemos novas leituras rápidas para a área "Minha biblioteca de saúde" atualizar sozinha.
+      const firstRetry = window.setTimeout(fetchData, 2500);
+      const secondRetry = window.setTimeout(fetchData, 7000);
+
+      return () => {
+        window.clearTimeout(firstRetry);
+        window.clearTimeout(secondRetry);
+      };
+    }
+
+    if (params.get('checkout') === 'cancel') {
+      toast.info('Pagamento cancelado. O material ainda não foi liberado.');
+    }
+  }, [location.search]);
 
   const fetchData = async () => {
     try {
@@ -296,6 +320,10 @@ export default function HealthLibrary() {
 
     return Array.from(new Set(['Todas', ...CATEGORY_DATA.map(c => c.name), ...dynamicCategories]));
   }, [materials]);
+
+  const purchasedMaterials = useMemo(() => {
+    return materials.filter(material => purchases.has(material.id));
+  }, [materials, purchases]);
 
   const filteredMaterials = useMemo(() => materials.filter(m => {
     const query = normalizeText(searchQuery);
@@ -604,6 +632,69 @@ export default function HealthLibrary() {
           <p className="text-slate-400 font-medium">Materiais educativos e guias para sua performance e reabilitação.</p>
         </div>
       </header>
+
+      {/* Minha Biblioteca de Saúde */}
+      <section className="bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-emerald-500/15 p-6 md:p-8 shadow-xl shadow-emerald-950/10 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-3">
+              <CheckCircle2 size={14} /> Materiais liberados
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight">Minha biblioteca de saúde</h2>
+            <p className="text-sm text-slate-400 font-medium">Aqui ficam os materiais comprados, com visualização na tela e opção de PDF.</p>
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+            {purchasedMaterials.length} {purchasedMaterials.length === 1 ? 'material' : 'materiais'}
+          </span>
+        </div>
+
+        {purchasedMaterials.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-white/10 bg-white/[0.03] p-8 text-center space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-white/5 flex items-center justify-center text-slate-500">
+              <FileIcon size={28} />
+            </div>
+            <h3 className="text-lg font-black text-white">Nenhum material comprado ainda</h3>
+            <p className="text-sm text-slate-400 max-w-md mx-auto">Após pagamento aprovado por Stripe ou Asaas, o material aparece automaticamente aqui.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {purchasedMaterials.map((material) => (
+              <div key={material.id} className="bg-white/[0.04] border border-white/10 rounded-[2rem] overflow-hidden flex flex-col">
+                <div className="h-32 bg-slate-800 overflow-hidden">
+                  <img
+                    src={material.cover_image || `https://picsum.photos/seed/${material.id}/800/500`}
+                    alt={material.title}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="p-5 flex-1 flex flex-col gap-4">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-1">Liberado</p>
+                    <h3 className="text-base font-black text-white leading-tight line-clamp-2">{material.title}</h3>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">{material.description}</p>
+                  </div>
+                  <div className="mt-auto grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleAccess(material)}
+                      className="py-3 rounded-2xl bg-sky-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink size={14} /> Visualizar
+                    </button>
+                    <button
+                      onClick={() => generatePDF(material)}
+                      disabled={isGeneratingPDF}
+                      className="py-3 rounded-2xl bg-white/5 text-white border border-white/10 font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isGeneratingPDF ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
             {/* Category Showcase - vitrine estática, não clicável */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
