@@ -4,12 +4,13 @@ import { motion } from 'motion/react';
 import { Lock } from 'lucide-react';
 import ProBanner from './ProBanner';
 import { cn } from '../lib/utils';
+import { getEffectivePlan, hasPlanAccess, type UserPlan } from '../lib/planAccess';
 
 interface ProGuardProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   variant?: 'full' | 'inline';
-  requiredPlan?: 'free' | 'basic' | 'pro';
+  requiredPlan?: UserPlan;
   className?: string;
 }
 
@@ -24,23 +25,15 @@ export default function ProGuard({ children, fallback, variant = 'full', require
     ) : null;
   }
 
-  // Pacientes e Admins sempre têm acesso
-  if (profile?.tipo_usuario === 'paciente' || profile?.plano === 'admin') {
+  // Pacientes e admins sempre têm acesso às rotas protegidas por este componente.
+  if (profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'admin' || profile?.plano === 'admin') {
     return <>{children}</>;
   }
 
-  // Fisioterapeutas
   if (profile?.tipo_usuario === 'fisioterapeuta') {
-    const userPlan = profile?.plan_type || profile?.plano || 'free';
-    const isPro = userPlan === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
-    const isBasic = userPlan === 'basic' || isPro;
-    const isFree = true; // Todo fisio tem acesso ao nível free
+    const currentPlan = getEffectivePlan(profile, subscription);
+    const hasAccess = hasPlanAccess(currentPlan, requiredPlan);
 
-    let hasAccess = false;
-    if (requiredPlan === 'pro') hasAccess = isPro;
-    else if (requiredPlan === 'basic') hasAccess = isBasic;
-    else hasAccess = isFree;
-    
     if (hasAccess) {
       return <>{children}</>;
     }
@@ -69,7 +62,6 @@ export default function ProGuard({ children, fallback, variant = 'full', require
     );
   }
 
-  // Se não houver perfil ou tipo desconhecido, bloqueia por segurança
   return (
     <div className="p-8 text-center bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl border border-red-100 dark:border-red-900/20">
       <Lock className="mx-auto mb-2" />
@@ -77,4 +69,3 @@ export default function ProGuard({ children, fallback, variant = 'full', require
     </div>
   );
 }
-

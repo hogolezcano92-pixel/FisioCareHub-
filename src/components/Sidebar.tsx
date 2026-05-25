@@ -27,6 +27,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, subscription, signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -50,7 +51,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin';
   const isAdmin = profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const isApproved = profile?.status_aprovacao === 'aprovado' || isAdmin || profile?.tipo_usuario === 'paciente';
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true;
+  const currentPlan = getEffectivePlan(profile, subscription);
+  const isPro = hasPlanAccess(currentPlan, 'pro');
+  const isBasic = hasPlanAccess(currentPlan, 'basic');
 
   const sections = useMemo(() => [
     ...(isAdmin ? [
@@ -79,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: t('nav.records'), path: '/records', icon: FileText },
-            { name: t('nav.documents'), path: '/documents', icon: FileSignature, pro: true },
+            { name: t('nav.documents'), path: '/documents', icon: FileSignature, basic: true },
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
@@ -126,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
-  ], [isAdmin, isApproved, isPhysio, profile, user, t]);
+  ], [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-background border-r border-white/5">
@@ -145,11 +148,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               {section.title}
             </h3>
             <div className="space-y-1">
-              {section.items.map((item) => {
+              {section.items.map((item: any) => {
                 const isActive = location.pathname === item.path;
                 const isLogout = item.path === '#logout';
                 const isHelp = item.path === '#help';
-                const isLocked = item.pro && !isPro;
+                const isLocked = (item.pro && !isPro) || (item.basic && !isBasic);
 
                 return (
                   <button
