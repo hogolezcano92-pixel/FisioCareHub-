@@ -29,6 +29,7 @@ type Product = {
   recommended_for?: string[] | null;
   price_label?: string | null;
   image_url?: string | null;
+  gallery_urls?: string[] | null;
   affiliate_url?: string | null;
   badge?: string | null;
   is_featured?: boolean | null;
@@ -164,6 +165,83 @@ const normalize = (value: string) =>
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+
+const normalizeGalleryUrls = (value?: string[] | null) => {
+  if (!Array.isArray(value)) return [];
+  return value.map(item => String(item || '').trim()).filter(Boolean).slice(0, 6);
+};
+
+const getProductImages = (product: Product) => {
+  const urls = [product.image_url, ...normalizeGalleryUrls(product.gallery_urls)]
+    .map(item => String(item || '').trim())
+    .filter(Boolean);
+  return Array.from(new Set(urls));
+};
+
+function ProductImageGallery({ product }: { product: Product }) {
+  const images = getProductImages(product);
+  const fallbackImage = fallbackProducts[0].image_url || '';
+  const [activeImage, setActiveImage] = useState(images[0] || fallbackImage);
+
+  useEffect(() => {
+    setActiveImage(images[0] || fallbackImage);
+  }, [product.id, product.image_url, product.gallery_urls?.join('|')]);
+
+  const displayImages = images.length > 0 ? images : [fallbackImage];
+
+  return (
+    <div className="relative h-52 overflow-hidden bg-slate-900">
+      <img
+        src={activeImage || fallbackImage}
+        alt={product.name}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+        {product.badge && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg">
+            <Sparkles size={12} />
+            {product.badge}
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
+          <Tag size={12} />
+          {product.category}
+        </span>
+        {displayImages.length > 1 && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-lg">
+            {displayImages.length} fotos
+          </span>
+        )}
+      </div>
+
+      <div className="absolute bottom-4 left-4 right-4">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-200">Produto recomendado</p>
+        <h2 className="mt-1 text-2xl font-black leading-tight text-white">{product.name}</h2>
+
+        {displayImages.length > 1 && (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {displayImages.slice(0, 7).map((url, index) => (
+              <button
+                key={`${url}-${index}`}
+                type="button"
+                onClick={() => setActiveImage(url)}
+                className={cn(
+                  'h-11 w-11 shrink-0 overflow-hidden rounded-xl border-2 bg-slate-800 transition-all',
+                  activeImage === url ? 'border-sky-300 opacity-100' : 'border-white/20 opacity-70 hover:opacity-100'
+                )}
+                aria-label={`Ver imagem ${index + 1} de ${product.name}`}
+              >
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ProductStore() {
   const { profile } = useAuth();
@@ -389,30 +467,7 @@ export default function ProductStore() {
                     key={product.id}
                     className="group overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.06] shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
                   >
-                    <div className="relative h-52 overflow-hidden bg-slate-900">
-                      <img
-                        src={product.image_url || fallbackProducts[0].image_url || ''}
-                        alt={product.name}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                        {product.badge && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg">
-                            <Sparkles size={12} />
-                            {product.badge}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
-                          <Tag size={12} />
-                          {product.category}
-                        </span>
-                      </div>
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-200">Produto recomendado</p>
-                        <h2 className="mt-1 text-2xl font-black leading-tight text-white">{product.name}</h2>
-                      </div>
-                    </div>
+                    <ProductImageGallery product={product} />
 
                     <div className="space-y-4 p-5">
                       {product.subtitle && (
