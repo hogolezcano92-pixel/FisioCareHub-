@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProGuard from '../components/ProGuard';
+import ProductStoreCarousel from '../components/ProductStoreCarousel';
 
 type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes';
 
@@ -352,6 +353,11 @@ export default function PhysioDashboard() {
             </div>
           )}
         </div>
+
+
+        {activeTab !== 'avaliacoes' && (
+          <ProductStoreCarousel audience="physio" />
+        )}
 
         <div className="space-y-6">
           {loading ? (

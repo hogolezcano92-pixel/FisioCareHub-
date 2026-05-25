@@ -48,6 +48,7 @@ import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
 import ActivityTimeline from '../components/FisioCare/ActivityTimeline';
 import { Skeleton, ListSkeleton } from '../components/Skeleton';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
+import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ProGuard from '../components/ProGuard';
 import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
@@ -570,6 +571,8 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+
+        <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
         
         {isAdmin && (
           <motion.div 
