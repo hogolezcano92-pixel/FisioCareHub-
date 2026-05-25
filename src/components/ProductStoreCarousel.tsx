@@ -91,8 +91,12 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     const safeIndex = ((index % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
     const target = container.children.item(safeIndex) as HTMLElement | null;
 
+    const centeredLeft = target
+      ? target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2
+      : 0;
+
     container.scrollTo({
-      left: target?.offsetLeft ?? 0,
+      left: Math.max(centeredLeft, 0),
       behavior: 'smooth',
     });
 
@@ -117,10 +121,14 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         const container = scrollRef.current;
         const target = container?.children.item(nextIndex) as HTMLElement | null;
 
-        container?.scrollTo({
-          left: target?.offsetLeft ?? 0,
-          behavior: 'smooth',
-        });
+        if (container && target) {
+          const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
+
+          container.scrollTo({
+            left: Math.max(centeredLeft, 0),
+            behavior: 'smooth',
+          });
+        }
 
         return nextIndex;
       });
@@ -208,7 +216,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             onMouseLeave={() => setIsAutoPaused(false)}
             onTouchStart={() => setIsAutoPaused(true)}
             onTouchEnd={() => setIsAutoPaused(false)}
-            className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 px-[calc((100%-235px)/2)] sm:px-[calc((100%-270px)/2)] md:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {carouselProducts.map((product) => {
               const priceLabel = normalizePriceLabel(product.price_label);
@@ -217,13 +225,13 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
               return (
                 <article
                   key={product.id}
-                  className="group min-w-[235px] sm:min-w-[270px] max-w-[270px] rounded-[1.75rem] border border-white/10 bg-slate-950/55 overflow-hidden shadow-xl hover:-translate-y-1 hover:border-sky-400/40 transition-all duration-300"
+                  className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-white/10 bg-slate-950/55 overflow-hidden shadow-xl hover:-translate-y-1 hover:border-sky-400/40 transition-all duration-300"
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-900">
                     <img
                       src={product.image_url || DEFAULT_PRODUCT_IMAGE}
                       alt={product.name}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
