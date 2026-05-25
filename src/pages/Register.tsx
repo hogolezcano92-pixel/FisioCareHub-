@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 export default function Register() {
   const { t } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshProfile } = useAuth();
   const [role, setRole] = useState<'paciente' | 'fisioterapeuta'>(() => {
     const saved = localStorage.getItem('pending_role');
     return (saved === 'fisioterapeuta' || saved === 'paciente') ? saved : 'paciente';
@@ -496,14 +496,22 @@ export default function Register() {
         }
       }
 
+      await refreshProfile();
+
       toast.success('Cadastro realizado com sucesso!', {
         description: role === 'fisioterapeuta'
           ? 'Sua conta foi criada e enviada para aprovação administrativa.'
-          : 'Sua conta foi configurada. Faça login para continuar.'
+          : 'Sua conta foi configurada. Bem-vindo ao FisioCareHub.'
       });
 
-      await supabase.auth.signOut();
-      navigate('/login');
+      localStorage.removeItem('pending_role');
+      localStorage.removeItem('registration_in_progress');
+
+      if (role === 'fisioterapeuta') {
+        navigate('/aguardando-aprovacao', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: any) {
       console.error("Erro inesperado durante o cadastro:", err);
       setError(err.message || 'Ocorreu um erro inesperado. Por favor, tente novamente.');
