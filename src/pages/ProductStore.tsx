@@ -32,7 +32,7 @@ type Product = {
   recommended_for?: string[] | null;
   price_label?: string | null;
   image_url?: string | null;
-  gallery_urls?: string[] | null;
+  gallery_urls?: string[] | string | null;
   affiliate_url?: string | null;
   badge?: string | null;
   is_featured?: boolean | null;
@@ -169,10 +169,41 @@ const normalize = (value: string) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-const normalizeGalleryUrls = (value?: string[] | null) => {
-  if (!Array.isArray(value)) return [];
-  return value.map(item => String(item || '').trim()).filter(Boolean).slice(0, 6);
+const normalizeGalleryUrls = (value?: string[] | string | null) => {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value
+      .map(item => String(item || '').trim())
+      .filter(Boolean)
+      .slice(0, 6);
+  }
+
+  const textValue = String(value || '').trim();
+  if (!textValue) return [];
+
+  try {
+    const parsed = JSON.parse(textValue);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map(item => String(item || '').trim())
+        .filter(Boolean)
+        .slice(0, 6);
+    }
+  } catch {
+    // Mantém compatibilidade se o Supabase retornar text[] como string comum.
+  }
+
+  return textValue
+    .replace(/^\{/, '')
+    .replace(/\}$/, '')
+    .split(',')
+    .map(item => item.trim().replace(/^"|"$/g, ''))
+    .filter(Boolean)
+    .slice(0, 6);
 };
+
+const getGalleryKey = (value?: string[] | string | null) => normalizeGalleryUrls(value).join('|');
 
 const getProductImages = (product: Product) => {
   const urls = [product.image_url, ...normalizeGalleryUrls(product.gallery_urls)]
@@ -188,7 +219,7 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
 
   useEffect(() => {
     setActiveImage(images[0] || fallbackImage);
-  }, [product.id, product.image_url, product.gallery_urls?.join('|')]);
+  }, [product.id, product.image_url, getGalleryKey(product.gallery_urls)]);
 
   const displayImages = images.length > 0 ? images : [fallbackImage];
 
@@ -505,7 +536,7 @@ export default function ProductStore() {
                     className="group flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-950/40 p-3 text-left transition hover:border-sky-400/50 hover:bg-sky-400/10"
                   >
                     <img
-                      src={getProductImages(product)[0] || fallbackProducts[0].image_url || ''}
+                      src={product.image_url || fallbackProducts[0].image_url || ''}
                       alt={product.name}
                       className="h-14 w-14 rounded-2xl object-cover"
                     />
@@ -625,14 +656,14 @@ export default function ProductStore() {
                         onClick={() => setGalleryProduct(product)}
                         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-black text-sky-100 transition hover:border-sky-300/60 hover:bg-sky-400/20 active:scale-[0.98]"
                       >
-                        Ver fotos do produto
+                        {getProductImages(product).length > 1 ? `Ver ${getProductImages(product).length} fotos do produto` : 'Ver foto do produto'}
                         <ArrowRight size={18} />
                       </button>
 
                       <button
                         onClick={() => handleOpenProduct(product)}
                         className={cn(
-                          'flex h-14 w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition active:scale-[0.98]',
+                          'flex h-13 w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition active:scale-[0.98]',
                           hasLink
                             ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/20 hover:from-sky-400 hover:to-indigo-400'
                             : 'border border-white/10 bg-white/[0.06] text-slate-300 hover:border-sky-400/40 hover:text-white'
