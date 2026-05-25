@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { cn, resolveStorageUrl, formatCPF, validateCPF } from '../lib/utils';
+import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 import { THEMES } from '../lib/themes';
 import { uploadDocument, uploadPhysioDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { logActivity } from '../services/activityService';
@@ -225,7 +226,7 @@ export default function Profile() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const isPro = profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const isPro = hasPlanAccess(getEffectivePlan(profile, subscription), 'pro');
 
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab;
