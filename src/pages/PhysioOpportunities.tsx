@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 import { opportunitiesService, PatientOpportunity, OpportunityServiceType } from '../services/opportunitiesService';
 
 const formatDateTime = (value?: string) => {
@@ -54,11 +55,7 @@ export default function PhysioOpportunities() {
   const [interestMessage, setInterestMessage] = React.useState('');
   const [feedback, setFeedback] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const isPro =
-    profile?.plano === 'pro'
-    || profile?.is_pro === true
-    || subscription?.status === 'ativo'
-    || profile?.plano === 'admin';
+  const isPro = hasPlanAccess(getEffectivePlan(profile, subscription), 'pro');
 
   const fetchOpportunities = React.useCallback(async () => {
     try {

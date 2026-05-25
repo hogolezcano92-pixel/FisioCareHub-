@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { toast } from 'sonner';
+import { getEffectivePlan, getPatientLimitByPlan, getPlanLabel } from '../lib/planAccess';
 
 export default function Patients() {
   const { user, profile, subscription } = useAuth();
@@ -165,12 +166,14 @@ export default function Patients() {
     if (!user) return;
 
     if (!editingPatient) {
-      const userPlan = profile?.plan_type || profile?.plano || 'basic';
-      const isPro = userPlan === 'pro' || profile?.plano === 'admin' || subscription?.status === 'ativo';
+      const currentPlan = getEffectivePlan(profile, subscription);
+      const patientLimit = getPatientLimitByPlan(currentPlan);
 
-      if (!isPro && patients.length >= 10) {
-        toast.error('Limite do Plano Basic atingido', {
-          description: 'Faça upgrade para o plano PRO para cadastrar pacientes ilimitados.'
+      if (patientLimit !== null && patients.length >= patientLimit) {
+        toast.error(`Limite do Plano ${getPlanLabel(currentPlan)} atingido`, {
+          description: currentPlan === 'free'
+            ? 'No plano gratuito, você pode cadastrar até 3 pacientes internos. Faça upgrade para o Basic ou PRO para liberar mais pacientes.'
+            : 'Faça upgrade para liberar mais pacientes.'
         });
         setShowModal(false);
         navigate('/subscription');

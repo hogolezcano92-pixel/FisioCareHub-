@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 import { 
   Calendar, 
   Users, 
@@ -48,7 +49,6 @@ import { EvolutionCharts } from '../components/FisioCare/EvolutionCharts';
 import ActivityTimeline from '../components/FisioCare/ActivityTimeline';
 import { Skeleton, ListSkeleton } from '../components/Skeleton';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
-import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ProGuard from '../components/ProGuard';
 import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
@@ -354,7 +354,7 @@ export default function Dashboard() {
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(() => ({
     isPhysio: profile?.tipo_usuario === 'fisioterapeuta',
     isApproved: profile?.status_aprovacao === 'aprovado',
-    isPro: profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo',
+    isPro: hasPlanAccess(getEffectivePlan(profile, subscription), 'pro'),
     isAdmin: profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'
   }), [profile, subscription, user?.email]);
 
@@ -571,8 +571,6 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
-
-        <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
         
         {isAdmin && (
           <motion.div 

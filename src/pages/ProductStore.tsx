@@ -212,13 +212,6 @@ const getProductImages = (product: Product) => {
   return Array.from(new Set(urls));
 };
 
-
-const getProductPriceLabel = (value?: string | null) => {
-  const text = String(value || '').trim();
-  if (!text || /ver na shopee|adicionar link|aguardando link/i.test(text)) return null;
-  return text;
-};
-
 function ProductImageGallery({ product, onOpenGallery }: { product: Product; onOpenGallery: () => void }) {
   const images = getProductImages(product);
   const fallbackImage = fallbackProducts[0].image_url || '';
@@ -411,7 +404,7 @@ export default function ProductStore() {
   const [galleryProduct, setGalleryProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    document.title = 'Loja FisioCareHub - Produtos recomendados';
+    document.title = 'FisioStore - Produtos recomendados';
     fetchProducts();
   }, []);
 
@@ -499,7 +492,7 @@ export default function ProductStore() {
               <div className="relative z-10">
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-sky-200">
                   <ShoppingBag size={16} />
-                  Loja FisioCareHub
+                  FisioStore
                 </div>
 
                 <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
@@ -667,13 +660,6 @@ export default function ProductStore() {
                         <ArrowRight size={18} />
                       </button>
 
-                      {getProductPriceLabel(product.price_label) && (
-                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200">Preço do produto</p>
-                          <p className="mt-1 text-lg font-black text-white">{getProductPriceLabel(product.price_label)}</p>
-                        </div>
-                      )}
-
                       <button
                         onClick={() => handleOpenProduct(product)}
                         className={cn(
@@ -690,7 +676,7 @@ export default function ProductStore() {
                           </>
                         ) : (
                           <>
-                            Aguardando link
+                            {product.price_label || 'Aguardando link'}
                             <ArrowRight size={18} />
                           </>
                         )}

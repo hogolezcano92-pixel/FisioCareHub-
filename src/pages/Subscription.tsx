@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { config } from '../config/api';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 
 type PlanId = 'basic' | 'pro' | 'pro_semiannual' | 'pro_annual';
 type BillingCycle = 'monthly' | 'semiannual' | 'annual';
@@ -64,7 +65,8 @@ export default function Subscription() {
   const [proKey, setProKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.plan_type === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const currentEffectivePlan = getEffectivePlan(profile, subscription);
+  const isPro = hasPlanAccess(currentEffectivePlan, 'pro');
 
   const handleUpgrade = async (method: 'payment' | 'key', selectedPlan: PlanId = 'pro') => {
     const planConfig = PLAN_CONFIG[selectedPlan];
@@ -223,7 +225,7 @@ export default function Subscription() {
     "Agendamentos Básicos"
   ];
 
-  const currentPlan = profile?.plan_type || profile?.plano || 'basic';
+  const currentPlan = currentEffectivePlan;
 
   return (
     <div className="max-w-6xl mx-auto py-12 px-4">
