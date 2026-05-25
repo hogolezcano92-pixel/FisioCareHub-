@@ -41,6 +41,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAutoPaused, setIsAutoPaused] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -95,6 +96,31 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
       behavior: 'smooth',
     });
   }, []);
+
+
+  const goToNextProduct = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const amount = Math.min(container.clientWidth * 0.85, 760);
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    const isAtEnd = container.scrollLeft + amount >= maxScrollLeft - 12;
+
+    container.scrollTo({
+      left: isAtEnd ? 0 : container.scrollLeft + amount,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (loading || featuredProducts.length <= 1 || isAutoPaused) return;
+
+    const intervalId = window.setInterval(() => {
+      goToNextProduct();
+    }, 3000);
+
+    return () => window.clearInterval(intervalId);
+  }, [featuredProducts.length, goToNextProduct, isAutoPaused, loading]);
 
   const openProduct = (product: StoreProduct) => {
     const url = String(product.affiliate_url || '').trim();
@@ -171,6 +197,10 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         ) : (
           <div
             ref={scrollRef}
+            onMouseEnter={() => setIsAutoPaused(true)}
+            onMouseLeave={() => setIsAutoPaused(false)}
+            onTouchStart={() => setIsAutoPaused(true)}
+            onTouchEnd={() => setIsAutoPaused(false)}
             className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {featuredProducts.map((product) => {
