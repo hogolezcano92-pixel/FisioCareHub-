@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
-  BadgeDollarSign,
   ArrowRight,
   CheckCircle2,
   ChevronLeft,
@@ -213,15 +212,11 @@ const getProductImages = (product: Product) => {
   return Array.from(new Set(urls));
 };
 
-const getVisiblePriceLabel = (product: Product) => {
-  const value = String(product.price_label || '').trim();
-  const normalizedValue = normalize(value);
 
-  if (!value || normalizedValue === 'ver na shopee' || normalizedValue === 'adicionar link shopee') {
-    return null;
-  }
-
-  return value;
+const getProductPriceLabel = (value?: string | null) => {
+  const text = String(value || '').trim();
+  if (!text || /ver na shopee|adicionar link|aguardando link/i.test(text)) return null;
+  return text;
 };
 
 function ProductImageGallery({ product, onOpenGallery }: { product: Product; onOpenGallery: () => void }) {
@@ -663,16 +658,6 @@ export default function ProductStore() {
                         </div>
                       )}
 
-                      {getVisiblePriceLabel(product) && (
-                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
-                          <div className="flex items-center gap-2 text-emerald-100">
-                            <BadgeDollarSign size={18} />
-                            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-200">Preço</span>
-                          </div>
-                          <strong className="text-sm font-black text-white">{getVisiblePriceLabel(product)}</strong>
-                        </div>
-                      )}
-
                       <button
                         type="button"
                         onClick={() => setGalleryProduct(product)}
@@ -681,6 +666,13 @@ export default function ProductStore() {
                         {getProductImages(product).length > 1 ? `Ver ${getProductImages(product).length} fotos do produto` : 'Ver foto do produto'}
                         <ArrowRight size={18} />
                       </button>
+
+                      {getProductPriceLabel(product.price_label) && (
+                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200">Preço do produto</p>
+                          <p className="mt-1 text-lg font-black text-white">{getProductPriceLabel(product.price_label)}</p>
+                        </div>
+                      )}
 
                       <button
                         onClick={() => handleOpenProduct(product)}
@@ -698,7 +690,7 @@ export default function ProductStore() {
                           </>
                         ) : (
                           <>
-                            Produto em breve
+                            Aguardando link
                             <ArrowRight size={18} />
                           </>
                         )}
