@@ -53,7 +53,6 @@ import ProGuard from '../components/ProGuard';
 import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
-import ProductStoreCarousel from '../components/ProductStoreCarousel';
 
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -259,10 +258,71 @@ export default function Dashboard() {
       const roleField = data.tipo_usuario === 'paciente' ? 'paciente_id' : 'fisio_id';
 
       let agendamentoIds: string[] = [];
+      let linkedPatientProfileIds: string[] = [];
+
       if (isPhysio) {
-        const { data: appts } = await supabase.from('agendamentos').select('id').eq('fisio_id', data.id);
-        agendamentoIds = (appts || []).map(a => a.id);
+        const linkedIds = new Set<string>();
+
+        const { data: appts } = await supabase
+          .from('agendamentos')
+          .select('id, paciente_id')
+          .eq('fisio_id', data.id);
+
+        agendamentoIds = (appts || []).map((appt: any) => appt.id).filter(Boolean);
+        (appts || []).forEach((appt: any) => {
+          if (appt.paciente_id) linkedIds.add(appt.paciente_id);
+        });
+
+        const { data: internalPatients } = await supabase
+          .from('pacientes')
+          .select('email')
+          .eq('fisioterapeuta_id', data.id);
+
+        const internalPatientEmails = Array.from(new Set(
+          (internalPatients || [])
+            .map((patient: any) => String(patient.email || '').trim().toLowerCase())
+            .filter(Boolean)
+        ));
+
+        if (internalPatientEmails.length > 0) {
+          const { data: linkedProfiles } = await supabase
+            .from('perfis')
+            .select('id, email')
+            .in('email', internalPatientEmails);
+
+          (linkedProfiles || []).forEach((patientProfile: any) => {
+            if (patientProfile.id) linkedIds.add(patientProfile.id);
+          });
+        }
+
+        linkedPatientProfileIds = Array.from(linkedIds);
       }
+
+      const physioTriagesCountQuery = linkedPatientProfileIds.length > 0
+        ? supabase.from('triagens').select('*', { count: 'exact', head: true }).in('paciente_id', linkedPatientProfileIds)
+        : Promise.resolve({ count: 0 });
+
+      const triagesListQuery = isPhysio
+        ? (linkedPatientProfileIds.length > 0
+          ? supabase
+            .from('triagens')
+            .select(`
+              *,
+              paciente:paciente_id (nome_completo, avatar_url, email)
+            `)
+            .in('paciente_id', linkedPatientProfileIds)
+            .order('created_at', { ascending: false })
+            .limit(5)
+          : Promise.resolve({ data: [] }))
+        : supabase
+          .from('triagens')
+          .select(`
+            *,
+            paciente:paciente_id (nome_completo, avatar_url, email)
+          `)
+          .eq('paciente_id', data.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
 
       const queries = [
         isPhysio ? Promise.all([
@@ -271,7 +331,7 @@ export default function Dashboard() {
           agendamentoIds.length > 0 
             ? supabase.from('evolucoes').select('*', { count: 'exact', head: true }).in('atendimento_id', agendamentoIds)
             : Promise.resolve({ count: 0 }),
-          supabase.from('triagens').select('*', { count: 'exact', head: true })
+          physioTriagesCountQuery
         ]) : Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
@@ -288,14 +348,7 @@ export default function Dashboard() {
           .order('data', { ascending: false })
           .order('hora', { ascending: false })
           .limit(5),
-        supabase
-          .from('triagens')
-          .select(`
-            *,
-            paciente:paciente_id (nome_completo, avatar_url, email)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(5),
+        triagesListQuery,
         supabase
           .from('historico_atividades')
           .select('*')
@@ -647,8 +700,6 @@ export default function Dashboard() {
             </Link>
           </motion.div>
         )}
-
-        <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
 
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
