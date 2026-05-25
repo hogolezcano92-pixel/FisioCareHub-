@@ -1,11 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@11.2.0?target=deno"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const APP_URL = Deno.env.get("APP_URL") || "http://localhost:3000"
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")
+
+const STRIPE_PRICE_BASIC_MONTHLY = Deno.env.get("STRIPE_PRICE_BASIC_MONTHLY")
+const STRIPE_PRICE_PRO_MONTHLY = Deno.env.get("STRIPE_PRICE_PRO_MONTHLY")
+const STRIPE_PRICE_PRO_SEMESTER = Deno.env.get("STRIPE_PRICE_PRO_SEMESTER")
+const STRIPE_PRICE_PRO_YEARLY = Deno.env.get("STRIPE_PRICE_PRO_YEARLY")
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,8 +18,83 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-// NÃO ALTERAR: este Price ID é usado somente para assinatura Pro.
-const FIXED_SUBSCRIPTION_PRICE_ID = "price_1TKGuwPm0ENTPw0-SA8SPjo9l"
+const PRICE_IDS = {
+  basic_monthly: STRIPE_PRICE_BASIC_MONTHLY,
+  pro_monthly: STRIPE_PRICE_PRO_MONTHLY,
+  pro_semester: STRIPE_PRICE_PRO_SEMESTER,
+  pro_yearly: STRIPE_PRICE_PRO_YEARLY,
+} as const
+
+type PlanKey = keyof typeof PRICE_IDS
+
+const PLAN_ALIASES: Record<string, PlanKey> = {
+  basic: "basic_monthly",
+  basic_monthly: "basic_monthly",
+  basic_mensal: "basic_monthly",
+
+  pro: "pro_monthly",
+  pro_monthly: "pro_monthly",
+  pro_mensal: "pro_monthly",
+
+  pro_semester: "pro_semester",
+  pro_semesterly: "pro_semester",
+  pro_semestral: "pro_semester",
+
+  pro_yearly: "pro_yearly",
+  pro_annual: "pro_yearly",
+  pro_anual: "pro_yearly",
+}
+
+const getBillingCycleFromPlanKey = (planKey: PlanKey): "monthly" | "semester" | "yearly" => {
+  if (planKey === "pro_semester") return "semester"
+  if (planKey === "pro_yearly") return "yearly"
+  return "monthly"
+}
+
+const getPlanNameFromPlanKey = (planKey: PlanKey): "basic" | "pro" => {
+  return planKey === "basic_monthly" ? "basic" : "pro"
+}
+
+const resolveSubscriptionPlanKey = (rawPlan: unknown, rawBillingCycle?: unknown): PlanKey => {
+  const plan = String(rawPlan || "").trim().toLowerCase()
+  const billingCycle = String(rawBillingCycle || "").trim().toLowerCase()
+
+  const directAlias = PLAN_ALIASES[plan]
+  if (directAlias) return directAlias
+
+  const combinedAlias = PLAN_ALIASES[`${plan}_${billingCycle}`]
+  if (combinedAlias) return combinedAlias
+
+  if (plan === "basic") return "basic_monthly"
+
+  if (plan === "pro") {
+    if (["semester", "semestral", "semestre", "semiannual", "semi_annual"].includes(billingCycle)) {
+      return "pro_semester"
+    }
+
+    if (["yearly", "annual", "anual", "ano", "year"].includes(billingCycle)) {
+      return "pro_yearly"
+    }
+
+    return "pro_monthly"
+  }
+
+  throw new Error("Plano de assinatura inválido")
+}
+
+const getSubscriptionPriceId = (planKey: PlanKey): string => {
+  const priceId = PRICE_IDS[planKey]
+
+  if (!priceId) {
+    throw new Error(`Price ID não configurado no Supabase Secret para o plano: ${planKey}`)
+  }
+
+  if (!priceId.startsWith("price_")) {
+    throw new Error(`Price ID inválido para o plano ${planKey}. O valor deve começar com price_`)
+  }
+
+  return priceId
+}
 
 const normalizeBrazilianAmount = (rawValue: unknown): number => {
   if (rawValue === null || rawValue === undefined || rawValue === "") {
@@ -47,43 +127,46 @@ const normalizeBrazilianAmount = (rawValue: unknown): number => {
 }
 
 const getMaterialAmountCents = (item: any): number => {
-  const rawValue =
-    item.amount_cents ??
-    item.price_cents ??
-    item.valor_centavos ??
-    item.valor_cents ??
-    item.amount ??
-    item.valor ??
-    item.total ??
-    item.preco ??
-    item.price
-
-  const normalizedValue = normalizeBrazilianAmount(rawValue)
-
-  if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
-    throw new Error(`Valor (amount) inválido para o material: ${item.title || item.id}`)
-  }
-
-  // Campos com estes nomes já devem estar em centavos.
-  // Ex.: price_cents = 2599 significa R$ 25,99.
-  const centsFields = [
+  const centsCandidates = [
     item.amount_cents,
     item.price_cents,
     item.valor_centavos,
     item.valor_cents,
   ]
 
-  const isAlreadyInCents = centsFields.some(value => value === rawValue)
+  for (const value of centsCandidates) {
+    const normalizedValue = normalizeBrazilianAmount(value)
 
-  const amountCents = isAlreadyInCents
-    ? Math.round(normalizedValue)
-    : Math.round(normalizedValue * 100)
+    if (Number.isFinite(normalizedValue) && normalizedValue > 0) {
+      const amountCents = Math.round(normalizedValue)
 
-  if (!Number.isInteger(amountCents) || amountCents < 50) {
-    throw new Error(`Valor (amount) inválido para o material: ${item.title || item.id}`)
+      if (Number.isInteger(amountCents) && amountCents >= 50) {
+        return amountCents
+      }
+    }
   }
 
-  return amountCents
+  const reaisCandidates = [
+    item.amount,
+    item.valor,
+    item.total,
+    item.preco,
+    item.price,
+  ]
+
+  for (const value of reaisCandidates) {
+    const normalizedValue = normalizeBrazilianAmount(value)
+
+    if (Number.isFinite(normalizedValue) && normalizedValue > 0) {
+      const amountCents = Math.round(normalizedValue * 100)
+
+      if (Number.isInteger(amountCents) && amountCents >= 50) {
+        return amountCents
+      }
+    }
+  }
+
+  throw new Error(`Valor (amount) inválido para o material: ${item.title || item.id}`)
 }
 
 serve(async (req) => {
@@ -93,16 +176,30 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { appointment_id, amount, product_id, material_ids, type, user_id, email, plan, service_name } = body
+    const {
+      appointment_id,
+      amount,
+      product_id,
+      material_ids,
+      type,
+      user_id,
+      email,
+      plan,
+      plan_key,
+      billing_cycle,
+      service_name,
+    } = body
+
+    const isSubscriptionRequest = Boolean(plan || plan_key || billing_cycle)
 
     const finalType = type || (
-      plan === "pro"
+      isSubscriptionRequest
         ? "subscription"
         : appointment_id
           ? "appointment"
-          : material_ids
+          : (material_ids || product_id)
             ? "material"
-            : plan || "subscription"
+            : "subscription"
     )
 
     const finalEmail = email || ""
@@ -123,20 +220,32 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    let line_items = []
+    let line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = []
     let mode: "subscription" | "payment" = "payment"
-    let metadata: any = { user_id: finalUserId }
+    let metadata: Record<string, string> = { user_id: String(finalUserId || "") }
 
-    if (finalType === "subscription" || plan === "pro") {
+    if (finalType === "subscription" || isSubscriptionRequest) {
+      const resolvedPlanKey = resolveSubscriptionPlanKey(plan_key || plan, billing_cycle)
+      const resolvedPriceId = getSubscriptionPriceId(resolvedPlanKey)
+      const resolvedPlan = getPlanNameFromPlanKey(resolvedPlanKey)
+      const resolvedBillingCycle = getBillingCycleFromPlanKey(resolvedPlanKey)
+
       line_items = [
         {
-          price: FIXED_SUBSCRIPTION_PRICE_ID,
+          price: resolvedPriceId,
           quantity: 1,
         },
       ]
 
       mode = "subscription"
-      metadata.plan = plan || "pro_fisioterapeuta"
+      metadata = {
+        ...metadata,
+        type: "subscription",
+        payment_area: "subscription",
+        plan: resolvedPlan,
+        plan_key: resolvedPlanKey,
+        billing_cycle: resolvedBillingCycle,
+      }
     } else if (appointment_id) {
       const safeAmount = Number(amount)
 
@@ -165,9 +274,14 @@ serve(async (req) => {
       ]
 
       mode = "payment"
-      metadata.type = "appointment"
-      metadata.appointment_id = appointment_id
-      metadata.appointmentId = appointment_id
+      metadata = {
+        ...metadata,
+        type: "appointment",
+        appointment_id: String(appointment_id),
+        appointmentId: String(appointment_id),
+        agendamento_id: String(appointment_id),
+        agendamentoId: String(appointment_id),
+      }
     } else if (
       (["material", "library"].includes(finalType) || ["material", "library"].includes(type)) &&
       (product_id || material_ids)
@@ -219,44 +333,80 @@ serve(async (req) => {
       })
 
       mode = "payment"
-      metadata.type = material_ids ? "library_purchase_bulk" : "library_purchase"
-      metadata.material_ids = ids.join(",")
+      metadata = {
+        ...metadata,
+        type: material_ids ? "library_purchase_bulk" : "library_purchase",
+        material_ids: ids.join(","),
+        payment_area: "health_library",
+      }
 
       if (!material_ids) {
-        metadata.material_id = product_id
+        metadata.material_id = String(product_id)
       }
     } else {
+      const resolvedPlanKey = resolveSubscriptionPlanKey(plan_key || plan || "pro_monthly", billing_cycle)
+      const resolvedPriceId = getSubscriptionPriceId(resolvedPlanKey)
+      const resolvedPlan = getPlanNameFromPlanKey(resolvedPlanKey)
+      const resolvedBillingCycle = getBillingCycleFromPlanKey(resolvedPlanKey)
+
       line_items = [
         {
-          price: FIXED_SUBSCRIPTION_PRICE_ID,
+          price: resolvedPriceId,
           quantity: 1,
         },
       ]
 
       mode = "subscription"
-      metadata.plan = plan || "pro_fisioterapeuta"
+      metadata = {
+        ...metadata,
+        type: "subscription",
+        payment_area: "subscription",
+        plan: resolvedPlan,
+        plan_key: resolvedPlanKey,
+        billing_cycle: resolvedBillingCycle,
+      }
     }
+
+    const isLibraryCheckout =
+      metadata.type === "library_purchase" || metadata.type === "library_purchase_bulk"
+
+    const isSubscriptionCheckout = metadata.type === "subscription"
 
     const successPath = appointment_id
       ? `/appointments?status=success&payment=appointment&session_id={CHECKOUT_SESSION_ID}`
-      : `/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}${plan === "pro" ? "&plan_id=pro" : ""}`
+      : isLibraryCheckout
+        ? `/patient/library?status=success&payment=library&session_id={CHECKOUT_SESSION_ID}`
+        : `/dashboard?status=success&session_id={CHECKOUT_SESSION_ID}${isSubscriptionCheckout ? `&plan_id=${metadata.plan}&plan_key=${metadata.plan_key}` : ""}`
 
     const cancelPath = appointment_id
       ? `/pagamento/${appointment_id}?status=canceled`
-      : `/subscription`
+      : isLibraryCheckout
+        ? `/patient/library?status=canceled&payment=library`
+        : `/subscription`
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       line_items,
       mode,
       success_url: `${APP_URL}${successPath}`,
       cancel_url: `${APP_URL}${cancelPath}`,
-      customer_email: finalEmail,
       client_reference_id: finalUserId,
       metadata,
-    })
+    }
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    if (finalEmail) {
+      sessionParams.customer_email = finalEmail
+    }
+
+    if (mode === "subscription") {
+      sessionParams.subscription_data = {
+        metadata,
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
+
+    return new Response(JSON.stringify({ url: session.url, session_id: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     })
