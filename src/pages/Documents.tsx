@@ -682,6 +682,23 @@ export default function Documents() {
     doc?.type ||
     'Documento';
 
+  const buildPremiumPdfPayload = (doc: any) => ({
+    ...doc,
+    document_name: getDocumentTitle(doc),
+    type: doc?.type || getDocumentTitle(doc),
+    patient_name: doc?.patient_name || doc?.paciente_nome || 'Paciente',
+    physio_name: doc?.physio_name || profile?.nome_completo || 'Fisioterapeuta',
+    criado_em: doc?.criado_em || doc?.created_at || new Date().toISOString(),
+    content: doc?.content || doc?.conteudo || doc?.description || 'Conteúdo não informado.',
+  });
+
+  const downloadPremiumDocumentPDF = (doc: any, customFileName?: string) => {
+    generateLegalDocumentPDF(buildPremiumPdfPayload(doc), {
+      profile,
+      fileName: customFileName || `${getDocumentTitle(doc)}-${doc?.patient_name || 'paciente'}`,
+    });
+  };
+
   const getClinicalFileUrl = async (doc: any) => {
     const pathOrUrl = doc?.file_path || doc?.arquivo_url;
     if (!pathOrUrl) throw new Error('Arquivo sem caminho para visualização.');
@@ -711,10 +728,7 @@ export default function Documents() {
   const handleDownloadDocument = async (doc: any) => {
     if (!doc?.isClinicalFile) {
       try {
-        generateLegalDocumentPDF(doc, {
-          profile,
-          fileName: `${getDocumentTitle(doc)}-${doc.patient_name || 'paciente'}`,
-        });
+        downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc.patient_name || 'paciente'}`);
         import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
       } catch (err) {
         console.error('Erro ao gerar PDF premium:', err);
@@ -740,42 +754,13 @@ export default function Documents() {
   };
 
   const handleExportFromTable = async (doc: any) => {
-    const tempDiv = document.createElement('div');
-    const docId = `export-temp-${doc.id}`;
-    tempDiv.id = docId;
-    tempDiv.style.position = 'fixed';
-    tempDiv.style.left = '-10000px';
-    tempDiv.style.top = '0';
-    tempDiv.style.width = '800px';
-    tempDiv.style.padding = '60px';
-    tempDiv.style.background = 'white';
-    tempDiv.style.color = 'black';
-    tempDiv.className = 'prose prose-slate max-w-none';
-    
-    document.body.appendChild(tempDiv);
-    
-    const root = createRoot(tempDiv);
-    root.render(
-      <div style={{ padding: '20px', backgroundColor: '#ffffff', color: '#000000', minHeight: '1000px' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#000000', fontWeight: '900', fontSize: '24px' }}>{doc.type}</h1>
-        <p style={{ marginBottom: '20px', color: '#000000', fontSize: '14px' }}><strong>Paciente:</strong> {doc.patient_name}</p>
-        <div style={{ color: '#000000', fontSize: '14px' }}>
-          <ReactMarkdown>{doc.content}</ReactMarkdown>
-        </div>
-        <div style={{ marginTop: '100px', paddingTop: '20px', borderTop: '2px solid #000', textAlign: 'center', fontSize: '12px', color: '#000' }}>
-          Documento oficial gerado via FisioCareHub em {new Date(doc.criado_em).toLocaleString('pt-BR')}
-        </div>
-      </div>
-    );
-
-    // Give more time for heavy JS based components to render
-    setTimeout(async () => {
-      await exportToPDF(docId, `${getDocumentTitle(doc)}-${doc.patient_name}`);
-      // Only remove after a short delay to ensure process finished
-      setTimeout(() => {
-        document.body.removeChild(tempDiv);
-      }, 500);
-    }, 1000);
+    try {
+      downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc?.patient_name || 'paciente'}`);
+      import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
+    } catch (err) {
+      console.error('Erro ao gerar PDF premium:', err);
+      import('sonner').then(({ toast }) => toast.error('Erro ao gerar PDF premium. Tente novamente.'));
+    }
   };
 
   const generateEvolutionReportPDF = async (record: any) => {
@@ -1695,63 +1680,16 @@ export default function Documents() {
 {!viewingDoc.isClinicalFile && (
                   <button 
                     onClick={() => {
-                      const printContent = document.getElementById('view-content');
-                      const windowUrl = 'about:blank';
-                      const uniqueName = new Date();
-                      const windowName = 'Print' + uniqueName.getTime();
-                      const printWindow = window.open(windowUrl, windowName, 'left=50000,top=50000,width=800,height=900');
-                      if (printWindow && printContent) {
-                        printWindow.document.write(`
-                          <html>
-                            <head>
-                              <title>Imprimir Documento - FisioCareHub</title>
-                              <style>
-                                body { 
-                                  font-family: 'Inter', sans-serif; 
-                                  color: #000000 !important; 
-                                  background-color: #ffffff !important;
-                                  padding: 40px;
-                                  line-height: 1.6;
-                                }
-                                h1, h2, h3, h4, h5, h6 { color: #000000 !important; margin-top: 1.5em; margin-bottom: 0.5em; }
-                                p { color: #000000 !important; margin-bottom: 1em; }
-                                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                                th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; color: #000000 !important; }
-                                th { background-color: #f8fafc; font-weight: bold; }
-                                .text-center { text-align: center; }
-                                .mb-8 { margin-bottom: 32px; }
-                                .font-black { font-weight: 900; }
-                                .font-bold { font-weight: 700; }
-                                .mt-16 { margin-top: 64px; }
-                                .pt-8 { padding-top: 32px; }
-                                .border-t { border-top: 1px solid #e2e8f0; }
-                                .text-xs { font-size: 12px; }
-                                .text-slate-400 { color: #94a3b8 !important; }
-                                .uppercase { text-transform: uppercase; }
-                                .tracking-widest { letter-spacing: 0.1em; }
-                                @media print {
-                                  body { padding: 0; }
-                                  @page { margin: 2cm; }
-                                }
-                              </style>
-                            </head>
-                            <body>
-                              ${printContent.innerHTML}
-                            </body>
-                          </html>
-                        `);
-                        printWindow.document.close();
-                        
-                        // Wait for content to load
-                        setTimeout(() => {
-                          printWindow.focus();
-                          printWindow.print();
-                          printWindow.close();
-                        }, 500);
+                      try {
+                        downloadPremiumDocumentPDF(viewingDoc, `${getDocumentTitle(viewingDoc)}-${viewingDoc.patient_name || 'paciente'}`);
+                        import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
+                      } catch (err) {
+                        console.error('Erro ao gerar PDF premium:', err);
+                        import('sonner').then(({ toast }) => toast.error('Erro ao gerar PDF premium. Tente novamente.'));
                       }
                     }}
                     className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
-                    title="Imprimir"
+                    title="Gerar PDF premium"
                   >
                     <Printer size={18} />
                   </button>
@@ -1847,13 +1785,16 @@ export default function Documents() {
                 ) : (
                   <div 
                     id="view-content" 
-                    className="bg-white p-5 sm:p-12 border border-white/10 shadow-2xl rounded-lg prose prose-slate w-full max-w-[800px] mx-auto min-h-[80vh] sm:min-h-[1100px] overflow-hidden"
-                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                    className="bg-white p-5 sm:p-12 border border-slate-200 shadow-2xl rounded-2xl prose prose-slate w-full max-w-[794px] mx-auto min-h-[80vh] sm:min-h-[1123px] overflow-hidden"
+                    style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
                   >
                     <style>{`
-                      #view-content * { color: #000000 !important; }
-                      #view-content h1, #view-content h2, #view-content h3 { color: #000000 !important; font-weight: 800; }
-                      #view-content p, #view-content li, #view-content td, #view-content th { color: #1a202c !important; }
+                      #view-content { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+                      #view-content h1, #view-content h2, #view-content h3 { color: #0f172a !important; font-weight: 900; }
+                      #view-content p, #view-content li, #view-content td, #view-content th { color: #334155 !important; }
+                      #view-content strong { color: #0f172a !important; font-weight: 800; }
+                      #view-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                      #view-content th, #view-content td { border: 1px solid #e2e8f0; padding: 10px; }
                     `}</style>
                     <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{getDocumentTitle(viewingDoc)}</h1>
                     <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
