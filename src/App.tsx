@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/utils';
+import { getEffectivePlan, hasPlanAccess } from './lib/planAccess';
 import { Toaster, toast } from 'sonner';
 
 // i18n
@@ -285,7 +286,8 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isPro = profile?.plano === 'admin' || profile?.plano === 'pro' || profile?.is_pro === true || subscription?.status === 'ativo';
+  const currentPlan = getEffectivePlan(profile, subscription);
+  const isPro = hasPlanAccess(currentPlan, 'pro');
   const isApproved = profile?.status_aprovacao === 'aprovado' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
 
   const handleLogout = async () => {
@@ -816,7 +818,7 @@ function AppContent() {
                   <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                   <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
-                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Documents /></ProGuard></ProtectedRoute>} />
+                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="basic"><Documents /></ProGuard></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
                   <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
                   <Route path="/about" element={<About />} />
