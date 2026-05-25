@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: t('nav.records'), path: '/records', icon: FileText },
-            { name: t('nav.documents'), path: '/documents', icon: FileSignature, basic: true },
+            { name: t('nav.documents'), path: '/documents', icon: FileSignature },
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
