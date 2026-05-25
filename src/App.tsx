@@ -818,7 +818,7 @@ function AppContent() {
                   <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                   <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
-                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="basic"><Documents /></ProGuard></ProtectedRoute>} />
+                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="free"><Documents /></ProGuard></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
                   <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
                   <Route path="/about" element={<About />} />
