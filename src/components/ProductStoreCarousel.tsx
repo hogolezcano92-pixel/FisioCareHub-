@@ -42,6 +42,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAutoPaused, setIsAutoPaused] = useState(false);
+  const [activeProductIndex, setActiveProductIndex] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -86,41 +87,50 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
       : products.slice(0, 10);
   }, [products]);
 
-  const scrollProducts = useCallback((direction: 'left' | 'right') => {
+  const scrollToProduct = useCallback((index: number) => {
     const container = scrollRef.current;
-    if (!container) return;
+    if (!container || featuredProducts.length === 0) return;
 
-    const amount = Math.min(container.clientWidth * 0.85, 760);
-    container.scrollBy({
-      left: direction === 'left' ? -amount : amount,
-      behavior: 'smooth',
-    });
-  }, []);
-
-
-  const goToNextProduct = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const amount = Math.min(container.clientWidth * 0.85, 760);
-    const maxScrollLeft = container.scrollWidth - container.clientWidth;
-    const isAtEnd = container.scrollLeft + amount >= maxScrollLeft - 12;
+    const safeIndex = ((index % featuredProducts.length) + featuredProducts.length) % featuredProducts.length;
+    const target = container.children.item(safeIndex) as HTMLElement | null;
 
     container.scrollTo({
-      left: isAtEnd ? 0 : container.scrollLeft + amount,
+      left: target?.offsetLeft ?? 0,
       behavior: 'smooth',
     });
-  }, []);
+
+    setActiveProductIndex(safeIndex);
+  }, [featuredProducts.length]);
+
+  const scrollProducts = useCallback((direction: 'left' | 'right') => {
+    scrollToProduct(activeProductIndex + (direction === 'left' ? -1 : 1));
+  }, [activeProductIndex, scrollToProduct]);
+
+  useEffect(() => {
+    setActiveProductIndex(0);
+    scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+  }, [featuredProducts.length]);
 
   useEffect(() => {
     if (loading || featuredProducts.length <= 1 || isAutoPaused) return;
 
     const intervalId = window.setInterval(() => {
-      goToNextProduct();
+      setActiveProductIndex((currentIndex) => {
+        const nextIndex = currentIndex + 1 >= featuredProducts.length ? 0 : currentIndex + 1;
+        const container = scrollRef.current;
+        const target = container?.children.item(nextIndex) as HTMLElement | null;
+
+        container?.scrollTo({
+          left: target?.offsetLeft ?? 0,
+          behavior: 'smooth',
+        });
+
+        return nextIndex;
+      });
     }, 3000);
 
     return () => window.clearInterval(intervalId);
-  }, [featuredProducts.length, goToNextProduct, isAutoPaused, loading]);
+  }, [featuredProducts.length, isAutoPaused, loading]);
 
   const openProduct = (product: StoreProduct) => {
     const url = String(product.affiliate_url || '').trim();
