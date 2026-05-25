@@ -89,6 +89,7 @@ const Partner = lazy(() => import('./pages/Partner'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Subscription = lazy(() => import('./pages/Subscription'));
 const HealthLibrary = lazy(() => import('./pages/HealthLibrary'));
+const ProductStore = lazy(() => import('./pages/ProductStore'));
 const ConfirmAppointment = lazy(() => import('./pages/ConfirmAppointment'));
 const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
 const PaymentPage = lazy(() => import('./pages/PaymentPage'));
@@ -823,6 +824,7 @@ function AppContent() {
                   <Route path="/partner" element={<Partner />} />
                   <Route path="/seja-parceiro" element={<Partner />} />
                   <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
+                  <Route path="/loja" element={<ProtectedRoute><ProductStore /></ProtectedRoute>} />
                   <Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} />
                   <Route path="/physio/:id" element={<ProtectedRoute><ProfessionalProfile /></ProtectedRoute>} />
                   <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
