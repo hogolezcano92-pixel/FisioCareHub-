@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,7 +22,9 @@ import {
   CheckCircle2,
   Printer,
   Lock,
-  FileJson
+  FileJson,
+  AlertCircle,
+  Crown
 } from 'lucide-react';
 import { generateDocument } from '../lib/groq';
 import html2canvas from 'html2canvas';
@@ -33,6 +36,7 @@ import { saveAs } from 'file-saver';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
+import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -123,7 +127,8 @@ const getMissingRequiredDocumentFields = (templateId: string | undefined, fields
     .map((field) => field.label);
 
 export default function Documents() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, subscription, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +149,51 @@ export default function Documents() {
   const [patients, setPatients] = useState<any[]>([]);
   const [patientRecords, setPatientRecords] = useState<any[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
+
+  const currentPlan = useMemo(() => getEffectivePlan(profile, subscription), [profile, subscription]);
+  const isFreePhysio = isPhysio && currentPlan === 'free';
+
+  const freeDocumentsUsedThisMonth = useMemo(() => {
+    if (!isFreePhysio) return 0;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+
+    return documents.filter((doc) => {
+      if (doc?.isClinicalFile) return false;
+      const createdAt = new Date(doc?.criado_em || doc?.created_at || 0).getTime();
+      return createdAt >= monthStart && createdAt < nextMonthStart;
+    }).length;
+  }, [documents, isFreePhysio]);
+
+  const hasReachedFreeDocumentLimit = isFreePhysio && freeDocumentsUsedThisMonth >= FREE_DOCUMENT_MONTHLY_LIMIT;
+
+  const showUpgradeToast = (message: string) => {
+    import('sonner').then(({ toast }) => toast.error(message));
+  };
+
+  const countFreeDocumentsCreatedThisMonth = async () => {
+    if (!user) return 0;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+
+    const { count, error } = await supabase
+      .from('documentos_gerados')
+      .select('id', { count: 'exact', head: true })
+      .eq('physio_id', user.id)
+      .gte('criado_em', monthStart)
+      .lt('criado_em', nextMonthStart);
+
+    if (error) {
+      console.error('Erro ao contar documentos gratuitos do mês:', error);
+      return freeDocumentsUsedThisMonth;
+    }
+
+    return count || 0;
+  };
 
   useEffect(() => {
     if (authLoading || !isPhysio) return;
@@ -299,6 +349,18 @@ export default function Documents() {
   }, [user, profile, authLoading]);
 
   const handleCreateNew = (template?: any) => {
+    if (isFreePhysio) {
+      if (!isFreeDocumentTemplate(template?.id)) {
+        showUpgradeToast('Este modelo é liberado nos planos Basic ou PRO. No gratuito, use os modelos básicos para teste.');
+        return;
+      }
+
+      if (hasReachedFreeDocumentLimit) {
+        showUpgradeToast(`Você já usou os ${FREE_DOCUMENT_MONTHLY_LIMIT} documentos básicos do plano gratuito neste mês.`);
+        return;
+      }
+    }
+
     setSelectedTemplate(template || null);
     setGeneratedContent('');
     setPatientName('');
@@ -319,6 +381,19 @@ export default function Documents() {
     if (!patientName) {
       import('sonner').then(({ toast }) => toast.error("Por favor, informe o nome do paciente."));
       return;
+    }
+
+    if (isFreePhysio) {
+      if (!isFreeDocumentTemplate(selectedTemplateId)) {
+        showUpgradeToast('Este modelo é liberado nos planos Basic ou PRO. Escolha um modelo básico para continuar no gratuito.');
+        return;
+      }
+
+      const usedThisMonth = await countFreeDocumentsCreatedThisMonth();
+      if (usedThisMonth >= FREE_DOCUMENT_MONTHLY_LIMIT) {
+        showUpgradeToast(`Limite mensal atingido: você já gerou ${FREE_DOCUMENT_MONTHLY_LIMIT} documentos básicos neste mês.`);
+        return;
+      }
     }
 
     const missingRequired = getMissingRequiredDocumentFields(selectedTemplateId, documentFields);
@@ -355,6 +430,19 @@ export default function Documents() {
     if (!generatedContent || !user || !profile) return;
 
     try {
+      if (isFreePhysio) {
+        if (!isFreeDocumentTemplate(selectedTemplateId)) {
+          showUpgradeToast('Este modelo é liberado nos planos Basic ou PRO.');
+          return;
+        }
+
+        const usedThisMonth = await countFreeDocumentsCreatedThisMonth();
+        if (usedThisMonth >= FREE_DOCUMENT_MONTHLY_LIMIT) {
+          showUpgradeToast(`Limite mensal atingido: você já salvou ${FREE_DOCUMENT_MONTHLY_LIMIT} documentos básicos neste mês.`);
+          return;
+        }
+      }
+
       const { data: newDoc, error } = await supabase
         .from('documentos_gerados')
         .insert({
@@ -921,7 +1009,7 @@ export default function Documents() {
 
 
   return (
-    <ProGuard requiredPlan="basic">
+    <ProGuard requiredPlan="free">
       <div className="space-y-8 pb-20">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -935,20 +1023,82 @@ export default function Documents() {
         {isPhysio && (
           <div className="flex gap-3">
             <button 
-              onClick={() => setIsEvolutionModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-white/5 text-blue-400 border border-blue-500/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all"
+              onClick={() => {
+                if (isFreePhysio) {
+                  showUpgradeToast('Relatório de evolução premium é liberado nos planos Basic ou PRO.');
+                  return;
+                }
+                setIsEvolutionModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-white/5 text-blue-400 border border-blue-500/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <FileSearch size={20} /> RELATÓRIO DE EVOLUÇÃO
             </button>
             <button 
               onClick={() => handleCreateNew()}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20"
+              disabled={hasReachedFreeDocumentLimit}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Plus size={20} /> CRIAR NOVO DOCUMENTO
             </button>
           </div>
         )}
       </header>
+
+      {isPhysio && isFreePhysio && (
+        <section className="rounded-[2rem] border border-blue-500/20 bg-gradient-to-br from-blue-500/10 via-slate-900/80 to-indigo-500/10 p-5 sm:p-6 shadow-xl shadow-blue-950/20">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-300 border border-blue-400/20 flex items-center justify-center shrink-0">
+                <FileText size={24} />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-white font-black text-lg">Plano Gratuito: documentos básicos liberados</p>
+                  <span className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black text-blue-200 uppercase tracking-widest">
+                    {freeDocumentsUsedThisMonth}/{FREE_DOCUMENT_MONTHLY_LIMIT} usados neste mês
+                  </span>
+                </div>
+                <p className="text-slate-300 text-sm font-medium mt-2 max-w-3xl">
+                  Você pode gerar até {FREE_DOCUMENT_MONTHLY_LIMIT} documentos clínicos básicos por mês para testar o FisioCareHub.
+                  Modelos avançados, documentos ilimitados e recursos completos ficam disponíveis nos planos Basic e PRO.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/subscription')}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all"
+              >
+                <Crown size={16} /> Ver planos
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isPhysio && isFreePhysio && hasReachedFreeDocumentLimit && (
+        <section className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="text-amber-300 shrink-0 mt-0.5" size={22} />
+            <div>
+              <p className="text-amber-100 font-black">Limite mensal atingido</p>
+              <p className="text-amber-100/80 text-sm font-medium">
+                Você já gerou os {FREE_DOCUMENT_MONTHLY_LIMIT} documentos básicos do plano gratuito neste mês.
+                Assine o Basic para gerar documentos clínicos sem limite.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/subscription')}
+            className="px-5 py-3 rounded-2xl bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-amber-200 transition-all"
+          >
+            Fazer upgrade
+          </button>
+        </section>
+      )}
 
       {/* Favorites Section - Only for Physio */}
       {isPhysio && (
@@ -958,18 +1108,21 @@ export default function Documents() {
             <h2 className="text-xl font-black text-white tracking-tight">FAVORITOS</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {FAVORITE_TEMPLATES.map((template) => (
+            {FAVORITE_TEMPLATES.map((template) => {
+              const isTemplateLockedForFree = isFreePhysio && !isFreeDocumentTemplate(template.id);
+
+              return (
               <motion.div
                 key={template.id}
                 whileHover={{ scale: 1.02 }}
-                className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden"
+                className={`bg-slate-900/50 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden ${isTemplateLockedForFree ? 'opacity-75' : ''}`}
               >
                 <div className={`w-12 h-12 ${template.bg.replace('bg-', 'bg-').replace('-50', '-500/10')} ${template.color.replace('text-', 'text-').replace('-600', '-400')} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-white/5`}>
                   <template.icon size={24} />
                 </div>
-                <div className="flex-1 cursor-pointer" onClick={() => handleCreateNew(template)}>
+                <div className="flex-1 cursor-pointer" onClick={() => isTemplateLockedForFree ? navigate('/subscription') : handleCreateNew(template)}>
                   <h3 className="font-black text-white leading-tight">{template.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Clique para iniciar</p>
+                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">{isTemplateLockedForFree ? 'Basic/PRO' : 'Clique para iniciar'}</p>
                 </div>
                 <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button className="p-1.5 text-slate-500 hover:text-rose-500 transition-colors" title="Remover dos favoritos">
@@ -980,7 +1133,8 @@ export default function Documents() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
