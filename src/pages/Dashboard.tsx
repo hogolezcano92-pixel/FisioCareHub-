@@ -53,6 +53,7 @@ import ProGuard from '../components/ProGuard';
 import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
+import ProductStoreCarousel from '../components/ProductStoreCarousel';
 
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -646,6 +647,8 @@ export default function Dashboard() {
             </Link>
           </motion.div>
         )}
+
+        <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
 
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

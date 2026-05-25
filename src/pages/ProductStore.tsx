@@ -48,6 +48,14 @@ const categories = [
   'Conforto',
 ];
 
+const normalizePriceLabel = (priceLabel?: string | null) => {
+  const text = String(priceLabel || '').trim();
+  if (!text || text.toLowerCase() === 'adicionar link shopee') return '';
+  if (/^r\$|^a partir de/i.test(text)) return text;
+  return `A partir de R$ ${text}`;
+};
+
+
 const fallbackProducts: Product[] = [
   {
     id: 'mini-band-kit',
@@ -613,7 +621,8 @@ export default function ProductStore() {
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {filteredProducts.map((product) => {
-                const hasLink = Boolean(product.affiliate_url);
+                const hasLink = Boolean(String(product.affiliate_url || '').trim());
+                const priceLabel = normalizePriceLabel(product.price_label);
                 return (
                   <article
                     key={product.id}
@@ -651,6 +660,16 @@ export default function ProductStore() {
                         </div>
                       )}
 
+                      {priceLabel && (
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
+                          <div className="flex items-center gap-2 text-emerald-200">
+                            <Tag size={16} />
+                            <span className="text-xs font-black uppercase tracking-wider">Preço</span>
+                          </div>
+                          <span className="text-sm font-black text-white text-right">{priceLabel}</span>
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setGalleryProduct(product)}
@@ -676,7 +695,7 @@ export default function ProductStore() {
                           </>
                         ) : (
                           <>
-                            {product.price_label || 'Aguardando link'}
+                            Aguardando link
                             <ArrowRight size={18} />
                           </>
                         )}
