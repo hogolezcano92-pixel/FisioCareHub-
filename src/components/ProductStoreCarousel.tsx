@@ -56,8 +56,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
           .select('id, name, subtitle, description, category, price_label, image_url, affiliate_url, badge, is_featured, created_at')
           .eq('is_active', true)
           .order('is_featured', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(12);
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.info('[ProductStoreCarousel] Não foi possível carregar produtos:', error.message);
@@ -81,17 +80,15 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     };
   }, []);
 
-  const featuredProducts = useMemo(() => {
-    return products.filter((product) => product.is_featured).length > 0
-      ? products.filter((product) => product.is_featured).slice(0, 10)
-      : products.slice(0, 10);
+  const carouselProducts = useMemo(() => {
+    return products;
   }, [products]);
 
   const scrollToProduct = useCallback((index: number) => {
     const container = scrollRef.current;
-    if (!container || featuredProducts.length === 0) return;
+    if (!container || carouselProducts.length === 0) return;
 
-    const safeIndex = ((index % featuredProducts.length) + featuredProducts.length) % featuredProducts.length;
+    const safeIndex = ((index % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
     const target = container.children.item(safeIndex) as HTMLElement | null;
 
     container.scrollTo({
@@ -100,7 +97,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     });
 
     setActiveProductIndex(safeIndex);
-  }, [featuredProducts.length]);
+  }, [carouselProducts.length]);
 
   const scrollProducts = useCallback((direction: 'left' | 'right') => {
     scrollToProduct(activeProductIndex + (direction === 'left' ? -1 : 1));
@@ -109,14 +106,14 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   useEffect(() => {
     setActiveProductIndex(0);
     scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
-  }, [featuredProducts.length]);
+  }, [carouselProducts.length]);
 
   useEffect(() => {
-    if (loading || featuredProducts.length <= 1 || isAutoPaused) return;
+    if (loading || carouselProducts.length <= 1 || isAutoPaused) return;
 
     const intervalId = window.setInterval(() => {
       setActiveProductIndex((currentIndex) => {
-        const nextIndex = currentIndex + 1 >= featuredProducts.length ? 0 : currentIndex + 1;
+        const nextIndex = currentIndex + 1 >= carouselProducts.length ? 0 : currentIndex + 1;
         const container = scrollRef.current;
         const target = container?.children.item(nextIndex) as HTMLElement | null;
 
@@ -130,7 +127,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     }, 3000);
 
     return () => window.clearInterval(intervalId);
-  }, [featuredProducts.length, isAutoPaused, loading]);
+  }, [carouselProducts.length, isAutoPaused, loading]);
 
   const openProduct = (product: StoreProduct) => {
     const url = String(product.affiliate_url || '').trim();
@@ -143,7 +140,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     navigate('/loja');
   };
 
-  if (!loading && featuredProducts.length === 0) {
+  if (!loading && carouselProducts.length === 0) {
     return null;
   }
 
@@ -213,7 +210,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             onTouchEnd={() => setIsAutoPaused(false)}
             className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {featuredProducts.map((product) => {
+            {carouselProducts.map((product) => {
               const priceLabel = normalizePriceLabel(product.price_label);
               const hasAffiliateUrl = Boolean(String(product.affiliate_url || '').trim());
 
