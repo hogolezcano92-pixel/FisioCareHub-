@@ -161,7 +161,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">
-              <Sparkles size={12} /> Loja FisioCareHub
+              <Sparkles size={12} /> FisioStore
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
