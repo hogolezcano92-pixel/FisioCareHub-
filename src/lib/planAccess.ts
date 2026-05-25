@@ -72,3 +72,20 @@ export const getPlanLabel = (plan: UserPlan): string => {
   if (plan === 'basic') return 'Basic';
   return 'Gratuito';
 };
+
+
+export const FREE_DOCUMENT_MONTHLY_LIMIT = 3;
+
+const FREE_DOCUMENT_TEMPLATE_IDS = new Set(['atestado', 'autorizacao', 'laudo']);
+
+export const isFreeDocumentTemplate = (templateId?: string | null): boolean => {
+  // Documento geral sem modelo específico continua liberado para teste,
+  // mas respeita o limite mensal do plano gratuito.
+  if (!templateId) return true;
+  return FREE_DOCUMENT_TEMPLATE_IDS.has(String(templateId).trim().toLowerCase());
+};
+
+export const getDocumentLimitByPlan = (plan: UserPlan): number | null => {
+  if (plan === 'free') return FREE_DOCUMENT_MONTHLY_LIMIT;
+  return null;
+};
