@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Minha Agenda', path: '/agenda', icon: Calendar, pro: true },
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
-            { name: 'Loja', path: '/loja', icon: ShoppingBag },
+            { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature, pro: true },
@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
             { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
             { name: t('nav.library'), path: '/patient/library', icon: BookOpen },
-            { name: 'Loja', path: '/loja', icon: ShoppingBag },
+            { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
           ] : [])
         ]
       },
