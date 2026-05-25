@@ -3,6 +3,8 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Filter,
   HeartPulse,
@@ -11,6 +13,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  X,
   Star,
   Tag,
 } from 'lucide-react';
@@ -178,7 +181,7 @@ const getProductImages = (product: Product) => {
   return Array.from(new Set(urls));
 };
 
-function ProductImageGallery({ product }: { product: Product }) {
+function ProductImageGallery({ product, onOpenGallery }: { product: Product; onOpenGallery: () => void }) {
   const images = getProductImages(product);
   const fallbackImage = fallbackProducts[0].image_url || '';
   const [activeImage, setActiveImage] = useState(images[0] || fallbackImage);
@@ -191,11 +194,18 @@ function ProductImageGallery({ product }: { product: Product }) {
 
   return (
     <div className="relative h-52 overflow-hidden bg-slate-900">
-      <img
-        src={activeImage || fallbackImage}
-        alt={product.name}
-        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-      />
+      <button
+        type="button"
+        onClick={onOpenGallery}
+        className="h-full w-full text-left"
+        aria-label={`Abrir galeria de imagens de ${product.name}`}
+      >
+        <img
+          src={activeImage || fallbackImage}
+          alt={product.name}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
+      </button>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
       <div className="absolute left-4 top-4 flex flex-wrap gap-2">
@@ -226,12 +236,122 @@ function ProductImageGallery({ product }: { product: Product }) {
               <button
                 key={`${url}-${index}`}
                 type="button"
-                onClick={() => setActiveImage(url)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setActiveImage(url);
+                }}
                 className={cn(
                   'h-11 w-11 shrink-0 overflow-hidden rounded-xl border-2 bg-slate-800 transition-all',
                   activeImage === url ? 'border-sky-300 opacity-100' : 'border-white/20 opacity-70 hover:opacity-100'
                 )}
                 aria-label={`Ver imagem ${index + 1} de ${product.name}`}
+              >
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenGallery();
+              }}
+              className="flex h-11 shrink-0 items-center rounded-xl border border-sky-300/40 bg-sky-500/90 px-3 text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-sky-400"
+            >
+              Ver fotos
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductGalleryModal({
+  product,
+  onClose,
+}: {
+  product: Product;
+  onClose: () => void;
+}) {
+  const images = getProductImages(product);
+  const fallbackImage = fallbackProducts[0].image_url || '';
+  const displayImages = images.length > 0 ? images : [fallbackImage];
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [product.id]);
+
+  const goPrevious = () => {
+    setActiveIndex((current) => (current === 0 ? displayImages.length - 1 : current - 1));
+  };
+
+  const goNext = () => {
+    setActiveIndex((current) => (current === displayImages.length - 1 ? 0 : current + 1));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-950/90 p-3 backdrop-blur-md sm:p-6">
+      <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-300">Galeria do produto</p>
+            <h3 className="truncate text-lg font-black text-white sm:text-xl">{product.name}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white transition hover:bg-white/[0.12]"
+            aria-label="Fechar galeria"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-slate-900">
+          <img
+            src={displayImages[activeIndex] || fallbackImage}
+            alt={`${product.name} - imagem ${activeIndex + 1}`}
+            className="max-h-[58vh] w-full object-contain"
+          />
+
+          {displayImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goPrevious}
+                className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-slate-950/70 text-white shadow-xl backdrop-blur transition hover:bg-sky-500"
+                aria-label="Imagem anterior"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-slate-950/70 text-white shadow-xl backdrop-blur transition hover:bg-sky-500"
+                aria-label="Próxima imagem"
+              >
+                <ChevronRight size={24} />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-slate-950/75 px-4 py-2 text-xs font-black text-white backdrop-blur">
+                {activeIndex + 1} / {displayImages.length}
+              </div>
+            </>
+          )}
+        </div>
+
+        {displayImages.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto border-t border-white/10 bg-slate-950 p-3 sm:p-4">
+            {displayImages.map((url, index) => (
+              <button
+                key={`${url}-${index}`}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={cn(
+                  'h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 bg-slate-800 transition sm:h-20 sm:w-20',
+                  activeIndex === index ? 'border-sky-300 opacity-100' : 'border-white/10 opacity-70 hover:opacity-100'
+                )}
+                aria-label={`Ver imagem ${index + 1}`}
               >
                 <img src={url} alt="" className="h-full w-full object-cover" />
               </button>
@@ -250,6 +370,7 @@ export default function ProductStore() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [usingFallback, setUsingFallback] = useState(true);
+  const [galleryProduct, setGalleryProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     document.title = 'Loja FisioCareHub - Produtos recomendados';
@@ -467,7 +588,7 @@ export default function ProductStore() {
                     key={product.id}
                     className="group overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.06] shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
                   >
-                    <ProductImageGallery product={product} />
+                    <ProductImageGallery product={product} onOpenGallery={() => setGalleryProduct(product)} />
 
                     <div className="space-y-4 p-5">
                       {product.subtitle && (
@@ -498,6 +619,15 @@ export default function ProductStore() {
                           </div>
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => setGalleryProduct(product)}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-black text-sky-100 transition hover:border-sky-300/60 hover:bg-sky-400/20 active:scale-[0.98]"
+                      >
+                        Ver fotos do produto
+                        <ArrowRight size={18} />
+                      </button>
 
                       <button
                         onClick={() => handleOpenProduct(product)}
@@ -552,6 +682,13 @@ export default function ProductStore() {
           </div>
         </section>
       </div>
+
+      {galleryProduct && (
+        <ProductGalleryModal
+          product={galleryProduct}
+          onClose={() => setGalleryProduct(null)}
+        />
+      )}
     </div>
   );
 }
