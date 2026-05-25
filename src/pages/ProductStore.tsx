@@ -505,7 +505,7 @@ export default function ProductStore() {
                     className="group flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-950/40 p-3 text-left transition hover:border-sky-400/50 hover:bg-sky-400/10"
                   >
                     <img
-                      src={product.image_url || fallbackProducts[0].image_url || ''}
+                      src={getProductImages(product)[0] || fallbackProducts[0].image_url || ''}
                       alt={product.name}
                       className="h-14 w-14 rounded-2xl object-cover"
                     />
@@ -632,7 +632,7 @@ export default function ProductStore() {
                       <button
                         onClick={() => handleOpenProduct(product)}
                         className={cn(
-                          'flex h-13 w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition active:scale-[0.98]',
+                          'flex h-14 w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition active:scale-[0.98]',
                           hasLink
                             ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/20 hover:from-sky-400 hover:to-indigo-400'
                             : 'border border-white/10 bg-white/[0.06] text-slate-300 hover:border-sky-400/40 hover:text-white'
