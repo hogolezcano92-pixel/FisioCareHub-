@@ -8,11 +8,12 @@ import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
 
-type PlanId = 'basic' | 'pro' | 'pro_semiannual' | 'pro_annual';
-type BillingCycle = 'monthly' | 'semiannual' | 'annual';
+type PlanId = 'basic_monthly' | 'pro_monthly' | 'pro_semester' | 'pro_yearly';
+type BillingCycle = 'monthly' | 'semester' | 'yearly';
 
 const PLAN_CONFIG: Record<PlanId, {
   stripePlan: 'basic' | 'pro';
+  planKey: PlanId;
   planId: PlanId;
   planVariant: PlanId;
   billingCycle: BillingCycle;
@@ -20,38 +21,42 @@ const PLAN_CONFIG: Record<PlanId, {
   serviceName: string;
   durationDays: number;
 }> = {
-  basic: {
+  basic_monthly: {
     stripePlan: 'basic',
-    planId: 'basic',
-    planVariant: 'basic',
+    planKey: 'basic_monthly',
+    planId: 'basic_monthly',
+    planVariant: 'basic_monthly',
     billingCycle: 'monthly',
     amount: 19.99,
-    serviceName: 'Plano Basic Fisioterapeuta',
+    serviceName: 'Plano Basic Mensal Fisioterapeuta',
     durationDays: 30,
   },
-  pro: {
+  pro_monthly: {
     stripePlan: 'pro',
-    planId: 'pro',
-    planVariant: 'pro',
+    planKey: 'pro_monthly',
+    planId: 'pro_monthly',
+    planVariant: 'pro_monthly',
     billingCycle: 'monthly',
     amount: 49.99,
     serviceName: 'Plano Pro Mensal Fisioterapeuta',
     durationDays: 30,
   },
-  pro_semiannual: {
+  pro_semester: {
     stripePlan: 'pro',
-    planId: 'pro_semiannual',
-    planVariant: 'pro_semiannual',
-    billingCycle: 'semiannual',
+    planKey: 'pro_semester',
+    planId: 'pro_semester',
+    planVariant: 'pro_semester',
+    billingCycle: 'semester',
     amount: 269.90,
     serviceName: 'Plano Pro Semestral Fisioterapeuta',
     durationDays: 180,
   },
-  pro_annual: {
+  pro_yearly: {
     stripePlan: 'pro',
-    planId: 'pro_annual',
-    planVariant: 'pro_annual',
-    billingCycle: 'annual',
+    planKey: 'pro_yearly',
+    planId: 'pro_yearly',
+    planVariant: 'pro_yearly',
+    billingCycle: 'yearly',
     amount: 499.90,
     serviceName: 'Plano Pro Anual Fisioterapeuta',
     durationDays: 365,
@@ -68,7 +73,7 @@ export default function Subscription() {
   const currentEffectivePlan = getEffectivePlan(profile, subscription);
   const isPro = hasPlanAccess(currentEffectivePlan, 'pro');
 
-  const handleUpgrade = async (method: 'payment' | 'key', selectedPlan: PlanId = 'pro') => {
+  const handleUpgrade = async (method: 'payment' | 'key', selectedPlan: PlanId = 'pro_monthly') => {
     const planConfig = PLAN_CONFIG[selectedPlan];
     const planType = planConfig.stripePlan;
     setLoading(true);
@@ -138,6 +143,7 @@ export default function Subscription() {
           user_id: profile.id,
           email: profile.email,
           plan: planType,
+          plan_key: planConfig.planKey,
           plan_id: planConfig.planId,
           plan_variant: planConfig.planVariant,
           billing_cycle: planConfig.billingCycle,
@@ -281,7 +287,7 @@ export default function Subscription() {
 
           {currentPlan !== 'basic' && currentPlan !== 'pro' ? (
             <button
-              onClick={() => handleUpgrade('payment', 'basic')}
+              onClick={() => handleUpgrade('payment', 'basic_monthly')}
               disabled={loading}
               className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
             >
@@ -297,7 +303,7 @@ export default function Subscription() {
         {/* Pro Monthly */}
         {[
           {
-            id: 'pro' as PlanId,
+            id: 'pro_monthly' as PlanId,
             title: 'Plano PRO Mensal',
             price: 'R$ 49,99',
             period: '/mês',
@@ -308,7 +314,7 @@ export default function Subscription() {
             buttonLabel: currentPlan === 'basic' ? 'Fazer Upgrade para PRO' : 'Assinar PRO Mensal',
           },
           {
-            id: 'pro_semiannual' as PlanId,
+            id: 'pro_semester' as PlanId,
             title: 'Plano PRO Semestral',
             price: 'R$ 269,90',
             period: '/semestre',
@@ -319,7 +325,7 @@ export default function Subscription() {
             buttonLabel: 'Assinar PRO Semestral',
           },
           {
-            id: 'pro_annual' as PlanId,
+            id: 'pro_yearly' as PlanId,
             title: 'Plano PRO Anual',
             price: 'R$ 499,90',
             period: '/ano',
@@ -352,7 +358,7 @@ export default function Subscription() {
                 <h3 className="text-lg font-black text-white px-4 py-1 bg-sky-500/20 text-sky-400 rounded-full inline-block flex items-center gap-2">
                   {plan.highlight ? <Sparkles size={16} /> : <Crown size={16} />} {plan.title}
                 </h3>
-                {currentPlan === 'pro' && plan.id === 'pro' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
+                {currentPlan === 'pro' && plan.id === 'pro_monthly' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black text-white tracking-tighter">{plan.price}</span>
@@ -420,14 +426,14 @@ export default function Subscription() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => handleUpgrade('key', 'basic')}
+                onClick={() => handleUpgrade('key', 'basic_monthly')}
                 disabled={loading || !proKey}
                 className="py-3 bg-white/5 border border-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 Ativar Basic
               </button>
               <button
-                onClick={() => handleUpgrade('key', 'pro')}
+                onClick={() => handleUpgrade('key', 'pro_monthly')}
                 disabled={loading || !proKey}
                 className="py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
