@@ -1767,22 +1767,13 @@ export default function PatientDetails() {
                       </div>
                       <p className="text-sm font-bold text-white truncate">{arq.nome_arquivo || 'Documento clínico'}</p>
                       <p className="text-xs font-bold text-slate-500 truncate mb-4">{formatDateBR(arq.created_at)}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openPatientArquivo(arq)}
-                          className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
-                        >
-                          <Eye size={14} /> Visualizar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openPatientArquivo(arq)}
-                          className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
-                        >
-                          <Download size={14} /> Abrir
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openPatientArquivo(arq)}
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
+                      >
+                        <Eye size={14} /> Visualizar documento
+                      </button>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         <button type="button" onClick={() => handleOpenEditArquivo(arq)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600/20 hover:text-blue-300 transition-all border border-white/5"><Edit3 size={12} /> Editar</button>
                         <button type="button" onClick={() => handleDeleteArquivo(arq.id)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-600/20 hover:text-red-300 transition-all border border-white/5"><Trash2 size={12} /> Apagar</button>
