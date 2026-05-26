@@ -42,6 +42,7 @@ import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import { isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
+import { generateEmailHTML } from '../services/emailTemplate';
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
@@ -835,7 +836,10 @@ export default function Profile() {
       const data = await invokeFunction('Send-email', {
         to: userData.email,
         subject: "Teste de Notificação - FisioCareHub",
-        html: `<h1>Olá ${userData.nome_completo || 'Usuário'}!</h1><p>Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`,
+        html: generateEmailHTML({
+          nome_do_usuario: userData.nome_completo || 'Usuário',
+          mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Teste de Notificação</h2><p style="margin:0;color:#475569;font-size:16px;line-height:26px;">Este é um e-mail de teste enviado via Supabase Edge Functions.</p>`
+        }),
         type: "email"
       });
 

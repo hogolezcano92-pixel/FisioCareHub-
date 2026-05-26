@@ -3,6 +3,7 @@ import { supabase, invokeFunction } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { Send, CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateEmailHTML } from '../services/emailTemplate';
 
 export default function TestEmail() {
   const [email, setEmail] = useState('');
@@ -26,16 +27,10 @@ export default function TestEmail() {
       const data = await invokeFunction('Send-email', {
         to: email,
         subject: "Teste de Notificação - FisioCareHub",
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-            <h2 style="color: #0ea5e9;">Notificação FisioCareHub</h2>
-            <p>Olá,</p>
-            <p>Este é um e-mail de teste enviado para verificar se a integração com o <strong>Resend</strong> via Supabase Edge Functions está funcionando corretamente.</p>
-            <p>Se você recebeu este e-mail, as notificações do sistema estão operacionais.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <p style="font-size: 12px; color: #64748b;">Enviado por FisioCareHub - ${new Date().toLocaleString()}</p>
-          </div>
-        `
+        html: generateEmailHTML({
+          nome_do_usuario: 'Usuário',
+          mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Notificação FisioCareHub</h2><p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:26px;">Este é um e-mail de teste enviado para verificar se a integração com o <strong>Resend</strong> via Supabase Edge Functions está funcionando corretamente.</p><p style="margin:0;color:#475569;font-size:16px;line-height:26px;">Se você recebeu este e-mail, as notificações do sistema estão operacionais.</p>`
+        })
       });
 
       setResult(data);
