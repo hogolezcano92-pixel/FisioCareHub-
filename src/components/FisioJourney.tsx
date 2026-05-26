@@ -54,6 +54,15 @@ const initialState: JourneyState = {
 
 const normalizeEmail = (value?: string | null) => value?.trim().toLowerCase() || '';
 const uniqueStrings = (values: any[]) => Array.from(new Set(values.filter(Boolean).map(String)));
+const uniqueByKey = (items: any[], getKey: (item: any) => string) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = getKey(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 const safeDate = (value: any) => {
   if (!value) return null;
   const date = new Date(value);
@@ -141,6 +150,7 @@ const getPhysioVisibleIds = async (targetPatientId: string, patient: any) => {
   return {
     visiblePatientIds: uniqueStrings([...baseIds, linkedProfile?.id]),
     clinicalPatientIds: uniqueStrings(clinicalIds),
+    emails: uniqueStrings([patientEmail]),
   };
 };
 
@@ -151,6 +161,7 @@ const getPatientModeVisibleIds = async (userId: string, email?: string | null) =
   return {
     visiblePatientIds: uniqueStrings(visiblePatientIds),
     clinicalPatientIds: uniqueStrings(linkedClinicalPatients.map((linked) => linked.id)),
+    emails: uniqueStrings([email, ...linkedClinicalPatients.map((linked) => linked.email)]).map((item) => normalizeEmail(item)),
   };
 };
 
@@ -178,35 +189,57 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       const clinicalPatientIds = ids.clinicalPatientIds.length > 0 ? ids.clinicalPatientIds : [targetPatientId];
       const allPatientIds = uniqueStrings([...visiblePatientIds, ...clinicalPatientIds]);
 
-      const [journalsResult, appointmentsResult, protocolsResult, directPrescriptionsResult, evolutionsResult, evaluationsResult, docsByIdResult] = await Promise.all([
-        supabase.from('registros_paciente').select('*').in('paciente_id', visiblePatientIds).order('data_registro', { ascending: false }).limit(30),
-        supabase.from('agendamentos').select('*').in('paciente_id', allPatientIds).order('data', { ascending: false }).limit(30),
-        supabase.from('protocolos_prescricao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(12),
-        supabase.from('exercicios_paciente').select('*, exercicio:exercicios(nome, descricao, objetivo_principal, imagem_url, video_url)').in('paciente_id', clinicalPatientIds).order('created_at', { ascending: false }).limit(80),
-        supabase.from('evolucoes').select('*').in('paciente_id', clinicalPatientIds).order('created_at', { ascending: false }).limit(20),
-        supabase.from('fichas_avaliacao').select('*').in('paciente_id', clinicalPatientIds).order('created_at', { ascending: false }).limit(10),
-        supabase.from('documentos_gerados').select('*').in('paciente_id', allPatientIds).order('criado_em', { ascending: false }).limit(12),
+      const [journalsResult, appointmentsResult, protocolsResult, directPrescriptionsResult, evolutionsResult, evaluationsResult, docsByIdResult, clinicalFilesResult] = await Promise.all([
+        supabase.from('registros_paciente').select('*').in('paciente_id', visiblePatientIds).order('data_registro', { ascending: false }).limit(60),
+        supabase.from('agendamentos').select('*').in('paciente_id', allPatientIds).order('data', { ascending: false }).limit(60),
+        supabase.from('protocolos_prescricao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(30),
+        // Exercícios rápidos prescritos na aba Meus Pacientes podem estar ligados ao ID clínico
+        // ou, em alguns fluxos antigos, ao ID da conta/perfil. Por isso buscamos em todos os IDs visíveis.
+        supabase.from('exercicios_paciente').select('*, exercicio:exercicios(nome, descricao, objetivo_principal, imagem_url, video_url)').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(120),
+        supabase.from('evolucoes').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(40),
+        supabase.from('fichas_avaliacao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(30),
+        supabase.from('documentos_gerados').select('*').in('paciente_id', allPatientIds).order('criado_em', { ascending: false }).limit(60),
+        supabase.from('arquivos_paciente').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(60),
       ]);
 
-      let documents = docsByIdResult.data || [];
-      const patientEmail = normalizeEmail(patient?.email || profile?.email || user?.email);
+      const emailsForDocuments = uniqueStrings([patient?.email, profile?.email, user?.email, ...(((ids as any).emails) || [])]).map((email) => normalizeEmail(email));
+      let generatedDocuments = docsByIdResult.data || [];
 
-      if ((docsByIdResult.error || documents.length === 0) && patientEmail) {
+      // Documentos gerados às vezes ficam vinculados por patient_email em vez de paciente_id.
+      // Juntamos os dois caminhos para a Jornada enxergar o mesmo que a aba Documentos.
+      if (emailsForDocuments.length > 0) {
         const { data: docsByEmail, error: docsByEmailError } = await supabase
           .from('documentos_gerados')
           .select('*')
-          .eq('patient_email', patientEmail)
+          .in('patient_email', emailsForDocuments)
           .order('criado_em', { ascending: false })
-          .limit(12);
+          .limit(60);
 
         if (!docsByEmailError && docsByEmail) {
-          documents = docsByEmail;
-        }
-
-        if (docsByEmailError) {
+          generatedDocuments = uniqueByKey([...generatedDocuments, ...docsByEmail], (doc) => `gerado-${doc.id || doc.source_id || doc.criado_em || doc.created_at}`);
+        } else if (docsByEmailError) {
           console.warn('Jornada: fallback por e-mail em documentos falhou:', docsByEmailError);
         }
       }
+
+      const clinicalFiles = (clinicalFilesResult.data || []).map((file: any) => {
+        const fileName = file.nome_arquivo || file.nome || file.titulo || file.name || file.file_name || file.filename || 'Arquivo clínico';
+        return {
+          ...file,
+          id: `arquivo-${file.id}`,
+          source_id: file.id,
+          title: fileName,
+          titulo: fileName,
+          type: file.tipo || file.categoria || 'Arquivo do prontuário',
+          description: file.observacoes || file.descricao || 'Arquivo anexado ao prontuário do paciente.',
+          descricao: file.observacoes || file.descricao || 'Arquivo anexado ao prontuário do paciente.',
+          criado_em: file.created_at || file.criado_em,
+          isClinicalFile: true,
+        };
+      });
+
+      const documents = uniqueByKey([...generatedDocuments, ...clinicalFiles], (doc) => `${doc.isClinicalFile ? 'arquivo' : 'gerado'}-${doc.source_id || doc.id || doc.criado_em || doc.created_at}`)
+        .sort((a, b) => latestDate(b) - latestDate(a));
 
       const protocols = protocolsResult.data || [];
       const protocolIds = protocols.map((protocol: any) => protocol.id).filter(Boolean);
@@ -217,7 +250,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
           .from('protocolo_itens')
           .select('*, exercicio:exercicios(nome, descricao, objetivo_principal, imagem_url, video_url)')
           .in('protocolo_id', protocolIds)
-          .limit(120);
+          .limit(200);
 
         protocolItems = itemsResult.data || [];
         if (itemsResult.error) console.warn('Jornada: protocolo_itens indisponível:', itemsResult.error);
@@ -231,6 +264,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
         evolutionsResult.error,
         evaluationsResult.error,
         docsByIdResult.error,
+        clinicalFilesResult.error,
       ]
         .filter(Boolean)
         .forEach((softError) => console.warn('Jornada carregada parcialmente:', softError));
@@ -380,8 +414,8 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
 
   if (loading) {
     return (
-      <div className="rounded-[2rem] border border-purple-100 bg-white p-8 shadow-sm">
-        <div className="flex items-center justify-center gap-3 text-purple-700 font-black">
+      <div className="rounded-[2rem] border border-violet-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center justify-center gap-3 text-violet-700 font-black">
           <Loader2 className="animate-spin" size={22} /> Carregando Jornada de Recuperação...
         </div>
       </div>
@@ -393,21 +427,21 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       <div className={cn(compact ? 'p-0' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8', 'space-y-6')}>
         {error && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{error}</div>}
 
-        <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-purple-100 bg-white p-5 md:p-7 shadow-[0_20px_70px_rgba(88,28,135,0.10)]">
+        <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 md:p-7 shadow-[0_20px_70px_rgba(88,28,135,0.10)]">
           <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-purple-100 blur-3xl" />
           <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <img src={patient?.avatar_url || patient?.foto_url || profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetPatientId}`} alt={patientName} className="h-16 w-16 rounded-2xl border-4 border-purple-100 object-cover shadow-sm" />
+              <img src={patient?.avatar_url || patient?.foto_url || profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetPatientId}`} alt={patientName} className="h-16 w-16 rounded-2xl border-4 border-violet-200 object-cover shadow-sm" />
               <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-purple-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-purple-700"><Sparkles size={12} /> FisioJourney</div>
-                <h1 className="text-2xl md:text-4xl font-black tracking-tight text-purple-800">Jornada de Recuperação</h1>
-                <p className="mt-1 text-sm md:text-base font-semibold text-slate-700">{isPhysioMode ? `Visão completa da evolução de ${patientName}.` : 'Acompanhe sua evolução de forma simples, visual e motivadora.'}</p>
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-violet-700"><Sparkles size={12} /> FisioJourney</div>
+                <h1 className="text-2xl md:text-4xl font-black tracking-tight text-violet-800">Jornada de Recuperação</h1>
+                <p className="mt-1 text-sm md:text-base font-bold text-slate-800">{isPhysioMode ? `Visão completa da evolução de ${patientName}.` : 'Acompanhe sua evolução de forma simples, visual e motivadora.'}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 rounded-[1.5rem] border border-purple-100 bg-purple-50/70 p-3 text-center">
-              <div><p className="text-2xl font-black text-purple-800">{metrics.progress}%</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Progresso</p></div>
-              <div className="border-x border-purple-100 px-3"><p className="text-2xl font-black text-purple-800">{metrics.currentPain ?? '-'}/10</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Dor atual</p></div>
-              <div><p className="text-2xl font-black text-purple-800">{metrics.exerciseAdherence}%</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Adesão</p></div>
+            <div className="grid grid-cols-3 gap-3 rounded-[1.5rem] border border-violet-200 bg-violet-50/70 p-3 text-center">
+              <div><p className="text-2xl font-black text-violet-800">{metrics.progress}%</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Progresso</p></div>
+              <div className="border-x border-violet-200 px-3"><p className="text-2xl font-black text-violet-800">{metrics.currentPain ?? '-'}/10</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Dor atual</p></div>
+              <div><p className="text-2xl font-black text-violet-800">{metrics.exerciseAdherence}%</p><p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Adesão</p></div>
             </div>
           </div>
         </motion.header>
@@ -417,46 +451,46 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Melhora da dor', value: `${metrics.painImprovement}%`, icon: HeartPulse, tone: 'text-rose-600 bg-rose-50 border-rose-100' },
-                { label: 'Sessões', value: metrics.completedAppointments, icon: Calendar, tone: 'text-purple-700 bg-purple-50 border-purple-100' },
+                { label: 'Sessões', value: metrics.completedAppointments, icon: Calendar, tone: 'text-violet-700 bg-violet-50 border-violet-200' },
                 { label: 'Exercícios', value: metrics.totalExercises, icon: Activity, tone: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
                 { label: 'Documentos', value: data.documents.length, icon: FileText, tone: 'text-blue-700 bg-blue-50 border-blue-100' },
               ].map((item) => (
-                <div key={item.label} className="rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm">
+                <div key={item.label} className="rounded-[1.5rem] border border-violet-200 bg-white p-4 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
                   <div className={cn('mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border', item.tone)}><item.icon size={22} /></div>
                   <p className="text-2xl font-black text-slate-950">{item.value}</p>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.label}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">{item.label}</p>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-[2rem] border border-purple-100 bg-white p-5 shadow-sm">
+            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-black text-purple-800">Linha do tempo clínica</h2>
-                  <p className="text-sm font-semibold text-slate-600">Tudo importante da recuperação em ordem cronológica.</p>
+                  <h2 className="text-xl font-black text-violet-800">Linha do tempo clínica</h2>
+                  <p className="text-sm font-bold text-slate-700">Tudo importante da recuperação em ordem cronológica.</p>
                 </div>
-                <Target className="text-purple-700" />
+                <Target className="text-violet-700" />
               </div>
               {timeline.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50 p-6 text-center">
-                  <p className="font-black text-purple-800">A jornada ainda está começando.</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-600">Conforme houver diário, exercícios, documentos e evoluções, tudo aparecerá aqui.</p>
+                <div className="rounded-2xl border border-dashed border-violet-300 bg-violet-50 p-6 text-center">
+                  <p className="font-black text-violet-800">A jornada ainda está começando.</p>
+                  <p className="mt-1 text-sm font-bold text-slate-700">Conforme houver diário, exercícios, documentos e evoluções, tudo aparecerá aqui.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {timeline.map((item, index) => (
                     <div key={`${item.type}-${item.date}-${index}`} className="relative flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-700 text-white shadow-sm"><item.icon size={20} /></div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-700 text-white shadow-sm"><item.icon size={20} /></div>
                         {index < timeline.length - 1 && <div className="mt-2 h-full min-h-8 w-px bg-purple-100" />}
                       </div>
-                      <div className="flex-1 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                          <p className="text-sm font-black text-purple-800">{item.type}</p>
-                          <p className="text-xs font-bold text-slate-500">{formatDateBR(new Date(item.date).toISOString())}</p>
+                          <p className="text-sm font-black text-violet-800">{item.type}</p>
+                          <p className="text-xs font-extrabold text-slate-700">{formatDateBR(new Date(item.date).toISOString())}</p>
                         </div>
                         <h3 className="mt-1 text-base font-black text-slate-950">{item.title}</h3>
-                        <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-700">{item.description}</p>
+                        <p className="mt-1 text-sm font-bold leading-relaxed text-slate-800">{item.description}</p>
                       </div>
                     </div>
                   ))}
@@ -464,15 +498,15 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               )}
             </div>
 
-            <div className="rounded-[2rem] border border-purple-100 bg-white p-5 shadow-sm">
+            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-700 text-white"><Sparkles size={22} /></div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-700 text-white"><Sparkles size={22} /></div>
                 <div>
-                  <h2 className="text-xl font-black text-purple-800">Resumo inteligente</h2>
-                  <p className="text-sm font-semibold text-slate-600">Leitura rápida para orientar a próxima conduta.</p>
+                  <h2 className="text-xl font-black text-violet-800">Resumo inteligente</h2>
+                  <p className="text-sm font-bold text-slate-700">Leitura rápida para orientar a próxima conduta.</p>
                 </div>
               </div>
-              <p className="rounded-2xl bg-purple-50 p-4 text-sm md:text-base font-semibold leading-relaxed text-slate-800">
+              <p className="rounded-2xl bg-violet-50 p-4 text-sm md:text-base font-semibold leading-relaxed text-slate-800">
                 {metrics.currentPain !== null
                   ? `Nos registros reais encontrados, a dor atual está em ${metrics.currentPain}/10${metrics.initialPain !== null ? `, saindo de ${metrics.initialPain}/10 no início` : ''}. A evolução estimada é de ${metrics.progress}% e a adesão registrada no diário está em ${metrics.exerciseAdherence}%. ${metrics.painImprovement > 0 ? 'Há sinal positivo de melhora; vale manter acompanhamento e progressão segura.' : 'Ainda há poucos sinais de melhora mensurável; vale reforçar registros, exercícios e reavaliação clínica.'}`
                   : 'Ainda faltam registros de dor para gerar uma leitura clínica mais precisa. Oriente o paciente a preencher o diário para enriquecer a jornada.'}
@@ -481,54 +515,54 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
           </div>
 
           <aside className="space-y-5">
-            <div className="rounded-[2rem] border border-purple-100 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-purple-800">Próximo passo</h2><Trophy className="text-purple-700" size={22} /></div>
+            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
+              <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-violet-800">Próximo passo</h2><Trophy className="text-violet-700" size={22} /></div>
               {metrics.nextAppointment ? (
-                <div className="rounded-2xl bg-purple-50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-purple-700">Próxima sessão</p>
+                <div className="rounded-2xl bg-violet-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-violet-700">Próxima sessão</p>
                   <p className="mt-2 text-xl font-black text-slate-950">{formatDateBR(metrics.nextAppointment.date.toISOString())}</p>
                   <p className="text-sm font-bold text-slate-700">{formatHourBR(metrics.nextAppointment.date.toISOString())}</p>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-purple-50 p-4">
+                <div className="rounded-2xl bg-violet-50 p-4">
                   <p className="font-black text-slate-950">Sem sessão futura registrada.</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-600">O próximo agendamento aparecerá aqui automaticamente.</p>
+                  <p className="mt-1 text-sm font-bold text-slate-700">O próximo agendamento aparecerá aqui automaticamente.</p>
                 </div>
               )}
             </div>
 
-            <div className="rounded-[2rem] border border-purple-100 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-purple-800">Alertas inteligentes</h2><Zap className="text-purple-700" size={22} /></div>
+            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
+              <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-black text-violet-800">Alertas inteligentes</h2><Zap className="text-violet-700" size={22} /></div>
               <div className="space-y-3">
                 {metrics.alerts.length === 0 ? (
                   <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
                     <div className="flex items-center gap-2 font-black text-emerald-800"><CheckCircle2 size={18} /> Tudo estável</div>
-                    <p className="mt-1 text-sm font-semibold text-slate-700">Nenhum alerta importante no momento.</p>
+                    <p className="mt-1 text-sm font-bold text-slate-800">Nenhum alerta importante no momento.</p>
                   </div>
                 ) : metrics.alerts.map((alert, index) => (
                   <div key={`${alert.title}-${index}`} className={cn('rounded-2xl border p-4', alert.type === 'danger' ? 'border-rose-100 bg-rose-50' : alert.type === 'success' ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50')}>
                     <div className={cn('flex items-center gap-2 font-black', alert.type === 'danger' ? 'text-rose-700' : alert.type === 'success' ? 'text-emerald-800' : 'text-amber-800')}>
                       {alert.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}{alert.title}
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-slate-700">{alert.detail}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-800">{alert.detail}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-purple-100 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-black text-purple-800">Ações rápidas</h2>
+            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
+              <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
               <div className="mt-4 grid gap-3">
-                {!isPhysioMode && <button onClick={() => navigate('/diario')} className="flex items-center justify-between rounded-2xl bg-purple-700 px-4 py-3 font-black text-white hover:bg-purple-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
-                <Link to={isPhysioMode ? `/patients/${targetPatientId}` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 font-black text-purple-800 hover:bg-purple-100 transition-all">
+                {!isPhysioMode && <button onClick={() => navigate('/diario')} className="flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
+                <Link to={isPhysioMode ? `/patients/${targetPatientId}` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
-                <Link to="/chat" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-950 hover:border-purple-200 transition-all">Mensagens <MessageCircle size={18} /></Link>
+                <Link to="/chat" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-950 hover:border-violet-300 transition-all">Mensagens <MessageCircle size={18} /></Link>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-purple-100 bg-purple-700 p-5 text-white shadow-sm">
-              <div className="flex items-center gap-3"><Users size={24} /><div><h2 className="text-lg font-black">Modo família</h2><p className="text-sm font-semibold text-purple-100">Preparado para uma próxima fase com convite seguro para cuidador/familiar.</p></div></div>
+            <div className="rounded-[2rem] border border-violet-200 bg-violet-700 p-5 text-white shadow-sm">
+              <div className="flex items-center gap-3"><Users size={24} /><div><h2 className="text-lg font-black">Modo família</h2><p className="text-sm font-semibold text-violet-100">Preparado para uma próxima fase com convite seguro para cuidador/familiar.</p></div></div>
             </div>
           </aside>
         </div>
