@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { generateFisioCareHubEmailHTML } from '../_shared/fisioEmailTemplate';
+import { generateFisioCareHubEmailHTML } from '../_shared/fisioEmailTemplate.js';
 
 const getEnv = (key: string, fallback = ''): string => {
   const value = process.env[key];
