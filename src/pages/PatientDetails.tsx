@@ -30,7 +30,7 @@ import {
   ClipboardList,
   ShieldCheck
 } from 'lucide-react';
-import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl, todayDateKeyBR, formatDateKeyBR } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { uploadPatientDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
@@ -834,7 +834,7 @@ export default function PatientDetails() {
       doc.text(physioName, margin, y + 5);
       doc.setFont('helvetica', 'normal');
       doc.text(`CREFITO: ${physioCrefito}`, margin, y + 10);
-      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, y + 15);
+      doc.text(`Data: ${formatDateKeyBR(todayDateKeyBR())}`, margin, y + 15);
 
       addFooter();
 

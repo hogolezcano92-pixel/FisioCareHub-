@@ -21,7 +21,7 @@ import {
   Zap,
   BarChart3
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 import { toast } from 'sonner';
 import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { 
@@ -163,7 +163,7 @@ export default function DailyJournal() {
       setHistory(data || []);
 
       // Se houver registro hoje, preencher os campos (opcional, para edição)
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayDateKeyBR();
       const todayEntry = data?.find(e => e.data_registro === today);
       if (todayEntry) {
         setPainLevel(todayEntry.nivel_dor);
@@ -193,7 +193,7 @@ export default function DailyJournal() {
 
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayDateKeyBR();
       const linkedPatients = user?.id
         ? await getLinkedClinicalPatients(user.id, user.email)
         : [];
@@ -233,7 +233,7 @@ export default function DailyJournal() {
 
   const chartData = useMemo(() => {
     return [...history].reverse().slice(-30).map(entry => ({
-      data: new Date(entry.data_registro).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      data: formatDateKeyBR(entry.data_registro),
       dor: entry.nivel_dor,
       adesao: (entry.concluidos_count / (entry.total_exercicios || 1)) * 100
     }));
@@ -242,7 +242,7 @@ export default function DailyJournal() {
   const weeklyAdherence = useMemo(() => {
     const last7Days = history.slice(0, 7).reverse();
     return last7Days.map(entry => ({
-      day: new Date(entry.data_registro).toLocaleDateString('pt-BR', { weekday: 'short' }),
+      day: formatDateKeyBR(entry.data_registro),
       completed: entry.concluidos_count,
       total: entry.total_exercicios
     }));
@@ -468,7 +468,7 @@ export default function DailyJournal() {
                      >
                         <div className="flex items-center justify-between mb-3">
                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                              {new Date(entry.data_registro).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                              {formatDateKeyBR(entry.data_registro)}
                            </span>
                            <span className="text-lg">{PAIN_LEVELS.find(l => l.value === entry.nivel_dor)?.emoji || '❓'}</span>
                         </div>
@@ -493,7 +493,7 @@ export default function DailyJournal() {
                                 <div className="flex items-center gap-1.5 text-emerald-500">
                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                                    <span className="text-[10px] font-black uppercase tracking-tighter">
-                                      Visualizado {physioName ? `por ${physioName}` : ''} em {new Date(entry.visualizado_em).toLocaleDateString()}
+                                      Visualizado {physioName ? `por ${physioName}` : ''} em {formatDateKeyBR(entry.visualizado_em)}
                                    </span>
                                 </div>
                               ) : (

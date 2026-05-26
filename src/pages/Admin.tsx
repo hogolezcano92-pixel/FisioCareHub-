@@ -1978,7 +1978,7 @@ export default function Admin() {
                           return (
                             <tr key={s.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                               <td className="px-8 py-5 text-sm font-bold text-[var(--text)]">
-                                {new Date(s.data).toLocaleDateString('pt-BR')} {s.hora}
+                                {formatDateKeyBR(s.data)} {s.hora}
                               </td>
                               <td className="px-8 py-5">
                                 <p className="text-sm font-bold text-[var(--text)]">{s.paciente?.nome_completo}</p>
@@ -2321,7 +2321,7 @@ export default function Admin() {
                               </div>
                               <div>
                                 <p className="text-base font-black text-[var(--white)] tracking-tight">{u.nome_completo}</p>
-                                <p className="text-[10px] text-[var(--text-2)] font-black uppercase tracking-widest">Cadastrado em {u.created_at ? new Date(u.created_at).toLocaleDateString() : '---'}</p>
+                                <p className="text-[10px] text-[var(--text-2)] font-black uppercase tracking-widest">Cadastrado em {u.created_at ? formatDateKeyBR(u.created_at) : '---'}</p>
                               </div>
                             </div>
                           </td>
@@ -2767,7 +2767,7 @@ export default function Admin() {
                       {filteredWithdrawals.map((w) => (
                           <tr key={w.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                             <td className="px-8 py-5 text-sm font-bold text-[var(--text)] uppercase tabular-nums">
-                              {new Date(w.created_at).toLocaleDateString('pt-BR')}
+                              {formatDateKeyBR(w.created_at)}
                             </td>
                             <td className="px-8 py-5">
                               <p className="text-sm font-bold text-[var(--text)]">{w.fisioterapeuta?.nome_completo}</p>
@@ -2806,7 +2806,7 @@ export default function Admin() {
                               )}
                               {w.status !== 'pendente' && (
                                 <span className="text-[10px] font-bold text-[var(--text-2)] italic uppercase">
-                                  {w.processado_em ? `${t('admin.withdrawals.processed_at', 'Proc. em')} ${new Date(w.processado_em).toLocaleDateString('pt-BR')}` : t('admin.withdrawals.finished', 'Finalizado')}
+                                  {w.processado_em ? `${t('admin.withdrawals.processed_at', 'Proc. em')} ${formatDateKeyBR(w.processado_em)}` : t('admin.withdrawals.finished', 'Finalizado')}
                                 </span>
                               )}
                             </td>
@@ -2899,7 +2899,7 @@ export default function Admin() {
                             </div>
                             <p className="text-[var(--text-2)] text-sm leading-relaxed max-w-2xl">{notification.mensagem}</p>
                             <p className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-widest pt-2">
-                              {new Date(notification.created_at).toLocaleDateString('pt-BR')} às {new Date(notification.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              {formatDateTimeBR(notification.created_at)}
                             </p>
                           </div>
                         </div>
@@ -3005,7 +3005,7 @@ export default function Admin() {
                               </select>
                             </td>
                             <td className="px-8 py-5 text-[10px] text-[var(--text-2)] font-bold">
-                              {new Date(t.criado_em).toLocaleDateString('pt-BR')}
+                              {formatDateKeyBR(t.criado_em)}
                             </td>
                             <td className="px-8 py-5 text-right">
                               <button 

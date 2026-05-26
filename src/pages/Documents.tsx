@@ -38,6 +38,7 @@ import { getLinkedClinicalPatients } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
+import { formatDateKeyBR, formatDateTimeBR, todayDateKeyBR } from '../lib/utils';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -550,7 +551,7 @@ export default function Documents() {
         new Paragraph({
           children: [
             new TextRun({ text: "Data: ", bold: true }),
-            new TextRun(new Date(doc.criado_em || new Date()).toLocaleString('pt-BR')),
+            new TextRun(formatDateTimeBR(doc.criado_em || todayDateKeyBR())),
           ],
           spacing: { after: 400 },
         }),
@@ -572,7 +573,7 @@ export default function Documents() {
           });
         }),
         new Paragraph({
-          text: `Documento oficial gerado via FisioCareHub em ${new Date().toLocaleDateString()}`,
+          text: `Documento oficial gerado via FisioCareHub em ${formatDateKeyBR(todayDateKeyBR())}`,
           alignment: AlignmentType.CENTER,
           spacing: { before: 800 },
           border: { top: { color: "000000", space: 1, style: BorderStyle.SINGLE, size: 6 } },
@@ -1253,7 +1254,7 @@ export default function Documents() {
                       </p>
                       {!isPhysio && !doc.isClinicalFile && (
                         <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black mt-2 uppercase tracking-widest' : 'text-amber-400 text-[10px] font-black mt-2 uppercase tracking-widest'}>
-                          {doc.accepted_at ? `Aceito em ${new Date(doc.accepted_at).toLocaleDateString('pt-BR')}` : (doc.acceptance_required ? 'Aceite pendente' : 'Leitura disponível')}
+                          {doc.accepted_at ? `Aceito em ${formatDateKeyBR(doc.accepted_at)}` : (doc.acceptance_required ? 'Aceite pendente' : 'Leitura disponível')}
                         </p>
                       )}
                     </div>
@@ -1359,7 +1360,7 @@ export default function Documents() {
                           <span className="font-bold text-white">{getDocumentTitle(doc)}</span>
                           {!isPhysio && !doc.isClinicalFile && (
                             <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1' : 'text-amber-400 text-[10px] font-black uppercase tracking-widest mt-1'}>
-                              {doc.accepted_at ? `Aceito em ${new Date(doc.accepted_at).toLocaleDateString('pt-BR')}` : (doc.acceptance_required ? 'Aceite pendente' : 'Disponível')}
+                              {doc.accepted_at ? `Aceito em ${formatDateKeyBR(doc.accepted_at)}` : (doc.acceptance_required ? 'Aceite pendente' : 'Disponível')}
                             </p>
                           )}
                         </div>
@@ -1529,7 +1530,7 @@ export default function Documents() {
                           >
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-black text-white">{new Date(record.created_at).toLocaleDateString('pt-BR')}</span>
+                                <span className="text-sm font-black text-white">{formatDateKeyBR(record.created_at)}</span>
                                 {record.integrity_hash && (
                                   <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-full border border-emerald-500/20">Hash Ativo</span>
                                 )}
