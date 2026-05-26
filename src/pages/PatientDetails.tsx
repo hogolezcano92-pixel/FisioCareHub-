@@ -251,8 +251,8 @@ export default function PatientDetails() {
         await checkPatientAccessStatus(patient);
       }
     } catch (err: any) {
-      console.error('Erro ao liberar acesso do paciente:', err);
-      toast.error(getSupabaseErrorMessage(err, 'Não foi possível liberar acesso para este paciente.'));
+      console.error('Erro ao enviar convite para o paciente:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Não foi possível enviar o convite para este paciente.'));
     } finally {
       setInvitingPatientAccess(false);
     }
@@ -1081,7 +1081,7 @@ export default function PatientDetails() {
                 className="px-6 py-2 bg-emerald-600/20 text-emerald-400 rounded-2xl hover:bg-emerald-600/30 transition-all border border-emerald-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2 disabled:opacity-60"
               >
                 {invitingPatientAccess ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                Liberar Acesso
+                Enviar Convite
               </button>
             )}
           </ProGuard>
