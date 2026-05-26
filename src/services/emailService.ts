@@ -4,7 +4,7 @@
  */
 
 import { invokeFunction } from '../lib/supabase.ts';
-import { escapeHtml, generateEmailHTML } from './emailTemplate.ts';
+import { escapeHtml, generateEmailHTML, generateFisioCareHubEmailHTML } from './emailTemplate.ts';
 export { generateEmailHTML };
 
 /**
@@ -18,34 +18,52 @@ export const sendWelcomeEmail = async (email: string, name: string, role: 'pacie
     return { success: false, error: 'Email não fornecido' };
   }
 
-  const safeName = escapeHtml(name);
+  const isProfessional = role === 'fisioterapeuta';
 
-  const welcomeMessage = role === 'fisioterapeuta'
-    ? `
-      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Cadastro profissional recebido!</h2>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${safeName}</strong>. Seja bem-vindo à rede de profissionais do <strong>FisioCareHub</strong>.</p>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seu cadastro profissional foi recebido com sucesso e agora está em análise pela nossa equipe.</p>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Seus documentos e informações serão revisados para garantir mais segurança aos pacientes e à plataforma.</p>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Assim que seu perfil for aprovado, você receberá uma confirmação por e-mail e poderá acessar os recursos profissionais do FisioCareHub, incluindo sua área de atendimentos, pacientes e ferramentas inteligentes.</p>
-      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Obrigado por escolher fazer parte do <strong>FisioCareHub</strong>.</p>
-    `
-    : `
-      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#2563eb; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Sua jornada de recuperação começa aqui!</h2>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Estamos felizes em acompanhar você no seu processo de reabilitação através do <strong>FisioCareHub</strong>.</p>
-      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Acesse o app para visualizar seus exercícios e acompanhar sua evolução.</p>
-    `;
-
-  const html = generateEmailHTML({
-    nome_do_usuario: name,
-    mensagem_principal_da_notificacao: welcomeMessage
-  });
+  const html = isProfessional
+    ? generateFisioCareHubEmailHTML({
+        title: 'Cadastro profissional em análise',
+        subtitle: 'Recebemos seu cadastro e nossa equipe fará a revisão das informações profissionais.',
+        preheader: 'Seu cadastro profissional foi recebido e está em análise no FisioCareHub.',
+        greetingName: name,
+        variant: 'approval',
+        contentHtml: `
+          <p style="margin:0 0 14px;">Obrigado por escolher fazer parte da rede de profissionais do <strong>FisioCareHub</strong>.</p>
+          <p style="margin:0 0 14px;">Seu cadastro foi recebido com sucesso e agora está em análise administrativa. Essa etapa ajuda a manter a plataforma mais segura para pacientes e profissionais.</p>
+          <p style="margin:0;">Assim que seu perfil for aprovado, você receberá um novo e-mail de confirmação e poderá acessar os recursos profissionais, como agenda, pacientes, prontuário, documentos e ferramentas de atendimento.</p>
+        `,
+        details: [
+          { label: 'Tipo de conta', value: 'Profissional de fisioterapia' },
+          { label: 'Status', value: 'Cadastro em análise' },
+          { label: 'Próximo passo', value: 'Aguardar revisão da equipe FisioCareHub' },
+        ],
+        ctas: [{ label: 'Acessar minha conta', href: 'https://fisiocarehub.company/profile' }],
+      })
+    : generateFisioCareHubEmailHTML({
+        title: 'Bem-vindo ao FisioCareHub',
+        subtitle: 'Sua área do paciente foi criada para acompanhar sua recuperação com mais organização e cuidado.',
+        preheader: 'Sua conta de paciente no FisioCareHub foi criada com sucesso.',
+        greetingName: name,
+        variant: 'invite',
+        contentHtml: `
+          <p style="margin:0 0 14px;">Sua conta foi criada com sucesso. A partir de agora, você poderá acompanhar sua jornada de reabilitação em um só lugar.</p>
+          <p style="margin:0 0 14px;">Pelo app, você pode visualizar agendamentos, exercícios prescritos, documentos, orientações e sua evolução durante o tratamento.</p>
+          <p style="margin:0;">Sempre que houver uma atualização importante, enviaremos uma notificação para manter você informado.</p>
+        `,
+        details: [
+          { label: 'Tipo de conta', value: 'Paciente' },
+          { label: 'Recursos disponíveis', value: 'Agendamentos, exercícios, documentos e orientações' },
+          { label: 'Status', value: 'Conta criada com sucesso' },
+        ],
+        ctas: [{ label: 'Acessar minha área', href: 'https://fisiocarehub.company' }],
+      });
 
   try {
     console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for ${email}`);
     const result = await invokeFunction('Send-email', {
       to: email,
-      subject: role === 'fisioterapeuta'
-        ? `Cadastro profissional recebido - FisioCareHub`
+      subject: isProfessional
+        ? 'Cadastro profissional em análise - FisioCareHub'
         : `Bem-vindo ao FisioCareHub - ${name}`,
       html
     });
@@ -69,28 +87,49 @@ export const sendProfessionalApprovalEmail = async (email: string, name: string,
     return { success: false, error: 'Email não fornecido' };
   }
 
-  const message = approved
-    ? `
-      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#10b981; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Perfil Aprovado!</h2>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Parabéns, <strong>${escapeHtml(name)}</strong>! Seu perfil de fisioterapeuta foi revisado e aprovado com sucesso.</p>
-      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Agora você já pode aceitar solicitações de pacientes e gerenciar seus atendimentos.</p>
-    `
-    : `
-      <h2 style="font-family:Arial, Helvetica, sans-serif; color:#ef4444; margin:0 0 18px 0; font-size:24px; line-height:31px; font-weight:800;">Perfil não aprovado</h2>
-      <p style="margin:0 0 16px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Olá, <strong>${escapeHtml(name)}</strong>. Infelizmente seu perfil não pôde ser aprovado no momento.</p>
-      <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569;">Por favor, entre em contato com nosso suporte para mais detalhes.</p>
-    `;
-
-  const html = generateEmailHTML({
-    nome_do_usuario: name,
-    mensagem_principal_da_notificacao: message
-  });
+  const html = approved
+    ? generateFisioCareHubEmailHTML({
+        title: 'Perfil profissional aprovado',
+        subtitle: 'Seu cadastro foi aprovado e sua área profissional já está liberada.',
+        preheader: 'Seu perfil profissional foi aprovado no FisioCareHub.',
+        greetingName: name,
+        variant: 'approval',
+        contentHtml: `
+          <p style="margin:0 0 14px;">Parabéns! Seu perfil de fisioterapeuta foi revisado e aprovado com sucesso.</p>
+          <p style="margin:0 0 14px;">Agora você já pode configurar seus serviços, organizar sua agenda, acompanhar pacientes e utilizar as ferramentas clínicas do FisioCareHub.</p>
+          <p style="margin:0;">Recomendamos revisar seu perfil profissional antes de começar a receber novos pacientes.</p>
+        `,
+        details: [
+          { label: 'Tipo de conta', value: 'Profissional de fisioterapia' },
+          { label: 'Status', value: 'Aprovado' },
+          { label: 'Próximo passo', value: 'Configurar agenda, serviços e perfil profissional' },
+        ],
+        ctas: [{ label: 'Acessar área profissional', href: 'https://fisiocarehub.company/profile' }],
+      })
+    : generateFisioCareHubEmailHTML({
+        title: 'Atualização do cadastro profissional',
+        subtitle: 'Seu cadastro foi revisado e precisa de atenção antes da aprovação.',
+        preheader: 'Há uma atualização sobre seu cadastro profissional no FisioCareHub.',
+        greetingName: name,
+        variant: 'support',
+        contentHtml: `
+          <p style="margin:0 0 14px;">Após análise, seu perfil profissional ainda não pôde ser aprovado no momento.</p>
+          <p style="margin:0 0 14px;">Revise seus dados e documentos no app. Se precisar de ajuda, entre em contato com o suporte do FisioCareHub.</p>
+          <p style="margin:0;">Depois dos ajustes, seu cadastro poderá passar por nova análise.</p>
+        `,
+        details: [
+          { label: 'Tipo de conta', value: 'Profissional de fisioterapia' },
+          { label: 'Status', value: 'Necessita revisão' },
+          { label: 'Próximo passo', value: 'Revisar dados/documentos ou falar com suporte' },
+        ],
+        ctas: [{ label: 'Acessar cadastro', href: 'https://fisiocarehub.company/profile' }],
+      });
 
   try {
     console.log(`[EmailService] [FLOW-AUDIT] Invoking Edge Function 'Send-email' for professional ${approved ? 'approval' : 'rejection'}`);
     await invokeFunction('Send-email', {
       to: email,
-      subject: approved ? 'Perfil Aprovado - FisioCareHub' : 'Atualização de Cadastro - FisioCareHub',
+      subject: approved ? 'Perfil profissional aprovado - FisioCareHub' : 'Atualização do cadastro profissional - FisioCareHub',
       html
     });
     console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Professional email sent to ${email}`);
