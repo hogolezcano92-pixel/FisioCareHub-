@@ -391,8 +391,13 @@ function addNoticeBox(doc: jsPDF, y: number, payload: PdfDocumentPayload, profil
 
 function drawSection(doc: jsPDF, title: string, body: string, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, accent: Rgb, documentId: string) {
   const cleanBody = safe(body, 'Não informado');
-  const lines = doc.splitTextToSize(cleanBody, CONTENT_W - 17);
-  const h = Math.max(24, 16 + lines.length * 4.6);
+  const textX = MARGIN + 12;
+  const textW = CONTENT_W - 22;
+  const titleLines = doc.splitTextToSize(safe(title, 'Conteúdo do documento'), textW);
+  const lines = doc.splitTextToSize(cleanBody, textW);
+  const titleBlockH = titleLines.length * 4.6;
+  const bodyY = 10.5 + titleBlockH + 3.5;
+  const h = Math.max(24, bodyY + lines.length * 4.6 + 5);
   y = ensureSpace(doc, y, h + 8, payload, profile, documentId);
 
   setColor(doc, COLORS.white, 'fill');
@@ -405,12 +410,12 @@ function drawSection(doc: jsPDF, title: string, body: string, y: number, payload
   setColor(doc, COLORS.navy);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.2);
-  doc.text(title, MARGIN + 12, y + 9.5);
+  doc.text(titleLines, textX, y + 9.5, { maxWidth: textW });
 
   setColor(doc, COLORS.slate);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.4);
-  doc.text(lines, MARGIN + 12, y + 17, { maxWidth: CONTENT_W - 17 });
+  doc.text(lines, textX, y + bodyY, { maxWidth: textW });
 
   return y + h + 8;
 }
