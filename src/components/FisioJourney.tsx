@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Activity,
@@ -21,8 +21,9 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
-import { formatDateBR, formatHourBR } from '../utils/date';
+import { formatDateBR, formatHourBR, todayDateKeyBR } from '../utils/date';
 import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
+import { toast } from 'sonner';
 
 type JourneyMode = 'patient' | 'physio';
 type JourneyProps = { patientId?: string; patient?: any; mode?: JourneyMode; compact?: boolean };
@@ -167,10 +168,15 @@ const getPatientModeVisibleIds = async (userId: string, email?: string | null) =
 
 export default function FisioJourney({ patientId, patient, mode = 'patient', compact = false }: JourneyProps) {
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
   const [data, setData] = useState<JourneyState>(initialState);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [checkinPain, setCheckinPain] = useState<number | null>(null);
+  const [checkinExerciseStatus, setCheckinExerciseStatus] = useState<'todos' | 'parcial' | 'nao'>('todos');
+  const [checkinMood, setCheckinMood] = useState<'melhor' | 'igual' | 'pior'>('igual');
+  const [checkinNotes, setCheckinNotes] = useState('');
+  const [savingCheckin, setSavingCheckin] = useState(false);
   const targetPatientId = patientId || patient?.id || user?.id || '';
   const isPhysioMode = mode === 'physio';
 
@@ -293,6 +299,70 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
     loadJourney();
   }, [loadJourney]);
 
+  const handleSaveCheckin = useCallback(async () => {
+    if (isPhysioMode) return;
+
+    if (!user?.id) {
+      toast.error('Faça login novamente para registrar sua evolução.');
+      return;
+    }
+
+    if (checkinPain === null) {
+      toast.error('Selecione sua dor de hoje para salvar o check-in.');
+      return;
+    }
+
+    setSavingCheckin(true);
+
+    try {
+      const linkedPatients = await getLinkedClinicalPatients(user.id, profile?.email || user.email);
+      const linkedClinicalPatient = linkedPatients[0];
+      const prescribedTotal = data.protocolItems.length + data.directPrescriptions.length;
+      const totalExercises = prescribedTotal > 0 ? prescribedTotal : 1;
+      const completedExercises = checkinExerciseStatus === 'todos'
+        ? totalExercises
+        : checkinExerciseStatus === 'parcial'
+          ? Math.max(1, Math.floor(totalExercises / 2))
+          : 0;
+
+      const moodLabel = checkinMood === 'melhor' ? 'melhor que antes' : checkinMood === 'pior' ? 'pior que antes' : 'igual/estável';
+      const exerciseLabel = checkinExerciseStatus === 'todos' ? 'fez todos os exercícios' : checkinExerciseStatus === 'parcial' ? 'fez parte dos exercícios' : 'não fez os exercícios';
+      const notes = [
+        `Check-in da Jornada: paciente se sente ${moodLabel} e ${exerciseLabel}.`,
+        checkinNotes.trim(),
+      ].filter(Boolean).join(' ');
+
+      const entryData = {
+        paciente_id: user.id,
+        fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+        nivel_dor: checkinPain,
+        exercicios_concluidos: [
+          { id: 'fisiojourney-checkin', name: 'Check-in da Jornada', completed: checkinExerciseStatus === 'todos' },
+        ],
+        total_exercicios: totalExercises,
+        concluidos_count: completedExercises,
+        notas: notes,
+        data_registro: todayDateKeyBR(),
+      };
+
+      const { error: saveError } = await supabase
+        .from('registros_paciente')
+        .upsert(entryData, { onConflict: 'paciente_id,data_registro' });
+
+      if (saveError) throw saveError;
+
+      toast.success('Evolução registrada na Jornada.');
+      setCheckinOpen(false);
+      setCheckinNotes('');
+      await loadJourney();
+    } catch (err) {
+      console.error('Erro ao salvar check-in da Jornada:', err);
+      toast.error('Não foi possível salvar o check-in agora.');
+    } finally {
+      setSavingCheckin(false);
+    }
+  }, [checkinExerciseStatus, checkinMood, checkinNotes, checkinPain, data.directPrescriptions.length, data.protocolItems.length, isPhysioMode, loadJourney, profile?.email, user]);
+
   const metrics = useMemo(() => {
     const painEntries = [...data.journals, ...data.evolutions, ...data.evaluations]
       .map((entry) => ({ ...entry, pain: getPainValue(entry), date: latestDate(entry) }))
@@ -365,6 +435,46 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
     };
   }, [data]);
 
+  const patientName = patient?.nome_completo || profile?.nome_completo || 'Paciente';
+
+  const smartSummary = useMemo(() => {
+    const hasPainData = metrics.currentPain !== null;
+    const trend = metrics.painImprovement >= 25
+      ? 'evolução positiva da dor'
+      : metrics.painImprovement > 0
+        ? 'melhora discreta da dor'
+        : hasPainData
+          ? 'dor ainda sem melhora mensurável'
+          : 'poucos registros de dor';
+    const adherenceStatus = metrics.exerciseAdherence >= 75
+      ? 'boa adesão aos exercícios'
+      : metrics.exerciseAdherence >= 40
+        ? 'adesão parcial aos exercícios'
+        : metrics.totalExercises > 0
+          ? 'adesão baixa ou ainda pouco registrada'
+          : 'sem exercícios vinculados encontrados';
+    const priority = metrics.alerts.some((alert) => alert.type === 'danger')
+      ? 'Revisar dor e sintomas antes de progredir carga.'
+      : metrics.exerciseAdherence < 40 && metrics.totalExercises > 0
+        ? 'Reforçar orientação e simplificar o plano para melhorar adesão.'
+        : metrics.progress >= 60
+          ? 'Manter progressão gradual e registrar novos objetivos funcionais.'
+          : 'Coletar mais registros para deixar a leitura clínica mais precisa.';
+
+    const mainText = hasPainData
+      ? `Análise inteligente: ${patientName} apresenta ${trend}, com dor atual em ${metrics.currentPain}/10${metrics.initialPain !== null ? ` e dor inicial de ${metrics.initialPain}/10` : ''}. A Jornada encontrou ${metrics.completedAppointments} sessão(ões), ${metrics.totalExercises} exercício(s) vinculado(s), ${data.documents.length} documento(s) e ${adherenceStatus}. ${priority}`
+      : `Análise inteligente: ainda não há registros suficientes de dor para uma leitura clínica completa. A Jornada já encontrou ${metrics.completedAppointments} sessão(ões), ${metrics.totalExercises} exercício(s) e ${data.documents.length} documento(s). ${priority}`;
+
+    const insights = [
+      metrics.currentPain !== null ? `Dor atual: ${metrics.currentPain}/10` : 'Registrar dor diariamente melhora a precisão da análise.',
+      metrics.painImprovement > 0 ? `Melhora estimada da dor: ${metrics.painImprovement}%` : 'Sem melhora de dor mensurável ainda.',
+      metrics.exerciseAdherence > 0 ? `Adesão registrada: ${metrics.exerciseAdherence}%` : 'Adesão ainda sem registros suficientes.',
+      metrics.nextAppointment ? 'Há uma próxima sessão registrada.' : 'Nenhuma sessão futura encontrada na Jornada.',
+    ];
+
+    return { mainText, insights, priority };
+  }, [data.documents.length, metrics, patientName]);
+
   const timeline = useMemo(() => [
     ...data.evaluations.map((item) => ({
       type: 'Avaliação',
@@ -410,8 +520,6 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
     })),
   ].filter((item) => item.date > 0).sort((a, b) => b.date - a.date).slice(0, compact ? 4 : 8), [data, compact]);
 
-  const patientName = patient?.nome_completo || profile?.nome_completo || 'Paciente';
-
   if (loading) {
     return (
       <div className="rounded-[2rem] border border-violet-200 bg-white p-8 shadow-sm">
@@ -425,6 +533,112 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
   return (
     <section className="min-h-full bg-white text-slate-950">
       <div className={cn(compact ? 'p-0' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8', 'space-y-6')}>
+        {checkinOpen && !isPhysioMode && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-4 sm:items-center">
+            <div className="w-full max-w-xl rounded-[2rem] border border-violet-200 bg-white p-5 shadow-2xl">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-700">Diário inteligente</p>
+                  <h2 className="mt-1 text-2xl font-black text-violet-800">Registrar evolução de hoje</h2>
+                  <p className="mt-1 text-sm font-bold text-slate-700">Esse check-in alimenta a Jornada, os alertas e o resumo inteligente.</p>
+                </div>
+                <button type="button" onClick={() => setCheckinOpen(false)} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-black text-slate-700">Fechar</button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm font-black text-slate-900">Dor hoje</label>
+                    <span className="text-lg font-black text-violet-800">{checkinPain ?? '-'}/10</span>
+                  </div>
+                  <div className="grid grid-cols-11 gap-1">
+                    {Array.from({ length: 11 }, (_, value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setCheckinPain(value)}
+                        className={cn(
+                          'rounded-xl border px-0 py-2 text-xs font-black transition-all',
+                          checkinPain === value ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-100 bg-violet-50 text-violet-800 hover:bg-violet-100'
+                        )}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-black text-slate-900">Exercícios de hoje</label>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'todos', label: 'Fiz todos' },
+                      { value: 'parcial', label: 'Parcial' },
+                      { value: 'nao', label: 'Não fiz' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setCheckinExerciseStatus(option.value as 'todos' | 'parcial' | 'nao')}
+                        className={cn(
+                          'rounded-2xl border px-3 py-3 text-sm font-black transition-all',
+                          checkinExerciseStatus === option.value ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-100 bg-white text-slate-800 hover:bg-violet-50'
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-black text-slate-900">Como você se sente em relação ao último registro?</label>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'melhor', label: 'Melhor' },
+                      { value: 'igual', label: 'Igual' },
+                      { value: 'pior', label: 'Pior' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setCheckinMood(option.value as 'melhor' | 'igual' | 'pior')}
+                        className={cn(
+                          'rounded-2xl border px-3 py-3 text-sm font-black transition-all',
+                          checkinMood === option.value ? 'border-violet-700 bg-violet-700 text-white' : 'border-violet-100 bg-white text-slate-800 hover:bg-violet-50'
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-black text-slate-900">Observações rápidas</label>
+                  <textarea
+                    value={checkinNotes}
+                    onChange={(event) => setCheckinNotes(event.target.value)}
+                    rows={4}
+                    className="mt-2 w-full rounded-2xl border border-violet-100 bg-white p-3 text-sm font-semibold text-slate-900 outline-none ring-violet-200 placeholder:text-slate-400 focus:ring-4"
+                    placeholder="Ex.: senti menos dor ao levantar, tive dificuldade no agachamento..."
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveCheckin}
+                  disabled={savingCheckin}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-700 px-5 py-4 text-sm font-black text-white transition-all hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {savingCheckin && <Loader2 className="animate-spin" size={18} />}
+                  Salvar check-in na Jornada
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{error}</div>}
 
         <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 md:p-7 shadow-[0_20px_70px_rgba(88,28,135,0.10)]">
@@ -506,11 +720,16 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                   <p className="text-sm font-bold text-slate-700">Leitura rápida para orientar a próxima conduta.</p>
                 </div>
               </div>
-              <p className="rounded-2xl bg-violet-50 p-4 text-sm md:text-base font-semibold leading-relaxed text-slate-800">
-                {metrics.currentPain !== null
-                  ? `Nos registros reais encontrados, a dor atual está em ${metrics.currentPain}/10${metrics.initialPain !== null ? `, saindo de ${metrics.initialPain}/10 no início` : ''}. A evolução estimada é de ${metrics.progress}% e a adesão registrada no diário está em ${metrics.exerciseAdherence}%. ${metrics.painImprovement > 0 ? 'Há sinal positivo de melhora; vale manter acompanhamento e progressão segura.' : 'Ainda há poucos sinais de melhora mensurável; vale reforçar registros, exercícios e reavaliação clínica.'}`
-                  : 'Ainda faltam registros de dor para gerar uma leitura clínica mais precisa. Oriente o paciente a preencher o diário para enriquecer a jornada.'}
-              </p>
+              <div className="rounded-2xl bg-violet-50 p-4">
+                <p className="text-sm md:text-base font-semibold leading-relaxed text-slate-900">{smartSummary.mainText}</p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {smartSummary.insights.map((insight) => (
+                    <div key={insight} className="rounded-xl border border-violet-100 bg-white px-3 py-2 text-xs font-black text-slate-800">
+                      {insight}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -553,7 +772,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
             <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
               <div className="mt-4 grid gap-3">
-                {!isPhysioMode && <button onClick={() => navigate('/diario')} className="flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
+                {!isPhysioMode && <button onClick={() => setCheckinOpen(true)} className="flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
                 <Link to={isPhysioMode ? `/patients/${targetPatientId}` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
