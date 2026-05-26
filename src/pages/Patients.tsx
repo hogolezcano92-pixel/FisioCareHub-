@@ -98,24 +98,143 @@ export default function Patients() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('DEBUG: Buscando pacientes para o fisioterapeuta:', user?.id);
-      const { data, error: supabaseError } = await supabase
+      if (!user?.id) {
+        setPatients([]);
+        return;
+      }
+
+      console.log('DEBUG: Buscando pacientes para o fisioterapeuta:', user.id);
+
+      const { data: clinicalPatients, error: supabaseError } = await supabase
         .from('pacientes')
         .select('*')
-        .eq('fisioterapeuta_id', user?.id)
+        .eq('fisioterapeuta_id', user.id)
         .order('nome_completo');
 
       if (supabaseError) {
         console.error('DEBUG: Erro detalhado do Supabase ao buscar:', supabaseError);
         throw supabaseError;
       }
-      console.log('DEBUG: Pacientes encontrados:', data?.length);
-      setPatients(data || []);
+
+      let mergedPatients = clinicalPatients || [];
+
+      // Pacientes que agendaram pelo app usam perfis.id em agendamentos.paciente_id.
+      // Se o webhook ainda não criou o vínculo clínico em pacientes, criamos/mostramos aqui
+      // para que eles apareçam em Meus Pacientes após agendamento/confirmacao.
+      const { data: appointments, error: appointmentsError } = await supabase
+        .from('agendamentos')
+        .select('id, paciente_id, fisio_id, status, data, hora')
+        .eq('fisio_id', user.id)
+        .not('paciente_id', 'is', null)
+        .order('data', { ascending: false });
+
+      if (appointmentsError) {
+        console.warn('DEBUG: Não foi possível buscar pacientes por agendamento:', appointmentsError);
+      }
+
+      const appointmentProfileIds = Array.from(
+        new Set((appointments || []).map((appointment: any) => appointment.paciente_id).filter(Boolean))
+      );
+
+      if (appointmentProfileIds.length > 0) {
+        const existingProfileLinks = new Set(
+          mergedPatients
+            .map((patient: any) => patient.perfil_id || patient.paciente_id)
+            .filter(Boolean)
+            .map(String)
+        );
+        const existingEmails = new Set(
+          mergedPatients
+            .map((patient: any) => patient.email?.trim().toLowerCase())
+            .filter(Boolean)
+        );
+
+        const missingProfileIds = appointmentProfileIds.filter((profileId) => !existingProfileLinks.has(String(profileId)));
+
+        if (missingProfileIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from('perfis')
+            .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
+            .in('id', missingProfileIds);
+
+          if (profilesError) {
+            console.warn('DEBUG: Não foi possível buscar perfis de pacientes agendados:', profilesError);
+          }
+
+          for (const patientProfile of profiles || []) {
+            const normalizedEmail = patientProfile.email?.trim().toLowerCase();
+            const alreadyLinkedByEmail = normalizedEmail && existingEmails.has(normalizedEmail);
+
+            if (alreadyLinkedByEmail) continue;
+
+            const payload = {
+              perfil_id: patientProfile.id,
+              fisioterapeuta_id: user.id,
+              nome_completo: patientProfile.nome_completo || 'Paciente',
+              email: patientProfile.email || null,
+              telefone: patientProfile.telefone || null,
+              data_nascimento: patientProfile.data_nascimento || null,
+              foto_url: patientProfile.foto_url || patientProfile.avatar_url || null,
+              avatar_url: patientProfile.avatar_url || patientProfile.foto_url || null,
+              tipo_paciente: 'externo',
+              origem: 'agendamento',
+              status: 'ativo',
+              updated_at: new Date().toISOString()
+            };
+
+            const { data: createdPatient, error: createError } = await supabase
+              .from('pacientes')
+              .insert(payload)
+              .select('*')
+              .single();
+
+            if (createError) {
+              console.warn('DEBUG: Não foi possível criar vínculo clínico completo para paciente agendado:', createError);
+
+              const fallbackPayload = {
+                perfil_id: patientProfile.id,
+                fisioterapeuta_id: user.id,
+                nome_completo: patientProfile.nome_completo || 'Paciente',
+                email: patientProfile.email || null,
+                telefone: patientProfile.telefone || null,
+                data_nascimento: patientProfile.data_nascimento || null,
+                foto_url: patientProfile.foto_url || patientProfile.avatar_url || null
+              };
+
+              const { data: fallbackPatient, error: fallbackError } = await supabase
+                .from('pacientes')
+                .insert(fallbackPayload)
+                .select('*')
+                .single();
+
+              if (fallbackError) {
+                console.warn('DEBUG: Não foi possível criar vínculo clínico mínimo para paciente agendado:', fallbackError);
+                continue;
+              }
+
+              if (fallbackPatient) {
+                mergedPatients = [...mergedPatients, fallbackPatient];
+                existingProfileLinks.add(String(patientProfile.id));
+                if (normalizedEmail) existingEmails.add(normalizedEmail);
+              }
+
+              continue;
+            }
+
+            if (createdPatient) {
+              mergedPatients = [...mergedPatients, createdPatient];
+              existingProfileLinks.add(String(patientProfile.id));
+              if (normalizedEmail) existingEmails.add(normalizedEmail);
+            }
+          }
+        }
+      }
+
+      console.log('DEBUG: Pacientes encontrados:', mergedPatients.length);
+      setPatients(mergedPatients);
     } catch (err: any) {
       console.error('Erro ao buscar pacientes:', err);
-      // Silenciamos o erro definindo como array vazio conforme solicitado
       setPatients([]);
-      // Só armazenamos o erro se for algo crítico para debug interno
       setError(err.message || 'Erro de conexão');
     } finally {
       setIsLoading(false);
@@ -310,7 +429,7 @@ export default function Patients() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 pt-24 md:pt-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
@@ -324,7 +443,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word pt-24 md:pt-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>
