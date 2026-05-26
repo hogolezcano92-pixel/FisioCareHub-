@@ -24,7 +24,8 @@ import {
   HelpCircle,
   Info,
   Lock,
-  ShoppingBag
+  ShoppingBag,
+  HeartPulse
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
@@ -86,6 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
+            { name: 'Jornada', path: '/jornada', icon: HeartPulse },
             { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
             { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
             { name: 'Solicitar atendimento', path: '/patient/requests', icon: MessageSquare },
