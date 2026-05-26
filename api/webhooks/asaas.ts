@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { generateFisioCareHubEmailHTML } from '../_shared/fisioEmailTemplate';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -50,36 +51,15 @@ const formatMoneyBR = (value: any) => {
 
 const getAppointmentDate = (appointment: any) => appointment?.data_servico || appointment?.data || appointment?.created_at;
 
-const buildEmailLayout = (title: string, content: string) => `
-  <div style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;">
-      <tr>
-        <td align="center" style="padding:28px 14px;">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;border-collapse:collapse;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e2e8f0;">
-            <tr>
-              <td style="background:#0f172a;padding:26px 24px;text-align:center;">
-                <h1 style="margin:0;color:#38bdf8;font-size:28px;line-height:34px;font-weight:900;">FisioCareHub</h1>
-                <p style="margin:8px 0 0;color:#cbd5e1;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">Reabilitação & Performance</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:28px 24px;">
-                <h2 style="margin:0 0 18px;color:#0f172a;font-size:24px;line-height:30px;">${escapeHtml(title)}</h2>
-                ${content}
-              </td>
-            </tr>
-            <tr>
-              <td style="background:#f1f5f9;padding:18px 24px;text-align:center;color:#64748b;font-size:12px;line-height:18px;">
-                Documento automático gerado pelo FisioCareHub.<br/>
-                Suporte: suporte@fisiocarehub.company
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </div>
-`;
+const buildEmailLayout = (title: string, content: string) => generateFisioCareHubEmailHTML({
+  title,
+  subtitle: 'Você recebeu uma atualização importante no FisioCareHub.',
+  contentHtml: content,
+  variant: title.toLowerCase().includes('pagamento') ? 'payment'
+    : title.toLowerCase().includes('documento') ? 'document'
+    : title.toLowerCase().includes('agendamento') || title.toLowerCase().includes('consulta') ? 'appointment'
+    : 'default',
+});
 
 const sendEmail = async (to: string | null | undefined, subject: string, html: string) => {
   if (!to) {
