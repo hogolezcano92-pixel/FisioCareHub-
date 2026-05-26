@@ -92,7 +92,7 @@ export default function PatientDetails() {
   const [showEditPrescricaoModal, setShowEditPrescricaoModal] = useState(false);
   const [editingPrescricao, setEditingPrescricao] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [patientAccessStatus, setPatientAccessStatus] = useState<'checking' | 'active' | 'inactive' | 'no_email'>('checking');
+  const [patientAccessStatus, setPatientAccessStatus] = useState<'checking' | 'active' | 'invited' | 'inactive' | 'no_email'>('checking');
   const [invitingPatientAccess, setInvitingPatientAccess] = useState(false);
 
   // Form States
@@ -129,8 +129,24 @@ export default function PatientDetails() {
 
   const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
 
+  const resolvePatientAccessStatus = (patientData: any) => {
+    const status = String(patientData?.acesso_status || '').trim().toLowerCase();
+    const accessReleased = patientData?.acesso_liberado === true || Boolean(patientData?.acesso_liberado_em);
+
+    if (status === 'ativo' || accessReleased) return 'active' as const;
+    if (status === 'convite_enviado' || Boolean(patientData?.convite_enviado_em) || Boolean(patientData?.ultimo_convite_em)) return 'invited' as const;
+    return null;
+  };
+
   const checkPatientAccessStatus = async (patientData: any) => {
     const patientEmail = normalizeEmail(patientData?.email);
+    const explicitStatus = resolvePatientAccessStatus(patientData);
+
+    if (explicitStatus) {
+      setPatientAccessStatus(explicitStatus);
+      return;
+    }
+
     const possibleProfileIds = [
       patientData?.perfil_id,
       patientData?.profile_id,
@@ -212,7 +228,28 @@ export default function PatientDetails() {
 
       toast.success(message);
 
-      await checkPatientAccessStatus(patient);
+      if (data?.status === 'invite_sent' || data?.status === 'invite_pending') {
+        const updatedPatient = {
+          ...patient,
+          perfil_id: data?.profileId || patient?.perfil_id,
+          acesso_status: 'convite_enviado',
+          convite_enviado_em: new Date().toISOString(),
+          ultimo_convite_em: new Date().toISOString(),
+        };
+        setPatient(updatedPatient);
+        setPatientAccessStatus('invited');
+      } else if (data?.status === 'linked_existing_account') {
+        const updatedPatient = {
+          ...patient,
+          perfil_id: data?.profileId || patient?.perfil_id,
+          acesso_status: 'ativo',
+          acesso_liberado_em: new Date().toISOString(),
+        };
+        setPatient(updatedPatient);
+        setPatientAccessStatus('active');
+      } else {
+        await checkPatientAccessStatus(patient);
+      }
     } catch (err: any) {
       console.error('Erro ao liberar acesso do paciente:', err);
       toast.error(getSupabaseErrorMessage(err, 'Não foi possível liberar acesso para este paciente.'));
@@ -1016,6 +1053,16 @@ export default function PatientDetails() {
                 className="px-6 py-2 bg-white/5 text-slate-400 rounded-2xl border border-white/5 font-black text-xs uppercase tracking-widest flex items-center gap-2"
               >
                 <Loader2 size={18} className="animate-spin" /> Verificando
+              </button>
+            ) : patientAccessStatus === 'invited' ? (
+              <button
+                type="button"
+                disabled={invitingPatientAccess}
+                onClick={handleInvitePatientAccess}
+                className="px-6 py-2 bg-sky-600/20 text-sky-300 rounded-2xl border border-sky-600/20 font-black text-xs uppercase tracking-widest flex items-center gap-2 disabled:opacity-60"
+                title="Convite enviado. O acesso ficará ativo quando o paciente concluir o cadastro."
+              >
+                {invitingPatientAccess ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />} Convite Enviado
               </button>
             ) : patientAccessStatus === 'no_email' ? (
               <button
