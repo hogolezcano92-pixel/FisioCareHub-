@@ -24,7 +24,8 @@ import {
   Lock,
   FileJson,
   AlertCircle,
-  Crown
+  Crown,
+  PenLine
 } from 'lucide-react';
 import { generateDocument } from '../lib/groq';
 import html2canvas from 'html2canvas';
@@ -136,6 +137,7 @@ export default function Documents() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
+  const [documentPatientId, setDocumentPatientId] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [documentFields, setDocumentFields] = useState<Record<string, string>>(getInitialDocumentFields());
   const [generating, setGenerating] = useState(false);
@@ -200,7 +202,7 @@ export default function Documents() {
     
     // Fetch patients for evolution report
     const fetchPatients = async () => {
-      const { data } = await supabase.from('pacientes').select('id, nome_completo');
+      const { data } = await supabase.from('pacientes').select('id, nome_completo, email').order('nome_completo');
       if (data) setPatients(data);
     };
     fetchPatients();
@@ -259,24 +261,59 @@ export default function Documents() {
           const linkedPatientIds = linkedPatients.map((p) => p.id).filter(Boolean);
 
           let generatedDocs: any[] = [];
-          if (linkedEmails.length > 0) {
+          const docFilters: string[] = [];
+          if (linkedPatientIds.length > 0) docFilters.push(...linkedPatientIds.map((pid: any) => `paciente_id.eq.${pid}`));
+          if (linkedEmails.length > 0) docFilters.push(...linkedEmails.map((email: any) => `patient_email.eq.${email}`));
+
+          if (docFilters.length > 0) {
             const { data, error } = await supabase
               .from('documentos_gerados')
               .select('*')
-              .in('patient_email', linkedEmails)
+              .or(docFilters.join(','))
+              .neq('visible_to_patient', false)
               .order('criado_em', { ascending: false });
 
-            if (error) throw error;
-            generatedDocs = data || [];
+            if (error) {
+              console.warn('Busca por paciente_id/visibilidade falhou, tentando fallback por e-mail:', error);
+              if (linkedEmails.length > 0) {
+                const { data: fallbackDocs, error: fallbackError } = await supabase
+                  .from('documentos_gerados')
+                  .select('*')
+                  .in('patient_email', linkedEmails)
+                  .order('criado_em', { ascending: false });
+                if (fallbackError) throw fallbackError;
+                generatedDocs = fallbackDocs || [];
+              }
+            } else {
+              generatedDocs = data || [];
+            }
           }
 
           let clinicalFiles: any[] = [];
           if (linkedPatientIds.length > 0) {
-            const { data: fileData, error: fileError } = await supabase
+            let fileData: any[] | null = null;
+            let fileError: any = null;
+
+            const fileResult = await supabase
               .from('arquivos_paciente')
               .select('*')
               .in('paciente_id', linkedPatientIds)
+              .neq('visible_to_patient', false)
               .order('created_at', { ascending: false });
+
+            fileData = fileResult.data;
+            fileError = fileResult.error;
+
+            if (fileError) {
+              console.warn('Busca com visible_to_patient falhou, tentando fallback:', fileError);
+              const fallbackFiles = await supabase
+                .from('arquivos_paciente')
+                .select('*')
+                .in('paciente_id', linkedPatientIds)
+                .order('created_at', { ascending: false });
+              fileData = fallbackFiles.data;
+              fileError = fallbackFiles.error;
+            }
 
             if (fileError) {
               console.error('Erro ao buscar arquivos clínicos do paciente:', fileError);
@@ -320,6 +357,7 @@ export default function Documents() {
 
                 return {
                   id: `arquivo-${file.id}`,
+                  source_id: file.id,
                   type: fileName,
                   document_name: fileName,
                   document_category: file.tipo || file.categoria || 'Arquivo do prontuário',
@@ -365,6 +403,7 @@ export default function Documents() {
     setGeneratedContent('');
     setPatientName('');
     setPatientEmail('');
+    setDocumentPatientId('');
     setAdditionalInfo('');
     setDocumentFields(getInitialDocumentFields(template?.id));
     setIsModalOpen(true);
@@ -443,18 +482,36 @@ export default function Documents() {
         }
       }
 
-      const { data: newDoc, error } = await supabase
+      const insertPayload = {
+        physio_id: user.id,
+        physio_name: profile.nome_completo || 'Fisioterapeuta',
+        patient_name: patientName,
+        patient_email: patientEmail ? patientEmail.trim().toLowerCase() : null,
+        paciente_id: documentPatientId || null,
+        visible_to_patient: true,
+        acceptance_required: ['contrato', 'autorizacao'].includes(String(selectedTemplateId || '')),
+        document_category: selectedTemplateId || 'geral',
+        type: selectedTemplate?.name || 'Documento Geral',
+        content: generatedContent,
+      };
+
+      let { data: newDoc, error } = await supabase
         .from('documentos_gerados')
-        .insert({
-          physio_id: user.id,
-          physio_name: profile.nome_completo || 'Fisioterapeuta',
-          patient_name: patientName,
-          patient_email: patientEmail ? patientEmail.trim().toLowerCase() : null,
-          type: selectedTemplate?.name || 'Documento Geral',
-          content: generatedContent,
-        })
+        .insert(insertPayload)
         .select()
         .single();
+
+      if (error) {
+        console.warn("Salvar com novos campos falhou, tentando compatibilidade:", error);
+        const { paciente_id, visible_to_patient, acceptance_required, document_category, ...legacyPayload } = insertPayload;
+        const fallback = await supabase
+          .from('documentos_gerados')
+          .insert(legacyPayload)
+          .select()
+          .single();
+        newDoc = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) {
         console.error("Erro Supabase ao salvar:", error);
@@ -750,6 +807,35 @@ export default function Documents() {
     } catch (err: any) {
       console.error('Erro ao baixar arquivo clínico:', err);
       import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao baixar documento.'));
+    }
+  };
+
+
+  const handleAcceptDocument = async (doc: any) => {
+    if (!user || doc?.isClinicalFile || doc?.accepted_at) return;
+    const confirmed = window.confirm('Confirmo que li e aceito este documento. Deseja registrar o aceite agora?');
+    if (!confirmed) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('documentos_gerados')
+        .update({
+          accepted_at: new Date().toISOString(),
+          accepted_by: user.id,
+          acceptance_ip: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', doc.id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      setDocuments((current) => current.map((item) => item.id === doc.id ? { ...item, ...data } : item));
+      setViewingDoc((current: any) => current?.id === doc.id ? { ...current, ...data } : current);
+      import('sonner').then(({ toast }) => toast.success('Aceite registrado com sucesso.'));
+    } catch (err: any) {
+      console.error('Erro ao registrar aceite:', err);
+      import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao registrar aceite.'));
     }
   };
 
@@ -1165,6 +1251,11 @@ export default function Documents() {
                       <p className="text-slate-500 text-xs font-black mt-2">
                         {new Date(doc.criado_em || doc.created_at).toLocaleString('pt-BR')}
                       </p>
+                      {!isPhysio && !doc.isClinicalFile && (
+                        <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black mt-2 uppercase tracking-widest' : 'text-amber-400 text-[10px] font-black mt-2 uppercase tracking-widest'}>
+                          {doc.accepted_at ? `Aceito em ${new Date(doc.accepted_at).toLocaleDateString('pt-BR')}` : (doc.acceptance_required ? 'Aceite pendente' : 'Leitura disponível')}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1207,6 +1298,15 @@ export default function Documents() {
                       <div />
                     )}
                   </div>
+
+                  {!isPhysio && !doc.isClinicalFile && !doc.accepted_at && doc.acceptance_required && (
+                    <button
+                      onClick={() => handleAcceptDocument(doc)}
+                      className="w-full h-11 text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15 cursor-pointer rounded-2xl transition-colors border border-emerald-500/20 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest"
+                    >
+                      <PenLine size={16} /> Li e Aceito
+                    </button>
+                  )}
 
                   {isPhysio && !doc.isClinicalFile && (
                     <button 
@@ -1255,7 +1355,14 @@ export default function Documents() {
                         <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
                           <FileText size={16} />
                         </div>
-                        <span className="font-bold text-white">{getDocumentTitle(doc)}</span>
+                        <div>
+                          <span className="font-bold text-white">{getDocumentTitle(doc)}</span>
+                          {!isPhysio && !doc.isClinicalFile && (
+                            <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1' : 'text-amber-400 text-[10px] font-black uppercase tracking-widest mt-1'}>
+                              {doc.accepted_at ? `Aceito em ${new Date(doc.accepted_at).toLocaleDateString('pt-BR')}` : (doc.acceptance_required ? 'Aceite pendente' : 'Disponível')}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-400 font-medium">
@@ -1708,6 +1815,15 @@ export default function Documents() {
                       title="Baixar Word"
                     >
                       <FileText size={20} />
+                    </button>
+                  )}
+                  {!isPhysio && !viewingDoc.isClinicalFile && viewingDoc.acceptance_required && !viewingDoc.accepted_at && (
+                    <button
+                      onClick={() => handleAcceptDocument(viewingDoc)}
+                      className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
+                      title="Li e aceito"
+                    >
+                      <PenLine size={18} />
                     </button>
                   )}
                   {isPhysio && (

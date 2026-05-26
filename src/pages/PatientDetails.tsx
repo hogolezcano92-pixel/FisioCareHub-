@@ -23,7 +23,12 @@ import {
   X,
   Send,
   Stethoscope,
-  FileSignature
+  FileSignature,
+  Edit3,
+  Eye,
+  EyeOff,
+  ClipboardList,
+  ShieldCheck
 } from 'lucide-react';
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
@@ -84,10 +89,16 @@ export default function PatientDetails() {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [dailyJournals, setDailyJournals] = useState<any[]>([]);
+  const [documentosGerados, setDocumentosGerados] = useState<any[]>([]);
+  const [timelineFilter, setTimelineFilter] = useState('todos');
 
   // Modal States
   const [showEvolucaoModal, setShowEvolucaoModal] = useState(false);
   const [showArquivoModal, setShowArquivoModal] = useState(false);
+  const [showEditEvolucaoModal, setShowEditEvolucaoModal] = useState(false);
+  const [editingEvolucao, setEditingEvolucao] = useState<any>(null);
+  const [showEditArquivoModal, setShowEditArquivoModal] = useState(false);
+  const [editingArquivo, setEditingArquivo] = useState<any>(null);
   const [showPrescricaoModal, setShowPrescricaoModal] = useState(false);
   const [showEditPrescricaoModal, setShowEditPrescricaoModal] = useState(false);
   const [editingPrescricao, setEditingPrescricao] = useState<any>(null);
@@ -107,6 +118,8 @@ export default function PatientDetails() {
 
   const [arquivoForm, setArquivoForm] = useState({
     tipo: 'Exame',
+    nome_arquivo: '',
+    visible_to_patient: true,
     file: null as File | null
   });
 
@@ -351,6 +364,37 @@ export default function PatientDetails() {
         .eq('paciente_id', id)
         .order('created_at', { ascending: false });
       setArquivos(arData || []);
+
+      // Fetch Documentos Gerados (vínculo por paciente_id + fallback por e-mail)
+      const patientEmailForDocs = normalizeEmail(patientData.email);
+      let docsQuery = supabase
+        .from('documentos_gerados')
+        .select('*')
+        .order('criado_em', { ascending: false });
+
+      if (patientEmailForDocs) {
+        docsQuery = docsQuery.or(`paciente_id.eq.${id},patient_email.eq.${patientEmailForDocs}`);
+      } else {
+        docsQuery = docsQuery.eq('paciente_id', id);
+      }
+
+      const { data: docsData, error: docsError } = await docsQuery;
+      if (docsError) {
+        // Compatibilidade com bancos que ainda não receberam a coluna paciente_id
+        console.warn('Busca por paciente_id em documentos_gerados falhou, tentando fallback por e-mail:', docsError);
+        if (patientEmailForDocs) {
+          const { data: fallbackDocs } = await supabase
+            .from('documentos_gerados')
+            .select('*')
+            .eq('patient_email', patientEmailForDocs)
+            .order('criado_em', { ascending: false });
+          setDocumentosGerados(fallbackDocs || []);
+        } else {
+          setDocumentosGerados([]);
+        }
+      } else {
+        setDocumentosGerados(docsData || []);
+      }
 
       // Fetch Agendamentos (for linking evolutions)
       const { data: atData } = await supabase
@@ -736,8 +780,50 @@ export default function PatientDetails() {
         y = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      addSectionTitle('7. Observações e validação', [15, 23, 42]);
-      addParagraph('Este prontuário reúne os registros cadastrados no FisioCareHub pelo profissional responsável. As informações devem ser interpretadas dentro do contexto clínico e não substituem a avaliação presencial e o raciocínio fisioterapêutico.');
+      addSectionTitle('7. Documentos gerados', [245, 158, 11]);
+      if (documentosGerados.length === 0) {
+        addParagraph('Nenhum documento gerado vinculado a este paciente.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: [245, 158, 11], textColor: 255, fontStyle: 'bold' },
+          margin: { left: margin, right: margin },
+          head: [['Data', 'Tipo', 'Status', 'Aceite']],
+          body: documentosGerados.map((documento) => [
+            documento.criado_em ? formatLongDate(documento.criado_em) : '-',
+            safeText(documento.document_name || documento.type || documento.titulo, 'Documento'),
+            documento.visible_to_patient === false ? 'Privado' : 'Visível ao paciente',
+            documento.accepted_at ? `Aceito em ${formatLongDate(documento.accepted_at)}` : 'Pendente/não aplicável',
+          ]),
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      addSectionTitle('8. Diário do paciente', [16, 185, 129]);
+      if (dailyJournals.length === 0) {
+        addParagraph('Nenhum registro de diário do paciente encontrado.');
+      } else {
+        autoTable(doc, {
+          startY: y,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+          headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+          margin: { left: margin, right: margin },
+          head: [['Data', 'Dor', 'Adesão', 'Notas']],
+          body: dailyJournals.map((journal) => [
+            journal.data_registro ? formatOnlyDateBR(journal.data_registro) : '-',
+            journal.nivel_dor !== undefined && journal.nivel_dor !== null ? `${journal.nivel_dor}/10` : '-',
+            `${journal.concluidos_count || 0}/${journal.total_exercicios || 0}`,
+            safeText(journal.notas, '-'),
+          ]),
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      addSectionTitle('9. Observações legais e validação', [15, 23, 42]);
+      addParagraph('Este prontuário reúne os registros cadastrados no FisioCareHub pelo profissional responsável. As informações devem ser interpretadas dentro do contexto clínico e não substituem a avaliação presencial e o raciocínio fisioterapêutico. A visualização pelo paciente depende das permissões definidas pelo profissional.');
 
       checkPage(36);
       y += 8;
@@ -776,7 +862,8 @@ export default function PatientDetails() {
               nome_arquivo: pdfFileName,
               mime_type: 'application/pdf',
               tamanho_bytes: pdfBlob.size,
-              tipo: 'Prontuário completo'
+              tipo: 'Prontuário completo',
+              visible_to_patient: true
             });
 
           if (arquivoError) throw arquivoError;
@@ -848,23 +935,33 @@ export default function PatientDetails() {
     try {
       const url = await uploadPatientDocument(user.id, id, arquivoForm.file);
       
+      const insertPayload = {
+        paciente_id: id,
+        arquivo_url: url,
+        file_path: url,
+        nome_arquivo: arquivoForm.nome_arquivo?.trim() || arquivoForm.file.name,
+        mime_type: arquivoForm.file.type || 'application/octet-stream',
+        tamanho_bytes: arquivoForm.file.size,
+        tipo: arquivoForm.tipo,
+        visible_to_patient: arquivoForm.visible_to_patient
+      };
+
       const { error } = await supabase
         .from('arquivos_paciente')
-        .insert({
-          paciente_id: id,
-          arquivo_url: url,
-          file_path: url,
-          nome_arquivo: arquivoForm.file.name,
-          mime_type: arquivoForm.file.type || 'application/octet-stream',
-          tamanho_bytes: arquivoForm.file.size,
-          tipo: arquivoForm.tipo
-        });
+        .insert(insertPayload);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Insert com visible_to_patient falhou, tentando compatibilidade:', error);
+        const { visible_to_patient, ...legacyPayload } = insertPayload;
+        const { error: legacyError } = await supabase
+          .from('arquivos_paciente')
+          .insert(legacyPayload);
+        if (legacyError) throw legacyError;
+      }
 
       toast.success('Arquivo enviado com sucesso!');
       setShowArquivoModal(false);
-      setArquivoForm({ tipo: 'Exame', file: null });
+      setArquivoForm({ tipo: 'Exame', nome_arquivo: '', visible_to_patient: true, file: null });
       fetchPatientData();
     } catch (err) {
       console.error('Erro ao enviar arquivo:', err);
@@ -998,6 +1095,167 @@ export default function PatientDetails() {
     }
   };
 
+
+  const buildTimelineItems = () => {
+    const items = [
+      ...avaliacoes.map((item) => ({ id: `avaliacao-${item.id}`, tipo: 'avaliação', title: item.diagnostico_fisio || 'Avaliação fisioterapêutica', date: item.created_at, description: item.queixa_principal || item.observacoes_finais || 'Ficha de avaliação cadastrada.', icon: Stethoscope })),
+      ...evolucoes.map((item) => ({ id: `evolucao-${item.id}`, tipo: 'evolução', title: 'Evolução clínica', date: item.created_at, description: item.descricao || item.plano || 'Evolução registrada.', icon: Activity })),
+      ...prescricoes.map((item) => ({ id: `prescricao-${item.id}`, tipo: 'prescrição', title: item.exercicio?.nome || 'Exercício prescrito', date: item.created_at, description: item.observacoes || 'Prescrição de exercício.', icon: Dna })),
+      ...arquivos.map((item) => ({ id: `arquivo-${item.id}`, tipo: 'anexo', title: item.nome_arquivo || item.tipo || 'Arquivo anexado', date: item.created_at, description: item.visible_to_patient === false ? 'Arquivo privado do fisioterapeuta.' : 'Visível para o paciente.', icon: Paperclip })),
+      ...documentosGerados.map((item) => ({ id: `doc-${item.id}`, tipo: 'documento', title: item.document_name || item.type || 'Documento gerado', date: item.criado_em || item.created_at, description: item.accepted_at ? 'Aceito pelo paciente.' : (item.visible_to_patient === false ? 'Documento privado.' : 'Documento visível ao paciente.'), icon: FileText })),
+      ...dailyJournals.map((item) => ({ id: `diario-${item.id}`, tipo: 'diário', title: `Diário de dor: ${item.nivel_dor ?? '-'}/10`, date: item.data_registro || item.created_at, description: item.notas || 'Registro do diário do paciente.', icon: ClipboardList })),
+    ];
+
+    return items
+      .filter((item) => timelineFilter === 'todos' || item.tipo === timelineFilter)
+      .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+  };
+
+  const handleOpenEditEvolucao = (evolucao: any) => {
+    setEditingEvolucao(evolucao);
+    setEvolucaoForm({
+      atendimento_id: evolucao.atendimento_id || '',
+      dor_escala: Number(evolucao.dor_escala || 0),
+      descricao: evolucao.descricao || '',
+      exercicios_realizados: evolucao.exercicios_realizados || '',
+      observacoes: evolucao.observacoes || '',
+      plano: evolucao.plano || ''
+    });
+    setShowEditEvolucaoModal(true);
+  };
+
+  const handleUpdateEvolucao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !editingEvolucao || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = { ...evolucaoForm, atendimento_id: evolucaoForm.atendimento_id || null, updated_at: new Date().toISOString() };
+      const { data, error } = await supabase
+        .from('evolucoes')
+        .update(payload)
+        .eq('id', editingEvolucao.id)
+        .eq('paciente_id', id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      setEvolucoes((current) => current.map((ev) => ev.id === editingEvolucao.id ? { ...ev, ...data } : ev));
+      toast.success('Evolução atualizada!');
+      setShowEditEvolucaoModal(false);
+      setEditingEvolucao(null);
+      setEvolucaoForm({ atendimento_id: '', dor_escala: 0, descricao: '', exercicios_realizados: '', observacoes: '', plano: '' });
+      fetchPatientData();
+    } catch (err) {
+      console.error('Erro ao atualizar evolução:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao atualizar evolução'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvolucao = async (evolucaoId: string) => {
+    if (!id || submitting) return;
+    if (!window.confirm('Deseja apagar esta evolução clínica?')) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('evolucoes').delete().eq('id', evolucaoId).eq('paciente_id', id);
+      if (error) throw error;
+      setEvolucoes((current) => current.filter((ev) => ev.id !== evolucaoId));
+      if (editingEvolucao?.id === evolucaoId) {
+        setShowEditEvolucaoModal(false);
+        setEditingEvolucao(null);
+      }
+      toast.success('Evolução apagada!');
+    } catch (err) {
+      console.error('Erro ao apagar evolução:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao apagar evolução'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEditArquivo = (arquivo: any) => {
+    setEditingArquivo(arquivo);
+    setArquivoForm({
+      tipo: arquivo.tipo || 'Documento',
+      nome_arquivo: arquivo.nome_arquivo || arquivo.nome || '',
+      visible_to_patient: arquivo.visible_to_patient !== false,
+      file: null
+    });
+    setShowEditArquivoModal(true);
+  };
+
+  const handleUpdateArquivo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !editingArquivo || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        tipo: arquivoForm.tipo,
+        nome_arquivo: arquivoForm.nome_arquivo || editingArquivo.nome_arquivo || editingArquivo.nome || 'Documento',
+        visible_to_patient: arquivoForm.visible_to_patient,
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await supabase
+        .from('arquivos_paciente')
+        .update(payload)
+        .eq('id', editingArquivo.id)
+        .eq('paciente_id', id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      setArquivos((current) => current.map((arq) => arq.id === editingArquivo.id ? { ...arq, ...data } : arq));
+      toast.success('Arquivo atualizado!');
+      setShowEditArquivoModal(false);
+      setEditingArquivo(null);
+      setArquivoForm({ tipo: 'Exame', nome_arquivo: '', visible_to_patient: true, file: null });
+      fetchPatientData();
+    } catch (err) {
+      console.error('Erro ao atualizar arquivo:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao atualizar arquivo'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteArquivo = async (arquivoId: string) => {
+    if (!id || submitting) return;
+    if (!window.confirm('Deseja apagar este arquivo do prontuário?')) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('arquivos_paciente').delete().eq('id', arquivoId).eq('paciente_id', id);
+      if (error) throw error;
+      setArquivos((current) => current.filter((arq) => arq.id !== arquivoId));
+      if (editingArquivo?.id === arquivoId) {
+        setShowEditArquivoModal(false);
+        setEditingArquivo(null);
+      }
+      toast.success('Arquivo apagado!');
+    } catch (err) {
+      console.error('Erro ao apagar arquivo:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao apagar arquivo'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleDocumentoVisibility = async (documento: any) => {
+    const nextValue = documento.visible_to_patient === false;
+    try {
+      const { data, error } = await supabase
+        .from('documentos_gerados')
+        .update({ visible_to_patient: nextValue, updated_at: new Date().toISOString() })
+        .eq('id', documento.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      setDocumentosGerados((current) => current.map((doc) => doc.id === documento.id ? { ...doc, ...data } : doc));
+      toast.success(nextValue ? 'Documento visível para o paciente.' : 'Documento privado para o fisioterapeuta.');
+    } catch (err) {
+      console.error('Erro ao alterar visibilidade do documento:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao alterar visibilidade do documento'));
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-sky-500" size={48} /></div>;
   if (!patient) return <div className="text-center py-20 font-black text-2xl">Paciente não encontrado</div>;
 
@@ -1110,12 +1368,15 @@ export default function PatientDetails() {
       {/* Tabs */}
       <div className="flex gap-2 p-2 bg-slate-900/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-x-auto no-scrollbar shadow-lg">
         {[
-          { id: 'ficha', label: 'Ficha Clínica', icon: User },
+          { id: 'prontuario', label: 'Prontuário Completo', icon: ClipboardList },
+          { id: 'ficha', label: 'Dados do Paciente', icon: User },
           { id: 'avaliacoes', label: 'Avaliações', icon: Stethoscope },
           { id: 'evolucoes', label: 'Evoluções', icon: Activity },
           { id: 'diario', label: 'Diário de Dor', icon: Activity },
-          { id: 'arquivos', label: 'Exames e Fotos', icon: Paperclip },
+          { id: 'arquivos', label: 'Exames/Anexos', icon: Paperclip },
+          { id: 'documentos', label: 'Documentos Gerados', icon: FileText },
           { id: 'prescricoes', label: 'Prescrições', icon: Dna },
+          { id: 'historico', label: 'Histórico Completo', icon: ShieldCheck },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1136,6 +1397,45 @@ export default function PatientDetails() {
       {/* Tab Content */}
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
+
+          {activeTab === 'prontuario' && (
+            <motion.div
+              key="prontuario"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h3 className="text-3xl font-black text-white flex items-center gap-3"><ClipboardList className="text-blue-400" /> Prontuário completo do paciente</h3>
+                    <p className="text-slate-400 font-medium mt-2">Visão única com dados clínicos, avaliações, evoluções, prescrições, anexos, documentos e diário.</p>
+                  </div>
+                  <button onClick={handleExportProntuario} className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all flex items-center gap-2"><Download size={18} /> Baixar prontuário completo</button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    ['Avaliações', avaliacoes.length, Stethoscope, 'avaliacoes'],
+                    ['Evoluções', evolucoes.length, Activity, 'evolucoes'],
+                    ['Prescrições', prescricoes.length, Dna, 'prescricoes'],
+                    ['Anexos', arquivos.length, Paperclip, 'arquivos'],
+                    ['Documentos', documentosGerados.length, FileText, 'documentos'],
+                    ['Diário', dailyJournals.length, ClipboardList, 'diario'],
+                    ['Sessões', agendamentos.length, Calendar, 'ficha'],
+                    ['Histórico', buildTimelineItems().length, ShieldCheck, 'historico'],
+                  ].map(([label, value, Icon, tab]: any) => (
+                    <button key={label} type="button" onClick={() => setActiveTab(tab)} className="p-5 bg-white/5 rounded-3xl text-left border border-white/5 hover:border-blue-500/30 hover:bg-white/10 transition-all">
+                      <Icon size={24} className="text-blue-400 mb-3" />
+                      <span className="block text-3xl font-black text-white">{value}</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'ficha' && (
             <motion.div
               key="ficha"
@@ -1282,8 +1582,12 @@ export default function PatientDetails() {
                             <p className="text-sm font-bold text-white">{formatDateBR(ev.created_at)}</p>
                           </div>
                         </div>
-                        <div className="px-4 py-2 bg-white/5 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
-                          Sessão #{evolucoes.length - evolucoes.indexOf(ev)}
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => handleOpenEditEvolucao(ev)} className="p-2 bg-white/5 text-slate-400 rounded-xl hover:text-blue-300 hover:bg-blue-500/10 border border-white/5 transition-all" title="Editar evolução"><Edit3 size={16} /></button>
+                          <button type="button" onClick={() => handleDeleteEvolucao(ev.id)} className="p-2 bg-white/5 text-slate-400 rounded-xl hover:text-red-300 hover:bg-red-500/10 border border-white/5 transition-all" title="Apagar evolução"><Trash2 size={16} /></button>
+                          <div className="px-4 py-2 bg-white/5 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
+                            Sessão #{evolucoes.length - evolucoes.indexOf(ev)}
+                          </div>
                         </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-8">
@@ -1438,8 +1742,12 @@ export default function PatientDetails() {
                       <div className="w-full aspect-square bg-white/5 rounded-2xl flex items-center justify-center text-slate-600 mb-4 group-hover:bg-blue-600/10 transition-colors border border-white/5">
                         <FileText size={40} />
                       </div>
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{arq.tipo}</p>
-                      <p className="text-sm font-bold text-white truncate mb-4">{formatDateBR(arq.created_at)}</p>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{arq.tipo}</p>
+                        {arq.visible_to_patient === false ? <EyeOff size={14} className="text-amber-400" /> : <Eye size={14} className="text-emerald-400" />}
+                      </div>
+                      <p className="text-sm font-bold text-white truncate">{arq.nome_arquivo || 'Documento clínico'}</p>
+                      <p className="text-xs font-bold text-slate-500 truncate mb-4">{formatDateBR(arq.created_at)}</p>
                       <a 
                         href={resolveStorageUrl(arq.arquivo_url)} 
                         target="_blank" 
@@ -1448,12 +1756,93 @@ export default function PatientDetails() {
                       >
                         <Download size={14} /> Baixar
                       </a>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button type="button" onClick={() => handleOpenEditArquivo(arq)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600/20 hover:text-blue-300 transition-all border border-white/5"><Edit3 size={12} /> Editar</button>
+                        <button type="button" onClick={() => handleDeleteArquivo(arq.id)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-600/20 hover:text-red-300 transition-all border border-white/5"><Trash2 size={12} /> Apagar</button>
+                      </div>
                     </div>
                   ))
                 )}
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'documentos' && (
+            <motion.div
+              key="documentos"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-black text-white">Documentos Gerados</h3>
+                <button onClick={() => navigate('/documents')} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all"><Plus size={20} /> Novo Documento</button>
+              </div>
+              {documentosGerados.length === 0 ? (
+                <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center shadow-2xl">
+                  <FileText size={48} className="text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 font-bold">Nenhum documento gerado vinculado a este paciente.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {documentosGerados.map((docGerado) => (
+                    <div key={docGerado.id} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl hover:border-blue-500/30 transition-all">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{docGerado.type || docGerado.document_name || 'Documento'}</p>
+                          <h4 className="text-lg font-black text-white truncate">{docGerado.document_name || docGerado.type || 'Documento gerado'}</h4>
+                          <p className="text-xs font-bold text-slate-500 mt-1">{formatDateBR(docGerado.criado_em || docGerado.created_at)}</p>
+                          <p className={cn("text-[10px] font-black uppercase tracking-widest mt-3 flex items-center gap-1", docGerado.visible_to_patient === false ? "text-amber-400" : "text-emerald-400")}>
+                            {docGerado.visible_to_patient === false ? 'Privado do fisioterapeuta' : 'Visível para paciente'}
+                          </p>
+                          {docGerado.accepted_at && <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1">Aceito em {formatDateBR(docGerado.accepted_at)}</p>}
+                        </div>
+                        <button type="button" onClick={() => handleToggleDocumentoVisibility(docGerado)} className="p-3 bg-white/5 text-slate-400 rounded-2xl hover:bg-white/10 hover:text-white border border-white/5" title="Alternar visibilidade">
+                          {docGerado.visible_to_patient === false ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'historico' && (
+            <motion.div
+              key="historico"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h3 className="text-2xl font-black text-white">Timeline clínica completa</h3>
+                <select value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value)} className="px-4 py-3 bg-slate-900 border border-white/10 rounded-2xl text-white font-bold outline-none">
+                  {['todos', 'avaliação', 'evolução', 'prescrição', 'anexo', 'documento', 'diário'].map((tipo) => <option key={tipo} value={tipo} className="bg-slate-900">{tipo === 'todos' ? 'Todos os registros' : tipo}</option>)}
+                </select>
+              </div>
+              <div className="space-y-3">
+                {buildTimelineItems().length === 0 ? (
+                  <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center shadow-2xl"><ShieldCheck size={48} className="text-slate-700 mx-auto mb-4" /><p className="text-slate-500 font-bold">Nenhum registro encontrado para este filtro.</p></div>
+                ) : buildTimelineItems().map((item: any) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.id} className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-3xl border border-white/10 shadow-xl flex items-start gap-4">
+                      <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-600/20"><Icon size={20} /></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1"><span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{item.tipo}</span><span className="text-[10px] font-bold text-slate-600">{item.date ? formatDateBR(item.date) : 'Sem data'}</span></div>
+                        <h4 className="text-white font-black truncate">{item.title}</h4>
+                        <p className="text-sm text-slate-400 font-medium line-clamp-2">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'prescricoes' && (
             <motion.div
               key="prescricoes"
@@ -1639,7 +2028,7 @@ export default function PatientDetails() {
         )}
         {showEvolucaoModal && (
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEvolucaoModal(false)} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowEvolucaoModal(false); }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-black text-white tracking-tight">Registrar Evolução Clínica</h2>
@@ -1740,6 +2129,30 @@ export default function PatientDetails() {
           </div>
         )}
 
+
+        {showEditEvolucaoModal && editingEvolucao && (
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowEditEvolucaoModal(false); setEditingEvolucao(null); }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-2xl bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-white tracking-tight">Editar Evolução Clínica</h2>
+                <button onClick={() => { setShowEditEvolucaoModal(false); setEditingEvolucao(null); }} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all"><X size={24} /></button>
+              </div>
+              <form onSubmit={handleUpdateEvolucao} className="space-y-6 overflow-y-auto pr-2">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Escala de Dor (0 a 10)</label>
+                  <div className="flex items-center gap-4"><input type="range" min="0" max="10" step="1" value={evolucaoForm.dor_escala} onChange={(e) => setEvolucaoForm({...evolucaoForm, dor_escala: parseInt(e.target.value)})} className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500" /><span className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-xl">{evolucaoForm.dor_escala}</span></div>
+                </div>
+                <textarea required value={evolucaoForm.descricao} onChange={(e) => setEvolucaoForm({...evolucaoForm, descricao: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none h-28 resize-none text-white" placeholder="Descrição da sessão" />
+                <textarea value={evolucaoForm.exercicios_realizados} onChange={(e) => setEvolucaoForm({...evolucaoForm, exercicios_realizados: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none text-white" placeholder="Exercícios/condutas realizadas" />
+                <textarea value={evolucaoForm.observacoes} onChange={(e) => setEvolucaoForm({...evolucaoForm, observacoes: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none text-white" placeholder="Observações" />
+                <input type="text" value={evolucaoForm.plano} onChange={(e) => setEvolucaoForm({...evolucaoForm, plano: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-white" placeholder="Plano terapêutico/próximos passos" />
+                <div className="flex gap-3"><button type="button" disabled={submitting} onClick={() => handleDeleteEvolucao(editingEvolucao.id)} className="px-5 py-4 bg-red-500/10 text-red-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500/20 border border-red-500/20 disabled:opacity-50">Apagar</button><button type="submit" disabled={submitting} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">{submitting ? <Loader2 className="animate-spin" /> : 'Salvar Alterações'}</button></div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
         {showArquivoModal && (
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowArquivoModal(false)} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
@@ -1764,6 +2177,27 @@ export default function PatientDetails() {
                     <option value="Documento" className="bg-slate-900">Documento Geral</option>
                   </select>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do documento <span className="text-slate-600 normal-case tracking-normal">(opcional)</span></label>
+                  <input
+                    type="text"
+                    value={arquivoForm.nome_arquivo}
+                    onChange={(e) => setArquivoForm({...arquivoForm, nome_arquivo: e.target.value})}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-white"
+                    placeholder="Ex: Exame de joelho, laudo de imagem..."
+                  />
+                </div>
+
+                <label className="flex items-center justify-between gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Visível para o paciente</span>
+                  <input
+                    type="checkbox"
+                    checked={arquivoForm.visible_to_patient}
+                    onChange={(e) => setArquivoForm({...arquivoForm, visible_to_patient: e.target.checked})}
+                    className="h-5 w-5 accent-blue-600"
+                  />
+                </label>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Selecionar Arquivo</label>
@@ -1797,6 +2231,21 @@ export default function PatientDetails() {
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : 'Iniciar Upload'}
                 </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {showEditArquivoModal && editingArquivo && (
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setShowEditArquivoModal(false); setEditingArquivo(null); }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-slate-900 rounded-[3rem] shadow-2xl p-8 overflow-hidden flex flex-col border border-white/10">
+              <div className="flex items-center justify-between mb-8"><h2 className="text-2xl font-black text-white tracking-tight">Editar Arquivo</h2><button onClick={() => { setShowEditArquivoModal(false); setEditingArquivo(null); }} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all"><X size={24} /></button></div>
+              <form onSubmit={handleUpdateArquivo} className="space-y-6">
+                <input type="text" value={arquivoForm.nome_arquivo} onChange={(e) => setArquivoForm({...arquivoForm, nome_arquivo: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-white" placeholder="Nome do documento" />
+                <select value={arquivoForm.tipo} onChange={(e) => setArquivoForm({...arquivoForm, tipo: e.target.value})} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-white"><option value="Exame" className="bg-slate-900">Exame</option><option value="Ressonância" className="bg-slate-900">Ressonância</option><option value="Raio-X" className="bg-slate-900">Raio-X</option><option value="Foto" className="bg-slate-900">Foto</option><option value="Documento" className="bg-slate-900">Documento</option><option value="Prontuário completo" className="bg-slate-900">Prontuário completo</option></select>
+                <label className="flex items-center justify-between gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer"><span className="text-xs font-black text-slate-400 uppercase tracking-widest">Visível para o paciente</span><input type="checkbox" checked={arquivoForm.visible_to_patient} onChange={(e) => setArquivoForm({...arquivoForm, visible_to_patient: e.target.checked})} className="h-5 w-5 accent-blue-600" /></label>
+                <div className="flex gap-3"><button type="button" disabled={submitting} onClick={() => handleDeleteArquivo(editingArquivo.id)} className="px-5 py-4 bg-red-500/10 text-red-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500/20 border border-red-500/20 disabled:opacity-50">Apagar</button><button type="submit" disabled={submitting} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">{submitting ? <Loader2 className="animate-spin" /> : 'Salvar'}</button></div>
               </form>
             </motion.div>
           </div>
