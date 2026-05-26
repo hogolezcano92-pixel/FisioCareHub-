@@ -103,6 +103,7 @@ const PhysioOpportunities = lazy(() => import('./pages/PhysioOpportunities'));
 const PatientOpportunityRequests = lazy(() => import('./pages/PatientOpportunityRequests'));
 const Telehealth = lazy(() => import('./pages/Telehealth'));
 const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
+const RecoveryJourney = lazy(() => import('./pages/RecoveryJourney'));
 
 const PageLoader = () => {
   const { t } = useTranslation();
@@ -798,6 +799,7 @@ function AppContent() {
                   {/* Protected Routes */}
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
+                  <Route path="/jornada" element={<ProtectedRoute allowedRoles={['paciente']}><RecoveryJourney /></ProtectedRoute>} />
                   <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
