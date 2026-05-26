@@ -28,13 +28,15 @@ import {
   Eye,
   EyeOff,
   ClipboardList,
-  ShieldCheck
+  ShieldCheck,
+  HeartPulse
 } from 'lucide-react';
-import { formatDate, cn, resolveStorageUrl, todayDateKeyBR, formatDateKeyBR } from '../lib/utils';
+import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
 import { uploadPatientDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
+import FisioJourney from '../components/FisioJourney';
 
 const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
   if (!err) return fallback;
@@ -834,7 +836,7 @@ export default function PatientDetails() {
       doc.text(physioName, margin, y + 5);
       doc.setFont('helvetica', 'normal');
       doc.text(`CREFITO: ${physioCrefito}`, margin, y + 10);
-      doc.text(`Data: ${formatDateKeyBR(todayDateKeyBR())}`, margin, y + 15);
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, y + 15);
 
       addFooter();
 
@@ -1387,6 +1389,7 @@ export default function PatientDetails() {
       {/* Tabs */}
       <div className="flex gap-2 p-2 bg-slate-900/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-x-auto no-scrollbar shadow-lg">
         {[
+          { id: 'jornada', label: 'Jornada', icon: HeartPulse },
           { id: 'prontuario', label: 'Prontuário Completo', icon: ClipboardList },
           { id: 'ficha', label: 'Dados do Paciente', icon: User },
           { id: 'avaliacoes', label: 'Avaliações', icon: Stethoscope },
@@ -1416,6 +1419,18 @@ export default function PatientDetails() {
       {/* Tab Content */}
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
+
+          {activeTab === 'jornada' && (
+            <motion.div
+              key="jornada"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <FisioJourney compact mode="physio" patientId={id} patient={patient} />
+            </motion.div>
+          )}
 
           {activeTab === 'prontuario' && (
             <motion.div

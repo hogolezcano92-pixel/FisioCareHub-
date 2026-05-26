@@ -54,6 +54,7 @@ import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
+import FisioJourney from '../components/FisioJourney';
 
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -703,6 +704,27 @@ export default function Dashboard() {
         )}
 
         <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
+
+        {!isPhysio && (
+          <div className="rounded-[2rem] border border-purple-100 bg-white p-4 md:p-5 shadow-[0_18px_60px_rgba(88,28,135,0.10)]">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-purple-700">Nova experiência</p>
+                <h2 className="text-2xl font-black text-purple-800 tracking-tight">Jornada de Recuperação</h2>
+                <p className="text-sm font-semibold text-slate-700">Seu progresso, diário, exercícios e próximos passos em uma visão moderna.</p>
+              </div>
+              <button
+                onClick={() => navigate('/jornada')}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-purple-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-purple-900/20 hover:bg-purple-800 transition-all"
+              >
+                Abrir jornada
+                <ChevronRight size={18} />
+              </button>
+            </div>
+            <FisioJourney compact mode="patient" />
+          </div>
+        )}
+
 
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
