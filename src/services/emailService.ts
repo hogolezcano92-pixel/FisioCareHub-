@@ -1,96 +1,11 @@
 /**
  * FisioCareHub - Transactional Email Service
- * Template compatível com Gmail, Outlook e clientes móveis.
+ * Todos os e-mails usam o template premium oficial do FisioCareHub.
  */
 
-import { formatDateBR } from '../utils/date.ts';
 import { invokeFunction } from '../lib/supabase.ts';
-
-interface EmailParams {
-  nome_do_usuario: string;
-  mensagem_principal_da_notificacao: string;
-  data_hora_formatada?: string;
-}
-
-const escapeHtml = (value: string) => String(value || '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#039;');
-
-export const generateEmailHTML = ({
-  nome_do_usuario,
-  mensagem_principal_da_notificacao,
-  data_hora_formatada
-}: EmailParams): string => {
-  const ano = new Date().getFullYear();
-  const dataExtenso = data_hora_formatada || formatDateBR(new Date());
-  const safeName = escapeHtml(nome_do_usuario);
-
-  return `
-<!doctype html>
-<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="x-apple-disable-message-reformatting" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Notificação FisioCareHub</title>
-  <!--[if mso]>
-  <style type="text/css">
-    body, table, td, p, a, h1, h2 { font-family: Arial, sans-serif !important; }
-    table { border-collapse: collapse !important; }
-  </style>
-  <![endif]-->
-</head>
-<body style="margin:0; padding:0; width:100% !important; min-width:100%; background-color:#f8fafc; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
-  <center style="width:100%; background-color:#f8fafc;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%; margin:0; padding:0; background-color:#f8fafc; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
-      <tr>
-        <td align="center" style="padding:24px 12px;">
-          <!--[if mso]>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"><tr><td>
-          <![endif]-->
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%; max-width:600px; background-color:#ffffff; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; border:1px solid #e5e7eb;">
-            <tr>
-              <td align="center" style="padding:34px 22px 28px 22px; border-bottom:1px solid #f1f5f9; text-align:center;">
-                <h1 style="margin:0; padding:0; font-family:Arial, Helvetica, sans-serif; font-size:30px; line-height:36px; font-weight:800; color:#2563eb; word-break:break-word;">FisioCareHub</h1>
-                <p style="margin:10px 0 0 0; padding:0; font-family:Arial, Helvetica, sans-serif; color:#475569; font-size:14px; line-height:22px;">Plataforma de Gestão em Fisioterapia</p>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:34px 22px; font-family:Arial, Helvetica, sans-serif; color:#334155; font-size:16px; line-height:26px; word-break:break-word; overflow-wrap:break-word;">
-                <p style="font-family:Arial, Helvetica, sans-serif; font-size:18px; line-height:26px; margin:0 0 22px 0; color:#1e293b;">Olá, <strong>${safeName}</strong></p>
-                <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#475569; word-break:break-word; overflow-wrap:break-word;">
-                  ${mensagem_principal_da_notificacao}
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="background-color:#1e293b; padding:32px 22px; text-align:center; font-family:Arial, Helvetica, sans-serif;">
-                <p style="margin:0 0 10px 0; font-family:Arial, Helvetica, sans-serif; font-weight:bold; color:#ffffff; font-size:14px; line-height:21px;">Informações de Contato</p>
-                <p style="margin:5px 0; font-family:Arial, Helvetica, sans-serif; color:#cbd5e1; font-size:14px; line-height:21px;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color:#ffffff; text-decoration:none; font-weight:bold; word-break:break-word;">suporte@fisiocarehub.company</a></p>
-                <p style="margin:5px 0; font-family:Arial, Helvetica, sans-serif; color:#cbd5e1; font-size:14px; line-height:21px;">Website: <a href="https://fisiocarehub.company" style="color:#ffffff; text-decoration:none; font-weight:bold; word-break:break-word;">fisiocarehub.company</a></p>
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; margin:20px 0;"><tr><td style="border-top:1px solid #334155; font-size:0; line-height:0;">&nbsp;</td></tr></table>
-                <p style="margin:10px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#94a3b8;">FisioCareHub © ${ano} - Todos os direitos reservados</p>
-                <p style="margin:15px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:17px; color:#94a3b8;">Gerado em: ${dataExtenso}</p>
-              </td>
-            </tr>
-          </table>
-          <!--[if mso]>
-          </td></tr></table>
-          <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </center>
-</body>
-</html>
-  `;
-};
+import { escapeHtml, generateEmailHTML } from './emailTemplate.ts';
+export { generateEmailHTML };
 
 /**
  * Sends a welcome email to a new user
