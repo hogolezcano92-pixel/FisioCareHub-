@@ -130,7 +130,7 @@ export default function PaymentPage() {
           body: JSON.stringify({
             user_id: user.id,
             email: profile.email,
-            plan: 'appointment',
+
             type: 'appointment',
             service_name: appointment.servico || appointment.tipo || 'Atendimento de Fisioterapia',
             amount: Number(appointment.valor),
