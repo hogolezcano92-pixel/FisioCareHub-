@@ -33,7 +33,7 @@ import {
 import { formatDate, cn, resolveStorageUrl } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import { toast } from 'sonner';
-import { uploadPatientDocument } from '../services/supabaseStorage';
+import { uploadPatientDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
 
 const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
@@ -1173,6 +1173,25 @@ export default function PatientDetails() {
     }
   };
 
+  const openPatientArquivo = async (arquivo: any) => {
+    try {
+      const pathOrUrl = arquivo?.file_path || arquivo?.arquivo_url;
+      if (!pathOrUrl) {
+        toast.error('Arquivo sem caminho para visualização.');
+        return;
+      }
+
+      const raw = String(pathOrUrl).trim();
+      const isUrl = /^https?:\/\//i.test(raw);
+      const url = isUrl ? raw : await getPrivateDocumentUrl(raw);
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Erro ao abrir arquivo do paciente:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao abrir arquivo. Verifique se o bucket documents existe e se o arquivo ainda está no Storage.'));
+    }
+  };
+
   const handleOpenEditArquivo = (arquivo: any) => {
     setEditingArquivo(arquivo);
     setArquivoForm({
@@ -1748,14 +1767,22 @@ export default function PatientDetails() {
                       </div>
                       <p className="text-sm font-bold text-white truncate">{arq.nome_arquivo || 'Documento clínico'}</p>
                       <p className="text-xs font-bold text-slate-500 truncate mb-4">{formatDateBR(arq.created_at)}</p>
-                      <a 
-                        href={resolveStorageUrl(arq.arquivo_url)} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
-                      >
-                        <Download size={14} /> Baixar
-                      </a>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openPatientArquivo(arq)}
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
+                        >
+                          <Eye size={14} /> Visualizar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openPatientArquivo(arq)}
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all border border-white/5"
+                        >
+                          <Download size={14} /> Abrir
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         <button type="button" onClick={() => handleOpenEditArquivo(arq)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600/20 hover:text-blue-300 transition-all border border-white/5"><Edit3 size={12} /> Editar</button>
                         <button type="button" onClick={() => handleDeleteArquivo(arq.id)} className="flex items-center justify-center gap-1 w-full py-2 bg-white/5 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-600/20 hover:text-red-300 transition-all border border-white/5"><Trash2 size={12} /> Apagar</button>
