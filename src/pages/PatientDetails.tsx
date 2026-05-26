@@ -144,6 +144,73 @@ export default function PatientDetails() {
 
   const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
 
+  const getPatientProfileCandidates = (patientData: any) => [
+    patientData?.perfil_id,
+    patientData?.profile_id,
+    patientData?.user_id,
+    patientData?.auth_user_id,
+    patientData?.paciente_id,
+  ].filter(Boolean).map(String);
+
+  const fetchLinkedPatientProfile = async (patientData: any) => {
+    const candidateIds = getPatientProfileCandidates(patientData);
+    const patientEmail = normalizeEmail(patientData?.email);
+
+    if (candidateIds.length > 0) {
+      const { data: profilesById, error: profilesByIdError } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url, tipo_usuario, role')
+        .in('id', candidateIds)
+        .limit(1);
+
+      if (profilesByIdError) {
+        console.warn('Erro ao buscar perfil real do paciente por ID:', profilesByIdError);
+      }
+
+      if (Array.isArray(profilesById) && profilesById[0]?.id) {
+        return profilesById[0];
+      }
+    }
+
+    if (patientEmail) {
+      const { data: profileByEmail, error: profileByEmailError } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url, tipo_usuario, role')
+        .ilike('email', patientEmail)
+        .maybeSingle();
+
+      if (profileByEmailError) {
+        console.warn('Erro ao buscar perfil real do paciente por e-mail:', profileByEmailError);
+      }
+
+      if (profileByEmail?.id) return profileByEmail;
+    }
+
+    return null;
+  };
+
+  const mergePatientWithProfile = (patientData: any, linkedProfile: any) => ({
+    ...patientData,
+    perfil_id: patientData?.perfil_id || linkedProfile?.id || null,
+    nome_completo: patientData?.nome_completo || linkedProfile?.nome_completo || 'Paciente',
+    email: patientData?.email || linkedProfile?.email || null,
+    telefone: patientData?.telefone || linkedProfile?.telefone || null,
+    data_nascimento: patientData?.data_nascimento || linkedProfile?.data_nascimento || null,
+    foto_url: patientData?.foto_url || patientData?.avatar_url || linkedProfile?.foto_url || linkedProfile?.avatar_url || null,
+    avatar_url: patientData?.avatar_url || linkedProfile?.avatar_url || linkedProfile?.foto_url || null,
+    linked_profile: linkedProfile || null,
+  });
+
+  const getAllPatientDataIds = (patientData: any, linkedProfile?: any) => Array.from(new Set([
+    patientData?.id,
+    patientData?.perfil_id,
+    patientData?.profile_id,
+    patientData?.user_id,
+    patientData?.auth_user_id,
+    patientData?.paciente_id,
+    linkedProfile?.id,
+  ].filter(Boolean).map(String)));
+
   const resolvePatientAccessStatus = (patientData: any) => {
     const status = String(patientData?.acesso_status || '').trim().toLowerCase();
     const accessReleased = patientData?.acesso_liberado === true || Boolean(patientData?.acesso_liberado_em);
@@ -348,14 +415,20 @@ export default function PatientDetails() {
         .eq('id', id)
         .single();
       if (pError) throw pError;
-      setPatient(patientData);
-      await checkPatientAccessStatus(patientData);
+
+      const linkedProfile = await fetchLinkedPatientProfile(patientData);
+      const resolvedPatient = mergePatientWithProfile(patientData, linkedProfile);
+      const patientDataIds = getAllPatientDataIds(patientData, linkedProfile);
+      const patientEmailForDocs = normalizeEmail(resolvedPatient.email);
+
+      setPatient(resolvedPatient);
+      await checkPatientAccessStatus(resolvedPatient);
 
       // Fetch Evoluções
       const { data: evData } = await supabase
         .from('evolucoes')
         .select('*')
-        .eq('paciente_id', id)
+        .in('paciente_id', patientDataIds)
         .order('created_at', { ascending: false });
       setEvolucoes(evData || []);
 
@@ -363,21 +436,20 @@ export default function PatientDetails() {
       const { data: arData } = await supabase
         .from('arquivos_paciente')
         .select('*')
-        .eq('paciente_id', id)
+        .in('paciente_id', patientDataIds)
         .order('created_at', { ascending: false });
       setArquivos(arData || []);
 
-      // Fetch Documentos Gerados (vínculo por paciente_id + fallback por e-mail)
-      const patientEmailForDocs = normalizeEmail(patientData.email);
+      // Fetch Documentos Gerados (vínculo por paciente_id/profile_id + fallback por e-mail)
       let docsQuery = supabase
         .from('documentos_gerados')
         .select('*')
         .order('criado_em', { ascending: false });
 
       if (patientEmailForDocs) {
-        docsQuery = docsQuery.or(`paciente_id.eq.${id},patient_email.eq.${patientEmailForDocs}`);
+        docsQuery = docsQuery.or(`paciente_id.in.(${patientDataIds.join(',')}),patient_email.eq.${patientEmailForDocs}`);
       } else {
-        docsQuery = docsQuery.eq('paciente_id', id);
+        docsQuery = docsQuery.in('paciente_id', patientDataIds);
       }
 
       const { data: docsData, error: docsError } = await docsQuery;
@@ -402,7 +474,7 @@ export default function PatientDetails() {
       const { data: atData } = await supabase
         .from('agendamentos')
         .select('*')
-        .eq('paciente_id', id)
+        .in('paciente_id', patientDataIds)
         .eq('status', 'realizado')
         .order('data', { ascending: false });
       setAgendamentos(atData || []);
@@ -413,7 +485,7 @@ export default function PatientDetails() {
       const { data: preData, error: preError } = await supabase
         .from('exercicios_paciente')
         .select('*')
-        .eq('paciente_id', id)
+        .in('paciente_id', patientDataIds)
         .order('created_at', { ascending: false });
 
       if (preError) {
@@ -452,7 +524,7 @@ export default function PatientDetails() {
       const { data: avaData } = await supabase
         .from('fichas_avaliacao')
         .select('*')
-        .eq('paciente_id', id)
+        .in('paciente_id', patientDataIds)
         .order('created_at', { ascending: false });
       setAvaliacoes(avaData || []);
 
@@ -460,33 +532,7 @@ export default function PatientDetails() {
       // O diário do paciente é salvo usando o ID da conta real do paciente
       // (perfis.id/auth.uid). Já o prontuário do fisioterapeuta usa o ID
       // clínico da tabela pacientes. Por isso buscamos pelos dois vínculos.
-      const journalPatientIds = Array.from(new Set([
-        patientData.id,
-        patientData.perfil_id,
-        patientData.profile_id,
-        patientData.user_id,
-        patientData.auth_user_id,
-        patientData.paciente_id,
-      ].filter(Boolean).map(String)));
-
-      const patientEmail = normalizeEmail(patientData.email);
-      if (patientEmail) {
-        const { data: linkedProfile, error: linkedProfileError } = await supabase
-          .from('perfis')
-          .select('id')
-          .ilike('email', patientEmail)
-          .maybeSingle();
-
-        if (linkedProfileError) {
-          console.warn('Erro ao buscar perfil vinculado ao diário:', linkedProfileError);
-        }
-
-        if (linkedProfile?.id) {
-          journalPatientIds.push(String(linkedProfile.id));
-        }
-      }
-
-      const uniqueJournalPatientIds = Array.from(new Set(journalPatientIds));
+      const uniqueJournalPatientIds = patientDataIds;
 
       if (uniqueJournalPatientIds.length > 0) {
         const { data: journalData, error: journalError } = await supabase
@@ -1291,8 +1337,8 @@ export default function PatientDetails() {
 
       <header className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-8">
         <div className="w-32 h-32 bg-white/5 rounded-[2rem] flex items-center justify-center text-blue-400 border-4 border-white/5 shadow-xl overflow-hidden">
-          {patient.foto_url ? (
-            <img src={resolveStorageUrl(patient.foto_url)} alt={patient.nome_completo} className="w-full h-full object-cover" />
+          {(patient.foto_url || patient.avatar_url) ? (
+            <img src={resolveStorageUrl(patient.foto_url || patient.avatar_url)} alt={patient.nome_completo} className="w-full h-full object-cover" />
           ) : (
             <User size={64} />
           )}

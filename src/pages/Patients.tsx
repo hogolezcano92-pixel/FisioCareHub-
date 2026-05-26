@@ -48,6 +48,89 @@ export default function Patients() {
   });
   const [uploadingImage, setUploadingImage] = useState(false);
 
+
+  const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
+
+  const resolvePatientPhoto = (patient: any, profileData?: any) => (
+    patient?.foto_url ||
+    patient?.avatar_url ||
+    profileData?.foto_url ||
+    profileData?.avatar_url ||
+    null
+  );
+
+  const enrichPatientsWithProfiles = async (basePatients: any[]) => {
+    const profileIds = Array.from(new Set(
+      basePatients
+        .flatMap((patient: any) => [patient?.perfil_id, patient?.profile_id, patient?.user_id, patient?.auth_user_id, patient?.paciente_id])
+        .filter(Boolean)
+        .map(String)
+    ));
+
+    const emails = Array.from(new Set(
+      basePatients
+        .map((patient: any) => normalizeEmail(patient?.email))
+        .filter(Boolean)
+    ));
+
+    const profilesById = new Map<string, any>();
+    const profilesByEmail = new Map<string, any>();
+
+    if (profileIds.length > 0) {
+      const { data: profilesByIdData, error: profilesByIdError } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url, tipo_usuario, role')
+        .in('id', profileIds);
+
+      if (profilesByIdError) {
+        console.warn('DEBUG: Não foi possível enriquecer pacientes por perfil_id:', profilesByIdError);
+      }
+
+      (profilesByIdData || []).forEach((profileItem: any) => {
+        profilesById.set(String(profileItem.id), profileItem);
+        const email = normalizeEmail(profileItem.email);
+        if (email) profilesByEmail.set(email, profileItem);
+      });
+    }
+
+    if (emails.length > 0) {
+      const { data: profilesByEmailData, error: profilesByEmailError } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url, tipo_usuario, role')
+        .in('email', emails);
+
+      if (profilesByEmailError) {
+        console.warn('DEBUG: Não foi possível enriquecer pacientes por e-mail:', profilesByEmailError);
+      }
+
+      (profilesByEmailData || []).forEach((profileItem: any) => {
+        profilesById.set(String(profileItem.id), profileItem);
+        const email = normalizeEmail(profileItem.email);
+        if (email) profilesByEmail.set(email, profileItem);
+      });
+    }
+
+    return basePatients.map((patient: any) => {
+      const candidateIds = [patient?.perfil_id, patient?.profile_id, patient?.user_id, patient?.auth_user_id, patient?.paciente_id]
+        .filter(Boolean)
+        .map(String);
+      const linkedProfile = candidateIds.map((candidateId) => profilesById.get(candidateId)).find(Boolean)
+        || profilesByEmail.get(normalizeEmail(patient?.email));
+
+      return {
+        ...patient,
+        perfil_id: patient?.perfil_id || linkedProfile?.id || null,
+        nome_completo: patient?.nome_completo || linkedProfile?.nome_completo || 'Paciente',
+        email: patient?.email || linkedProfile?.email || null,
+        telefone: patient?.telefone || linkedProfile?.telefone || null,
+        data_nascimento: patient?.data_nascimento || linkedProfile?.data_nascimento || null,
+        foto_url: resolvePatientPhoto(patient, linkedProfile),
+        avatar_url: patient?.avatar_url || linkedProfile?.avatar_url || linkedProfile?.foto_url || null,
+        linked_profile: linkedProfile || null,
+      };
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -116,7 +199,7 @@ export default function Patients() {
         throw supabaseError;
       }
 
-      let mergedPatients = clinicalPatients || [];
+      let mergedPatients = await enrichPatientsWithProfiles(clinicalPatients || []);
 
       // Pacientes que agendaram pelo app usam perfis.id em agendamentos.paciente_id.
       // Se o webhook ainda não criou o vínculo clínico em pacientes, criamos/mostramos aqui
@@ -230,6 +313,8 @@ export default function Patients() {
         }
       }
 
+      mergedPatients = await enrichPatientsWithProfiles(mergedPatients);
+
       console.log('DEBUG: Pacientes encontrados:', mergedPatients.length);
       setPatients(mergedPatients);
     } catch (err: any) {
@@ -270,7 +355,7 @@ export default function Patients() {
       data_nascimento: patient.data_nascimento || '',
       diagnostico: patient.diagnostico || '',
       observacoes: patient.observacoes || '',
-      foto_url: patient.foto_url || ''
+      foto_url: patient.foto_url || patient.avatar_url || ''
     });
     setShowModal(true);
   };
