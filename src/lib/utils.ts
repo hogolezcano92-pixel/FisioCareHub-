@@ -6,30 +6,89 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const ISO_DATE_KEY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const SAO_PAULO_TZ = 'America/Sao_Paulo';
 
-export function normalizeDateKey(value?: string | null) {
+function pad2(value: number) {
+  return String(value).padStart(2, '0');
+}
+
+function getDatePartsInSaoPaulo(date: Date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: SAO_PAULO_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === 'year')?.value || String(date.getFullYear());
+  const month = parts.find((p) => p.type === 'month')?.value || pad2(date.getMonth() + 1);
+  const day = parts.find((p) => p.type === 'day')?.value || pad2(date.getDate());
+
+  return { year, month, day };
+}
+
+function hasExplicitTimezone(value: string) {
+  return /(?:z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
+}
+
+export function todayDateKeyBR() {
+  const { year, month, day } = getDatePartsInSaoPaulo(new Date());
+  return `${year}-${month}-${day}`;
+}
+
+export function addDaysToDateKey(dateKey: string, days: number) {
+  const key = normalizeDateKey(dateKey) || todayDateKeyBR();
+  const [year, month, day] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+export function normalizeDateKey(value?: string | Date | number | null) {
   if (!value) return '';
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    const { year, month, day } = getDatePartsInSaoPaulo(value);
+    return `${year}-${month}-${day}`;
+  }
+
   const raw = String(value).trim();
   const iso = raw.match(ISO_DATE_KEY_RE);
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
 
   const isoDateTime = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T\s]/);
-  if (isoDateTime) return `${isoDateTime[1]}-${isoDateTime[2]}-${isoDateTime[3]}`;
+  if (isoDateTime) {
+    if (hasExplicitTimezone(raw)) {
+      const parsed = new Date(raw);
+      if (!Number.isNaN(parsed.getTime())) {
+        const { year, month, day } = getDatePartsInSaoPaulo(parsed);
+        return `${year}-${month}-${day}`;
+      }
+    }
+    return `${isoDateTime[1]}-${isoDateTime[2]}-${isoDateTime[3]}`;
+  }
 
   const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (br) return `${br[3]}-${br[2]}-${br[1]}`;
 
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    const { year, month, day } = getDatePartsInSaoPaulo(parsed);
+    return `${year}-${month}-${day}`;
+  }
+
   return '';
 }
 
-export function formatDateKeyBR(value?: string | null, fallback = 'Data não informada') {
+export function formatDateKeyBR(value?: string | Date | number | null, fallback = 'Data não informada') {
   const key = normalizeDateKey(value);
   if (!key) return value ? String(value) : fallback;
   const [year, month, day] = key.split('-');
   return `${day}/${month}/${year}`;
 }
 
-export function formatDateKeyLongBR(value?: string | null, fallback = 'Data não informada') {
+export function formatDateKeyLongBR(value?: string | Date | number | null, fallback = 'Data não informada') {
   const key = normalizeDateKey(value);
   if (!key) return value ? String(value) : fallback;
   const [year, month, day] = key.split('-').map(Number);
@@ -38,25 +97,50 @@ export function formatDateKeyLongBR(value?: string | null, fallback = 'Data não
   return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-export function formatTimeBR(value?: string | null, fallback = 'Horário não informado') {
+export function formatTimeBR(value?: string | Date | number | null, fallback = 'Horário não informado') {
   if (!value) return fallback;
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return fallback;
+    return value.toLocaleTimeString('pt-BR', {
+      timeZone: SAO_PAULO_TZ,
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   const raw = String(value).trim();
+  if (hasExplicitTimezone(raw)) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString('pt-BR', {
+        timeZone: SAO_PAULO_TZ,
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  }
+
   const time = raw.match(/(\d{2}):(\d{2})/);
   if (time) return `${time[1]}:${time[2]}`;
   return raw || fallback;
 }
 
+export function formatDateTimeBR(date: any, fallback = '') {
+  if (!date) return fallback;
+  const value = date?.toDate ? date.toDate() : date;
+  const dateKey = normalizeDateKey(value);
+  if (!dateKey) return fallback || String(date);
+
+  const [year, month, day] = dateKey.split('-');
+  const hour = formatTimeBR(value, '');
+
+  return hour ? `${day}/${month}/${year}, ${hour}` : `${day}/${month}/${year}`;
+}
+
+
 export function formatDate(date: any) {
-  if (!date) return '';
-  const d = date.toDate ? date.toDate() : new Date(date);
-  return d.toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDateTimeBR(date);
 }
 
 export function resolveStorageUrl(url: string) {
