@@ -599,7 +599,10 @@ async function startServer() {
                 to: appData.fisioterapeuta.email,
                 subject: 'Novo Agendamento Recebido - FisioCareHub',
                 appointmentId: appointmentId,
-                html: `<h3>Novo Agendamento Confirmado!</h3><p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p><p><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><a href="${baseUrl}/appointments">Ver na Agenda</a>`
+                html: generateEmailHTML({
+                  nome_do_usuario: appData.fisioterapeuta.nome_completo || 'Fisioterapeuta',
+                  mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Novo Agendamento Confirmado</h2><p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:26px;">O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou e pagou o agendamento.</p><p style="margin:0 0 18px;color:#475569;font-size:16px;line-height:26px;"><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><p style="margin:22px 0;text-align:center;"><a href="${baseUrl}/appointments" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:900;padding:14px 20px;border-radius:12px;">Ver na Agenda</a></p>`
+                })
               } 
             }).then(v => console.log(`[Webhook] [FLOW-AUDIT] Physio email result:`, v)).catch(e => console.error(`[Webhook] [FLOW-AUDIT] Physio email error:`, e));
             
@@ -607,7 +610,10 @@ async function startServer() {
               body: {
                 to: appData.paciente.email,
                 subject: 'Pagamento Confirmado - FisioCareHub',
-                html: `<h3>Pagamento Confirmado!</h3><p>Olá ${appData.paciente.nome_completo}, seu pagamento foi processado com sucesso.</p><p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
+                html: generateEmailHTML({
+                  nome_do_usuario: appData.paciente.nome_completo || 'Paciente',
+                  mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Pagamento Confirmado</h2><p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:26px;">Seu pagamento foi processado com sucesso.</p><p style="margin:0;color:#475569;font-size:16px;line-height:26px;">Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
+                })
               }
             }).then(v => console.log(`[Webhook] [FLOW-AUDIT] Patient email result:`, v)).catch(e => console.error(`[Webhook] [FLOW-AUDIT] Patient email error:`, e));
 
@@ -1231,7 +1237,10 @@ async function startServer() {
                   to: appData.fisioterapeuta.email,
                   subject: 'Novo Agendamento Recebido (Asaas) - FisioCareHub',
                   appointmentId: appointmentId,
-                  html: `<h3>Novo Agendamento Confirmado via Asaas!</h3><p>O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou o agendamento.</p><p><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><a href="${baseUrl}/appointments">Ver na Agenda</a>`
+                  html: generateEmailHTML({
+                    nome_do_usuario: appData.fisioterapeuta.nome_completo || 'Fisioterapeuta',
+                    mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Novo Agendamento Confirmado via Asaas</h2><p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:26px;">O paciente <strong>${appData.paciente.nome_completo}</strong> confirmou o agendamento.</p><p style="margin:0 0 18px;color:#475569;font-size:16px;line-height:26px;"><strong>Data:</strong> ${formattedDate} às ${formattedTime}</p><p style="margin:22px 0;text-align:center;"><a href="${baseUrl}/appointments" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:900;padding:14px 20px;border-radius:12px;">Ver na Agenda</a></p>`
+                  })
                 } 
               }).then(v => console.log(`[Asaas Webhook] [FLOW-AUDIT] Physio email result:`, v)).catch(e => console.error(`[Asaas Webhook] [FLOW-AUDIT] Physio email error:`, e));
               
@@ -1239,7 +1248,10 @@ async function startServer() {
                 body: {
                   to: appData.paciente.email,
                   subject: 'Pagamento Confirmado (Asaas) - FisioCareHub',
-                  html: `<h3>Pagamento Confirmado!</h3><p>Olá ${appData.paciente.nome_completo}, seu pagamento via Pix/Boleto foi processado com sucesso.</p><p>Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
+                  html: generateEmailHTML({
+                    nome_do_usuario: appData.paciente.nome_completo || 'Paciente',
+                    mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Pagamento Confirmado</h2><p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:26px;">Seu pagamento via Pix/Boleto foi processado com sucesso.</p><p style="margin:0;color:#475569;font-size:16px;line-height:26px;">Sua consulta com <strong>${appData.fisioterapeuta.nome_completo}</strong> está confirmada.</p>`
+                  })
                 }
               }).then(v => console.log(`[Asaas Webhook] [FLOW-AUDIT] Patient email result:`, v)).catch(e => console.error(`[Asaas Webhook] [FLOW-AUDIT] Patient email error:`, e));
             }
@@ -1825,66 +1837,11 @@ ${JSON.stringify(fieldKeys)}
 
       console.log("[Admin API] Generating template...");
       // We use a simplified version of the production template for the test
-      const testHtml = `
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Notificação FisioCareHub</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F8FAFC;">
-        <tr>
-            <td align="center" style="padding: 40px 0;">
-                <!-- Main Card -->
-                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td align="center" style="padding: 40px 30px; border-bottom: 1px solid #F1F5F9;">
-                            <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #2563EB;">FisioCareHub</h1>
-                            <p style="margin: 10px 0 0 0; color: #475569; font-size: 14px;">Plataforma de Gestão em Fisioterapia</p>
-                        </td>
-                    </tr>
-                    
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding: 40px 30px; color: #334155; line-height: 1.6;">
-                            <p style="font-size: 18px; margin: 0 0 24px 0; color: #1E293B;">Olá, <strong>${profile.nome_completo || "Usuário Teste"}</strong></p>
-                            
-                            <div style="font-size: 16px; color: #475569;">
-                                Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook.
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- Footer / Branding Block -->
-                    <tr>
-                        <td style="background-color: #1E293B; padding: 40px 30px; text-align: center;">
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                                <tr>
-                                    <td style="color: #CBD5E1; font-size: 14px; line-height: 1.5;">
-                                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #FFFFFF;">Informações de Contato</p>
-                                        <p style="margin: 5px 0;">Suporte: <a href="mailto:suporte@fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">suporte@fisiocarehub.company</a></p>
-                                        <p style="margin: 5px 0;">Website: <a href="https://fisiocarehub.company" style="color: #FFFFFF; text-decoration: none; font-weight: bold;">fisiocarehub.company</a></p>
-                                        <p style="margin: 5px 0; color: #FFFFFF; font-weight: bold;">São Paulo - Brasil | Latin America</p>
-                                        
-                                        <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
-                                        
-                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8;">FisioCareHub © ${new Date().getFullYear()} - Todos os direitos reservados</p>
-                                        <p style="margin: 10px 0; font-size: 12px; color: #94A3B8; font-style: italic;">Esta é uma mensagem automática, por favor não responda.</p>
-                                        <p style="margin: 15px 0 0 0; font-size: 11px; color: #64748B;">Gerado em: ${formatDateBR(new Date())}</p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>`;
+      const testHtml = generateEmailHTML({
+        nome_do_usuario: profile.nome_completo || 'Usuário Teste',
+        mensagem_principal_da_notificacao: `<h2 style="margin:0 0 16px;color:#2563eb;font-size:24px;line-height:31px;font-weight:900;">Teste de template</h2><p style="margin:0;color:#475569;font-size:16px;line-height:26px;">Este é um teste do template real de e-mails do FisioCareHub. Verifique layout, espaçamento e compatibilidade com Gmail/Outlook.</p>`,
+        data_hora_formatada: formatDateBR(new Date())
+      });
 
       console.log(`[Admin API] Sending test email to ${profile.email}`);
       
