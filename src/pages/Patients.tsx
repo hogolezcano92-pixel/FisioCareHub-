@@ -429,7 +429,7 @@ export default function Patients() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 pt-24 md:pt-0">
+      <div className="space-y-8 pt-10 md:pt-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
@@ -443,7 +443,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word pt-24 md:pt-0">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word pt-10 md:pt-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>
@@ -616,16 +616,16 @@ export default function Patients() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] box-border"
             >
-              <div className="p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">{editingPatient ? 'EDITAR PACIENTE' : 'CADASTRO NOVO PACIENTE'}</h2>
+              <div className="px-4 py-4 sm:p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-base sm:text-lg font-black text-white tracking-tight uppercase leading-tight">{editingPatient ? 'EDITAR PACIENTE' : 'CADASTRO NOVO PACIENTE'}</h2>
                 <button onClick={closePatientModal} className="p-2 hover:bg-white/5 text-slate-400 rounded-full transition-all">
                   <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreatePatient} className="p-5 space-y-4 overflow-y-auto">
+              <form onSubmit={handleCreatePatient} className="px-4 py-4 sm:p-5 space-y-4 overflow-y-auto">
                 <div className="flex justify-center mb-4">
                   <div className="relative group">
                     <input
@@ -661,7 +661,7 @@ export default function Patients() {
                       required
                       value={formData.nome}
                       onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                      className="input-compact"
+                      className="input-compact w-full max-w-full min-w-0 box-border"
                       placeholder="Ex: João Silva"
                     />
                   </div>
@@ -672,7 +672,7 @@ export default function Patients() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="input-compact"
+                      className="input-compact w-full max-w-full min-w-0 box-border"
                       placeholder="joao@email.com"
                     />
                   </div>
@@ -682,7 +682,7 @@ export default function Patients() {
                       type="text"
                       value={formData.telefone}
                       onChange={(e) => setFormData({...formData, telefone: e.target.value})}
-                      className="input-compact"
+                      className="input-compact w-full max-w-full min-w-0 box-border"
                       placeholder="(11) 99999-9999"
                     />
                   </div>
@@ -692,7 +692,7 @@ export default function Patients() {
                       type="date"
                       value={formData.data_nascimento}
                       onChange={(e) => setFormData({...formData, data_nascimento: e.target.value})}
-                      className="input-compact"
+                      className="input-compact w-full max-w-full min-w-0 box-border appearance-none"
                     />
                   </div>
                 </div>
@@ -703,7 +703,7 @@ export default function Patients() {
                     type="text"
                     value={formData.diagnostico}
                     onChange={(e) => setFormData({...formData, diagnostico: e.target.value})}
-                    className="input-compact"
+                    className="input-compact w-full max-w-full min-w-0 box-border"
                     placeholder="Ex: Hérnia de disco L4-L5"
                   />
                 </div>
@@ -713,7 +713,7 @@ export default function Patients() {
                   <textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    className="input-compact h-20 resize-none"
+                    className="input-compact w-full max-w-full min-w-0 box-border h-20 resize-none"
                     placeholder="Alguma observação importante sobre o paciente..."
                   />
                 </div>
@@ -721,7 +721,7 @@ export default function Patients() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 mb-1 bg-sky-500 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : editingPatient ? 'Atualizar Paciente' : 'Salvar Paciente'}
                 </button>
