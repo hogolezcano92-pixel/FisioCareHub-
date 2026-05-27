@@ -18,15 +18,15 @@ export const THEMES: Record<string, ThemeConfig> = {
   light: {
     id: 'light',
     name: 'Claro Premium',
-    primary: '#2563EB',
-    primaryHover: '#1D4ED8',
-    bg: '#F8FAFC',
+    primary: '#6D28D9',
+    primaryHover: '#5B21B6',
+    bg: '#FAF8FF',
     card: '#FFFFFF',
-    cardHover: '#F1F5F9',
-    border: '#E2E8F0',
+    cardHover: '#F5F3FF',
+    border: '#DDD6FE',
     text: '#0F172A',
-    textMuted: '#64748B',
-    shadowRgb: '37, 99, 235',
+    textMuted: '#334155',
+    shadowRgb: '109, 40, 217',
     mode: 'light'
   },
   blue: {
