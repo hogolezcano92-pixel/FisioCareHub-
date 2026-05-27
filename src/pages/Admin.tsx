@@ -1666,9 +1666,11 @@ export default function Admin() {
           <div className="flex items-center gap-2">
             <button 
               onClick={toggleTheme}
+              title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar tema claro'}
+              aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar tema claro'}
               className="p-2.5 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 rounded-xl transition-all"
             >
-              <Sun size={20} />
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
             <button className="p-2.5 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 rounded-xl transition-all relative">
               <Bell size={20} />
