@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -79,10 +79,13 @@ const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
 export default function PatientDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile } = useAuth();
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('ficha');
+  const allowedTabs = ['jornada', 'prontuario', 'ficha', 'avaliacoes', 'evolucoes', 'diario', 'arquivos', 'documentos', 'prescricoes', 'historico'];
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(allowedTabs.includes(initialTab || '') ? initialTab || 'ficha' : 'ficha');
   
   // Data States
   const [evolucoes, setEvolucoes] = useState<any[]>([]);
@@ -107,6 +110,19 @@ export default function PatientDetails() {
   const [submitting, setSubmitting] = useState(false);
   const [patientAccessStatus, setPatientAccessStatus] = useState<'checking' | 'active' | 'invited' | 'inactive' | 'no_email'>('checking');
   const [invitingPatientAccess, setInvitingPatientAccess] = useState(false);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && allowedTabs.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
+
 
   // Form States
   const [evolucaoForm, setEvolucaoForm] = useState({
@@ -1448,7 +1464,7 @@ export default function PatientDetails() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             className={cn(
               "flex items-center gap-2 px-6 py-3 rounded-full font-black text-sm whitespace-nowrap transition-all",
               activeTab === tab.id 
