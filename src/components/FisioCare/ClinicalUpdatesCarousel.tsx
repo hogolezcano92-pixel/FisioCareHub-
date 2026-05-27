@@ -58,7 +58,6 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   pubmed: 'Artigo científico',
   gnews: 'Notícia',
   scielo: 'Artigo SciELO',
-  scielo: 'Artigo SciELO',
   manual: 'Conteúdo FisioCareHub',
   sistema: 'Sistema',
 };
