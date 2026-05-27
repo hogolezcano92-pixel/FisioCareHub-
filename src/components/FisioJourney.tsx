@@ -96,6 +96,77 @@ const latestDate = (item: any) => {
   return safeDate(raw)?.getTime() || 0;
 };
 
+const normalizeStatus = (value: any) => String(value || '').trim().toLowerCase();
+const normalizeTextKey = (value: any) => String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+
+const APPOINTMENT_STATUS_PRIORITY: Record<string, number> = {
+  realizado: 70,
+  concluido: 70,
+  concluído: 70,
+  confirmado: 60,
+  confirmada: 60,
+  paid: 60,
+  pago: 60,
+  agendado: 50,
+  agendada: 50,
+  marcado: 50,
+  marcada: 50,
+  remarcado: 45,
+  remarcada: 45,
+  cancelado: 20,
+  cancelada: 20,
+  faltou: 15,
+  ausente: 15,
+  pendente_pagamento: 0,
+  pending_payment: 0,
+  aguardando_pagamento: 0,
+  pendente: 0,
+  pending: 0,
+};
+
+const isUsefulAppointmentStatus = (appointment: any) => {
+  const status = normalizeStatus(appointment?.status || appointment?.payment_status);
+  if (!status) return true;
+  return (APPOINTMENT_STATUS_PRIORITY[status] ?? 30) > 0;
+};
+
+const appointmentPriority = (appointment: any) => {
+  const status = normalizeStatus(appointment?.status || appointment?.payment_status);
+  return APPOINTMENT_STATUS_PRIORITY[status] ?? 30;
+};
+
+const appointmentTimelineKey = (appointment: any) => {
+  const date = appointmentDate(appointment);
+  const dayMinute = date
+    ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`
+    : String(appointment?.data_servico || appointment?.data || appointment?.created_at || appointment?.criado_em || 'sem-data');
+  const service = normalizeTextKey(appointment?.servico || appointment?.tipo || appointment?.titulo || appointment?.title || 'sessao');
+  const patientKey = String(appointment?.paciente_id || appointment?.patient_id || 'paciente');
+  return `${patientKey}|${dayMinute}|${service}`;
+};
+
+const cleanAppointmentsForTimeline = (appointments: any[]) => {
+  const byKey = new Map<string, any>();
+
+  appointments
+    .filter(isUsefulAppointmentStatus)
+    .forEach((appointment) => {
+      const key = appointmentTimelineKey(appointment);
+      const current = byKey.get(key);
+      if (!current || appointmentPriority(appointment) > appointmentPriority(current) || latestDate(appointment) > latestDate(current)) {
+        byKey.set(key, appointment);
+      }
+    });
+
+  return Array.from(byKey.values()).sort((a, b) => (appointmentDate(b)?.getTime() || latestDate(b)) - (appointmentDate(a)?.getTime() || latestDate(a)));
+};
+
+const timelineEventKey = (item: any) => {
+  const day = item.date ? new Date(item.date).toISOString().slice(0, 16) : 'sem-data';
+  return `${normalizeTextKey(item.type)}|${normalizeTextKey(item.title)}|${day}`;
+};
+
+
 const getExerciseCompletionFromJournals = (journals: any[]) => {
   let completed = 0;
   let total = 0;
@@ -498,76 +569,97 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
     return { mainText, insights, priority };
   }, [data.documents.length, metrics, patientName]);
 
-  const timeline = useMemo(() => [
-    ...data.evaluations.map((item) => ({
-      type: 'Avaliação',
-      title: item.diagnostico_fisio || item.queixa_principal || 'Avaliação inicial',
-      description: item.objetivos_terapeuticos || item.conduta || item.observacoes_finais || 'Ficha de avaliação registrada pelo fisioterapeuta.',
-      date: latestDate(item),
-      icon: ClipboardList,
-      href: tabPath('avaliacoes'),
-      actionLabel: 'Abrir avaliações',
-    })),
-    ...data.evolutions.map((item) => ({
-      type: 'Evolução',
-      title: 'Evolução clínica',
-      description: item.descricao || item.observacoes || item.plano || 'Evolução registrada pelo fisioterapeuta.',
-      date: latestDate(item),
-      icon: Activity,
-      href: tabPath('evolucoes'),
-      actionLabel: 'Abrir evoluções',
-    })),
-    ...data.journals.map((item) => ({
-      type: 'Diário',
-      title: `Dor ${getPainValue(item) ?? '-'}/10`,
-      description: item.notas || item.observacoes || item.descricao || item.sintomas || 'Registro rápido do paciente.',
-      date: latestDate(item),
-      icon: HeartPulse,
-      href: tabPath('diario'),
-      actionLabel: 'Abrir diário',
-    })),
-    ...data.appointments.map((item) => ({
-      type: 'Sessão',
-      title: item.servico || item.tipo || `Sessão ${item.status || ''}`.trim(),
-      description: item.observacoes || (item.status ? `Status: ${item.status}` : 'Agendamento vinculado ao tratamento.'),
-      date: appointmentDate(item)?.getTime() || latestDate(item),
-      icon: Calendar,
-      href: tabPath('historico'),
-      actionLabel: 'Abrir histórico',
-    })),
-    ...data.protocols.map((item) => ({
-      type: 'Protocolo',
-      title: item.titulo || 'Protocolo de exercícios',
-      description: item.observacoes || 'Prescrição de exercícios vinculada ao tratamento.',
-      date: latestDate(item),
-      icon: Activity,
-      href: tabPath('prescricoes'),
-      actionLabel: 'Abrir prescrições',
-    })),
-    ...data.directPrescriptions.map((item) => ({
-      type: 'Exercício',
-      title: item.exercicio?.nome || item.nome || 'Exercício prescrito',
-      description: item.observacoes || item.exercicio?.descricao || 'Exercício prescrito pelo fisioterapeuta.',
-      date: latestDate(item),
-      icon: Activity,
-      href: tabPath('prescricoes'),
-      actionLabel: 'Abrir prescrições',
-    })),
-    ...data.documents.map((item) => {
-      const docUrl = getDocumentUrl(item);
-      const externalUrl = typeof docUrl === 'string' && /^https?:\/\//i.test(docUrl) ? docUrl : '';
-      return {
-        type: 'Documento',
-        title: item.title || item.titulo || item.type || item.tipo || item.filename || item.nome || 'Documento clínico',
-        description: item.description || item.descricao || 'Documento gerado no tratamento.',
+  const timeline = useMemo(() => {
+    const usefulAppointments = cleanAppointmentsForTimeline(data.appointments);
+
+    const rawEvents = [
+      ...data.evaluations.map((item) => ({
+        type: 'Avaliação',
+        title: item.diagnostico_fisio || item.queixa_principal || 'Avaliação inicial',
+        description: item.objetivos_terapeuticos || item.conduta || item.observacoes_finais || 'Ficha de avaliação registrada pelo fisioterapeuta.',
         date: latestDate(item),
-        icon: FileText,
-        href: externalUrl || tabPath(item.source === 'arquivo_paciente' ? 'arquivos' : 'documentos'),
-        external: Boolean(externalUrl),
-        actionLabel: externalUrl ? 'Abrir documento' : 'Abrir documentos',
-      };
-    }),
-  ].filter((item) => item.date > 0).sort((a, b) => b.date - a.date).slice(0, compact ? 4 : 10), [data, compact, isPhysioMode, patientDetailsPath]);
+        icon: ClipboardList,
+        href: tabPath('avaliacoes'),
+        actionLabel: 'Abrir avaliações',
+        priority: 80,
+      })),
+      ...data.evolutions.map((item) => ({
+        type: 'Evolução',
+        title: 'Evolução clínica',
+        description: item.descricao || item.observacoes || item.plano || 'Evolução registrada pelo fisioterapeuta.',
+        date: latestDate(item),
+        icon: Activity,
+        href: tabPath('evolucoes'),
+        actionLabel: 'Abrir evoluções',
+        priority: 75,
+      })),
+      ...data.journals.map((item) => ({
+        type: 'Diário',
+        title: `Dor ${getPainValue(item) ?? '-'}/10`,
+        description: item.notas || item.observacoes || item.descricao || item.sintomas || 'Registro rápido do paciente.',
+        date: latestDate(item),
+        icon: HeartPulse,
+        href: tabPath('diario'),
+        actionLabel: 'Abrir diário',
+        priority: 60,
+      })),
+      ...usefulAppointments.map((item) => ({
+        type: 'Sessão',
+        title: item.servico || item.tipo || `Sessão ${item.status || ''}`.trim(),
+        description: item.observacoes || (item.status ? `Status: ${item.status}` : 'Sessão vinculada ao tratamento.'),
+        date: appointmentDate(item)?.getTime() || latestDate(item),
+        icon: Calendar,
+        href: tabPath('historico'),
+        actionLabel: 'Abrir histórico',
+        priority: 50 + appointmentPriority(item),
+      })),
+      ...data.protocols.map((item) => ({
+        type: 'Protocolo',
+        title: item.titulo || 'Protocolo de exercícios',
+        description: item.observacoes || 'Prescrição de exercícios vinculada ao tratamento.',
+        date: latestDate(item),
+        icon: Activity,
+        href: tabPath('prescricoes'),
+        actionLabel: 'Abrir prescrições',
+        priority: 55,
+      })),
+      ...data.directPrescriptions.map((item) => ({
+        type: 'Exercício',
+        title: item.exercicio?.nome || item.nome || 'Exercício prescrito',
+        description: item.observacoes || item.exercicio?.descricao || 'Exercício prescrito pelo fisioterapeuta.',
+        date: latestDate(item),
+        icon: Activity,
+        href: tabPath('prescricoes'),
+        actionLabel: 'Abrir prescrições',
+        priority: 55,
+      })),
+      ...data.documents.map((item) => {
+        const docUrl = getDocumentUrl(item);
+        const externalUrl = typeof docUrl === 'string' && /^https?:\/\//i.test(docUrl) ? docUrl : '';
+        return {
+          type: 'Documento',
+          title: item.title || item.titulo || item.type || item.tipo || item.filename || item.nome || 'Documento clínico',
+          description: item.description || item.descricao || 'Documento gerado no tratamento.',
+          date: latestDate(item),
+          icon: FileText,
+          href: externalUrl || tabPath(item.source === 'arquivo_paciente' || item.isClinicalFile ? 'arquivos' : 'documentos'),
+          external: Boolean(externalUrl),
+          actionLabel: externalUrl ? 'Abrir documento' : 'Abrir documentos',
+          priority: 45,
+        };
+      }),
+    ].filter((item) => item.date > 0);
+
+    const dedupedEvents = uniqueByKey(
+      rawEvents
+        .sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.date - a.date),
+      timelineEventKey,
+    );
+
+    return dedupedEvents
+      .sort((a, b) => b.date - a.date)
+      .slice(0, compact ? 4 : 10);
+  }, [data, compact, isPhysioMode, patientDetailsPath]);
 
   if (loading) {
     return (
