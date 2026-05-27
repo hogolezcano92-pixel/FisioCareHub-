@@ -25,6 +25,7 @@ type ClinicalUpdate = {
   category?: string | null;
   published_at?: string | null;
   image_url?: string | null;
+  image_key?: string | null;
   is_featured?: boolean | null;
 };
 
@@ -67,6 +68,7 @@ const imageInputFromUpdate = (item: ClinicalUpdate) => ({
   category: item.category,
   sourceType: item.source_type,
   imageUrl: item.image_url,
+  imageKey: item.image_key,
 });
 
 const getClinicalBullets = (item: ClinicalUpdate) => {
@@ -118,7 +120,7 @@ export default function ClinicalUpdateDetail() {
     try {
       const { data, error } = await supabase
         .from('clinical_updates')
-        .select('id, title, summary, source, source_url, source_type, category, published_at, image_url, is_featured')
+        .select('id, title, summary, source, source_url, source_type, category, published_at, image_url, image_key, is_featured')
         .eq('id', id)
         .eq('is_published', true)
         .single();
