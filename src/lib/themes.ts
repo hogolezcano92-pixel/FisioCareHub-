@@ -11,9 +11,24 @@ export interface ThemeConfig {
   text: string;
   textMuted: string;
   shadowRgb: string;
+  mode?: 'light' | 'dark';
 }
 
 export const THEMES: Record<string, ThemeConfig> = {
+  light: {
+    id: 'light',
+    name: 'Claro Premium',
+    primary: '#2563EB',
+    primaryHover: '#1D4ED8',
+    bg: '#F8FAFC',
+    card: '#FFFFFF',
+    cardHover: '#F1F5F9',
+    border: '#E2E8F0',
+    text: '#0F172A',
+    textMuted: '#64748B',
+    shadowRgb: '37, 99, 235',
+    mode: 'light'
+  },
   blue: {
     id: 'blue',
     name: 'Azul Clínico',
@@ -25,7 +40,8 @@ export const THEMES: Record<string, ThemeConfig> = {
     border: '#2D3748',
     text: '#FFFFFF',
     textMuted: '#94A3B8',
-    shadowRgb: '0, 71, 171'
+    shadowRgb: '0, 71, 171',
+    mode: 'dark'
   },
   green: {
     id: 'green',
@@ -38,7 +54,8 @@ export const THEMES: Record<string, ThemeConfig> = {
     border: '#0F5135',
     text: '#FFFFFF',
     textMuted: '#A7F3D0',
-    shadowRgb: '16, 185, 129'
+    shadowRgb: '16, 185, 129',
+    mode: 'dark'
   },
   purple: {
     id: 'purple',
@@ -51,7 +68,8 @@ export const THEMES: Record<string, ThemeConfig> = {
     border: '#2D225E',
     text: '#FFFFFF',
     textMuted: '#C4B5FD',
-    shadowRgb: '139, 92, 246'
+    shadowRgb: '139, 92, 246',
+    mode: 'dark'
   }
 };
 
@@ -68,7 +86,12 @@ export const applyTheme = (themeId: string) => {
   root.style.setProperty('--theme-text', theme.text);
   root.style.setProperty('--theme-text-muted', theme.textMuted);
   root.style.setProperty('--theme-shadow-rgb', theme.shadowRgb);
-  
+
+  const mode = theme.mode || 'dark';
+  root.setAttribute('data-theme', mode);
+  root.classList.toggle('dark', mode === 'dark');
+
   // Also update body background directly for instant feedback on the very edge of the viewport
   document.body.style.backgroundColor = theme.bg;
+  document.body.style.color = theme.text;
 };
