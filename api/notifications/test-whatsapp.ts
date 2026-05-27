@@ -402,7 +402,9 @@ const fallbackAdaptedItem = (item: ClinicalUpdateInsert): ClinicalUpdateInsert =
   const fallbackSummary = item.summary
     || `Artigo científico relacionado a ${item.category || 'fisioterapia e reabilitação'}. Abra a fonte para conferir os detalhes.`;
 
-  const title = stripHtml(item.title, 140);
+  const title = looksMostlyEnglish(String(item.title || ''))
+    ? stripHtml(`Artigo recente sobre ${item.category || 'fisioterapia e reabilitação'}`, 140)
+    : stripHtml(item.title, 140);
   const summary = stripHtml(fallbackSummary, 340);
   const imageFields = buildImageFields(title || item.title, summary, item.category, item.image_key);
 
@@ -619,8 +621,8 @@ ${JSON.stringify(buildClinicalEditorPayload(item))}`,
 
 
 const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
-  const groqAttempts = GROQ_API_KEY ? 3 : 0;
-  const geminiAttempts = GEMINI_API_KEY ? 2 : 0;
+  const groqAttempts = GROQ_API_KEY ? 2 : 0;
+  const geminiAttempts = GEMINI_API_KEY ? 1 : 0;
 
   for (let attempt = 1; attempt <= groqAttempts; attempt += 1) {
     try {
@@ -669,15 +671,15 @@ const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[])
   return adapted;
 };
 
-const fetchPubMed = async () => {
+const fetchPubMed = async (maxQueries = PUBMED_QUERIES.length) => {
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of PUBMED_QUERIES) {
+  for (const query of PUBMED_QUERIES.slice(0, maxQueries)) {
     const searchUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi');
     searchUrl.searchParams.set('db', 'pubmed');
     searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
-    searchUrl.searchParams.set('retmax', '6');
+    searchUrl.searchParams.set('retmax', '4');
     searchUrl.searchParams.set('sort', 'pub date');
     if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
 
@@ -738,17 +740,17 @@ const fetchPubMed = async () => {
   return updates;
 };
 
-const fetchGNews = async () => {
+const fetchGNews = async (maxQueries = GNEWS_QUERIES.length) => {
   if (!GNEWS_API_KEY) return [] as ClinicalUpdateInsert[];
 
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of GNEWS_QUERIES) {
+  for (const query of GNEWS_QUERIES.slice(0, maxQueries)) {
     const url = new URL('https://gnews.io/api/v4/search');
     url.searchParams.set('q', query.term);
     url.searchParams.set('lang', query.term.includes('fisioterapia') ? 'pt' : 'en');
     url.searchParams.set('country', query.term.includes('fisioterapia') ? 'br' : 'us');
-    url.searchParams.set('max', '10');
+    url.searchParams.set('max', '4');
     url.searchParams.set('apikey', GNEWS_API_KEY);
 
     const response = await fetch(url.toString());
@@ -783,14 +785,14 @@ const fetchGNews = async () => {
   return updates;
 };
 
-const fetchEuropePMC = async () => {
+const fetchEuropePMC = async (maxQueries = EUROPE_PMC_QUERIES.length) => {
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of EUROPE_PMC_QUERIES) {
+  for (const query of EUROPE_PMC_QUERIES.slice(0, maxQueries)) {
     const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
     url.searchParams.set('query', `${query.term} AND FIRST_PDATE:[2024-01-01 TO 2026-12-31]`);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('pageSize', '5');
+    url.searchParams.set('pageSize', '3');
     url.searchParams.set('sort', 'P_PDATE_D');
 
     try {
@@ -840,14 +842,14 @@ const fetchEuropePMC = async () => {
   return updates;
 };
 
-const fetchCrossref = async () => {
+const fetchCrossref = async (maxQueries = CROSSREF_QUERIES.length) => {
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of CROSSREF_QUERIES) {
+  for (const query of CROSSREF_QUERIES.slice(0, maxQueries)) {
     const url = new URL('https://api.crossref.org/works');
     url.searchParams.set('query', query.term);
     url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
-    url.searchParams.set('rows', '5');
+    url.searchParams.set('rows', '3');
     url.searchParams.set('sort', 'published');
     url.searchParams.set('order', 'desc');
     if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
@@ -931,24 +933,52 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
+    // Modo padrão leve para evitar timeout na Vercel.
+    // Use ?full=1 apenas quando quiser uma rodada maior.
+    const fullMode = req.query.full === '1';
+
+    const limits = fullMode
+      ? {
+          pubmedQueries: PUBMED_QUERIES.length,
+          gnewsQueries: GNEWS_QUERIES.length,
+          europePmcQueries: 2,
+          crossrefQueries: 2,
+          newsSelect: 6,
+          pubmedSelect: 18,
+          europePmcSelect: 1,
+          crossrefSelect: 1,
+          total: 26,
+        }
+      : {
+          pubmedQueries: 4,
+          gnewsQueries: 2,
+          europePmcQueries: 0,
+          crossrefQueries: 0,
+          newsSelect: 2,
+          pubmedSelect: 8,
+          europePmcSelect: 0,
+          crossrefSelect: 0,
+          total: 10,
+        };
+
     const [pubMedUpdates, newsUpdates, europePmcUpdates, crossrefUpdates] = await Promise.all([
-      fetchPubMed(),
-      fetchGNews(),
-      fetchEuropePMC(),
-      fetchCrossref(),
+      fetchPubMed(limits.pubmedQueries),
+      fetchGNews(limits.gnewsQueries),
+      limits.europePmcQueries > 0 ? fetchEuropePMC(limits.europePmcQueries) : Promise.resolve([] as ClinicalUpdateInsert[]),
+      limits.crossrefQueries > 0 ? fetchCrossref(limits.crossrefQueries) : Promise.resolve([] as ClinicalUpdateInsert[]),
     ]);
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...newsUpdates.slice(0, 2),
-      ...pubMedUpdates.slice(0, 8),
-      ...europePmcUpdates.slice(0, 1),
-      ...crossrefUpdates.slice(0, 1),
+      ...newsUpdates.slice(0, limits.newsSelect),
+      ...pubMedUpdates.slice(0, limits.pubmedSelect),
+      ...europePmcUpdates.slice(0, limits.europePmcSelect),
+      ...crossrefUpdates.slice(0, limits.crossrefSelect),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 12);
+    const updates = Array.from(uniqueMap.values()).slice(0, limits.total);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
@@ -995,11 +1025,12 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         europepmc: europePmcUpdates.length,
         crossref: crossrefUpdates.length,
       },
+      mode: fullMode ? 'full' : 'light',
       selected_for_save: {
-        pubmed: Math.min(pubMedUpdates.length, 34),
-        gnews: Math.min(newsUpdates.length, 12),
-        europepmc: Math.min(europePmcUpdates.length, 2),
-        crossref: Math.min(crossrefUpdates.length, 2),
+        pubmed: Math.min(pubMedUpdates.length, limits.pubmedSelect),
+        gnews: Math.min(newsUpdates.length, limits.newsSelect),
+        europepmc: Math.min(europePmcUpdates.length, limits.europePmcSelect),
+        crossref: Math.min(crossrefUpdates.length, limits.crossrefSelect),
         total: updates.length,
       },
     });
