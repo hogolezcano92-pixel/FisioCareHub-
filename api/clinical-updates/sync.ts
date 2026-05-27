@@ -1,1 +1,272 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
 
+type ClinicalUpdateInsert = {
+  title: string;
+  summary: string;
+  source: string;
+  source_url: string;
+  source_type: 'pubmed' | 'gnews';
+  category: string;
+  external_id: string;
+  published_at: string | null;
+  image_url: string | null;
+  is_published: boolean;
+  is_featured: boolean;
+};
+
+const getEnv = (key: string, fallback = '') => {
+  const value = process.env[key];
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return fallback;
+  return trimmed;
+};
+
+const SUPABASE_URL = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL'));
+const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+const NCBI_API_KEY = getEnv('NCBI_API_KEY');
+const GNEWS_API_KEY = getEnv('GNEWS_API_KEY');
+const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
+
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  : null;
+
+const PUBMED_QUERIES = [
+  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
+  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
+  { term: 'low back pain rehabilitation physical therapy', category: 'Ortopedia' },
+  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
+  { term: 'cardiorespiratory physiotherapy rehabilitation', category: 'Cardiorrespiratória' },
+  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
+];
+
+const GNEWS_QUERIES = [
+  { term: 'fisioterapia reabilitação', category: 'Fisioterapia' },
+  { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
+];
+
+const DEFAULT_IMAGES: Record<string, string> = {
+  'Reabilitação': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
+  'Exercício terapêutico': 'https://images.unsplash.com/photo-1571019613914-85f342c6a11e?auto=format&fit=crop&q=80&w=1200',
+  'Ortopedia': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200',
+  'Neurológica': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&q=80&w=1200',
+  'Cardiorrespiratória': 'https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&q=80&w=1200',
+  'Esportiva': 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=80&w=1200',
+  'Fisioterapia': 'https://images.unsplash.com/photo-1519824145371-296894a0daa9?auto=format&fit=crop&q=80&w=1200',
+};
+
+const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ')
+  .trim()
+  .slice(0, maxLength);
+
+const normalizeDate = (value: unknown) => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  const date = new Date(raw);
+  if (!Number.isNaN(date.getTime())) return date.toISOString();
+
+  const yearMatch = raw.match(/\b(19|20)\d{2}\b/);
+  if (yearMatch) return new Date(`${yearMatch[0]}-01-01T12:00:00.000Z`).toISOString();
+
+  return null;
+};
+
+const isSafeClinicalTopic = (title: string, summary = '') => {
+  const text = `${title} ${summary}`.toLowerCase();
+  const includeTerms = [
+    'physiotherapy', 'physical therapy', 'rehabilitation', 'exercise therapy',
+    'fisioterapia', 'reabilitação', 'therapeutic exercise', 'musculoskeletal',
+    'stroke', 'low back pain', 'cardiorespiratory', 'sports', 'geriatric',
+  ];
+
+  const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
+  return includeTerms.some((term) => text.includes(term)) && !blockedTerms.some((term) => text.includes(term));
+};
+
+const fetchPubMed = async () => {
+  const updates: ClinicalUpdateInsert[] = [];
+
+  for (const query of PUBMED_QUERIES) {
+    const searchUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi');
+    searchUrl.searchParams.set('db', 'pubmed');
+    searchUrl.searchParams.set('term', `${query.term} AND (2024:3000[pdat])`);
+    searchUrl.searchParams.set('retmode', 'json');
+    searchUrl.searchParams.set('retmax', '4');
+    searchUrl.searchParams.set('sort', 'pub date');
+    if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
+
+    const searchResponse = await fetch(searchUrl.toString());
+    if (!searchResponse.ok) continue;
+
+    const searchData: any = await searchResponse.json();
+    const ids = searchData?.esearchresult?.idlist || [];
+    if (!ids.length) continue;
+
+    const summaryUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi');
+    summaryUrl.searchParams.set('db', 'pubmed');
+    summaryUrl.searchParams.set('id', ids.join(','));
+    summaryUrl.searchParams.set('retmode', 'json');
+    if (NCBI_API_KEY) summaryUrl.searchParams.set('api_key', NCBI_API_KEY);
+
+    const summaryResponse = await fetch(summaryUrl.toString());
+    if (!summaryResponse.ok) continue;
+
+    const summaryData: any = await summaryResponse.json();
+    const result = summaryData?.result || {};
+
+    for (const id of ids) {
+      const item = result[id];
+      if (!item?.title) continue;
+
+      const title = stripHtml(item.title, 240);
+      const source = stripHtml(item.source || 'PubMed', 120);
+      const pubDate = normalizeDate(item.pubdate || item.epubdate || item.sortpubdate);
+      const authors = Array.isArray(item.authors)
+        ? item.authors.slice(0, 2).map((author: any) => author?.name).filter(Boolean).join(', ')
+        : '';
+      const summary = stripHtml(
+        `${source}${authors ? ` • ${authors}` : ''}. Artigo científico indexado no PubMed sobre ${query.term}. Abra a fonte para conferir resumo, autores e detalhes metodológicos.`,
+        420
+      );
+
+      if (!isSafeClinicalTopic(title, summary)) continue;
+
+      updates.push({
+        title,
+        summary,
+        source,
+        source_url: `https://pubmed.ncbi.nlm.nih.gov/${id}/`,
+        source_type: 'pubmed',
+        category: query.category,
+        external_id: `pubmed:${id}`,
+        published_at: pubDate,
+        image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Reabilitação,
+        is_published: true,
+        is_featured: query.category === 'Reabilitação' || query.category === 'Ortopedia',
+      });
+    }
+  }
+
+  return updates;
+};
+
+const fetchGNews = async () => {
+  if (!GNEWS_API_KEY) return [] as ClinicalUpdateInsert[];
+
+  const updates: ClinicalUpdateInsert[] = [];
+
+  for (const query of GNEWS_QUERIES) {
+    const url = new URL('https://gnews.io/api/v4/search');
+    url.searchParams.set('q', query.term);
+    url.searchParams.set('lang', query.term.includes('fisioterapia') ? 'pt' : 'en');
+    url.searchParams.set('country', query.term.includes('fisioterapia') ? 'br' : 'us');
+    url.searchParams.set('max', '5');
+    url.searchParams.set('apikey', GNEWS_API_KEY);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) continue;
+
+    const data: any = await response.json();
+    const articles = Array.isArray(data?.articles) ? data.articles : [];
+
+    for (const article of articles) {
+      const title = stripHtml(article.title, 240);
+      const summary = stripHtml(article.description || article.content || '', 420);
+      if (!title || !isSafeClinicalTopic(title, summary)) continue;
+
+      updates.push({
+        title,
+        summary: summary || 'Notícia relacionada à fisioterapia e reabilitação. Abra a fonte para ler o conteúdo completo.',
+        source: stripHtml(article.source?.name || 'GNews', 120),
+        source_url: String(article.url || '').trim(),
+        source_type: 'gnews',
+        category: query.category,
+        external_id: `gnews:${Buffer.from(String(article.url || title)).toString('base64url').slice(0, 80)}`,
+        published_at: normalizeDate(article.publishedAt),
+        image_url: String(article.image || '').trim() || DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Fisioterapia,
+        is_published: true,
+        is_featured: false,
+      });
+    }
+  }
+
+  return updates;
+};
+
+const authorizeRequest = (req: VercelRequest) => {
+  if (!CRON_SECRET) return true;
+  const authorization = String(req.headers.authorization || '');
+  const headerSecret = String(req.headers['x-cron-secret'] || '');
+  const querySecret = typeof req.query.secret === 'string' ? req.query.secret : '';
+
+  return authorization === `Bearer ${CRON_SECRET}` || headerSecret === CRON_SECRET || querySecret === CRON_SECRET;
+};
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!['GET', 'POST'].includes(req.method || '')) {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  if (!authorizeRequest(req)) {
+    return res.status(401).json({ success: false, error: 'Unauthorized cron request' });
+  }
+
+  if (!supabase) {
+    return res.status(500).json({
+      success: false,
+      error: 'Supabase não configurado. Verifique SUPABASE_URL/VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
+    });
+  }
+
+  try {
+    const [pubMedUpdates, newsUpdates] = await Promise.all([
+      fetchPubMed(),
+      fetchGNews(),
+    ]);
+
+    const uniqueMap = new Map<string, ClinicalUpdateInsert>();
+    [...pubMedUpdates, ...newsUpdates].forEach((item) => {
+      if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
+    });
+
+    const updates = Array.from(uniqueMap.values()).slice(0, 30);
+
+    if (!updates.length) {
+      return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
+    }
+
+    const { data, error } = await supabase
+      .from('clinical_updates')
+      .upsert(updates, { onConflict: 'external_id', ignoreDuplicates: false })
+      .select('id, external_id');
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      success: true,
+      inserted: data?.length || 0,
+      sources: {
+        pubmed: pubMedUpdates.length,
+        gnews: newsUpdates.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('[Clinical Updates Sync] Erro:', error);
+    return res.status(500).json({
+      success: false,
+      error: error?.message || 'Erro ao sincronizar atualizações clínicas.',
+    });
+  }
+}
