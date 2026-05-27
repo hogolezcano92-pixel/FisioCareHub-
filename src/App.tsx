@@ -56,6 +56,7 @@ import Footer from './components/Footer';
 import LGPDModal from './components/LGPDModal';
 import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
+import ThemeQuickToggle from './components/ThemeQuickToggle';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -405,6 +406,7 @@ function Navbar() {
                   </div>
                 </Link>
                 <div className="flex items-center gap-1">
+                  <ThemeQuickToggle />
                   <NotificationBell />
                   <button
                     onClick={handleLogout}
@@ -417,6 +419,7 @@ function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-3 ml-4">
+                <ThemeQuickToggle />
                 <Link 
                   to="/login" 
                   className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
@@ -435,6 +438,7 @@ function Navbar() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
+            <ThemeQuickToggle />
             {user && <NotificationBell />}
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -757,12 +761,16 @@ function AppContent() {
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         <NotificationHandler />
         <ProfileCompletionPrompt />
+        {showSidebar && !isAdminPage && (
+          <ThemeQuickToggle className="hidden lg:inline-flex fixed top-5 right-6 z-[60]" />
+        )}
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
               <Logo variant="light" size="sm" />
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <ThemeQuickToggle />
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
