@@ -366,3 +366,204 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
   border-radius: inherit;
 }
+
+/* =========================================================
+   FisioCareHub — camada global de contraste para TEMA CLARO
+   ---------------------------------------------------------
+   Importante: estes ajustes só entram quando o tema ativo é
+   claro. O dark mode continua usando as classes originais.
+   ========================================================= */
+:root[data-theme="light"] {
+  --theme-bg: #F8FAFC;
+  --theme-card: #FFFFFF;
+  --theme-card-hover: #F1F5F9;
+  --theme-border: #D8E2EF;
+  --theme-text: #0F172A;
+  --theme-text-muted: #475569;
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --border: #D8E2EF;
+  --text: #0F172A;
+  --text-2: #475569;
+  --field-bg: #FFFFFF;
+  --field-border: #CBD5E1;
+  --field-text: #0F172A;
+  --field-placeholder: #64748B;
+}
+
+:root[data-theme="light"] body,
+:root[data-theme="light"] main,
+:root[data-theme="light"] .min-h-screen {
+  color: var(--theme-text);
+}
+
+/* Fundos escuros fixos viram superfícies claras somente no tema claro */
+:root[data-theme="light"] .bg-slate-950,
+:root[data-theme="light"] .bg-slate-950\/95,
+:root[data-theme="light"] .bg-slate-950\/90,
+:root[data-theme="light"] .bg-slate-950\/80,
+:root[data-theme="light"] .bg-slate-950\/70,
+:root[data-theme="light"] .bg-gray-950,
+:root[data-theme="light"] .bg-zinc-950 {
+  background-color: #F8FAFC !important;
+}
+
+:root[data-theme="light"] .bg-slate-900,
+:root[data-theme="light"] .bg-slate-900\/95,
+:root[data-theme="light"] .bg-slate-900\/90,
+:root[data-theme="light"] .bg-slate-900\/80,
+:root[data-theme="light"] .bg-slate-900\/70,
+:root[data-theme="light"] .bg-gray-900,
+:root[data-theme="light"] .bg-zinc-900 {
+  background-color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] .bg-slate-800,
+:root[data-theme="light"] .bg-slate-800\/90,
+:root[data-theme="light"] .bg-slate-800\/80,
+:root[data-theme="light"] .bg-gray-800,
+:root[data-theme="light"] .bg-zinc-800,
+:root[data-theme="light"] .bg-white\/5,
+:root[data-theme="light"] .bg-white\/10,
+:root[data-theme="light"] .bg-white\/15 {
+  background-color: #F1F5F9 !important;
+}
+
+/* Textos pensados para fundo escuro recebem contraste no tema claro */
+:root[data-theme="light"] .text-white,
+:root[data-theme="light"] .text-slate-50,
+:root[data-theme="light"] .text-slate-100,
+:root[data-theme="light"] .text-gray-50,
+:root[data-theme="light"] .text-zinc-50 {
+  color: #0F172A !important;
+}
+
+:root[data-theme="light"] .text-slate-200,
+:root[data-theme="light"] .text-gray-200,
+:root[data-theme="light"] .text-zinc-200 {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .text-slate-300,
+:root[data-theme="light"] .text-gray-300,
+:root[data-theme="light"] .text-zinc-300,
+:root[data-theme="light"] .text-slate-400,
+:root[data-theme="light"] .text-gray-400,
+:root[data-theme="light"] .text-zinc-400,
+:root[data-theme="light"] .text-slate-500,
+:root[data-theme="light"] .text-gray-500,
+:root[data-theme="light"] .text-zinc-500 {
+  color: #475569 !important;
+}
+
+/* Bordas/brilhos brancos quase invisíveis viram bordas reais no claro */
+:root[data-theme="light"] .border-white\/5,
+:root[data-theme="light"] .border-white\/10,
+:root[data-theme="light"] .border-white\/20,
+:root[data-theme="light"] .border-slate-800,
+:root[data-theme="light"] .border-slate-700,
+:root[data-theme="light"] .border-gray-800,
+:root[data-theme="light"] .border-zinc-800 {
+  border-color: #D8E2EF !important;
+}
+
+:root[data-theme="light"] .ring-white\/10,
+:root[data-theme="light"] .ring-white\/20 {
+  --tw-ring-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+/* Cards globais usados no app */
+:root[data-theme="light"] .glass-card,
+:root[data-theme="light"] .premium-card,
+:root[data-theme="light"] .card {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  color: #0F172A !important;
+  border-color: #D8E2EF !important;
+  box-shadow: 0 18px 45px -28px rgba(15, 23, 42, 0.28) !important;
+}
+
+:root[data-theme="light"] .glass-card:hover,
+:root[data-theme="light"] .premium-card:hover {
+  background-color: #FFFFFF !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+/* Inputs, selects e textareas claros e legíveis */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  color: #0F172A !important;
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+}
+
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* Gradientes de páginas escuras viram fundo claro no tema claro */
+:root[data-theme="light"] .from-slate-950,
+:root[data-theme="light"] .from-gray-950,
+:root[data-theme="light"] .from-zinc-950 {
+  --tw-gradient-from: #F8FAFC var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(248 250 252 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+:root[data-theme="light"] .via-slate-900,
+:root[data-theme="light"] .via-gray-900,
+:root[data-theme="light"] .via-zinc-900 {
+  --tw-gradient-via: #FFFFFF var(--tw-gradient-via-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+
+:root[data-theme="light"] .to-slate-950,
+:root[data-theme="light"] .to-slate-900,
+:root[data-theme="light"] .to-gray-950,
+:root[data-theme="light"] .to-gray-900,
+:root[data-theme="light"] .to-zinc-950,
+:root[data-theme="light"] .to-zinc-900 {
+  --tw-gradient-to: #EEF4FF var(--tw-gradient-to-position) !important;
+}
+
+/* Preserva texto branco em botões e áreas coloridas/gradientes */
+:root[data-theme="light"] .btn-primary,
+:root[data-theme="light"] .btn-primary *,
+:root[data-theme="light"] .btn-primary-compact,
+:root[data-theme="light"] .btn-primary-compact *,
+:root[data-theme="light"] button.bg-primary,
+:root[data-theme="light"] button.bg-primary *,
+:root[data-theme="light"] a.bg-primary,
+:root[data-theme="light"] a.bg-primary *,
+:root[data-theme="light"] .bg-primary.text-white,
+:root[data-theme="light"] .bg-primary .text-white,
+:root[data-theme="light"] .bg-blue-600.text-white,
+:root[data-theme="light"] .bg-blue-600 .text-white,
+:root[data-theme="light"] .bg-indigo-600.text-white,
+:root[data-theme="light"] .bg-indigo-600 .text-white,
+:root[data-theme="light"] .bg-violet-600.text-white,
+:root[data-theme="light"] .bg-violet-600 .text-white,
+:root[data-theme="light"] .bg-purple-600.text-white,
+:root[data-theme="light"] .bg-purple-600 .text-white,
+:root[data-theme="light"] .bg-emerald-600.text-white,
+:root[data-theme="light"] .bg-emerald-600 .text-white,
+:root[data-theme="light"] .bg-red-600.text-white,
+:root[data-theme="light"] .bg-red-600 .text-white,
+:root[data-theme="light"] .bg-gradient-to-r.text-white,
+:root[data-theme="light"] .bg-gradient-to-r .text-white,
+:root[data-theme="light"] .bg-gradient-to-br.text-white,
+:root[data-theme="light"] .bg-gradient-to-br .text-white {
+  color: #FFFFFF !important;
+}
+
+/* Overlays escuros deixam de esconder conteúdo no tema claro */
+:root[data-theme="light"] .bg-black\/20,
+:root[data-theme="light"] .bg-black\/30,
+:root[data-theme="light"] .bg-black\/40,
+:root[data-theme="light"] .bg-black\/50,
+:root[data-theme="light"] .bg-slate-950\/60,
+:root[data-theme="light"] .bg-slate-950\/70,
+:root[data-theme="light"] .bg-slate-950\/80 {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+}
