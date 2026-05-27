@@ -509,7 +509,7 @@ function ClinicalUpdateReader({
   const image = getClinicalImage(update);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-28 z-[80] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-xl sm:inset-0 sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-x-0 bottom-0 top-[6.35rem] z-[90] flex items-start justify-center bg-slate-950/95 p-0 backdrop-blur-xl sm:inset-0 sm:items-center sm:bg-slate-950/80 sm:p-4" role="dialog" aria-modal="true">
       <button
         type="button"
         className="absolute inset-0 h-full w-full cursor-default"
@@ -517,19 +517,19 @@ function ClinicalUpdateReader({
         onClick={onClose}
       />
 
-      <article className="relative max-h-[calc(100dvh-7rem)] w-full max-w-4xl overflow-hidden rounded-t-[2rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-black/40 sm:max-h-[92vh] sm:rounded-[2rem]">
-        <div className="relative h-44 overflow-hidden bg-slate-900 sm:h-56">
+      <article className="relative flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-t-[1.25rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-black/40 sm:h-auto sm:max-h-[92vh] sm:rounded-[2rem]">
+        <div className="relative h-52 shrink-0 overflow-hidden bg-slate-900 sm:h-56">
           <img src={image} alt="Imagem clínica da atualização" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10" />
 
-          <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/65 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-100 backdrop-blur-md">
-              <BookOpenCheck size={13} /> Ler no FisioCareHub
+          <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-3 sm:left-4 sm:right-4 sm:top-4">
+            <div className="inline-flex max-w-[calc(100%-3.25rem)] items-center gap-2 rounded-full border border-white/15 bg-slate-950/70 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-sky-100 backdrop-blur-md sm:text-[10px]">
+              <BookOpenCheck size={13} /> <span className="truncate">Ler no FisioCareHub</span>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/65 text-slate-200 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/70 text-slate-200 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
               aria-label="Fechar"
             >
               <X size={18} />
@@ -537,19 +537,19 @@ function ClinicalUpdateReader({
           </div>
 
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-sky-200">
-              <span className="rounded-full border border-sky-300/20 bg-sky-400/10 px-2.5 py-1">{normalizeType(update.source_type)}</span>
-              <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1">{inferCategoryFromText(update)}</span>
-              <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1">{formatDate(update.published_at)}</span>
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-sky-200 sm:gap-2 sm:text-[10px] sm:tracking-widest">
+              <span className="rounded-full border border-sky-300/20 bg-sky-400/10 px-2 py-1 sm:px-2.5">{normalizeType(update.source_type)}</span>
+              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 sm:px-2.5">{inferCategoryFromText(update)}</span>
+              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 sm:px-2.5">{formatDate(update.published_at)}</span>
             </div>
-            <h2 className="line-clamp-3 max-w-3xl text-xl font-black leading-tight text-white sm:text-3xl">
+            <h2 className="line-clamp-2 max-w-3xl text-xl font-black leading-tight text-white sm:line-clamp-3 sm:text-3xl">
               {update.title}
             </h2>
           </div>
         </div>
 
-        <div className="max-h-[calc(100dvh-18rem)] overflow-y-auto p-5 sm:max-h-[calc(92vh-14rem)] sm:p-7">
-          <div className="grid gap-5 lg:grid-cols-[1.35fr_0.85fr]">
+        <div className="flex-1 overflow-y-auto p-5 sm:max-h-[calc(92vh-14rem)] sm:p-7">
+          <div className="grid gap-5 pb-20 sm:pb-0 lg:grid-cols-[1.35fr_0.85fr]">
             <div className="space-y-5">
               <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
                 <div className="mb-3 flex items-center gap-2 text-sm font-black text-white">
