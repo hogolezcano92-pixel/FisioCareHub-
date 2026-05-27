@@ -940,15 +940,15 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...newsUpdates.slice(0, 12),
-      ...pubMedUpdates.slice(0, 34),
-      ...europePmcUpdates.slice(0, 2),
-      ...crossrefUpdates.slice(0, 2),
+      ...newsUpdates.slice(0, 2),
+      ...pubMedUpdates.slice(0, 8),
+      ...europePmcUpdates.slice(0, 1),
+      ...crossrefUpdates.slice(0, 1),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 50);
+    const updates = Array.from(uniqueMap.values()).slice(0, 12);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
