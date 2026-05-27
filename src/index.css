@@ -567,3 +567,234 @@ input:-webkit-autofill:active {
 :root[data-theme="light"] .bg-slate-950\/80 {
   background-color: rgba(255, 255, 255, 0.72) !important;
 }
+
+
+/* =========================================================
+   FisioCareHub — refinamento v2 do TEMA CLARO
+   Referência visual: claro premium branco/lilás, texto forte
+   e cards nítidos. Mantém o dark mode intacto.
+   ========================================================= */
+:root[data-theme="light"] {
+  --theme-primary: #6D28D9;
+  --theme-primary-hover: #5B21B6;
+  --theme-bg: #FAF8FF;
+  --theme-card: #FFFFFF;
+  --theme-card-hover: #F5F3FF;
+  --theme-border: #DDD6FE;
+  --theme-text: #0F172A;
+  --theme-text-muted: #334155;
+  --theme-shadow-rgb: 109, 40, 217;
+  --bg: #FAF8FF;
+  --surface: #FFFFFF;
+  --border: #DDD6FE;
+  --text: #0F172A;
+  --text-2: #334155;
+  --field-bg: #FFFFFF;
+  --field-border: #C4B5FD;
+  --field-text: #0F172A;
+  --field-placeholder: #64748B;
+  --color-background: #FAF8FF;
+  --color-foreground: #0F172A;
+}
+
+:root[data-theme="light"] html,
+:root[data-theme="light"] body {
+  background: #FAF8FF !important;
+  color: #0F172A !important;
+}
+
+:root[data-theme="light"] .bg-background,
+:root[data-theme="light"] .bg-bg-general {
+  background-color: #FAF8FF !important;
+}
+
+/* Cards claros com borda lilás e sombra leve, no padrão do print de referência */
+:root[data-theme="light"] .glass-card,
+:root[data-theme="light"] .premium-card,
+:root[data-theme="light"] .admin-card,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] [class*="bg-white/5"],
+:root[data-theme="light"] [class*="bg-white/10"],
+:root[data-theme="light"] [class*="bg-white/15"],
+:root[data-theme="light"] [class*="bg-slate-900/50"],
+:root[data-theme="light"] [class*="bg-slate-950/40"] {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 18px 45px -30px rgba(109, 40, 217, 0.40) !important;
+}
+
+:root[data-theme="light"] .glass-card *,
+:root[data-theme="light"] .premium-card *,
+:root[data-theme="light"] .admin-card *,
+:root[data-theme="light"] .card * {
+  border-color: inherit;
+}
+
+/* Textos no claro: principal bem escuro; secundário legível, não cinza claro */
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] h4,
+:root[data-theme="light"] h5,
+:root[data-theme="light"] h6,
+:root[data-theme="light"] .text-foreground,
+:root[data-theme="light"] .text-text-main,
+:root[data-theme="light"] .text-card,
+:root[data-theme="light"] .text-card-foreground {
+  color: #0F172A !important;
+}
+
+:root[data-theme="light"] .text-muted-foreground,
+:root[data-theme="light"] .text-text-muted,
+:root[data-theme="light"] .admin-text-secondary,
+:root[data-theme="light"] .text-muted,
+:root[data-theme="light"] .text-ice {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .text-slate-300,
+:root[data-theme="light"] .text-slate-400,
+:root[data-theme="light"] .text-slate-500,
+:root[data-theme="light"] .text-gray-300,
+:root[data-theme="light"] .text-gray-400,
+:root[data-theme="light"] .text-gray-500,
+:root[data-theme="light"] .text-zinc-300,
+:root[data-theme="light"] .text-zinc-400,
+:root[data-theme="light"] .text-zinc-500 {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] .text-slate-600,
+:root[data-theme="light"] .text-gray-600,
+:root[data-theme="light"] .text-zinc-600 {
+  color: #1E293B !important;
+}
+
+/* Roxo premium como destaque do tema claro */
+:root[data-theme="light"] .text-primary,
+:root[data-theme="light"] .text-dark-primary,
+:root[data-theme="light"] .admin-title {
+  color: #6D28D9 !important;
+}
+
+:root[data-theme="light"] .border-border,
+:root[data-theme="light"] .border-border-soft,
+:root[data-theme="light"] .border-white\/5,
+:root[data-theme="light"] .border-white\/10,
+:root[data-theme="light"] .border-white\/20,
+:root[data-theme="light"] .border-slate-100,
+:root[data-theme="light"] .border-slate-200,
+:root[data-theme="light"] .border-slate-700,
+:root[data-theme="light"] .border-slate-800 {
+  border-color: #DDD6FE !important;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] .input-compact {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #C4B5FD !important;
+  box-shadow: 0 10px 30px -24px rgba(109, 40, 217, 0.35) !important;
+}
+
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] select:focus,
+:root[data-theme="light"] textarea:focus,
+:root[data-theme="light"] .input-compact:focus {
+  border-color: #8B5CF6 !important;
+  --tw-ring-color: rgba(139, 92, 246, 0.28) !important;
+}
+
+/* Mantém branco dentro de botões, badges e blocos coloridos no tema claro */
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-blue-7"], [class*="bg-blue-8"], [class*="bg-blue-9"],
+  [class*="bg-indigo-5"], [class*="bg-indigo-6"], [class*="bg-indigo-7"], [class*="bg-indigo-8"], [class*="bg-indigo-9"],
+  [class*="bg-violet-5"], [class*="bg-violet-6"], [class*="bg-violet-7"], [class*="bg-violet-8"], [class*="bg-violet-9"],
+  [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-purple-7"], [class*="bg-purple-8"], [class*="bg-purple-9"],
+  [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-emerald-7"], [class*="bg-emerald-8"], [class*="bg-emerald-9"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-green-8"], [class*="bg-green-9"],
+  [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"], [class*="bg-red-8"], [class*="bg-red-9"],
+  [class*="bg-rose-5"], [class*="bg-rose-6"], [class*="bg-rose-7"], [class*="bg-rose-8"], [class*="bg-rose-9"],
+  [class*="bg-gradient-to"]
+).text-white,
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-blue-7"], [class*="bg-blue-8"], [class*="bg-blue-9"],
+  [class*="bg-indigo-5"], [class*="bg-indigo-6"], [class*="bg-indigo-7"], [class*="bg-indigo-8"], [class*="bg-indigo-9"],
+  [class*="bg-violet-5"], [class*="bg-violet-6"], [class*="bg-violet-7"], [class*="bg-violet-8"], [class*="bg-violet-9"],
+  [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-purple-7"], [class*="bg-purple-8"], [class*="bg-purple-9"],
+  [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-emerald-7"], [class*="bg-emerald-8"], [class*="bg-emerald-9"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-green-8"], [class*="bg-green-9"],
+  [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"], [class*="bg-red-8"], [class*="bg-red-9"],
+  [class*="bg-rose-5"], [class*="bg-rose-6"], [class*="bg-rose-7"], [class*="bg-rose-8"], [class*="bg-rose-9"],
+  [class*="bg-gradient-to"]
+) .text-white {
+  color: #FFFFFF !important;
+}
+
+/* Cabeçalhos/sidebars escuros da marca continuam escuros e com texto branco */
+:root[data-theme="light"] :is(
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"]
+) {
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"]
+) :is(.text-white, .text-slate-50, .text-slate-100, .text-slate-200) {
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"]
+) :is(.text-slate-300, .text-slate-400, .text-gray-300, .text-gray-400) {
+  color: #CBD5E1 !important;
+}
+
+/* Tabelas, dropdowns e listas com aparência clara consistente */
+:root[data-theme="light"] table,
+:root[data-theme="light"] thead,
+:root[data-theme="light"] tbody,
+:root[data-theme="light"] tr,
+:root[data-theme="light"] td,
+:root[data-theme="light"] th {
+  color: #0F172A;
+  border-color: #DDD6FE !important;
+}
+
+:root[data-theme="light"] thead,
+:root[data-theme="light"] .bg-slate-50,
+:root[data-theme="light"] .bg-gray-50 {
+  background-color: #F5F3FF !important;
+}
+
+/* Overlays em tema claro: menos escuros para não apagar textos/cards */
+:root[data-theme="light"] .bg-black\/20,
+:root[data-theme="light"] .bg-black\/30,
+:root[data-theme="light"] .bg-black\/40,
+:root[data-theme="light"] .bg-black\/50 {
+  background-color: rgba(15, 23, 42, 0.18) !important;
+}
