@@ -77,11 +77,24 @@ const normalizeDate = (value: unknown) => {
   const raw = String(value || '').trim();
   if (!raw) return null;
 
+  const normalizeIfValid = (date: Date) => {
+    if (Number.isNaN(date.getTime())) return null;
+
+    // PubMed pode retornar datas futuras/ahead of print.
+    // Evitamos salvar datas futuras para não confundir o fisioterapeuta no Dashboard.
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (date.getTime() > tomorrow.getTime()) return new Date().toISOString();
+
+    return date.toISOString();
+  };
+
   const date = new Date(raw);
-  if (!Number.isNaN(date.getTime())) return date.toISOString();
+  const normalizedDate = normalizeIfValid(date);
+  if (normalizedDate) return normalizedDate;
 
   const yearMatch = raw.match(/\b(19|20)\d{2}\b/);
-  if (yearMatch) return new Date(`${yearMatch[0]}-01-01T12:00:00.000Z`).toISOString();
+  if (yearMatch) return normalizeIfValid(new Date(`${yearMatch[0]}-01-01T12:00:00.000Z`));
 
   return null;
 };
@@ -205,7 +218,7 @@ const fetchPubMed = async () => {
   for (const query of PUBMED_QUERIES) {
     const searchUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi');
     searchUrl.searchParams.set('db', 'pubmed');
-    searchUrl.searchParams.set('term', `${query.term} AND (2024:3000[pdat])`);
+    searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
     searchUrl.searchParams.set('retmax', '4');
     searchUrl.searchParams.set('sort', 'pub date');
