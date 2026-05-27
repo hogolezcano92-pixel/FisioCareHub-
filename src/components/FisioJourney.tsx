@@ -436,6 +436,9 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
   }, [data]);
 
   const patientName = patient?.nome_completo || profile?.nome_completo || 'Paciente';
+  const patientDetailsPath = isPhysioMode ? `/patients/${patient?.id || targetPatientId}` : '';
+  const tabPath = (tab: string) => isPhysioMode ? `${patientDetailsPath}?tab=${tab}` : '';
+  const getDocumentUrl = (item: any) => item?.public_url || item?.url || item?.file_url || item?.arquivo_url || item?.documento_url || item?.download_url || item?.signedUrl || item?.signed_url || '';
 
   const smartSummary = useMemo(() => {
     const hasPainData = metrics.currentPain !== null;
@@ -482,6 +485,8 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       description: item.objetivos_terapeuticos || item.conduta || item.observacoes_finais || 'Ficha de avaliação registrada pelo fisioterapeuta.',
       date: latestDate(item),
       icon: ClipboardList,
+      href: tabPath('avaliacoes'),
+      actionLabel: 'Abrir avaliações',
     })),
     ...data.evolutions.map((item) => ({
       type: 'Evolução',
@@ -489,6 +494,8 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       description: item.descricao || item.observacoes || item.plano || 'Evolução registrada pelo fisioterapeuta.',
       date: latestDate(item),
       icon: Activity,
+      href: tabPath('evolucoes'),
+      actionLabel: 'Abrir evoluções',
     })),
     ...data.journals.map((item) => ({
       type: 'Diário',
@@ -496,6 +503,17 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       description: item.notas || item.observacoes || item.descricao || item.sintomas || 'Registro rápido do paciente.',
       date: latestDate(item),
       icon: HeartPulse,
+      href: tabPath('diario'),
+      actionLabel: 'Abrir diário',
+    })),
+    ...data.appointments.map((item) => ({
+      type: 'Sessão',
+      title: item.servico || item.tipo || `Sessão ${item.status || ''}`.trim(),
+      description: item.observacoes || (item.status ? `Status: ${item.status}` : 'Agendamento vinculado ao tratamento.'),
+      date: appointmentDate(item)?.getTime() || latestDate(item),
+      icon: Calendar,
+      href: tabPath('historico'),
+      actionLabel: 'Abrir histórico',
     })),
     ...data.protocols.map((item) => ({
       type: 'Protocolo',
@@ -503,6 +521,8 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       description: item.observacoes || 'Prescrição de exercícios vinculada ao tratamento.',
       date: latestDate(item),
       icon: Activity,
+      href: tabPath('prescricoes'),
+      actionLabel: 'Abrir prescrições',
     })),
     ...data.directPrescriptions.map((item) => ({
       type: 'Exercício',
@@ -510,15 +530,24 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       description: item.observacoes || item.exercicio?.descricao || 'Exercício prescrito pelo fisioterapeuta.',
       date: latestDate(item),
       icon: Activity,
+      href: tabPath('prescricoes'),
+      actionLabel: 'Abrir prescrições',
     })),
-    ...data.documents.map((item) => ({
-      type: 'Documento',
-      title: item.title || item.titulo || item.type || item.tipo || 'Documento clínico',
-      description: item.description || item.descricao || 'Documento gerado no tratamento.',
-      date: latestDate(item),
-      icon: FileText,
-    })),
-  ].filter((item) => item.date > 0).sort((a, b) => b.date - a.date).slice(0, compact ? 4 : 8), [data, compact]);
+    ...data.documents.map((item) => {
+      const docUrl = getDocumentUrl(item);
+      const externalUrl = typeof docUrl === 'string' && /^https?:\/\//i.test(docUrl) ? docUrl : '';
+      return {
+        type: 'Documento',
+        title: item.title || item.titulo || item.type || item.tipo || item.filename || item.nome || 'Documento clínico',
+        description: item.description || item.descricao || 'Documento gerado no tratamento.',
+        date: latestDate(item),
+        icon: FileText,
+        href: externalUrl || tabPath(item.source === 'arquivo_paciente' ? 'arquivos' : 'documentos'),
+        external: Boolean(externalUrl),
+        actionLabel: externalUrl ? 'Abrir documento' : 'Abrir documentos',
+      };
+    }),
+  ].filter((item) => item.date > 0).sort((a, b) => b.date - a.date).slice(0, compact ? 4 : 10), [data, compact, isPhysioMode, patientDetailsPath]);
 
   if (loading) {
     return (
@@ -692,22 +721,43 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {timeline.map((item, index) => (
-                    <div key={`${item.type}-${item.date}-${index}`} className="relative flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-700 text-white shadow-sm"><item.icon size={20} /></div>
-                        {index < timeline.length - 1 && <div className="mt-2 h-full min-h-8 w-px bg-purple-100" />}
-                      </div>
-                      <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  {timeline.map((item, index) => {
+                    const cardContent = (
+                      <>
                         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                           <p className="text-sm font-black text-violet-800">{item.type}</p>
                           <p className="text-xs font-extrabold text-slate-700">{formatDateBR(new Date(item.date).toISOString())}</p>
                         </div>
                         <h3 className="mt-1 text-base font-black text-slate-950">{item.title}</h3>
                         <p className="mt-1 text-sm font-bold leading-relaxed text-slate-800">{item.description}</p>
+                        {item.href && <p className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">{item.actionLabel || 'Ver detalhes'} <ArrowRight size={14} /></p>}
+                      </>
+                    );
+
+                    return (
+                      <div key={`${item.type}-${item.date}-${index}`} className="relative flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-700 text-white shadow-sm"><item.icon size={20} /></div>
+                          {index < timeline.length - 1 && <div className="mt-2 h-full min-h-8 w-px bg-purple-100" />}
+                        </div>
+                        {item.href ? (
+                          item.external ? (
+                            <a href={item.href} target="_blank" rel="noreferrer" className="flex-1 rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
+                              {cardContent}
+                            </a>
+                          ) : (
+                            <Link to={item.href} className="flex-1 rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
+                              {cardContent}
+                            </Link>
+                          )
+                        ) : (
+                          <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            {cardContent}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -773,7 +823,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
               <div className="mt-4 grid gap-3">
                 {!isPhysioMode && <button onClick={() => setCheckinOpen(true)} className="flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
-                <Link to={isPhysioMode ? `/patients/${targetPatientId}` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
+                <Link to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
                 <Link to="/chat" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-950 hover:border-violet-300 transition-all">Mensagens <MessageCircle size={18} /></Link>
