@@ -16,6 +16,7 @@ type ClinicalUpdateInsert = {
   image_key?: string | null;
   is_published: boolean;
   is_featured: boolean;
+  translation_status?: 'translated' | 'fallback';
 };
 
 const getEnv = (key: string, fallback = '') => {
@@ -127,22 +128,6 @@ const CROSSREF_QUERIES = [
   { term: '"sports physiotherapy" rehabilitation', category: 'Esportiva' },
 ];
 
-const DEFAULT_IMAGES: Record<string, string> = {
-  'Reabilitação': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
-  'Exercício terapêutico': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
-  'Ortopedia': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
-  'Neurológica': IMAGE_KEY_TO_LOCAL_IMAGE.neurologia,
-  'Cardiorrespiratória': IMAGE_KEY_TO_LOCAL_IMAGE.respiratoria,
-  'Esportiva': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
-  'Geriatria': IMAGE_KEY_TO_LOCAL_IMAGE.geriatria,
-  'Fisioterapia': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
-  'Saúde da mulher': IMAGE_KEY_TO_LOCAL_IMAGE.saude_mulher,
-  'Saúde do homem': IMAGE_KEY_TO_LOCAL_IMAGE.saude_homem,
-  'Saúde pélvica': IMAGE_KEY_TO_LOCAL_IMAGE.pelvica,
-  'Dermatofuncional': IMAGE_KEY_TO_LOCAL_IMAGE.dermato,
-  'Medicina geral': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
-};
-
 const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
   .replace(/<[^>]*>/g, ' ')
   .replace(/&amp;/g, '&')
@@ -198,7 +183,6 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
 
   return includeTerms.some((term) => text.includes(term)) && !blockedTerms.some((term) => text.includes(term));
 };
-
 
 const isStrictPhysioScientificTopic = (title: string, summary = '') => {
   const text = normalizeText(`${title} ${summary}`);
@@ -412,7 +396,6 @@ const safeJsonParse = (value: string) => {
   }
 };
 
-
 const fallbackAdaptedItem = (item: ClinicalUpdateInsert): ClinicalUpdateInsert => {
   const fallbackSummary = item.summary
     || `Artigo científico relacionado a ${item.category || 'fisioterapia e reabilitação'}. Abra a fonte para conferir os detalhes.`;
@@ -427,19 +410,17 @@ const fallbackAdaptedItem = (item: ClinicalUpdateInsert): ClinicalUpdateInsert =
     summary,
     ...imageFields,
     is_published: true,
+    translation_status: 'fallback',
   };
 };
 
-const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
-  if (!GROQ_API_KEY) {
-    const imageFields = buildImageFields(item.title, item.summary, item.category, item.image_key);
-    return { ...item, ...imageFields };
-  }
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const requestGroqTranslation = async (item: ClinicalUpdateInsert, attempt: number) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 35000);
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 22000);
-
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       signal: controller.signal,
@@ -449,7 +430,7 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        temperature: 0.1,
+        temperature: attempt === 1 ? 0.1 : 0,
         max_tokens: 760,
         response_format: { type: 'json_object' },
         messages: [
@@ -483,14 +464,17 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
       }),
     });
 
-    clearTimeout(timeout);
-
-    if (!response.ok) return fallbackAdaptedItem(item);
+    if (!response.ok) {
+      throw new Error(`Groq HTTP ${response.status}`);
+    }
 
     const data: any = await response.json();
     const content = String(data?.choices?.[0]?.message?.content || '').trim();
     const parsed = safeJsonParse(content);
-    if (!parsed) return fallbackAdaptedItem(item);
+
+    if (!parsed) {
+      throw new Error('Groq returned invalid JSON');
+    }
 
     const title = stripHtml(parsed.title || '', 140);
     const summary = stripHtml(parsed.summary || '', 340);
@@ -498,13 +482,11 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
     const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : null;
 
     if (!title || !summary) {
-      console.warn('[Clinical Updates Sync] Tradução Groq inválida, usando fallback:', item.external_id);
-      return fallbackAdaptedItem(item);
+      throw new Error('Groq returned empty title or summary');
     }
 
     if (looksMostlyEnglish(`${title} ${summary}`)) {
-      console.warn('[Clinical Updates Sync] Groq retornou inglês, usando fallback seguro:', item.external_id);
-      return fallbackAdaptedItem(item);
+      throw new Error('Groq returned mostly English content');
     }
 
     const imageFields = buildImageFields(title, summary, category, imageKey);
@@ -515,23 +497,41 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
       summary,
       category: category || item.category,
       ...imageFields,
+      translation_status: 'translated' as const,
     };
-  } catch (error) {
-    console.warn('[Clinical Updates Sync] Groq indisponível, usando fallback:', error);
-    return fallbackAdaptedItem(item);
+  } finally {
+    clearTimeout(timeout);
   }
 };
 
-const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[]) => {
-  if (!GROQ_API_KEY || !updates.length) {
-    return updates.map((item) => ({
-      ...item,
-      ...buildImageFields(item.title, item.summary, item.category, item.image_key),
-    }));
+const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
+  if (!GROQ_API_KEY) {
+    return fallbackAdaptedItem(item);
   }
 
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await requestGroqTranslation(item, attempt);
+    } catch (error) {
+      console.warn(`[Clinical Updates Sync] Groq falhou na tentativa ${attempt}/${maxAttempts}:`, error);
+
+      if (attempt < maxAttempts) {
+        await wait(700 * attempt);
+      }
+    }
+  }
+
+  console.warn('[Clinical Updates Sync] Groq falhou após todas as tentativas, publicando com fallback:', item.external_id);
+  return fallbackAdaptedItem(item);
+};
+
+const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[]) => {
+  if (!updates.length) return [];
+
   const adapted: ClinicalUpdateInsert[] = [];
-  const batchSize = 3;
+  const batchSize = 1;
 
   for (let index = 0; index < updates.length; index += batchSize) {
     const batch = updates.slice(index, index + batchSize);
@@ -841,15 +841,20 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const { data, error } = await supabase
       .from('clinical_updates')
-      .upsert(adaptedUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
+      .upsert(adaptedUpdates.map(({ translation_status, ...item }) => item), { onConflict: 'external_id', ignoreDuplicates: false })
       .select('id, external_id');
 
     if (error) throw error;
+
+    const translatedCount = adaptedUpdates.filter((item) => item.translation_status === 'translated').length;
+    const fallbackCount = adaptedUpdates.filter((item) => item.translation_status === 'fallback').length;
 
     return res.status(200).json({
       success: true,
       inserted: data?.length || 0,
       translated_with_groq: Boolean(GROQ_API_KEY),
+      translated_count: translatedCount,
+      fallback_count: fallbackCount,
       skipped_untranslated: updates.length - adaptedUpdates.length,
       sources: {
         pubmed: pubMedUpdates.length,
