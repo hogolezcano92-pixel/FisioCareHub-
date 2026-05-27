@@ -8,7 +8,7 @@
   ],
   "crons": [
     {
-      "path": "/api/clinical-updates/sync",
+      "path": "/api/notifications/test-whatsapp",
       "schedule": "0 8 * * *"
     }
   ]
