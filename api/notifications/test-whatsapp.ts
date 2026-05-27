@@ -505,7 +505,7 @@ const fetchPubMed = async () => {
     searchUrl.searchParams.set('db', 'pubmed');
     searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
-    searchUrl.searchParams.set('retmax', '4');
+    searchUrl.searchParams.set('retmax', '10');
     searchUrl.searchParams.set('sort', 'pub date');
     if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
 
@@ -576,7 +576,7 @@ const fetchGNews = async () => {
     url.searchParams.set('q', query.term);
     url.searchParams.set('lang', query.term.includes('fisioterapia') ? 'pt' : 'en');
     url.searchParams.set('country', query.term.includes('fisioterapia') ? 'br' : 'us');
-    url.searchParams.set('max', '5');
+    url.searchParams.set('max', '10');
     url.searchParams.set('apikey', GNEWS_API_KEY);
 
     const response = await fetch(url.toString());
@@ -675,7 +675,7 @@ const fetchCrossref = async () => {
     const url = new URL('https://api.crossref.org/works');
     url.searchParams.set('query', query.term);
     url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
-    url.searchParams.set('rows', '5');
+    url.searchParams.set('rows', '3');
     url.searchParams.set('sort', 'published');
     url.searchParams.set('order', 'desc');
     if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
