@@ -58,6 +58,7 @@ const DEFAULT_IMAGES: Record<string, string> = {
   'Neurológica': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&q=80&w=1200',
   'Cardiorrespiratória': 'https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&q=80&w=1200',
   'Esportiva': 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=80&w=1200',
+  'Geriatria': 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200',
   'Fisioterapia': 'https://images.unsplash.com/photo-1519824145371-296894a0daa9?auto=format&fit=crop&q=80&w=1200',
 };
 
@@ -298,7 +299,9 @@ const fetchGNews = async () => {
         category: query.category,
         external_id: `gnews:${Buffer.from(String(article.url || title)).toString('base64url').slice(0, 80)}`,
         published_at: normalizeDate(article.publishedAt),
-        image_url: String(article.image || '').trim() || DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Fisioterapia,
+        // Usamos imagem clínica curada por categoria para evitar capas externas aleatórias
+        // que não combinam com o tema do artigo/notícia no carrossel.
+        image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Fisioterapia,
         is_published: true,
         is_featured: false,
       });
