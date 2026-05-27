@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight,
   BookOpenCheck,
@@ -161,6 +162,7 @@ const buildPracticalApplication = (item: ClinicalUpdate) => {
 };
 
 export default function ClinicalUpdatesCarousel({ className }: { className?: string }) {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [updates, setUpdates] = useState<ClinicalUpdate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,7 +251,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
   }, [selectedCategory, updates.length]);
 
   useEffect(() => {
-    if (!autoPlay || loading || visibleUpdates.length <= 1 || selectedUpdate) return;
+    if (!autoPlay || loading || visibleUpdates.length <= 1) return;
 
     const intervalId = window.setInterval(() => {
       setActiveIndex((currentIndex) => {
@@ -267,7 +269,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
     }, 5200);
 
     return () => window.clearInterval(intervalId);
-  }, [autoPlay, loading, selectedUpdate, visibleUpdates.length]);
+  }, [autoPlay, loading, visibleUpdates.length]);
 
   const openSource = (item: ClinicalUpdate) => {
     const url = String(item.source_url || '').trim();
@@ -275,8 +277,8 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
   };
 
   const openReader = (item: ClinicalUpdate) => {
-    setSelectedUpdate(item);
     setAutoPlay(false);
+    navigate(`/clinical-updates/${item.id}`);
   };
 
   return (
@@ -484,14 +486,6 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
           </div>
         </div>
       </section>
-
-      {selectedUpdate ? (
-        <ClinicalUpdateReader
-          update={selectedUpdate}
-          onClose={() => setSelectedUpdate(null)}
-          onOpenSource={() => openSource(selectedUpdate)}
-        />
-      ) : null}
     </>
   );
 }
@@ -509,7 +503,7 @@ function ClinicalUpdateReader({
   const image = getClinicalImage(update);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-[6.35rem] z-[90] flex items-start justify-center bg-slate-950/95 p-0 backdrop-blur-xl sm:inset-0 sm:items-center sm:bg-slate-950/80 sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-x-0 bottom-0 top-[5.15rem] z-[90] flex items-start justify-center bg-slate-950/95 p-0 backdrop-blur-xl sm:inset-0 sm:items-center sm:bg-slate-950/80 sm:p-4" role="dialog" aria-modal="true">
       <button
         type="button"
         className="absolute inset-0 h-full w-full cursor-default"
@@ -518,7 +512,7 @@ function ClinicalUpdateReader({
       />
 
       <article className="relative flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-t-[1.25rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-black/40 sm:h-auto sm:max-h-[92vh] sm:rounded-[2rem]">
-        <div className="relative h-52 shrink-0 overflow-hidden bg-slate-900 sm:h-56">
+        <div className="relative h-44 shrink-0 overflow-hidden bg-slate-900 sm:h-56">
           <img src={image} alt="Imagem clínica da atualização" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10" />
 
@@ -537,18 +531,18 @@ function ClinicalUpdateReader({
           </div>
 
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-sky-200 sm:gap-2 sm:text-[10px] sm:tracking-widest">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.12em] text-sky-200 sm:mb-3 sm:gap-2 sm:text-[10px] sm:tracking-widest">
               <span className="rounded-full border border-sky-300/20 bg-sky-400/10 px-2 py-1 sm:px-2.5">{normalizeType(update.source_type)}</span>
               <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 sm:px-2.5">{inferCategoryFromText(update)}</span>
               <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 sm:px-2.5">{formatDate(update.published_at)}</span>
             </div>
-            <h2 className="line-clamp-2 max-w-3xl text-xl font-black leading-tight text-white sm:line-clamp-3 sm:text-3xl">
+            <h2 className="line-clamp-2 max-w-3xl text-lg font-black leading-tight text-white sm:line-clamp-3 sm:text-3xl">
               {update.title}
             </h2>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 sm:max-h-[calc(92vh-14rem)] sm:p-7">
+        <div className="flex-1 overflow-y-auto p-4 sm:max-h-[calc(92vh-14rem)] sm:p-7">
           <div className="grid gap-5 pb-20 sm:pb-0 lg:grid-cols-[1.35fr_0.85fr]">
             <div className="space-y-5">
               <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
