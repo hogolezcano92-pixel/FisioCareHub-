@@ -116,7 +116,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
         .eq('is_published', true)
         .order('is_featured', { ascending: false })
         .order('published_at', { ascending: false })
-        .limit(12);
+        .limit(30);
 
       if (error) {
         console.info('[ClinicalUpdatesCarousel] Tabela ainda não disponível ou sem permissão:', error.message);
