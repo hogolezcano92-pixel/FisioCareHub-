@@ -1623,7 +1623,7 @@ export default function Profile() {
                       </h3>
                       <p className="text-slate-400 font-medium mb-8 ml-9">Escolha o tema que melhor combina com seu estilo.</p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {Object.values(THEMES).map((t) => (
                           <button
                             key={t.id}
@@ -1651,7 +1651,7 @@ export default function Profile() {
                             </p>
 
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                              {t.id === 'blue' ? 'Padrão Profissional' : t.id === 'green' ? 'Bem-estar Profundo' : 'Visual Exclusivo'}
+                              {t.id === 'light' ? 'Visual claro e limpo' : t.id === 'blue' ? 'Padrão Profissional' : t.id === 'green' ? 'Bem-estar Profundo' : 'Visual Exclusivo'}
                             </p>
 
                             {/* Active Indicator */}

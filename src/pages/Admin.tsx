@@ -100,6 +100,7 @@ export default function Admin() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('admin-theme', theme);
   }, [theme]);
 
