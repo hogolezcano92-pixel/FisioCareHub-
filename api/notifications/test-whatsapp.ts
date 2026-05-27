@@ -75,10 +75,22 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 const PUBMED_QUERIES = [
   { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
   { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
+  { term: 'therapeutic exercise physical therapy', category: 'Exercício terapêutico' },
+  { term: 'musculoskeletal physiotherapy rehabilitation', category: 'Ortopedia' },
   { term: 'low back pain rehabilitation physical therapy', category: 'Ortopedia' },
+  { term: 'knee osteoarthritis physical therapy exercise', category: 'Ortopedia' },
+  { term: 'shoulder pain physical therapy rehabilitation', category: 'Ortopedia' },
   { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
+  { term: 'neurological rehabilitation physical therapy', category: 'Neurológica' },
+  { term: 'Parkinson rehabilitation physical therapy', category: 'Neurológica' },
   { term: 'cardiorespiratory physiotherapy rehabilitation', category: 'Cardiorrespiratória' },
+  { term: 'pulmonary rehabilitation physiotherapy', category: 'Cardiorrespiratória' },
+  { term: 'COPD pulmonary rehabilitation exercise', category: 'Cardiorrespiratória' },
   { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
+  { term: 'sports injury rehabilitation physical therapy', category: 'Esportiva' },
+  { term: 'geriatric rehabilitation physiotherapy', category: 'Geriatria' },
+  { term: 'balance training older adults physical therapy', category: 'Geriatria' },
+  { term: 'pelvic floor physical therapy rehabilitation', category: 'Saúde pélvica' },
 ];
 
 const GNEWS_QUERIES = [
@@ -86,10 +98,14 @@ const GNEWS_QUERIES = [
   { term: 'fisioterapia dor lombar', category: 'Ortopedia' },
   { term: 'fisioterapia esportiva reabilitação', category: 'Esportiva' },
   { term: 'fisioterapia respiratória reabilitação', category: 'Cardiorrespiratória' },
+  { term: 'fisioterapia neurológica reabilitação', category: 'Neurológica' },
   { term: 'reabilitação AVC fisioterapia', category: 'Neurológica' },
+  { term: 'fisioterapia idosos quedas', category: 'Geriatria' },
+  { term: 'fisioterapia assoalho pélvico', category: 'Saúde pélvica' },
   { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
   { term: 'physical therapy rehabilitation', category: 'Reabilitação' },
   { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
+  { term: 'pulmonary rehabilitation physical therapy', category: 'Cardiorrespiratória' },
 ];
 
 const EUROPE_PMC_QUERIES = [
@@ -534,7 +550,7 @@ const fetchPubMed = async () => {
     searchUrl.searchParams.set('db', 'pubmed');
     searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
-    searchUrl.searchParams.set('retmax', '12');
+    searchUrl.searchParams.set('retmax', '6');
     searchUrl.searchParams.set('sort', 'pub date');
     if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
 
@@ -797,15 +813,15 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...newsUpdates.slice(0, 10),
-      ...pubMedUpdates.slice(0, 24),
-      ...europePmcUpdates.slice(0, 4),
-      ...crossrefUpdates.slice(0, 4),
+      ...newsUpdates.slice(0, 12),
+      ...pubMedUpdates.slice(0, 34),
+      ...europePmcUpdates.slice(0, 2),
+      ...crossrefUpdates.slice(0, 2),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 42);
+    const updates = Array.from(uniqueMap.values()).slice(0, 50);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
@@ -842,10 +858,10 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         crossref: crossrefUpdates.length,
       },
       selected_for_save: {
-        pubmed: Math.min(pubMedUpdates.length, 24),
-        gnews: Math.min(newsUpdates.length, 10),
-        europepmc: Math.min(europePmcUpdates.length, 4),
-        crossref: Math.min(crossrefUpdates.length, 4),
+        pubmed: Math.min(pubMedUpdates.length, 34),
+        gnews: Math.min(newsUpdates.length, 12),
+        europepmc: Math.min(europePmcUpdates.length, 2),
+        crossref: Math.min(crossrefUpdates.length, 2),
         total: updates.length,
       },
     });
