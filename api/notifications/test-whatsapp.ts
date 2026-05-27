@@ -16,7 +16,7 @@ type ClinicalUpdateInsert = {
   image_key?: string | null;
   is_published: boolean;
   is_featured: boolean;
-  translation_status?: 'translated' | 'fallback';
+  translation_status?: 'groq' | 'gemini' | 'fallback';
 };
 
 const getEnv = (key: string, fallback = '') => {
@@ -35,6 +35,8 @@ const CROSSREF_MAILTO = getEnv('CROSSREF_MAILTO', 'hogolezcano92@gmail.com');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
 const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
 const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
+const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
+const GEMINI_MODEL = getEnv('GEMINI_MODEL', 'gemini-1.5-flash');
 
 const ALLOWED_IMAGE_KEYS = [
   'neurologia',
@@ -497,33 +499,158 @@ const requestGroqTranslation = async (item: ClinicalUpdateInsert, attempt: numbe
       summary,
       category: category || item.category,
       ...imageFields,
-      translation_status: 'translated' as const,
+      translation_status: 'groq' as const,
     };
   } finally {
     clearTimeout(timeout);
   }
 };
 
-const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
-  if (!GROQ_API_KEY) {
-    return fallbackAdaptedItem(item);
+
+const buildClinicalEditorSystemPrompt = () => [
+  'Você é um editor científico do FisioCareHub para fisioterapeutas brasileiros.',
+  'Traduza obrigatoriamente title e summary para português do Brasil, com linguagem profissional, clara e segura.',
+  'Nunca devolva o título em inglês. Mesmo títulos científicos devem ser traduzidos para português claro.',
+  'Não invente achados, resultados, recomendações clínicas específicas nem dados que não estejam no texto.',
+  'Não prometa cura e não transforme o conteúdo em orientação médica individual.',
+  'Responda somente JSON válido no formato: {"title":"...","summary":"...","category":"...","image_key":"..."}.',
+  'O title deve ter no máximo 110 caracteres.',
+  'O summary deve ter no máximo 280 caracteres e explicar por que o tema interessa ao fisioterapeuta.',
+  'A category deve ser uma destas: Reabilitação, Exercício terapêutico, Ortopedia, Neurológica, Cardiorrespiratória, Esportiva, Geriatria, Fisioterapia, Saúde da mulher, Saúde do homem, Saúde pélvica, Dermatofuncional, Medicina geral.',
+  'A image_key deve ser obrigatoriamente uma destas: neurologia, neuro, ortopedia, geriatria, respiratoria, pelvica, saude_mulher, saude_homem, dermato, medicina_geral.',
+  'Escolha image_key pelo tema clínico principal do artigo. Se tiver AVC, disfagia, marcha neurológica, Parkinson ou neuroplasticidade, prefira neurologia/neuro. Se for DPOC, pulmonar, respiração, reabilitação cardíaca ou bicicleta monitorada, use respiratoria. Se for joelho, ombro, lombar, coluna, dor musculoesquelética, dor trocantérica ou artrose, use ortopedia. Se for idoso, quedas, sarcopenia ou fragilidade, use geriatria. Se for assoalho pélvico, incontinência ou dor pélvica, use pelvica. Se for gestação, pós-parto, menopausa, mama ou saúde feminina, use saude_mulher. Se for próstata, urologia masculina ou saúde masculina, use saude_homem. Se for pele, cicatriz, linfedema, queimadura, estética ou pós-operatório tegumentar, use dermato. Se não houver tema claro, use medicina_geral.'
+].join(' ');
+
+const buildClinicalEditorPayload = (item: ClinicalUpdateInsert) => ({
+  title: item.title,
+  summary: item.summary,
+  category: item.category,
+  source_type: item.source_type,
+  source: item.source,
+});
+
+const normalizeTranslatedClinicalItem = (
+  item: ClinicalUpdateInsert,
+  parsed: any,
+  provider: 'groq' | 'gemini'
+): ClinicalUpdateInsert => {
+  const title = stripHtml(parsed?.title || '', 140);
+  const summary = stripHtml(parsed?.summary || '', 340);
+  const category = stripHtml(parsed?.category || item.category, 80);
+  const imageKey = isClinicalImageKey(parsed?.image_key) ? String(parsed.image_key) : null;
+
+  if (!title || !summary) {
+    throw new Error(`${provider} returned empty title or summary`);
   }
 
-  const maxAttempts = 3;
+  if (looksMostlyEnglish(`${title} ${summary}`)) {
+    throw new Error(`${provider} returned mostly English content`);
+  }
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+  const imageFields = buildImageFields(title, summary, category, imageKey);
+
+  return {
+    ...item,
+    title,
+    summary,
+    category: category || item.category,
+    ...imageFields,
+    translation_status: provider,
+  };
+};
+
+const requestGeminiTranslation = async (item: ClinicalUpdateInsert, attempt: number) => {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY not configured');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 35000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          generationConfig: {
+            temperature: attempt === 1 ? 0.1 : 0,
+            maxOutputTokens: 760,
+            responseMimeType: 'application/json',
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `${buildClinicalEditorSystemPrompt()}
+
+Conteúdo para traduzir/adaptar:
+${JSON.stringify(buildClinicalEditorPayload(item))}`,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini HTTP ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    const content = String(data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    const parsed = safeJsonParse(content);
+
+    if (!parsed) {
+      throw new Error('Gemini returned invalid JSON');
+    }
+
+    return normalizeTranslatedClinicalItem(item, parsed, 'gemini');
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+
+const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
+  const groqAttempts = GROQ_API_KEY ? 3 : 0;
+  const geminiAttempts = GEMINI_API_KEY ? 2 : 0;
+
+  for (let attempt = 1; attempt <= groqAttempts; attempt += 1) {
     try {
-      return await requestGroqTranslation(item, attempt);
+      const result = await requestGroqTranslation(item, attempt);
+      return {
+        ...result,
+        translation_status: 'groq',
+      };
     } catch (error) {
-      console.warn(`[Clinical Updates Sync] Groq falhou na tentativa ${attempt}/${maxAttempts}:`, error);
+      console.warn(`[Clinical Updates Sync] Groq falhou na tentativa ${attempt}/${groqAttempts}:`, error);
 
-      if (attempt < maxAttempts) {
+      if (attempt < groqAttempts) {
         await wait(700 * attempt);
       }
     }
   }
 
-  console.warn('[Clinical Updates Sync] Groq falhou após todas as tentativas, publicando com fallback:', item.external_id);
+  for (let attempt = 1; attempt <= geminiAttempts; attempt += 1) {
+    try {
+      return await requestGeminiTranslation(item, attempt);
+    } catch (error) {
+      console.warn(`[Clinical Updates Sync] Gemini falhou na tentativa ${attempt}/${geminiAttempts}:`, error);
+
+      if (attempt < geminiAttempts) {
+        await wait(900 * attempt);
+      }
+    }
+  }
+
+  console.warn('[Clinical Updates Sync] Groq/Gemini falharam, publicando com fallback:', item.external_id);
   return fallbackAdaptedItem(item);
 };
 
@@ -834,6 +961,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         success: true,
         inserted: 0,
         translated_with_groq: Boolean(GROQ_API_KEY),
+        translated_with_gemini: Boolean(GEMINI_API_KEY),
         skipped_untranslated: updates.length,
         message: 'Conteúdos encontrados, mas nenhum passou no filtro de tradução para português.',
       });
@@ -846,13 +974,18 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     if (error) throw error;
 
-    const translatedCount = adaptedUpdates.filter((item) => item.translation_status === 'translated').length;
+    const groqCount = adaptedUpdates.filter((item) => item.translation_status === 'groq').length;
+    const geminiCount = adaptedUpdates.filter((item) => item.translation_status === 'gemini').length;
+    const translatedCount = groqCount + geminiCount;
     const fallbackCount = adaptedUpdates.filter((item) => item.translation_status === 'fallback').length;
 
     return res.status(200).json({
       success: true,
       inserted: data?.length || 0,
       translated_with_groq: Boolean(GROQ_API_KEY),
+      translated_with_gemini: Boolean(GEMINI_API_KEY),
+      translated_by_groq: groqCount,
+      translated_by_gemini: geminiCount,
       translated_count: translatedCount,
       fallback_count: fallbackCount,
       skipped_untranslated: updates.length - adaptedUpdates.length,
