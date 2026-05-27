@@ -1,12 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+type ClinicalSourceType = 'pubmed' | 'gnews' | 'europepmc' | 'crossref';
+
 type ClinicalUpdateInsert = {
   title: string;
   summary: string;
   source: string;
   source_url: string;
-  source_type: 'pubmed' | 'gnews' | 'scielo';
+  source_type: ClinicalSourceType;
   category: string;
   external_id: string;
   published_at: string | null;
@@ -28,8 +30,7 @@ const SUPABASE_URL = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL'));
 const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 const NCBI_API_KEY = getEnv('NCBI_API_KEY');
 const GNEWS_API_KEY = getEnv('GNEWS_API_KEY');
-const SCIELO_API_KEY = getEnv('SCIELO_API_KEY');
-const SCIELO_API_URL = getEnv('SCIELO_API_URL', getEnv('SCIELO_ARTICLEMETA_URL'));
+const CROSSREF_MAILTO = getEnv('CROSSREF_MAILTO', 'hogolezcano92@gmail.com');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
 const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
 const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
@@ -85,13 +86,21 @@ const GNEWS_QUERIES = [
   { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
 ];
 
-const SCIELO_QUERIES = [
-  { term: 'fisioterapia', category: 'Fisioterapia' },
-  { term: 'reabilitação', category: 'Reabilitação' },
-  { term: 'exercício terapêutico', category: 'Exercício terapêutico' },
-  { term: 'dor lombar fisioterapia', category: 'Ortopedia' },
-  { term: 'reabilitação cardiorrespiratória', category: 'Cardiorrespiratória' },
-  { term: 'reabilitação neurológica', category: 'Neurológica' },
+const EUROPE_PMC_QUERIES = [
+  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
+  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
+  { term: 'low back pain physiotherapy', category: 'Ortopedia' },
+  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
+  { term: 'cardiorespiratory rehabilitation physiotherapy', category: 'Cardiorrespiratória' },
+  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
+];
+
+const CROSSREF_QUERIES = [
+  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
+  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
+  { term: 'low back pain physical therapy', category: 'Ortopedia' },
+  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
+  { term: 'cardiorespiratory physiotherapy', category: 'Cardiorrespiratória' },
 ];
 
 const DEFAULT_IMAGES: Record<string, string> = {
@@ -136,8 +145,6 @@ const normalizeDate = (value: unknown) => {
   const normalizeIfValid = (date: Date) => {
     if (Number.isNaN(date.getTime())) return null;
 
-    // PubMed pode retornar datas futuras/ahead of print.
-    // Evitamos salvar datas futuras para não confundir o fisioterapeuta no Dashboard.
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     if (date.getTime() > tomorrow.getTime()) return new Date().toISOString();
@@ -161,7 +168,7 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
     'physiotherapy', 'physical therapy', 'rehabilitation', 'exercise therapy',
     'fisioterapia', 'reabilitação', 'therapeutic exercise', 'musculoskeletal',
     'stroke', 'low back pain', 'cardiorespiratory', 'sports', 'geriatric',
-    'dor lombar', 'cardiorrespiratória', 'idoso', 'neurológica', 'scielo',
+    'dor lombar', 'cardiorrespiratória', 'idoso', 'neurológica',
   ];
   const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
 
@@ -286,8 +293,6 @@ const buildImageFields = (title: string, summary: string, category: string, pref
   };
 };
 
-
-
 const getFirstString = (...values: unknown[]) => {
   for (const value of values) {
     if (typeof value === 'string' && value.trim()) return value.trim();
@@ -304,176 +309,14 @@ const getFirstString = (...values: unknown[]) => {
   return '';
 };
 
-const getNested = (obj: any, path: string) =>
-  path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
-
-const extractScieloItems = (payload: any) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.objects)) return payload.objects;
-  if (Array.isArray(payload?.results)) return payload.results;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.articles)) return payload.articles;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.response?.docs)) return payload.response.docs;
-  return [];
-};
-
-const buildScieloConfiguredUrl = (term: string) => {
-  if (!SCIELO_API_URL) return null;
-
-  const url = new URL(SCIELO_API_URL);
-
-  // Mantém compatibilidade com proxies/API ArticleMeta diferentes.
-  // Se o endpoint oficial que você usar tiver parâmetros próprios, você pode
-  // deixar SCIELO_API_URL já com esses parâmetros fixos na Vercel.
-  if (!url.searchParams.has('q')) url.searchParams.set('q', term);
-  if (!url.searchParams.has('query')) url.searchParams.set('query', term);
-  if (!url.searchParams.has('search')) url.searchParams.set('search', term);
-  if (!url.searchParams.has('lang')) url.searchParams.set('lang', 'pt');
-  if (!url.searchParams.has('limit')) url.searchParams.set('limit', '5');
-  if (!url.searchParams.has('page_size')) url.searchParams.set('page_size', '5');
-
-  return url;
-};
-
-const getScieloArticleUrl = (article: any) => {
-  const explicitUrl = getFirstString(
-    article.url,
-    article.html_url,
-    article.fulltext_url,
-    article.article_url,
-    article.links?.html,
-    article.links?.fulltext,
-    article.scielo_url,
-    article.link
-  );
-
-  if (explicitUrl) return explicitUrl;
-
-  const doi = getFirstString(article.doi, article.document?.doi, article.article?.doi);
-  if (doi) return `https://doi.org/${String(doi).replace(/^https?:\/\/doi\.org\//i, '')}`;
-
-  const pid = getFirstString(article.pid, article.scielo_id, article.aid, article.code);
-  if (pid) return `https://www.scielo.br/scielo.php?script=sci_arttext&pid=${encodeURIComponent(pid)}`;
-
-  return '';
-};
-
-const normalizeScieloArticle = (article: any, query: { term: string; category: string }, index = 0): ClinicalUpdateInsert | null => {
-  const title = stripHtml(getFirstString(
-    article.title,
-    article.article_title,
-    article.original_title,
-    article.titles?.pt,
-    article.titles?.original,
-    article.name,
-    getNested(article, 'title.pt'),
-    getNested(article, 'title.original')
-  ), 240);
-
-  const summary = stripHtml(getFirstString(
-    article.abstract,
-    article.summary,
-    article.description,
-    article.abstracts?.pt,
-    article.abstracts?.original,
-    getNested(article, 'abstract.pt'),
-    getNested(article, 'abstract.original')
-  ), 420);
-
-  if (!title || !isSafeClinicalTopic(title, summary || query.term)) return null;
-
-  const doi = getFirstString(article.doi, article.document?.doi, article.article?.doi);
-  const articleUrl = getScieloArticleUrl(article);
-  const pid = getFirstString(article.pid, article.scielo_id, article.aid, article.code, doi, articleUrl, `${query.term}:${title}:${index}`);
-
-  const source = stripHtml(getFirstString(
-    article.journal,
-    article.journal_title,
-    article.collection,
-    article.source,
-    getNested(article, 'journal.title'),
-    'SciELO'
-  ), 120);
-
-  const publishedAt = normalizeDate(getFirstString(
-    article.published_at,
-    article.publication_date,
-    article.publication_year,
-    article.year,
-    article.created,
-    article.updated
-  ));
-
-  const finalSummary = summary || `Artigo da SciELO relacionado a ${query.term}. Abra a fonte para conferir o resumo e os detalhes do estudo.`;
-  const imageFields = buildImageFields(title, finalSummary, query.category);
-
-  return {
-    title,
-    summary: finalSummary,
-    source: source || 'SciELO',
-    source_url: articleUrl || 'https://www.scielo.br/',
-    source_type: 'scielo',
-    category: query.category,
-    external_id: `scielo:${Buffer.from(String(pid)).toString('base64url').slice(0, 80)}`,
-    published_at: publishedAt,
-    ...imageFields,
-    is_published: true,
-    is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
-  };
-};
-
-const decodeHtmlEntities = (value: string) => value
-  .replace(/&amp;/g, '&')
-  .replace(/&lt;/g, '<')
-  .replace(/&gt;/g, '>')
-  .replace(/&quot;/g, '"')
-  .replace(/&#39;/g, "'");
-
-const extractScieloItemsFromHtml = (html: string, query: { term: string; category: string }) => {
-  const items: ClinicalUpdateInsert[] = [];
-  const seen = new Set<string>();
-
-  // Fallback sem API key: lê a página pública de busca da SciELO.
-  // É propositalmente conservador: se não achar título/link confiável, ignora.
-  const anchorRegex = /<a[^>]+href=["']([^"']*(?:scielo\.br|scielosp\.org)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let match: RegExpExecArray | null;
-
-  while ((match = anchorRegex.exec(html)) && items.length < 6) {
-    const rawHref = decodeHtmlEntities(match[1] || '');
-    const rawTitle = stripHtml(decodeHtmlEntities(match[2] || ''), 220);
-
-    if (!rawHref || !rawTitle) continue;
-    if (!/\/j\/|scielo\.php|article|abstract/i.test(rawHref)) continue;
-    if (rawTitle.length < 12) continue;
-
-    const href = rawHref.startsWith('http') ? rawHref : `https://search.scielo.org${rawHref}`;
-    if (seen.has(href)) continue;
-    seen.add(href);
-
-    const summary = `Resultado encontrado na busca pública da SciELO para "${query.term}". Abra a fonte para conferir o resumo e o artigo completo.`;
-    if (!isSafeClinicalTopic(rawTitle, summary)) continue;
-
-    const imageFields = buildImageFields(rawTitle, summary, query.category);
-
-    items.push({
-      title: rawTitle,
-      summary,
-      source: 'SciELO',
-      source_url: href,
-      source_type: 'scielo',
-      category: query.category,
-      external_id: `scielo:${Buffer.from(href).toString('base64url').slice(0, 80)}`,
-      published_at: null,
-      ...imageFields,
-      is_published: true,
-      is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
-    });
+const getFirstArrayString = (value: unknown) => {
+  if (Array.isArray(value)) {
+    const found = value.find((item) => typeof item === 'string' && item.trim());
+    return found ? String(found).trim() : '';
   }
 
-  return items;
+  return typeof value === 'string' ? value.trim() : '';
 };
-
 
 const safeJsonParse = (value: string) => {
   try {
@@ -710,80 +553,126 @@ const fetchGNews = async () => {
   return updates;
 };
 
-
-
-const fetchScielo = async () => {
+const fetchEuropePMC = async () => {
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of SCIELO_QUERIES) {
-    const jsonUrls: URL[] = [];
+  for (const query of EUROPE_PMC_QUERIES) {
+    const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
+    url.searchParams.set('query', `${query.term} AND FIRST_PDATE:[2024-01-01 TO 2026-12-31]`);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('pageSize', '5');
+    url.searchParams.set('sort', 'P_PDATE_D');
 
-    const configuredUrl = buildScieloConfiguredUrl(query.term);
-    if (configuredUrl) jsonUrls.push(configuredUrl);
-
-    // Tentativas públicas. Se uma delas não responder JSON, seguimos para a próxima
-    // e depois para o fallback HTML.
-    [
-      `https://search.scielo.org/?q=${encodeURIComponent(query.term)}&lang=pt&count=6&format=json`,
-      `https://search.scielo.org/api/v1/search?q=${encodeURIComponent(query.term)}&lang=pt&count=6`,
-      `https://search.scielo.org/solr/select?q=${encodeURIComponent(query.term)}&wt=json&rows=6`,
-    ].forEach((candidate) => {
-      try { jsonUrls.push(new URL(candidate)); } catch {}
-    });
-
-    let foundForQuery = 0;
-
-    for (const url of jsonUrls) {
-      try {
-        const response = await fetch(url.toString(), {
-          headers: {
-            Accept: 'application/json',
-            ...(SCIELO_API_KEY ? { Authorization: `Bearer ${SCIELO_API_KEY}`, 'x-api-key': SCIELO_API_KEY } : {}),
-          },
-        });
-
-        if (!response.ok) continue;
-
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('json')) continue;
-
-        const payload: any = await response.json();
-        const articles = extractScieloItems(payload).slice(0, 6);
-
-        for (const article of articles) {
-          const normalized = normalizeScieloArticle(article, query, updates.length);
-          if (normalized) {
-            updates.push(normalized);
-            foundForQuery += 1;
-          }
-        }
-
-        if (foundForQuery > 0) break;
-      } catch (error) {
-        console.warn('[Clinical Updates Sync] Falha ao buscar SciELO JSON:', error);
-      }
-    }
-
-    if (foundForQuery > 0) continue;
-
-    // Fallback sem chave e sem JSON: usa a busca pública em HTML.
     try {
-      const htmlUrl = `https://search.scielo.org/?q=${encodeURIComponent(query.term)}&lang=pt&count=10&from=0&output=site`;
-      const response = await fetch(htmlUrl, { headers: { Accept: 'text/html' } });
+      const response = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
       if (!response.ok) continue;
 
-      const html = await response.text();
-      const htmlItems = extractScieloItemsFromHtml(html, query);
-      updates.push(...htmlItems);
+      const data: any = await response.json();
+      const articles = Array.isArray(data?.resultList?.result) ? data.resultList.result : [];
+
+      for (const article of articles) {
+        const title = stripHtml(article.title, 240);
+        const abstract = stripHtml(article.abstractText || '', 420);
+        const journal = stripHtml(article.journalTitle || article.source || 'Europe PMC', 120);
+        const pmid = String(article.pmid || '').trim();
+        const doi = String(article.doi || '').trim();
+
+        if (!title || !isSafeClinicalTopic(title, abstract || query.term)) continue;
+
+        const sourceUrl = pmid
+          ? `https://europepmc.org/article/MED/${pmid}`
+          : doi
+            ? `https://doi.org/${doi}`
+            : 'https://europepmc.org/';
+
+        const summary = abstract || `${journal}. Artigo biomédico indexado no Europe PMC sobre ${query.term}. Abra a fonte para conferir resumo, autores e detalhes.`;
+        const imageFields = buildImageFields(title, summary, query.category);
+
+        updates.push({
+          title,
+          summary,
+          source: journal || 'Europe PMC',
+          source_url: sourceUrl,
+          source_type: 'europepmc',
+          category: query.category,
+          external_id: `europepmc:${pmid || doi || Buffer.from(title).toString('base64url').slice(0, 80)}`,
+          published_at: normalizeDate(article.firstPublicationDate || article.pubYear),
+          ...imageFields,
+          is_published: true,
+          is_featured: query.category === 'Reabilitação',
+        });
+      }
     } catch (error) {
-      console.warn('[Clinical Updates Sync] Falha ao buscar SciELO HTML:', error);
+      console.warn('[Clinical Updates Sync] Falha ao buscar Europe PMC:', error);
     }
   }
 
   return updates;
 };
 
+const fetchCrossref = async () => {
+  const updates: ClinicalUpdateInsert[] = [];
 
+  for (const query of CROSSREF_QUERIES) {
+    const url = new URL('https://api.crossref.org/works');
+    url.searchParams.set('query', query.term);
+    url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
+    url.searchParams.set('rows', '5');
+    url.searchParams.set('sort', 'published');
+    url.searchParams.set('order', 'desc');
+    if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
+
+    try {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': `FisioCareHub/1.0 (${CROSSREF_MAILTO || 'contact@fisiocarehub.company'})`,
+        },
+      });
+
+      if (!response.ok) continue;
+
+      const data: any = await response.json();
+      const items = Array.isArray(data?.message?.items) ? data.message.items : [];
+
+      for (const item of items) {
+        const title = stripHtml(getFirstArrayString(item.title), 240);
+        const abstract = stripHtml(item.abstract || item.subtitle?.[0] || '', 420);
+        const containerTitle = stripHtml(getFirstArrayString(item['container-title']) || 'Crossref', 120);
+        const doi = String(item.DOI || '').trim();
+
+        if (!title || !isSafeClinicalTopic(title, abstract || query.term)) continue;
+
+        const publishedParts = item.published?.['date-parts']?.[0] || item['published-print']?.['date-parts']?.[0] || item['published-online']?.['date-parts']?.[0];
+        const publishedAt = Array.isArray(publishedParts) && publishedParts.length
+          ? normalizeDate(`${publishedParts[0]}-${String(publishedParts[1] || 1).padStart(2, '0')}-${String(publishedParts[2] || 1).padStart(2, '0')}`)
+          : null;
+
+        const sourceUrl = doi ? `https://doi.org/${doi}` : String(item.URL || 'https://search.crossref.org/').trim();
+        const summary = abstract || `${containerTitle}. Metadado científico encontrado no Crossref sobre ${query.term}. Abra a fonte para conferir o artigo completo.`;
+        const imageFields = buildImageFields(title, summary, query.category);
+
+        updates.push({
+          title,
+          summary,
+          source: containerTitle || 'Crossref',
+          source_url: sourceUrl,
+          source_type: 'crossref',
+          category: query.category,
+          external_id: `crossref:${doi || Buffer.from(sourceUrl || title).toString('base64url').slice(0, 80)}`,
+          published_at: publishedAt,
+          ...imageFields,
+          is_published: true,
+          is_featured: false,
+        });
+      }
+    } catch (error) {
+      console.warn('[Clinical Updates Sync] Falha ao buscar Crossref:', error);
+    }
+  }
+
+  return updates;
+};
 
 const authorizeCronRequest = (req: VercelRequest) => {
   if (!CRON_SECRET) return false;
@@ -811,17 +700,19 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
-    const [pubMedUpdates, newsUpdates, scieloUpdates] = await Promise.all([
+    const [pubMedUpdates, newsUpdates, europePmcUpdates, crossrefUpdates] = await Promise.all([
       fetchPubMed(),
       fetchGNews(),
-      fetchScielo(),
+      fetchEuropePMC(),
+      fetchCrossref(),
     ]);
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...scieloUpdates.slice(0, 8),
+      ...europePmcUpdates.slice(0, 8),
+      ...crossrefUpdates.slice(0, 4),
       ...newsUpdates.slice(0, 4),
-      ...pubMedUpdates.slice(0, 12),
+      ...pubMedUpdates.slice(0, 8),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
@@ -859,7 +750,8 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       sources: {
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
-        scielo: scieloUpdates.length,
+        europepmc: europePmcUpdates.length,
+        crossref: crossrefUpdates.length,
       },
     });
   } catch (error: any) {
