@@ -11,6 +11,7 @@ type ClinicalUpdateInsert = {
   external_id: string;
   published_at: string | null;
   image_url: string | null;
+  image_key?: string | null;
   is_published: boolean;
   is_featured: boolean;
 };
@@ -30,6 +31,25 @@ const GNEWS_API_KEY = getEnv('GNEWS_API_KEY');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
 const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
 const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
+
+const ALLOWED_IMAGE_KEYS = [
+  'neurologia',
+  'neuro',
+  'ortopedia',
+  'geriatria',
+  'respiratoria',
+  'pelvica',
+  'saude_mulher',
+  'saude_homem',
+  'dermato',
+  'medicina_geral',
+] as const;
+
+type ClinicalImageKey = typeof ALLOWED_IMAGE_KEYS[number];
+
+const isClinicalImageKey = (value: unknown): value is ClinicalImageKey =>
+  ALLOWED_IMAGE_KEYS.includes(String(value || '') as ClinicalImageKey);
+
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -152,10 +172,12 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
               'Traduza e adapte o conteúdo para português do Brasil, com linguagem profissional, clara e segura.',
               'Não invente achados, resultados, recomendações clínicas específicas nem dados que não estejam no texto.',
               'Não prometa cura e não transforme o conteúdo em orientação médica individual.',
-              'Responda somente JSON válido no formato: {"title":"...","summary":"...","category":"..."}.',
+              'Responda somente JSON válido no formato: {"title":"...","summary":"...","category":"...","image_key":"..."}.',
               'O title deve ter no máximo 110 caracteres.',
               'O summary deve ter no máximo 280 caracteres e explicar por que o tema interessa ao fisioterapeuta.',
-              'A category deve ser uma destas: Reabilitação, Exercício terapêutico, Ortopedia, Neurológica, Cardiorrespiratória, Esportiva, Geriatria, Fisioterapia.'
+              'A category deve ser uma destas: Reabilitação, Exercício terapêutico, Ortopedia, Neurológica, Cardiorrespiratória, Esportiva, Geriatria, Fisioterapia, Saúde da mulher, Saúde do homem, Saúde pélvica, Dermatofuncional, Medicina geral.',
+              'A image_key deve ser obrigatoriamente uma destas: neurologia, neuro, ortopedia, geriatria, respiratoria, pelvica, saude_mulher, saude_homem, dermato, medicina_geral.',
+              'Escolha image_key pelo tema clínico principal do artigo. Se tiver AVC, disfagia, marcha neurológica, Parkinson ou neuroplasticidade, prefira neurologia/neuro. Se for DPOC, pulmonar, respiração ou bicicleta monitorada, use respiratoria. Se for joelho, ombro, lombar, coluna, dor musculoesquelética ou artrose, use ortopedia. Se for idoso, quedas, sarcopenia ou fragilidade, use geriatria. Se for assoalho pélvico, incontinência ou dor pélvica, use pelvica. Se for gestação, pós-parto, menopausa, mama ou saúde feminina, use saude_mulher. Se for próstata, urologia masculina ou saúde masculina, use saude_homem. Se for pele, cicatriz, linfedema, queimadura, estética ou pós-operatório tegumentar, use dermato. Se não houver tema claro, use medicina_geral.'
             ].join(' '),
           },
           {
@@ -184,12 +206,14 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
     const title = stripHtml(parsed.title || item.title, 140);
     const summary = stripHtml(parsed.summary || item.summary, 340);
     const category = stripHtml(parsed.category || item.category, 80);
+    const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : item.image_key || null;
 
     return {
       ...item,
       title: title || item.title,
       summary: summary || item.summary,
       category: category || item.category,
+      image_key: imageKey,
     };
   } catch (error) {
     console.warn('[Clinical Updates Sync] Groq indisponível, usando conteúdo original:', error);
@@ -270,6 +294,7 @@ const fetchPubMed = async () => {
         external_id: `pubmed:${id}`,
         published_at: pubDate,
         image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Reabilitação,
+        image_key: null,
         is_published: true,
         is_featured: query.category === 'Reabilitação' || query.category === 'Ortopedia',
       });
@@ -315,6 +340,7 @@ const fetchGNews = async () => {
         // Usamos imagem clínica curada por categoria para evitar capas externas aleatórias
         // que não combinam com o tema do artigo/notícia no carrossel.
         image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Fisioterapia,
+        image_key: null,
         is_published: true,
         is_featured: false,
       });
