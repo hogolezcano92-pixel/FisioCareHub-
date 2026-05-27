@@ -50,6 +50,18 @@ type ClinicalImageKey = typeof ALLOWED_IMAGE_KEYS[number];
 const isClinicalImageKey = (value: unknown): value is ClinicalImageKey =>
   ALLOWED_IMAGE_KEYS.includes(String(value || '') as ClinicalImageKey);
 
+const IMAGE_KEY_TO_LOCAL_IMAGE: Record<ClinicalImageKey, string> = {
+  neurologia: '/clinical-updates/neurologia.jpg',
+  neuro: '/clinical-updates/neuro.jpg',
+  ortopedia: '/clinical-updates/ortopedia.jpg',
+  geriatria: '/clinical-updates/geriatria.jpg',
+  respiratoria: '/clinical-updates/respiratória.jpg',
+  pelvica: '/clinical-updates/pelvica.jpg',
+  saude_mulher: '/clinical-updates/Saude-da-mulher.jpg',
+  saude_homem: '/clinical-updates/saude-do-homem.jpg',
+  dermato: '/clinical-updates/dermato.jpg',
+  medicina_geral: '/clinical-updates/medicina-geral.jpg',
+};
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -72,14 +84,19 @@ const GNEWS_QUERIES = [
 ];
 
 const DEFAULT_IMAGES: Record<string, string> = {
-  'Reabilitação': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
-  'Exercício terapêutico': 'https://images.unsplash.com/photo-1571019613914-85f342c6a11e?auto=format&fit=crop&q=80&w=1200',
-  'Ortopedia': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200',
-  'Neurológica': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&q=80&w=1200',
-  'Cardiorrespiratória': 'https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&q=80&w=1200',
-  'Esportiva': 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=80&w=1200',
-  'Geriatria': 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200',
-  'Fisioterapia': 'https://images.unsplash.com/photo-1519824145371-296894a0daa9?auto=format&fit=crop&q=80&w=1200',
+  'Reabilitação': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
+  'Exercício terapêutico': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
+  'Ortopedia': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
+  'Neurológica': IMAGE_KEY_TO_LOCAL_IMAGE.neurologia,
+  'Cardiorrespiratória': IMAGE_KEY_TO_LOCAL_IMAGE.respiratoria,
+  'Esportiva': IMAGE_KEY_TO_LOCAL_IMAGE.ortopedia,
+  'Geriatria': IMAGE_KEY_TO_LOCAL_IMAGE.geriatria,
+  'Fisioterapia': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
+  'Saúde da mulher': IMAGE_KEY_TO_LOCAL_IMAGE.saude_mulher,
+  'Saúde do homem': IMAGE_KEY_TO_LOCAL_IMAGE.saude_homem,
+  'Saúde pélvica': IMAGE_KEY_TO_LOCAL_IMAGE.pelvica,
+  'Dermatofuncional': IMAGE_KEY_TO_LOCAL_IMAGE.dermato,
+  'Medicina geral': IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
 };
 
 const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
@@ -92,6 +109,14 @@ const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
   .replace(/\s+/g, ' ')
   .trim()
   .slice(0, maxLength);
+
+const normalizeText = (value: unknown) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
+const countMatches = (text: string, words: string[]) =>
+  words.reduce((score, word) => score + (text.includes(normalizeText(word)) ? 1 : 0), 0);
 
 const normalizeDate = (value: unknown) => {
   const raw = String(value || '').trim();
@@ -132,22 +157,121 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
 };
 
 const looksMostlyEnglish = (value: string) => {
-  const text = String(value || '').toLowerCase();
+  const text = ` ${normalizeText(value)} `;
   const englishMarkers = [
-    ' the ', ' and ', ' of ', ' in ', ' with ', ' for ', ' patients',
-    ' rehabilitation', ' physical therapy', ' exercise', ' effects',
-    ' supplementation', ' overweight', ' obese', ' challenges',
+    ' the ', ' and ', ' of ', ' in ', ' with ', ' for ', ' patients ',
+    ' rehabilitation ', ' physical therapy ', ' exercise ', ' effects ',
+    ' supplementation ', ' overweight ', ' obese ', ' challenges ',
+    ' cardiac ', ' blood flow ', ' beetroot ', ' stroke ',
   ];
   const portugueseMarkers = [
-    ' de ', ' da ', ' do ', ' em ', ' com ', ' para ', ' pacientes',
-    ' reabilitação', ' fisioterapia', ' exercício', ' efeitos',
-    ' suplementação', ' sobrepeso', ' obesos', ' desafios',
+    ' de ', ' da ', ' do ', ' em ', ' com ', ' para ', ' pacientes ',
+    ' reabilitacao ', ' fisioterapia ', ' exercicio ', ' efeitos ',
+    ' suplementacao ', ' sobrepeso ', ' obesos ', ' desafios ',
+    ' cardiaca ', ' fluxo sanguineo ', ' beterraba ', ' avc ',
   ];
 
   const englishScore = englishMarkers.reduce((score, marker) => score + (text.includes(marker) ? 1 : 0), 0);
   const portugueseScore = portugueseMarkers.reduce((score, marker) => score + (text.includes(marker) ? 1 : 0), 0);
 
   return englishScore >= 2 && englishScore > portugueseScore;
+};
+
+const inferClinicalImageKey = (title: string, summary = '', category = ''): ClinicalImageKey => {
+  const text = normalizeText(`${category} ${title} ${summary}`);
+
+  const scores: Record<ClinicalImageKey, number> = {
+    neurologia: 0,
+    neuro: 0,
+    ortopedia: 0,
+    geriatria: 0,
+    respiratoria: 0,
+    pelvica: 0,
+    saude_mulher: 0,
+    saude_homem: 0,
+    dermato: 0,
+    medicina_geral: 0,
+  };
+
+  scores.neurologia += countMatches(text, [
+    'neurologica', 'neurologia', 'avc', 'stroke', 'acidente vascular cerebral',
+    'parkinson', 'cerebral', 'neuroplasticidade', 'hemiparesia', 'hemiplegia',
+    'marcha', 'equilibrio', 'coordenacao', 'disfagia', 'degluticao', 'vestibular',
+  ]);
+
+  scores.neuro += countMatches(text, [
+    'neuro', 'controle motor', 'sistema nervoso', 'coordenacao respiratoria',
+    'respiracao e degluticao',
+  ]);
+
+  scores.ortopedia += countMatches(text, [
+    'ortopedia', 'ortopedica', 'musculoesqueletica', 'musculoesqueletico',
+    'joelho', 'ombro', 'quadril', 'tornozelo', 'coluna', 'lombar', 'lombalgia',
+    'cervical', 'artrose', 'osteoartrite', 'tendinite', 'tendinopatia', 'lca',
+    'ligamento', 'fratura', 'dor trocanterica', 'dor', 'lesao',
+  ]);
+
+  scores.geriatria += countMatches(text, [
+    'geriatria', 'geriatrica', 'idoso', 'idosa', 'idosos', 'envelhecimento',
+    'queda', 'quedas', 'fragilidade', 'sarcopenia', 'osteoporose', 'longevidade',
+    'autonomia',
+  ]);
+
+  scores.respiratoria += countMatches(text, [
+    'respiratoria', 'respiratorio', 'cardiorrespiratoria', 'cardiorrespiratorio',
+    'cardiaca', 'cardiaco', 'cardiac', 'pulmonar', 'pulmao', 'dpoc', 'asma',
+    'ventilacao', 'oxigenio', 'dispneia', 'espirometria', 'respiracao',
+    'condicionamento', 'bicicleta', 'ergometrica', 'aerobico',
+  ]);
+
+  scores.pelvica += countMatches(text, [
+    'pelvica', 'assoalho pelvico', 'incontinencia', 'urinaria', 'uroginecologica',
+    'perineo', 'dor pelvica', 'prolapso',
+  ]);
+
+  scores.saude_mulher += countMatches(text, [
+    'saude da mulher', 'mulher', 'mulheres', 'feminina', 'gestante', 'gestacao',
+    'gravidez', 'pos-parto', 'menopausa', 'mama', 'mamaria', 'endometriose',
+  ]);
+
+  scores.saude_homem += countMatches(text, [
+    'saude do homem', 'homem', 'homens', 'masculina', 'prostata', 'prostatico',
+    'urologica', 'erecao',
+  ]);
+
+  scores.dermato += countMatches(text, [
+    'dermato', 'dermatofuncional', 'pele', 'cicatriz', 'cicatrizacao', 'queimadura',
+    'linfedema', 'edema', 'fibrose', 'pos-operatorio', 'estetica', 'drenagem',
+  ]);
+
+  scores.medicina_geral += countMatches(text, [
+    'medicina geral', 'saude geral', 'clinica', 'prevencao', 'qualidade de vida',
+    'estudo', 'pesquisa', 'evidencia', 'tratamento', 'reabilitacao',
+  ]);
+
+  if (scores.neurologia > 0 && /avc|stroke|parkinson|neurolog|neuro|disfagia|deglut/.test(text)) {
+    scores.neurologia += 4;
+  }
+
+  if (scores.pelvica > 0) scores.pelvica += 3;
+  if (scores.respiratoria > 0 && /cardio|pulmonar|respirat|dpoc|asma/.test(text)) scores.respiratoria += 3;
+  if (scores.ortopedia > 0 && /joelho|ombro|lombar|coluna|quadril|artrose|dor/.test(text)) scores.ortopedia += 2;
+
+  const bestKey = (Object.keys(scores) as ClinicalImageKey[])
+    .sort((a, b) => scores[b] - scores[a])[0];
+
+  return bestKey && scores[bestKey] > 0 ? bestKey : 'medicina_geral';
+};
+
+const buildImageFields = (title: string, summary: string, category: string, preferredKey?: string | null) => {
+  const imageKey = isClinicalImageKey(preferredKey)
+    ? String(preferredKey) as ClinicalImageKey
+    : inferClinicalImageKey(title, summary, category);
+
+  return {
+    image_key: imageKey,
+    image_url: IMAGE_KEY_TO_LOCAL_IMAGE[imageKey] || IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
+  };
 };
 
 const safeJsonParse = (value: string) => {
@@ -164,8 +288,11 @@ const safeJsonParse = (value: string) => {
   }
 };
 
-const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert> => {
-  if (!GROQ_API_KEY) return item;
+const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
+  if (!GROQ_API_KEY) {
+    const imageFields = buildImageFields(item.title, item.summary, item.category, item.image_key);
+    return { ...item, ...imageFields };
+  }
 
   try {
     const controller = new AbortController();
@@ -197,7 +324,7 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
               'O summary deve ter no máximo 280 caracteres e explicar por que o tema interessa ao fisioterapeuta.',
               'A category deve ser uma destas: Reabilitação, Exercício terapêutico, Ortopedia, Neurológica, Cardiorrespiratória, Esportiva, Geriatria, Fisioterapia, Saúde da mulher, Saúde do homem, Saúde pélvica, Dermatofuncional, Medicina geral.',
               'A image_key deve ser obrigatoriamente uma destas: neurologia, neuro, ortopedia, geriatria, respiratoria, pelvica, saude_mulher, saude_homem, dermato, medicina_geral.',
-              'Escolha image_key pelo tema clínico principal do artigo. Se tiver AVC, disfagia, marcha neurológica, Parkinson ou neuroplasticidade, prefira neurologia/neuro. Se for DPOC, pulmonar, respiração ou bicicleta monitorada, use respiratoria. Se for joelho, ombro, lombar, coluna, dor musculoesquelética ou artrose, use ortopedia. Se for idoso, quedas, sarcopenia ou fragilidade, use geriatria. Se for assoalho pélvico, incontinência ou dor pélvica, use pelvica. Se for gestação, pós-parto, menopausa, mama ou saúde feminina, use saude_mulher. Se for próstata, urologia masculina ou saúde masculina, use saude_homem. Se for pele, cicatriz, linfedema, queimadura, estética ou pós-operatório tegumentar, use dermato. Se não houver tema claro, use medicina_geral.'
+              'Escolha image_key pelo tema clínico principal do artigo. Se tiver AVC, disfagia, marcha neurológica, Parkinson ou neuroplasticidade, prefira neurologia/neuro. Se for DPOC, pulmonar, respiração, reabilitação cardíaca ou bicicleta monitorada, use respiratoria. Se for joelho, ombro, lombar, coluna, dor musculoesquelética, dor trocantérica ou artrose, use ortopedia. Se for idoso, quedas, sarcopenia ou fragilidade, use geriatria. Se for assoalho pélvico, incontinência ou dor pélvica, use pelvica. Se for gestação, pós-parto, menopausa, mama ou saúde feminina, use saude_mulher. Se for próstata, urologia masculina ou saúde masculina, use saude_homem. Se for pele, cicatriz, linfedema, queimadura, estética ou pós-operatório tegumentar, use dermato. Se não houver tema claro, use medicina_geral.'
             ].join(' '),
           },
           {
@@ -216,46 +343,45 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
 
     clearTimeout(timeout);
 
-    if (!response.ok) return item;
+    if (!response.ok) return null;
 
     const data: any = await response.json();
     const content = String(data?.choices?.[0]?.message?.content || '').trim();
     const parsed = safeJsonParse(content);
-    if (!parsed) return item;
+    if (!parsed) return null;
 
-    const title = stripHtml(parsed.title || item.title, 140);
-    const summary = stripHtml(parsed.summary || item.summary, 340);
+    const title = stripHtml(parsed.title || '', 140);
+    const summary = stripHtml(parsed.summary || '', 340);
     const category = stripHtml(parsed.category || item.category, 80);
-    const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : item.image_key || null;
+    const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : null;
 
-    // Se o Groq responder algo ainda em inglês, não sobrescrevemos como se estivesse traduzido.
-    // A etapa final de sincronização filtrará esse item para evitar card em inglês no app.
-    if (looksMostlyEnglish(`${title} ${summary}`)) {
-      console.warn('[Clinical Updates Sync] Groq retornou conteúdo ainda em inglês, item será ignorado:', item.external_id);
-      return {
-        ...item,
-        title: item.title,
-        summary: item.summary,
-        category: category || item.category,
-        image_key: imageKey,
-      };
+    if (!title || !summary || looksMostlyEnglish(`${title} ${summary}`)) {
+      console.warn('[Clinical Updates Sync] Tradução Groq inválida/inglês, ignorando item:', item.external_id);
+      return null;
     }
+
+    const imageFields = buildImageFields(title, summary, category, imageKey);
 
     return {
       ...item,
-      title: title || item.title,
-      summary: summary || item.summary,
+      title,
+      summary,
       category: category || item.category,
-      image_key: imageKey,
+      ...imageFields,
     };
   } catch (error) {
-    console.warn('[Clinical Updates Sync] Groq indisponível, usando conteúdo original:', error);
-    return item;
+    console.warn('[Clinical Updates Sync] Groq indisponível, item ignorado para evitar conteúdo em inglês:', error);
+    return null;
   }
 };
 
 const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[]) => {
-  if (!GROQ_API_KEY || !updates.length) return updates;
+  if (!GROQ_API_KEY || !updates.length) {
+    return updates.map((item) => ({
+      ...item,
+      ...buildImageFields(item.title, item.summary, item.category, item.image_key),
+    }));
+  }
 
   const adapted: ClinicalUpdateInsert[] = [];
   const batchSize = 3;
@@ -263,7 +389,7 @@ const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[])
   for (let index = 0; index < updates.length; index += batchSize) {
     const batch = updates.slice(index, index + batchSize);
     const result = await Promise.all(batch.map((item) => adaptClinicalUpdateToPortuguese(item)));
-    adapted.push(...result);
+    adapted.push(...result.filter(Boolean) as ClinicalUpdateInsert[]);
   }
 
   return adapted;
@@ -317,6 +443,8 @@ const fetchPubMed = async () => {
 
       if (!isSafeClinicalTopic(title, summary)) continue;
 
+      const imageFields = buildImageFields(title, summary, query.category);
+
       updates.push({
         title,
         summary,
@@ -326,8 +454,7 @@ const fetchPubMed = async () => {
         category: query.category,
         external_id: `pubmed:${id}`,
         published_at: pubDate,
-        image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Reabilitação,
-        image_key: null,
+        ...imageFields,
         is_published: true,
         is_featured: query.category === 'Reabilitação' || query.category === 'Ortopedia',
       });
@@ -361,6 +488,8 @@ const fetchGNews = async () => {
       const summary = stripHtml(article.description || article.content || '', 420);
       if (!title || !isSafeClinicalTopic(title, summary)) continue;
 
+      const imageFields = buildImageFields(title, summary || '', query.category);
+
       updates.push({
         title,
         summary: summary || 'Notícia relacionada à fisioterapia e reabilitação. Abra a fonte para ler o conteúdo completo.',
@@ -370,10 +499,7 @@ const fetchGNews = async () => {
         category: query.category,
         external_id: `gnews:${Buffer.from(String(article.url || title)).toString('base64url').slice(0, 80)}`,
         published_at: normalizeDate(article.publishedAt),
-        // Usamos imagem clínica curada por categoria para evitar capas externas aleatórias
-        // que não combinam com o tema do artigo/notícia no carrossel.
-        image_url: DEFAULT_IMAGES[query.category] || DEFAULT_IMAGES.Fisioterapia,
-        image_key: null,
+        ...imageFields,
         is_published: true,
         is_featured: false,
       });
@@ -426,23 +552,20 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
     }
 
     const adaptedUpdates = await adaptClinicalUpdatesToPortuguese(updates);
-    const publishableUpdates = GROQ_API_KEY
-      ? adaptedUpdates.filter((item) => !looksMostlyEnglish(`${item.title} ${item.summary}`))
-      : adaptedUpdates;
 
-    if (!publishableUpdates.length) {
+    if (!adaptedUpdates.length) {
       return res.status(200).json({
         success: true,
         inserted: 0,
         translated_with_groq: Boolean(GROQ_API_KEY),
-        skipped_untranslated: adaptedUpdates.length,
+        skipped_untranslated: updates.length,
         message: 'Conteúdos encontrados, mas nenhum passou no filtro de tradução para português.',
       });
     }
 
     const { data, error } = await supabase
       .from('clinical_updates')
-      .upsert(publishableUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
+      .upsert(adaptedUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
       .select('id, external_id');
 
     if (error) throw error;
@@ -451,7 +574,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       success: true,
       inserted: data?.length || 0,
       translated_with_groq: Boolean(GROQ_API_KEY),
-      skipped_untranslated: adaptedUpdates.length - publishableUpdates.length,
+      skipped_untranslated: updates.length - adaptedUpdates.length,
       sources: {
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
