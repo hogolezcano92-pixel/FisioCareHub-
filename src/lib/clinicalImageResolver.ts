@@ -37,8 +37,6 @@ const LOCAL_IMAGES: Record<string, ClinicalImageMatch> = {
   respiratoria: {
     key: 'respiratoria',
     label: 'Cardiorrespiratória',
-    // Mantive o nome exatamente como aparece no GitHub.
-    // Se você renomear para respiratoria.jpg, troque este caminho também.
     src: '/clinical-updates/respiratoria.jpg',
   },
   pelvica: {
@@ -49,8 +47,6 @@ const LOCAL_IMAGES: Record<string, ClinicalImageMatch> = {
   saude_mulher: {
     key: 'saude_mulher',
     label: 'Saúde da mulher',
-    // Mantive o nome exatamente como aparece no GitHub.
-    // Se você renomear para saude-da-mulher.jpg, troque este caminho também.
     src: '/clinical-updates/saude-da-mulher.jpg',
   },
   saude_homem: {
@@ -86,12 +82,173 @@ const normalizeImageKey = (value?: string | null) =>
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
+const hasAny = (text: string, words: string[]) =>
+  words.some((word) => text.includes(normalizeText(word)));
+
+const clearTopicOverride = (text: string): keyof typeof LOCAL_IMAGES | null => {
+  const hasRespiratory = hasAny(text, [
+    'cardiorrespiratoria',
+    'cardiorrespiratorio',
+    'respiratoria',
+    'respiratorio',
+    'respiracao',
+    'pulmonar',
+    'pulmao',
+    'pulmoes',
+    'dpoc',
+    'asma',
+    'ventilacao',
+    'oxigenio',
+    'dispneia',
+    'espirometria',
+    'cardiaca',
+    'cardiaco',
+    'cardiopulmonar',
+    'reabilitacao cardiaca',
+    'condicionamento cardiorrespiratorio',
+    'exercicio aerobico',
+    'bicicleta ergometrica',
+  ]);
+
+  const hasNeuro = hasAny(text, [
+    'neurologia',
+    'neurologica',
+    'neuro',
+    'avc',
+    'stroke',
+    'acidente vascular cerebral',
+    'parkinson',
+    'hemiparesia',
+    'hemiplegia',
+    'neuroplasticidade',
+    'disfagia',
+    'degluticao',
+    'vestibular',
+    'controle motor',
+  ]);
+
+  const hasOrtho = hasAny(text, [
+    'ortopedia',
+    'ortopedica',
+    'musculoesqueletica',
+    'musculoesqueletico',
+    'joelho',
+    'ombro',
+    'quadril',
+    'tornozelo',
+    'coluna',
+    'lombar',
+    'lombalgia',
+    'cervical',
+    'artrose',
+    'osteoartrite',
+    'tendinite',
+    'tendinopatia',
+    'lca',
+    'ligamento',
+    'fratura',
+    'dor trocanterica',
+  ]);
+
+  const hasGeriatric = hasAny(text, [
+    'geriatria',
+    'geriatrica',
+    'idoso',
+    'idosa',
+    'idosos',
+    'envelhecimento',
+    'queda',
+    'quedas',
+    'fragilidade',
+    'sarcopenia',
+    'osteoporose',
+    'longevidade',
+  ]);
+
+  const hasPelvic = hasAny(text, [
+    'pelvica',
+    'assoalho pelvico',
+    'incontinencia',
+    'urinaria',
+    'uroginecologica',
+    'perineo',
+    'dor pelvica',
+    'prolapso',
+  ]);
+
+  const hasWomanHealth = hasAny(text, [
+    'saude da mulher',
+    'mulher',
+    'mulheres',
+    'feminina',
+    'gestante',
+    'gestacao',
+    'gravidez',
+    'pos-parto',
+    'menopausa',
+    'mama',
+    'mamaria',
+    'endometriose',
+  ]);
+
+  const hasManHealth = hasAny(text, [
+    'saude do homem',
+    'homem',
+    'homens',
+    'masculina',
+    'prostata',
+    'prostatico',
+    'urologica',
+    'erecao',
+  ]);
+
+  const hasDermato = hasAny(text, [
+    'dermato',
+    'dermatofuncional',
+    'pele',
+    'cicatriz',
+    'cicatrizacao',
+    'queimadura',
+    'linfedema',
+    'edema',
+    'fibrose',
+    'pos-operatorio',
+    'estetica',
+    'drenagem',
+  ]);
+
+  // Prioridade forte: quando o texto é claramente respiratório,
+  // não deixamos image_key antiga/errada de neurologia dominar.
+  if (hasRespiratory && !hasNeuro) return 'respiratoria';
+
+  // Se tiver AVC/disfagia/Parkinson/neuro, neurologia continua prioritária,
+  // mesmo que o artigo também mencione respiração.
+  if (hasNeuro) return 'neurologia';
+
+  if (hasPelvic) return 'pelvica';
+  if (hasWomanHealth && !hasPelvic) return 'saude_mulher';
+  if (hasManHealth && !hasPelvic) return 'saude_homem';
+  if (hasDermato) return 'dermato';
+  if (hasGeriatric) return 'geriatria';
+  if (hasOrtho) return 'ortopedia';
+  if (hasRespiratory) return 'respiratoria';
+
+  return null;
+};
+
 export const resolveClinicalImageMatch = (input: ClinicalImageInput): ClinicalImageMatch => {
+  const text = normalizeText(`${input.category || ''} ${input.title || ''} ${input.summary || ''}`);
+
+  // 1) Primeiro validamos o tema claro pelo próprio texto.
+  // Isso corrige casos em que o Groq/Supabase salvou image_key errada.
+  const forcedKey = clearTopicOverride(text);
+  if (forcedKey && LOCAL_IMAGES[forcedKey]) return LOCAL_IMAGES[forcedKey];
+
+  // 2) Só depois confiamos na image_key salva.
   const imageKey = normalizeImageKey(input.imageKey);
   if (imageKey && LOCAL_IMAGES[imageKey]) return LOCAL_IMAGES[imageKey];
 
-  const text = normalizeText(`${input.category || ''} ${input.title || ''} ${input.summary || ''}`);
-
+  // 3) Fallback por pontuação.
   const scores: Record<keyof typeof LOCAL_IMAGES, number> = {
     neurologia: 0,
     neuro: 0,
@@ -108,20 +265,20 @@ export const resolveClinicalImageMatch = (input: ClinicalImageInput): ClinicalIm
   scores.neurologia += countMatches(text, [
     'neurologia', 'neurologica', 'avc', 'stroke', 'acidente vascular cerebral',
     'parkinson', 'cerebral', 'neuroplasticidade', 'hemiparesia', 'hemiplegia',
-    'marcha', 'equilibrio', 'coordenacao', 'coordenação', 'disfagia', 'degluticao',
+    'marcha', 'equilibrio', 'coordenacao', 'disfagia', 'degluticao',
     'vestibular', 'motora', 'neuro',
   ]);
 
   scores.neuro += countMatches(text, [
-    'neuro', 'sistema nervoso', 'controle motor', 'coordenação respiratória',
-    'coordenacao respiratoria', 'respiração e deglutição', 'respiracao e degluticao',
+    'neuro', 'sistema nervoso', 'controle motor', 'coordenacao respiratoria',
+    'respiracao e degluticao',
   ]);
 
   scores.ortopedia += countMatches(text, [
     'ortopedia', 'ortopedica', 'musculoesqueletica', 'musculoesqueletico',
     'joelho', 'ombro', 'quadril', 'tornozelo', 'coluna', 'lombar', 'lombalgia',
     'cervical', 'artrose', 'osteoartrite', 'tendinite', 'tendinopatia', 'lca',
-    'ligamento', 'fratura', 'dor', 'lesao', 'lesão',
+    'ligamento', 'fratura', 'dor trocanterica', 'dor', 'lesao',
   ]);
 
   scores.geriatria += countMatches(text, [
@@ -132,46 +289,46 @@ export const resolveClinicalImageMatch = (input: ClinicalImageInput): ClinicalIm
 
   scores.respiratoria += countMatches(text, [
     'respiratoria', 'respiratorio', 'cardiorrespiratoria', 'cardiorrespiratorio',
-    'pulmonar', 'pulmao', 'pulmão', 'dpoc', 'asma', 'ventilacao', 'ventilação',
-    'oxigenio', 'oxigênio', 'dispneia', 'espirometria', 'respiracao', 'respiração',
-    'condicionamento', 'bicicleta', 'ergometrica', 'ergométrica', 'aerobico', 'aeróbico',
+    'cardiaca', 'cardiaco', 'cardiopulmonar', 'reabilitacao cardiaca',
+    'pulmonar', 'pulmao', 'dpoc', 'asma', 'ventilacao', 'oxigenio',
+    'dispneia', 'espirometria', 'respiracao', 'condicionamento',
+    'bicicleta', 'ergometrica', 'aerobico',
   ]);
 
   scores.pelvica += countMatches(text, [
-    'pelvica', 'pélvica', 'assoalho pelvico', 'assoalho pélvico',
-    'incontinencia', 'incontinência', 'urinaria', 'urinária', 'uroginecologica',
-    'uroginecológica', 'perineo', 'períneo', 'dor pelvica', 'dor pélvica',
-    'prolapso',
+    'pelvica', 'assoalho pelvico', 'incontinencia', 'urinaria',
+    'uroginecologica', 'perineo', 'dor pelvica', 'prolapso',
   ]);
 
   scores.saude_mulher += countMatches(text, [
-    'saude da mulher', 'saúde da mulher', 'mulher', 'mulheres', 'feminina',
-    'gestante', 'gestacao', 'gestação', 'gravidez', 'pos-parto', 'pós-parto',
-    'menopausa', 'mama', 'mamaria', 'mamária', 'endometriose',
+    'saude da mulher', 'mulher', 'mulheres', 'feminina',
+    'gestante', 'gestacao', 'gravidez', 'pos-parto',
+    'menopausa', 'mama', 'mamaria', 'endometriose',
   ]);
 
   scores.saude_homem += countMatches(text, [
-    'saude do homem', 'saúde do homem', 'homem', 'homens', 'masculina',
-    'prostata', 'próstata', 'prostatico', 'prostático', 'erecao', 'ereção',
-    'urologica', 'urológica',
+    'saude do homem', 'homem', 'homens', 'masculina',
+    'prostata', 'prostatico', 'erecao', 'urologica',
   ]);
 
   scores.dermato += countMatches(text, [
-    'dermato', 'dermatofuncional', 'pele', 'cicatriz', 'cicatrização',
-    'cicatrizacao', 'queimadura', 'linfedema', 'edema', 'fibrose',
-    'pos-operatorio', 'pós-operatório', 'estetica', 'estética', 'drenagem',
+    'dermato', 'dermatofuncional', 'pele', 'cicatriz', 'cicatrizacao',
+    'queimadura', 'linfedema', 'edema', 'fibrose',
+    'pos-operatorio', 'estetica', 'drenagem',
   ]);
 
   scores.medicina_geral += countMatches(text, [
-    'medicina geral', 'saude geral', 'saúde geral', 'clinica', 'clínica',
-    'prevencao', 'prevenção', 'qualidade de vida', 'estudo', 'pesquisa',
-    'evidencia', 'evidência', 'tratamento', 'reabilitacao', 'reabilitação',
+    'medicina geral', 'saude geral', 'clinica',
+    'prevencao', 'qualidade de vida', 'estudo', 'pesquisa',
+    'evidencia', 'tratamento', 'reabilitacao',
   ]);
 
-  // Regras de prioridade para temas que se misturam.
-  // Ex.: pós-AVC com respiração deve continuar como neurologia.
   if (scores.neurologia > 0 && /avc|stroke|parkinson|neurolog|neuro|disfagia|deglut/.test(text)) {
     scores.neurologia += 4;
+  }
+
+  if (scores.respiratoria > 0 && /respirat|pulmonar|dpoc|asma|cardio|ventil|dispneia|oxigen/.test(text)) {
+    scores.respiratoria += 4;
   }
 
   if (scores.pelvica > 0) scores.pelvica += 3;
