@@ -28,6 +28,8 @@ const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 const NCBI_API_KEY = getEnv('NCBI_API_KEY');
 const GNEWS_API_KEY = getEnv('GNEWS_API_KEY');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
+const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
+const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -93,6 +95,107 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
   const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
 
   return includeTerms.some((term) => text.includes(term)) && !blockedTerms.some((term) => text.includes(term));
+};
+
+const safeJsonParse = (value: string) => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    const match = value.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
+  }
+};
+
+const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert> => {
+  if (!GROQ_API_KEY) return item;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.2,
+        max_tokens: 520,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'Você é um editor científico do FisioCareHub para fisioterapeutas brasileiros.',
+              'Traduza e adapte o conteúdo para português do Brasil, com linguagem profissional, clara e segura.',
+              'Não invente achados, resultados, recomendações clínicas específicas nem dados que não estejam no texto.',
+              'Não prometa cura e não transforme o conteúdo em orientação médica individual.',
+              'Responda somente JSON válido no formato: {"title":"...","summary":"...","category":"..."}.',
+              'O title deve ter no máximo 110 caracteres.',
+              'O summary deve ter no máximo 280 caracteres e explicar por que o tema interessa ao fisioterapeuta.',
+              'A category deve ser uma destas: Reabilitação, Exercício terapêutico, Ortopedia, Neurológica, Cardiorrespiratória, Esportiva, Geriatria, Fisioterapia.'
+            ].join(' '),
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              title: item.title,
+              summary: item.summary,
+              category: item.category,
+              source_type: item.source_type,
+              source: item.source,
+            }),
+          },
+        ],
+      }),
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) return item;
+
+    const data: any = await response.json();
+    const content = String(data?.choices?.[0]?.message?.content || '').trim();
+    const parsed = safeJsonParse(content);
+    if (!parsed) return item;
+
+    const title = stripHtml(parsed.title || item.title, 140);
+    const summary = stripHtml(parsed.summary || item.summary, 340);
+    const category = stripHtml(parsed.category || item.category, 80);
+
+    return {
+      ...item,
+      title: title || item.title,
+      summary: summary || item.summary,
+      category: category || item.category,
+    };
+  } catch (error) {
+    console.warn('[Clinical Updates Sync] Groq indisponível, usando conteúdo original:', error);
+    return item;
+  }
+};
+
+const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[]) => {
+  if (!GROQ_API_KEY || !updates.length) return updates;
+
+  const adapted: ClinicalUpdateInsert[] = [];
+  const batchSize = 3;
+
+  for (let index = 0; index < updates.length; index += batchSize) {
+    const batch = updates.slice(index, index + batchSize);
+    const result = await Promise.all(batch.map((item) => adaptClinicalUpdateToPortuguese(item)));
+    adapted.push(...result);
+  }
+
+  return adapted;
 };
 
 const fetchPubMed = async () => {
@@ -241,15 +344,17 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 30);
+    const updates = Array.from(uniqueMap.values()).slice(0, 24);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
     }
 
+    const adaptedUpdates = await adaptClinicalUpdatesToPortuguese(updates);
+
     const { data, error } = await supabase
       .from('clinical_updates')
-      .upsert(updates, { onConflict: 'external_id', ignoreDuplicates: false })
+      .upsert(adaptedUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
       .select('id, external_id');
 
     if (error) throw error;
@@ -257,6 +362,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
     return res.status(200).json({
       success: true,
       inserted: data?.length || 0,
+      translated_with_groq: Boolean(GROQ_API_KEY),
       sources: {
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
