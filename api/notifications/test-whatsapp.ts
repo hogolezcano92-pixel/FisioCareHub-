@@ -6,7 +6,7 @@ type ClinicalUpdateInsert = {
   summary: string;
   source: string;
   source_url: string;
-  source_type: 'pubmed' | 'gnews';
+  source_type: 'pubmed' | 'gnews' | 'scielo';
   category: string;
   external_id: string;
   published_at: string | null;
@@ -28,6 +28,9 @@ const SUPABASE_URL = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL'));
 const SUPABASE_SERVICE_ROLE_KEY = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 const NCBI_API_KEY = getEnv('NCBI_API_KEY');
 const GNEWS_API_KEY = getEnv('GNEWS_API_KEY');
+const SCIELO_API_KEY = getEnv('SCIELO_API_KEY');
+const SCIELO_API_URL = getEnv('SCIELO_API_URL', getEnv('SCIELO_ARTICLEMETA_URL'));
+const SCIELO_API_KEY = getEnv('SCIELO_API_KEY');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
 const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
 const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
@@ -81,6 +84,15 @@ const PUBMED_QUERIES = [
 const GNEWS_QUERIES = [
   { term: 'fisioterapia reabilitação', category: 'Fisioterapia' },
   { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
+];
+
+const SCIELO_QUERIES = [
+  { term: 'fisioterapia', category: 'Fisioterapia' },
+  { term: 'reabilitação', category: 'Reabilitação' },
+  { term: 'exercício terapêutico', category: 'Exercício terapêutico' },
+  { term: 'dor lombar fisioterapia', category: 'Ortopedia' },
+  { term: 'reabilitação cardiorrespiratória', category: 'Cardiorrespiratória' },
+  { term: 'reabilitação neurológica', category: 'Neurológica' },
 ];
 
 const DEFAULT_IMAGES: Record<string, string> = {
@@ -150,6 +162,7 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
     'physiotherapy', 'physical therapy', 'rehabilitation', 'exercise therapy',
     'fisioterapia', 'reabilitação', 'therapeutic exercise', 'musculoskeletal',
     'stroke', 'low back pain', 'cardiorespiratory', 'sports', 'geriatric',
+    'dor lombar', 'cardiorrespiratória', 'idoso', 'neurológica', 'scielo',
   ];
   const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
 
@@ -273,6 +286,134 @@ const buildImageFields = (title: string, summary: string, category: string, pref
     image_url: IMAGE_KEY_TO_LOCAL_IMAGE[imageKey] || IMAGE_KEY_TO_LOCAL_IMAGE.medicina_geral,
   };
 };
+
+
+const getFirstString = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+      const found = value.find((item) => typeof item === 'string' && item.trim());
+      if (found) return String(found).trim();
+    }
+  }
+
+  return '';
+};
+
+const getNested = (obj: any, path: string) =>
+  path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+
+const extractScieloItems = (payload: any) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.objects)) return payload.objects;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.articles)) return payload.articles;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const buildScieloUrl = (term: string) => {
+  if (!SCIELO_API_URL) return null;
+
+  const url = new URL(SCIELO_API_URL);
+  const existingParams = url.searchParams;
+
+  // Mantém compatibilidade com diferentes APIs/ArticleMeta proxies.
+  // Se o endpoint que você conseguir usar outros nomes, basta deixar SCIELO_API_URL
+  // já com esses parâmetros fixos na Vercel.
+  if (!existingParams.has('q')) existingParams.set('q', term);
+  if (!existingParams.has('query')) existingParams.set('query', term);
+  if (!existingParams.has('search')) existingParams.set('search', term);
+  if (!existingParams.has('lang')) existingParams.set('lang', 'pt');
+  if (!existingParams.has('limit')) existingParams.set('limit', '5');
+  if (!existingParams.has('page_size')) existingParams.set('page_size', '5');
+
+  return url;
+};
+
+const getScieloArticleUrl = (article: any) => {
+  const explicitUrl = getFirstString(
+    article.url,
+    article.html_url,
+    article.fulltext_url,
+    article.links?.html,
+    article.links?.fulltext,
+    article.scielo_url
+  );
+
+  if (explicitUrl) return explicitUrl;
+
+  const doi = getFirstString(article.doi, article.document?.doi, article.article?.doi);
+  if (doi) return `https://doi.org/${doi}`;
+
+  const pid = getFirstString(article.pid, article.scielo_id, article.aid, article.code);
+  if (pid) return `https://www.scielo.br/journal/article/${encodeURIComponent(pid)}`;
+
+  return '';
+};
+
+const normalizeScieloArticle = (article: any, query: { term: string; category: string }): ClinicalUpdateInsert | null => {
+  const title = stripHtml(getFirstString(
+    article.title,
+    article.article_title,
+    article.original_title,
+    article.titles?.pt,
+    article.titles?.original,
+    getNested(article, 'title.pt'),
+    getNested(article, 'title.original')
+  ), 240);
+
+  const summary = stripHtml(getFirstString(
+    article.abstract,
+    article.summary,
+    article.description,
+    article.abstracts?.pt,
+    article.abstracts?.original,
+    getNested(article, 'abstract.pt'),
+    getNested(article, 'abstract.original')
+  ), 420);
+
+  if (!title || !isSafeClinicalTopic(title, summary || query.term)) return null;
+
+  const doi = getFirstString(article.doi, article.document?.doi, article.article?.doi);
+  const pid = getFirstString(article.pid, article.scielo_id, article.aid, article.code, doi || title);
+  const source = stripHtml(getFirstString(
+    article.journal,
+    article.journal_title,
+    article.collection,
+    article.source,
+    getNested(article, 'journal.title'),
+    'SciELO'
+  ), 120);
+
+  const publishedAt = normalizeDate(getFirstString(
+    article.published_at,
+    article.publication_date,
+    article.publication_year,
+    article.year,
+    article.created,
+    article.updated
+  ));
+
+  const articleUrl = getScieloArticleUrl(article);
+  const imageFields = buildImageFields(title, summary || query.term, query.category);
+
+  return {
+    title,
+    summary: summary || `Artigo da SciELO relacionado a ${query.term}. Abra a fonte para conferir o resumo e os detalhes do estudo.`,
+    source: source || 'SciELO',
+    source_url: articleUrl || 'https://www.scielo.br/',
+    source_type: 'scielo',
+    category: query.category,
+    external_id: `scielo:${Buffer.from(String(pid || articleUrl || title)).toString('base64url').slice(0, 80)}`,
+    published_at: publishedAt,
+    ...imageFields,
+    is_published: true,
+    is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
+  };
+};
+
 
 const safeJsonParse = (value: string) => {
   try {
@@ -509,6 +650,45 @@ const fetchGNews = async () => {
   return updates;
 };
 
+
+const fetchScielo = async () => {
+  if (!SCIELO_API_URL) return [] as ClinicalUpdateInsert[];
+
+  const updates: ClinicalUpdateInsert[] = [];
+
+  for (const query of SCIELO_QUERIES) {
+    const url = buildScieloUrl(query.term);
+    if (!url) continue;
+
+    try {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Accept: 'application/json',
+          ...(SCIELO_API_KEY ? { Authorization: `Bearer ${SCIELO_API_KEY}`, 'x-api-key': SCIELO_API_KEY } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        console.warn('[Clinical Updates Sync] SciELO indisponível:', response.status, response.statusText);
+        continue;
+      }
+
+      const payload: any = await response.json();
+      const articles = extractScieloItems(payload).slice(0, 5);
+
+      for (const article of articles) {
+        const normalized = normalizeScieloArticle(article, query);
+        if (normalized) updates.push(normalized);
+      }
+    } catch (error) {
+      console.warn('[Clinical Updates Sync] Falha ao buscar SciELO:', error);
+    }
+  }
+
+  return updates;
+};
+
+
 const authorizeCronRequest = (req: VercelRequest) => {
   if (!CRON_SECRET) return false;
 
@@ -535,13 +715,14 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
-    const [pubMedUpdates, newsUpdates] = await Promise.all([
+    const [pubMedUpdates, newsUpdates, scieloUpdates] = await Promise.all([
       fetchPubMed(),
       fetchGNews(),
+      fetchScielo(),
     ]);
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
-    [...pubMedUpdates, ...newsUpdates].forEach((item) => {
+    [...pubMedUpdates, ...newsUpdates, ...scieloUpdates].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
@@ -578,6 +759,8 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       sources: {
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
+        scielo: scieloUpdates.length,
+        scielo: scieloUpdates.length,
       },
     });
   } catch (error: any) {
