@@ -31,7 +31,8 @@ import {
   UserCheck,
   Home as HomeIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, resolveStorageUrl } from '../lib/utils';
@@ -825,6 +826,100 @@ export default function Home() {
                 <p className="text-lg text-slate-500 font-medium">Tente ajustar sua busca ou filtros.</p>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+
+      {/* Marketplace Ecosystem Section */}
+      <section className="relative overflow-hidden px-6 py-24 sm:py-28">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.16),transparent_28%)] dark:opacity-70" />
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.6 }}
+              className="relative overflow-hidden rounded-[3rem] border border-violet-100 bg-white p-8 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-white/[0.06] dark:shadow-blue-950/20 sm:p-10 lg:p-12"
+            >
+              <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-100 blur-3xl dark:bg-violet-500/20" />
+              <div className="absolute -bottom-20 left-10 h-56 w-56 rounded-full bg-sky-100 blur-3xl dark:bg-sky-500/10" />
+              <div className="relative z-10 space-y-7">
+                <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-violet-700 dark:border-violet-400/20 dark:bg-violet-400/10 dark:text-violet-200">
+                  <Sparkles size={14} /> Ecossistema FisioCareHub
+                </div>
+
+                <div className="space-y-4">
+                  <h2 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
+                    Um marketplace completo para a jornada fisioterapêutica.
+                  </h2>
+                  <p className="max-w-2xl text-base font-semibold leading-8 text-slate-600 dark:text-slate-300 sm:text-lg">
+                    O paciente encontra profissionais, agenda atendimento, acompanha evolução, recebe exercícios e ainda acessa produtos terapêuticos na FisioStore — tudo em um só lugar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    { icon: Search, title: 'Encontre especialistas', text: 'Busca por fisioterapeutas aprovados e serviços disponíveis.' },
+                    { icon: Calendar, title: 'Agende e acompanhe', text: 'Consultas, histórico, documentos e evolução conectados.' },
+                    { icon: Activity, title: 'Exercícios e cuidado', text: 'Orientações para continuar o cuidado fora da sessão.' },
+                    { icon: ShoppingBag, title: 'FisioStore integrada', text: 'Produtos que complementam a reabilitação e o autocuidado.' },
+                  ].map((item) => (
+                    <div key={item.title} className="rounded-[1.75rem] border border-violet-100 bg-violet-50/60 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:bg-white hover:shadow-xl hover:shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.05] dark:hover:border-sky-400/30 dark:hover:bg-white/[0.08]">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-violet-700 shadow-sm shadow-violet-100 dark:bg-slate-900 dark:text-sky-300 dark:shadow-none">
+                        <item.icon size={22} />
+                      </div>
+                      <h3 className="text-base font-black text-slate-950 dark:text-white">{item.title}</h3>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-400">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.6, delay: 0.08 }}
+              className="relative overflow-hidden rounded-[3rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-violet-50 p-8 shadow-2xl shadow-sky-100/70 dark:border-white/10 dark:from-slate-950/80 dark:via-slate-900/70 dark:to-indigo-950/60 dark:shadow-blue-950/20 sm:p-10 lg:p-12"
+            >
+              <div className="absolute right-8 top-8 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-sky-700 dark:border-white/10 dark:bg-white/10 dark:text-sky-200">
+                FisioStore
+              </div>
+
+              <div className="relative z-10 flex min-h-full flex-col justify-between gap-10 pt-10">
+                <div className="space-y-5">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-[1.6rem] bg-violet-600 text-white shadow-2xl shadow-violet-500/25">
+                    <ShoppingBag size={30} />
+                  </div>
+                  <h3 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                    Produtos terapêuticos como parte do cuidado.
+                  </h3>
+                  <p className="text-base font-semibold leading-8 text-slate-600 dark:text-slate-300">
+                    A loja não aparece como venda solta: ela entra como apoio para exercícios, postura, fortalecimento, recuperação e autocuidado orientado.
+                  </p>
+                </div>
+
+                <div className="grid gap-3">
+                  {['Faixas elásticas e minibands', 'Bolas, steps e halteres', 'Kinesio tape e acessórios', 'Apoios para postura e conforto'].map((item) => (
+                    <div key={item} className="flex items-center gap-3 rounded-2xl border border-white bg-white/80 p-4 text-sm font-black text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200">
+                      <CheckCircle2 className="text-emerald-500 dark:text-emerald-300" size={18} />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  to="/loja"
+                  className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-6 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-violet-500/20 transition hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-violet-500/25 sm:w-auto"
+                >
+                  Conhecer FisioStore
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>

@@ -488,27 +488,27 @@ export default function ProductStore() {
     : 'Produtos úteis para apoiar seus exercícios e cuidados em casa.';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-hidden rounded-[28px] border border-white/10 shadow-2xl">
+    <div className="min-h-screen overflow-hidden rounded-[28px] border border-violet-100 bg-[#f8f6ff] text-slate-950 shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-none">
       <div className="relative isolate">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_36%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.2),transparent_34%),linear-gradient(180deg,#020617_0%,#0f172a_55%,#020617_100%)]" />
-        <div className="absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_34%),linear-gradient(180deg,#f8f6ff_0%,#ffffff_48%,#f3f7ff_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_36%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.2),transparent_34%),linear-gradient(180deg,#020617_0%,#0f172a_55%,#020617_100%)]" />
+        <div className="absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-200/60 blur-3xl dark:bg-cyan-400/10" />
 
         <section className="px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
-            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-              <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-sky-400/20 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[32px] border border-violet-100 bg-white p-6 shadow-2xl shadow-violet-100/70 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none sm:p-8">
+              <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-violet-200/70 blur-3xl dark:bg-sky-400/20" />
               <div className="relative z-10">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-sky-200">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-violet-700 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-200">
                   <ShoppingBag size={16} />
                   FisioStore
                 </div>
 
-                <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-                  Produtos de fisioterapia recomendados para reabilitação domiciliar.
+                <h1 className="max-w-3xl text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl lg:text-5xl">
+                  FisioStore: produtos terapêuticos conectados ao cuidado fisioterapêutico.
                 </h1>
 
-                <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-slate-300 sm:text-base">
-                  {roleLabel} A compra acontece fora do FisioCareHub, diretamente na Shopee ou loja parceira, usando links externos.
+                <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
+                  {roleLabel} Encontre materiais para exercícios, postura, fortalecimento, recuperação e autocuidado. A compra acontece fora do FisioCareHub, diretamente na Shopee ou loja parceira, usando links externos.
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -517,21 +517,21 @@ export default function ProductStore() {
                     { icon: ExternalLink, title: 'Link externo', text: 'Compra finalizada fora do app.' },
                     { icon: Sparkles, title: 'Afiliado', text: 'Pronto para links da Shopee.' },
                   ].map((item) => (
-                    <div key={item.title} className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
-                      <item.icon className="mb-3 text-sky-300" size={22} />
-                      <p className="text-sm font-black text-white">{item.title}</p>
-                      <p className="mt-1 text-xs font-semibold leading-5 text-slate-400">{item.text}</p>
+                    <div key={item.title} className="rounded-3xl border border-violet-100 bg-violet-50/70 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none">
+                      <item.icon className="mb-3 text-violet-700 dark:text-sky-300" size={22} />
+                      <p className="text-sm font-black text-slate-950 dark:text-white">{item.title}</p>
+                      <p className="mt-1 text-xs font-semibold leading-5 text-slate-600 dark:text-slate-400">{item.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+            <div className="rounded-[32px] border border-violet-100 bg-white p-5 shadow-2xl shadow-violet-100/70 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none sm:p-6">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Destaques</p>
-                  <h2 className="mt-1 text-xl font-black text-white">Essenciais da clínica</h2>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 dark:text-slate-500">Destaques</p>
+                  <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">Essenciais da clínica</h2>
                 </div>
                 <Star className="text-amber-300" size={24} />
               </div>
@@ -541,7 +541,7 @@ export default function ProductStore() {
                   <button
                     key={product.id}
                     onClick={() => handleOpenProduct(product)}
-                    className="group flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-950/40 p-3 text-left transition hover:border-sky-400/50 hover:bg-sky-400/10"
+                    className="group flex w-full items-center gap-3 rounded-3xl border border-violet-100 bg-violet-50/60 p-3 text-left transition hover:border-violet-300 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-slate-950/40 dark:hover:border-sky-400/50 dark:hover:bg-sky-400/10"
                   >
                     <img
                       src={product.image_url || fallbackProducts[0].image_url || ''}
@@ -549,8 +549,8 @@ export default function ProductStore() {
                       className="h-14 w-14 rounded-2xl object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-white">{product.name}</p>
-                      <p className="truncate text-xs font-semibold text-slate-400">{product.category}</p>
+                      <p className="truncate text-sm font-black text-slate-950 dark:text-white">{product.name}</p>
+                      <p className="truncate text-xs font-semibold text-slate-600 dark:text-slate-400">{product.category}</p>
                     </div>
                     <ArrowRight className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-sky-300" size={18} />
                   </button>
@@ -561,7 +561,7 @@ export default function ProductStore() {
         </section>
 
         <section className="px-4 pb-6 sm:px-6 lg:px-10">
-          <div className="rounded-[30px] border border-white/10 bg-white/[0.055] p-4 shadow-xl backdrop-blur-xl sm:p-5">
+          <div className="rounded-[30px] border border-violet-100 bg-white p-4 shadow-xl shadow-violet-100/60 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.055] dark:shadow-none sm:p-5">
             <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
@@ -569,7 +569,7 @@ export default function ProductStore() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Buscar por produto, indicação ou exercício..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-slate-950/70 pl-12 pr-4 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/60 focus:ring-4 focus:ring-sky-400/10"
+                  className="h-14 w-full rounded-2xl border border-violet-100 bg-violet-50/70 pl-12 pr-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-violet-300 focus:ring-4 focus:ring-violet-200/50 dark:border-white/10 dark:bg-slate-950/70 dark:text-white dark:focus:border-sky-400/60 dark:focus:ring-sky-400/10"
                 />
               </div>
 
@@ -584,7 +584,7 @@ export default function ProductStore() {
                         'whitespace-nowrap rounded-2xl px-4 py-3 text-xs font-black uppercase tracking-wider transition',
                         isActive
                           ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                          : 'border border-white/10 bg-white/[0.05] text-slate-400 hover:border-sky-400/40 hover:text-white'
+                          : 'border border-violet-100 bg-violet-50/70 text-slate-600 hover:border-violet-300 hover:bg-white hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-400 dark:hover:border-sky-400/40 dark:hover:text-white'
                       )}
                     >
                       {category}
@@ -595,7 +595,7 @@ export default function ProductStore() {
             </div>
 
             {usingFallback && (
-              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
+              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
                 <Info className="mt-0.5 shrink-0" size={18} />
                 <p className="text-xs font-semibold leading-5 sm:text-sm">
                   A loja já está pronta. Estes são produtos modelo para visualizar o layout. Depois que você tiver os links de afiliado, cadastre os produtos na tabela <strong>store_products</strong> ou me peça para ligar isso ao Admin.
@@ -609,14 +609,14 @@ export default function ProductStore() {
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-96 animate-pulse rounded-[30px] border border-white/10 bg-white/[0.06]" />
+                <div key={index} className="h-96 animate-pulse rounded-[30px] border border-violet-100 bg-white dark:border-white/10 dark:bg-white/[0.06]" />
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="rounded-[30px] border border-white/10 bg-white/[0.06] p-10 text-center">
+            <div className="rounded-[30px] border border-violet-100 bg-white p-10 text-center shadow-xl shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none">
               <Filter className="mx-auto mb-4 text-slate-500" size={40} />
-              <h2 className="text-xl font-black text-white">Nenhum produto encontrado</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-400">Tente outra categoria ou termo de busca.</p>
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">Nenhum produto encontrado</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-600 dark:text-slate-400">Tente outra categoria ou termo de busca.</p>
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -626,33 +626,33 @@ export default function ProductStore() {
                 return (
                   <article
                     key={product.id}
-                    className="group overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.06] shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
+                    className="group overflow-hidden rounded-[30px] border border-violet-100 bg-white shadow-2xl shadow-violet-100/60 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-violet-300 dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none dark:hover:border-sky-400/40 dark:hover:bg-white/[0.08]"
                   >
                     <ProductImageGallery product={product} onOpenGallery={() => setGalleryProduct(product)} />
 
                     <div className="space-y-4 p-5">
                       {product.subtitle && (
-                        <p className="text-sm font-bold leading-6 text-slate-300">{product.subtitle}</p>
+                        <p className="text-sm font-bold leading-6 text-slate-700 dark:text-slate-300">{product.subtitle}</p>
                       )}
 
-                      <p className="text-sm font-medium leading-6 text-slate-400">{product.description}</p>
+                      <p className="text-sm font-semibold leading-6 text-slate-600 dark:text-slate-400">{product.description}</p>
 
                       {product.clinical_indication && (
-                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
-                          <div className="mb-2 flex items-center gap-2 text-emerald-200">
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                          <div className="mb-2 flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
                             <HeartPulse size={17} />
                             <p className="text-xs font-black uppercase tracking-wider">Indicação clínica</p>
                           </div>
-                          <p className="text-xs font-semibold leading-5 text-emerald-50/90">{product.clinical_indication}</p>
+                          <p className="text-xs font-semibold leading-5 text-emerald-800 dark:text-emerald-50/90">{product.clinical_indication}</p>
                         </div>
                       )}
 
                       {product.recommended_for && product.recommended_for.length > 0 && (
                         <div>
-                          <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Combina com</p>
+                          <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-500">Combina com</p>
                           <div className="flex flex-wrap gap-2">
                             {product.recommended_for.slice(0, 4).map((item) => (
-                              <span key={item} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] font-bold text-slate-300">
+                              <span key={item} className="rounded-full border border-violet-100 bg-violet-50 px-3 py-1 text-[11px] font-bold text-slate-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">
                                 {item}
                               </span>
                             ))}
@@ -661,19 +661,19 @@ export default function ProductStore() {
                       )}
 
                       {priceLabel && (
-                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
-                          <div className="flex items-center gap-2 text-emerald-200">
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                          <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
                             <Tag size={16} />
                             <span className="text-xs font-black uppercase tracking-wider">Preço</span>
                           </div>
-                          <span className="text-sm font-black text-white text-right">{priceLabel}</span>
+                          <span className="text-sm font-black text-slate-950 text-right dark:text-white">{priceLabel}</span>
                         </div>
                       )}
 
                       <button
                         type="button"
                         onClick={() => setGalleryProduct(product)}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-black text-sky-100 transition hover:border-sky-300/60 hover:bg-sky-400/20 active:scale-[0.98]"
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-700 transition hover:border-violet-300 hover:bg-violet-100 active:scale-[0.98] dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-100 dark:hover:border-sky-300/60 dark:hover:bg-sky-400/20"
                       >
                         {getProductImages(product).length > 1 ? `Ver ${getProductImages(product).length} fotos do produto` : 'Ver foto do produto'}
                         <ArrowRight size={18} />
@@ -685,7 +685,7 @@ export default function ProductStore() {
                           'flex h-13 w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition active:scale-[0.98]',
                           hasLink
                             ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/20 hover:from-sky-400 hover:to-indigo-400'
-                            : 'border border-white/10 bg-white/[0.06] text-slate-300 hover:border-sky-400/40 hover:text-white'
+                            : 'border border-violet-100 bg-violet-50 text-slate-600 hover:border-violet-300 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:text-white'
                         )}
                       >
                         {hasLink ? (
@@ -710,22 +710,22 @@ export default function ProductStore() {
 
         <section className="px-4 pb-10 sm:px-6 lg:px-10">
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-[28px] border border-white/10 bg-white/[0.055] p-5 sm:p-6">
-              <div className="mb-3 flex items-center gap-2 text-sky-200">
+            <div className="rounded-[28px] border border-violet-100 bg-white p-5 shadow-lg shadow-violet-100/50 dark:border-white/10 dark:bg-white/[0.055] dark:shadow-none sm:p-6">
+              <div className="mb-3 flex items-center gap-2 text-violet-700 dark:text-sky-200">
                 <CheckCircle2 size={20} />
                 <h3 className="font-black">Como vai funcionar</h3>
               </div>
-              <p className="text-sm font-semibold leading-7 text-slate-400">
+              <p className="text-sm font-semibold leading-7 text-slate-600 dark:text-slate-400">
                 O FisioCareHub recomenda o produto, o usuário clica no botão e é direcionado para a Shopee. Pagamento, entrega, garantia e suporte da compra ficam com a Shopee/vendedor.
               </p>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/[0.055] p-5 sm:p-6">
-              <div className="mb-3 flex items-center gap-2 text-amber-200">
+            <div className="rounded-[28px] border border-amber-100 bg-white p-5 shadow-lg shadow-amber-100/50 dark:border-white/10 dark:bg-white/[0.055] dark:shadow-none sm:p-6">
+              <div className="mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-200">
                 <AlertCircle size={20} />
                 <h3 className="font-black">Aviso importante</h3>
               </div>
-              <p className="text-sm font-semibold leading-7 text-slate-400">
+              <p className="text-sm font-semibold leading-7 text-slate-600 dark:text-slate-400">
                 Alguns links podem gerar comissão para o FisioCareHub, sem custo adicional para o usuário. Produtos não substituem avaliação fisioterapêutica e devem respeitar orientação profissional.
               </p>
             </div>
