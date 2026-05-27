@@ -201,7 +201,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
         supabase.from('protocolos_prescricao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(30),
         // Exercícios rápidos prescritos na aba Meus Pacientes podem estar ligados ao ID clínico
         // ou, em alguns fluxos antigos, ao ID da conta/perfil. Por isso buscamos em todos os IDs visíveis.
-        supabase.from('exercicios_paciente').select('*, exercicio:exercicios(nome, descricao, objetivo_principal, imagem_url, video_url)').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(120),
+        supabase.from('exercicios_paciente').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(120),
         supabase.from('evolucoes').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(40),
         supabase.from('fichas_avaliacao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(30),
         supabase.from('documentos_gerados').select('*').in('paciente_id', allPatientIds).order('criado_em', { ascending: false }).limit(60),
@@ -248,6 +248,26 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
         .sort((a, b) => latestDate(b) - latestDate(a));
 
       const protocols = protocolsResult.data || [];
+      let directPrescriptions = directPrescriptionsResult.data || [];
+      const directExerciseIds = uniqueStrings(directPrescriptions.map((item: any) => item.exercicio_id));
+
+      if (directExerciseIds.length > 0) {
+        const { data: directExercises, error: directExercisesError } = await supabase
+          .from('exercicios')
+          .select('id, nome, descricao, objetivo_principal, imagem_url, video_url')
+          .in('id', directExerciseIds);
+
+        if (directExercisesError) {
+          console.warn('Jornada: não foi possível enriquecer exercícios diretos:', directExercisesError);
+        } else {
+          const exerciseMap = new Map((directExercises || []).map((exercise: any) => [String(exercise.id), exercise]));
+          directPrescriptions = directPrescriptions.map((item: any) => ({
+            ...item,
+            exercicio: exerciseMap.get(String(item.exercicio_id)) || item.exercicio || null,
+          }));
+        }
+      }
+
       const protocolIds = protocols.map((protocol: any) => protocol.id).filter(Boolean);
       let protocolItems: any[] = [];
 
@@ -280,7 +300,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
         appointments: appointmentsResult.data || [],
         protocols,
         protocolItems,
-        directPrescriptions: directPrescriptionsResult.data || [],
+        directPrescriptions,
         evolutions: evolutionsResult.data || [],
         evaluations: evaluationsResult.data || [],
         documents,
