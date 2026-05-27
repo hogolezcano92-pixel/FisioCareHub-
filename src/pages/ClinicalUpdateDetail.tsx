@@ -13,7 +13,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { cn } from '../lib/utils';
+import { resolveClinicalImage, resolveClinicalImageLabel } from '../lib/clinicalImageResolver';
 
 type ClinicalUpdate = {
   id: string;
@@ -26,19 +26,6 @@ type ClinicalUpdate = {
   published_at?: string | null;
   image_url?: string | null;
   is_featured?: boolean | null;
-};
-
-const CATEGORY_IMAGES: Record<string, string> = {
-  'Reabilitação': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
-  'Exercício terapêutico': 'https://images.unsplash.com/photo-1571019613914-85f342c6a11e?auto=format&fit=crop&q=80&w=1200',
-  'Ortopedia': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200',
-  'Neurológica': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&q=80&w=1200',
-  'Cardiorrespiratória': 'https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&q=80&w=1200',
-  'Esportiva': 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=80&w=1200',
-  'Geriatria': 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200',
-  'Fisioterapia': 'https://images.unsplash.com/photo-1519824145371-296894a0daa9?auto=format&fit=crop&q=80&w=1200',
-  'Evidência': 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=1200',
-  'Geral': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
 };
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
@@ -74,58 +61,41 @@ const normalizeType = (value?: string | null) => {
   return SOURCE_TYPE_LABELS[key] || value || 'Atualização';
 };
 
-const inferCategoryFromText = (item: ClinicalUpdate) => {
-  const category = String(item.category || '').trim();
-  if (category && CATEGORY_IMAGES[category]) return category;
-
-  const text = `${item.title || ''} ${item.summary || ''}`.toLowerCase();
-
-  if (/(lombar|joelho|ombro|ortop|musculoesquel|dor|artrose|coluna|quadril|tornozelo)/i.test(text)) return 'Ortopedia';
-  if (/(avc|stroke|neurol|parkinson|cerebral|equilíbrio|marcha)/i.test(text)) return 'Neurológica';
-  if (/(cardio|respirat|pulmonar|ventila|dpoc|oxig|covid)/i.test(text)) return 'Cardiorrespiratória';
-  if (/(esport|atleta|corrida|lesão esportiva|performance)/i.test(text)) return 'Esportiva';
-  if (/(idoso|geriatr|envelhec|queda|fragilidade)/i.test(text)) return 'Geriatria';
-  if (/(exercício|exercise|fortalecimento|mobilidade|terapêutico)/i.test(text)) return 'Exercício terapêutico';
-  if (/(evidência|estudo|científico|pubmed|pesquisa)/i.test(text)) return 'Evidência';
-
-  return category || 'Geral';
-};
-
-const getClinicalImage = (item: ClinicalUpdate) => {
-  const category = inferCategoryFromText(item);
-  const isManualContent = ['manual', 'sistema'].includes(String(item.source_type || '').toLowerCase());
-
-  if (!isManualContent) return CATEGORY_IMAGES[category] || CATEGORY_IMAGES.Geral;
-
-  return item.image_url || CATEGORY_IMAGES[category] || CATEGORY_IMAGES.Geral;
-};
+const imageInputFromUpdate = (item: ClinicalUpdate) => ({
+  title: item.title,
+  summary: item.summary,
+  category: item.category,
+  sourceType: item.source_type,
+  imageUrl: item.image_url,
+});
 
 const getClinicalBullets = (item: ClinicalUpdate) => {
   const summary = String(item.summary || '').trim();
-  const category = inferCategoryFromText(item);
+  const area = resolveClinicalImageLabel(imageInputFromUpdate(item));
   const sourceType = normalizeType(item.source_type);
 
   return [
-    `${sourceType} relacionado à área de ${category}.`,
+    `${sourceType} relacionado à área de ${area}.`,
     summary || 'Resumo clínico indisponível no momento. Consulte a fonte original para detalhes.',
     'Use este conteúdo como atualização profissional, não como protocolo individual para todos os pacientes.',
   ];
 };
 
 const buildPracticalApplication = (item: ClinicalUpdate) => {
-  const category = inferCategoryFromText(item);
+  const area = resolveClinicalImageLabel(imageInputFromUpdate(item));
 
   const applications: Record<string, string> = {
-    'Ortopedia': 'Pode ajudar o fisioterapeuta a refletir sobre avaliação funcional, progressão de exercícios, dor, mobilidade e retorno às atividades.',
-    'Neurológica': 'Pode apoiar raciocínio sobre marcha, equilíbrio, funcionalidade, neuroplasticidade e acompanhamento progressivo do paciente.',
-    'Cardiorrespiratória': 'Pode contribuir para atualização sobre tolerância ao esforço, segurança, monitoramento e reabilitação cardiorrespiratória.',
-    'Esportiva': 'Pode ser útil para pensar em prevenção, retorno gradual ao esporte, controle de carga e desempenho funcional.',
+    'Neurologia': 'Pode apoiar raciocínio sobre marcha, equilíbrio, coordenação, neuroplasticidade, funcionalidade e acompanhamento progressivo do paciente.',
+    'Ortopedia': 'Pode ajudar o fisioterapeuta a refletir sobre avaliação funcional, dor, mobilidade, progressão de exercícios e retorno às atividades.',
     'Geriatria': 'Pode apoiar decisões sobre prevenção de quedas, força, autonomia, mobilidade e funcionalidade em idosos.',
-    'Exercício terapêutico': 'Pode orientar ideias de prescrição, progressão, aderência e segurança no exercício terapêutico.',
-    'Reabilitação': 'Pode ajudar no planejamento de cuidado, metas funcionais e acompanhamento da evolução do paciente.',
+    'Cardiorrespiratória': 'Pode contribuir para atualização sobre tolerância ao esforço, segurança, monitoramento e reabilitação cardiorrespiratória.',
+    'Saúde pélvica': 'Pode apoiar raciocínio sobre função do assoalho pélvico, educação em saúde, progressão terapêutica e acompanhamento seguro.',
+    'Saúde da mulher': 'Pode contribuir para atualização em cuidado funcional, prevenção, qualidade de vida e orientação clínica específica para mulheres.',
+    'Saúde do homem': 'Pode contribuir para atualização em cuidado funcional, prevenção, qualidade de vida e orientação clínica específica para homens.',
+    'Dermatofuncional': 'Pode apoiar raciocínio sobre função tecidual, cicatrização, edema, linfedema, cuidados pós-operatórios e reabilitação dermatofuncional.',
   };
 
-  return applications[category] || 'Pode servir como inspiração para atualização clínica, educação em saúde e tomada de decisão baseada em evidências.';
+  return applications[area] || 'Pode servir como inspiração para atualização clínica, educação em saúde e tomada de decisão baseada em evidências.';
 };
 
 export default function ClinicalUpdateDetail() {
@@ -205,7 +175,9 @@ export default function ClinicalUpdateDetail() {
     );
   }
 
-  const image = getClinicalImage(update);
+  const imageInput = imageInputFromUpdate(update);
+  const image = resolveClinicalImage(imageInput);
+  const area = resolveClinicalImageLabel(imageInput);
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 pb-10">
@@ -229,7 +201,7 @@ export default function ClinicalUpdateDetail() {
 
             <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-sky-200">
               <span className="rounded-full border border-sky-300/20 bg-sky-400/10 px-2.5 py-1">{normalizeType(update.source_type)}</span>
-              <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1">{inferCategoryFromText(update)}</span>
+              <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1">{area}</span>
               <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1">{formatDate(update.published_at)}</span>
             </div>
 
