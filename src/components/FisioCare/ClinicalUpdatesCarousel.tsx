@@ -28,6 +28,7 @@ type ClinicalUpdate = {
   category?: string | null;
   published_at?: string | null;
   image_url?: string | null;
+  image_key?: string | null;
   is_featured?: boolean | null;
 };
 
@@ -92,6 +93,7 @@ const imageInputFromUpdate = (item: ClinicalUpdate) => ({
   category: item.category,
   sourceType: item.source_type,
   imageUrl: item.image_url,
+  imageKey: item.image_key,
 });
 
 export default function ClinicalUpdatesCarousel({ className }: { className?: string }) {
@@ -109,7 +111,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
     try {
       const { data, error } = await supabase
         .from('clinical_updates')
-        .select('id, title, summary, source, source_url, source_type, category, published_at, image_url, is_featured')
+        .select('id, title, summary, source, source_url, source_type, category, published_at, image_url, image_key, is_featured')
         .eq('is_published', true)
         .order('is_featured', { ascending: false })
         .order('published_at', { ascending: false })
