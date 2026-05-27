@@ -486,12 +486,13 @@ export default function PatientDetails() {
         setDocumentosGerados(docsData || []);
       }
 
-      // Fetch Agendamentos (for linking evolutions)
+      // Fetch Agendamentos/Sessões
+      // Para o prontuário e histórico completo, o fisioterapeuta precisa enxergar todas as sessões:
+      // futuras, pagas, confirmadas, realizadas, canceladas ou pendentes.
       const { data: atData } = await supabase
         .from('agendamentos')
         .select('*')
         .in('paciente_id', patientDataIds)
-        .eq('status', 'realizado')
         .order('data', { ascending: false });
       setAgendamentos(atData || []);
 
@@ -1168,6 +1169,7 @@ export default function PatientDetails() {
       ...arquivos.map((item) => ({ id: `arquivo-${item.id}`, tipo: 'anexo', title: item.nome_arquivo || item.tipo || 'Arquivo anexado', date: item.created_at, description: item.visible_to_patient === false ? 'Arquivo privado do fisioterapeuta.' : 'Visível para o paciente.', icon: Paperclip })),
       ...documentosGerados.map((item) => ({ id: `doc-${item.id}`, tipo: 'documento', title: item.document_name || item.type || 'Documento gerado', date: item.criado_em || item.created_at, description: item.accepted_at ? 'Aceito pelo paciente.' : (item.visible_to_patient === false ? 'Documento privado.' : 'Documento visível ao paciente.'), icon: FileText })),
       ...dailyJournals.map((item) => ({ id: `diario-${item.id}`, tipo: 'diário', title: `Diário de dor: ${item.nivel_dor ?? '-'}/10`, date: item.data_registro || item.created_at, description: item.notas || 'Registro do diário do paciente.', icon: ClipboardList })),
+      ...agendamentos.map((item) => ({ id: `sessao-${item.id}`, tipo: 'sessão', title: item.servico || item.tipo || `Sessão ${item.status || ''}`.trim(), date: item.data_servico || item.data || item.created_at, description: item.status ? `Status: ${item.status}` : 'Agendamento vinculado ao paciente.', icon: Calendar })),
     ];
 
     return items
@@ -1915,7 +1917,7 @@ export default function PatientDetails() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h3 className="text-2xl font-black text-white">Timeline clínica completa</h3>
                 <select value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value)} className="px-4 py-3 bg-slate-900 border border-white/10 rounded-2xl text-white font-bold outline-none">
-                  {['todos', 'avaliação', 'evolução', 'prescrição', 'anexo', 'documento', 'diário'].map((tipo) => <option key={tipo} value={tipo} className="bg-slate-900">{tipo === 'todos' ? 'Todos os registros' : tipo}</option>)}
+                  {['todos', 'avaliação', 'evolução', 'prescrição', 'anexo', 'documento', 'diário', 'sessão'].map((tipo) => <option key={tipo} value={tipo} className="bg-slate-900">{tipo === 'todos' ? 'Todos os registros' : tipo}</option>)}
                 </select>
               </div>
               <div className="space-y-3">

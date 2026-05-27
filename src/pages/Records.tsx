@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { cn, formatDate, resolveStorageUrl } from '../lib/utils';
-import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
 import { downloadAvaliacaoPremiumPdf, downloadEvolucaoPremiumPdf, downloadFichaClinicaPremiumPdf } from '../services/premiumPdfService';
 
 type SectionKey = 'resumo' | 'avaliacoes' | 'evolucoes' | 'documentos' | 'dor';
@@ -242,7 +242,7 @@ export default function Records() {
               .from('registros_paciente')
               .select('*')
               .in('paciente_id', clinicalIds)
-              .order('created_at', { ascending: false });
+              .order('data_registro', { ascending: false });
             if (!painError) setPainRecords(painData || []);
 
             const { data: oldRecords, error: oldError } = await supabase
@@ -267,14 +267,15 @@ export default function Records() {
         const linkedPatients = linked as ClinicalPatient[];
         setClinicalPatients(linkedPatients);
 
-        const patientIds = Array.from(new Set([user.id, ...linkedPatients.map((p) => p.id)].filter(Boolean)));
+        const patientIds = await getPatientVisibleIds(user.id, profile?.email || user.email);
         const clinicalIds = linkedPatients.map((p) => p.id).filter(Boolean);
+        const allReadablePatientIds = Array.from(new Set([...patientIds, ...clinicalIds].filter(Boolean)));
 
-        if (clinicalIds.length > 0) {
+        if (allReadablePatientIds.length > 0) {
           const { data: evalData, error: evalError } = await supabase
             .from('fichas_avaliacao')
             .select('*')
-            .in('paciente_id', clinicalIds)
+            .in('paciente_id', allReadablePatientIds)
             .order('created_at', { ascending: false });
           if (evalError) warnings.push(`Avaliações: ${evalError.message}`);
           setEvaluations(evalData || []);
@@ -282,7 +283,7 @@ export default function Records() {
           const { data: evoData, error: evoError } = await supabase
             .from('evolucoes')
             .select('*')
-            .in('paciente_id', clinicalIds)
+            .in('paciente_id', allReadablePatientIds)
             .order('created_at', { ascending: false });
           if (evoError) warnings.push(`Evoluções: ${evoError.message}`);
           setEvolutions(evoData || []);
@@ -290,7 +291,7 @@ export default function Records() {
           const { data: fileData, error: fileError } = await supabase
             .from('arquivos_paciente')
             .select('*')
-            .in('paciente_id', clinicalIds)
+            .in('paciente_id', allReadablePatientIds)
             .order('created_at', { ascending: false });
           if (fileError) warnings.push(`Documentos: ${fileError.message}`);
           setFiles(fileData || []);
@@ -298,15 +299,15 @@ export default function Records() {
           const { data: painData, error: painError } = await supabase
             .from('registros_paciente')
             .select('*')
-            .in('paciente_id', patientIds)
-            .order('created_at', { ascending: false });
+            .in('paciente_id', allReadablePatientIds)
+            .order('data_registro', { ascending: false });
           if (!painError) setPainRecords(painData || []);
         }
 
         const { data: oldRecords, error: oldError } = await supabase
           .from('prontuarios')
           .select('*')
-          .in('paciente_id', patientIds)
+          .in('paciente_id', allReadablePatientIds)
           .order('data_registro', { ascending: false });
         if (!oldError) setLegacyRecords(oldRecords || []);
       } catch (error: any) {

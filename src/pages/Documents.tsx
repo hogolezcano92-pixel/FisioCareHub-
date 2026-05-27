@@ -34,7 +34,7 @@ import { createRoot } from 'react-dom/client';
 import ProGuard from '../components/ProGuard';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
-import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
@@ -258,8 +258,9 @@ export default function Documents() {
           setDocuments(data || []);
         } else {
           const linkedPatients = await getLinkedClinicalPatients(user.id, user.email);
+          const visiblePatientIds = await getPatientVisibleIds(user.id, user.email);
           const linkedEmails = Array.from(new Set([user.email, ...linkedPatients.map((p) => p.email)].filter(Boolean).map((email: any) => String(email).toLowerCase())));
-          const linkedPatientIds = linkedPatients.map((p) => p.id).filter(Boolean);
+          const linkedPatientIds = Array.from(new Set([...visiblePatientIds, ...linkedPatients.map((p) => p.id)].filter(Boolean)));
 
           let generatedDocs: any[] = [];
           const docFilters: string[] = [];

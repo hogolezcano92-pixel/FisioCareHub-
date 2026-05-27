@@ -132,15 +132,16 @@ export default function PatientExercises() {
 
       // Prescrições rápidas feitas pela aba "Meus Pacientes" ficam em exercicios_paciente.
       // Elas também precisam aparecer para o paciente com conta ativa.
-      const clinicalPatientIds = visiblePatientIds.filter((patientId) => patientId !== user.id);
+      // Em alguns fluxos a prescrição direta fica no ID clínico (pacientes.id),
+      // em outros no ID da conta (perfis.id). Por isso usamos todos os IDs visíveis.
+      const prescriptionPatientIds = visiblePatientIds;
 
       let directProtocol: any | null = null;
-      if (clinicalPatientIds.length > 0) {
+      if (prescriptionPatientIds.length > 0) {
         const { data: prescriptionsData, error: prescriptionsError } = await supabase
           .from('exercicios_paciente')
           .select('*')
-          .in('paciente_id', clinicalPatientIds)
-          .eq('status', 'ativo')
+          .in('paciente_id', prescriptionPatientIds)
           .order('created_at', { ascending: false });
 
         if (prescriptionsError) {

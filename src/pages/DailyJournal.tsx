@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { cn, formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 import { toast } from 'sonner';
-import { getLinkedClinicalPatients } from '../services/patientLinkService';
+import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
 import { 
   LineChart, 
   Line, 
@@ -121,10 +121,15 @@ export default function DailyJournal() {
 
   const fetchExercises = async () => {
     try {
+      if (!user?.id) return;
+
+      const visiblePatientIds = await getPatientVisibleIds(user.id, user.email);
+      const nextExercises: ExerciseItem[] = [];
+
       const { data: protocols } = await supabase
         .from('protocolos_prescricao')
         .select('id')
-        .eq('paciente_id', user?.id)
+        .in('paciente_id', visiblePatientIds)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -139,13 +144,46 @@ export default function DailyJournal() {
           .order('ordem');
 
         if (items) {
-          setExercises(items.map(item => ({
+          nextExercises.push(...items.map(item => ({
             id: item.id,
-            name: (item.exercicio as any).nome,
+            name: (item.exercicio as any)?.nome || 'Exercício',
             completed: false
           })));
         }
       }
+
+      const { data: directPrescriptions, error: directError } = await supabase
+        .from('exercicios_paciente')
+        .select('*')
+        .in('paciente_id', visiblePatientIds)
+        .order('created_at', { ascending: false });
+
+      if (!directError && directPrescriptions) {
+        const exerciseIds = Array.from(new Set(directPrescriptions.map((item: any) => item.exercicio_id).filter(Boolean)));
+        let exerciseNames: Record<string, string> = {};
+
+        if (exerciseIds.length > 0) {
+          const { data: exercisesData } = await supabase
+            .from('exercicios')
+            .select('id, nome')
+            .in('id', exerciseIds);
+
+          exerciseNames = (exercisesData || []).reduce((acc: Record<string, string>, exercise: any) => {
+            acc[exercise.id] = exercise.nome;
+            return acc;
+          }, {});
+        }
+
+        nextExercises.push(...directPrescriptions.map((item: any) => ({
+          id: `direto-${item.id}`,
+          name: exerciseNames[item.exercicio_id] || item.nome || 'Exercício prescrito',
+          completed: false
+        })));
+      }
+
+      const unique = new Map<string, ExerciseItem>();
+      nextExercises.forEach((item) => unique.set(item.id, item));
+      if (unique.size > 0) setExercises(Array.from(unique.values()));
     } catch (err) {
       console.error('Erro ao buscar exercícios:', err);
     }
