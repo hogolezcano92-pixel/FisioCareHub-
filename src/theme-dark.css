@@ -10,6 +10,10 @@
   --gradient: linear-gradient(90deg, #3B82F6, #7B61FF, #C837AB);
   --radius: 16px;
   --space: 24px;
+  --field-bg: rgba(255, 255, 255, 0.9);
+  --field-border: rgba(148, 163, 184, 0.35);
+  --field-text: #0F172A;
+  --field-placeholder: rgba(100, 116, 139, 0.75);
 }
 
 :root[data-theme="dark"] {
@@ -22,6 +26,10 @@
   --primary: #7B61FF;
   --primary-2: #3B82F6;
   --gradient: linear-gradient(90deg, #3B82F6, #7B61FF, #C837AB);
+  --field-bg: rgba(255, 255, 255, 0.1);
+  --field-border: rgba(255, 255, 255, 0.15);
+  --field-text: #FFFFFF;
+  --field-placeholder: rgba(255, 255, 255, 0.4);
 }
 
 body {
