@@ -66,7 +66,22 @@ const uniqueByKey = (items: any[], getKey: (item: any) => string) => {
 };
 const safeDate = (value: any) => {
   if (!value) return null;
-  const date = new Date(value);
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const raw = String(value).trim();
+
+  // Aceita formato brasileiro usado em alguns fluxos antigos: 26/05/2026 ou 26/05/2026 21:00
+  const brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[,\s]+(\d{2}):(\d{2}))?/);
+  if (brMatch) {
+    const [, day, month, year, hour = '12', minute = '00'] = brMatch;
+    const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
@@ -165,7 +180,6 @@ const timelineEventKey = (item: any) => {
   const day = item.date ? new Date(item.date).toISOString().slice(0, 16) : 'sem-data';
   return `${normalizeTextKey(item.type)}|${normalizeTextKey(item.title)}|${day}`;
 };
-
 
 const getExerciseCompletionFromJournals = (journals: any[]) => {
   let completed = 0;
@@ -267,7 +281,9 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
       const allPatientIds = uniqueStrings([...visiblePatientIds, ...clinicalPatientIds]);
 
       const [journalsResult, appointmentsResult, protocolsResult, directPrescriptionsResult, evolutionsResult, evaluationsResult, docsByIdResult, clinicalFilesResult] = await Promise.all([
-        supabase.from('registros_paciente').select('*').in('paciente_id', visiblePatientIds).order('data_registro', { ascending: false }).limit(60),
+        // Diário/check-in pode ter sido salvo pelo ID da conta em perfis ou pelo ID clínico em pacientes.
+        // A linha do tempo precisa buscar os dois para não esconder registros reais de dor.
+        supabase.from('registros_paciente').select('*').in('paciente_id', allPatientIds).order('data_registro', { ascending: false }).limit(60),
         supabase.from('agendamentos').select('*').in('paciente_id', allPatientIds).order('data', { ascending: false }).limit(60),
         supabase.from('protocolos_prescricao').select('*').in('paciente_id', allPatientIds).order('created_at', { ascending: false }).limit(30),
         // Exercícios rápidos prescritos na aba Meus Pacientes podem estar ligados ao ID clínico
@@ -593,16 +609,31 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
         actionLabel: 'Abrir evoluções',
         priority: 75,
       })),
-      ...data.journals.map((item) => ({
-        type: 'Diário',
-        title: `Dor ${getPainValue(item) ?? '-'}/10`,
-        description: item.notas || item.observacoes || item.descricao || item.sintomas || 'Registro rápido do paciente.',
-        date: latestDate(item),
-        icon: HeartPulse,
-        href: tabPath('diario'),
-        actionLabel: 'Abrir diário',
-        priority: 60,
-      })),
+      ...data.journals.map((item) => {
+        const pain = getPainValue(item);
+        const journalDate =
+          safeDate(item?.data_registro)?.getTime() ||
+          safeDate(item?.created_at)?.getTime() ||
+          safeDate(item?.criado_em)?.getTime() ||
+          safeDate(item?.updated_at)?.getTime() ||
+          latestDate(item);
+
+        const exerciseText =
+          Number(item?.total_exercicios) > 0
+            ? ` Exercícios: ${Number(item?.concluidos_count || 0)}/${Number(item?.total_exercicios)}.`
+            : '';
+
+        return {
+          type: 'Diário',
+          title: pain !== null ? `Dor ${pain}/10` : 'Registro de dor',
+          description: `${item.notas || item.observacoes || item.descricao || item.sintomas || 'Registro rápido do paciente.'}${exerciseText}`,
+          date: journalDate,
+          icon: HeartPulse,
+          href: tabPath('diario'),
+          actionLabel: 'Abrir diário',
+          priority: 60,
+        };
+      }),
       ...usefulAppointments.map((item) => ({
         type: 'Sessão',
         title: item.servico || item.tipo || `Sessão ${item.status || ''}`.trim(),
