@@ -39,7 +39,7 @@ const LOCAL_IMAGES: Record<string, ClinicalImageMatch> = {
     label: 'Cardiorrespiratória',
     // Mantive o nome exatamente como aparece no GitHub.
     // Se você renomear para respiratoria.jpg, troque este caminho também.
-    src: '/clinical-updates/respiratória.jpg',
+    src: '/clinical-updates/respiratoria.jpg',
   },
   pelvica: {
     key: 'pelvica',
@@ -51,7 +51,7 @@ const LOCAL_IMAGES: Record<string, ClinicalImageMatch> = {
     label: 'Saúde da mulher',
     // Mantive o nome exatamente como aparece no GitHub.
     // Se você renomear para saude-da-mulher.jpg, troque este caminho também.
-    src: '/clinical-updates/Saude-da-mulher.jpg',
+    src: '/clinical-updates/saude-da-mulher.jpg',
   },
   saude_homem: {
     key: 'saude_homem',
