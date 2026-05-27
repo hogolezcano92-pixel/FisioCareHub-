@@ -29,6 +29,7 @@ import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProGuard from '../components/ProGuard';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
+import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 
 type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes';
 
@@ -356,7 +357,10 @@ export default function PhysioDashboard() {
 
 
         {activeTab !== 'avaliacoes' && (
-          <ProductStoreCarousel audience="physio" />
+          <>
+            <ClinicalUpdatesCarousel />
+            <ProductStoreCarousel audience="physio" />
+          </>
         )}
 
         <div className="space-y-6">
