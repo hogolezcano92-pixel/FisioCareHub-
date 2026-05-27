@@ -83,7 +83,13 @@ const PUBMED_QUERIES = [
 
 const GNEWS_QUERIES = [
   { term: 'fisioterapia reabilitação', category: 'Fisioterapia' },
+  { term: 'fisioterapia dor lombar', category: 'Ortopedia' },
+  { term: 'fisioterapia esportiva reabilitação', category: 'Esportiva' },
+  { term: 'fisioterapia respiratória reabilitação', category: 'Cardiorrespiratória' },
+  { term: 'reabilitação AVC fisioterapia', category: 'Neurológica' },
   { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
+  { term: 'physical therapy rehabilitation', category: 'Reabilitação' },
+  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
 ];
 
 const EUROPE_PMC_QUERIES = [
@@ -505,7 +511,7 @@ const fetchPubMed = async () => {
     searchUrl.searchParams.set('db', 'pubmed');
     searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
-    searchUrl.searchParams.set('retmax', '10');
+    searchUrl.searchParams.set('retmax', '12');
     searchUrl.searchParams.set('sort', 'pub date');
     if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
 
@@ -675,7 +681,7 @@ const fetchCrossref = async () => {
     const url = new URL('https://api.crossref.org/works');
     url.searchParams.set('query', query.term);
     url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
-    url.searchParams.set('rows', '3');
+    url.searchParams.set('rows', '5');
     url.searchParams.set('sort', 'published');
     url.searchParams.set('order', 'desc');
     if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
@@ -768,15 +774,15 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...europePmcUpdates.slice(0, 8),
+      ...newsUpdates.slice(0, 8),
+      ...pubMedUpdates.slice(0, 20),
+      ...europePmcUpdates.slice(0, 4),
       ...crossrefUpdates.slice(0, 4),
-      ...newsUpdates.slice(0, 4),
-      ...pubMedUpdates.slice(0, 8),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 24);
+    const updates = Array.from(uniqueMap.values()).slice(0, 36);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
@@ -811,6 +817,13 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         gnews: newsUpdates.length,
         europepmc: europePmcUpdates.length,
         crossref: crossrefUpdates.length,
+      },
+      selected_for_save: {
+        pubmed: Math.min(pubMedUpdates.length, 20),
+        gnews: Math.min(newsUpdates.length, 8),
+        europepmc: Math.min(europePmcUpdates.length, 4),
+        crossref: Math.min(crossrefUpdates.length, 4),
+        total: updates.length,
       },
     });
   } catch (error: any) {
