@@ -54,6 +54,7 @@ import ClinicalAssistant from '../components/FisioCare/ClinicalAssistant';
 import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
+import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 import FisioJourney from '../components/FisioJourney';
 
 
@@ -702,6 +703,8 @@ export default function Dashboard() {
             </Link>
           </motion.div>
         )}
+
+        {isPhysio && <ClinicalUpdatesCarousel />}
 
         <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
 
