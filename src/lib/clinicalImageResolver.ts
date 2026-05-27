@@ -4,6 +4,7 @@ export type ClinicalImageInput = {
   category?: string | null;
   sourceType?: string | null;
   imageUrl?: string | null;
+  imageKey?: string | null;
 };
 
 export type ClinicalImageMatch = {
@@ -80,7 +81,15 @@ const normalizeText = (value?: string | null) =>
 const countMatches = (text: string, words: string[]) =>
   words.reduce((score, word) => score + (text.includes(normalizeText(word)) ? 1 : 0), 0);
 
+const normalizeImageKey = (value?: string | null) =>
+  normalizeText(value)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
 export const resolveClinicalImageMatch = (input: ClinicalImageInput): ClinicalImageMatch => {
+  const imageKey = normalizeImageKey(input.imageKey);
+  if (imageKey && LOCAL_IMAGES[imageKey]) return LOCAL_IMAGES[imageKey];
+
   const text = normalizeText(`${input.category || ''} ${input.title || ''} ${input.summary || ''}`);
 
   const scores: Record<keyof typeof LOCAL_IMAGES, number> = {
