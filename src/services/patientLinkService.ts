@@ -21,14 +21,18 @@ export interface LinkedClinicalPatient {
 export async function getLinkedClinicalPatients(userId: string, email?: string | null): Promise<LinkedClinicalPatient[]> {
   const normalizedEmail = email?.trim().toLowerCase();
 
+  // Mantém a busca simples e segura, mas considera os dois vínculos reais usados no app:
+  // 1) pacientes.perfil_id apontando para perfis.id/auth.uid()
+  // 2) pacientes.email igual ao e-mail da conta do paciente
+  // Também aceitamos pacientes.id = userId para cobrir cadastros antigos/inconsistentes.
   let query = supabase
     .from('pacientes')
     .select('id, nome_completo, fisioterapeuta_id, perfil_id, email');
 
   if (normalizedEmail) {
-    query = query.or(`perfil_id.eq.${userId},email.eq.${normalizedEmail}`);
+    query = query.or(`perfil_id.eq.${userId},id.eq.${userId},email.ilike.${normalizedEmail}`);
   } else {
-    query = query.eq('perfil_id', userId);
+    query = query.or(`perfil_id.eq.${userId},id.eq.${userId}`);
   }
 
   const { data, error } = await query;
