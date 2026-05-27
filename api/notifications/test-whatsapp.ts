@@ -396,6 +396,24 @@ const safeJsonParse = (value: string) => {
   }
 };
 
+
+const fallbackAdaptedItem = (item: ClinicalUpdateInsert): ClinicalUpdateInsert => {
+  const fallbackSummary = item.summary
+    || `Artigo científico relacionado a ${item.category || 'fisioterapia e reabilitação'}. Abra a fonte para conferir os detalhes.`;
+
+  const title = stripHtml(item.title, 140);
+  const summary = stripHtml(fallbackSummary, 340);
+  const imageFields = buildImageFields(title || item.title, summary, item.category, item.image_key);
+
+  return {
+    ...item,
+    title: title || item.title,
+    summary,
+    ...imageFields,
+    is_published: true,
+  };
+};
+
 const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
   if (!GROQ_API_KEY) {
     const imageFields = buildImageFields(item.title, item.summary, item.category, item.image_key);
@@ -451,21 +469,26 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
 
     clearTimeout(timeout);
 
-    if (!response.ok) return null;
+    if (!response.ok) return fallbackAdaptedItem(item);
 
     const data: any = await response.json();
     const content = String(data?.choices?.[0]?.message?.content || '').trim();
     const parsed = safeJsonParse(content);
-    if (!parsed) return null;
+    if (!parsed) return fallbackAdaptedItem(item);
 
     const title = stripHtml(parsed.title || '', 140);
     const summary = stripHtml(parsed.summary || '', 340);
     const category = stripHtml(parsed.category || item.category, 80);
     const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : null;
 
-    if (!title || !summary || looksMostlyEnglish(`${title} ${summary}`)) {
-      console.warn('[Clinical Updates Sync] Tradução Groq inválida/inglês, ignorando item:', item.external_id);
-      return null;
+    if (!title || !summary) {
+      console.warn('[Clinical Updates Sync] Tradução Groq inválida, usando fallback:', item.external_id);
+      return fallbackAdaptedItem(item);
+    }
+
+    if (looksMostlyEnglish(`${title} ${summary}`)) {
+      console.warn('[Clinical Updates Sync] Groq retornou inglês, usando fallback seguro:', item.external_id);
+      return fallbackAdaptedItem(item);
     }
 
     const imageFields = buildImageFields(title, summary, category, imageKey);
@@ -478,8 +501,8 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
       ...imageFields,
     };
   } catch (error) {
-    console.warn('[Clinical Updates Sync] Groq indisponível, item ignorado para evitar conteúdo em inglês:', error);
-    return null;
+    console.warn('[Clinical Updates Sync] Groq indisponível, usando fallback:', error);
+    return fallbackAdaptedItem(item);
   }
 };
 
@@ -774,15 +797,15 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
-      ...newsUpdates.slice(0, 8),
-      ...pubMedUpdates.slice(0, 20),
+      ...newsUpdates.slice(0, 10),
+      ...pubMedUpdates.slice(0, 24),
       ...europePmcUpdates.slice(0, 4),
       ...crossrefUpdates.slice(0, 4),
     ].forEach((item) => {
       if (item.external_id && item.title) uniqueMap.set(item.external_id, item);
     });
 
-    const updates = Array.from(uniqueMap.values()).slice(0, 36);
+    const updates = Array.from(uniqueMap.values()).slice(0, 42);
 
     if (!updates.length) {
       return res.status(200).json({ success: true, inserted: 0, message: 'Nenhum conteúdo novo encontrado.' });
@@ -819,8 +842,8 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         crossref: crossrefUpdates.length,
       },
       selected_for_save: {
-        pubmed: Math.min(pubMedUpdates.length, 20),
-        gnews: Math.min(newsUpdates.length, 8),
+        pubmed: Math.min(pubMedUpdates.length, 24),
+        gnews: Math.min(newsUpdates.length, 10),
         europepmc: Math.min(europePmcUpdates.length, 4),
         crossref: Math.min(crossrefUpdates.length, 4),
         total: updates.length,
