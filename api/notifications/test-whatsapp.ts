@@ -131,6 +131,25 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
   return includeTerms.some((term) => text.includes(term)) && !blockedTerms.some((term) => text.includes(term));
 };
 
+const looksMostlyEnglish = (value: string) => {
+  const text = String(value || '').toLowerCase();
+  const englishMarkers = [
+    ' the ', ' and ', ' of ', ' in ', ' with ', ' for ', ' patients',
+    ' rehabilitation', ' physical therapy', ' exercise', ' effects',
+    ' supplementation', ' overweight', ' obese', ' challenges',
+  ];
+  const portugueseMarkers = [
+    ' de ', ' da ', ' do ', ' em ', ' com ', ' para ', ' pacientes',
+    ' reabilitação', ' fisioterapia', ' exercício', ' efeitos',
+    ' suplementação', ' sobrepeso', ' obesos', ' desafios',
+  ];
+
+  const englishScore = englishMarkers.reduce((score, marker) => score + (text.includes(marker) ? 1 : 0), 0);
+  const portugueseScore = portugueseMarkers.reduce((score, marker) => score + (text.includes(marker) ? 1 : 0), 0);
+
+  return englishScore >= 2 && englishScore > portugueseScore;
+};
+
 const safeJsonParse = (value: string) => {
   try {
     return JSON.parse(value);
@@ -150,7 +169,7 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), 22000);
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -161,15 +180,16 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        temperature: 0.2,
-        max_tokens: 520,
+        temperature: 0.1,
+        max_tokens: 760,
         response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',
             content: [
               'Você é um editor científico do FisioCareHub para fisioterapeutas brasileiros.',
-              'Traduza e adapte o conteúdo para português do Brasil, com linguagem profissional, clara e segura.',
+              'Traduza obrigatoriamente title e summary para português do Brasil, com linguagem profissional, clara e segura.',
+              'Nunca devolva o título em inglês. Mesmo títulos científicos devem ser traduzidos para português claro.',
               'Não invente achados, resultados, recomendações clínicas específicas nem dados que não estejam no texto.',
               'Não prometa cura e não transforme o conteúdo em orientação médica individual.',
               'Responda somente JSON válido no formato: {"title":"...","summary":"...","category":"...","image_key":"..."}.',
@@ -207,6 +227,19 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
     const summary = stripHtml(parsed.summary || item.summary, 340);
     const category = stripHtml(parsed.category || item.category, 80);
     const imageKey = isClinicalImageKey(parsed.image_key) ? String(parsed.image_key) : item.image_key || null;
+
+    // Se o Groq responder algo ainda em inglês, não sobrescrevemos como se estivesse traduzido.
+    // A etapa final de sincronização filtrará esse item para evitar card em inglês no app.
+    if (looksMostlyEnglish(`${title} ${summary}`)) {
+      console.warn('[Clinical Updates Sync] Groq retornou conteúdo ainda em inglês, item será ignorado:', item.external_id);
+      return {
+        ...item,
+        title: item.title,
+        summary: item.summary,
+        category: category || item.category,
+        image_key: imageKey,
+      };
+    }
 
     return {
       ...item,
@@ -393,10 +426,23 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
     }
 
     const adaptedUpdates = await adaptClinicalUpdatesToPortuguese(updates);
+    const publishableUpdates = GROQ_API_KEY
+      ? adaptedUpdates.filter((item) => !looksMostlyEnglish(`${item.title} ${item.summary}`))
+      : adaptedUpdates;
+
+    if (!publishableUpdates.length) {
+      return res.status(200).json({
+        success: true,
+        inserted: 0,
+        translated_with_groq: Boolean(GROQ_API_KEY),
+        skipped_untranslated: adaptedUpdates.length,
+        message: 'Conteúdos encontrados, mas nenhum passou no filtro de tradução para português.',
+      });
+    }
 
     const { data, error } = await supabase
       .from('clinical_updates')
-      .upsert(adaptedUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
+      .upsert(publishableUpdates, { onConflict: 'external_id', ignoreDuplicates: false })
       .select('id, external_id');
 
     if (error) throw error;
@@ -405,6 +451,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       success: true,
       inserted: data?.length || 0,
       translated_with_groq: Boolean(GROQ_API_KEY),
+      skipped_untranslated: adaptedUpdates.length - publishableUpdates.length,
       sources: {
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
