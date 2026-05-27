@@ -96,11 +96,13 @@ const EUROPE_PMC_QUERIES = [
 ];
 
 const CROSSREF_QUERIES = [
-  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
-  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
-  { term: 'low back pain physical therapy', category: 'Ortopedia' },
-  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
-  { term: 'cardiorespiratory physiotherapy', category: 'Cardiorrespiratória' },
+  { term: '"physiotherapy" rehabilitation', category: 'Reabilitação' },
+  { term: '"physical therapy" rehabilitation', category: 'Reabilitação' },
+  { term: '"exercise therapy" physiotherapy', category: 'Exercício terapêutico' },
+  { term: '"low back pain" "physical therapy"', category: 'Ortopedia' },
+  { term: '"stroke rehabilitation" physiotherapy', category: 'Neurológica' },
+  { term: '"cardiorespiratory rehabilitation" physiotherapy', category: 'Cardiorrespiratória' },
+  { term: '"sports physiotherapy" rehabilitation', category: 'Esportiva' },
 ];
 
 const DEFAULT_IMAGES: Record<string, string> = {
@@ -173,6 +175,62 @@ const isSafeClinicalTopic = (title: string, summary = '') => {
   const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
 
   return includeTerms.some((term) => text.includes(term)) && !blockedTerms.some((term) => text.includes(term));
+};
+
+
+const isStrictPhysioScientificTopic = (title: string, summary = '') => {
+  const text = normalizeText(`${title} ${summary}`);
+
+  const mustHaveClinicalTerm = [
+    'physiotherapy',
+    'physical therapy',
+    'fisioterapia',
+    'exercise therapy',
+    'therapeutic exercise',
+    'rehabilitation exercise',
+    'rehabilitation exercises',
+    'musculoskeletal',
+    'low back pain',
+    'dor lombar',
+    'stroke rehabilitation',
+    'avc',
+    'cardiorespiratory',
+    'cardiorrespiratory',
+    'pulmonary rehabilitation',
+    'reabilitacao pulmonar',
+    'sports physiotherapy',
+    'sports rehabilitation',
+    'neurological rehabilitation',
+    'geriatric rehabilitation',
+    'physical rehabilitation',
+    'clinical rehabilitation',
+  ];
+
+  const blockedTerms = [
+    'water distribution',
+    'distribution systems',
+    'engineering',
+    'reliability engineering',
+    'substance use',
+    'addiction',
+    'employment',
+    'education outcomes',
+    'urban rehabilitation',
+    'building rehabilitation',
+    'infrastructure',
+    'regenerative rehabilitation',
+    'autism work operators',
+    'systems rehabilitation',
+    'network rehabilitation',
+    'environmental rehabilitation',
+    'land rehabilitation',
+    'mining rehabilitation',
+  ];
+
+  const hasClinicalTerm = mustHaveClinicalTerm.some((term) => text.includes(normalizeText(term)));
+  const hasBlockedTerm = blockedTerms.some((term) => text.includes(normalizeText(term)));
+
+  return hasClinicalTerm && !hasBlockedTerm;
 };
 
 const looksMostlyEnglish = (value: string) => {
@@ -642,6 +700,7 @@ const fetchCrossref = async () => {
         const doi = String(item.DOI || '').trim();
 
         if (!title || !isSafeClinicalTopic(title, abstract || query.term)) continue;
+        if (!isStrictPhysioScientificTopic(title, `${abstract} ${query.term} ${containerTitle}`)) continue;
 
         const publishedParts = item.published?.['date-parts']?.[0] || item['published-print']?.['date-parts']?.[0] || item['published-online']?.['date-parts']?.[0];
         const publishedAt = Array.isArray(publishedParts) && publishedParts.length
