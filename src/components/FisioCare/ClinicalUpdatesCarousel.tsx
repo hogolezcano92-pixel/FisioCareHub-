@@ -83,6 +83,12 @@ const formatDate = (value?: string | null) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Atualização recente';
 
+  // Algumas bases científicas podem retornar data futura/ahead of print.
+  // Para não mostrar uma data errada no app, tratamos como atualização recente.
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (date.getTime() > tomorrow.getTime()) return 'Atualização recente';
+
   return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
@@ -503,7 +509,7 @@ function ClinicalUpdateReader({
   const image = getClinicalImage(update);
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-xl sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-x-0 bottom-0 top-28 z-[80] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-xl sm:inset-0 sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <button
         type="button"
         className="absolute inset-0 h-full w-full cursor-default"
@@ -511,7 +517,7 @@ function ClinicalUpdateReader({
         onClick={onClose}
       />
 
-      <article className="relative max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-t-[2rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-black/40 sm:rounded-[2rem]">
+      <article className="relative max-h-[calc(100dvh-7rem)] w-full max-w-4xl overflow-hidden rounded-t-[2rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-black/40 sm:max-h-[92vh] sm:rounded-[2rem]">
         <div className="relative h-44 overflow-hidden bg-slate-900 sm:h-56">
           <img src={image} alt="Imagem clínica da atualização" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10" />
@@ -542,7 +548,7 @@ function ClinicalUpdateReader({
           </div>
         </div>
 
-        <div className="max-h-[calc(92vh-11rem)] overflow-y-auto p-5 sm:p-7">
+        <div className="max-h-[calc(100dvh-18rem)] overflow-y-auto p-5 sm:max-h-[calc(92vh-14rem)] sm:p-7">
           <div className="grid gap-5 lg:grid-cols-[1.35fr_0.85fr]">
             <div className="space-y-5">
               <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
