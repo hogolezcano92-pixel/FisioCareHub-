@@ -26,7 +26,8 @@ import {
   Wind,
   Zap,
   Accessibility,
-  ArrowRight
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -54,6 +55,8 @@ interface Exercise {
   indicacao_clinica: string;
   imagem_url: string;
   video_url?: string;
+  pdf_url?: string;
+  arquivo_url?: string;
   series?: string;
   repeticoes?: string;
   fisio_id?: string | null;
@@ -66,6 +69,9 @@ interface PrescriptionItem extends Exercise {
   customFreq?: string;
   customObs?: string;
 }
+
+const getExercisePdfUrl = (exercise?: Pick<Exercise, 'pdf_url' | 'arquivo_url'> | null) =>
+  String(exercise?.pdf_url || exercise?.arquivo_url || '').trim();
 
 export default function Exercises() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -415,10 +421,16 @@ export default function Exercises() {
                     </div>
 
                     {/* Objective Badge */}
-                    <div className="absolute bottom-4 left-4">
+                    <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center gap-2">
                       <span className="bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-tight">
                         {ex.objetivo_principal || 'Geral'}
                       </span>
+                      {getExercisePdfUrl(ex) && (
+                        <span className="inline-flex items-center gap-1 bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-xl border border-rose-300/30 uppercase tracking-tight">
+                          <FileText size={12} />
+                          PDF
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -585,6 +597,28 @@ export default function Exercises() {
                       <p className="text-xs text-rose-400 font-bold">{selectedExerciseDetail.precaucoes || 'Nenhuma informada'}</p>
                     </div>
                   </div>
+
+                  {getExercisePdfUrl(selectedExerciseDetail) && (
+                    <section className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-rose-200">
+                        <FileText size={18} />
+                        <h4 className="text-xs font-black uppercase tracking-widest">Material em PDF</h4>
+                      </div>
+                      <p className="text-sm font-semibold text-rose-100/80">
+                        Este exercício possui um PDF complementar cadastrado pelo Admin.
+                      </p>
+                      <a
+                        href={getExercisePdfUrl(selectedExerciseDetail)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-400 transition-all"
+                      >
+                        <FileText size={16} />
+                        Abrir PDF do exercício
+                      </a>
+                    </section>
+                  )}
 
                   <div className="pt-8 flex gap-4">
                     <button

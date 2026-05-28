@@ -17,7 +17,8 @@ import {
   Zap,
   Calendar,
   Layers,
-  Accessibility
+  Accessibility,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getPatientVisibleIds } from '../services/patientLinkService';
@@ -29,6 +30,8 @@ interface ProtocolItem {
     descricao: string;
     imagem_url: string;
     video_url: string;
+    pdf_url?: string | null;
+    arquivo_url?: string | null;
     indicacao_clinica: string;
     precaucoes: string;
     objetivo_principal: string;
@@ -88,6 +91,9 @@ const isPexelsVideoUrl = (url: string) => {
   const normalized = String(url || '').toLowerCase();
   return normalized.includes('pexels.com') || normalized.includes('videos.pexels.com');
 };
+
+const getExercisePdfUrl = (exercise?: ProtocolItem['exercicio'] | null) =>
+  String(exercise?.pdf_url || exercise?.arquivo_url || '').trim();
 
 const normalizeProtocolItem = (item: any): ProtocolItem => {
   const exercise = item?.exercicio || {};
@@ -335,10 +341,16 @@ export default function PatientExercises() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
                 
-                <div className="absolute bottom-6 left-6">
+                <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-center gap-2">
                   <span className="bg-sky-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-lg">
                     {item.exercicio?.categoria_principal}
                   </span>
+                  {getExercisePdfUrl(item.exercicio) && (
+                    <span className="inline-flex items-center gap-1 bg-rose-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-lg">
+                      <FileText size={12} />
+                      PDF
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -433,6 +445,27 @@ export default function PatientExercises() {
                   <section className="bg-rose-500/5 p-5 rounded-2xl border border-rose-500/10">
                     <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2 font-black">Atenção / Cuidados</h4>
                     <p className="text-rose-400/80 text-sm font-medium">{selectedItemDetail.exercicio?.precaucoes}</p>
+                  </section>
+                )}
+
+                {getExercisePdfUrl(selectedItemDetail.exercicio) && (
+                  <section className="space-y-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
+                    <div className="flex items-center gap-2 text-rose-200">
+                      <FileText size={18} />
+                      <h4 className="text-xs font-black uppercase tracking-widest">PDF do exercício</h4>
+                    </div>
+                    <p className="text-sm font-semibold text-rose-100/80">
+                      Material complementar vinculado a este exercício pelo FisioCareHub.
+                    </p>
+                    <a
+                      href={getExercisePdfUrl(selectedItemDetail.exercicio)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-400 transition-all"
+                    >
+                      <FileText size={16} />
+                      Abrir PDF do exercício
+                    </a>
                   </section>
                 )}
 
