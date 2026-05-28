@@ -463,14 +463,14 @@ export default function Home() {
       </section>
 
       {/* FisioStories - Conteúdo vivo dos fisioterapeutas */}
-      <section className="relative z-20 px-6 lg:px-20 mt-14 mb-28">
+      <section className="relative z-20 px-6 lg:px-20 mt-6 mb-10 sm:mt-10 sm:mb-16">
         <div className="max-w-7xl mx-auto">
           <StoryRail compact className="max-w-full !shadow-none" />
         </div>
       </section>
 
       {/* Mirrored Benefits Section */}
-      <section className="py-24 px-6 lg:px-20 relative z-20">
+      <section className="pt-10 pb-14 sm:py-20 lg:py-24 px-6 lg:px-20 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Patient Card */}
           <motion.div
@@ -525,13 +525,13 @@ export default function Home() {
       </section>
 
       {/* Specialties Slider Section - Modern & Professional */}
-      <section className="py-32 px-6 lg:px-20 relative overflow-hidden">
+      <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8"
+            className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 lg:mb-20 gap-6 sm:gap-8"
           >
             <div className="space-y-4">
               <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em]">{t('home.specialties_label', 'Especialidades Médicas')}</p>
@@ -617,9 +617,9 @@ export default function Home() {
       </section>
 
       {/* How it Works Section - Bento Grid Style */}
-      <section className="py-32 px-6 lg:px-20 bg-slate-900/30">
+      <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24 space-y-4 relative z-30">
+          <div className="text-center mb-10 sm:mb-16 lg:mb-24 space-y-4 relative z-30">
             <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.5em]">Processo Inteligente</p>
             <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
               Sua Jornada de <span className="text-blue-500 italic font-black">Recuperação</span>
@@ -679,9 +679,9 @@ export default function Home() {
       </section>
 
       {/* Professionals Section - Dynamic Grid */}
-      <section className="py-32 px-6 lg:px-20">
+      <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8 relative z-30">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 lg:mb-20 gap-6 sm:gap-8 relative z-30">
             <div className="space-y-4">
               <p className="text-[10px] sm:text-[12px] font-black text-blue-500 uppercase tracking-[0.4em]">Nossa Rede</p>
               <h3 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter">
@@ -861,7 +861,7 @@ export default function Home() {
 
 
       {/* Marketplace Ecosystem Section */}
-      <section className="relative overflow-hidden px-6 py-24 sm:py-28">
+      <section className="relative overflow-hidden px-6 py-14 sm:py-20 lg:py-28">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.16),transparent_28%)] dark:opacity-70" />
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
@@ -957,7 +957,7 @@ export default function Home() {
       <PhysioHighlight />
 
       {/* CTA Section - High Impact SaaS Style */}
-      <section className="py-32 px-6">
+      <section className="py-16 sm:py-24 lg:py-32 px-6">
         <div className="max-w-7xl mx-auto relative group">
           <div className="absolute inset-0 bg-blue-600 rounded-[4rem] blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity" />
           <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-24 text-center text-white overflow-hidden shadow-2xl">
