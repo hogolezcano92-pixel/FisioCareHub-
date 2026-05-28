@@ -84,6 +84,11 @@ const getVideoEmbedInfo = (url: string) => {
   return { type: 'video' as const, src: videoUrl };
 };
 
+const isPexelsVideoUrl = (url: string) => {
+  const normalized = String(url || '').toLowerCase();
+  return normalized.includes('pexels.com') || normalized.includes('videos.pexels.com');
+};
+
 const normalizeProtocolItem = (item: any): ProtocolItem => {
   const exercise = item?.exercicio || {};
 
@@ -134,6 +139,7 @@ export default function PatientExercises() {
   const [protocolItems, setProtocolItems] = useState<ProtocolItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemDetail, setSelectedItemDetail] = useState<ProtocolItem | null>(null);
+  const [videoAspectRatios, setVideoAspectRatios] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user) {
@@ -440,7 +446,12 @@ export default function PatientExercises() {
                         <h4 className="text-xs font-black uppercase tracking-widest">Vídeo do exercício</h4>
                       </div>
 
-                      <div className="overflow-hidden rounded-2xl border border-sky-400/20 bg-black shadow-xl shadow-sky-950/20">
+                      <div
+                        className={cn(
+                          'overflow-hidden rounded-2xl border border-sky-400/20 shadow-xl shadow-sky-950/20',
+                          video.type === 'video' && !isPexelsVideoUrl(video.src) ? 'bg-transparent' : 'bg-black'
+                        )}
+                      >
                         {video.type === 'iframe' ? (
                           <iframe
                             src={video.src}
@@ -449,7 +460,7 @@ export default function PatientExercises() {
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                           />
-                        ) : (
+                        ) : isPexelsVideoUrl(video.src) ? (
                           <video
                             src={video.src}
                             controls
@@ -460,6 +471,31 @@ export default function PatientExercises() {
                           >
                             Seu navegador não conseguiu carregar este vídeo.
                           </video>
+                        ) : (
+                          <div className="flex w-full items-center justify-center bg-transparent p-0">
+                            <video
+                              src={video.src}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              poster={selectedItemDetail.exercicio?.imagem_url || undefined}
+                              onLoadedMetadata={(event) => {
+                                const target = event.currentTarget;
+                                if (target.videoWidth && target.videoHeight) {
+                                  setVideoAspectRatios((current) => ({
+                                    ...current,
+                                    [video.src]: `${target.videoWidth} / ${target.videoHeight}`,
+                                  }));
+                                }
+                              }}
+                              style={{
+                                aspectRatio: videoAspectRatios[video.src],
+                              }}
+                              className="w-full max-h-[70vh] rounded-2xl bg-transparent object-contain"
+                            >
+                              Seu navegador não conseguiu carregar este vídeo.
+                            </video>
+                          </div>
                         )}
                       </div>
 
