@@ -19,6 +19,12 @@ type ClinicalUpdateInsert = {
   translation_status?: 'groq' | 'deepl' | 'fallback';
 };
 
+type ClinicalUpdateBackfillRow = ClinicalUpdateInsert & {
+  id: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const getEnv = (key: string, fallback = '') => {
   const value = process.env[key];
   if (!value) return fallback;
@@ -676,6 +682,115 @@ const adaptClinicalUpdatesToPortuguese = async (updates: ClinicalUpdateInsert[])
   return adapted;
 };
 
+
+const clinicalRowToInsert = (row: ClinicalUpdateBackfillRow): ClinicalUpdateInsert => ({
+  title: row.title,
+  summary: row.summary || '',
+  source: row.source || 'FisioCareHub',
+  source_url: row.source_url || '',
+  source_type: row.source_type,
+  category: row.category || 'Fisioterapia',
+  external_id: row.external_id,
+  published_at: row.published_at || null,
+  image_url: row.image_url || null,
+  image_key: row.image_key || null,
+  is_published: Boolean(row.is_published),
+  is_featured: Boolean(row.is_featured),
+});
+
+const backfillTranslateClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
+  if (!supabase) {
+    return res.status(500).json({
+      success: false,
+      error: 'Supabase não configurado. Verifique SUPABASE_URL/VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
+    });
+  }
+
+  const fullMode = req.query.full === '1';
+  const limit = fullMode ? 50 : 20;
+
+  const { data: rows, error } = await supabase
+    .from('clinical_updates')
+    .select('id, title, summary, source, source_url, source_type, category, external_id, published_at, image_url, image_key, is_published, is_featured, created_at')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const candidates = ((rows || []) as ClinicalUpdateBackfillRow[])
+    .filter((item) => looksMostlyEnglish(`${item.title || ''} ${item.summary || ''}`));
+
+  if (!candidates.length) {
+    return res.status(200).json({
+      success: true,
+      mode: fullMode ? 'backfill_full' : 'backfill_light',
+      checked: rows?.length || 0,
+      candidates: 0,
+      updated: 0,
+      message: 'Nenhum artigo em inglês encontrado dentro do limite analisado.',
+    });
+  }
+
+  const translatedRows: ClinicalUpdateBackfillRow[] = [];
+
+  for (const row of candidates) {
+    const translated = await adaptClinicalUpdateToPortuguese(clinicalRowToInsert(row));
+
+    if (!translated) continue;
+
+    translatedRows.push({
+      ...row,
+      ...translated,
+      id: row.id,
+    });
+  }
+
+  if (!translatedRows.length) {
+    return res.status(200).json({
+      success: true,
+      mode: fullMode ? 'backfill_full' : 'backfill_light',
+      checked: rows?.length || 0,
+      candidates: candidates.length,
+      updated: 0,
+      translated_with_groq: Boolean(GROQ_API_KEY),
+      translated_with_deepl: Boolean(DEEPL_API_KEY),
+      message: 'Artigos candidatos encontrados, mas nenhum conseguiu ser traduzido.',
+    });
+  }
+
+  const updatesForSupabase = translatedRows.map(({ id, translation_status, created_at, updated_at, ...item }) => ({
+    id,
+    ...item,
+  }));
+
+  const { data: updatedData, error: updateError } = await supabase
+    .from('clinical_updates')
+    .upsert(updatesForSupabase, { onConflict: 'id', ignoreDuplicates: false })
+    .select('id, external_id');
+
+  if (updateError) throw updateError;
+
+  const groqCount = translatedRows.filter((item) => item.translation_status === 'groq').length;
+  const deeplCount = translatedRows.filter((item) => item.translation_status === 'deepl').length;
+  const fallbackCount = translatedRows.filter((item) => item.translation_status === 'fallback').length;
+
+  return res.status(200).json({
+    success: true,
+    mode: fullMode ? 'backfill_full' : 'backfill_light',
+    checked: rows?.length || 0,
+    candidates: candidates.length,
+    updated: updatedData?.length || 0,
+    translated_with_groq: Boolean(GROQ_API_KEY),
+    translated_with_deepl: Boolean(DEEPL_API_KEY),
+    translated_by_groq: groqCount,
+    translated_by_deepl: deeplCount,
+    translated_count: groqCount + deeplCount,
+    fallback_count: fallbackCount,
+  });
+};
+
+
 const fetchPubMed = async (maxQueries = PUBMED_QUERIES.length) => {
   const updates: ClinicalUpdateInsert[] = [];
 
@@ -938,6 +1053,10 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
+    if (req.query.backfill === '1') {
+      return backfillTranslateClinicalUpdates(req, res);
+    }
+
     // Modo padrão leve para evitar timeout na Vercel.
     // Use ?full=1 apenas quando quiser uma rodada maior.
     const fullMode = req.query.full === '1';
