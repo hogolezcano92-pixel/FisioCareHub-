@@ -236,5 +236,5 @@ export const storiesService = {
 
 export const getStoryAvatar = (storyOrPhysio: FisioStory | StoryGroup['physio']) => {
   const physio = 'physio' in storyOrPhysio ? storyOrPhysio.physio : storyOrPhysio;
-  return physio?.foto_url || physio?.avatar_url || '';
+  return (physio as StoryGroup['physio'] | null | undefined)?.foto_url || (physio as StoryGroup['physio'] | null | undefined)?.avatar_url || '';
 };
