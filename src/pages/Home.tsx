@@ -53,6 +53,7 @@ interface Professional {
   bio: string;
   location: string;
   crefito?: string;
+  services?: string[];
 }
 
 const NOISE_SVG = "data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
@@ -177,7 +178,7 @@ export default function Home() {
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito')
+        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados')
         .eq('tipo_usuario', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
@@ -215,7 +216,10 @@ export default function Home() {
           reviews: Math.floor(Math.random() * 50) + 10,
           bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
           location: profile.localizacao || profile.cidade || 'São Paulo',
-          crefito: profile.crefito
+          crefito: profile.crefito,
+          services: Array.isArray(profile.servicos_ofertados)
+            ? profile.servicos_ofertados.filter(Boolean).slice(0, 4)
+            : []
         }));
         setProfessionals(mappedData);
       } else {
@@ -789,7 +793,24 @@ export default function Home() {
                           </div>
                           
                           <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
-                          <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-6">{pro.fullSpec}</p>
+                          <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-5">{pro.fullSpec}</p>
+
+                          {pro.services && pro.services.length > 0 && (
+                            <div className="w-full mb-6 space-y-2">
+                              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
+                              <div className="flex flex-wrap justify-center gap-2">
+                                {pro.services.map((service) => (
+                                  <span
+                                    key={service}
+                                    className="max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-bold text-slate-300"
+                                    title={service}
+                                  >
+                                    {service}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           
                           <Link
                             to={`/physio/${pro.id}`}
