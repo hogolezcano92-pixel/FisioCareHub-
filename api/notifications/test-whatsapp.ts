@@ -16,7 +16,7 @@ type ClinicalUpdateInsert = {
   image_key?: string | null;
   is_published: boolean;
   is_featured: boolean;
-  translation_status?: 'groq' | 'gemini' | 'fallback';
+  translation_status?: 'groq' | 'deepl' | 'fallback';
 };
 
 const getEnv = (key: string, fallback = '') => {
@@ -35,8 +35,8 @@ const CROSSREF_MAILTO = getEnv('CROSSREF_MAILTO', 'hogolezcano92@gmail.com');
 const CRON_SECRET = getEnv('CRON_SECRET', getEnv('CLINICAL_UPDATES_SYNC_SECRET'));
 const GROQ_API_KEY = getEnv('GROQ_API_KEY', getEnv('VITE_GROQ_API_KEY'));
 const GROQ_MODEL = getEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
-const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
-const GEMINI_MODEL = getEnv('GEMINI_MODEL', 'gemini-1.5-flash');
+const DEEPL_API_KEY = getEnv('DEEPL_API_KEY');
+const DEEPL_API_URL = getEnv('DEEPL_API_URL');
 
 const ALLOWED_IMAGE_KEYS = [
   'neurologia',
@@ -534,7 +534,7 @@ const buildClinicalEditorPayload = (item: ClinicalUpdateInsert) => ({
 const normalizeTranslatedClinicalItem = (
   item: ClinicalUpdateInsert,
   parsed: any,
-  provider: 'groq' | 'gemini'
+  provider: 'groq' | 'deepl'
 ): ClinicalUpdateInsert => {
   const title = stripHtml(parsed?.title || '', 140);
   const summary = stripHtml(parsed?.summary || '', 340);
@@ -561,59 +561,64 @@ const normalizeTranslatedClinicalItem = (
   };
 };
 
-const requestGeminiTranslation = async (item: ClinicalUpdateInsert, attempt: number) => {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured');
+
+const getDeepLBaseUrl = () => {
+  if (DEEPL_API_URL) return DEEPL_API_URL.replace(/\/+$/, '');
+  return DEEPL_API_KEY.endsWith(':fx') ? 'https://api-free.deepl.com' : 'https://api.deepl.com';
+};
+
+const requestDeepLTranslation = async (item: ClinicalUpdateInsert) => {
+  if (!DEEPL_API_KEY) {
+    throw new Error('DEEPL_API_KEY not configured');
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35000);
+  const timeout = setTimeout(() => controller.abort(), 22000);
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
-      {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          generationConfig: {
-            temperature: attempt === 1 ? 0.1 : 0,
-            maxOutputTokens: 760,
-            responseMimeType: 'application/json',
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: `${buildClinicalEditorSystemPrompt()}
+    const fallbackSummary = item.summary
+      || `Artigo científico relacionado a ${item.category || 'fisioterapia e reabilitação'}. Abra a fonte para conferir os detalhes.`;
 
-Conteúdo para traduzir/adaptar:
-${JSON.stringify(buildClinicalEditorPayload(item))}`,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+    const response = await fetch(`${getDeepLBaseUrl()}/v2/translate`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `DeepL-Auth-Key ${DEEPL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: [
+          stripHtml(item.title, 240),
+          stripHtml(fallbackSummary, 420),
+        ],
+        target_lang: 'PT-BR',
+      }),
+    });
 
     if (!response.ok) {
-      throw new Error(`Gemini HTTP ${response.status}`);
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`DeepL HTTP ${response.status}: ${errorText.slice(0, 400)}`);
     }
 
     const data: any = await response.json();
-    const content = String(data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-    const parsed = safeJsonParse(content);
+    const translations = Array.isArray(data?.translations) ? data.translations : [];
 
-    if (!parsed) {
-      throw new Error('Gemini returned invalid JSON');
+    const title = stripHtml(translations?.[0]?.text || '', 140);
+    const summary = stripHtml(translations?.[1]?.text || '', 340);
+
+    if (!title || !summary) {
+      throw new Error('DeepL returned empty title or summary');
     }
 
-    return normalizeTranslatedClinicalItem(item, parsed, 'gemini');
+    const imageFields = buildImageFields(title, summary, item.category, item.image_key);
+
+    return {
+      ...item,
+      title,
+      summary,
+      ...imageFields,
+      translation_status: 'deepl' as const,
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -622,7 +627,7 @@ ${JSON.stringify(buildClinicalEditorPayload(item))}`,
 
 const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Promise<ClinicalUpdateInsert | null> => {
   const groqAttempts = GROQ_API_KEY ? 2 : 0;
-  const geminiAttempts = GEMINI_API_KEY ? 1 : 0;
+  const deeplAttempts = DEEPL_API_KEY ? 1 : 0;
 
   for (let attempt = 1; attempt <= groqAttempts; attempt += 1) {
     try {
@@ -640,19 +645,19 @@ const adaptClinicalUpdateToPortuguese = async (item: ClinicalUpdateInsert): Prom
     }
   }
 
-  for (let attempt = 1; attempt <= geminiAttempts; attempt += 1) {
+  for (let attempt = 1; attempt <= deeplAttempts; attempt += 1) {
     try {
-      return await requestGeminiTranslation(item, attempt);
+      return await requestDeepLTranslation(item);
     } catch (error) {
-      console.warn(`[Clinical Updates Sync] Gemini falhou na tentativa ${attempt}/${geminiAttempts}:`, error);
+      console.warn(`[Clinical Updates Sync] DeepL falhou na tentativa ${attempt}/${deeplAttempts}:`, error);
 
-      if (attempt < geminiAttempts) {
+      if (attempt < deeplAttempts) {
         await wait(900 * attempt);
       }
     }
   }
 
-  console.warn('[Clinical Updates Sync] Groq/Gemini falharam, publicando com fallback:', item.external_id);
+  console.warn('[Clinical Updates Sync] Groq/DeepL falharam, publicando com fallback:', item.external_id);
   return fallbackAdaptedItem(item);
 };
 
@@ -991,7 +996,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         success: true,
         inserted: 0,
         translated_with_groq: Boolean(GROQ_API_KEY),
-        translated_with_gemini: Boolean(GEMINI_API_KEY),
+        translated_with_deepl: Boolean(DEEPL_API_KEY),
         skipped_untranslated: updates.length,
         message: 'Conteúdos encontrados, mas nenhum passou no filtro de tradução para português.',
       });
@@ -1005,17 +1010,17 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
     if (error) throw error;
 
     const groqCount = adaptedUpdates.filter((item) => item.translation_status === 'groq').length;
-    const geminiCount = adaptedUpdates.filter((item) => item.translation_status === 'gemini').length;
-    const translatedCount = groqCount + geminiCount;
+    const deeplCount = adaptedUpdates.filter((item) => item.translation_status === 'deepl').length;
+    const translatedCount = groqCount + deeplCount;
     const fallbackCount = adaptedUpdates.filter((item) => item.translation_status === 'fallback').length;
 
     return res.status(200).json({
       success: true,
       inserted: data?.length || 0,
       translated_with_groq: Boolean(GROQ_API_KEY),
-      translated_with_gemini: Boolean(GEMINI_API_KEY),
+      translated_with_deepl: Boolean(DEEPL_API_KEY),
       translated_by_groq: groqCount,
-      translated_by_gemini: geminiCount,
+      translated_by_deepl: deeplCount,
       translated_count: translatedCount,
       fallback_count: fallbackCount,
       skipped_untranslated: updates.length - adaptedUpdates.length,
