@@ -287,10 +287,10 @@ export default function PatientExercises() {
         </div>
 
         {protocols.length > 1 && (
-          <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-2xl border border-white/10">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3">Histórico:</span>
-            <select 
-              className="bg-transparent text-white font-bold text-sm outline-none px-2 pr-8 "
+          <div className="w-full md:w-auto max-w-full flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-900 p-1.5 rounded-2xl border border-white/10 overflow-hidden">
+            <span className="shrink-0 text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 pt-2 sm:pt-0">Histórico:</span>
+            <select
+              className="w-full sm:w-auto min-w-0 max-w-full bg-transparent text-white font-bold text-sm outline-none px-3 py-2 pr-10 truncate rounded-xl border border-white/10 sm:border-0"
               onChange={(e) => handleSelectProtocol(protocols.find(p => p.id === e.target.value))}
             >
               {protocols.map(p => (
