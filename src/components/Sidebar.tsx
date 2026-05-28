@@ -63,6 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         items: [
           { name: t('nav.admin_dashboard'), path: '/admin', icon: LayoutDashboard },
           { name: t('nav.manage_users'), path: '/admin?tab=users', icon: Users },
+          { name: 'FisioStories', path: '/admin/stories', icon: Activity },
           { name: t('nav.library'), path: '/admin?tab=library', icon: BookOpen },
           { name: t('nav.payments'), path: '/admin?tab=payments', icon: DollarSign },
           { name: t('nav.settings'), path: '/admin?tab=settings', icon: Settings },
@@ -80,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Minha Agenda', path: '/agenda', icon: Calendar, pro: true },
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
+            { name: 'FisioStories', path: '/dashboard/fisio?tab=stories', icon: Smartphone, pro: true },
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: t('nav.records'), path: '/records', icon: FileText },
