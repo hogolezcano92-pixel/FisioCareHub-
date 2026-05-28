@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { cn, resolveStorageUrl, formatDateKeyBR, normalizeDateKey } from '../lib/utils';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { availabilityService, Slot, toDateKey } from '../services/availabilityService';
+import StoryRail from '../components/FisioStories/StoryRail';
 
 const isIsoDateKey = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
 
@@ -461,6 +462,13 @@ export default function ProfessionalProfile() {
                 </div>
               )}
             </div>
+
+            <StoryRail
+              physioId={physio.id}
+              title="Stories deste profissional"
+              subtitle="Dicas, bastidores e agenda recente"
+              compact
+            />
 
             <div className="grid md:grid-cols-2 gap-6">
               {educationList.length > 0 && (

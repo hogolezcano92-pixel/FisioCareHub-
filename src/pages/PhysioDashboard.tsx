@@ -30,8 +30,9 @@ import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProGuard from '../components/ProGuard';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
+import PhysioStoriesManager from '../components/FisioStories/PhysioStoriesManager';
 
-type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes';
+type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes' | 'stories';
 
 type Review = {
   id: string;
@@ -266,6 +267,9 @@ export default function PhysioDashboard() {
                   </span>
                 )}
               </button>
+              <button onClick={() => navigate('/dashboard/fisio?tab=stories')} className={tabButtonClass('stories')}>
+                <Activity size={16} /> Stories
+              </button>
               <button onClick={() => navigate('/dashboard/fisio?tab=financeiro')} className={tabButtonClass('financeiro')}>
                 <DollarSign size={16} /> Financeiro
               </button>
@@ -379,6 +383,10 @@ export default function PhysioDashboard() {
             />
           ) : activeTab === 'avaliacoes' ? (
             <ReviewsTab reviews={reviews} stats={reviewStats} />
+          ) : activeTab === 'stories' ? (
+            <ProGuard requiredPlan="pro">
+              <PhysioStoriesManager />
+            </ProGuard>
           ) : activeTab === 'financeiro' ? (
             <ProGuard requiredPlan="pro">
               <FinancialDashboard />

@@ -41,6 +41,7 @@ import { supabase } from '../lib/supabase';
 import PhysioHighlight from '../components/PhysioHighlight';
 import { AnimatedBackground } from '../components/AnimatedBackground';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
+import StoryRail from '../components/FisioStories/StoryRail';
 
 interface Professional {
   id: string;
@@ -460,6 +461,14 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* FisioStories - Conteúdo vivo dos fisioterapeutas */}
+      <section className="relative z-20 px-6 lg:px-20 -mt-10 mb-16">
+        <div className="max-w-7xl mx-auto">
+          <StoryRail />
+        </div>
+      </section>
+
 
       {/* Mirrored Benefits Section */}
       <section className="py-32 px-6 lg:px-20 relative z-20 -mt-20">
