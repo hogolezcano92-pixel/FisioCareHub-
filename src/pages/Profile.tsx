@@ -37,6 +37,7 @@ import { uploadDocument, uploadPhysioDocument, getPrivateDocumentUrl } from '../
 import { logActivity } from '../services/activityService';
 import { getSupabase, invokeFunction, supabase } from '../lib/supabase';
 import AvatarUpload from '../components/AvatarUpload';
+import PhysioStoriesManager from '../components/FisioStories/PhysioStoriesManager';
 import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
@@ -868,6 +869,7 @@ export default function Profile() {
 
   const physioTabs = [
     { id: 'profile_prof', label: t('nav.profile'), icon: User },
+    { id: 'stories', label: 'FisioStories', icon: Camera },
     { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2 },
     { id: 'subscription', label: t('nav.subscription'), icon: Crown },
     { id: 'earnings', label: t('payments.received'), icon: DollarSign },
@@ -1676,6 +1678,18 @@ export default function Profile() {
                         </div>
                       </div>
                     </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'stories' && isPhysio && (
+                  <motion.div
+                    key="stories"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <PhysioStoriesManager />
                   </motion.div>
                 )}
 

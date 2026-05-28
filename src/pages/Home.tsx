@@ -463,15 +463,14 @@ export default function Home() {
       </section>
 
       {/* FisioStories - Conteúdo vivo dos fisioterapeutas */}
-      <section className="relative z-20 px-6 lg:px-20 -mt-10 mb-16">
+      <section className="relative z-20 px-6 lg:px-20 mt-8 mb-24">
         <div className="max-w-7xl mx-auto">
-          <StoryRail />
+          <StoryRail compact className="max-w-full" />
         </div>
       </section>
 
-
       {/* Mirrored Benefits Section */}
-      <section className="py-32 px-6 lg:px-20 relative z-20 -mt-20">
+      <section className="py-24 px-6 lg:px-20 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Patient Card */}
           <motion.div

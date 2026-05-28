@@ -56,7 +56,6 @@ import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 import FisioJourney from '../components/FisioJourney';
-import PhysioStoriesManager from '../components/FisioStories/PhysioStoriesManager';
 
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -629,9 +628,6 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
-        {isPhysio && isApproved && (
-          <PhysioStoriesManager compact />
-        )}
 
         
         {isAdmin && (
