@@ -56,6 +56,7 @@ import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 import FisioJourney from '../components/FisioJourney';
+import StoryAvatar from '../components/FisioStories/StoryAvatar';
 
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -537,6 +538,13 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
             {!profile ? (
               <div className="w-16 h-16 bg-slate-800 animate-pulse rounded-full border-4 border-white/5" />
+            ) : isPhysio ? (
+              <StoryAvatar
+                physioId={profile.id}
+                name={profile.nome_completo}
+                avatarUrl={(profile as any).foto_url || profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
+                sizeClassName="w-16 h-16"
+              />
             ) : (
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
