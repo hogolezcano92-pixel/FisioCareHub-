@@ -75,6 +75,7 @@ const Appointments = lazy(() => import('./pages/Appointments'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Documents = lazy(() => import('./pages/Documents'));
 const Admin = lazy(() => import('./pages/Admin'));
+const AdminStories = lazy(() => import('./pages/AdminStories'));
 const Patients = lazy(() => import('./pages/Patients'));
 const PatientDetails = lazy(() => import('./pages/PatientDetails'));
 const Agenda = lazy(() => import('./pages/Agenda'));
@@ -832,6 +833,7 @@ function AppContent() {
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="free"><Documents /></ProGuard></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
+                  <Route path="/admin/stories" element={<ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute>} />
                   <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
                   <Route path="/about" element={<About />} />
                   <Route path="/sobre" element={<About />} />
