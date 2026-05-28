@@ -58,6 +58,32 @@ const firstPrescriptionValue = (...values: unknown[]) => {
   return '';
 };
 
+const getVideoEmbedInfo = (url: string) => {
+  const videoUrl = String(url || '').trim();
+
+  if (!videoUrl) {
+    return { type: 'empty' as const, src: '' };
+  }
+
+  const youtubeMatch = videoUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
+  if (youtubeMatch?.[1]) {
+    return {
+      type: 'iframe' as const,
+      src: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
+    };
+  }
+
+  const vimeoMatch = videoUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vimeoMatch?.[1]) {
+    return {
+      type: 'iframe' as const,
+      src: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+    };
+  }
+
+  return { type: 'video' as const, src: videoUrl };
+};
+
 const normalizeProtocolItem = (item: any): ProtocolItem => {
   const exercise = item?.exercicio || {};
 
@@ -404,17 +430,51 @@ export default function PatientExercises() {
                   </section>
                 )}
 
-                {selectedItemDetail.exercicio?.video_url && (
-                  <a
-                    href={selectedItemDetail.exercicio.video_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-lg hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20"
-                  >
-                    <Play size={24} fill="currentColor" />
-                    ASSISTIR VÍDEO
-                  </a>
-                )}
+                {selectedItemDetail.exercicio?.video_url && (() => {
+                  const video = getVideoEmbedInfo(selectedItemDetail.exercicio.video_url);
+
+                  return (
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2 text-sky-300">
+                        <Play size={18} fill="currentColor" />
+                        <h4 className="text-xs font-black uppercase tracking-widest">Vídeo do exercício</h4>
+                      </div>
+
+                      <div className="overflow-hidden rounded-2xl border border-sky-400/20 bg-black shadow-xl shadow-sky-950/20">
+                        {video.type === 'iframe' ? (
+                          <iframe
+                            src={video.src}
+                            title={selectedItemDetail.exercicio?.nome || 'Vídeo do exercício'}
+                            className="aspect-video w-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={video.src}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            poster={selectedItemDetail.exercicio?.imagem_url || undefined}
+                            className="aspect-video w-full bg-black object-contain"
+                          >
+                            Seu navegador não conseguiu carregar este vídeo.
+                          </video>
+                        )}
+                      </div>
+
+                      <a
+                        href={selectedItemDetail.exercicio.video_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-sky-300 hover:text-sky-200"
+                      >
+                        Abrir vídeo em nova aba
+                        <ChevronRight size={14} />
+                      </a>
+                    </section>
+                  );
+                })()}
               </div>
             </motion.div>
           </div>
