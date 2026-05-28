@@ -1,5 +1,17 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { Camera, Image as ImageIcon, Loader2, Plus, Video, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  Camera,
+  Eye,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Send,
+  Trash2,
+  UploadCloud,
+  Video,
+  X,
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +34,8 @@ const getInitials = (name?: string | null) =>
     .map(part => part[0]?.toUpperCase())
     .join('') || 'F';
 
+const isClient = () => typeof window !== 'undefined' && typeof document !== 'undefined';
+
 export default function StoryAvatar({
   physioId,
   name,
@@ -32,8 +46,8 @@ export default function StoryAvatar({
   const { user } = useAuth();
   const [stories, setStories] = useState<FisioStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [creatorOpen, setCreatorOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState('');
@@ -75,14 +89,14 @@ export default function StoryAvatar({
     void loadStories();
   }, [physioId]);
 
-  const handleAvatarClick = () => {
-    if (hasStories) {
-      setViewerOpen(true);
+  const openProfileAction = () => {
+    if (isOwner) {
+      setOptionsOpen(true);
       return;
     }
 
-    if (isOwner) {
-      setCreatorOpen(true);
+    if (hasStories) {
+      setViewerOpen(true);
     }
   };
 
@@ -91,11 +105,16 @@ export default function StoryAvatar({
     setFile(nextFile);
   };
 
+  const resetComposer = () => {
+    setFile(null);
+    setCaption('');
+  };
+
   const publishStory = async () => {
     if (!isOwner) return;
 
     if (!file) {
-      toast.error('Selecione uma imagem ou vídeo para publicar.');
+      toast.error('Selecione uma foto ou vídeo para publicar.');
       return;
     }
 
@@ -115,11 +134,9 @@ export default function StoryAvatar({
       });
 
       toast.success('Story publicado.');
-      setFile(null);
-      setCaption('');
-      setCreatorOpen(false);
+      resetComposer();
+      setOptionsOpen(false);
       await loadStories();
-      setViewerOpen(true);
     } catch (error: any) {
       console.error('[StoryAvatar] Erro ao publicar story:', error);
       toast.error(error?.message || 'Erro ao publicar story.');
@@ -128,16 +145,152 @@ export default function StoryAvatar({
     }
   };
 
+  const deleteCurrentStories = async () => {
+    if (!isOwner || stories.length === 0) return;
+
+    const confirmed = window.confirm('Remover seus stories ativos?');
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(stories.map(story => storiesService.deleteStory(story.id)));
+      setStories([]);
+      toast.success('Stories removidos.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao remover stories.');
+    }
+  };
+
+  const overlay = (
+    <>
+      {viewerOpen && storyGroups.length > 0 && (
+        <StoryViewer groups={storyGroups} initialGroupIndex={0} onClose={() => setViewerOpen(false)} />
+      )}
+
+      <AnimatePresence>
+        {optionsOpen && (
+          <div className="fixed inset-0 z-[10050] flex items-end justify-center bg-slate-950/80 p-0 backdrop-blur-xl sm:items-center sm:p-4">
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 60, scale: 0.98 }}
+              className="w-full max-w-lg overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#070B16] shadow-2xl shadow-sky-950/40 sm:rounded-[2rem]"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 p-5">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-pink-300">Seu story</p>
+                  <h3 className="text-xl font-black text-white">Adicionar ao story</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOptionsOpen(false);
+                    resetComposer();
+                  }}
+                  className="rounded-full bg-white/5 p-2 text-slate-300 hover:bg-white/10"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-5 p-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-center hover:bg-white/[0.09]">
+                    <UploadCloud className="mb-2 text-pink-300" size={28} />
+                    <span className="text-sm font-black text-white">Foto ou vídeo</span>
+                    <span className="mt-1 text-[11px] font-semibold text-slate-400">Escolher arquivo</span>
+                    <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => hasStories && setViewerOpen(true)}
+                    disabled={!hasStories}
+                    className="flex min-h-[104px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-center hover:bg-white/[0.09] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Eye className="mb-2 text-sky-300" size={28} />
+                    <span className="text-sm font-black text-white">Ver story</span>
+                    <span className="mt-1 text-[11px] font-semibold text-slate-400">
+                      {hasStories ? `${stories.length} ativo(s)` : 'Nenhum ativo'}
+                    </span>
+                  </button>
+                </div>
+
+                {file && (
+                  <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04]">
+                    <div className="relative aspect-[9/14] max-h-[360px] w-full bg-black">
+                      {file.type.startsWith('video/') ? (
+                        <video src={URL.createObjectURL(file)} controls playsInline className="h-full w-full object-contain" />
+                      ) : (
+                        <img src={URL.createObjectURL(file)} alt="Prévia do story" className="h-full w-full object-contain" />
+                      )}
+
+                      <div className="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur">
+                        {file.type.startsWith('video/') ? (
+                          <span className="inline-flex items-center gap-1"><Video size={12} /> Vídeo</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1"><ImageIcon size={12} /> Foto</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 p-4">
+                      <textarea
+                        value={caption}
+                        onChange={(event) => setCaption(event.target.value)}
+                        placeholder="Escreva uma legenda curta..."
+                        rows={2}
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white outline-none focus:border-pink-400"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={publishStory}
+                        disabled={publishing}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-orange-400 px-5 py-4 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-pink-950/30 disabled:opacity-60"
+                      >
+                        {publishing ? <Loader2 className="animate-spin" size={18} /> : <Send size={17} />}
+                        Postar story
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {hasStories && (
+                  <button
+                    type="button"
+                    onClick={deleteCurrentStories}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-3 text-xs font-black uppercase tracking-widest text-rose-200 hover:bg-rose-500/15"
+                  >
+                    <Trash2 size={15} />
+                    Remover stories ativos
+                  </button>
+                )}
+
+                <p className="text-center text-[11px] font-semibold leading-relaxed text-slate-500">
+                  O story fica visível na Home e no perfil público do fisioterapeuta por 24 horas.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+
   return (
     <>
       <div className={`relative inline-flex ${className}`}>
         <button
           type="button"
-          onClick={handleAvatarClick}
-          className={`relative rounded-full ${hasStories ? 'bg-gradient-to-tr from-sky-400 via-violet-500 to-fuchsia-500 p-[3px]' : 'p-0'} transition-transform hover:scale-105`}
-          aria-label={hasStories ? 'Ver FisioStories' : 'Criar FisioStory'}
+          onClick={openProfileAction}
+          className={`relative rounded-full transition-transform hover:scale-105 ${
+            hasStories
+              ? 'bg-gradient-to-tr from-orange-400 via-pink-500 to-fuchsia-600 p-[4px] shadow-lg shadow-pink-950/30'
+              : 'p-0'
+          }`}
+          aria-label={isOwner ? 'Abrir opções do story' : 'Ver story'}
         >
-          <div className={`${sizeClassName} overflow-hidden rounded-full bg-slate-900 ring-4 ring-slate-950/50`}>
+          <div className={`${sizeClassName} overflow-hidden rounded-full bg-slate-900 ring-4 ring-[#0B1120]`}>
             {avatarUrl ? (
               <img
                 src={avatarUrl}
@@ -153,14 +306,14 @@ export default function StoryAvatar({
           </div>
         </button>
 
-        <div className="absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[2px] border-[#0B1120] bg-emerald-500 shadow-lg z-10" />
+        <span className="absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[2px] border-[#0B1120] bg-emerald-500 shadow-lg z-10" />
 
         {isOwner && (
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              setCreatorOpen(true);
+              setOptionsOpen(true);
             }}
             className="absolute -bottom-1 -right-1 z-20 grid h-7 w-7 place-items-center rounded-full border-2 border-[#0B1120] bg-white text-slate-950 shadow-xl hover:scale-110 transition-transform"
             aria-label="Adicionar story"
@@ -176,71 +329,7 @@ export default function StoryAvatar({
         )}
       </div>
 
-      {viewerOpen && storyGroups.length > 0 && (
-        <StoryViewer groups={storyGroups} initialGroupIndex={0} onClose={() => setViewerOpen(false)} />
-      )}
-
-      <AnimatePresence>
-        {creatorOpen && (
-          <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              className="w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 shadow-2xl shadow-sky-950/40"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 p-5">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-300">FisioStory</p>
-                  <h3 className="text-xl font-black text-white">Publicar foto ou vídeo</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCreatorOpen(false)}
-                  className="rounded-full bg-white/5 p-2 text-slate-300 hover:bg-white/10"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="space-y-4 p-5">
-                <label className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-sky-400/30 bg-sky-500/10 p-5 text-center hover:bg-sky-500/15">
-                  {file?.type.startsWith('video/') ? (
-                    <Video className="mb-3 text-sky-300" size={32} />
-                  ) : (
-                    <ImageIcon className="mb-3 text-sky-300" size={32} />
-                  )}
-                  <span className="text-sm font-black text-white">
-                    {file ? file.name : 'Selecionar imagem ou vídeo'}
-                  </span>
-                  <span className="mt-1 text-xs font-semibold text-slate-400">
-                    Imagem até 15 MB · Vídeo até 80 MB
-                  </span>
-                  <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
-                </label>
-
-                <textarea
-                  value={caption}
-                  onChange={(event) => setCaption(event.target.value)}
-                  placeholder="Legenda curta, dica, agenda disponível..."
-                  rows={3}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white outline-none focus:border-sky-400"
-                />
-
-                <button
-                  type="button"
-                  onClick={publishStory}
-                  disabled={publishing}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-4 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-sky-950/30 disabled:opacity-60"
-                >
-                  {publishing ? <Loader2 className="animate-spin" size={18} /> : <Camera size={17} />}
-                  Publicar Story
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {isClient() ? createPortal(overlay, document.body) : null}
     </>
   );
 }
