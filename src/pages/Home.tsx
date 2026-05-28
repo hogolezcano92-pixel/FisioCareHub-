@@ -463,9 +463,9 @@ export default function Home() {
       </section>
 
       {/* FisioStories - Conteúdo vivo dos fisioterapeutas */}
-      <section className="relative z-20 px-6 lg:px-20 mt-8 mb-24">
+      <section className="relative z-20 px-6 lg:px-20 mt-14 mb-28">
         <div className="max-w-7xl mx-auto">
-          <StoryRail compact className="max-w-full" />
+          <StoryRail compact className="max-w-full !shadow-none" />
         </div>
       </section>
 
