@@ -81,8 +81,8 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-pink-500 transition-all hover:translate-x-1 group"
                   >
-                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-pink-500/10 transition-colors">
-                      <Instagram size={18} className="group-hover:scale-110 transition-transform" />
+                    <div className="p-2 bg-[#E1306C]/10 rounded-lg group-hover:bg-[#E1306C] transition-colors">
+                      <Instagram size={18} className="text-[#E1306C] group-hover:text-white group-hover:scale-110 transition-transform" />
                     </div>
                     @fisiocarehub.app
                   </a>
@@ -92,8 +92,8 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-emerald-500 transition-all hover:translate-x-1 group"
                   >
-                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-emerald-500/10 transition-colors">
-                      <MessageCircle size={18} className="group-hover:scale-110 transition-transform" />
+                    <div className="p-2 bg-[#25D366]/10 rounded-lg group-hover:bg-[#25D366] transition-colors">
+                      <MessageCircle size={18} className="text-[#25D366] group-hover:text-white group-hover:scale-110 transition-transform" />
                     </div>
                     +55 11 98404-0563
                   </a>
