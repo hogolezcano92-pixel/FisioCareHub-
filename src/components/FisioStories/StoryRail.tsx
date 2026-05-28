@@ -70,7 +70,7 @@ export default function StoryRail({ title = 'FisioStories', subtitle = 'Dicas, b
             const avatar = getStoryAvatar(group.physio);
             return (
               <button key={group.physio_id} onClick={() => setViewerIndex(index)} className={`${compact ? 'min-w-[66px]' : 'min-w-[86px]'} group flex flex-col items-center gap-2`}>
-                <div className="rounded-full bg-gradient-to-tr from-sky-400 via-violet-500 to-fuchsia-500 p-[3px] shadow-lg shadow-sky-950/30">
+                <div className="rounded-full bg-gradient-to-tr from-orange-400 via-pink-500 to-fuchsia-600 p-[4px] shadow-lg shadow-sky-950/30">
                   <div className={`${compact ? 'h-12 w-12 ring-2' : 'h-16 w-16 ring-4'} grid place-items-center overflow-hidden rounded-full bg-slate-950 ring-slate-950`}>
                     {avatar ? <img src={avatar} alt={group.physio?.nome_completo || 'Fisioterapeuta'} className="h-full w-full object-cover" /> : <span className="text-sm font-black text-white">{getInitials(group.physio?.nome_completo)}</span>}
                   </div>
