@@ -57,6 +57,7 @@ import LGPDModal from './components/LGPDModal';
 import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
+import IncomingVideoCallListener from './components/IncomingVideoCallListener';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -758,6 +759,7 @@ function AppContent() {
       <ScrollToTop />
       <LGPDModal />
       <Toaster position="top-right" richColors closeButton />
+      <IncomingVideoCallListener />
 
       <ErrorBoundary>
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
