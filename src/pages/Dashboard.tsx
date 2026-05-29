@@ -523,8 +523,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-
-  return (
     return (
   <div className="min-h-screen pb-12 bg-background relative overflow-hidden transition-colors duration-500">
     <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
