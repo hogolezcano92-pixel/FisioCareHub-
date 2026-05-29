@@ -394,12 +394,12 @@ export default function PhysioOpportunities() {
       </div>
 
       {selected && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelected(null)} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 bg-slate-900 p-4 sm:p-8 shadow-2xl flex flex-col"
+            className="relative w-full max-w-2xl max-h-[86vh] sm:max-h-[88vh] overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 bg-slate-900 p-4 sm:p-8 shadow-2xl flex flex-col"
           >
             <div className="flex items-start justify-between gap-4 mb-4 sm:mb-6 shrink-0">
               <div className="min-w-0 flex-1">
