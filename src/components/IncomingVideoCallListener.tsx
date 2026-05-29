@@ -58,6 +58,7 @@ export default function IncomingVideoCallListener() {
     if (!isCallVisible || !incomingCall) return;
 
     if (missedTimerRef.current) window.clearTimeout(missedTimerRef.current);
+
     missedTimerRef.current = window.setTimeout(async () => {
       const { error } = await supabase
         .from('video_calls')
@@ -164,9 +165,8 @@ export default function IncomingVideoCallListener() {
       .update({ status: 'accepted' })
       .eq('id', incomingCall.id);
 
-    setBusy(false);
-
     if (error) {
+      setBusy(false);
       console.error('[VideoCall] Erro ao atender chamada:', error);
       toast.error('Não foi possível atender a chamada.');
       return;
@@ -174,11 +174,18 @@ export default function IncomingVideoCallListener() {
 
     const title = incomingCall.title || `Consulta online com ${incomingCall.caller_name || 'paciente'}`;
     const subtitle = incomingCall.subtitle || 'Sala protegida do FisioCareHub';
+    const telehealthUrl =
+      `/telehealth?room=${encodeURIComponent(incomingCall.room_id)}` +
+      `&callId=${encodeURIComponent(incomingCall.id)}` +
+      `&title=${encodeURIComponent(title)}` +
+      `&subtitle=${encodeURIComponent(subtitle)}` +
+      `&returnTo=${encodeURIComponent('/chat')}`;
 
+    audioRef.current?.pause();
     setIncomingCall(null);
-    navigate(
-      `/telehealth?room=${encodeURIComponent(incomingCall.room_id)}&callId=${encodeURIComponent(incomingCall.id)}&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(subtitle)}&returnTo=${encodeURIComponent('/chat')}`
-    );
+    setBusy(false);
+
+    navigate(telehealthUrl);
   };
 
   return (
@@ -203,10 +210,14 @@ export default function IncomingVideoCallListener() {
                   <Video size={34} />
                 </div>
 
-                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-blue-300">Chamada de vídeo</p>
-                <h3 className="text-2xl font-black tracking-tight text-white">{incomingCall.caller_name || 'Alguém'} está chamando</h3>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-blue-300">
+                  Chamada de vídeo
+                </p>
+                <h3 className="text-2xl font-black tracking-tight text-white">
+                  {incomingCall.caller_name || 'Alguém'} está chamando
+                </h3>
                 <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-400">
-                  Atenda para entrar na consulta online protegida pelo FisioCareHub.
+                  Atenda para abrir a sala de vídeo. O navegador vai pedir permissão para câmera e microfone.
                 </p>
 
                 <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
