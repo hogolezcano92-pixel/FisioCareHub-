@@ -92,6 +92,43 @@ const isPexelsVideoUrl = (url: string) => {
   return normalized.includes('pexels.com') || normalized.includes('videos.pexels.com');
 };
 
+const getVideoExternalUrl = (originalUrl?: string | null) => {
+  const original = String(originalUrl || '').trim();
+  if (!original) return '';
+
+  const video = getVideoEmbedInfo(original);
+
+  // Para YouTube/Vimeo, abrir a URL original é melhor do que abrir o embed.
+  if (video.type === 'iframe') {
+    return original;
+  }
+
+  // Para Pexels e arquivos mp4, usar exatamente o src que o player interno já consegue tocar.
+  return video.src || original;
+};
+
+const openVideoInNewTab = (event: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const externalUrl = String(url || '').trim();
+  if (!externalUrl) return;
+
+  // Mantém a abertura diretamente ligada ao clique do usuário.
+  // Isso evita travar/bloquear em Safari/iPhone/PWA quando o target blank falha.
+  const opened = window.open(externalUrl, '_blank', 'noopener,noreferrer');
+
+  if (!opened) {
+    const link = document.createElement('a');
+    link.href = externalUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+};
+
 const getExercisePdfUrl = (exercise?: ProtocolItem['exercicio'] | null) =>
   String(exercise?.pdf_url || exercise?.arquivo_url || '').trim();
 
@@ -340,7 +377,7 @@ export default function PatientExercises() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
-                
+
                 <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-center gap-2">
                   <span className="bg-sky-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-lg">
                     {item.exercicio?.categoria_principal}
@@ -415,7 +452,7 @@ export default function PatientExercises() {
 
               <div className="md:w-1/2 p-8 md:p-12 overflow-y-auto space-y-8 bg-slate-900 custom-scrollbar">
                 <button onClick={() => setSelectedItemDetail(null)} className="absolute top-8 right-8 p-2 hover:bg-white/5 rounded-full text-slate-400 transition-all border border-white/10"><X size={24} /></button>
-                
+
                 <div className="space-y-3">
                   <span className="text-[10px] font-black bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full uppercase tracking-widest border border-sky-500/20">
                     {selectedItemDetail.exercicio?.categoria_principal}
@@ -471,6 +508,7 @@ export default function PatientExercises() {
 
                 {selectedItemDetail.exercicio?.video_url && (() => {
                   const video = getVideoEmbedInfo(selectedItemDetail.exercicio.video_url);
+                  const externalVideoUrl = getVideoExternalUrl(selectedItemDetail.exercicio.video_url);
 
                   return (
                     <section className="space-y-3">
@@ -533,9 +571,10 @@ export default function PatientExercises() {
                       </div>
 
                       <a
-                        href={selectedItemDetail.exercicio.video_url}
+                        href={externalVideoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(event) => openVideoInNewTab(event, externalVideoUrl)}
                         className="inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-sky-300 hover:text-sky-200"
                       >
                         Abrir vídeo em nova aba
