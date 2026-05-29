@@ -82,6 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
+            { name: 'Exames IA', path: '/exam-ai', icon: BrainCircuit },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
@@ -96,6 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
             { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
+            { name: 'Exames IA', path: '/exam-ai', icon: BrainCircuit },
             { name: t('nav.library'), path: '/patient/library', icon: BookOpen },
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
           ] : [])
