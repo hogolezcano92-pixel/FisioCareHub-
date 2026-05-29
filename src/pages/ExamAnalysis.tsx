@@ -205,29 +205,75 @@ export default function ExamAnalysis() {
         }
       }
 
-      const response = await fetch('/api/exams/analyze', {
+      const response = await fetch('/api/library/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: 'exam_analysis',
           accessToken,
+          examText: notes,
+          clinicalContext: notes,
           fileUrl: filePath,
           fileName: file?.name || 'Texto digitado',
           fileType: file?.type || 'text/plain',
           imageDataUrl,
           examType,
           patientName: patientName.trim() || profile?.nome_completo || 'Paciente não informado',
-          notes,
         }),
       });
 
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || 'Não foi possível analisar o exame.');
 
-      setResult(payload.analysis);
+      const aiAnalysis = payload.analysis || {};
+      const normalizedResult: AiResult = {
+        resumo: aiAnalysis.resumo_executivo || '',
+        achados_principais: aiAnalysis.principais_achados || [],
+        pontos_atencao: aiAnalysis.pontos_para_fisioterapeuta_revisar || [],
+        explicacao_paciente: aiAnalysis.explicacao_para_paciente || '',
+        orientacao_profissional: [
+          ...(aiAnalysis.pontos_para_fisioterapeuta_revisar || []),
+          ...(aiAnalysis.possiveis_relacoes_funcionais || []),
+          aiAnalysis.recomendacao_segura || '',
+        ].filter(Boolean).join('\n\n'),
+        sinais_alerta: aiAnalysis.sinais_de_alerta || [],
+        limitacoes: Array.isArray(aiAnalysis.limitacoes) ? aiAnalysis.limitacoes.join(' ') : (aiAnalysis.limitacoes || ''),
+        confianca: 'moderada',
+      };
+
+      setResult(normalizedResult);
+
+      const { error: insertError } = await supabase
+        .from('exam_analyses')
+        .insert({
+          uploaded_by: user.id,
+          patient_name: patientName.trim() || profile?.nome_completo || null,
+          exam_type: aiAnalysis.exam_type || examType,
+          file_name: file?.name || 'Texto digitado',
+          file_type: file?.type || 'text/plain',
+          file_url: filePath || null,
+          status: 'completed',
+          ai_summary: normalizedResult.resumo,
+          ai_findings: normalizedResult.achados_principais,
+          ai_attention_points: normalizedResult.pontos_atencao,
+          ai_patient_explanation: normalizedResult.explicacao_paciente,
+          ai_professional_notes: normalizedResult.orientacao_profissional,
+          ai_alerts: normalizedResult.sinais_alerta,
+          ai_limitations: normalizedResult.limitacoes,
+          ai_confidence: normalizedResult.confianca,
+          ai_raw_response: payload,
+        });
+
+      if (insertError) {
+        console.warn('[ExamAnalysis] Análise gerada, mas não foi possível salvar histórico:', insertError);
+        toast.info('Análise gerada, mas o histórico não foi salvo. Verifique o SQL da tabela exam_analyses.');
+      } else {
+        await fetchRecords();
+      }
+
       toast.success('Análise gerada com sucesso. Revise antes de usar clinicamente.');
       setFile(null);
       setNotes('');
-      await fetchRecords();
     } catch (error: any) {
       console.error('[ExamAnalysis] Erro:', error);
       toast.error(error?.message || 'Erro ao analisar exame.');
