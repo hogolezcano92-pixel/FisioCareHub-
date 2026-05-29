@@ -798,3 +798,14 @@ input:-webkit-autofill:active {
 :root[data-theme="light"] .bg-black\/50 {
   background-color: rgba(15, 23, 42, 0.18) !important;
 }
+
+/* iOS/Safari: evita zoom automático ao focar campos de formulário no mobile.
+   Mantém a experiência do web app mais parecida com aplicativo, sem alterar lógica. */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
