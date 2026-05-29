@@ -738,6 +738,7 @@ function AppContent() {
                   <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
                   <Route path="/exames-ia" element={<ProtectedRoute><ExamAnalysis /></ProtectedRoute>} />
+                  <Route path="/exam-ai" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
