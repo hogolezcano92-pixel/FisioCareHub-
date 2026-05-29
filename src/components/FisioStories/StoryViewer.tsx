@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Calendar, User, MessageCircle, Eye, MousePointerClick } from 'lucide-react';
+import { X, Calendar, User, MessageCircle, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { cn } from '../../lib/utils';
 import { FisioStory, StoryGroup, storiesService, getStoryAvatar } from '../../services/storiesService';
 
 type StoryViewerProps = {
@@ -63,6 +62,15 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   const canGoPrev = groupIndex > 0 || storyIndex > 0;
   const canGoNext = groupIndex < groups.length - 1 || storyIndex < (group?.stories?.length || 0) - 1;
+
+  const profilePath = story ? `/physio/${story.physio_id}` : '/buscar-fisio';
+  const bookingPath = story?.cta_url || `${profilePath}?storyAction=book`;
+  const messagePath = story ? `/chat?physio=${story.physio_id}` : '/chat';
+
+  const protectPath = useCallback((path: string) => {
+    if (user) return path;
+    return `/login?redirect=${encodeURIComponent(path)}`;
+  }, [user]);
 
   const goPrev = useCallback(() => {
     setProgress(0);
@@ -148,9 +156,34 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   const avatar = useMemo(() => getStoryAvatar(group?.physio), [group?.physio]);
 
-  const handleCta = async () => {
+  const handleAction = async () => {
     if (!story) return;
     await storiesService.trackClick(story.id, user?.id);
+    onClose();
+  };
+
+  const handleShare = async () => {
+    if (!story) return;
+
+    await storiesService.trackClick(story.id, user?.id);
+
+    const shareUrl = `${window.location.origin}${profilePath}`;
+    const shareText = `Conheça ${group?.physio?.nome_completo || 'este fisioterapeuta'} no FisioCareHub.`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'FisioCareHub',
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        window.alert('Link do perfil copiado.');
+      }
+    } catch (error) {
+      console.warn('[StoryViewer] Compartilhamento cancelado ou indisponível:', error);
+    }
   };
 
   if (!group || !story || !isClient()) return null;
@@ -208,42 +241,55 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
             type="button"
             aria-label="Story anterior"
             onClick={canGoPrev ? goPrev : undefined}
-            className="absolute left-0 top-24 bottom-32 z-20 w-1/2"
+            className="absolute left-0 top-24 bottom-40 z-20 w-1/2"
           />
           <button
             type="button"
             aria-label="Próximo story"
             onClick={goNext}
-            className="absolute right-0 top-24 bottom-32 z-20 w-1/2"
+            className="absolute right-0 top-24 bottom-40 z-20 w-1/2"
           />
 
-          <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/90 to-transparent p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-24 sm:p-5 sm:pt-20">
+          <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 to-transparent p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-24 sm:p-5 sm:pt-20">
             {story.title && <h3 className="text-xl font-black text-white">{story.title}</h3>}
             {story.caption && <p className="mt-2 text-sm font-semibold leading-relaxed text-white/80">{story.caption}</p>}
 
-            <div className="mt-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-white/55">
-              <Eye size={14} /> {Number(story.views_count || 0)} views
-              <span className="mx-1 h-1 w-1 rounded-full bg-white/30" />
-              <MousePointerClick size={14} /> {Number(story.clicks_count || 0)} cliques
-            </div>
+            <Link
+              to={protectPath(bookingPath)}
+              onClick={handleAction}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-4 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-pink-950/30"
+            >
+              <Calendar size={17} />
+              Agendar avaliação
+            </Link>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <Link
-                to={`/physio/${story.physio_id}`}
-                onClick={handleCta}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white backdrop-blur-xl hover:bg-white/20"
+                to={protectPath(profilePath)}
+                onClick={handleAction}
+                className="inline-flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-xl hover:bg-white/20"
               >
-                <User size={16} />
+                <User size={18} />
                 Perfil
               </Link>
+
               <Link
-                to={story.cta_url || `/physio/${story.physio_id}`}
-                onClick={handleCta}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-pink-950/30"
+                to={protectPath(messagePath)}
+                onClick={handleAction}
+                className="inline-flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-xl hover:bg-white/20"
               >
-                {story.cta_type === 'message' ? <MessageCircle size={16} /> : <Calendar size={16} />}
-                {story.cta_label || 'Agendar'}
+                <MessageCircle size={18} />
+                Mensagem
               </Link>
+
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-xl hover:bg-white/20"
+              >
+                <Share2 size={18} />
+                Compartilhar
+              </button>
             </div>
           </div>
         </motion.div>
