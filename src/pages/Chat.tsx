@@ -406,7 +406,7 @@ export default function Chat() {
     } catch (err) { console.error(err); }
   };
 
-  const handleStartVideoCall = () => {
+  const handleStartVideoCall = async () => {
     if (!targetUser || !user) return;
 
     const room = `FisioCareHub-${[user.id, targetUser.id].sort().join('-')}`;
@@ -415,9 +415,44 @@ export default function Chat() {
       ? `${userData.nome_completo} e ${targetUser.nome_completo || 'profissional'}`
       : `Sala protegida do FisioCareHub`;
 
-    navigate(
-      `/telehealth?room=${encodeURIComponent(room)}&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(subtitle)}&returnTo=${encodeURIComponent('/chat')}`
-    );
+    try {
+      const { data: call, error: callError } = await supabase
+        .from('video_calls')
+        .insert({
+          caller_id: user.id,
+          receiver_id: targetUser.id,
+          caller_name: userData?.nome_completo || user.email || 'Paciente',
+          receiver_name: targetUser.nome_completo || targetUser.email || 'Profissional',
+          room_id: room,
+          title,
+          subtitle,
+          provider: 'internal',
+          status: 'ringing'
+        })
+        .select('*')
+        .single();
+
+      if (callError) throw callError;
+
+      await supabase
+        .from('notificacoes')
+        .insert({
+          user_id: targetUser.id,
+          titulo: 'Chamada de vídeo recebida',
+          mensagem: `${userData?.nome_completo || 'Alguém'} está chamando você por vídeo.`,
+          tipo: 'video_call',
+          lida: false,
+          link: `/telehealth?room=${encodeURIComponent(room)}&callId=${encodeURIComponent(call.id)}&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(subtitle)}&returnTo=${encodeURIComponent('/chat')}`
+        });
+
+      toast.success('Chamando por vídeo...');
+      navigate(
+        `/telehealth?room=${encodeURIComponent(room)}&callId=${encodeURIComponent(call.id)}&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(subtitle)}&returnTo=${encodeURIComponent('/chat')}`
+      );
+    } catch (error) {
+      console.error('[VideoCall] Erro ao iniciar chamada:', error);
+      toast.error('Não foi possível iniciar a chamada de vídeo. Verifique se o SQL de video_calls foi aplicado.');
+    }
   };
 
   const isChattingWithSupport = targetUser?.tipo_usuario === 'admin' || 
