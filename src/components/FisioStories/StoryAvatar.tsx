@@ -279,52 +279,66 @@ export default function StoryAvatar({
 
   return (
     <>
-      <div className={`relative inline-flex ${className}`}>
-        <button
-          type="button"
-          onClick={openProfileAction}
-          className={`relative rounded-full transition-transform hover:scale-105 ${
-            hasStories
-              ? 'bg-gradient-to-tr from-orange-400 via-pink-500 to-fuchsia-600 p-[4px] shadow-lg shadow-pink-950/30'
-              : 'p-0'
-          }`}
-          aria-label={isOwner ? 'Abrir opções do story' : 'Ver story'}
-        >
-          <div className={`${sizeClassName} overflow-hidden rounded-full bg-slate-900 ring-4 ring-[#0B1120]`}>
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={name || 'Fisioterapeuta'}
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-sky-500 to-violet-500 text-sm font-black text-white">
-                {getInitials(name)}
-              </div>
-            )}
-          </div>
-        </button>
-
-        <span className="absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[2px] border-[#0B1120] bg-emerald-500 shadow-lg z-10" />
-
-        {isOwner && (
+      <div className={`relative inline-flex flex-col items-center gap-1.5 ${className}`}>
+        <div className="relative inline-flex">
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              setOptionsOpen(true);
-            }}
-            className="absolute -bottom-1 -right-1 z-20 grid h-7 w-7 place-items-center rounded-full border-2 border-[#0B1120] bg-white text-slate-950 shadow-xl hover:scale-110 transition-transform"
-            aria-label="Adicionar story"
+            onClick={openProfileAction}
+            className={`relative rounded-full transition-transform hover:scale-105 ${
+              hasStories
+                ? 'bg-gradient-to-tr from-purple-700 via-rose-600 to-red-500 p-[6px] shadow-[0_0_0_3px_rgba(126,34,206,0.22),0_0_26px_rgba(244,63,94,0.55)]'
+                : 'p-0'
+            }`}
+            aria-label={isOwner ? 'Abrir opções do story' : 'Ver story'}
           >
-            <Plus size={18} className="stroke-[3px]" />
+            <div className={`${sizeClassName} overflow-hidden rounded-full bg-slate-900 ring-[5px] ring-[#0B1120]`}>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={name || 'Fisioterapeuta'}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="grid h-full w-full place-items-center bg-gradient-to-br from-sky-500 to-violet-500 text-sm font-black text-white">
+                  {getInitials(name)}
+                </div>
+              )}
+            </div>
           </button>
-        )}
 
-        {loading && (
-          <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-slate-950/80">
-            <Loader2 size={12} className="animate-spin text-sky-300" />
+          <span className="absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[2px] border-[#0B1120] bg-emerald-500 shadow-lg z-10" />
+
+          {isOwner && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setOptionsOpen(true);
+              }}
+              className="absolute -bottom-1.5 -right-1.5 z-20 grid h-8 w-8 place-items-center rounded-full border-[3px] border-[#0B1120] bg-white text-slate-950 shadow-xl hover:scale-110 transition-transform"
+              aria-label="Adicionar story"
+            >
+              <Plus size={19} className="stroke-[3.2px]" />
+            </button>
+          )}
+
+          {loading && (
+            <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-slate-950/80">
+              <Loader2 size={12} className="animate-spin text-sky-300" />
+            </span>
+          )}
+        </div>
+
+        {isOwner && (
+          <span
+            className={`ml-1 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] shadow-lg ${
+              hasStories
+                ? 'border-rose-400/30 bg-rose-500/15 text-rose-100 shadow-rose-950/20'
+                : 'border-sky-400/20 bg-sky-500/10 text-sky-200 shadow-sky-950/20'
+            }`}
+          >
+            {hasStories ? 'Story ativo' : 'Adicionar story'}
           </span>
         )}
       </div>
