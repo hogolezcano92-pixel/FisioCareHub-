@@ -411,7 +411,7 @@ export default function Chat() {
                                 new URLSearchParams(location.search).get('support') === 'true';
 
   return (
-    <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-12 lg:pt-0">
+    <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-6 lg:pt-0">
       {/* Background Decoration */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.025] z-0">
         <img 
@@ -562,7 +562,7 @@ export default function Chat() {
         ) : (
           <>
             {/* Header */}
-            <header className="px-3 py-2 md:p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/78 backdrop-blur-2xl sticky top-0 z-20 h-[56px] md:h-auto shadow-[0_12px_32px_rgba(2,6,23,0.28)]">
+            <header className="px-3 py-2 md:p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/82 backdrop-blur-2xl sticky top-0 z-20 h-[54px] md:h-auto shadow-[0_10px_26px_rgba(2,6,23,0.24)]">
               <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                 <button onClick={() => setTargetUser(null)} className="md:hidden p-1.5 text-slate-400 hover:text-blue-400 transition-colors">
                   <ArrowLeft size={20} />
@@ -619,16 +619,16 @@ export default function Chat() {
             <div className="flex-1 flex overflow-hidden">
               {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto px-4 pt-4 pb-24 md:px-7 md:pt-6 md:pb-32 space-y-4 bg-slate-950 bg-fixed scroll-smooth relative"
+                className="flex-1 overflow-y-auto px-5 pt-5 pb-28 md:px-8 md:pt-7 md:pb-32 space-y-5 bg-slate-950 bg-fixed scroll-smooth relative"
                 style={{
                   backgroundImage:
-                    'linear-gradient(rgba(2,6,23,0.38), rgba(2,6,23,0.44)), radial-gradient(circle at top left, rgba(59,130,246,0.08), transparent 32%), radial-gradient(circle at bottom right, rgba(124,58,237,0.08), transparent 34%), url(https://www.transparenttextures.com/patterns/cubes.png)',
-                  backgroundSize: 'auto, auto, auto, 132px 132px',
+                    'linear-gradient(rgba(2,6,23,0.66), rgba(2,6,23,0.70)), radial-gradient(circle at top left, rgba(59,130,246,0.055), transparent 34%), radial-gradient(circle at bottom right, rgba(124,58,237,0.055), transparent 36%), url(https://www.transparenttextures.com/patterns/cubes.png)',
+                  backgroundSize: 'auto, auto, auto, 160px 160px',
                   backgroundPosition: 'center, center, center, center',
                 }}
               >
-                <div className="flex justify-center mb-5">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-300 uppercase tracking-[0.18em] shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+                <div className="flex justify-center mb-6">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.035] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-300 uppercase tracking-[0.18em] shadow-[0_8px_20px_rgba(0,0,0,0.16)]">
                     <ShieldCheck size={12} className="text-blue-300" />
                     Conversa protegida
                   </div>
@@ -659,7 +659,7 @@ export default function Chat() {
                     return (
                       <div key={msg.id} className="space-y-4">
                         {showDateSeparator && (
-                          <div className="flex justify-center my-5">
+                          <div className="flex justify-center my-4">
                             <div className="px-3.5 py-1.5 bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-[0.18em] shadow-sm">
                               {formatOnlyDateBR(msg.criado_em)}
                             </div>
@@ -668,15 +668,15 @@ export default function Chat() {
                         <motion.div
                           initial={{ opacity: 0, y: 8, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          className={cn("flex flex-col group", isMe ? "items-end pr-1" : "items-start pl-1")}
+                          className={cn("flex flex-col group", isMe ? "items-end pr-2" : "items-start pl-2")}
                         >
                           <div className={cn(
-                            "max-w-[78%] md:max-w-[64%] px-3.5 py-2.5 md:px-5 md:py-3.5 rounded-[24px] text-sm shadow-[0_12px_28px_rgba(0,0,0,0.20)] relative transition-all min-w-[72px] border backdrop-blur-md",
+                            "max-w-[72%] md:max-w-[60%] px-3.5 py-2.5 md:px-4.5 md:py-3 rounded-[22px] text-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)] relative transition-all min-w-[70px] border backdrop-blur-md",
                             isMe 
-                              ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[8px] border-blue-300/20 shadow-blue-950/20" 
-                              : "bg-slate-900/78 text-slate-100 rounded-bl-[8px] border-white/10 shadow-slate-950/25"
+                              ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[8px] border-blue-300/20 shadow-blue-950/18" 
+                              : "bg-slate-900/74 text-slate-100 rounded-bl-[8px] border-white/10 shadow-slate-950/20"
                           )}>
-                            <p className="leading-relaxed font-semibold mb-1 break-words text-[14px] md:text-[15px]">{msg.mensagem}</p>
+                            <p className="leading-[1.55] font-semibold mb-1 break-words text-[13.5px] md:text-[15px]">{msg.mensagem}</p>
 
                             <div className={cn(
                               "text-[8.5px] font-black uppercase tracking-widest opacity-60 text-right",
@@ -800,7 +800,7 @@ export default function Chat() {
             </div>
 
             {/* Footer / Input */}
-            <footer className="px-2.5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-5 bg-slate-950/88 backdrop-blur-2xl border-t border-white/10 shadow-[0_-12px_32px_rgba(2,6,23,0.30)]">
+            <footer className="px-3 pt-2.5 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-5 bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_28px_rgba(2,6,23,0.28)]">
               {(targetUser.tipo_usuario === 'admin' || targetUser.email === 'hogolezcano92@gmail.com') && !user ? (
                 <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-500/5 rounded-3xl border border-blue-500/20 mx-2 md:mx-0">
                   <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
@@ -819,7 +819,7 @@ export default function Chat() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full rounded-[26px] md:rounded-[34px] bg-blue-950/14 md:bg-transparent p-0.5 md:p-0">
+                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full rounded-[24px] md:rounded-[34px] bg-blue-950/10 md:bg-transparent p-0 md:p-0">
                   <div className="flex-1 relative group">
                     <input
                       ref={inputRef}
@@ -833,7 +833,7 @@ export default function Chat() {
                         }
                       }}
                       placeholder="Mensagem..."
-                      className="w-full pl-4 pr-18 py-3 md:py-3.5 bg-white/[0.07] border border-white/15 rounded-[24px] outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-400/45 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_24px_rgba(0,0,0,0.16)] text-white placeholder:text-slate-500"
+                      className="w-full pl-4 pr-16 py-2.5 md:py-3.5 bg-white/[0.07] border border-white/15 rounded-[22px] outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-400/45 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.14)] text-white placeholder:text-slate-500"
                     />
                     <div className="absolute right-2.5 md:right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 md:gap-1.5">
                       <button type="button" className="p-1.5 md:p-2 text-slate-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition-colors">
@@ -856,7 +856,7 @@ export default function Chat() {
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="w-11 h-11 md:w-13 md:h-13 bg-gradient-to-br from-blue-500 via-blue-600 to-violet-600 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_12px_28px_rgba(37,99,235,0.34)] disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0 border border-blue-300/20"
+                    className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-violet-600 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_12px_28px_rgba(37,99,235,0.34)] disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0 border border-blue-300/20"
                   >
                     <Send className="w-5 h-5 md:w-6 md:h-6 translate-x-0.5 -translate-y-0.5" />
                   </button>
