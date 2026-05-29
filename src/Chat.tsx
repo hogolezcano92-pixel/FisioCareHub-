@@ -59,6 +59,33 @@ export default function Chat() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const directUserId = params.get('user') || params.get('physio') || params.get('target');
+
+    if (!directUserId || targetUser?.id === directUserId) return;
+
+    const fetchDirectUser = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', directUserId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.id !== user?.id) {
+          setTargetUser(data);
+        }
+      } catch (error) {
+        console.error('[Chat] Erro ao abrir conversa direta:', error);
+      }
+    };
+
+    fetchDirectUser();
+  }, [location.search, targetUser?.id, user?.id]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
     if (params.get('support') === 'true' && !targetUser) {
       const fetchAdmin = async () => {
         let { data: adminData } = await supabase

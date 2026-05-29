@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -25,6 +25,7 @@ export default function ProfessionalProfile() {
   const { id } = useParams();
   const { user, profile: currentUserProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [physio, setPhysio] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -60,6 +61,15 @@ export default function ProfessionalProfile() {
 
     fetchPhysio();
   }, [id, navigate]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldOpenBooking = params.get('storyAction') === 'book' || params.get('open') === 'booking' || params.get('agendar') === 'true';
+
+    if (shouldOpenBooking) {
+      setShowBookingModal(true);
+    }
+  }, [location.search]);
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
