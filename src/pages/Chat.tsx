@@ -551,7 +551,7 @@ export default function Chat() {
 
       {/* Chat Area */}
       <main className={cn(
-        "flex-1 flex flex-col bg-slate-950 z-10",
+        "flex-1 flex flex-col bg-slate-950 z-10 relative overflow-hidden",
         !targetUser && "hidden md:flex items-center justify-center bg-slate-900/20"
       )}>
         {!targetUser ? (
@@ -579,7 +579,7 @@ export default function Chat() {
         ) : (
           <>
             {/* Header */}
-            <header className="px-3 py-2 md:p-6 border-b border-white/5 flex items-center justify-between bg-slate-900/80 backdrop-blur-xl sticky top-0 z-20 h-[60px] md:h-auto">
+            <header className="px-3 py-2 md:p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/75 backdrop-blur-2xl sticky top-0 z-20 h-[60px] md:h-auto shadow-[0_18px_45px_rgba(2,6,23,0.35)]">
               <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                 <button onClick={() => setTargetUser(null)} className="md:hidden p-1.5 text-slate-400 hover:text-blue-400 transition-colors">
                   <ArrowLeft size={20} />
@@ -587,7 +587,7 @@ export default function Chat() {
                 <div className="relative flex-shrink-0">
                   <img 
                     src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
-                    className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-white/10 shadow-md" 
+                    className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.35)]" 
                     alt={targetUser.nome_completo} 
                     referrerPolicy="no-referrer"
                   />
@@ -604,18 +604,18 @@ export default function Chat() {
                 </div>
               </div>
               <div className="flex items-center gap-0.5 md:gap-2 flex-shrink-0">
-                <button className="p-1.5 md:p-3 text-slate-400 hover:text-blue-400 hover:bg-white/5 rounded-xl md:rounded-2xl transition-all border border-transparent hover:border-white/5">
+                <button className="p-1.5 md:p-3 text-slate-400 hover:text-blue-300 bg-white/[0.04] hover:bg-blue-500/10 rounded-xl md:rounded-2xl transition-all border border-white/10 hover:border-blue-400/25 shadow-sm">
                   <Phone size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={() => navigate(`/telehealth?room=FisioCareHub-${[user?.id, targetUser.id].sort().join('-')}`)}
-                  className="p-1.5 md:p-3 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl md:rounded-2xl transition-all shadow-sm border border-blue-500/20"
+                  className="p-1.5 md:p-3 text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(37,99,235,0.18)] border border-blue-400/25"
                 >
                   <Video size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={handleShareConversation}
-                  className="p-1.5 md:p-3 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl md:rounded-2xl transition-all shadow-sm border border-emerald-500/20"
+                  className="p-1.5 md:p-3 text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(16,185,129,0.16)] border border-emerald-400/25"
                   title="Compartilhar conversa"
                 >
                   <Share size={16} className="md:w-[18px] md:h-[18px]" />
@@ -624,8 +624,8 @@ export default function Chat() {
                 <button 
                   onClick={() => setShowUserInfo(!showUserInfo)}
                   className={cn(
-                    "p-1.5 md:p-3 rounded-xl md:rounded-2xl transition-all border",
-                    showUserInfo ? "text-blue-400 bg-blue-500/10 border-blue-500/20" : "text-slate-400 hover:text-white hover:bg-white/5 border-transparent hover:border-white/5"
+                    "p-1.5 md:p-3 rounded-xl md:rounded-2xl transition-all border shadow-sm",
+                    showUserInfo ? "text-blue-300 bg-blue-500/15 border-blue-400/25" : "text-slate-400 bg-white/[0.04] hover:text-white hover:bg-white/10 border-white/10 hover:border-white/20"
                   )}
                 >
                   <Info size={16} className="md:w-[18px] md:h-[18px]" />
@@ -635,20 +635,28 @@ export default function Chat() {
 
             <div className="flex-1 flex overflow-hidden">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed scroll-smooth invert opacity-50">
-                <div className="flex justify-center mb-8 invert">
-                  <div className="px-4 py-1.5 bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-sm">
-                    Início da Conversa Segura
+              <div
+                className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-950 bg-fixed scroll-smooth relative"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at top left, rgba(59,130,246,0.10), transparent 34%), radial-gradient(circle at bottom right, rgba(124,58,237,0.10), transparent 36%), url(https://www.transparenttextures.com/patterns/cubes.png)',
+                  backgroundSize: 'auto, auto, 220px 220px',
+                }}
+              >
+                <div className="flex justify-center mb-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.045] backdrop-blur-xl border border-white/10 rounded-full text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
+                    <ShieldCheck size={13} className="text-blue-300" />
+                    Conversa protegida pelo FisioCareHub
                   </div>
                 </div>
 
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 space-y-4 invert">
+                  <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <Loader2 className="animate-spin text-blue-400" size={32} />
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Carregando mensagens...</p>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-20 space-y-4 invert">
+                  <div className="text-center py-20 space-y-4">
                     <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/20">
                       <Sparkles size={32} />
                     </div>
@@ -665,10 +673,10 @@ export default function Chat() {
                       msgDate.toDateString() !== prevMsgDate.toDateString();
 
                     return (
-                      <div key={msg.id} className="space-y-6 invert">
+                      <div key={msg.id} className="space-y-6">
                         {showDateSeparator && (
                           <div className="flex justify-center my-8">
-                            <div className="px-4 py-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                            <div className="px-4 py-1.5 bg-white/[0.055] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] shadow-sm">
                               {formatOnlyDateBR(msg.criado_em)}
                             </div>
                           </div>
@@ -679,16 +687,16 @@ export default function Chat() {
                           className={cn("flex flex-col group", isMe ? "items-end" : "items-start")}
                         >
                           <div className={cn(
-                            "max-w-[85%] md:max-w-[70%] px-4 py-2.5 md:px-6 md:py-4 rounded-[1.5rem] md:rounded-[2rem] text-sm shadow-xl relative transition-all min-w-[80px]",
+                            "max-w-[86%] md:max-w-[70%] px-4 py-3 md:px-6 md:py-4 rounded-[28px] text-sm shadow-[0_18px_40px_rgba(0,0,0,0.24)] relative transition-all min-w-[86px] border backdrop-blur-md",
                             isMe 
-                              ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-900/20" 
-                              : "bg-white/5 text-white rounded-tl-none border border-white/10"
+                              ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[10px] border-blue-300/20 shadow-blue-950/25" 
+                              : "bg-slate-900/80 text-slate-100 rounded-bl-[10px] border-white/10 shadow-slate-950/35"
                           )}>
-                            <p className="leading-relaxed font-bold mb-1 break-words">{msg.mensagem}</p>
+                            <p className="leading-relaxed font-semibold mb-1 break-words text-[15px] md:text-base">{msg.mensagem}</p>
                             
                             <div className={cn(
                               "text-[9px] font-black uppercase tracking-widest opacity-60 text-right",
-                              isMe ? "text-blue-100" : "text-slate-500"
+                              isMe ? "text-blue-100" : "text-slate-400"
                             )}>
                               {formatHourBR(msg.criado_em)}
                             </div>
@@ -808,7 +816,7 @@ export default function Chat() {
             </div>
 
             {/* Footer / Input */}
-            <footer className="p-2 md:p-6 bg-slate-950 border-t border-white/5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <footer className="p-2 md:p-6 bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-18px_45px_rgba(2,6,23,0.38)] pb-[max(0.5rem,env(safe-area-inset-bottom))]">
               {(targetUser.tipo_usuario === 'admin' || targetUser.email === 'hogolezcano92@gmail.com') && !user ? (
                 <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-500/5 rounded-3xl border border-blue-500/20 mx-2 md:mx-0">
                   <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
@@ -827,7 +835,7 @@ export default function Chat() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full">
+                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full rounded-[30px] md:rounded-[34px] bg-blue-950/20 md:bg-transparent p-1 md:p-0">
                   <div className="flex-1 relative group">
                     <input
                       ref={inputRef}
@@ -841,10 +849,10 @@ export default function Chat() {
                         }
                       }}
                       placeholder="Mensagem..."
-                      className="w-full pl-5 pr-12 py-3 md:py-4 bg-white/5 border border-white/10 rounded-full outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all font-bold text-sm md:text-base shadow-inner text-white"
+                      className="w-full pl-5 pr-20 py-3.5 md:py-4 bg-white/[0.07] border border-white/15 rounded-[26px] outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-400/45 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_30px_rgba(0,0,0,0.18)] text-white placeholder:text-slate-500"
                     />
                     <div className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 md:gap-2">
-                      <button type="button" className="p-1 md:p-2 text-slate-500 hover:text-blue-400 transition-colors">
+                      <button type="button" className="p-1.5 md:p-2 text-slate-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition-colors">
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                       <input
@@ -855,7 +863,7 @@ export default function Chat() {
                       />
                       <label 
                         htmlFor="chat-file-upload" 
-                        className="p-1 md:p-2 text-slate-500 hover:text-blue-400 transition-colors cursor-pointer"
+                        className="p-1.5 md:p-2 text-slate-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
                       >
                         <Share className="w-4 h-4 md:w-5 md:h-5" />
                       </label>
@@ -864,7 +872,7 @@ export default function Chat() {
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0"
+                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 via-blue-600 to-violet-600 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_14px_32px_rgba(37,99,235,0.38)] disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0 border border-blue-300/20"
                   >
                     <Send className="w-5 h-5 md:w-7 md:h-7 translate-x-0.5 -translate-y-0.5" />
                   </button>
