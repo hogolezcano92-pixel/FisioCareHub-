@@ -27,6 +27,18 @@ type EvaluationAIFields = {
   observacoes_finais: string;
 };
 
+type ExamAnalysisAIResult = {
+  exam_type: string;
+  resumo_executivo: string;
+  principais_achados: string[];
+  explicacao_para_paciente: string;
+  pontos_para_fisioterapeuta_revisar: string[];
+  possiveis_relacoes_funcionais: string[];
+  sinais_de_alerta: string[];
+  limitacoes: string[];
+  recomendacao_segura: string;
+};
+
 const FIELD_KEYS: Array<keyof EvaluationAIFields> = [
   'queixa_principal',
   'historia_doenca_atual',
@@ -50,6 +62,18 @@ const FIELD_KEYS: Array<keyof EvaluationAIFields> = [
   'conduta',
   'frequencia_sessoes',
   'observacoes_finais',
+];
+
+const EXAM_ANALYSIS_KEYS: Array<keyof ExamAnalysisAIResult> = [
+  'exam_type',
+  'resumo_executivo',
+  'principais_achados',
+  'explicacao_para_paciente',
+  'pontos_para_fisioterapeuta_revisar',
+  'possiveis_relacoes_funcionais',
+  'sinais_de_alerta',
+  'limitacoes',
+  'recomendacao_segura',
 ];
 
 const getEnv = (key: string, fallback = '') => {
@@ -76,6 +100,15 @@ const sanitizeText = (value: unknown, maxLength = 1800) => {
   return value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
 };
 
+const sanitizeStringArray = (value: unknown, maxItems = 8, maxLength = 700) => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => sanitizeText(item, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+};
+
 const normalizeAiFields = (raw: any): EvaluationAIFields => {
   const output: any = {};
   for (const key of FIELD_KEYS) {
@@ -89,6 +122,59 @@ const normalizeAiFields = (raw: any): EvaluationAIFields => {
   return output as EvaluationAIFields;
 };
 
+const normalizeExamAnalysis = (raw: any): ExamAnalysisAIResult => ({
+  exam_type: sanitizeText(raw?.exam_type, 160) || 'Exame não especificado',
+  resumo_executivo: sanitizeText(raw?.resumo_executivo, 2400),
+  principais_achados: sanitizeStringArray(raw?.principais_achados, 10, 800),
+  explicacao_para_paciente: sanitizeText(raw?.explicacao_para_paciente, 2400),
+  pontos_para_fisioterapeuta_revisar: sanitizeStringArray(raw?.pontos_para_fisioterapeuta_revisar, 10, 800),
+  possiveis_relacoes_funcionais: sanitizeStringArray(raw?.possiveis_relacoes_funcionais, 8, 800),
+  sinais_de_alerta: sanitizeStringArray(raw?.sinais_de_alerta, 8, 800),
+  limitacoes: sanitizeStringArray(raw?.limitacoes, 8, 800),
+  recomendacao_segura: sanitizeText(raw?.recomendacao_segura, 1800),
+});
+
+const getServerClients = async (accessToken?: string) => {
+  const supabaseUrl = normalizeSupabaseUrl(
+    getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co')
+  );
+  const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  const groqApiKey = getEnv('GROQ_API_KEY') || getEnv('VITE_GROQ_API_KEY');
+
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada no servidor.');
+  }
+
+  if (!groqApiKey) {
+    throw new Error('GROQ_API_KEY não configurada no servidor.');
+  }
+
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  } catch (error) {
+    console.error('[AI API] Invalid Supabase URL:', supabaseUrl, error);
+    throw new Error('URL do Supabase inválida. Configure VITE_SUPABASE_URL/SUPABASE_URL corretamente.');
+  }
+
+  let authUserId = '';
+  if (accessToken) {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (authError || !authData.user) {
+      const error = new Error('Sessão inválida ou expirada.');
+      (error as any).statusCode = 401;
+      throw error;
+    }
+
+    authUserId = authData.user.id;
+  }
+
+  const groq = new Groq({ apiKey: groqApiKey });
+
+  return { supabaseAdmin, groq, authUserId };
+};
+
 async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse) {
   const { accessToken, pacienteId, notes, currentForm, patient } = req.body || {};
   const safePacienteId = sanitizeText(pacienteId, 120);
@@ -97,37 +183,7 @@ async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse)
     return res.status(400).json({ error: 'Sessão ou paciente não informado.' });
   }
 
-  const supabaseUrl = normalizeSupabaseUrl(
-    getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co')
-  );
-  const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
-  const groqApiKey = getEnv('GROQ_API_KEY') || getEnv('VITE_GROQ_API_KEY');
-
-  if (!serviceRoleKey) {
-    return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada no servidor.' });
-  }
-
-  if (!groqApiKey) {
-    return res.status(500).json({ error: 'GROQ_API_KEY não configurada no servidor.' });
-  }
-
-  let supabaseAdmin;
-  try {
-    supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-  } catch (error) {
-    console.error('[Evaluation AI API] Invalid Supabase URL:', supabaseUrl, error);
-    return res.status(500).json({
-      error: 'URL do Supabase inválida. Configure VITE_SUPABASE_URL/SUPABASE_URL como https://exciqetztunqgxbwwodo.supabase.co',
-    });
-  }
-
-  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
-
-  if (authError || !authData.user) {
-    return res.status(401).json({ error: 'Sessão inválida ou expirada.' });
-  }
-
-  const userId = authData.user.id;
+  const { supabaseAdmin, groq, authUserId: userId } = await getServerClients(accessToken);
 
   const { data: profile } = await supabaseAdmin
     .from('perfis')
@@ -191,7 +247,6 @@ Retorne exatamente estes campos:
 ${JSON.stringify(FIELD_KEYS)}
 `;
 
-  const groq = new Groq({ apiKey: groqApiKey });
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     temperature: 0.2,
@@ -222,6 +277,155 @@ ${JSON.stringify(FIELD_KEYS)}
   });
 }
 
+async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
+  const {
+    accessToken,
+    examText,
+    examType,
+    fileName,
+    fileUrl,
+    patientId,
+    patientName,
+    clinicalContext,
+  } = req.body || {};
+
+  const safeExamText = sanitizeText(examText, 16000);
+  const safeClinicalContext = sanitizeText(clinicalContext, 5000);
+  const safeFileName = sanitizeText(fileName, 300);
+  const safeFileUrl = sanitizeText(fileUrl, 1000);
+  const safeExamType = sanitizeText(examType, 180) || 'Exame/laudo clínico';
+  const safePatientId = sanitizeText(patientId, 120);
+  const safePatientName = sanitizeText(patientName, 240);
+
+  if (!accessToken) {
+    return res.status(400).json({ error: 'Sessão não informada.' });
+  }
+
+  if (!safeExamText && !safeClinicalContext) {
+    return res.status(400).json({
+      error: 'Informe o texto do laudo ou observações clínicas para a IA analisar.',
+      message: 'Nesta versão, a IA analisa texto extraído/colado do exame. Para imagens/PDF sem texto, use o campo de texto do laudo.',
+    });
+  }
+
+  const { supabaseAdmin, groq, authUserId: userId } = await getServerClients(accessToken);
+
+  const { data: profile } = await supabaseAdmin
+    .from('perfis')
+    .select('id, tipo_usuario, email, nome_completo')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (!profile) {
+    return res.status(401).json({ error: 'Perfil do usuário não encontrado.' });
+  }
+
+  let patientRecord: any = null;
+  if (safePatientId) {
+    const { data, error } = await supabaseAdmin
+      .from('pacientes')
+      .select('id, nome_completo, fisioterapeuta_id')
+      .eq('id', safePatientId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[Exam AI API] Não foi possível validar paciente no backend:', error);
+    }
+
+    patientRecord = data;
+
+    const isAdmin = profile?.tipo_usuario === 'admin' || profile?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+    const isPatientOwner = safePatientId === userId || patientRecord?.id === userId;
+    const isLinkedPhysio = patientRecord?.fisioterapeuta_id === userId;
+
+    if (patientRecord && !isAdmin && !isPatientOwner && !isLinkedPhysio) {
+      return res.status(403).json({ error: 'Você não tem permissão para analisar exames deste paciente.' });
+    }
+  }
+
+  const prompt = `
+Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil.
+Sua função é organizar, resumir e explicar informações de exames/laudos enviados pelo usuário.
+
+REGRAS OBRIGATÓRIAS:
+- Não faça diagnóstico médico definitivo.
+- Não diga "você tem" determinada doença.
+- Use "o laudo descreve", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
+- Não prescreva tratamento fechado.
+- Não substitua médico, fisioterapeuta ou profissional habilitado.
+- Se houver achado grave ou sinal de alerta no texto, oriente revisão com profissional habilitado.
+- Se o texto for insuficiente, diga claramente que a análise é limitada.
+- Responda apenas JSON válido, sem markdown.
+
+DADOS DO USUÁRIO:
+${JSON.stringify({
+  usuario_logado: profile?.nome_completo || '',
+  tipo_usuario: profile?.tipo_usuario || '',
+  paciente: patientRecord?.nome_completo || safePatientName || '',
+  patient_id: safePatientId || '',
+})}
+
+ARQUIVO:
+${JSON.stringify({
+  file_name: safeFileName,
+  file_url: safeFileUrl,
+  exam_type_informado: safeExamType,
+})}
+
+CONTEXTO CLÍNICO INFORMADO:
+${safeClinicalContext || 'Não informado.'}
+
+TEXTO DO EXAME/LAUDO:
+${safeExamText || 'Não informado.'}
+
+Retorne exatamente este JSON:
+{
+  "exam_type": "tipo provável do exame, se informado ou inferido com cautela",
+  "resumo_executivo": "resumo curto e objetivo do que o laudo/texto descreve",
+  "principais_achados": ["achado 1", "achado 2"],
+  "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo",
+  "pontos_para_fisioterapeuta_revisar": ["ponto 1", "ponto 2"],
+  "possiveis_relacoes_funcionais": ["possível relação funcional 1", "possível relação funcional 2"],
+  "sinais_de_alerta": ["sinal de alerta citado ou 'não informado no texto enviado'"],
+  "limitacoes": ["limitação 1", "limitação 2"],
+  "recomendacao_segura": "orientação segura dizendo que a análise é apoio e precisa de revisão profissional"
+}
+
+Chaves obrigatórias:
+${JSON.stringify(EXAM_ANALYSIS_KEYS)}
+`;
+
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.15,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'Você retorna somente JSON válido. Você é uma IA de apoio para resumir laudos/exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
+      },
+      { role: 'user', content: prompt },
+    ],
+  });
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    return res.status(502).json({ error: 'A IA retornou uma resposta vazia.' });
+  }
+
+  const parsed = JSON.parse(content);
+  const analysis = normalizeExamAnalysis(parsed);
+
+  return res.status(200).json({
+    success: true,
+    mode: 'exam_analysis',
+    analysis,
+    warning:
+      'Análise gerada por IA para apoio informativo. Não substitui avaliação, diagnóstico ou conduta de profissional habilitado.',
+  });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
@@ -232,12 +436,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return await completeEvaluationWithAi(req, res);
     }
 
+    if (req.body?.mode === 'exam_analysis') {
+      return await analyzeExamWithAi(req, res);
+    }
+
     return res.status(403).json({
       error: 'Geração automática de materiais por IA desativada.',
       message: 'Materiais da biblioteca devem ser criados, revisados e publicados manualmente pelo Admin.',
     });
   } catch (error: any) {
     console.error('[AI API Error]', error);
-    return res.status(500).json({ error: error?.message || 'Erro ao executar recurso de IA.' });
+
+    const statusCode = Number(error?.statusCode || 500);
+    return res.status(statusCode).json({ error: error?.message || 'Erro ao executar recurso de IA.' });
   }
 }
