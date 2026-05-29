@@ -21,13 +21,8 @@ import {
   Menu, 
   X, 
   Home as HomeIcon,
-  LayoutDashboard,
-  Stethoscope,
   Calendar as CalendarIcon,
   MessageSquare,
-  MessageCircle,
-  HelpCircle,
-  Phone,
   AlertTriangle,
   FileSignature,
   ShieldCheck,
@@ -108,6 +103,7 @@ const Telehealth = lazy(() => import('./pages/Telehealth'));
 const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
 const RecoveryJourney = lazy(() => import('./pages/RecoveryJourney'));
 const ClinicalUpdateDetail = lazy(() => import('./pages/ClinicalUpdateDetail'));
+const ExamAnalysis = lazy(() => import('./pages/ExamAnalysis'));
 
 const PageLoader = () => {
   const { t } = useTranslation();
@@ -181,15 +177,12 @@ function ScrollToTop() {
   const { pathname, search } = useLocation();
 
   useEffect(() => {
-    // Force immediate scroll to top on any route change (path or search params)
-    // Using behavior: 'auto' to override any CSS smooth scrolling
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'auto'
     });
 
-    // Fallback for different browsers/containers
     document.documentElement.scrollTo({
       top: 0,
       left: 0,
@@ -201,7 +194,6 @@ function ScrollToTop() {
       behavior: 'auto'
     });
 
-    // Disable browser's default scroll restoration to prevent interference
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
@@ -210,21 +202,10 @@ function ScrollToTop() {
   return null;
 }
 
-function LoadingScreen() {
-  const { t } = useTranslation();
-  return (
-    <div className="min-h-screen bg-bg-general flex flex-col items-center justify-center space-y-4 transition-colors duration-300">
-      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-text-muted font-bold uppercase tracking-widest text-xs">{t('common.loading_system', 'Carregando Sistema...')}</p>
-    </div>
-  );
-}
-
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
 
-  // If loading or profile is not yet available but user is logged in, show splash
   if (loading || (user && !profile)) {
     return <SplashScreen />;
   }
@@ -236,9 +217,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
       if (redirectTarget && redirectTarget !== '/login') {
         sessionStorage.setItem('pendingRedirect', redirectTarget);
       }
-    } catch {
-      // sessionStorage can be unavailable in some embedded browsers.
-    }
+    } catch {}
 
     return (
       <Navigate
@@ -253,30 +232,25 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
   const isAdmin = userRole === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const isApproved = profile?.status_aprovacao === 'aprovado';
 
-  // Block unapproved physiotherapists (except for profile and waiting page)
   if (userRole === 'fisioterapeuta' && !isApproved && !isAdmin) {
     if (location.pathname !== '/aguardando-aprovacao' && location.pathname !== '/profile') {
       return <Navigate to="/aguardando-aprovacao" replace />;
     }
   }
 
-  // If approved user tries to access waiting page, send them to dashboard
   if (location.pathname === '/aguardando-aprovacao' && (isApproved || isAdmin || userRole === 'paciente')) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If we are on a route that requires specific roles
   if (allowedRoles && !allowedRoles.includes(userRole)) {
     if (isAdmin) return <Navigate to="/admin" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Special case: If an Admin tries to access the general dashboard, send them to /admin
   if (location.pathname === '/dashboard' && isAdmin) {
     return <Navigate to="/admin" replace />;
   }
 
-  // Special case: If a non-admin tries to access /admin, send them to /dashboard
   if (location.pathname === '/admin' && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -311,31 +285,33 @@ function Navbar() {
     { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
     ...(user ? [
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
-        ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }] 
+        ? [
+            { name: t('nav.admin'), path: '/admin', icon: ShieldCheck },
+            { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+          ] 
         : []),
 
-      // Items for Physiotherapists
       ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: 'Minha Agenda', path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
         { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
+        { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
         { name: t('nav.subscription'), path: '/subscription', icon: Crown },
       ] : []),
 
-      // Items for Patients
       ...(profile?.tipo_usuario === 'paciente' ? [
         { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
         { name: t('nav.workouts'), path: '/treinos', icon: Activity },
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
+        { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
         { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
       ] : []),
 
-      // Common Items
       ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
         { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
       ] : []),
@@ -355,7 +331,6 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
             {navItems.filter(item => !(['/login', '/register'].includes(item.path) && user)).map((item) => {
               const isActive = location.pathname === item.path;
@@ -439,7 +414,6 @@ function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
             <ThemeQuickToggle />
             {user && <NotificationBell />}
@@ -453,7 +427,6 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Nav */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -553,37 +526,6 @@ function NotificationHandler() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchLatestNotification = async () => {
-      const { data, error } = await supabase
-        .from('notificacoes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('lida', false)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error("Erro ao buscar notificações:", error);
-        return;
-      }
-
-      if (!isInitialLoad.current && data && data.length > 0) {
-        const notification = data[0];
-        const createdAt = new Date(notification.created_at).getTime();
-
-        if (Date.now() - createdAt < 10000) {
-          playSound();
-          toast.info(notification.titulo, {
-            description: notification.mensagem,
-            action: notification.link ? {
-              label: "Ver",
-              onClick: () => window.location.href = notification.link
-            } : undefined
-          });
-        }
-      }
-    };
-
     const channel = supabase
       .channel(`notificacoes_${user.id}`)
       .on('postgres_changes', { 
@@ -609,17 +551,14 @@ function NotificationHandler() {
         console.log('[Realtime] Global notification subscription status:', status);
       });
 
-    // Listener Global para Agendamentos (Realtime)
     const appointmentsChannel = supabase
       .channel(`agendamentos_realtime_${user.id}`)
-      // Escuta novos agendamentos onde o usuário é o fisioterapeuta
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'agendamentos',
         filter: `fisio_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('[Realtime] New appointment (as physio):', payload);
+      }, () => {
         if (!isInitialLoad.current) {
           playSound();
           toast.success("Novo Agendamento", {
@@ -627,14 +566,12 @@ function NotificationHandler() {
           });
         }
       })
-      // Escuta novos agendamentos onde o usuário é o paciente
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'agendamentos',
         filter: `paciente_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('[Realtime] New appointment (as patient):', payload);
+      }, () => {
         if (!isInitialLoad.current) {
           playSound();
           toast.success("Agendamento Registrado", {
@@ -642,13 +579,11 @@ function NotificationHandler() {
           });
         }
       })
-      // Escuta atualizações em agendamentos existentes
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'agendamentos'
       }, (payload) => {
-        console.log('[Realtime] Appointment update received:', payload);
         if (!isInitialLoad.current) {
           const record = payload.new as any;
           if (record && (record.paciente_id === user.id || record.fisio_id === user.id)) {
@@ -672,18 +607,14 @@ function NotificationHandler() {
   return null;
 }
 
-
 function HeaderObserver() {
   const location = useLocation();
 
   useEffect(() => {
     const updateHeaderHeight = () => {
-      // Find the currently active fixed or sticky header
-      // We look for elements that are likely headers and visible
       const headers = document.querySelectorAll('header, nav.sticky, nav.fixed');
       let activeHeader: HTMLElement | null = null;
 
-      // Filter for visible headers that are at the top and FIXED
       for (const h of Array.from(headers) as HTMLElement[]) {
         const rect = h.getBoundingClientRect();
         const style = window.getComputedStyle(h);
@@ -691,7 +622,7 @@ function HeaderObserver() {
 
         if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
           activeHeader = h;
-          break; // Usually only one fixed header at top
+          break;
         }
       }
 
@@ -703,13 +634,9 @@ function HeaderObserver() {
       }
     };
 
-    // Run on mount and location change
     updateHeaderHeight();
-
-    // Also run on resize
     window.addEventListener('resize', updateHeaderHeight);
 
-    // Observer for dynamic changes (like mobile menu opening affecting header height or visibility)
     const observer = new MutationObserver(updateHeaderHeight);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
@@ -723,7 +650,7 @@ function HeaderObserver() {
 }
 
 function AppContent() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -802,19 +729,16 @@ function AppContent() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/aguardando-aprovacao" element={
-                    <ProtectedRoute>
-                      <AguardandoAprovacao />
-                    </ProtectedRoute>
-                  } />
+                  <Route path="/aguardando-aprovacao" element={<ProtectedRoute><AguardandoAprovacao /></ProtectedRoute>} />
 
-                  {/* Protected Routes */}
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
                   <Route path="/jornada" element={<ProtectedRoute allowedRoles={['paciente']}><RecoveryJourney /></ProtectedRoute>} />
                   <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
+                  <Route path="/exames-ia" element={<ProtectedRoute><ExamAnalysis /></ProtectedRoute>} />
+                  <Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                   <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
@@ -861,7 +785,6 @@ function AppContent() {
               </Suspense>
             </div>
 
-            {/* Footer Unificado */}
             {!isAdminPage && location.pathname !== '/chat' && <Footer />}
           </main>
         </div>
