@@ -64,12 +64,13 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   const canGoNext = groupIndex < groups.length - 1 || storyIndex < (group?.stories?.length || 0) - 1;
 
   const profilePath = story ? `/physio/${story.physio_id}` : '/buscar-fisio';
-  const bookingPath = story?.cta_url || `${profilePath}?storyAction=book`;
-  const messagePath = story ? `/chat?physio=${story.physio_id}` : '/chat';
+  const safeCtaUrl = story?.cta_url?.startsWith('/') ? story.cta_url : '';
+  const bookingPath = safeCtaUrl || `${profilePath}?storyAction=book`;
+  const messagePath = story ? `/chat?user=${story.physio_id}` : '/chat';
 
   const protectPath = useCallback((path: string) => {
     if (user) return path;
-    return `/login?redirect=${encodeURIComponent(path)}`;
+    return `/login?redirectTo=${encodeURIComponent(path)}`;
   }, [user]);
 
   const goPrev = useCallback(() => {
