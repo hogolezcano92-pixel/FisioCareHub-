@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -107,26 +107,179 @@ const getVideoExternalUrl = (originalUrl?: string | null) => {
   return video.src || original;
 };
 
-const openVideoInNewTab = (event: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+const escapeHtmlAttribute = (value: string) =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const openVideoInNewTab = (event: MouseEvent<HTMLAnchorElement>, url: string, title?: string) => {
   event.preventDefault();
   event.stopPropagation();
 
   const externalUrl = String(url || '').trim();
   if (!externalUrl) return;
 
-  // Mantém a abertura diretamente ligada ao clique do usuário.
-  // Isso evita travar/bloquear em Safari/iPhone/PWA quando o target blank falha.
-  const opened = window.open(externalUrl, '_blank', 'noopener,noreferrer');
+  const newTab = window.open('', '_blank');
 
-  if (!opened) {
-    const link = document.createElement('a');
-    link.href = externalUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  if (!newTab) {
+    window.location.href = externalUrl;
+    return;
   }
+
+  const safeUrl = escapeHtmlAttribute(externalUrl);
+  const safeTitle = escapeHtmlAttribute(title || 'Vídeo do exercício');
+
+  newTab.document.write(`
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>${safeTitle} - FisioCareHub</title>
+        <style>
+          html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: #020617;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          }
+
+          .page {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: max(20px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+            box-sizing: border-box;
+          }
+
+          .topbar {
+            position: fixed;
+            top: max(14px, env(safe-area-inset-top));
+            left: 16px;
+            right: 16px;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: #e0f2fe;
+          }
+
+          .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+
+          .brand strong {
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: #38bdf8;
+          }
+
+          .brand span {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(226, 232, 240, .72);
+          }
+
+          .close {
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.08);
+            color: #fff;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-weight: 900;
+            cursor: pointer;
+          }
+
+          .player-card {
+            width: 100%;
+            max-width: 960px;
+            border-radius: 28px;
+            border: 1px solid rgba(125, 211, 252, .18);
+            background: rgba(15, 23, 42, .78);
+            box-shadow: 0 30px 90px rgba(14, 165, 233, .18);
+            overflow: hidden;
+          }
+
+          video {
+            display: block;
+            width: 100%;
+            max-height: 78vh;
+            background: #000;
+          }
+
+          .footer {
+            padding: 14px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .title {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.35;
+            font-weight: 900;
+            color: #ffffff;
+          }
+
+          .original {
+            color: #7dd3fc;
+            font-size: 12px;
+            font-weight: 900;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+          }
+
+          .hint {
+            margin: 0;
+            color: rgba(226, 232, 240, .62);
+            font-size: 12px;
+            line-height: 1.45;
+            font-weight: 600;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="topbar">
+          <div class="brand">
+            <strong>FisioCareHub</strong>
+            <span>Vídeo do exercício</span>
+          </div>
+          <button class="close" onclick="window.close()">Fechar</button>
+        </div>
+
+        <main class="page">
+          <section class="player-card">
+            <video src="${safeUrl}" controls playsinline autoplay></video>
+            <div class="footer">
+              <p class="title">${safeTitle}</p>
+              <a class="original" href="${safeUrl}" target="_blank" rel="noopener noreferrer">
+                Abrir arquivo original
+              </a>
+              <p class="hint">
+                Caso o vídeo não carregue, toque em “Abrir arquivo original”.
+              </p>
+            </div>
+          </section>
+        </main>
+      </body>
+    </html>
+  `);
+
+  newTab.document.close();
 };
 
 const getExercisePdfUrl = (exercise?: ProtocolItem['exercicio'] | null) =>
@@ -574,7 +727,7 @@ export default function PatientExercises() {
                         href={externalVideoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(event) => openVideoInNewTab(event, externalVideoUrl)}
+                        onClick={(event) => openVideoInNewTab(event, externalVideoUrl, selectedItemDetail.exercicio?.nome)}
                         className="inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-sky-300 hover:text-sky-200"
                       >
                         Abrir vídeo em nova aba
