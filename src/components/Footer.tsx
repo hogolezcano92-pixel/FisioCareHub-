@@ -106,7 +106,7 @@ export default function Footer() {
         {/* Bottom Copyright */}
         <div className="mt-16 pt-8 border-t border-white/5 text-center">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            © {currentYear} <span className="text-white">FisioCareHub</span>. {t('footer.rights', 'Todos os direitos reservados.')}
+            © {currentYear} <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-white bg-clip-text text-transparent">FisioCareHub</span>. {t('footer.rights', 'Todos os direitos reservados.')}
           </p>
         </div>
       </div>

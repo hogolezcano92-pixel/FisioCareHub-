@@ -19,7 +19,7 @@ const Logo: React.FC<LogoProps> = ({
 }) => {
   const sizeClasses = {
     sm: {
-      icon: "w-8 h-8 rounded-lg",
+      icon: "w-8 h-8 rounded-xl",
       text: "text-lg sm:text-xl",
       tagline: "text-[6px] sm:text-[7px]",
       gap: "gap-2"
@@ -54,11 +54,11 @@ const Logo: React.FC<LogoProps> = ({
           className="relative flex items-center justify-center"
         >
           {/* Premium Background Glow */}
-          <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full group-hover:bg-blue-400/30 transition-all duration-500" />
+          <div className="absolute inset-0 bg-sky-400/20 blur-2xl rounded-full group-hover:bg-violet-400/25 transition-all duration-500" />
           
           {/* Home Care Icon: House + Professional Figure */}
           <div className={cn(
-            "bg-gradient-to-br from-[#0EA5E9] to-[#2563EB] flex items-center justify-center shadow-xl overflow-hidden relative border border-white/20",
+            "bg-gradient-to-br from-[#0EA5E9] via-[#2563EB] to-[#7C3AED] flex items-center justify-center shadow-xl shadow-blue-950/25 overflow-hidden relative border border-white/20 ring-1 ring-white/10",
             sizeClasses[size].icon
           )}>
             {/* Subtle Background Pattern */}
@@ -130,20 +130,25 @@ const Logo: React.FC<LogoProps> = ({
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col leading-none whitespace-nowrap"
         >
-          <span className={cn(
-            "font-sans font-black tracking-tighter drop-shadow-sm",
-            sizeClasses[size].text,
-            variant === 'dark' ? "text-slate-900" : "text-white"
-          )}>
+          <span
+            className={cn(
+              "font-sans font-black tracking-tighter bg-clip-text text-transparent",
+              "drop-shadow-[0_0_18px_rgba(56,189,248,0.18)]",
+              sizeClasses[size].text,
+              variant === 'dark'
+                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-slate-900"
+                : "bg-gradient-to-r from-sky-400 via-violet-400 to-white"
+            )}
+          >
             FisioCareHub
           </span>
           <div className="flex flex-col mt-1">
             <div className="flex items-center gap-2">
-              <div className={cn("h-[1px] w-3 rounded-full", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
+              <div className={cn("h-[2px] w-3 rounded-full shadow-[0_0_12px_rgba(56,189,248,0.45)]", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
               <span className={cn(
                 "font-black uppercase tracking-[0.15em]",
                 sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-400" : "text-slate-300"
+                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
               )}>
                 Reabilitação
               </span>
@@ -153,7 +158,7 @@ const Logo: React.FC<LogoProps> = ({
               <span className={cn(
                 "font-black uppercase tracking-[0.15em]",
                 sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-400" : "text-slate-300"
+                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
               )}>
                 & Performance
               </span>
