@@ -12,22 +12,17 @@ import {
   Search, 
   Share, 
   ShieldCheck,
-  Copy, 
   Video, 
-  MoreVertical, 
   Phone, 
   Info,
   ArrowLeft,
   Sparkles,
-  Bot,
-  BrainCircuit,
   CheckCheck,
   Lock,
-  LogIn,
-  Smile
+  LogIn
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { formatDate, cn } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { formatDateBR, formatHourBR, formatOnlyDateBR } from '../utils/date';
 import KineAI, { KineIcon } from '../components/KineAI';
 
@@ -57,7 +52,6 @@ export default function Chat() {
     if (params.get('support') === 'true' && !targetUser) {
       const fetchAdmin = async () => {
         try {
-          // 1. Check direct auth for robustness as requested
           const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
           if (authError || !authUser) {
             console.error("[Support] Auth required:", authError);
@@ -65,16 +59,15 @@ export default function Chat() {
             return;
           }
 
-          // 2. Ensure a ticket exists in suporte_tickets (Requirement 2 & 6)
           const { data: tickets, error: ticketError } = await supabase
             .from('suporte_tickets')
             .select('*')
             .eq('usuario_id', authUser.id)
             .eq('status', 'aberto')
             .limit(1);
-          
+
           const existingTicket = tickets && tickets.length > 0 ? tickets[0] : null;
-          
+
           if (ticketError && ticketError.code !== 'PGRST116') {
             console.error("[Support] Error checking tickets:", ticketError);
           }
@@ -90,22 +83,20 @@ export default function Chat() {
                 descricao: 'Iniciado via botão de suporte no chat.',
                 status: 'aberto'
               });
-            
+
             if (insertError) {
               console.error("[Support] Error creating ticket:", insertError);
-              // We continue anyway to try and find an admin
             }
           }
 
-          // 3. Find admin to chat with
           let { data: admins, error: adminError } = await supabase
             .from('perfis')
             .select('*')
             .eq('tipo_usuario', 'admin')
             .limit(1);
-          
+
           let adminData = admins && admins.length > 0 ? admins[0] : null;
-          
+
           if (adminError || !adminData) {
             console.warn("[Support] Standard admin not found, trying fallback...", adminError);
             const { data: fallbackAdmins, error: fallbackError } = await supabase
@@ -113,9 +104,9 @@ export default function Chat() {
               .select('*')
               .eq('email', 'hogolezcano92@gmail.com')
               .limit(1);
-            
+
             const fallbackAdmin = fallbackAdmins && fallbackAdmins.length > 0 ? fallbackAdmins[0] : null;
-            
+
             if (fallbackError || !fallbackAdmin) {
                console.error("[Support] Support unavailable. Admin Error:", adminError, "Fallback Error:", fallbackError);
                toast.error(`Suporte indisponível: ${fallbackError?.message || adminError?.message || 'Administradores não encontrados'}. Verifique o console para detalhes.`);
@@ -123,7 +114,7 @@ export default function Chat() {
             }
             adminData = fallbackAdmin;
           }
-          
+
           if (adminData) {
             console.log("[Support] Connected to admin:", adminData.email);
             setTargetUser(adminData);
@@ -170,7 +161,7 @@ export default function Chat() {
             .from('perfis')
             .select('*')
             .in('id', uids);
-          
+
           if (chatUsers) {
             setRecentChats(chatUsers);
           }
@@ -179,7 +170,6 @@ export default function Chat() {
     };
 
     const init = async () => {
-      // Prioritize session check as requested
       const { data: { session } } = await supabase.auth.getSession();
       const currentUser = user || session?.user;
 
@@ -189,7 +179,7 @@ export default function Chat() {
           .select('*')
           .eq('id', currentUser.id)
           .single();
-        
+
         if (profile) setUserData(profile);
         await fetchRecentChats();
         setLoading(false);
@@ -223,7 +213,7 @@ export default function Chat() {
     if (user && targetUser) {
       setLoading(true);
       setTimeout(() => inputRef.current?.focus(), 500);
-      
+
       let subscriptionSupabase: any;
 
       const fetchMessages = async () => {
@@ -257,11 +247,10 @@ export default function Chat() {
           }, (payload) => {
             console.log('[Realtime] New message received:', payload);
             const newMsg = payload.new;
-            // Check if the message belongs to the current conversation
             const isRelevant = 
               (newMsg.remetente === user.id && newMsg.destinatario === targetUser.id) ||
               (newMsg.remetente === targetUser.id && newMsg.destinatario === user.id);
-            
+
             if (isRelevant) {
               console.log('[Realtime] Message is relevant, fetching messages...');
               fetchMessages();
@@ -300,13 +289,13 @@ export default function Chat() {
       const filteredResults = data.filter(u => {
         if (u.id === user.id) return false;
         if (isAdmin) return true;
-        
+
         const targetIsPhysio = u.tipo_usuario === 'fisioterapeuta';
         const targetIsPatient = u.tipo_usuario === 'paciente';
 
         if (isPatient) return targetIsPhysio;
         if (isPhysio) return targetIsPatient;
-        
+
         return false;
       });
 
@@ -335,7 +324,7 @@ export default function Chat() {
       const filePath = `chat-files/${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars') // Using avatars bucket as it already exists
+        .from('avatars')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
@@ -344,7 +333,6 @@ export default function Chat() {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Send the link as a message
       await supabase
         .from('mensagens')
         .insert({
@@ -383,7 +371,6 @@ export default function Chat() {
 
       if (error) throw error;
 
-      // Create notification for recipient
       await supabase
         .from('notificacoes')
         .insert({
@@ -424,9 +411,9 @@ export default function Chat() {
                                 new URLSearchParams(location.search).get('support') === 'true';
 
   return (
-    <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-16 lg:pt-0">
+    <div className="h-[calc(100vh-4rem)] lg:h-screen flex bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative pt-12 lg:pt-0">
       {/* Background Decoration */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
+      <div className="absolute inset-0 pointer-events-none opacity-[0.025] z-0">
         <img 
           src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070" 
           className="w-full h-full object-cover"
@@ -434,9 +421,6 @@ export default function Chat() {
           referrerPolicy="no-referrer"
         />
       </div>
-      {/* ... rest of component ... */}
-      {/* (I'll just replace the copy button inside the map) */}
-
 
       {/* Sidebar */}
       <aside className={cn(
@@ -452,7 +436,6 @@ export default function Chat() {
             {!isChattingWithSupport && (
               <button 
                 onClick={() => {
-                  // Dispatch event to open KineAI
                   setShowKineAI(true);
                 }}
                 className="px-3 py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-3 border border-white/5 shadow-sm group"
@@ -579,7 +562,7 @@ export default function Chat() {
         ) : (
           <>
             {/* Header */}
-            <header className="px-3 py-2 md:p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/75 backdrop-blur-2xl sticky top-0 z-20 h-[60px] md:h-auto shadow-[0_18px_45px_rgba(2,6,23,0.35)]">
+            <header className="px-3 py-2 md:p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/78 backdrop-blur-2xl sticky top-0 z-20 h-[56px] md:h-auto shadow-[0_12px_32px_rgba(2,6,23,0.28)]">
               <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                 <button onClick={() => setTargetUser(null)} className="md:hidden p-1.5 text-slate-400 hover:text-blue-400 transition-colors">
                   <ArrowLeft size={20} />
@@ -587,48 +570,48 @@ export default function Chat() {
                 <div className="relative flex-shrink-0">
                   <img 
                     src={targetUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.id}`} 
-                    className="w-8 h-8 md:w-14 md:h-14 rounded-2xl object-cover border-2 border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.35)]" 
+                    className="w-8 h-8 md:w-13 md:h-13 rounded-xl md:rounded-2xl object-cover border-2 border-white/15 shadow-[0_8px_22px_rgba(0,0,0,0.28)]" 
                     alt={targetUser.nome_completo} 
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-5 md:h-5 bg-emerald-500 border-2 md:border-4 border-slate-900 rounded-full"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-4 md:h-4 bg-emerald-500 border-2 md:border-3 border-slate-900 rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-xs md:text-lg font-black text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em] truncate">
+                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.18em] truncate">
                       {targetUser.tipo_usuario === 'admin' ? 'Especialista Humano • Online' : 'Online'}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-0.5 md:gap-2 flex-shrink-0">
-                <button className="p-1.5 md:p-3 text-slate-400 hover:text-blue-300 bg-white/[0.04] hover:bg-blue-500/10 rounded-xl md:rounded-2xl transition-all border border-white/10 hover:border-blue-400/25 shadow-sm">
-                  <Phone size={16} className="md:w-[18px] md:h-[18px]" />
+                <button className="p-1.5 md:p-2.5 text-slate-400 hover:text-blue-300 bg-white/[0.04] hover:bg-blue-500/10 rounded-xl md:rounded-2xl transition-all border border-white/10 hover:border-blue-400/25 shadow-sm">
+                  <Phone size={15} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={() => navigate(`/telehealth?room=FisioCareHub-${[user?.id, targetUser.id].sort().join('-')}`)}
-                  className="p-1.5 md:p-3 text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(37,99,235,0.18)] border border-blue-400/25"
+                  className="p-1.5 md:p-2.5 text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(37,99,235,0.18)] border border-blue-400/25"
                 >
-                  <Video size={16} className="md:w-[18px] md:h-[18px]" />
+                  <Video size={15} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={handleShareConversation}
-                  className="p-1.5 md:p-3 text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(16,185,129,0.16)] border border-emerald-400/25"
+                  className="p-1.5 md:p-2.5 text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(16,185,129,0.16)] border border-emerald-400/25"
                   title="Compartilhar conversa"
                 >
-                  <Share size={16} className="md:w-[18px] md:h-[18px]" />
+                  <Share size={15} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <div className="hidden md:block w-px h-8 bg-white/10 mx-2"></div>
                 <button 
                   onClick={() => setShowUserInfo(!showUserInfo)}
                   className={cn(
-                    "p-1.5 md:p-3 rounded-xl md:rounded-2xl transition-all border shadow-sm",
+                    "p-1.5 md:p-2.5 rounded-xl md:rounded-2xl transition-all border shadow-sm",
                     showUserInfo ? "text-blue-300 bg-blue-500/15 border-blue-400/25" : "text-slate-400 bg-white/[0.04] hover:text-white hover:bg-white/10 border-white/10 hover:border-white/20"
                   )}
                 >
-                  <Info size={16} className="md:w-[18px] md:h-[18px]" />
+                  <Info size={15} className="md:w-[18px] md:h-[18px]" />
                 </button>
               </div>
             </header>
@@ -636,17 +619,18 @@ export default function Chat() {
             <div className="flex-1 flex overflow-hidden">
               {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-950 bg-fixed scroll-smooth relative"
+                className="flex-1 overflow-y-auto px-4 pt-4 pb-24 md:px-7 md:pt-6 md:pb-32 space-y-4 bg-slate-950 bg-fixed scroll-smooth relative"
                 style={{
                   backgroundImage:
-                    'radial-gradient(circle at top left, rgba(59,130,246,0.10), transparent 34%), radial-gradient(circle at bottom right, rgba(124,58,237,0.10), transparent 36%), url(https://www.transparenttextures.com/patterns/cubes.png)',
-                  backgroundSize: 'auto, auto, 220px 220px',
+                    'linear-gradient(rgba(2,6,23,0.38), rgba(2,6,23,0.44)), radial-gradient(circle at top left, rgba(59,130,246,0.08), transparent 32%), radial-gradient(circle at bottom right, rgba(124,58,237,0.08), transparent 34%), url(https://www.transparenttextures.com/patterns/cubes.png)',
+                  backgroundSize: 'auto, auto, auto, 132px 132px',
+                  backgroundPosition: 'center, center, center, center',
                 }}
               >
-                <div className="flex justify-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.045] backdrop-blur-xl border border-white/10 rounded-full text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
-                    <ShieldCheck size={13} className="text-blue-300" />
-                    Conversa protegida pelo FisioCareHub
+                <div className="flex justify-center mb-5">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-300 uppercase tracking-[0.18em] shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+                    <ShieldCheck size={12} className="text-blue-300" />
+                    Conversa protegida
                   </div>
                 </div>
 
@@ -668,34 +652,34 @@ export default function Chat() {
                     const msgDate = new Date(msg.criado_em);
                     const prevMsg = idx > 0 ? messages[idx - 1] : null;
                     const prevMsgDate = prevMsg ? new Date(prevMsg.criado_em) : null;
-                    
+
                     const showDateSeparator = !prevMsgDate || 
                       msgDate.toDateString() !== prevMsgDate.toDateString();
 
                     return (
-                      <div key={msg.id} className="space-y-6">
+                      <div key={msg.id} className="space-y-4">
                         {showDateSeparator && (
-                          <div className="flex justify-center my-8">
-                            <div className="px-4 py-1.5 bg-white/[0.055] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] shadow-sm">
+                          <div className="flex justify-center my-5">
+                            <div className="px-3.5 py-1.5 bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-[0.18em] shadow-sm">
                               {formatOnlyDateBR(msg.criado_em)}
                             </div>
                           </div>
                         )}
                         <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          initial={{ opacity: 0, y: 8, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          className={cn("flex flex-col group", isMe ? "items-end" : "items-start")}
+                          className={cn("flex flex-col group", isMe ? "items-end pr-1" : "items-start pl-1")}
                         >
                           <div className={cn(
-                            "max-w-[86%] md:max-w-[70%] px-4 py-3 md:px-6 md:py-4 rounded-[28px] text-sm shadow-[0_18px_40px_rgba(0,0,0,0.24)] relative transition-all min-w-[86px] border backdrop-blur-md",
+                            "max-w-[78%] md:max-w-[64%] px-3.5 py-2.5 md:px-5 md:py-3.5 rounded-[24px] text-sm shadow-[0_12px_28px_rgba(0,0,0,0.20)] relative transition-all min-w-[72px] border backdrop-blur-md",
                             isMe 
-                              ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[10px] border-blue-300/20 shadow-blue-950/25" 
-                              : "bg-slate-900/80 text-slate-100 rounded-bl-[10px] border-white/10 shadow-slate-950/35"
+                              ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[8px] border-blue-300/20 shadow-blue-950/20" 
+                              : "bg-slate-900/78 text-slate-100 rounded-bl-[8px] border-white/10 shadow-slate-950/25"
                           )}>
-                            <p className="leading-relaxed font-semibold mb-1 break-words text-[15px] md:text-base">{msg.mensagem}</p>
-                            
+                            <p className="leading-relaxed font-semibold mb-1 break-words text-[14px] md:text-[15px]">{msg.mensagem}</p>
+
                             <div className={cn(
-                              "text-[9px] font-black uppercase tracking-widest opacity-60 text-right",
+                              "text-[8.5px] font-black uppercase tracking-widest opacity-60 text-right",
                               isMe ? "text-blue-100" : "text-slate-400"
                             )}>
                               {formatHourBR(msg.criado_em)}
@@ -747,7 +731,7 @@ export default function Chat() {
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">E-mail</p>
                           <p className="text-sm font-bold text-slate-300 truncate">{targetUser.email}</p>
                         </div>
-                        
+
                         {targetUser.telefone && (
                           <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Telefone</p>
@@ -761,7 +745,7 @@ export default function Chat() {
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Usuário</p>
                               <p className="text-[10px] font-mono text-slate-500 break-all">{targetUser.id}</p>
                             </div>
-                            
+
                             {targetUser.localizacao && (
                               <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Localização</p>
@@ -777,7 +761,7 @@ export default function Chat() {
                                 <p className="text-sm font-bold text-slate-300">{targetUser.especialidade}</p>
                               </div>
                             )}
-                            
+
                             {targetUser.crefito && (
                               <div className="p-4 bg-white/5 rounded-2xl space-y-1 border border-white/5">
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CREFITO</p>
@@ -816,7 +800,7 @@ export default function Chat() {
             </div>
 
             {/* Footer / Input */}
-            <footer className="p-2 md:p-6 bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-18px_45px_rgba(2,6,23,0.38)] pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <footer className="px-2.5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-5 bg-slate-950/88 backdrop-blur-2xl border-t border-white/10 shadow-[0_-12px_32px_rgba(2,6,23,0.30)]">
               {(targetUser.tipo_usuario === 'admin' || targetUser.email === 'hogolezcano92@gmail.com') && !user ? (
                 <div className="flex flex-col items-center gap-3 p-4 md:p-6 bg-blue-500/5 rounded-3xl border border-blue-500/20 mx-2 md:mx-0">
                   <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
@@ -835,7 +819,7 @@ export default function Chat() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full rounded-[30px] md:rounded-[34px] bg-blue-950/20 md:bg-transparent p-1 md:p-0">
+                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-center max-w-4xl mx-auto w-full rounded-[26px] md:rounded-[34px] bg-blue-950/14 md:bg-transparent p-0.5 md:p-0">
                   <div className="flex-1 relative group">
                     <input
                       ref={inputRef}
@@ -849,9 +833,9 @@ export default function Chat() {
                         }
                       }}
                       placeholder="Mensagem..."
-                      className="w-full pl-5 pr-20 py-3.5 md:py-4 bg-white/[0.07] border border-white/15 rounded-[26px] outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-400/45 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_30px_rgba(0,0,0,0.18)] text-white placeholder:text-slate-500"
+                      className="w-full pl-4 pr-18 py-3 md:py-3.5 bg-white/[0.07] border border-white/15 rounded-[24px] outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-400/45 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_24px_rgba(0,0,0,0.16)] text-white placeholder:text-slate-500"
                     />
-                    <div className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 md:gap-2">
+                    <div className="absolute right-2.5 md:right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 md:gap-1.5">
                       <button type="button" className="p-1.5 md:p-2 text-slate-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition-colors">
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
@@ -872,9 +856,9 @@ export default function Chat() {
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 via-blue-600 to-violet-600 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_14px_32px_rgba(37,99,235,0.38)] disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0 border border-blue-300/20"
+                    className="w-11 h-11 md:w-13 md:h-13 bg-gradient-to-br from-blue-500 via-blue-600 to-violet-600 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_12px_28px_rgba(37,99,235,0.34)] disabled:opacity-50 disabled:scale-100 disabled:shadow-none flex-shrink-0 border border-blue-300/20"
                   >
-                    <Send className="w-5 h-5 md:w-7 md:h-7 translate-x-0.5 -translate-y-0.5" />
+                    <Send className="w-5 h-5 md:w-6 md:h-6 translate-x-0.5 -translate-y-0.5" />
                   </button>
                 </form>
               )}
@@ -882,6 +866,7 @@ export default function Chat() {
           </>
         )}
       </main>
+
       {!isChattingWithSupport && showKineAI && (
         <KineAI externalForceOpen={showKineAI} onClose={() => setShowKineAI(false)} />
       )}
