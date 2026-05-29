@@ -406,6 +406,20 @@ export default function Chat() {
     } catch (err) { console.error(err); }
   };
 
+  const handleStartVideoCall = () => {
+    if (!targetUser || !user) return;
+
+    const room = `FisioCareHub-${[user.id, targetUser.id].sort().join('-')}`;
+    const title = `Consulta online com ${targetUser.nome_completo || 'profissional'}`;
+    const subtitle = userData?.nome_completo
+      ? `${userData.nome_completo} e ${targetUser.nome_completo || 'profissional'}`
+      : `Sala protegida do FisioCareHub`;
+
+    navigate(
+      `/telehealth?room=${encodeURIComponent(room)}&title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(subtitle)}&returnTo=${encodeURIComponent('/chat')}`
+    );
+  };
+
   const isChattingWithSupport = targetUser?.tipo_usuario === 'admin' || 
                                 targetUser?.email === 'hogolezcano92@gmail.com' ||
                                 new URLSearchParams(location.search).get('support') === 'true';
@@ -591,7 +605,7 @@ export default function Chat() {
                   <Phone size={15} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
-                  onClick={() => navigate(`/telehealth?room=FisioCareHub-${[user?.id, targetUser.id].sort().join('-')}`)}
+                  onClick={handleStartVideoCall}
                   className="p-1.5 md:p-2.5 text-blue-300 bg-blue-500/15 hover:bg-blue-500/25 rounded-xl md:rounded-2xl transition-all shadow-[0_10px_25px_rgba(37,99,235,0.18)] border border-blue-400/25"
                 >
                   <Video size={15} className="md:w-[18px] md:h-[18px]" />
@@ -700,13 +714,20 @@ export default function Chat() {
                     initial={{ x: '100%', opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: '100%', opacity: 0 }}
-                    className="fixed inset-y-0 right-0 w-full sm:w-80 lg:relative lg:inset-auto lg:w-96 border-l border-white/5 bg-slate-900 p-6 overflow-y-auto z-[40] lg:z-10 shadow-2xl lg:shadow-none"
+                    className="fixed inset-x-0 bottom-0 top-[104px] w-full sm:top-0 sm:inset-y-0 sm:right-0 sm:left-auto sm:w-80 lg:relative lg:inset-auto lg:w-96 border-l border-white/5 bg-slate-900 p-5 sm:p-6 overflow-y-auto z-[40] lg:z-10 shadow-2xl lg:shadow-none"
                   >
-                    <div className="flex justify-between items-center mb-6 lg:hidden">
-                      <h3 className="text-lg font-black text-white tracking-tight">Detalhes do Usuário</h3>
-                      <button onClick={() => setShowUserInfo(false)} className="p-2 text-slate-500 hover:text-white">
-                        <ArrowLeft size={24} />
+                    <div className="sticky top-0 z-10 -mx-5 -mt-5 mb-6 flex items-center gap-3 border-b border-white/10 bg-slate-900/95 px-5 py-4 backdrop-blur-2xl sm:-mx-6 sm:-mt-6 sm:px-6">
+                      <button
+                        onClick={() => setShowUserInfo(false)}
+                        className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:border-blue-400/30 hover:bg-blue-500/10 hover:text-blue-300"
+                        aria-label="Voltar para o chat"
+                      >
+                        <ArrowLeft size={20} />
                       </button>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-300">Detalhes</p>
+                        <h3 className="truncate text-base font-black text-white">Profissional</h3>
+                      </div>
                     </div>
 
                     <div className="space-y-8">
