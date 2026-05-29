@@ -591,19 +591,9 @@ export default function PatientExercises() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl bg-slate-900 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-3xl bg-slate-900 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="md:w-1/2 bg-slate-950 relative">
-                {selectedItemDetail.exercicio?.imagem_url ? (
-                  <img src={selectedItemDetail.exercicio.imagem_url} alt={selectedItemDetail.exercicio.nome} className="w-full h-full object-contain p-8" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-800">
-                    <Activity size={120} />
-                  </div>
-                )}
-              </div>
-
-              <div className="md:w-1/2 p-8 md:p-12 overflow-y-auto space-y-8 bg-slate-900 custom-scrollbar">
+              <div className="w-full p-8 md:p-12 overflow-y-auto space-y-8 bg-slate-900 custom-scrollbar">
                 <button onClick={() => setSelectedItemDetail(null)} className="absolute top-8 right-8 p-2 hover:bg-white/5 rounded-full text-slate-400 transition-all border border-white/10"><X size={24} /></button>
 
                 <div className="space-y-3">
@@ -623,41 +613,6 @@ export default function PatientExercises() {
                      <p className="text-sm font-black text-white">{selectedItemDetail.frequencia || '1x ao dia'}</p>
                    </div>
                 </div>
-
-                <section className="space-y-2">
-                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Caminho da Recuperação</h4>
-                  <p className="text-slate-300 font-medium leading-relaxed">
-                    {selectedItemDetail.exercicio?.descricao}
-                  </p>
-                </section>
-
-                {selectedItemDetail.exercicio?.precaucoes && (
-                  <section className="bg-rose-500/5 p-5 rounded-2xl border border-rose-500/10">
-                    <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2 font-black">Atenção / Cuidados</h4>
-                    <p className="text-rose-400/80 text-sm font-medium">{selectedItemDetail.exercicio?.precaucoes}</p>
-                  </section>
-                )}
-
-                {getExercisePdfUrl(selectedItemDetail.exercicio) && (
-                  <section className="space-y-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
-                    <div className="flex items-center gap-2 text-rose-200">
-                      <FileText size={18} />
-                      <h4 className="text-xs font-black uppercase tracking-widest">PDF do exercício</h4>
-                    </div>
-                    <p className="text-sm font-semibold text-rose-100/80">
-                      Material complementar vinculado a este exercício pelo FisioCareHub.
-                    </p>
-                    <a
-                      href={getExercisePdfUrl(selectedItemDetail.exercicio)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-400 transition-all"
-                    >
-                      <FileText size={16} />
-                      Abrir PDF do exercício
-                    </a>
-                  </section>
-                )}
 
                 {selectedItemDetail.exercicio?.video_url && (() => {
                   const video = getVideoEmbedInfo(selectedItemDetail.exercicio.video_url);
@@ -736,6 +691,43 @@ export default function PatientExercises() {
                     </section>
                   );
                 })()}
+
+                <section className="space-y-2">
+                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Caminho da Recuperação</h4>
+                  <p className="text-slate-300 font-medium leading-relaxed">
+                    {selectedItemDetail.exercicio?.descricao}
+                  </p>
+                </section>
+
+                {selectedItemDetail.exercicio?.precaucoes && (
+                  <section className="bg-rose-500/5 p-5 rounded-2xl border border-rose-500/10">
+                    <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2 font-black">Atenção / Cuidados</h4>
+                    <p className="text-rose-400/80 text-sm font-medium">{selectedItemDetail.exercicio?.precaucoes}</p>
+                  </section>
+                )}
+
+                {getExercisePdfUrl(selectedItemDetail.exercicio) && (
+                  <section className="space-y-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4">
+                    <div className="flex items-center gap-2 text-rose-200">
+                      <FileText size={18} />
+                      <h4 className="text-xs font-black uppercase tracking-widest">PDF do exercício</h4>
+                    </div>
+                    <p className="text-sm font-semibold text-rose-100/80">
+                      Material complementar vinculado a este exercício pelo FisioCareHub.
+                    </p>
+                    <a
+                      href={getExercisePdfUrl(selectedItemDetail.exercicio)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-400 transition-all"
+                    >
+                      <FileText size={16} />
+                      Abrir PDF do exercício
+                    </a>
+                  </section>
+                )}
+
+
               </div>
             </motion.div>
           </div>
