@@ -76,6 +76,15 @@ const EXAM_ANALYSIS_KEYS: Array<keyof ExamAnalysisAIResult> = [
   'recomendacao_segura',
 ];
 
+const TEXT_MODEL = 'llama-3.3-70b-versatile';
+const VISION_MODELS = [
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'meta-llama/llama-4-maverick-17b-128e-instruct',
+];
+
+const AI_TIMEOUT_MS = 40_000;
+const MAX_IMAGE_DATA_URL_LENGTH = 4_500_000;
+
 const getEnv = (key: string, fallback = '') => {
   const value = process.env[key];
   if (!value) return fallback;
@@ -133,6 +142,47 @@ const normalizeExamAnalysis = (raw: any): ExamAnalysisAIResult => ({
   limitacoes: sanitizeStringArray(raw?.limitacoes, 8, 800),
   recomendacao_segura: sanitizeText(raw?.recomendacao_segura, 1800),
 });
+
+const getErrorMessage = (error: any) => {
+  const raw =
+    error?.response?.data?.error?.message ||
+    error?.error?.message ||
+    error?.message ||
+    String(error || '');
+
+  return typeof raw === 'string' ? raw : JSON.stringify(raw);
+};
+
+const isPermissionOrModelError = (error: any) => {
+  const message = getErrorMessage(error).toLowerCase();
+  return (
+    error?.status === 403 ||
+    error?.statusCode === 403 ||
+    message.includes('blocked') ||
+    message.includes('permission') ||
+    message.includes('model') ||
+    message.includes('not found') ||
+    message.includes('does not exist')
+  );
+};
+
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = AI_TIMEOUT_MS): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      const error = new Error('A análise visual demorou mais que o esperado. Tente uma imagem menor ou informe contexto clínico.');
+      (error as any).statusCode = 504;
+      reject(error);
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
 
 const getServerClients = async (accessToken?: string) => {
   const supabaseUrl = normalizeSupabaseUrl(
@@ -199,10 +249,6 @@ async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse)
     .eq('id', safePacienteId)
     .maybeSingle();
 
-  // A IA só organiza texto para o fisioterapeuta revisar.
-  // Se o paciente não for encontrado pelo backend por RLS/ambiente/preview,
-  // não bloqueamos a IA; apenas seguimos sem dados sensíveis do paciente.
-  // A gravação final continua protegida pelo Supabase/RLS no salvamento da ficha.
   if (patientError) {
     console.warn('[Evaluation AI API] Não foi possível validar paciente no backend:', patientError);
   }
@@ -247,18 +293,21 @@ Retorne exatamente estes campos:
 ${JSON.stringify(FIELD_KEYS)}
 `;
 
-  const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    temperature: 0.2,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content: 'Você retorna somente JSON válido para preencher fichas fisioterapêuticas. Você é cauteloso, não inventa dados e mantém revisão humana obrigatória.',
-      },
-      { role: 'user', content: prompt },
-    ],
-  });
+  const completion = await withTimeout(
+    groq.chat.completions.create({
+      model: TEXT_MODEL,
+      temperature: 0.2,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: 'Você retorna somente JSON válido para preencher fichas fisioterapêuticas. Você é cauteloso, não inventa dados e mantém revisão humana obrigatória.',
+        },
+        { role: 'user', content: prompt },
+      ],
+    }),
+    35_000
+  );
 
   const content = completion.choices[0]?.message?.content;
   if (!content) {
@@ -276,6 +325,144 @@ ${JSON.stringify(FIELD_KEYS)}
       : 'Conteúdo gerado por IA sem validar dados do paciente no backend. Revise antes de salvar.',
   });
 }
+
+const buildExamPrompt = ({
+  profile,
+  patientRecord,
+  safePatientId,
+  safePatientName,
+  safeFileName,
+  safeFileUrl,
+  safeFileType,
+  safeExamType,
+  safeClinicalContext,
+  safeExamText,
+  hasImage,
+}: any) => `
+Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil.
+Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados e gerar um pré-laudo/relatório de apoio para revisão profissional.
+
+REGRAS OBRIGATÓRIAS:
+- Não faça diagnóstico médico definitivo.
+- Não diga "você tem" determinada doença.
+- Use "a imagem sugere", "o material enviado mostra", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
+- Não prescreva tratamento fechado.
+- Não substitua médico, fisioterapeuta ou profissional habilitado.
+- Se houver achado grave ou sinal de alerta no texto, oriente revisão com profissional habilitado.
+- Se a imagem estiver limitada, com baixa qualidade, sem incidências suficientes ou sem texto, diga claramente que a análise é limitada.
+- Responda apenas JSON válido, sem markdown.
+
+DADOS DO USUÁRIO:
+${JSON.stringify({
+  usuario_logado: profile?.nome_completo || '',
+  tipo_usuario: profile?.tipo_usuario || '',
+  paciente: patientRecord?.nome_completo || safePatientName || '',
+  patient_id: safePatientId || '',
+})}
+
+ARQUIVO:
+${JSON.stringify({
+  file_name: safeFileName,
+  file_url: safeFileUrl,
+  file_type: safeFileType,
+  exam_type_informado: safeExamType,
+  imagem_enviada_para_analise_visual: Boolean(hasImage),
+})}
+
+CONTEXTO CLÍNICO INFORMADO:
+${safeClinicalContext || 'Não informado.'}
+
+TEXTO DO LAUDO, SE HOUVER:
+${safeExamText || 'Não informado.'}
+
+INSTRUÇÃO SOBRE IMAGEM:
+${hasImage ? 'Uma imagem do exame foi enviada. Analise visualmente a imagem com cautela e descreva apenas achados observáveis.' : 'Nenhuma imagem foi enviada para análise visual. Use apenas o texto/contexto informado.'}
+
+Retorne exatamente este JSON:
+{
+  "exam_type": "tipo provável do exame, se informado ou inferido com cautela",
+  "resumo_executivo": "pré-laudo de apoio curto e objetivo, descrevendo o que a imagem/texto mostra com cautela",
+  "principais_achados": ["achado 1", "achado 2"],
+  "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo",
+  "pontos_para_fisioterapeuta_revisar": ["ponto 1", "ponto 2"],
+  "possiveis_relacoes_funcionais": ["possível relação funcional 1", "possível relação funcional 2"],
+  "sinais_de_alerta": ["sinal de alerta citado ou 'não informado no texto enviado'"],
+  "limitacoes": ["limitação 1", "limitação 2"],
+  "recomendacao_segura": "orientação segura dizendo que a análise é apoio e precisa de revisão profissional"
+}
+
+Chaves obrigatórias:
+${JSON.stringify(EXAM_ANALYSIS_KEYS)}
+`;
+
+const createExamCompletion = async ({
+  groq,
+  prompt,
+  imageDataUrl,
+}: {
+  groq: Groq;
+  prompt: string;
+  imageDataUrl: string;
+}) => {
+  const systemMessage = {
+    role: 'system',
+    content:
+      'Você retorna somente JSON válido. Você é uma IA de apoio para analisar exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
+  };
+
+  if (!imageDataUrl) {
+    return await withTimeout(
+      groq.chat.completions.create({
+        model: TEXT_MODEL,
+        temperature: 0.15,
+        response_format: { type: 'json_object' },
+        messages: [systemMessage, { role: 'user', content: prompt }] as any,
+      }),
+      AI_TIMEOUT_MS
+    );
+  }
+
+  let lastError: any = null;
+
+  for (const model of VISION_MODELS) {
+    try {
+      console.log(`[Exam AI API] Tentando modelo vision: ${model}`);
+
+      return await withTimeout(
+        groq.chat.completions.create({
+          model,
+          temperature: 0.15,
+          response_format: { type: 'json_object' },
+          messages: [
+            systemMessage,
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image_url', image_url: { url: imageDataUrl } },
+              ],
+            },
+          ] as any,
+        }),
+        AI_TIMEOUT_MS
+      );
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`[Exam AI API] Falha no modelo vision ${model}:`, getErrorMessage(error));
+
+      if (!isPermissionOrModelError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  const friendlyError = new Error(
+    `Os modelos de visão da Groq não estão disponíveis neste projeto. Habilite ${VISION_MODELS[0]} na Groq ou tente informar contexto/laudo em texto.`
+  );
+  (friendlyError as any).statusCode = 403;
+  (friendlyError as any).cause = lastError;
+  throw friendlyError;
+};
 
 async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
   const {
@@ -296,13 +483,32 @@ async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
   const safeFileName = sanitizeText(fileName, 300);
   const safeFileUrl = sanitizeText(fileUrl, 1000);
   const safeFileType = sanitizeText(fileType, 180);
-  const safeImageDataUrl = typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/') && imageDataUrl.length < 7_000_000 ? imageDataUrl : '';
+
+  const safeImageDataUrl =
+    typeof imageDataUrl === 'string' &&
+    imageDataUrl.startsWith('data:image/') &&
+    imageDataUrl.length <= MAX_IMAGE_DATA_URL_LENGTH
+      ? imageDataUrl
+      : '';
+
+  const imageRejectedBySize =
+    typeof imageDataUrl === 'string' &&
+    imageDataUrl.startsWith('data:image/') &&
+    imageDataUrl.length > MAX_IMAGE_DATA_URL_LENGTH;
+
   const safeExamType = sanitizeText(examType, 180) || 'Exame/laudo clínico';
   const safePatientId = sanitizeText(patientId, 120);
   const safePatientName = sanitizeText(patientName, 240);
 
   if (!accessToken) {
     return res.status(400).json({ error: 'Sessão não informada.' });
+  }
+
+  if (imageRejectedBySize && !safeExamText && !safeClinicalContext) {
+    return res.status(413).json({
+      error: 'A imagem está grande demais para análise visual.',
+      message: 'Envie uma imagem menor, tire um print mais leve ou comprima a foto antes de tentar novamente.',
+    });
   }
 
   if (!safeImageDataUrl && !safeExamText && !safeClinicalContext) {
@@ -347,85 +553,24 @@ async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  const prompt = `
-Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil.
-Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados e gerar um pré-laudo/relatório de apoio para revisão profissional.
+  const prompt = buildExamPrompt({
+    profile,
+    patientRecord,
+    safePatientId,
+    safePatientName,
+    safeFileName,
+    safeFileUrl,
+    safeFileType,
+    safeExamType,
+    safeClinicalContext,
+    safeExamText,
+    hasImage: Boolean(safeImageDataUrl),
+  });
 
-REGRAS OBRIGATÓRIAS:
-- Não faça diagnóstico médico definitivo.
-- Não diga "você tem" determinada doença.
-- Use "a imagem sugere", "o material enviado mostra", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
-- Não prescreva tratamento fechado.
-- Não substitua médico, fisioterapeuta ou profissional habilitado.
-- Se houver achado grave ou sinal de alerta no texto, oriente revisão com profissional habilitado.
-- Se a imagem estiver limitada, com baixa qualidade, sem incidências suficientes ou sem texto, diga claramente que a análise é limitada.
-- Responda apenas JSON válido, sem markdown.
-
-DADOS DO USUÁRIO:
-${JSON.stringify({
-  usuario_logado: profile?.nome_completo || '',
-  tipo_usuario: profile?.tipo_usuario || '',
-  paciente: patientRecord?.nome_completo || safePatientName || '',
-  patient_id: safePatientId || '',
-})}
-
-ARQUIVO:
-${JSON.stringify({
-  file_name: safeFileName,
-  file_url: safeFileUrl,
-  file_type: safeFileType,
-  exam_type_informado: safeExamType,
-  imagem_enviada_para_analise_visual: Boolean(safeImageDataUrl),
-})}
-
-CONTEXTO CLÍNICO INFORMADO:
-${safeClinicalContext || 'Não informado.'}
-
-TEXTO DO LAUDO, SE HOUVER:
-${safeExamText || 'Não informado.'}
-
-INSTRUÇÃO SOBRE IMAGEM:
-${safeImageDataUrl ? 'Uma imagem do exame foi enviada. Analise visualmente a imagem com cautela e descreva apenas achados observáveis.' : 'Nenhuma imagem foi enviada para análise visual. Use apenas o texto/contexto informado.'}
-
-Retorne exatamente este JSON:
-{
-  "exam_type": "tipo provável do exame, se informado ou inferido com cautela",
-  "resumo_executivo": "pré-laudo de apoio curto e objetivo, descrevendo o que a imagem/texto mostra com cautela",
-  "principais_achados": ["achado 1", "achado 2"],
-  "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo",
-  "pontos_para_fisioterapeuta_revisar": ["ponto 1", "ponto 2"],
-  "possiveis_relacoes_funcionais": ["possível relação funcional 1", "possível relação funcional 2"],
-  "sinais_de_alerta": ["sinal de alerta citado ou 'não informado no texto enviado'"],
-  "limitacoes": ["limitação 1", "limitação 2"],
-  "recomendacao_segura": "orientação segura dizendo que a análise é apoio e precisa de revisão profissional"
-}
-
-Chaves obrigatórias:
-${JSON.stringify(EXAM_ANALYSIS_KEYS)}
-`;
-
-  const messages = [
-    {
-      role: 'system',
-      content:
-        'Você retorna somente JSON válido. Você é uma IA de apoio para analisar exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
-    },
-    safeImageDataUrl
-      ? {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: safeImageDataUrl } },
-          ],
-        }
-      : { role: 'user', content: prompt },
-  ] as any;
-
-  const completion = await groq.chat.completions.create({
-    model: safeImageDataUrl ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile',
-    temperature: 0.15,
-    response_format: { type: 'json_object' },
-    messages,
+  const completion = await createExamCompletion({
+    groq,
+    prompt,
+    imageDataUrl: safeImageDataUrl,
   });
 
   const content = completion.choices[0]?.message?.content;
@@ -440,6 +585,7 @@ ${JSON.stringify(EXAM_ANALYSIS_KEYS)}
     success: true,
     mode: 'exam_analysis',
     analysis,
+    used_visual_analysis: Boolean(safeImageDataUrl),
     warning:
       'Análise gerada por IA para apoio informativo. Não substitui avaliação, diagnóstico ou conduta de profissional habilitado.',
   });
