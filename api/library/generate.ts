@@ -85,6 +85,35 @@ const VISION_MODELS = [
 const AI_TIMEOUT_MS = 40_000;
 const MAX_IMAGE_DATA_URL_LENGTH = 4_500_000;
 
+const HIGH_RISK_TERMS = [
+  'fratura',
+  'luxação',
+  'luxacao',
+  'ruptura',
+  'tumor',
+  'neoplasia',
+  'infecção',
+  'infeccao',
+  'osteomielite',
+  'deslocamento',
+  'desviado',
+  'desviada',
+];
+
+const CAUTION_TERMS = [
+  'possível',
+  'possivel',
+  'sugestivo',
+  'sugere',
+  'suspeita',
+  'aparente',
+  'a confirmar',
+  'não é possível confirmar',
+  'nao e possivel confirmar',
+  'sem evidência clara',
+  'sem evidencia clara',
+];
+
 const getEnv = (key: string, fallback = '') => {
   const value = process.env[key];
   if (!value) return fallback;
@@ -118,6 +147,29 @@ const sanitizeStringArray = (value: unknown, maxItems = 8, maxLength = 700) => {
     .slice(0, maxItems);
 };
 
+const hasHighRiskTerm = (value: string) => {
+  const lower = value.toLowerCase();
+  return HIGH_RISK_TERMS.some((term) => lower.includes(term));
+};
+
+const hasCautionTerm = (value: string) => {
+  const lower = value.toLowerCase();
+  return CAUTION_TERMS.some((term) => lower.includes(term));
+};
+
+const softenHighRiskClaim = (value: string) => {
+  const text = sanitizeText(value, 1200);
+  if (!text) return '';
+
+  if (hasHighRiskTerm(text) && !hasCautionTerm(text)) {
+    return `Possível achado a confirmar: ${text}. Necessita correlação com exame completo, outras incidências e laudo de profissional habilitado.`;
+  }
+
+  return text;
+};
+
+const uniqueStrings = (items: string[]) => Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
+
 const normalizeAiFields = (raw: any): EvaluationAIFields => {
   const output: any = {};
   for (const key of FIELD_KEYS) {
@@ -131,17 +183,42 @@ const normalizeAiFields = (raw: any): EvaluationAIFields => {
   return output as EvaluationAIFields;
 };
 
-const normalizeExamAnalysis = (raw: any): ExamAnalysisAIResult => ({
-  exam_type: sanitizeText(raw?.exam_type, 160) || 'Exame não especificado',
-  resumo_executivo: sanitizeText(raw?.resumo_executivo, 2400),
-  principais_achados: sanitizeStringArray(raw?.principais_achados, 10, 800),
-  explicacao_para_paciente: sanitizeText(raw?.explicacao_para_paciente, 2400),
-  pontos_para_fisioterapeuta_revisar: sanitizeStringArray(raw?.pontos_para_fisioterapeuta_revisar, 10, 800),
-  possiveis_relacoes_funcionais: sanitizeStringArray(raw?.possiveis_relacoes_funcionais, 8, 800),
-  sinais_de_alerta: sanitizeStringArray(raw?.sinais_de_alerta, 8, 800),
-  limitacoes: sanitizeStringArray(raw?.limitacoes, 8, 800),
-  recomendacao_segura: sanitizeText(raw?.recomendacao_segura, 1800),
-});
+const normalizeExamAnalysis = (raw: any): ExamAnalysisAIResult => {
+  const rawResumo = sanitizeText(raw?.resumo_executivo, 2400);
+  const rawExplicacao = sanitizeText(raw?.explicacao_para_paciente, 2400);
+  const rawRecomendacao = sanitizeText(raw?.recomendacao_segura, 1800);
+
+  const principaisAchados = sanitizeStringArray(raw?.principais_achados, 10, 800).map(softenHighRiskClaim);
+  const sinaisDeAlerta = sanitizeStringArray(raw?.sinais_de_alerta, 8, 800).map(softenHighRiskClaim);
+  const limitacoes = sanitizeStringArray(raw?.limitacoes, 8, 800);
+
+  const hasRiskClaim =
+    hasHighRiskTerm(rawResumo) ||
+    hasHighRiskTerm(rawExplicacao) ||
+    principaisAchados.some(hasHighRiskTerm) ||
+    sinaisDeAlerta.some(hasHighRiskTerm);
+
+  const safetyLimitations = hasRiskClaim
+    ? [
+        'Achados graves, como fratura, luxação, ruptura, tumor ou infecção, não devem ser considerados confirmados por esta IA.',
+        'A análise visual por IA é limitada e exige revisão por radiologista, ortopedista ou profissional habilitado, especialmente em imagem única ou sem incidência AP/lateral completa.',
+      ]
+    : [];
+
+  return {
+    exam_type: sanitizeText(raw?.exam_type, 160) || 'Exame não especificado',
+    resumo_executivo: softenHighRiskClaim(rawResumo),
+    principais_achados: uniqueStrings(principaisAchados).slice(0, 10),
+    explicacao_para_paciente: softenHighRiskClaim(rawExplicacao),
+    pontos_para_fisioterapeuta_revisar: sanitizeStringArray(raw?.pontos_para_fisioterapeuta_revisar, 10, 800),
+    possiveis_relacoes_funcionais: sanitizeStringArray(raw?.possiveis_relacoes_funcionais, 8, 800),
+    sinais_de_alerta: uniqueStrings(sinaisDeAlerta).slice(0, 8),
+    limitacoes: uniqueStrings([...limitacoes, ...safetyLimitations]).slice(0, 10),
+    recomendacao_segura:
+      softenHighRiskClaim(rawRecomendacao) ||
+      'Este pré-laudo é apenas apoio informativo. A interpretação final deve ser feita por profissional habilitado com o exame completo e avaliação clínica.',
+  };
+};
 
 const getErrorMessage = (error: any) => {
   const raw =
@@ -340,17 +417,28 @@ const buildExamPrompt = ({
   hasImage,
 }: any) => `
 Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil.
-Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados e gerar um pré-laudo/relatório de apoio para revisão profissional.
+Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados observáveis e gerar um pré-laudo/relatório de apoio para revisão profissional.
 
-REGRAS OBRIGATÓRIAS:
+REGRAS OBRIGATÓRIAS DE SEGURANÇA:
 - Não faça diagnóstico médico definitivo.
 - Não diga "você tem" determinada doença.
+- Nunca afirme fratura, luxação, ruptura, tumor, infecção, osteomielite, deslocamento ou lesão grave como diagnóstico confirmado.
+- Se houver suspeita visual de fratura/luxação/ruptura/deslocamento, escreva obrigatoriamente: "possível achado a confirmar" e "não é possível confirmar apenas por esta imagem".
+- Em imagem única, incidência única, baixa resolução, imagem cortada ou sem AP/lateral completas, classifique a análise como limitada.
+- Para raio-X musculoesquelético, primeiro descreva alinhamento, espaço articular, osteófitos/alterações degenerativas, sinais grosseiros de fratura/luxação e limitações da incidência.
+- Para raio-X, não conclua "fratura com deslocamento" sem evidência inequívoca; prefira "irregularidade óssea/possível achado a confirmar" quando houver dúvida.
+- Diferencie "achados observáveis" de "hipóteses a confirmar".
 - Use "a imagem sugere", "o material enviado mostra", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
 - Não prescreva tratamento fechado.
-- Não substitua médico, fisioterapeuta ou profissional habilitado.
-- Se houver achado grave ou sinal de alerta no texto, oriente revisão com profissional habilitado.
+- Não substitua médico, fisioterapeuta, radiologista ou profissional habilitado.
 - Se a imagem estiver limitada, com baixa qualidade, sem incidências suficientes ou sem texto, diga claramente que a análise é limitada.
 - Responda apenas JSON válido, sem markdown.
+
+AUTO-REVISÃO OBRIGATÓRIA ANTES DE RESPONDER:
+1. Verifique se você afirmou algum achado grave como certeza. Se sim, reescreva como possibilidade a confirmar.
+2. Verifique se o resumo está cauteloso.
+3. Verifique se as limitações mencionam imagem única/incidência insuficiente quando aplicável.
+4. Verifique se a recomendação final exige revisão profissional.
 
 DADOS DO USUÁRIO:
 ${JSON.stringify({
@@ -376,19 +464,19 @@ TEXTO DO LAUDO, SE HOUVER:
 ${safeExamText || 'Não informado.'}
 
 INSTRUÇÃO SOBRE IMAGEM:
-${hasImage ? 'Uma imagem do exame foi enviada. Analise visualmente a imagem com cautela e descreva apenas achados observáveis.' : 'Nenhuma imagem foi enviada para análise visual. Use apenas o texto/contexto informado.'}
+${hasImage ? 'Uma imagem do exame foi enviada. Analise visualmente a imagem com cautela e descreva apenas achados observáveis. Se for RX com uma incidência, considere a análise limitada.' : 'Nenhuma imagem foi enviada para análise visual. Use apenas o texto/contexto informado.'}
 
 Retorne exatamente este JSON:
 {
   "exam_type": "tipo provável do exame, se informado ou inferido com cautela",
-  "resumo_executivo": "pré-laudo de apoio curto e objetivo, descrevendo o que a imagem/texto mostra com cautela",
-  "principais_achados": ["achado 1", "achado 2"],
-  "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo",
+  "resumo_executivo": "pré-laudo de apoio curto, cauteloso e objetivo. Não confirme achados graves sem laudo profissional.",
+  "principais_achados": ["achado observável 1", "achado observável 2", "hipótese a confirmar, se houver"],
+  "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo e sem diagnóstico definitivo",
   "pontos_para_fisioterapeuta_revisar": ["ponto 1", "ponto 2"],
   "possiveis_relacoes_funcionais": ["possível relação funcional 1", "possível relação funcional 2"],
-  "sinais_de_alerta": ["sinal de alerta citado ou 'não informado no texto enviado'"],
+  "sinais_de_alerta": ["se houver suspeita de achado grave: possível achado a confirmar; caso contrário, 'não há sinal de alerta evidente na imagem isolada'"],
   "limitacoes": ["limitação 1", "limitação 2"],
-  "recomendacao_segura": "orientação segura dizendo que a análise é apoio e precisa de revisão profissional"
+  "recomendacao_segura": "orientação segura dizendo que a análise é apoio, limitada e precisa de revisão profissional"
 }
 
 Chaves obrigatórias:
@@ -407,14 +495,14 @@ const createExamCompletion = async ({
   const systemMessage = {
     role: 'system',
     content:
-      'Você retorna somente JSON válido. Você é uma IA de apoio para analisar exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
+      'Você retorna somente JSON válido. Você é uma IA de apoio para exames, sempre cautelosa. Nunca confirma diagnóstico grave por imagem isolada. Para fratura/luxação/ruptura/deslocamento/tumor/infecção, use sempre linguagem de possibilidade a confirmar e revisão profissional obrigatória.',
   };
 
   if (!imageDataUrl) {
     return await withTimeout(
       groq.chat.completions.create({
         model: TEXT_MODEL,
-        temperature: 0.15,
+        temperature: 0.05,
         response_format: { type: 'json_object' },
         messages: [systemMessage, { role: 'user', content: prompt }] as any,
       }),
@@ -431,7 +519,7 @@ const createExamCompletion = async ({
       return await withTimeout(
         groq.chat.completions.create({
           model,
-          temperature: 0.15,
+          temperature: 0.05,
           response_format: { type: 'json_object' },
           messages: [
             systemMessage,
