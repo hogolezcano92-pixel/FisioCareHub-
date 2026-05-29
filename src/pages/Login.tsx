@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,8 +22,6 @@ export default function Login() {
   const [countdown, setCountdown] = useState(0);
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
-  const [showLoginSplash, setShowLoginSplash] = useState(false);
-  const loginSplashHoldRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,7 +59,7 @@ export default function Login() {
     });
 
   useEffect(() => {
-    if (!authLoading && user && !isAuthenticating && !loginSplashHoldRef.current) {
+    if (!authLoading && user && !isAuthenticating) {
       // If already logged in, redirect based on role
       const checkRoleAndRedirect = async () => {
         const { data: profileData } = await supabase
@@ -189,8 +187,6 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setIsAuthenticating(true);
-    loginSplashHoldRef.current = true;
-    setShowLoginSplash(false);
     setError('');
 
     const cleanEmail = email.trim().toLowerCase();
@@ -203,8 +199,6 @@ export default function Login() {
 
       if (loginError) {
         setIsAuthenticating(false);
-        loginSplashHoldRef.current = false;
-        setShowLoginSplash(false);
         if (loginError.message.includes('Email not confirmed')) {
           setError('Por favor, confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
         } else if (loginError.message.includes('Invalid login credentials')) {
@@ -231,8 +225,6 @@ export default function Login() {
       if (isBiometricSupported && count === 0) {
         // Show prompt to register biometrics
         setIsAuthenticating(false);
-        loginSplashHoldRef.current = false;
-        setShowLoginSplash(false);
         setShowBiometricPrompt(true);
         return;
       }
@@ -259,16 +251,12 @@ export default function Login() {
       }
 
       clearPendingRedirect();
-      setShowLoginSplash(true);
       await keepPremiumSplashVisible();
-      loginSplashHoldRef.current = false;
       navigate(redirectTarget, { replace: true });
     } catch (err: any) {
       console.error("Erro no login:", err);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
       setIsAuthenticating(false);
-      loginSplashHoldRef.current = false;
-      setShowLoginSplash(false);
     } finally {
       setLoading(false);
     }
@@ -324,7 +312,7 @@ export default function Login() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showLoginSplash && <SplashScreen />}
+        {isAuthenticating && <SplashScreen />}
       </AnimatePresence>
       
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
