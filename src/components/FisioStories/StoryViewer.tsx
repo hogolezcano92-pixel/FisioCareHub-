@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Calendar, User, MessageCircle, Share2, Loader2 } from 'lucide-react';
+import { X, Calendar, User, MessageCircle, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,12 +28,10 @@ const StoryMedia = ({
   story,
   onEnded,
   onProgress,
-  onReady,
 }: {
   story: FisioStory;
   onEnded: () => void;
   onProgress: (value: number) => void;
-  onReady: () => void;
 }) => {
   if (story.media_type === 'video') {
     return (
@@ -44,10 +42,7 @@ const StoryMedia = ({
         autoPlay
         playsInline
         muted
-        preload="auto"
         onLoadedMetadata={() => onProgress(0)}
-        onLoadedData={onReady}
-        onCanPlay={onReady}
         onTimeUpdate={(event) => {
           const video = event.currentTarget;
           if (!video.duration || !Number.isFinite(video.duration)) return;
@@ -68,9 +63,6 @@ const StoryMedia = ({
       alt={story.title || 'FisioStory'}
       className="h-full w-full object-contain bg-black"
       referrerPolicy="no-referrer"
-      loading="eager"
-      decoding="async"
-      onLoad={onReady}
       onError={onEnded}
     />
   );
@@ -89,7 +81,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [mediaReady, setMediaReady] = useState(false);
 
   const nextTriggeredRef = useRef(false);
   const closeRef = useRef(onClose);
@@ -100,16 +91,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   const group = viewerGroups[groupIndex];
   const story = group?.stories?.[storyIndex];
-
-  const nextStory = useMemo(() => {
-    if (!group || !story) return null;
-
-    const nextInSameGroup = group.stories[storyIndex + 1];
-    if (nextInSameGroup) return nextInSameGroup;
-
-    const nextGroup = viewerGroups[groupIndex + 1];
-    return nextGroup?.stories?.[0] || null;
-  }, [group, groupIndex, story, storyIndex, viewerGroups]);
 
   const canGoPrev = groupIndex > 0 || storyIndex > 0;
   const canGoNext = groupIndex < viewerGroups.length - 1 || storyIndex < (group?.stories?.length || 0) - 1;
@@ -127,7 +108,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   const goPrev = useCallback(() => {
     nextTriggeredRef.current = false;
     setProgress(0);
-    setMediaReady(false);
 
     setStoryIndex(currentStoryIndex => {
       if (currentStoryIndex > 0) {
@@ -150,7 +130,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   const goNext = useCallback(() => {
     setProgress(0);
-    setMediaReady(false);
 
     setStoryIndex(currentStoryIndex => {
       setGroupIndex(currentGroupIndex => {
@@ -192,7 +171,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
     nextTriggeredRef.current = false;
     setProgress(0);
-    setMediaReady(false);
   }, [story?.id]);
 
   useEffect(() => {
@@ -201,7 +179,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   }, [story?.id, user?.id]);
 
   useEffect(() => {
-    if (!story?.id || !mediaReady) return;
+    if (!story?.id) return;
 
     if (story.media_type === 'video') {
       return;
@@ -220,24 +198,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
     }, 80);
 
     return () => window.clearInterval(interval);
-  }, [goNext, mediaReady, story?.id, story?.media_type]);
-
-  useEffect(() => {
-    if (!nextStory?.media_url || !isClient()) return;
-
-    if (nextStory.media_type === 'video') {
-      const video = document.createElement('video');
-      video.src = nextStory.media_url;
-      video.preload = 'auto';
-      video.muted = true;
-      video.playsInline = true;
-      video.load();
-      return;
-    }
-
-    const image = new Image();
-    image.src = nextStory.media_url;
-  }, [nextStory?.id, nextStory?.media_type, nextStory?.media_url]);
+  }, [goNext, story?.id, story?.media_type]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -336,16 +297,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
             </div>
           </div>
 
-          <StoryMedia story={story} onEnded={handleStoryEnded} onProgress={setProgress} onReady={() => setMediaReady(true)} />
-
-          {!mediaReady && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black">
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-2xl shadow-sky-950/40 backdrop-blur-xl">
-                <Loader2 className="mx-auto mb-3 animate-spin text-sky-300" size={28} />
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/80">Carregando story</p>
-              </div>
-            </div>
-          )}
+          <StoryMedia story={story} onEnded={handleStoryEnded} onProgress={setProgress} />
 
           <button
             type="button"
