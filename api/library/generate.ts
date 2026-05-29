@@ -287,12 +287,16 @@ async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
     patientId,
     patientName,
     clinicalContext,
+    imageDataUrl,
+    fileType,
   } = req.body || {};
 
   const safeExamText = sanitizeText(examText, 16000);
   const safeClinicalContext = sanitizeText(clinicalContext, 5000);
   const safeFileName = sanitizeText(fileName, 300);
   const safeFileUrl = sanitizeText(fileUrl, 1000);
+  const safeFileType = sanitizeText(fileType, 180);
+  const safeImageDataUrl = typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/') && imageDataUrl.length < 7_000_000 ? imageDataUrl : '';
   const safeExamType = sanitizeText(examType, 180) || 'Exame/laudo clínico';
   const safePatientId = sanitizeText(patientId, 120);
   const safePatientName = sanitizeText(patientName, 240);
@@ -301,10 +305,10 @@ async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Sessão não informada.' });
   }
 
-  if (!safeExamText && !safeClinicalContext) {
+  if (!safeImageDataUrl && !safeExamText && !safeClinicalContext) {
     return res.status(400).json({
-      error: 'Informe o texto do laudo ou observações clínicas para a IA analisar.',
-      message: 'Nesta versão, a IA analisa texto extraído/colado do exame. Para imagens/PDF sem texto, use o campo de texto do laudo.',
+      error: 'Envie uma imagem do exame ou informe um contexto clínico para a IA analisar.',
+      message: 'A análise visual funciona com imagens. Para PDF puro, envie uma foto/print da página ou inclua um contexto clínico opcional.',
     });
   }
 
@@ -345,16 +349,16 @@ async function analyzeExamWithAi(req: VercelRequest, res: VercelResponse) {
 
   const prompt = `
 Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil.
-Sua função é organizar, resumir e explicar informações de exames/laudos enviados pelo usuário.
+Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados e gerar um pré-laudo/relatório de apoio para revisão profissional.
 
 REGRAS OBRIGATÓRIAS:
 - Não faça diagnóstico médico definitivo.
 - Não diga "você tem" determinada doença.
-- Use "o laudo descreve", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
+- Use "a imagem sugere", "o material enviado mostra", "o texto informado sugere", "pode estar relacionado", "necessita correlação clínica".
 - Não prescreva tratamento fechado.
 - Não substitua médico, fisioterapeuta ou profissional habilitado.
 - Se houver achado grave ou sinal de alerta no texto, oriente revisão com profissional habilitado.
-- Se o texto for insuficiente, diga claramente que a análise é limitada.
+- Se a imagem estiver limitada, com baixa qualidade, sem incidências suficientes ou sem texto, diga claramente que a análise é limitada.
 - Responda apenas JSON válido, sem markdown.
 
 DADOS DO USUÁRIO:
@@ -369,19 +373,24 @@ ARQUIVO:
 ${JSON.stringify({
   file_name: safeFileName,
   file_url: safeFileUrl,
+  file_type: safeFileType,
   exam_type_informado: safeExamType,
+  imagem_enviada_para_analise_visual: Boolean(safeImageDataUrl),
 })}
 
 CONTEXTO CLÍNICO INFORMADO:
 ${safeClinicalContext || 'Não informado.'}
 
-TEXTO DO EXAME/LAUDO:
+TEXTO DO LAUDO, SE HOUVER:
 ${safeExamText || 'Não informado.'}
+
+INSTRUÇÃO SOBRE IMAGEM:
+${safeImageDataUrl ? 'Uma imagem do exame foi enviada. Analise visualmente a imagem com cautela e descreva apenas achados observáveis.' : 'Nenhuma imagem foi enviada para análise visual. Use apenas o texto/contexto informado.'}
 
 Retorne exatamente este JSON:
 {
   "exam_type": "tipo provável do exame, se informado ou inferido com cautela",
-  "resumo_executivo": "resumo curto e objetivo do que o laudo/texto descreve",
+  "resumo_executivo": "pré-laudo de apoio curto e objetivo, descrevendo o que a imagem/texto mostra com cautela",
   "principais_achados": ["achado 1", "achado 2"],
   "explicacao_para_paciente": "explicação em linguagem simples, sem alarmismo",
   "pontos_para_fisioterapeuta_revisar": ["ponto 1", "ponto 2"],
@@ -395,18 +404,28 @@ Chaves obrigatórias:
 ${JSON.stringify(EXAM_ANALYSIS_KEYS)}
 `;
 
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'Você retorna somente JSON válido. Você é uma IA de apoio para analisar exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
+    },
+    safeImageDataUrl
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: safeImageDataUrl } },
+          ],
+        }
+      : { role: 'user', content: prompt },
+  ] as any;
+
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: safeImageDataUrl ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile',
     temperature: 0.15,
     response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content:
-          'Você retorna somente JSON válido. Você é uma IA de apoio para resumir laudos/exames de forma cautelosa, sem diagnóstico definitivo, sem prescrição fechada e com revisão humana obrigatória.',
-      },
-      { role: 'user', content: prompt },
-    ],
+    messages,
   });
 
   const content = completion.choices[0]?.message?.content;
