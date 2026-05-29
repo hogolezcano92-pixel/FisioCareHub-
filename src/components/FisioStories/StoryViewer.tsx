@@ -70,16 +70,30 @@ const StoryMedia = ({
 
 export default function StoryViewer({ groups, initialGroupIndex, onClose }: StoryViewerProps) {
   const { user } = useAuth();
+
+  /*
+   * IMPORTANTE:
+   * Mantemos uma cópia local dos groups no momento em que o viewer abre.
+   * Assim, se o parent recarregar stories após trackView/trackClick, o story atual
+   * não volta para o início nem muda de lista no meio da reprodução.
+   */
+  const [viewerGroups] = useState<StoryGroup[]>(() => groups);
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const nextTriggeredRef = useRef(false);
 
-  const group = groups[groupIndex];
+  const nextTriggeredRef = useRef(false);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
+  const group = viewerGroups[groupIndex];
   const story = group?.stories?.[storyIndex];
 
   const canGoPrev = groupIndex > 0 || storyIndex > 0;
-  const canGoNext = groupIndex < groups.length - 1 || storyIndex < (group?.stories?.length || 0) - 1;
+  const canGoNext = groupIndex < viewerGroups.length - 1 || storyIndex < (group?.stories?.length || 0) - 1;
 
   const profilePath = story ? `/physio/${story.physio_id}` : '/buscar-fisio';
   const safeCtaUrl = story?.cta_url?.startsWith('/') ? story.cta_url : '';
@@ -95,36 +109,55 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
     nextTriggeredRef.current = false;
     setProgress(0);
 
-    if (storyIndex > 0) {
-      setStoryIndex(prev => prev - 1);
-      return;
-    }
+    setStoryIndex(currentStoryIndex => {
+      if (currentStoryIndex > 0) {
+        return currentStoryIndex - 1;
+      }
 
-    if (groupIndex > 0) {
-      const prevGroup = groups[groupIndex - 1];
-      setGroupIndex(prev => prev - 1);
-      setStoryIndex(Math.max((prevGroup?.stories?.length || 1) - 1, 0));
-    }
-  }, [groupIndex, groups, storyIndex]);
+      setGroupIndex(currentGroupIndex => {
+        if (currentGroupIndex <= 0) return currentGroupIndex;
+
+        const previousGroup = viewerGroups[currentGroupIndex - 1];
+        const previousStoryIndex = Math.max((previousGroup?.stories?.length || 1) - 1, 0);
+
+        setStoryIndex(previousStoryIndex);
+        return currentGroupIndex - 1;
+      });
+
+      return currentStoryIndex;
+    });
+  }, [viewerGroups]);
 
   const goNext = useCallback(() => {
     setProgress(0);
 
-    if (!group) return;
+    setStoryIndex(currentStoryIndex => {
+      setGroupIndex(currentGroupIndex => {
+        const currentGroup = viewerGroups[currentGroupIndex];
+        const currentStoriesLength = currentGroup?.stories?.length || 0;
 
-    if (storyIndex < group.stories.length - 1) {
-      setStoryIndex(prev => prev + 1);
-      return;
-    }
+        if (currentStoryIndex < currentStoriesLength - 1) {
+          return currentGroupIndex;
+        }
 
-    if (groupIndex < groups.length - 1) {
-      setGroupIndex(prev => prev + 1);
-      setStoryIndex(0);
-      return;
-    }
+        if (currentGroupIndex < viewerGroups.length - 1) {
+          return currentGroupIndex + 1;
+        }
 
-    onClose();
-  }, [group, groupIndex, groups.length, onClose, storyIndex]);
+        closeRef.current();
+        return currentGroupIndex;
+      });
+
+      const currentGroup = viewerGroups[groupIndex];
+      const currentStoriesLength = currentGroup?.stories?.length || 0;
+
+      if (currentStoryIndex < currentStoriesLength - 1) {
+        return currentStoryIndex + 1;
+      }
+
+      return 0;
+    });
+  }, [groupIndex, viewerGroups]);
 
   const handleStoryEnded = useCallback(() => {
     if (nextTriggeredRef.current) return;
@@ -134,21 +167,11 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   }, [goNext]);
 
   useEffect(() => {
-    setGroupIndex(initialGroupIndex);
-    setStoryIndex(0);
-    setProgress(0);
+    if (!story?.id) return;
+
     nextTriggeredRef.current = false;
-  }, [initialGroupIndex]);
-
-  useEffect(() => {
-    if (!group?.stories?.length) return;
-
-    if (storyIndex > group.stories.length - 1) {
-      setStoryIndex(0);
-      setProgress(0);
-      nextTriggeredRef.current = false;
-    }
-  }, [group?.stories?.length, storyIndex]);
+    setProgress(0);
+  }, [story?.id]);
 
   useEffect(() => {
     if (!story?.id) return;
@@ -157,9 +180,6 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   useEffect(() => {
     if (!story?.id) return;
-
-    nextTriggeredRef.current = false;
-    setProgress(0);
 
     if (story.media_type === 'video') {
       return;
@@ -182,7 +202,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') closeRef.current();
       if (event.key === 'ArrowRight') goNext();
       if (event.key === 'ArrowLeft') goPrev();
     };
@@ -194,14 +214,14 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [goNext, goPrev, onClose]);
+  }, [goNext, goPrev]);
 
   const avatar = useMemo(() => getStoryAvatar(group?.physio), [group?.physio]);
 
   const handleAction = async () => {
     if (!story) return;
     await storiesService.trackClick(story.id, user?.id);
-    onClose();
+    closeRef.current();
   };
 
   const handleShare = async () => {
