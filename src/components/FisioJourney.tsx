@@ -849,7 +849,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               ))}
             </div>
 
-            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
+            <div className="w-full max-w-full min-w-0 overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-black text-violet-800">Linha do tempo clínica</h2>
@@ -863,7 +863,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                   <p className="mt-1 text-sm font-bold text-slate-700">Conforme houver diário, exercícios, documentos e evoluções, tudo aparecerá aqui.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="w-full max-w-full min-w-0 space-y-4 overflow-hidden">
                   {timeline.map((item, index) => {
                     const cardContent = (
                       <>
@@ -872,29 +872,29 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                           <p className="text-xs font-extrabold text-slate-700">{formatDateBR(new Date(item.date).toISOString())}</p>
                         </div>
                         <h3 className="mt-1 text-base font-black text-slate-950">{item.title}</h3>
-                        <p className="mt-1 text-sm font-bold leading-relaxed text-slate-800">{item.description}</p>
+                        <p className="mt-1 max-w-full break-words text-sm font-bold leading-relaxed text-slate-800 [overflow-wrap:anywhere]">{item.description}</p>
                         {item.href && <p className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">{item.actionLabel || 'Ver detalhes'} <ArrowRight size={14} /></p>}
                       </>
                     );
 
                     return (
-                      <div key={`${item.type}-${item.date}-${index}`} className="relative flex gap-4">
+                      <div key={`${item.type}-${item.date}-${index}`} className="relative grid w-full max-w-full min-w-0 grid-cols-[44px_minmax(0,1fr)] gap-4 overflow-hidden">
                         <div className="flex flex-col items-center">
                           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-700 text-white shadow-sm"><item.icon size={20} /></div>
                           {index < timeline.length - 1 && <div className="mt-2 h-full min-h-8 w-px bg-purple-100" />}
                         </div>
                         {item.href ? (
                           item.external ? (
-                            <a href={item.href} target="_blank" rel="noreferrer" className="flex-1 rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
+                            <a href={item.href} target="_blank" rel="noreferrer" className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
                               {cardContent}
                             </a>
                           ) : (
-                            <Link to={item.href} className="flex-1 rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
+                            <Link to={item.href} className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-violet-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md">
                               {cardContent}
                             </Link>
                           )
                         ) : (
-                          <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                          <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                             {cardContent}
                           </div>
                         )}
