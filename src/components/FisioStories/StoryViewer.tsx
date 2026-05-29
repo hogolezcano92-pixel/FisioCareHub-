@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Calendar, User, MessageCircle, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -24,7 +24,15 @@ const getInitials = (name?: string | null) =>
 
 const isClient = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
-const StoryMedia = ({ story, onEnded }: { story: FisioStory; onEnded: () => void }) => {
+const StoryMedia = ({
+  story,
+  onEnded,
+  onProgress,
+}: {
+  story: FisioStory;
+  onEnded: () => void;
+  onProgress: (value: number) => void;
+}) => {
   if (story.media_type === 'video') {
     return (
       <video
@@ -33,8 +41,16 @@ const StoryMedia = ({ story, onEnded }: { story: FisioStory; onEnded: () => void
         controls={false}
         autoPlay
         playsInline
-        muted={false}
+        muted
+        onLoadedMetadata={() => onProgress(0)}
+        onTimeUpdate={(event) => {
+          const video = event.currentTarget;
+          if (!video.duration || !Number.isFinite(video.duration)) return;
+
+          onProgress(Math.min((video.currentTime / video.duration) * 100, 100));
+        }}
         onEnded={onEnded}
+        onError={onEnded}
         className="h-full w-full object-contain bg-black"
       />
     );
@@ -47,6 +63,7 @@ const StoryMedia = ({ story, onEnded }: { story: FisioStory; onEnded: () => void
       alt={story.title || 'FisioStory'}
       className="h-full w-full object-contain bg-black"
       referrerPolicy="no-referrer"
+      onError={onEnded}
     />
   );
 };
@@ -56,6 +73,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const nextTriggeredRef = useRef(false);
 
   const group = groups[groupIndex];
   const story = group?.stories?.[storyIndex];
@@ -74,6 +92,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
   }, [user]);
 
   const goPrev = useCallback(() => {
+    nextTriggeredRef.current = false;
     setProgress(0);
 
     if (storyIndex > 0) {
@@ -107,18 +126,39 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
     onClose();
   }, [group, groupIndex, groups.length, onClose, storyIndex]);
 
+  const handleStoryEnded = useCallback(() => {
+    if (nextTriggeredRef.current) return;
+
+    nextTriggeredRef.current = true;
+    goNext();
+  }, [goNext]);
+
+  useEffect(() => {
+    setGroupIndex(initialGroupIndex);
+    setStoryIndex(0);
+    setProgress(0);
+    nextTriggeredRef.current = false;
+  }, [initialGroupIndex]);
+
+  useEffect(() => {
+    if (!group?.stories?.length) return;
+
+    if (storyIndex > group.stories.length - 1) {
+      setStoryIndex(0);
+      setProgress(0);
+      nextTriggeredRef.current = false;
+    }
+  }, [group?.stories?.length, storyIndex]);
+
   useEffect(() => {
     if (!story?.id) return;
     void storiesService.trackView(story.id, user?.id);
   }, [story?.id, user?.id]);
 
   useEffect(() => {
-    setStoryIndex(0);
-  }, [groupIndex]);
-
-  useEffect(() => {
     if (!story?.id) return;
 
+    nextTriggeredRef.current = false;
     setProgress(0);
 
     if (story.media_type === 'video') {
@@ -130,7 +170,8 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
       const nextProgress = Math.min(((Date.now() - startedAt) / STORY_DURATION_MS) * 100, 100);
       setProgress(nextProgress);
 
-      if (nextProgress >= 100) {
+      if (nextProgress >= 100 && !nextTriggeredRef.current) {
+        nextTriggeredRef.current = true;
         window.clearInterval(interval);
         goNext();
       }
@@ -205,7 +246,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
                   index < storyIndex
                     ? '100%'
                     : index === storyIndex
-                      ? `${story.media_type === 'video' ? 100 : progress}%`
+                      ? `${progress}%`
                       : '0%';
 
                 return (
@@ -236,7 +277,7 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose }: Stor
             </div>
           </div>
 
-          <StoryMedia story={story} onEnded={goNext} />
+          <StoryMedia story={story} onEnded={handleStoryEnded} onProgress={setProgress} />
 
           <button
             type="button"
