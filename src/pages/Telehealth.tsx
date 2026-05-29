@@ -1,43 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { 
-  Video, 
-  Mic, 
-  MicOff, 
-  VideoOff, 
-  PhoneOff, 
-  MessageSquare, 
-  Users, 
-  Settings, 
-  Maximize,
+import {
   ArrowLeft,
   Loader2,
-  ShieldCheck
+  MessageSquare,
+  PhoneOff,
+  ShieldCheck,
+  Video,
 } from 'lucide-react';
-import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 
 export default function Telehealth() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [room, setRoom] = useState<string>('');
+
+  const [room, setRoom] = useState('');
   const [callId, setCallId] = useState<string | null>(null);
   const [title, setTitle] = useState('Teleconsulta FisioCareHub');
-  const [subtitle, setSubtitle] = useState('Criptografia de ponta a ponta ativa');
+  const [subtitle, setSubtitle] = useState('Sala protegida do FisioCareHub');
   const [returnTo, setReturnTo] = useState('/chat');
-  const [isJoined, setIsJoined] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [isJoined, setIsJoined] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const roomName = params.get('room') || 'FisioCare-Geral';
+
+    const roomName = params.get('room') || 'FisioCareHub-Geral';
     const call = params.get('callId');
     const friendlyTitle = params.get('title') || 'Teleconsulta FisioCareHub';
-    const friendlySubtitle = params.get('subtitle') || 'Criptografia de ponta a ponta ativa';
+    const friendlySubtitle = params.get('subtitle') || 'Sala protegida do FisioCareHub';
     const backRoute = params.get('returnTo') || '/chat';
 
     setRoom(roomName);
@@ -45,18 +38,58 @@ export default function Telehealth() {
     setTitle(friendlyTitle);
     setSubtitle(friendlySubtitle);
     setReturnTo(backRoute);
-    
-    // Simulate loading/joining
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
 
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => {
+      setLoading(false);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
   }, [location.search]);
 
-  const handleJoin = () => {
+  const safeRoom = useMemo(() => {
+    const normalized = room
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 90);
+
+    return normalized || 'FisioCareHub-Geral';
+  }, [room]);
+
+  const jitsiUrl = useMemo(() => {
+    const config = [
+      'prejoinPageEnabled=false',
+      'startWithAudioMuted=false',
+      'startWithVideoMuted=false',
+      'disableDeepLinking=true',
+    ].join('&config.');
+
+    const interfaceConfig = [
+      'SHOW_JITSI_WATERMARK=false',
+      'SHOW_WATERMARK_FOR_GUESTS=false',
+      'MOBILE_APP_PROMO=false',
+      'HIDE_INVITE_MORE_HEADER=true',
+    ].join('&interfaceConfig.');
+
+    return `https://meet.jit.si/${safeRoom}#config.${config}&interfaceConfig.${interfaceConfig}`;
+  }, [safeRoom]);
+
+  const handleJoin = async () => {
     setIsJoined(true);
-    toast.success('Você entrou na sala de atendimento!');
+
+    if (callId) {
+      const { error } = await supabase
+        .from('video_calls')
+        .update({ status: 'accepted' })
+        .eq('id', callId);
+
+      if (error) {
+        console.warn('[VideoCall] Não foi possível marcar a chamada como aceita:', error);
+      }
+    }
+
+    toast.success('Abrindo câmera e microfone...');
   };
 
   const handleLeave = async () => {
@@ -83,7 +116,9 @@ export default function Telehealth() {
         </div>
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="animate-spin text-blue-500" size={24} />
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Preparando sala segura...</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+            Preparando sala segura...
+          </p>
         </div>
       </div>
     );
@@ -91,172 +126,114 @@ export default function Telehealth() {
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col overflow-hidden relative">
-      {/* Header */}
-      <header className="px-6 py-4 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between z-20">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(returnTo)} className="p-2 text-slate-400 hover:text-white transition-colors">
+      <header className="px-4 md:px-6 py-3 md:py-4 bg-slate-900/85 backdrop-blur-xl border-b border-white/10 flex items-center justify-between z-20">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => navigate(returnTo)}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-2xl hover:bg-white/10"
+            aria-label="Voltar ao chat"
+          >
             <ArrowLeft size={20} />
           </button>
-          <div>
-            <h2 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
-              {title}
-              <span className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+
+          <div className="min-w-0">
+            <h2 className="text-xs md:text-sm font-black text-white tracking-tight flex items-center gap-2 truncate">
+              <span className="truncate">{title}</span>
+              <span className="hidden sm:flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-400/15">
                 <ShieldCheck size={10} className="text-emerald-400" />
                 <span className="text-[7px] text-emerald-400 font-black uppercase tracking-widest">Protegido</span>
               </span>
             </h2>
-            <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">{subtitle}</p>
+            <p className="text-[8px] md:text-[9px] text-slate-500 uppercase font-bold tracking-widest mt-0.5 truncate">
+              {subtitle}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2">
-            <Users size={14} className="text-slate-500" />
-            <span className="text-xs font-bold text-white">2</span>
-          </div>
-        </div>
+
+        <button
+          onClick={handleLeave}
+          className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest border border-red-400/20 flex items-center gap-2"
+        >
+          <PhoneOff size={16} />
+          <span className="hidden sm:inline">Encerrar</span>
+        </button>
       </header>
 
-      {/* Video Content */}
-      <main className="flex-1 relative bg-slate-900 flex items-center justify-center p-4">
+      <main className="flex-1 relative bg-slate-950 overflow-hidden">
         {!isJoined ? (
-          <div className="max-w-md w-full glass-card p-10 text-center space-y-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
-            <div className="relative mx-auto w-40 h-40">
-              <div className="absolute inset-0 bg-blue-600/20 rounded-full animate-ping opacity-25"></div>
-              <div className="relative w-full h-full bg-slate-800 rounded-full flex items-center justify-center border-4 border-slate-700 shadow-inner overflow-hidden">
-                {isVideoOn ? (
-                  <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=200" className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
-                ) : (
-                  <VideoOff size={48} className="text-slate-600" />
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="text-2xl font-black text-white tracking-tight">Pronto para começar?</h3>
-              <p className="text-slate-400 text-xs font-medium leading-relaxed">{subtitle}. Verifique sua câmera e microfone antes de entrar.</p>
-            </div>
-
-            <div className="flex justify-center gap-4">
-              <button 
-                onClick={() => setIsMicOn(!isMicOn)}
-                className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border",
-                  isMicOn ? "bg-white/5 text-slate-300 border-white/10" : "bg-red-500/10 text-red-400 border-red-500/20"
-                )}
-              >
-                {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
-              </button>
-              <button 
-                onClick={() => setIsVideoOn(!isVideoOn)}
-                className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border",
-                  isVideoOn ? "bg-white/5 text-slate-300 border-white/10" : "bg-red-500/10 text-red-400 border-red-500/20"
-                )}
-              >
-                {isVideoOn ? <Video size={20} /> : <VideoOff size={20} />}
-              </button>
-            </div>
-
-            <button 
-              onClick={handleJoin}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/40 transition-all flex items-center justify-center gap-2 group"
+          <div className="h-full flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="max-w-md w-full rounded-[2.25rem] border border-white/10 bg-slate-900/80 p-7 md:p-9 text-center shadow-2xl shadow-blue-950/30 backdrop-blur-xl"
             >
-              Entrar Agora
-              <ArrowLeft className="rotate-180 group-hover:translate-x-1 transition-transform" size={16} />
-            </button>
+              <div className="relative mx-auto mb-7 flex h-28 w-28 items-center justify-center rounded-[2rem] border border-blue-300/20 bg-blue-500/15 text-blue-200 shadow-xl shadow-blue-950/30">
+                <div className="absolute inset-0 rounded-[2rem] bg-blue-400/20 animate-ping opacity-20" />
+                <Video size={44} className="relative" />
+              </div>
+
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-blue-300">
+                Sala de vídeo
+              </p>
+              <h3 className="text-2xl font-black text-white tracking-tight">
+                Pronto para entrar?
+              </h3>
+              <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-400">
+                Ao entrar, o navegador vai pedir permissão para usar câmera e microfone. Os dois participantes entram na mesma sala protegida.
+              </p>
+
+              <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sala</p>
+                <p className="mt-1 break-all text-xs font-bold text-slate-300">{safeRoom}</p>
+              </div>
+
+              <button
+                onClick={handleJoin}
+                className="mt-7 w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/40 transition-all flex items-center justify-center gap-2"
+              >
+                <Video size={18} />
+                Entrar na videochamada
+              </button>
+
+              <button
+                onClick={() => navigate(returnTo)}
+                className="mt-3 w-full py-3 text-slate-400 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+              >
+                Voltar ao chat
+              </button>
+            </motion.div>
           </div>
         ) : (
-          <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* User Video (Small) */}
-            <div className="relative bg-slate-800 rounded-3xl overflow-hidden border border-white/5 group shadow-2xl">
-              <div className="absolute top-4 left-4 z-10">
-                <span className="px-3 py-1 bg-slate-900/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest border border-white/10">Você</span>
-              </div>
-              {isVideoOn ? (
-                <img 
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070" 
-                  className="w-full h-full object-cover" 
-                  alt="My Video" 
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                  <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center border-4 border-slate-700">
-                    <VideoOff size={32} className="text-slate-600" />
-                  </div>
-                </div>
-              )}
-              {!isMicOn && (
-                <div className="absolute bottom-4 right-4 bg-red-500 p-2 rounded-xl shadow-lg">
-                  <MicOff size={14} className="text-white" />
-                </div>
-              )}
-            </div>
-
-            {/* Remote Video (Large) */}
-            <div className="relative bg-[#0F172A] rounded-3xl overflow-hidden border border-white/5 group shadow-2xl">
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                <span className="px-3 py-1 bg-blue-600/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest border border-blue-500/30">Outro participante</span>
-              </div>
-              <img 
-                src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=2070" 
-                className="w-full h-full object-cover" 
-                alt="Physio Video" 
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute bottom-4 right-4">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/40"></div>
-              </div>
-            </div>
+          <div className="h-full w-full bg-slate-950">
+            <iframe
+              title="Videochamada FisioCareHub"
+              src={jitsiUrl}
+              allow="camera; microphone; fullscreen; display-capture; autoplay"
+              className="h-full w-full border-0"
+            />
           </div>
         )}
       </main>
 
-      {/* Controls Footer */}
-      <footer className="h-24 bg-slate-900/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-center px-6 z-20">
-        <div className="flex items-center gap-3 sm:gap-6">
-          <button 
-            onClick={() => setIsMicOn(!isMicOn)}
-            className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border shadow-lg",
-              isMicOn ? "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10" : "bg-red-500/10 text-red-500 border-red-500/20"
-            )}
+      {isJoined && (
+        <footer className="bg-slate-900/90 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex items-center justify-center gap-3">
+          <button
+            onClick={() => navigate(returnTo)}
+            className="h-11 px-4 rounded-2xl bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest"
           >
-            {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
-          </button>
-          
-          <button 
-            onClick={() => setIsVideoOn(!isVideoOn)}
-            className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border shadow-lg",
-              isVideoOn ? "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10" : "bg-red-500/10 text-red-500 border-red-500/20"
-            )}
-          >
-            {isVideoOn ? <Video size={20} /> : <VideoOff size={20} />}
+            <MessageSquare size={16} />
+            Chat
           </button>
 
-          <button 
+          <button
             onClick={handleLeave}
-            className="w-16 h-12 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all shadow-xl shadow-red-900/30 border border-red-500/20"
+            className="h-11 px-5 rounded-2xl bg-red-600 text-white border border-red-400/20 hover:bg-red-700 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-xl shadow-red-950/30"
           >
-            <PhoneOff size={24} />
+            <PhoneOff size={18} />
+            Encerrar
           </button>
-
-          <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
-
-          <button className="w-12 h-12 bg-white/5 text-slate-400 hover:text-white rounded-2xl flex items-center justify-center transition-all border border-transparent hover:border-white/10 hidden sm:flex">
-            <MessageSquare size={20} />
-          </button>
-          
-          <button className="w-12 h-12 bg-white/5 text-slate-400 hover:text-white rounded-2xl flex items-center justify-center transition-all border border-transparent hover:border-white/10 hidden sm:flex">
-            <Maximize size={20} />
-          </button>
-          
-          <button className="w-12 h-12 bg-white/5 text-slate-400 hover:text-white rounded-2xl flex items-center justify-center transition-all border border-transparent hover:border-white/10">
-            <Settings size={20} />
-          </button>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }
