@@ -53,6 +53,11 @@ export default function Login() {
     }
   };
 
+  const keepPremiumSplashVisible = () =>
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 5000);
+    });
+
   useEffect(() => {
     if (!authLoading && user && !isAuthenticating) {
       // If already logged in, redirect based on role
@@ -235,19 +240,19 @@ export default function Login() {
       const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
       const isApproved = profileData?.status_aprovacao === 'aprovado';
 
+      let redirectTarget = '/dashboard';
+
       if (isPhysio && !isApproved) {
-        clearPendingRedirect();
-        navigate('/aguardando-aprovacao', { replace: true });
+        redirectTarget = '/aguardando-aprovacao';
       } else if (fullRedirect && fullRedirect !== '/dashboard') {
-        clearPendingRedirect();
-        navigate(fullRedirect, { replace: true });
+        redirectTarget = fullRedirect;
       } else if (isAdmin) {
-        clearPendingRedirect();
-        navigate('/admin', { replace: true });
-      } else {
-        clearPendingRedirect();
-        navigate('/dashboard', { replace: true });
+        redirectTarget = '/admin';
       }
+
+      clearPendingRedirect();
+      await keepPremiumSplashVisible();
+      navigate(redirectTarget, { replace: true });
     } catch (err: any) {
       console.error("Erro no login:", err);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
