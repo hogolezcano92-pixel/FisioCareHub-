@@ -17,11 +17,16 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 export default function Telehealth() {
   const location = useLocation();
   const navigate = useNavigate();
   const [room, setRoom] = useState<string>('');
+  const [callId, setCallId] = useState<string | null>(null);
+  const [title, setTitle] = useState('Teleconsulta FisioCareHub');
+  const [subtitle, setSubtitle] = useState('Criptografia de ponta a ponta ativa');
+  const [returnTo, setReturnTo] = useState('/chat');
   const [isJoined, setIsJoined] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -30,7 +35,16 @@ export default function Telehealth() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roomName = params.get('room') || 'FisioCare-Geral';
+    const call = params.get('callId');
+    const friendlyTitle = params.get('title') || 'Teleconsulta FisioCareHub';
+    const friendlySubtitle = params.get('subtitle') || 'Criptografia de ponta a ponta ativa';
+    const backRoute = params.get('returnTo') || '/chat';
+
     setRoom(roomName);
+    setCallId(call);
+    setTitle(friendlyTitle);
+    setSubtitle(friendlySubtitle);
+    setReturnTo(backRoute);
     
     // Simulate loading/joining
     const timer = setTimeout(() => {
@@ -45,9 +59,20 @@ export default function Telehealth() {
     toast.success('Você entrou na sala de atendimento!');
   };
 
-  const handleLeave = () => {
+  const handleLeave = async () => {
+    if (callId) {
+      const { error } = await supabase
+        .from('video_calls')
+        .update({ status: 'ended' })
+        .eq('id', callId);
+
+      if (error) {
+        console.warn('[VideoCall] Não foi possível finalizar o registro da chamada:', error);
+      }
+    }
+
     toast.info('Atendimento encerrado.');
-    navigate('/chat');
+    navigate(returnTo);
   };
 
   if (loading) {
@@ -69,18 +94,18 @@ export default function Telehealth() {
       {/* Header */}
       <header className="px-6 py-4 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => navigate(returnTo)} className="p-2 text-slate-400 hover:text-white transition-colors">
             <ArrowLeft size={20} />
           </button>
           <div>
             <h2 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
-              Teleconsulta: {room}
+              {title}
               <span className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                 <ShieldCheck size={10} className="text-emerald-400" />
                 <span className="text-[7px] text-emerald-400 font-black uppercase tracking-widest">Protegido</span>
               </span>
             </h2>
-            <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">Criptografia de ponta a ponta ativa</p>
+            <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">{subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -108,7 +133,7 @@ export default function Telehealth() {
             
             <div className="space-y-3">
               <h3 className="text-2xl font-black text-white tracking-tight">Pronto para começar?</h3>
-              <p className="text-slate-400 text-xs font-medium leading-relaxed">Verifique sua câmera e microfone antes de entrar na sala de atendimento.</p>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed">{subtitle}. Verifique sua câmera e microfone antes de entrar.</p>
             </div>
 
             <div className="flex justify-center gap-4">
@@ -171,7 +196,7 @@ export default function Telehealth() {
             {/* Remote Video (Large) */}
             <div className="relative bg-[#0F172A] rounded-3xl overflow-hidden border border-white/5 group shadow-2xl">
               <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                <span className="px-3 py-1 bg-blue-600/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest border border-blue-500/30">Dra. Amanda Oliveira</span>
+                <span className="px-3 py-1 bg-blue-600/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest border border-blue-500/30">Outro participante</span>
               </div>
               <img 
                 src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=2070" 
