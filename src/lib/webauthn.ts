@@ -22,6 +22,24 @@ function getFriendlyWebAuthnError(err: any) {
   return message || 'Erro inesperado na biometria.';
 }
 
+async function readJsonResponse<T = any>(response: Response, fallbackMessage: string): Promise<T> {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.toLowerCase().includes('application/json')) {
+    const text = await response.text().catch(() => '');
+
+    if (text.toLowerCase().includes('<!doctype')) {
+      throw new Error(
+        'A rota de biometria retornou HTML em vez de JSON. Verifique o vercel.json para não redirecionar /api para index.html.'
+      );
+    }
+
+    throw new Error(fallbackMessage);
+  }
+
+  return await response.json();
+}
+
 export async function registerBiometrics() {
   try {
     const swa = await loadSwa();
@@ -38,11 +56,11 @@ export async function registerBiometrics() {
     });
 
     if (!optionsRes.ok) {
-      const err = await optionsRes.json().catch(() => null);
+      const err = await readJsonResponse(optionsRes, 'Erro ao obter opções de registro').catch(() => null);
       throw new Error(err?.error || 'Erro ao obter opções de registro');
     }
 
-    const options = await optionsRes.json();
+    const options = await readJsonResponse(optionsRes, 'Erro ao obter opções de registro');
 
     /**
      * Segurança extra para Safari/iOS:
@@ -68,11 +86,11 @@ export async function registerBiometrics() {
     });
 
     if (!verifyRes.ok) {
-      const err = await verifyRes.json().catch(() => null);
+      const err = await readJsonResponse(verifyRes, 'Erro ao verificar registro biométrico').catch(() => null);
       throw new Error(err?.error || 'Erro ao verificar registro biométrico');
     }
 
-    return await verifyRes.json();
+    return await readJsonResponse(verifyRes, 'Erro ao verificar registro biométrico');
   } catch (err: any) {
     console.error('WebAuthn Error:', err);
     throw new Error(getFriendlyWebAuthnError(err));
@@ -102,11 +120,11 @@ export async function loginWithBiometrics(email: string) {
     }
 
     if (!optionsRes.ok) {
-      const err = await optionsRes.json().catch(() => null);
+      const err = await readJsonResponse(optionsRes, 'Erro ao obter opções de login').catch(() => null);
       throw new Error(err?.error || 'Erro ao obter opções de login');
     }
 
-    const options = await optionsRes.json();
+    const options = await readJsonResponse(optionsRes, 'Erro ao obter opções de login');
 
     if (options?.rpId) {
       delete options.rpId;
@@ -123,11 +141,11 @@ export async function loginWithBiometrics(email: string) {
     });
 
     if (!verifyRes.ok) {
-      const err = await verifyRes.json().catch(() => null);
+      const err = await readJsonResponse(verifyRes, 'Erro na verificação biométrica').catch(() => null);
       throw new Error(err?.error || 'Erro na verificação biométrica');
     }
 
-    const verificationResult = await verifyRes.json();
+    const verificationResult = await readJsonResponse(verifyRes, 'Erro na verificação biométrica');
 
     if (verificationResult.verified && verificationResult.magicLink) {
       window.location.href = verificationResult.magicLink;
