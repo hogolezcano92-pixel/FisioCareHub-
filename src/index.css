@@ -809,3 +809,233 @@ input:-webkit-autofill:active {
   }
 }
 
+
+/* =========================================================
+   FisioCareHub — refinamento v3 do TEMA CLARO
+   Objetivo: corrigir áreas que ainda usavam fundos escuros
+   fixos/arbitrários sem tocar no dark mode nem na lógica.
+   ========================================================= */
+:root[data-theme="light"] :is(
+  [class*="bg-[#060F24]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#101F45]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"],
+  [class*="from-[#060F24]"],
+  [class*="from-[#0A1931]"],
+  [class*="via-[#0A1931]"],
+  [class*="to-[#101F45]"]
+) {
+  background-color: #FAF8FF !important;
+  background-image: none !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#0B1120]"]
+):not(header):not(aside):not(nav) {
+  box-shadow: 0 18px 45px -32px rgba(109, 40, 217, 0.38) !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="bg-[#060F24]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#101F45]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"]
+) :is(.text-white, .text-white\/95, .text-white\/90, .text-white\/80, .text-white\/70, .text-white\/65, .text-white\/60, .text-white\/55, .text-white\/50, .text-slate-50, .text-slate-100, .text-slate-200) {
+  color: #0F172A !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="bg-[#060F24]"],
+  [class*="bg-[#071230]"],
+  [class*="bg-[#0A1931]"],
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#101F45]"],
+  [class*="bg-[#0B0F19]"],
+  [class*="bg-[#0a0f1e]"],
+  [class*="bg-[#0f172a]"]
+) :is(.text-white\/45, .text-white\/40, .text-white\/35, .text-white\/30, .text-slate-300, .text-slate-400, .text-gray-300, .text-gray-400) {
+  color: #334155 !important;
+}
+
+/* Superfícies translúcidas que ainda pareciam invisíveis no claro */
+:root[data-theme="light"] :is(
+  [class*="bg-white/5"],
+  [class*="bg-white/10"],
+  [class*="bg-white/15"],
+  [class*="bg-white/[0.08]"],
+  [class*="bg-black/20"],
+  [class*="bg-black/30"],
+  [class*="bg-black/40"],
+  [class*="bg-black/50"],
+  [class*="bg-slate-900/"],
+  [class*="bg-slate-950/"]
+) {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="border-white/5"],
+  [class*="border-white/10"],
+  [class*="border-white/15"],
+  [class*="border-white/20"],
+  [class*="border-white/[0.08]"]
+) {
+  border-color: #DDD6FE !important;
+}
+
+/* Mantém contraste de textos secundários que usavam opacidade branca */
+:root[data-theme="light"] :is(
+  .text-white\/95,
+  .text-white\/90,
+  .text-white\/80,
+  .text-white\/75,
+  .text-white\/70,
+  .text-white\/65,
+  .text-white\/60,
+  .text-white\/55,
+  .text-white\/50
+) {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] :is(
+  .text-white\/45,
+  .text-white\/40,
+  .text-white\/35,
+  .text-white\/30,
+  .text-white\/25,
+  .text-white\/20
+) {
+  color: #475569 !important;
+}
+
+/* Headers e cards com backdrop no claro ficam nítidos, sem sumir no fundo */
+:root[data-theme="light"] :is(header, .admin-header, [class*="backdrop-blur"]) {
+  border-color: #DDD6FE !important;
+}
+
+:root[data-theme="light"] header:not([class*="bg-gradient"]),
+:root[data-theme="light"] .admin-header {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #0F172A !important;
+}
+
+/* Botões, badges e ícones sobre fundos coloridos continuam brancos */
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-[#7B2CBF]"],
+  [class*="bg-[#8A2BE2]"],
+  [class*="bg-[#9D4EDD]"],
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-blue-7"], [class*="bg-blue-8"], [class*="bg-blue-9"],
+  [class*="bg-indigo-5"], [class*="bg-indigo-6"], [class*="bg-indigo-7"], [class*="bg-indigo-8"], [class*="bg-indigo-9"],
+  [class*="bg-violet-5"], [class*="bg-violet-6"], [class*="bg-violet-7"], [class*="bg-violet-8"], [class*="bg-violet-9"],
+  [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-purple-7"], [class*="bg-purple-8"], [class*="bg-purple-9"],
+  [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-emerald-7"], [class*="bg-emerald-8"], [class*="bg-emerald-9"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-green-8"], [class*="bg-green-9"],
+  [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"], [class*="bg-red-8"], [class*="bg-red-9"],
+  [class*="bg-rose-5"], [class*="bg-rose-6"], [class*="bg-rose-7"], [class*="bg-rose-8"], [class*="bg-rose-9"],
+  [class*="bg-gradient-to"]
+),
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-[#7B2CBF]"],
+  [class*="bg-[#8A2BE2]"],
+  [class*="bg-[#9D4EDD]"],
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-blue-7"], [class*="bg-blue-8"], [class*="bg-blue-9"],
+  [class*="bg-indigo-5"], [class*="bg-indigo-6"], [class*="bg-indigo-7"], [class*="bg-indigo-8"], [class*="bg-indigo-9"],
+  [class*="bg-violet-5"], [class*="bg-violet-6"], [class*="bg-violet-7"], [class*="bg-violet-8"], [class*="bg-violet-9"],
+  [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-purple-7"], [class*="bg-purple-8"], [class*="bg-purple-9"],
+  [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-emerald-7"], [class*="bg-emerald-8"], [class*="bg-emerald-9"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-green-8"], [class*="bg-green-9"],
+  [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"], [class*="bg-red-8"], [class*="bg-red-9"],
+  [class*="bg-rose-5"], [class*="bg-rose-6"], [class*="bg-rose-7"], [class*="bg-rose-8"], [class*="bg-rose-9"],
+  [class*="bg-gradient-to"]
+) * {
+  color: #FFFFFF !important;
+}
+
+/* Cards/linhas de tabela e listas ganham separação no tema claro */
+:root[data-theme="light"] :is(tr, li, article, section) > :is([class*="bg-white/5"], [class*="bg-white/10"], [class*="bg-slate-900/"]) {
+  box-shadow: 0 12px 32px -26px rgba(109, 40, 217, 0.34) !important;
+}
+
+/* Correção de ordem: containers de página que tinham gradiente escuro
+   não devem herdar texto branco no modo claro. */
+:root[data-theme="light"] :is(
+  [class*="from-[#060F24]"],
+  [class*="from-[#0A1931]"],
+  [class*="via-[#0A1931]"],
+  [class*="to-[#101F45]"]
+),
+:root[data-theme="light"] :is(
+  [class*="from-[#060F24]"],
+  [class*="from-[#0A1931]"],
+  [class*="via-[#0A1931]"],
+  [class*="to-[#101F45]"]
+) :is(.text-white, .text-slate-50, .text-slate-100, .text-slate-200, .text-gray-50, .text-gray-100) {
+  color: #0F172A !important;
+}
+
+:root[data-theme="light"] :is(
+  [class*="from-[#060F24]"],
+  [class*="from-[#0A1931]"],
+  [class*="via-[#0A1931]"],
+  [class*="to-[#101F45]"]
+) :is(.text-white\/95, .text-white\/90, .text-white\/80, .text-white\/75, .text-white\/70, .text-white\/65, .text-white\/60, .text-white\/55, .text-white\/50, .text-white\/45, .text-white\/40, .text-slate-300, .text-slate-400, .text-gray-300, .text-gray-400) {
+  color: #334155 !important;
+}
+
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-[#7B2CBF]"],
+  [class*="bg-[#8A2BE2]"],
+  [class*="bg-[#9D4EDD]"],
+  [class*="bg-blue-600"],
+  [class*="bg-blue-700"],
+  [class*="bg-indigo-600"],
+  [class*="bg-violet-600"],
+  [class*="bg-purple-600"],
+  [class*="bg-emerald-600"],
+  [class*="bg-green-600"],
+  [class*="bg-red-600"],
+  [class*="bg-rose-600"]
+),
+:root[data-theme="light"] :is(
+  .btn-primary,
+  .btn-primary-compact,
+  .bg-primary,
+  [class*="bg-[#7B2CBF]"],
+  [class*="bg-[#8A2BE2]"],
+  [class*="bg-[#9D4EDD]"],
+  [class*="bg-blue-600"],
+  [class*="bg-blue-700"],
+  [class*="bg-indigo-600"],
+  [class*="bg-violet-600"],
+  [class*="bg-purple-600"],
+  [class*="bg-emerald-600"],
+  [class*="bg-green-600"],
+  [class*="bg-red-600"],
+  [class*="bg-rose-600"]
+) * {
+  color: #FFFFFF !important;
+}
