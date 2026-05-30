@@ -1039,3 +1039,264 @@ input:-webkit-autofill:active {
 ) * {
   color: #FFFFFF !important;
 }
+
+
+/* =========================================================
+   FisioCareHub — TEMA CLARO v6 REAL
+   Correção cirúrgica: Exames IA + Header fixo mobile
+   Cole este bloco no FINAL do src/index.css
+   Não altera o dark mode.
+   ========================================================= */
+
+/* Variáveis reforçadas do tema claro */
+:root[data-theme="light"],
+html[data-theme="light"],
+body[data-theme="light"],
+html.light,
+body.light {
+  --theme-bg: #FAF8FF;
+  --theme-card: #FFFFFF;
+  --theme-card-hover: #F5F3FF;
+  --theme-border: #DDD6FE;
+  --theme-text: #0F172A;
+  --theme-text-muted: #334155;
+  --field-bg: #FFFFFF;
+  --field-border: #C4B5FD;
+  --field-text: #0F172A;
+  --field-placeholder: #64748B;
+}
+
+/* Corrige fundos escuros arbitrários que ainda aparecem na tela Exames IA */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="bg-[#060F24]"],
+    [class*="bg-[#060f24]"],
+    [class*="bg-[#071230]"],
+    [class*="bg-[#0A1931]"],
+    [class*="bg-[#0a1931]"],
+    [class*="bg-[#0B1120]"],
+    [class*="bg-[#0b1120]"],
+    [class*="bg-[#101F45]"],
+    [class*="bg-[#101f45]"],
+    [class*="bg-[#020617]"],
+    [class*="bg-[#020617]"],
+    [class*="bg-[#0F172A]"],
+    [class*="bg-[#0f172a]"],
+    [class*="from-[#060F24]"],
+    [class*="from-[#060f24]"],
+    [class*="from-[#0A1931]"],
+    [class*="from-[#0a1931]"],
+    [class*="from-[#0B1120]"],
+    [class*="from-[#0b1120]"],
+    [class*="via-[#0A1931]"],
+    [class*="via-[#0a1931]"],
+    [class*="via-[#0B1120]"],
+    [class*="via-[#0b1120]"],
+    [class*="to-[#101F45]"],
+    [class*="to-[#101f45]"],
+    [class*="to-[#020617]"]
+  ) {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 18px 45px -30px rgba(109, 40, 217, 0.38) !important;
+}
+
+/* Corrige gradientes escuros que podem estar segurando a página no dark */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="from-slate-950"],
+    [class*="from-slate-900"],
+    [class*="from-gray-950"],
+    [class*="from-gray-900"],
+    [class*="via-slate-950"],
+    [class*="via-slate-900"],
+    [class*="via-gray-950"],
+    [class*="via-gray-900"],
+    [class*="to-slate-950"],
+    [class*="to-slate-900"],
+    [class*="to-gray-950"],
+    [class*="to-gray-900"]
+  ) {
+  --tw-gradient-from: #FAF8FF var(--tw-gradient-from-position) !important;
+  --tw-gradient-via: #FFFFFF var(--tw-gradient-via-position) !important;
+  --tw-gradient-to: #F5F3FF var(--tw-gradient-to-position) !important;
+}
+
+/* Cards translúcidos da tela Exames IA */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="bg-white/5"],
+    [class*="bg-white/10"],
+    [class*="bg-white/15"],
+    [class*="bg-white/[0.08]"],
+    [class*="bg-slate-900/"],
+    [class*="bg-slate-950/"],
+    [class*="bg-black/20"],
+    [class*="bg-black/30"],
+    [class*="bg-black/40"],
+    [class*="bg-black/50"]
+  ) {
+  background: rgba(255, 255, 255, 0.97) !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 14px 36px -28px rgba(109, 40, 217, 0.42) !important;
+}
+
+/* Textos apagados no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white,
+    .text-white\/95,
+    .text-white\/90,
+    .text-white\/80,
+    .text-white\/75,
+    .text-white\/70,
+    .text-white\/65,
+    .text-white\/60,
+    .text-white\/55,
+    .text-white\/50,
+    .text-slate-50,
+    .text-slate-100,
+    .text-slate-200
+  ) {
+  color: #0F172A !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white\/45,
+    .text-white\/40,
+    .text-white\/35,
+    .text-white\/30,
+    .text-white\/25,
+    .text-white\/20,
+    .text-slate-300,
+    .text-slate-400,
+    .text-slate-500,
+    .text-gray-300,
+    .text-gray-400,
+    .text-gray-500
+  ) {
+  color: #334155 !important;
+}
+
+/* Títulos e subtítulos da área Exames IA */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(h1, h2, h3, h4, h5, h6) {
+  color: #0F172A !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(p, span, label, small) {
+  border-color: #DDD6FE;
+}
+
+/* Área de upload do exame */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="border-dashed"],
+    [class*="border-white/10"],
+    [class*="border-white/15"],
+    [class*="border-white/20"],
+    [class*="border-slate-700"],
+    [class*="border-slate-800"]
+  ) {
+  border-color: #C4B5FD !important;
+}
+
+/* Inputs, select e textarea da tela Exames IA */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input, select, textarea) {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #C4B5FD !important;
+  box-shadow: 0 10px 30px -24px rgba(109, 40, 217, 0.35) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input::placeholder, textarea::placeholder) {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+/* Header fixo mobile no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #0F172A !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 12px 35px -28px rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Botões do header: lua, sino e menu */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #1E293B !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 10px 24px -20px rgba(15, 23, 42, 0.45) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button svg {
+  color: #1E293B !important;
+  stroke: #1E293B !important;
+}
+
+/* Logo no header mais visível no claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header img {
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.18)) saturate(1.12) contrast(1.08);
+}
+
+/* Mantém texto branco somente em botões coloridos/gradientes */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-gradient-to"]
+  ),
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-gradient-to"]
+  ) * {
+  color: #FFFFFF !important;
+}
+
+/* Botões tipo Gerar PDF que usam fundo azul escuro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is([class*="bg-[#082F49]"], [class*="bg-[#0C4A6E]"], [class*="bg-sky-900"], [class*="bg-cyan-900"]) {
+  background-color: #075985 !important;
+  color: #FFFFFF !important;
+  border-color: #0EA5E9 !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is([class*="bg-[#082F49]"], [class*="bg-[#0C4A6E]"], [class*="bg-sky-900"], [class*="bg-cyan-900"]) * {
+  color: #FFFFFF !important;
+}
