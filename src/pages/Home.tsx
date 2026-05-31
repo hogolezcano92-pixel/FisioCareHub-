@@ -831,14 +831,6 @@ export default function Home() {
           stroke: #2563EB !important;
         }
 
-        /* Cards do ecossistema e FisioStore */
-        html:not(.dark) body:not(.dark) .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
-        :root[data-theme="light"] .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
-        html.light .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
-        body.light .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$ {
-          background-color: #FFFFFF !important;
-        }
-
         /* Números grandes decorativos não devem sumir totalmente */
         html:not(.dark) body:not(.dark) .fisio-home .text-white\\/10,
         :root[data-theme="light"] .fisio-home .text-white\\/10,
@@ -863,6 +855,205 @@ export default function Home() {
           color: inherit !important;
         }
       
+
+        /* Ajustes finais apenas para as áreas dos prints no tema claro */
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-title,
+        :root[data-theme="light"] .fisio-home .home-hero-title,
+        html.light .fisio-home .home-hero-title,
+        body.light .fisio-home .home-hero-title {
+          color: #F8FAFC !important;
+          text-shadow: 0 8px 28px rgba(2, 6, 23, 0.7) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-title span:not(.text-transparent),
+        :root[data-theme="light"] .fisio-home .home-hero-title span:not(.text-transparent),
+        html.light .fisio-home .home-hero-title span:not(.text-transparent),
+        body.light .fisio-home .home-hero-title span:not(.text-transparent) {
+          color: #F8FAFC !important;
+          opacity: 1 !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-title .text-transparent,
+        :root[data-theme="light"] .fisio-home .home-hero-title .text-transparent,
+        html.light .fisio-home .home-hero-title .text-transparent,
+        body.light .fisio-home .home-hero-title .text-transparent {
+          color: transparent !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-subtitle,
+        :root[data-theme="light"] .fisio-home .home-hero-subtitle,
+        html.light .fisio-home .home-hero-subtitle,
+        body.light .fisio-home .home-hero-subtitle {
+          color: #E2E8F0 !important;
+          opacity: 1 !important;
+          text-shadow: 0 6px 18px rgba(2, 6, 23, 0.62) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-stats,
+        :root[data-theme="light"] .fisio-home .home-hero-stats,
+        html.light .fisio-home .home-hero-stats,
+        body.light .fisio-home .home-hero-stats {
+          border-color: rgba(191, 219, 254, 0.55) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-stats p:first-child,
+        :root[data-theme="light"] .fisio-home .home-hero-stats p:first-child,
+        html.light .fisio-home .home-hero-stats p:first-child,
+        body.light .fisio-home .home-hero-stats p:first-child {
+          color: #3B82F6 !important;
+          opacity: 1 !important;
+          text-shadow: 0 8px 22px rgba(2, 6, 23, 0.45) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-hero-stats p:last-child,
+        :root[data-theme="light"] .fisio-home .home-hero-stats p:last-child,
+        html.light .fisio-home .home-hero-stats p:last-child,
+        body.light .fisio-home .home-hero-stats p:last-child {
+          color: rgba(226, 232, 240, 0.88) !important;
+          opacity: 1 !important;
+          text-shadow: 0 6px 18px rgba(2, 6, 23, 0.45) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-vip-card,
+        :root[data-theme="light"] .fisio-home .home-vip-card,
+        html.light .fisio-home .home-vip-card,
+        body.light .fisio-home .home-vip-card {
+          background: rgba(255, 255, 255, 0.94) !important;
+          border-color: rgba(196, 181, 253, 0.95) !important;
+          color: #0F172A !important;
+          box-shadow: 0 28px 80px -35px rgba(88, 28, 135, 0.55) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-vip-card :is(p, span, div),
+        :root[data-theme="light"] .fisio-home .home-vip-card :is(p, span, div),
+        html.light .fisio-home .home-vip-card :is(p, span, div),
+        body.light .fisio-home .home-vip-card :is(p, span, div) {
+          color: #0F172A !important;
+          opacity: 1 !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-vip-card .text-blue-400,
+        :root[data-theme="light"] .fisio-home .home-vip-card .text-blue-400,
+        html.light .fisio-home .home-vip-card .text-blue-400,
+        body.light .fisio-home .home-vip-card .text-blue-400 {
+          color: #2563EB !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-vip-card .bg-gradient-to-br,
+        html:not(.dark) body:not(.dark) .fisio-home .home-vip-card .bg-gradient-to-br *,
+        :root[data-theme="light"] .fisio-home .home-vip-card .bg-gradient-to-br,
+        :root[data-theme="light"] .fisio-home .home-vip-card .bg-gradient-to-br *,
+        html.light .fisio-home .home-vip-card .bg-gradient-to-br,
+        html.light .fisio-home .home-vip-card .bg-gradient-to-br *,
+        body.light .fisio-home .home-vip-card .bg-gradient-to-br,
+        body.light .fisio-home .home-vip-card .bg-gradient-to-br * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-stories-section,
+        :root[data-theme="light"] .fisio-home .home-stories-section,
+        html.light .fisio-home .home-stories-section,
+        body.light .fisio-home .home-stories-section {
+          color: #F8FAFC !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-stories-section :is(p, span, h1, h2, h3, h4, h5, h6),
+        :root[data-theme="light"] .fisio-home .home-stories-section :is(p, span, h1, h2, h3, h4, h5, h6),
+        html.light .fisio-home .home-stories-section :is(p, span, h1, h2, h3, h4, h5, h6),
+        body.light .fisio-home .home-stories-section :is(p, span, h1, h2, h3, h4, h5, h6) {
+          color: #F8FAFC !important;
+          opacity: 1 !important;
+          text-shadow: 0 5px 16px rgba(2, 6, 23, 0.5) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-ecosystem-card,
+        :root[data-theme="light"] .fisio-home .home-ecosystem-card,
+        html.light .fisio-home .home-ecosystem-card,
+        body.light .fisio-home .home-ecosystem-card,
+        html:not(.dark) body:not(.dark) .fisio-home .home-store-card,
+        :root[data-theme="light"] .fisio-home .home-store-card,
+        html.light .fisio-home .home-store-card,
+        body.light .fisio-home .home-store-card {
+          background: rgba(255, 255, 255, 0.94) !important;
+          border-color: rgba(196, 181, 253, 0.75) !important;
+          color: #0F172A !important;
+          box-shadow: 0 28px 85px -44px rgba(88, 28, 135, 0.5) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-ecosystem-card :is(h2, h3),
+        :root[data-theme="light"] .fisio-home .home-ecosystem-card :is(h2, h3),
+        html.light .fisio-home .home-ecosystem-card :is(h2, h3),
+        body.light .fisio-home .home-ecosystem-card :is(h2, h3),
+        html:not(.dark) body:not(.dark) .fisio-home .home-store-card h3,
+        :root[data-theme="light"] .fisio-home .home-store-card h3,
+        html.light .fisio-home .home-store-card h3,
+        body.light .fisio-home .home-store-card h3 {
+          color: #0F172A !important;
+          opacity: 1 !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-ecosystem-card p,
+        :root[data-theme="light"] .fisio-home .home-ecosystem-card p,
+        html.light .fisio-home .home-ecosystem-card p,
+        body.light .fisio-home .home-ecosystem-card p,
+        html:not(.dark) body:not(.dark) .fisio-home .home-store-card p,
+        :root[data-theme="light"] .fisio-home .home-store-card p,
+        html.light .fisio-home .home-store-card p,
+        body.light .fisio-home .home-store-card p {
+          color: #475569 !important;
+          opacity: 1 !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-ecosystem-feature,
+        :root[data-theme="light"] .fisio-home .home-ecosystem-feature,
+        html.light .fisio-home .home-ecosystem-feature,
+        body.light .fisio-home .home-ecosystem-feature,
+        html:not(.dark) body:not(.dark) .fisio-home .home-store-item,
+        :root[data-theme="light"] .fisio-home .home-store-item,
+        html.light .fisio-home .home-store-item,
+        body.light .fisio-home .home-store-item {
+          background: #F8F5FF !important;
+          border-color: #DDD6FE !important;
+          color: #0F172A !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-label,
+        :root[data-theme="light"] .fisio-home .home-cta-label,
+        html.light .fisio-home .home-cta-label,
+        body.light .fisio-home .home-cta-label {
+          background: rgba(255, 255, 255, 0.96) !important;
+          border-color: rgba(255, 255, 255, 0.85) !important;
+          color: #2563EB !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-register-button,
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-register-button *,
+        :root[data-theme="light"] .fisio-home .home-cta-register-button,
+        :root[data-theme="light"] .fisio-home .home-cta-register-button *,
+        html.light .fisio-home .home-cta-register-button,
+        html.light .fisio-home .home-cta-register-button *,
+        body.light .fisio-home .home-cta-register-button,
+        body.light .fisio-home .home-cta-register-button * {
+          background: #FFFFFF !important;
+          color: #2563EB !important;
+          stroke: #2563EB !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-login-button,
+        :root[data-theme="light"] .fisio-home .home-cta-login-button,
+        html.light .fisio-home .home-cta-login-button,
+        body.light .fisio-home .home-cta-login-button {
+          background: rgba(15, 23, 42, 0.22) !important;
+          border-color: rgba(255, 255, 255, 0.45) !important;
+          color: #FFFFFF !important;
+        }
+
       `}</style>
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
@@ -885,7 +1076,7 @@ export default function Home() {
             </motion.div>
             
             <div className="space-y-6">
-              <h1 className="text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-gray-100 leading-[0.95] tracking-tighter">
+              <h1 className="home-hero-title text-5xl sm:text-7xl lg:text-[8rem] font-display font-black text-gray-100 leading-[0.95] tracking-tighter">
                 <motion.span 
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -916,7 +1107,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
+                className="home-hero-subtitle text-lg md:text-2xl text-gray-300 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium opacity-90"
               >
                 {t('home.hero.subtitle', 'Conectamos os melhores especialistas em reabilitação domiciliar a pacientes que buscam cuidado personalizado, tecnologia e resultados reais.')}
               </motion.p>
@@ -964,7 +1155,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="flex flex-wrap justify-center lg:justify-start gap-8 pt-10 border-t border-white/10"
+              className="home-hero-stats flex flex-wrap justify-center lg:justify-start gap-8 pt-10 border-t border-white/10"
             >
               <div className="space-y-1">
                 <p className="text-2xl font-black text-white">{t('home.stats.specialists_count', '500+')}</p>
@@ -1054,7 +1245,7 @@ export default function Home() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.8, duration: 1 }}
-            className="absolute bottom-4 left-6 right-6 lg:left-auto lg:right-12 lg:w-[32rem] p-12 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] z-10"
+            className="home-vip-card absolute bottom-4 left-6 right-6 lg:left-auto lg:right-12 lg:w-[32rem] p-12 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] z-10"
           >
             <div className="flex items-center gap-7 mb-8">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl flex-shrink-0 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
@@ -1072,7 +1263,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-20 px-6 lg:px-20 mt-6 mb-10 sm:mt-10 sm:mb-16">
+      <section className="home-stories-section relative z-20 px-6 lg:px-20 mt-6 mb-10 sm:mt-10 sm:mb-16">
         <div className="max-w-7xl mx-auto">
           <StoryRail compact className="max-w-full !shadow-none" />
         </div>
@@ -1469,7 +1660,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.6 }}
-              className="relative overflow-hidden rounded-[3rem] border border-violet-100 bg-white p-8 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-white/[0.06] dark:shadow-blue-950/20 sm:p-10 lg:p-12"
+              className="home-ecosystem-card relative overflow-hidden rounded-[3rem] border border-violet-100 bg-white p-8 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-white/[0.06] dark:shadow-blue-950/20 sm:p-10 lg:p-12"
             >
               <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-100 blur-3xl dark:bg-violet-500/20" />
               <div className="absolute -bottom-20 left-10 h-56 w-56 rounded-full bg-sky-100 blur-3xl dark:bg-sky-500/10" />
@@ -1494,7 +1685,7 @@ export default function Home() {
                     { icon: Activity, title: 'Exercícios e cuidado', text: 'Orientações para continuar o cuidado fora da sessão.' },
                     { icon: ShoppingBag, title: 'FisioStore integrada', text: 'Produtos que complementam a reabilitação e o autocuidado.' },
                   ].map((item) => (
-                    <div key={item.title} className="rounded-[1.75rem] border border-violet-100 bg-violet-50/60 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:bg-white hover:shadow-xl hover:shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.05] dark:hover:border-sky-400/30 dark:hover:bg-white/[0.08]">
+                    <div key={item.title} className="home-ecosystem-feature rounded-[1.75rem] border border-violet-100 bg-violet-50/60 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:bg-white hover:shadow-xl hover:shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.05] dark:hover:border-sky-400/30 dark:hover:bg-white/[0.08]">
                       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-violet-700 shadow-sm shadow-violet-100 dark:bg-slate-900 dark:text-sky-300 dark:shadow-none">
                         <item.icon size={22} />
                       </div>
@@ -1511,7 +1702,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.6, delay: 0.08 }}
-              className="relative overflow-hidden rounded-[3rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-violet-50 p-8 shadow-2xl shadow-sky-100/70 dark:border-white/10 dark:from-slate-950/80 dark:via-slate-900/70 dark:to-indigo-950/60 dark:shadow-blue-950/20 sm:p-10 lg:p-12"
+              className="home-store-card relative overflow-hidden rounded-[3rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-violet-50 p-8 shadow-2xl shadow-sky-100/70 dark:border-white/10 dark:from-slate-950/80 dark:via-slate-900/70 dark:to-indigo-950/60 dark:shadow-blue-950/20 sm:p-10 lg:p-12"
             >
               <div className="absolute right-8 top-8 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-sky-700 dark:border-white/10 dark:bg-white/10 dark:text-sky-200">
                 FisioStore
@@ -1532,7 +1723,7 @@ export default function Home() {
 
                 <div className="grid gap-3">
                   {['Faixas elásticas e minibands', 'Bolas, steps e halteres', 'Kinesio tape e acessórios', 'Apoios para postura e conforto'].map((item) => (
-                    <div key={item} className="flex items-center gap-3 rounded-2xl border border-white bg-white/80 p-4 text-sm font-black text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200">
+                    <div key={item} className="home-store-item flex items-center gap-3 rounded-2xl border border-white bg-white/80 p-4 text-sm font-black text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200">
                       <CheckCircle2 className="text-emerald-500 dark:text-emerald-300" size={18} />
                       {item}
                     </div>
@@ -1567,7 +1758,7 @@ export default function Home() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                className="inline-block px-6 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.4em]"
+                className="home-cta-label inline-block px-6 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.4em]"
               >
                 {t('home.cta.label', 'Pronto para a Mudança?')}
               </motion.div>
@@ -1581,13 +1772,13 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
                 <Link
                   to="/register"
-                  className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-xl shadow-white/10 active:scale-95"
+                  className="home-cta-register-button px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-base hover:bg-blue-50 transition-all shadow-xl shadow-white/10 active:scale-95"
                 >
                   {t('nav.register')}
                 </Link>
                 <Link
                   to="/login"
-                  className="px-10 py-5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl font-black text-base hover:bg-white/20 transition-all active:scale-95"
+                  className="home-cta-login-button px-10 py-5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl font-black text-base hover:bg-white/20 transition-all active:scale-95"
                 >
                   {t('nav.login')}
                 </Link>
