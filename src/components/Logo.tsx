@@ -136,30 +136,47 @@ const Logo: React.FC<LogoProps> = ({
               "drop-shadow-[0_0_18px_rgba(56,189,248,0.18)]",
               sizeClasses[size].text,
               variant === 'dark'
-                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-slate-900"
-                : "bg-gradient-to-r from-sky-400 via-violet-400 to-white"
+                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-slate-900 dark:from-sky-400 dark:via-violet-400 dark:to-white"
+                : "bg-gradient-to-r from-sky-500 via-violet-500 to-slate-800 dark:from-sky-400 dark:via-violet-400 dark:to-white"
             )}
           >
             FisioCareHub
           </span>
+
           <div className="flex flex-col mt-1">
             <div className="flex items-center gap-2">
-              <div className={cn("h-[2px] w-3 rounded-full shadow-[0_0_12px_rgba(56,189,248,0.45)]", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
-              <span className={cn(
-                "font-black uppercase tracking-[0.15em]",
-                sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
-              )}>
+              <div
+                className={cn(
+                  "h-[2px] w-3 rounded-full shadow-[0_0_12px_rgba(56,189,248,0.45)]",
+                  variant === 'dark'
+                    ? "bg-[#0EA5E9]"
+                    : "bg-[#0EA5E9]"
+                )}
+              />
+              <span
+                className={cn(
+                  "font-black uppercase tracking-[0.15em]",
+                  sizeClasses[size].tagline,
+                  variant === 'dark'
+                    ? "text-slate-600 dark:text-slate-300"
+                    : "text-slate-700 dark:text-slate-300"
+                )}
+              >
                 Reabilitação
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <div className="h-[1px] w-3 bg-transparent" />
-              <span className={cn(
-                "font-black uppercase tracking-[0.15em]",
-                sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
-              )}>
+              <span
+                className={cn(
+                  "font-black uppercase tracking-[0.15em]",
+                  sizeClasses[size].tagline,
+                  variant === 'dark'
+                    ? "text-slate-600 dark:text-slate-300"
+                    : "text-slate-700 dark:text-slate-300"
+                )}
+              >
                 & Performance
               </span>
             </div>
