@@ -873,3 +873,115 @@ html.light .public-navbar a[href="/login"]:hover,
 body.light .public-navbar a[href="/login"]:hover {
   color: #2563EB !important;
 }
+/* Aviso de cadastro incompleto - ajuste tema claro sem mexer no dark mode */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog),
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings),
+html.light .fixed:has(.lucide-user-cog),
+html.light .fixed:has(.lucide-settings),
+:root[data-theme="light"] .fixed:has(.lucide-user-cog),
+:root[data-theme="light"] .fixed:has(.lucide-settings) {
+  color: #0f172a !important;
+}
+
+/* Card principal do aviso */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) [class*="bg-slate-900"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) [class*="bg-slate-950"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) [class*="bg-slate-900"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) [class*="bg-slate-950"],
+html.light .fixed:has(.lucide-user-cog) [class*="bg-slate-900"],
+html.light .fixed:has(.lucide-user-cog) [class*="bg-slate-950"],
+html.light .fixed:has(.lucide-settings) [class*="bg-slate-900"],
+html.light .fixed:has(.lucide-settings) [class*="bg-slate-950"],
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) [class*="bg-slate-900"],
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) [class*="bg-slate-950"],
+:root[data-theme="light"] .fixed:has(.lucide-settings) [class*="bg-slate-900"],
+:root[data-theme="light"] .fixed:has(.lucide-settings) [class*="bg-slate-950"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(196, 181, 253, 0.9) !important;
+  box-shadow: 0 30px 90px -35px rgba(30, 41, 59, 0.45) !important;
+}
+
+/* Textos do aviso */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) :is(h1, h2, h3, h4, p, span, li, div),
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) :is(h1, h2, h3, h4, p, span, li, div),
+html.light .fixed:has(.lucide-user-cog) :is(h1, h2, h3, h4, p, span, li, div),
+html.light .fixed:has(.lucide-settings) :is(h1, h2, h3, h4, p, span, li, div),
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) :is(h1, h2, h3, h4, p, span, li, div),
+:root[data-theme="light"] .fixed:has(.lucide-settings) :is(h1, h2, h3, h4, p, span, li, div) {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Descrições secundárias */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) p,
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) p,
+html.light .fixed:has(.lucide-user-cog) p,
+html.light .fixed:has(.lucide-settings) p,
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) p,
+:root[data-theme="light"] .fixed:has(.lucide-settings) p {
+  color: #475569 !important;
+}
+
+/* Card das pendências */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) [class*="bg-white"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) [class*="bg-white"],
+html.light .fixed:has(.lucide-user-cog) [class*="bg-white"],
+html.light .fixed:has(.lucide-settings) [class*="bg-white"],
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) [class*="bg-white"],
+:root[data-theme="light"] .fixed:has(.lucide-settings) [class*="bg-white"] {
+  background: #f3e8ff !important;
+  color: #0f172a !important;
+  border-color: #c4b5fd !important;
+}
+
+/* Botão fechar */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) button:has(.lucide-x),
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) button:has(.lucide-x),
+html.light .fixed:has(.lucide-user-cog) button:has(.lucide-x),
+html.light .fixed:has(.lucide-settings) button:has(.lucide-x),
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) button:has(.lucide-x),
+:root[data-theme="light"] .fixed:has(.lucide-settings) button:has(.lucide-x) {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) button:has(.lucide-x) svg,
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) button:has(.lucide-x) svg,
+html.light .fixed:has(.lucide-user-cog) button:has(.lucide-x) svg,
+html.light .fixed:has(.lucide-settings) button:has(.lucide-x) svg,
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) button:has(.lucide-x) svg,
+:root[data-theme="light"] .fixed:has(.lucide-settings) button:has(.lucide-x) svg {
+  stroke: #0f172a !important;
+}
+
+/* Botão "Lembrar depois" */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) button:not([class*="bg-blue"]):not(:has(.lucide-x)),
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) button:not([class*="bg-blue"]):not(:has(.lucide-x)),
+html.light .fixed:has(.lucide-user-cog) button:not([class*="bg-blue"]):not(:has(.lucide-x)),
+html.light .fixed:has(.lucide-settings) button:not([class*="bg-blue"]):not(:has(.lucide-x)),
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) button:not([class*="bg-blue"]):not(:has(.lucide-x)),
+:root[data-theme="light"] .fixed:has(.lucide-settings) button:not([class*="bg-blue"]):not(:has(.lucide-x)) {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+}
+
+/* Botão azul continua branco */
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) [class*="bg-blue"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-user-cog) [class*="bg-blue"] *,
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) [class*="bg-blue"],
+html:not(.dark) body:not(.dark) .fixed:has(.lucide-settings) [class*="bg-blue"] *,
+html.light .fixed:has(.lucide-user-cog) [class*="bg-blue"],
+html.light .fixed:has(.lucide-user-cog) [class*="bg-blue"] *,
+html.light .fixed:has(.lucide-settings) [class*="bg-blue"],
+html.light .fixed:has(.lucide-settings) [class*="bg-blue"] *,
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) [class*="bg-blue"],
+:root[data-theme="light"] .fixed:has(.lucide-user-cog) [class*="bg-blue"] *,
+:root[data-theme="light"] .fixed:has(.lucide-settings) [class*="bg-blue"],
+:root[data-theme="light"] .fixed:has(.lucide-settings) [class*="bg-blue"] * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
