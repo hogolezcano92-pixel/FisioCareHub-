@@ -156,6 +156,16 @@ export const FinancialDashboard = () => {
     { label: 'Previsão de Recebimento', value: `R$ ${financialStats.forecast.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: CreditCard, color: 'bg-amber-600 shadow-amber-900/20' },
   ];
 
+  const weeklyBarColors = [
+    'bg-gradient-to-t from-sky-500 to-cyan-300 shadow-sky-900/30',
+    'bg-gradient-to-t from-violet-500 to-purple-300 shadow-violet-900/30',
+    'bg-gradient-to-t from-emerald-500 to-green-300 shadow-emerald-900/30',
+    'bg-gradient-to-t from-amber-500 to-orange-300 shadow-amber-900/30',
+    'bg-gradient-to-t from-rose-500 to-pink-300 shadow-rose-900/30',
+    'bg-gradient-to-t from-indigo-500 to-blue-300 shadow-indigo-900/30',
+    'bg-gradient-to-t from-teal-500 to-cyan-300 shadow-teal-900/30',
+  ];
+
   return (
     <div className="space-y-6">
       {loading && (
@@ -222,8 +232,8 @@ export const FinancialDashboard = () => {
                       animate={{ height: data.height.replace('h-', '') + 'px' }}
                       transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
                       className={cn(
-                        "w-full max-w-[28px] rounded-t-lg transition-all group-hover:brightness-110",
-                        i === 4 ? "bg-blue-600 shadow-lg shadow-blue-900/20" : "bg-white/5"
+                        "w-full max-w-[28px] rounded-t-lg shadow-lg transition-all group-hover:brightness-110 group-hover:scale-105",
+                        data.count > 0 ? weeklyBarColors[i % weeklyBarColors.length] : "bg-white/5 shadow-none"
                       )}
                     />
                     <div className="absolute -top-6 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md whitespace-nowrap border border-white/5">
