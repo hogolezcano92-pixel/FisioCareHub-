@@ -1378,3 +1378,60 @@ input:-webkit-autofill:active {
   ) * {
   color: #FFFFFF !important;
 }
+/* Header e footer roxo escuro somente no tema claro */
+:root[data-theme="light"] header,
+:root[data-theme="light"] footer,
+:root[data-theme="light"] .footer,
+:root[data-theme="light"] [role="contentinfo"],
+html.light header,
+html.light footer,
+html.light .footer,
+html.light [role="contentinfo"],
+body.light header,
+body.light footer,
+body.light .footer,
+body.light [role="contentinfo"] {
+  background: linear-gradient(135deg, #4C1D95 0%, #5B21B6 50%, #6D28D9 100%) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 14px 36px -24px rgba(76, 29, 149, 0.55) !important;
+}
+
+/* Textos e ícones dentro do header/footer ficam brancos para aparecer no roxo */
+:root[data-theme="light"] header :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+:root[data-theme="light"] footer :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+:root[data-theme="light"] .footer :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+:root[data-theme="light"] [role="contentinfo"] :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+html.light header :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+html.light footer :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+body.light header :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg),
+body.light footer :is(h1, h2, h3, h4, h5, h6, p, span, small, strong, b, a, label, li, div, svg) {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Botões dentro do header/footer */
+:root[data-theme="light"] header button,
+:root[data-theme="light"] footer button,
+:root[data-theme="light"] .footer button,
+html.light header button,
+html.light footer button,
+body.light header button,
+body.light footer button {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: none !important;
+}
+
+/* Ícones dos botões */
+:root[data-theme="light"] header button svg,
+:root[data-theme="light"] footer button svg,
+html.light header button svg,
+html.light footer button svg,
+body.light header button svg,
+body.light footer button svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
