@@ -115,8 +115,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           title: t('nav.communication'),
           items: [
-            // Chat e Suporte precisam ficar liberados para fisioterapeuta gratuito,
-            // porque são o canal direto com administrador/suporte.
             { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
             { name: t('nav.support'), path: '/chat?support=true', icon: ShieldCheck },
           ]
@@ -136,11 +134,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ], [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-background border-r border-white/5">
+    <div className="flex flex-col h-full bg-[#EFE7FF] dark:bg-background border-r border-violet-200 dark:border-white/5">
       {/* Logo Section */}
-      <div className="p-6 border-b border-white/5">
+      <div className="p-6 border-b border-violet-200 dark:border-white/5 bg-white/35 dark:bg-transparent">
         <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-          <Logo size="sm" variant="light" />
+          <div className="[&_*]:!opacity-100">
+            <Logo size="sm" variant="light" />
+          </div>
         </Link>
       </div>
 
@@ -148,10 +148,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
         {sections.map((section) => (
           <div key={section.title} className="space-y-2">
-            <h3 className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+            <h3 className="px-4 text-[10px] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.2em]">
               {section.title}
             </h3>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {section.items.map((item: any) => {
                 const isActive = location.pathname === item.path;
                 const isLogout = item.path === '#logout';
@@ -176,12 +176,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item",
+                      "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item active:scale-95",
                       isActive 
                         ? "bg-primary text-white shadow-lg shadow-premium" 
                         : item.variant === 'danger'
-                          ? "text-rose-400 hover:bg-rose-500/10 active:scale-95"
-                          : "text-slate-400 hover:bg-white/5 hover:text-white active:scale-95"
+                          ? "bg-white/85 dark:bg-transparent text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                          : "bg-white/85 dark:bg-transparent text-slate-700 dark:text-slate-400 hover:bg-violet-100 dark:hover:bg-white/5 hover:text-violet-700 dark:hover:text-white shadow-sm shadow-violet-100/60 dark:shadow-none"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -189,7 +189,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         size={20} 
                         className={cn(
                           "transition-colors",
-                          isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-primary"
+                          isActive 
+                            ? "text-white" 
+                            : item.variant === 'danger' 
+                              ? "text-rose-500 dark:text-rose-400" 
+                              : "text-slate-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
                         )} 
                       />
                       <span>{item.name}</span>
@@ -214,18 +218,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </nav>
 
       {/* User Profile Summary */}
-      <div className="p-4 border-t border-white/5">
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5">
+      <div className="p-4 border-t border-violet-200 dark:border-white/5 bg-white/25 dark:bg-transparent">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 dark:bg-white/5 shadow-sm shadow-violet-100/70 dark:shadow-none">
           <img 
             src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`}
             alt="Avatar"
-            className="w-10 h-10 rounded-xl object-cover border-2 border-white/10 shadow-sm"
+            className="w-10 h-10 rounded-xl object-cover border-2 border-violet-200 dark:border-white/10 shadow-sm"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-black text-white truncate">
+            <p className="text-xs font-black text-slate-950 dark:text-white truncate">
               {profile?.nome_completo || 'Usuário'}
             </p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
+            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest truncate">
               {profile?.tipo_usuario === 'paciente'
                 ? (profile?.idioma === 'en' ? 'Patient' : profile?.idioma === 'es' ? 'Paciente' : 'Paciente')
                 : (profile?.plano === 'admin'
