@@ -1067,3 +1067,67 @@ html.light aside img:first-of-type,
 body.light aside img:first-of-type {
   filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.22)) contrast(1.12) saturate(1.12);
 }
+/* Header mobile - logo e ícones mais visíveis no tema claro */
+html:not(.dark) body:not(.dark) header.lg\:hidden,
+html.light header.lg\:hidden,
+body.light header.lg\:hidden,
+:root[data-theme="light"] header.lg\:hidden {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid rgba(196, 181, 253, 0.75) !important;
+  box-shadow: 0 14px 40px -30px rgba(88, 28, 135, 0.45) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+/* Melhora o logo no tema claro */
+html:not(.dark) body:not(.dark) header.lg\:hidden img,
+html.light header.lg\:hidden img,
+body.light header.lg\:hidden img,
+:root[data-theme="light"] header.lg\:hidden img {
+  filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.24)) contrast(1.12) saturate(1.18) !important;
+}
+
+/* Força textos do logo, caso sejam texto e não imagem */
+html:not(.dark) body:not(.dark) header.lg\:hidden :is(span, p, strong),
+html.light header.lg\:hidden :is(span, p, strong),
+body.light header.lg\:hidden :is(span, p, strong),
+:root[data-theme="light"] header.lg\:hidden :is(span, p, strong) {
+  opacity: 1 !important;
+}
+
+/* Botões do topo: lua, sino e menu */
+html:not(.dark) body:not(.dark) header.lg\:hidden button,
+html.light header.lg\:hidden button,
+body.light header.lg\:hidden button,
+:root[data-theme="light"] header.lg\:hidden button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(196, 181, 253, 0.75) !important;
+  box-shadow: 0 10px 28px -24px rgba(88, 28, 135, 0.45) !important;
+}
+
+/* Ícone da lua */
+html:not(.dark) body:not(.dark) header.lg\:hidden button svg.lucide-moon,
+html.light header.lg\:hidden button svg.lucide-moon,
+body.light header.lg\:hidden button svg.lucide-moon,
+:root[data-theme="light"] header.lg\:hidden button svg.lucide-moon {
+  color: #7C3AED !important;
+  stroke: #7C3AED !important;
+}
+
+/* Ícone do sino */
+html:not(.dark) body:not(.dark) header.lg\:hidden button svg.lucide-bell,
+html.light header.lg\:hidden button svg.lucide-bell,
+body.light header.lg\:hidden button svg.lucide-bell,
+:root[data-theme="light"] header.lg\:hidden button svg.lucide-bell {
+  color: #2563EB !important;
+  stroke: #2563EB !important;
+}
+
+/* Ícone do menu */
+html:not(.dark) body:not(.dark) header.lg\:hidden button svg.lucide-menu,
+html.light header.lg\:hidden button svg.lucide-menu,
+body.light header.lg\:hidden button svg.lucide-menu,
+:root[data-theme="light"] header.lg\:hidden button svg.lucide-menu {
+  color: #0F172A !important;
+  stroke: #0F172A !important;
+}
