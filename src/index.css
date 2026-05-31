@@ -808,4 +808,351 @@ input:-webkit-autofill:active {
     font-size: 16px !important;
   }
 }
+/* =========================================================
+   FisioCareHub — TEMA CLARO v9 BALANCEADO
+   Objetivo: melhorar contraste global sem transformar tudo em branco
+   Aplicar no FINAL do src/index.css
+   Não altera o dark mode.
+   ========================================================= */
 
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light) {
+  --theme-bg: #FAF8FF !important;
+  --theme-card: rgba(255, 255, 255, 0.92) !important;
+  --theme-card-hover: rgba(245, 243, 255, 0.96) !important;
+  --theme-border: #C4B5FD !important;
+  --theme-text: #0F172A !important;
+  --theme-text-muted: #334155 !important;
+
+  --bg: #FAF8FF !important;
+  --surface: rgba(255, 255, 255, 0.92) !important;
+  --border: #C4B5FD !important;
+  --text: #0F172A !important;
+  --text-2: #334155 !important;
+
+  --field-bg: #FFFFFF !important;
+  --field-border: #A78BFA !important;
+  --field-text: #0F172A !important;
+  --field-placeholder: #64748B !important;
+}
+
+/* Fundo geral claro premium, sem apagar identidade visual */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(html, body, main, #root, .min-h-screen) {
+  background-color: #FAF8FF !important;
+  color: #0F172A !important;
+}
+
+/* Títulos e subtítulos sempre nítidos */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(h1, h2, h3, h4, h5, h6) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Textos principais */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(p, label, small, li, td, th, strong, b) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Classes claras que ficam invisíveis no tema claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white,
+    .text-white\/95,
+    .text-white\/90,
+    .text-white\/80,
+    .text-white\/75,
+    .text-white\/70,
+    .text-slate-50,
+    .text-slate-100,
+    .text-slate-200,
+    .text-gray-50,
+    .text-gray-100,
+    .text-gray-200,
+    .text-zinc-50,
+    .text-zinc-100,
+    .text-zinc-200,
+    .text-foreground,
+    .text-text-main
+  ) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+/* Textos secundários mais fortes */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white\/60,
+    .text-white\/55,
+    .text-white\/50,
+    .text-white\/45,
+    .text-white\/40,
+    .text-white\/35,
+    .text-white\/30,
+    .text-slate-300,
+    .text-slate-400,
+    .text-slate-500,
+    .text-gray-300,
+    .text-gray-400,
+    .text-gray-500,
+    .text-zinc-300,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-muted,
+    .text-muted-foreground,
+    .text-text-muted,
+    .admin-text-secondary,
+    .text-ice
+  ) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Não quebrar textos com gradiente */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.text-transparent, .bg-clip-text) {
+  color: transparent !important;
+}
+
+/* Cards: claros, mas com profundidade e borda visível */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .glass-card,
+    .premium-card,
+    .admin-card,
+    .card,
+    .bg-card,
+    article,
+    [class*="bg-white/5"],
+    [class*="bg-white/10"],
+    [class*="bg-white/15"],
+    [class*="bg-white/[0.08]"],
+    [class*="bg-slate-900/"],
+    [class*="bg-slate-950/"],
+    [class*="bg-gray-900/"],
+    [class*="bg-black/20"],
+    [class*="bg-black/30"],
+    [class*="bg-black/40"],
+    [class*="bg-black/50"]
+  ) {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #0F172A !important;
+  border-color: rgba(196, 181, 253, 0.9) !important;
+  box-shadow: 0 16px 42px -30px rgba(109, 40, 217, 0.42) !important;
+  backdrop-filter: blur(14px);
+}
+
+/* Textos dentro dos cards */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.glass-card, .premium-card, .admin-card, .card, .bg-card, article)
+  :is(h1, h2, h3, h4, h5, h6, .text-white, .text-slate-50, .text-slate-100, .text-slate-200) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.glass-card, .premium-card, .admin-card, .card, .bg-card, article)
+  :is(p, span, small, label, .text-slate-300, .text-slate-400, .text-slate-500, .text-white\/40, .text-white\/50, .text-white\/60, .text-white\/70) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Fundos escuros fixos só viram claros em conteúdo comum, não em botões/header/nav/sidebar */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .bg-slate-950,
+    .bg-slate-900,
+    .bg-slate-800,
+    .bg-gray-950,
+    .bg-gray-900,
+    .bg-gray-800,
+    .bg-zinc-950,
+    .bg-zinc-900,
+    .bg-zinc-800,
+    [class*="bg-[#060F24]"],
+    [class*="bg-[#060f24]"],
+    [class*="bg-[#071230]"],
+    [class*="bg-[#0A1931]"],
+    [class*="bg-[#0a1931]"],
+    [class*="bg-[#0B1120]"],
+    [class*="bg-[#0b1120]"],
+    [class*="bg-[#101F45]"],
+    [class*="bg-[#101f45]"],
+    [class*="bg-[#020617]"],
+    [class*="bg-[#0F172A]"],
+    [class*="bg-[#0f172a]"]
+  ):not(button):not(a):not([role="button"]):not(header):not(nav):not(aside) {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #0F172A !important;
+  border-color: #C4B5FD !important;
+}
+
+/* Gradientes escuros adaptados para claro, sem virar branco puro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="from-slate-950"],
+    [class*="from-slate-900"],
+    [class*="from-gray-950"],
+    [class*="from-gray-900"],
+    [class*="from-zinc-950"],
+    [class*="from-zinc-900"],
+    [class*="from-[#060F24]"],
+    [class*="from-[#060f24]"],
+    [class*="from-[#0A1931]"],
+    [class*="from-[#0a1931]"],
+    [class*="from-[#0B1120]"],
+    [class*="from-[#0b1120]"]
+  ) {
+  --tw-gradient-from: #F5F3FF var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(245 243 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="via-slate-950"],
+    [class*="via-slate-900"],
+    [class*="via-gray-950"],
+    [class*="via-gray-900"],
+    [class*="via-zinc-950"],
+    [class*="via-zinc-900"],
+    [class*="via-[#0A1931]"],
+    [class*="via-[#0a1931]"],
+    [class*="via-[#0B1120]"],
+    [class*="via-[#0b1120]"]
+  ) {
+  --tw-gradient-via: #FFFFFF var(--tw-gradient-via-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    [class*="to-slate-950"],
+    [class*="to-slate-900"],
+    [class*="to-gray-950"],
+    [class*="to-gray-900"],
+    [class*="to-zinc-950"],
+    [class*="to-zinc-900"],
+    [class*="to-[#101F45]"],
+    [class*="to-[#101f45]"],
+    [class*="to-[#020617]"]
+  ) {
+  --tw-gradient-to: #EEF2FF var(--tw-gradient-to-position) !important;
+}
+
+/* Bordas nítidas */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .border-white\/5,
+    .border-white\/10,
+    .border-white\/15,
+    .border-white\/20,
+    .border-white\/30,
+    .border-slate-700,
+    .border-slate-800,
+    .border-gray-700,
+    .border-gray-800,
+    .border-zinc-700,
+    .border-zinc-800,
+    .border-border,
+    .border-border-soft,
+    [class*="border-white/"]
+  ) {
+  border-color: #C4B5FD !important;
+}
+
+/* Inputs e campos */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input, select, textarea, .input-compact) {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #A78BFA !important;
+  box-shadow: 0 10px 28px -24px rgba(109, 40, 217, 0.45) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input::placeholder, textarea::placeholder) {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+/* Header claro nítido */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  color: #0F172A !important;
+  border-color: #C4B5FD !important;
+  box-shadow: 0 12px 36px -28px rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(18px);
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header :is(h1, h2, h3, span, p, .text-white, .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #1E293B !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 10px 24px -20px rgba(15, 23, 42, 0.45) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button svg {
+  color: #1E293B !important;
+  stroke: #1E293B !important;
+}
+
+/* Manter branco em botões, badges e áreas realmente coloridas */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    button.bg-primary,
+    a.bg-primary,
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ),
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    button.bg-primary,
+    a.bg-primary,
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ) * {
+  color: #FFFFFF !important;
+}
+
+/* Confirmação visual
+   FisioCareHub — TEMA CLARO v9 BALANCEADO
+*/
