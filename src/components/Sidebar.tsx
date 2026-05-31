@@ -209,13 +209,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-active-item,
-        html:not(.dark) .fisio-sidebar-shell .sidebar-active-item *,
         body.light .fisio-sidebar-shell .sidebar-active-item,
-        body.light .fisio-sidebar-shell .sidebar-active-item *,
         html.light .fisio-sidebar-shell .sidebar-active-item,
+        :root[data-theme="light"] .fisio-sidebar-shell .sidebar-active-item {
+          background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%) !important;
+          color: #FFFFFF !important;
+          border: 1px solid rgba(255, 255, 255, 0.42) !important;
+          box-shadow: 0 18px 42px -24px rgba(91, 33, 182, 0.72) !important;
+        }
+
+        html:not(.dark) .fisio-sidebar-shell .sidebar-active-item *,
+        body.light .fisio-sidebar-shell .sidebar-active-item *,
         html.light .fisio-sidebar-shell .sidebar-active-item *,
-        :root[data-theme="light"] .fisio-sidebar-shell .sidebar-active-item,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-active-item * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+          opacity: 1 !important;
+        }
+
+        html:not(.dark) .fisio-sidebar-shell .sidebar-active-item svg,
+        body.light .fisio-sidebar-shell .sidebar-active-item svg,
+        html.light .fisio-sidebar-shell .sidebar-active-item svg,
+        :root[data-theme="light"] .fisio-sidebar-shell .sidebar-active-item svg {
           color: #FFFFFF !important;
           stroke: #FFFFFF !important;
         }
@@ -296,7 +311,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       className={cn(
                         "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item active:scale-95",
                         isActive 
-                          ? "sidebar-active-item bg-primary text-white shadow-lg shadow-premium" 
+                          ? "sidebar-active-item bg-gradient-to-r from-violet-700 to-blue-600 text-white shadow-lg shadow-violet-300/50 dark:shadow-premium" 
                           : item.variant === 'danger'
                             ? "text-rose-400 hover:bg-rose-500/10"
                             : "text-slate-400 hover:bg-white/5 hover:text-white"
@@ -307,7 +322,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                           size={20} 
                           className={cn(
                             "transition-colors",
-                            isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-500 group-hover:text-primary"
+                            isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-blue-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
                           )} 
                         />
                         <span>{item.name}</span>
