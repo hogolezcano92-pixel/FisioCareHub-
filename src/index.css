@@ -1189,3 +1189,192 @@ input:-webkit-autofill:active {
   ) * {
   color: #FFFFFF !important;
 }
+/* =========================================================
+   FisioCareHub — TEMA CLARO COM CARDS ROXO CLARO
+   Cards roxo suave + textos pretos no modo claro.
+   Não altera o dark mode.
+   ========================================================= */
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light) {
+  --theme-bg: #F8FAFF !important;
+  --theme-card: #F3E8FF !important;
+  --theme-card-hover: #EDE9FE !important;
+  --theme-border: #C084FC !important;
+  --theme-text: #0B1120 !important;
+  --theme-text-muted: #1E293B !important;
+
+  --surface: #F3E8FF !important;
+  --border: #C084FC !important;
+  --text: #0B1120 !important;
+  --text-2: #1E293B !important;
+}
+
+/* Fundo geral continua claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light) body,
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light) main,
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light) .min-h-screen {
+  background:
+    radial-gradient(circle at top left, rgba(147, 51, 234, 0.10), transparent 35%),
+    linear-gradient(135deg, #F8FAFF 0%, #FFFFFF 45%, #F5F3FF 100%) !important;
+  color: #0B1120 !important;
+}
+
+/* Cards roxo claro no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .glass-card,
+    .premium-card,
+    .admin-card,
+    .card,
+    article,
+    section,
+    [class*="bg-white/5"],
+    [class*="bg-white/10"],
+    [class*="bg-white/15"],
+    [class*="bg-white/[0.08]"],
+    [class*="bg-slate-900/"],
+    [class*="bg-slate-950/"],
+    [class*="bg-black/20"],
+    [class*="bg-black/30"],
+    [class*="bg-black/40"],
+    [class*="bg-black/50"]
+  ) {
+  background-color: #F3E8FF !important;
+  background-image: linear-gradient(135deg, #F3E8FF 0%, #EDE9FE 100%) !important;
+  color: #0B1120 !important;
+  border-color: #C084FC !important;
+  box-shadow: 0 18px 45px -28px rgba(109, 40, 217, 0.42) !important;
+}
+
+/* Textos dentro dos cards em preto forte */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .glass-card,
+    .premium-card,
+    .admin-card,
+    .card,
+    article,
+    section
+  )
+  :is(h1, h2, h3, h4, h5, h6, p, span, label, small, strong, b, li, div) {
+  color: #0B1120 !important;
+  opacity: 1 !important;
+}
+
+/* Subtítulos e textos secundários mais escuros */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-muted,
+    .text-muted-foreground,
+    .text-text-muted,
+    .admin-text-secondary,
+    .text-slate-300,
+    .text-slate-400,
+    .text-slate-500,
+    .text-gray-300,
+    .text-gray-400,
+    .text-gray-500,
+    .text-white\/70,
+    .text-white\/60,
+    .text-white\/50,
+    .text-white\/40,
+    .text-white\/30
+  ) {
+  color: #1E293B !important;
+  opacity: 1 !important;
+}
+
+/* Títulos principais continuam fortes */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(h1, h2, h3, h4, h5, h6) {
+  color: #0B1120 !important;
+}
+
+/* Destaques roxos e azuis no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.text-primary, .text-dark-primary, .admin-title) {
+  color: #6D28D9 !important;
+}
+
+/* Fundos escuros fixos também viram card roxo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .bg-slate-950,
+    .bg-slate-900,
+    .bg-slate-800,
+    .bg-gray-950,
+    .bg-gray-900,
+    .bg-gray-800,
+    .bg-zinc-950,
+    .bg-zinc-900,
+    .bg-zinc-800,
+    [class*="bg-[#060F24]"],
+    [class*="bg-[#060f24]"],
+    [class*="bg-[#071230]"],
+    [class*="bg-[#0A1931]"],
+    [class*="bg-[#0a1931]"],
+    [class*="bg-[#0B1120]"],
+    [class*="bg-[#0b1120]"],
+    [class*="bg-[#101F45]"],
+    [class*="bg-[#101f45]"],
+    [class*="bg-[#020617]"],
+    [class*="bg-[#0F172A]"],
+    [class*="bg-[#0f172a]"]
+  ):not(button):not(a):not([role="button"]):not(header) {
+  background-color: #F3E8FF !important;
+  background-image: linear-gradient(135deg, #F3E8FF 0%, #EDE9FE 100%) !important;
+  color: #0B1120 !important;
+  border-color: #C084FC !important;
+}
+
+/* Header continua branco translúcido e legível */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #0B1120 !important;
+  border-color: #C084FC !important;
+}
+
+/* Botões coloridos continuam com texto branco */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    button.bg-primary,
+    a.bg-primary,
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ),
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    button.bg-primary,
+    a.bg-primary,
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ) * {
+  color: #FFFFFF !important;
+}
