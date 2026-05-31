@@ -248,122 +248,180 @@ export default function Home() {
 
             <style>{`
         /*
-          Correção visual da Home no tema claro.
-          Importante: o app usa dark mode por classe ".dark".
-          Então o tema claro também precisa funcionar quando NÃO existe ".dark".
+          FisioCareHub Home - Tema claro completo
+          Só aplica quando NÃO está em dark mode.
+          Não altera o dark mode.
         */
 
-        html:not(.dark) .fisio-home,
+        html:not(.dark) body:not(.dark) .fisio-home,
         :root[data-theme="light"] .fisio-home,
         html.light .fisio-home,
         body.light .fisio-home {
           background:
-            radial-gradient(circle at 18% 8%, rgba(124, 58, 237, 0.14), transparent 32%),
-            radial-gradient(circle at 82% 18%, rgba(37, 99, 235, 0.12), transparent 34%),
-            #FAF8FF !important;
+            radial-gradient(circle at 18% 4%, rgba(124, 58, 237, 0.16), transparent 34%),
+            radial-gradient(circle at 88% 14%, rgba(37, 99, 235, 0.14), transparent 32%),
+            linear-gradient(180deg, #FAF8FF 0%, #F8FAFC 45%, #F4F0FF 100%) !important;
           color: #0F172A !important;
         }
 
-        html:not(.dark) .fisio-home section,
+        html:not(.dark) body:not(.dark) .fisio-home section,
         :root[data-theme="light"] .fisio-home section,
         html.light .fisio-home section,
         body.light .fisio-home section {
           color: #0F172A !important;
         }
 
-        /* Títulos principais no modo claro */
-        html:not(.dark) .fisio-home h1,
-        html:not(.dark) .fisio-home h2,
-        html:not(.dark) .fisio-home h3,
-        html:not(.dark) .fisio-home h4,
-        html:not(.dark) .fisio-home h5,
-        html:not(.dark) .fisio-home h6,
-        :root[data-theme="light"] .fisio-home h1,
-        :root[data-theme="light"] .fisio-home h2,
-        :root[data-theme="light"] .fisio-home h3,
-        :root[data-theme="light"] .fisio-home h4,
-        :root[data-theme="light"] .fisio-home h5,
-        :root[data-theme="light"] .fisio-home h6,
-        html.light .fisio-home h1,
-        html.light .fisio-home h2,
-        html.light .fisio-home h3,
-        html.light .fisio-home h4,
-        html.light .fisio-home h5,
-        html.light .fisio-home h6 {
+        /* Base geral de textos no tema claro */
+        html:not(.dark) body:not(.dark) .fisio-home :is(p, span, li, label, small, strong, div),
+        :root[data-theme="light"] .fisio-home :is(p, span, li, label, small, strong, div),
+        html.light .fisio-home :is(p, span, li, label, small, strong, div),
+        body.light .fisio-home :is(p, span, li, label, small, strong, div) {
+          opacity: 1;
+        }
+
+        /* Títulos grandes e médios */
+        html:not(.dark) body:not(.dark) .fisio-home :is(h1, h2, h3, h4, h5, h6),
+        :root[data-theme="light"] .fisio-home :is(h1, h2, h3, h4, h5, h6),
+        html.light .fisio-home :is(h1, h2, h3, h4, h5, h6),
+        body.light .fisio-home :is(h1, h2, h3, h4, h5, h6) {
           color: #0F172A !important;
           opacity: 1 !important;
           text-shadow: none !important;
         }
 
-        /* Textos claros que sumiam no modo claro */
-        html:not(.dark) .fisio-home :is(
+        /* Corrige classes claras usadas no dark mode */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .text-white,
+          .text-gray-50,
           .text-gray-100,
           .text-gray-200,
+          .text-slate-50,
           .text-slate-100,
           .text-slate-200
         ),
         :root[data-theme="light"] .fisio-home :is(
           .text-white,
+          .text-gray-50,
           .text-gray-100,
           .text-gray-200,
+          .text-slate-50,
           .text-slate-100,
           .text-slate-200
         ),
         html.light .fisio-home :is(
           .text-white,
+          .text-gray-50,
           .text-gray-100,
           .text-gray-200,
+          .text-slate-50,
+          .text-slate-100,
+          .text-slate-200
+        ),
+        body.light .fisio-home :is(
+          .text-white,
+          .text-gray-50,
+          .text-gray-100,
+          .text-gray-200,
+          .text-slate-50,
           .text-slate-100,
           .text-slate-200
         ) {
-          color: #111827 !important;
+          color: #0F172A !important;
           opacity: 1 !important;
         }
 
-        html:not(.dark) .fisio-home :is(
+        /* Subtítulos, descrições e textos secundários */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .text-gray-300,
           .text-gray-400,
+          .text-gray-500,
           .text-slate-300,
           .text-slate-400,
           .text-slate-500,
+          .text-slate-600,
+          .text-white\\/90,
+          .text-white\\/80,
           .text-white\\/70,
           .text-white\\/60,
-          .text-white\\/50
+          .text-white\\/50,
+          .text-white\\/40,
+          .text-white\\/30,
+          .text-white\\/20,
+          .text-white\\/10
         ),
         :root[data-theme="light"] .fisio-home :is(
           .text-gray-300,
           .text-gray-400,
+          .text-gray-500,
           .text-slate-300,
           .text-slate-400,
           .text-slate-500,
+          .text-slate-600,
+          .text-white\\/90,
+          .text-white\\/80,
           .text-white\\/70,
           .text-white\\/60,
-          .text-white\\/50
+          .text-white\\/50,
+          .text-white\\/40,
+          .text-white\\/30,
+          .text-white\\/20,
+          .text-white\\/10
         ),
         html.light .fisio-home :is(
           .text-gray-300,
           .text-gray-400,
+          .text-gray-500,
           .text-slate-300,
           .text-slate-400,
           .text-slate-500,
+          .text-slate-600,
+          .text-white\\/90,
+          .text-white\\/80,
           .text-white\\/70,
           .text-white\\/60,
-          .text-white\\/50
+          .text-white\\/50,
+          .text-white\\/40,
+          .text-white\\/30,
+          .text-white\\/20,
+          .text-white\\/10
+        ),
+        body.light .fisio-home :is(
+          .text-gray-300,
+          .text-gray-400,
+          .text-gray-500,
+          .text-slate-300,
+          .text-slate-400,
+          .text-slate-500,
+          .text-slate-600,
+          .text-white\\/90,
+          .text-white\\/80,
+          .text-white\\/70,
+          .text-white\\/60,
+          .text-white\\/50,
+          .text-white\\/40,
+          .text-white\\/30,
+          .text-white\\/20,
+          .text-white\\/10
         ) {
           color: #475569 !important;
           opacity: 1 !important;
         }
 
-        /* Cards escuros/translúcidos viram cards claros no tema claro */
-        html:not(.dark) .fisio-home :is(
+        /* Cards translúcidos escuros viram cards claros */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .bg-white\\/5,
           .bg-white\\/10,
           .bg-white\\/15,
+          .bg-white\\/20,
           .bg-slate-900\\/30,
           .bg-slate-900\\/40,
+          .bg-slate-900\\/50,
           .bg-slate-900\\/60,
+          .bg-slate-900\\/70,
           .bg-slate-900\\/80,
+          .bg-slate-950\\/40,
+          .bg-slate-950\\/60,
+          .bg-slate-950\\/80,
           .bg-black\\/20,
           .bg-black\\/30,
           .bg-black\\/40,
@@ -373,10 +431,16 @@ export default function Home() {
           .bg-white\\/5,
           .bg-white\\/10,
           .bg-white\\/15,
+          .bg-white\\/20,
           .bg-slate-900\\/30,
           .bg-slate-900\\/40,
+          .bg-slate-900\\/50,
           .bg-slate-900\\/60,
+          .bg-slate-900\\/70,
           .bg-slate-900\\/80,
+          .bg-slate-950\\/40,
+          .bg-slate-950\\/60,
+          .bg-slate-950\\/80,
           .bg-black\\/20,
           .bg-black\\/30,
           .bg-black\\/40,
@@ -386,66 +450,103 @@ export default function Home() {
           .bg-white\\/5,
           .bg-white\\/10,
           .bg-white\\/15,
+          .bg-white\\/20,
           .bg-slate-900\\/30,
           .bg-slate-900\\/40,
+          .bg-slate-900\\/50,
           .bg-slate-900\\/60,
+          .bg-slate-900\\/70,
           .bg-slate-900\\/80,
+          .bg-slate-950\\/40,
+          .bg-slate-950\\/60,
+          .bg-slate-950\\/80,
+          .bg-black\\/20,
+          .bg-black\\/30,
+          .bg-black\\/40,
+          .bg-black\\/50
+        ),
+        body.light .fisio-home :is(
+          .bg-white\\/5,
+          .bg-white\\/10,
+          .bg-white\\/15,
+          .bg-white\\/20,
+          .bg-slate-900\\/30,
+          .bg-slate-900\\/40,
+          .bg-slate-900\\/50,
+          .bg-slate-900\\/60,
+          .bg-slate-900\\/70,
+          .bg-slate-900\\/80,
+          .bg-slate-950\\/40,
+          .bg-slate-950\\/60,
+          .bg-slate-950\\/80,
           .bg-black\\/20,
           .bg-black\\/30,
           .bg-black\\/40,
           .bg-black\\/50
         ) {
-          background-color: rgba(255, 255, 255, 0.88) !important;
+          background-color: rgba(255, 255, 255, 0.92) !important;
           color: #0F172A !important;
           border-color: rgba(167, 139, 250, 0.55) !important;
-          box-shadow: 0 24px 70px -36px rgba(88, 28, 135, 0.45) !important;
+          box-shadow: 0 24px 70px -38px rgba(88, 28, 135, 0.46) !important;
         }
 
-        /* Bordas no modo claro */
-        html:not(.dark) .fisio-home :is(
+        /* Bordas */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .border-white\\/5,
           .border-white\\/10,
-          .border-white\\/20
+          .border-white\\/20,
+          .border-white\\/30
         ),
         :root[data-theme="light"] .fisio-home :is(
           .border-white\\/5,
           .border-white\\/10,
-          .border-white\\/20
+          .border-white\\/20,
+          .border-white\\/30
         ),
         html.light .fisio-home :is(
           .border-white\\/5,
           .border-white\\/10,
-          .border-white\\/20
+          .border-white\\/20,
+          .border-white\\/30
+        ),
+        body.light .fisio-home :is(
+          .border-white\\/5,
+          .border-white\\/10,
+          .border-white\\/20,
+          .border-white\\/30
         ) {
-          border-color: rgba(167, 139, 250, 0.55) !important;
+          border-color: rgba(167, 139, 250, 0.6) !important;
         }
 
-        /* Inputs de busca */
-        html:not(.dark) .fisio-home :is(input, select, textarea),
+        /* Inputs e busca */
+        html:not(.dark) body:not(.dark) .fisio-home :is(input, select, textarea),
         :root[data-theme="light"] .fisio-home :is(input, select, textarea),
-        html.light .fisio-home :is(input, select, textarea) {
+        html.light .fisio-home :is(input, select, textarea),
+        body.light .fisio-home :is(input, select, textarea) {
           background-color: #FFFFFF !important;
           color: #0F172A !important;
           border-color: #A78BFA !important;
-          box-shadow: 0 14px 35px -28px rgba(88, 28, 135, 0.55) !important;
+          box-shadow: 0 16px 40px -30px rgba(88, 28, 135, 0.55) !important;
         }
 
-        html:not(.dark) .fisio-home :is(input::placeholder, textarea::placeholder),
+        html:not(.dark) body:not(.dark) .fisio-home :is(input::placeholder, textarea::placeholder),
         :root[data-theme="light"] .fisio-home :is(input::placeholder, textarea::placeholder),
-        html.light .fisio-home :is(input::placeholder, textarea::placeholder) {
+        html.light .fisio-home :is(input::placeholder, textarea::placeholder),
+        body.light .fisio-home :is(input::placeholder, textarea::placeholder) {
           color: #64748B !important;
           opacity: 1 !important;
         }
 
-        /* Mantém textos com gradiente funcionando */
-        html:not(.dark) .fisio-home :is(.bg-clip-text, .text-transparent),
+        /* Mantém textos com gradiente bonitos */
+        html:not(.dark) body:not(.dark) .fisio-home :is(.bg-clip-text, .text-transparent),
         :root[data-theme="light"] .fisio-home :is(.bg-clip-text, .text-transparent),
-        html.light .fisio-home :is(.bg-clip-text, .text-transparent) {
+        html.light .fisio-home :is(.bg-clip-text, .text-transparent),
+        body.light .fisio-home :is(.bg-clip-text, .text-transparent) {
           color: transparent !important;
         }
 
-        /* Destaques azuis e roxos */
-        html:not(.dark) .fisio-home :is(
+        /* Cores de destaque */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .text-blue-400,
           .text-blue-500,
           .text-indigo-400,
@@ -458,6 +559,12 @@ export default function Home() {
           .text-indigo-500
         ),
         html.light .fisio-home :is(
+          .text-blue-400,
+          .text-blue-500,
+          .text-indigo-400,
+          .text-indigo-500
+        ),
+        body.light .fisio-home :is(
           .text-blue-400,
           .text-blue-500,
           .text-indigo-400,
@@ -467,15 +574,32 @@ export default function Home() {
           opacity: 1 !important;
         }
 
-        html:not(.dark) .fisio-home :is(.text-violet-400, .text-purple-400),
+        html:not(.dark) body:not(.dark) .fisio-home :is(.text-violet-400, .text-purple-400),
         :root[data-theme="light"] .fisio-home :is(.text-violet-400, .text-purple-400),
-        html.light .fisio-home :is(.text-violet-400, .text-purple-400) {
+        html.light .fisio-home :is(.text-violet-400, .text-purple-400),
+        body.light .fisio-home :is(.text-violet-400, .text-purple-400) {
           color: #6D28D9 !important;
           opacity: 1 !important;
         }
 
-        /* Botões coloridos continuam com texto branco */
-        html:not(.dark) .fisio-home :is(
+        html:not(.dark) body:not(.dark) .fisio-home :is(.text-amber-400),
+        :root[data-theme="light"] .fisio-home :is(.text-amber-400),
+        html.light .fisio-home :is(.text-amber-400),
+        body.light .fisio-home :is(.text-amber-400) {
+          color: #F59E0B !important;
+          opacity: 1 !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home :is(.text-emerald-300, .text-emerald-400, .text-emerald-500),
+        :root[data-theme="light"] .fisio-home :is(.text-emerald-300, .text-emerald-400, .text-emerald-500),
+        html.light .fisio-home :is(.text-emerald-300, .text-emerald-400, .text-emerald-500),
+        body.light .fisio-home :is(.text-emerald-300, .text-emerald-400, .text-emerald-500) {
+          color: #059669 !important;
+          opacity: 1 !important;
+        }
+
+        /* Botões fortes continuam com texto branco */
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .bg-blue-600,
           .bg-indigo-600,
           .bg-violet-600,
@@ -483,9 +607,11 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ),
-        html:not(.dark) .fisio-home :is(
+        html:not(.dark) body:not(.dark) .fisio-home :is(
           .bg-blue-600,
           .bg-indigo-600,
           .bg-violet-600,
@@ -493,7 +619,9 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ) *,
         :root[data-theme="light"] .fisio-home :is(
           .bg-blue-600,
@@ -503,7 +631,9 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ),
         :root[data-theme="light"] .fisio-home :is(
           .bg-blue-600,
@@ -513,7 +643,9 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ) *,
         html.light .fisio-home :is(
           .bg-blue-600,
@@ -523,7 +655,9 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ),
         html.light .fisio-home :is(
           .bg-blue-600,
@@ -533,110 +667,202 @@ export default function Home() {
           .bg-emerald-600,
           .bg-green-600,
           .bg-red-600,
-          .bg-rose-600
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
+        ) *,
+        body.light .fisio-home :is(
+          .bg-blue-600,
+          .bg-indigo-600,
+          .bg-violet-600,
+          .bg-purple-600,
+          .bg-emerald-600,
+          .bg-green-600,
+          .bg-red-600,
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
+        ),
+        body.light .fisio-home :is(
+          .bg-blue-600,
+          .bg-indigo-600,
+          .bg-violet-600,
+          .bg-purple-600,
+          .bg-emerald-600,
+          .bg-green-600,
+          .bg-red-600,
+          .bg-rose-600,
+          .bg-gradient-to-r,
+          .bg-gradient-to-br
         ) * {
           color: #FFFFFF !important;
           stroke: #FFFFFF !important;
         }
 
-        /* Cards com imagem precisam continuar com texto branco */
-        html:not(.dark) .fisio-home .home-image-showcase,
-        html:not(.dark) .fisio-home .home-image-showcase *,
+        /* Exceção: textos com gradiente não podem virar branco */
+        html:not(.dark) body:not(.dark) .fisio-home .text-transparent,
+        :root[data-theme="light"] .fisio-home .text-transparent,
+        html.light .fisio-home .text-transparent,
+        body.light .fisio-home .text-transparent {
+          color: transparent !important;
+        }
+
+        /* Seções com imagem continuam com texto branco por cima da foto */
+        html:not(.dark) body:not(.dark) .fisio-home .home-image-showcase,
+        html:not(.dark) body:not(.dark) .fisio-home .home-image-showcase *,
         :root[data-theme="light"] .fisio-home .home-image-showcase,
         :root[data-theme="light"] .fisio-home .home-image-showcase *,
         html.light .fisio-home .home-image-showcase,
-        html.light .fisio-home .home-image-showcase * {
+        html.light .fisio-home .home-image-showcase *,
+        body.light .fisio-home .home-image-showcase,
+        body.light .fisio-home .home-image-showcase * {
           color: #FFFFFF !important;
           stroke: #FFFFFF !important;
         }
 
-        /* CTA final continua branco em cima do fundo azul */
-        html:not(.dark) .fisio-home .home-cta-card,
-        html:not(.dark) .fisio-home .home-cta-card *,
+        /* CTA final azul continua branco */
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-card,
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-card *,
         :root[data-theme="light"] .fisio-home .home-cta-card,
         :root[data-theme="light"] .fisio-home .home-cta-card *,
         html.light .fisio-home .home-cta-card,
-        html.light .fisio-home .home-cta-card * {
+        html.light .fisio-home .home-cta-card *,
+        body.light .fisio-home .home-cta-card,
+        body.light .fisio-home .home-cta-card * {
           color: #FFFFFF !important;
           stroke: #FFFFFF !important;
         }
 
-        html:not(.dark) .fisio-home .home-cta-card a.bg-white,
-        html:not(.dark) .fisio-home .home-cta-card a.bg-white *,
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-card a.bg-white,
+        html:not(.dark) body:not(.dark) .fisio-home .home-cta-card a.bg-white *,
         :root[data-theme="light"] .fisio-home .home-cta-card a.bg-white,
         :root[data-theme="light"] .fisio-home .home-cta-card a.bg-white *,
         html.light .fisio-home .home-cta-card a.bg-white,
-        html.light .fisio-home .home-cta-card a.bg-white * {
+        html.light .fisio-home .home-cta-card a.bg-white *,
+        body.light .fisio-home .home-cta-card a.bg-white,
+        body.light .fisio-home .home-cta-card a.bg-white * {
           color: #2563EB !important;
           stroke: #2563EB !important;
         }
 
-        /* Badge inicial do hero */
-        html:not(.dark) .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5,
+        /* Hero: badge inicial */
+        html:not(.dark) body:not(.dark) .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5,
         :root[data-theme="light"] .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5,
-        html.light .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5 {
-          background: rgba(255,255,255,0.9) !important;
-          border-color: rgba(167,139,250,0.55) !important;
+        html.light .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5,
+        body.light .fisio-home section:first-of-type .inline-flex.items-center.gap-3.px-5 {
+          background: rgba(255,255,255,0.94) !important;
+          border-color: rgba(167,139,250,0.65) !important;
+          box-shadow: 0 18px 45px -32px rgba(88, 28, 135, 0.5) !important;
         }
 
-        /* Botão "Sou fisioterapeuta" no tema claro */
-        html:not(.dark) .fisio-home a[href="/register"] .border-white\\/20,
+        /* Botão secundário "Sou fisioterapeuta" */
+        html:not(.dark) body:not(.dark) .fisio-home a[href="/register"] .border-white\\/20,
         :root[data-theme="light"] .fisio-home a[href="/register"] .border-white\\/20,
-        html.light .fisio-home a[href="/register"] .border-white\\/20 {
+        html.light .fisio-home a[href="/register"] .border-white\\/20,
+        body.light .fisio-home a[href="/register"] .border-white\\/20 {
           background: #FFFFFF !important;
           color: #2563EB !important;
           border-color: #93C5FD !important;
+          box-shadow: 0 16px 45px -30px rgba(37, 99, 235, 0.65) !important;
         }
 
-        html:not(.dark) .fisio-home a[href="/register"] .border-white\\/20 *,
+        html:not(.dark) body:not(.dark) .fisio-home a[href="/register"] .border-white\\/20 *,
         :root[data-theme="light"] .fisio-home a[href="/register"] .border-white\\/20 *,
-        html.light .fisio-home a[href="/register"] .border-white\\/20 * {
+        html.light .fisio-home a[href="/register"] .border-white\\/20 *,
+        body.light .fisio-home a[href="/register"] .border-white\\/20 * {
           color: #2563EB !important;
           stroke: #2563EB !important;
         }
 
+        /* Métricas do hero */
+        html:not(.dark) body:not(.dark) .fisio-home section:first-of-type .border-t,
+        :root[data-theme="light"] .fisio-home section:first-of-type .border-t,
+        html.light .fisio-home section:first-of-type .border-t,
+        body.light .fisio-home section:first-of-type .border-t {
+          border-color: rgba(167, 139, 250, 0.45) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home section:first-of-type .border-t p:first-child,
+        :root[data-theme="light"] .fisio-home section:first-of-type .border-t p:first-child,
+        html.light .fisio-home section:first-of-type .border-t p:first-child,
+        body.light .fisio-home section:first-of-type .border-t p:first-child {
+          color: #1E3A8A !important;
+          opacity: 1 !important;
+        }
+
         /* Cards de profissionais */
-        html:not(.dark) .fisio-home .group\\/card,
+        html:not(.dark) body:not(.dark) .fisio-home .group\\/card,
         :root[data-theme="light"] .fisio-home .group\\/card,
-        html.light .fisio-home .group\\/card {
+        html.light .fisio-home .group\\/card,
+        body.light .fisio-home .group\\/card {
           background: #F3E8FF !important;
           border-color: #C4B5FD !important;
           color: #0F172A !important;
         }
 
-        html:not(.dark) .fisio-home .group\\/card h4,
-        html:not(.dark) .fisio-home .group\\/card span,
-        html:not(.dark) .fisio-home .group\\/card p,
-        :root[data-theme="light"] .fisio-home .group\\/card h4,
-        :root[data-theme="light"] .fisio-home .group\\/card span,
-        :root[data-theme="light"] .fisio-home .group\\/card p,
-        html.light .fisio-home .group\\/card h4,
-        html.light .fisio-home .group\\/card span,
-        html.light .fisio-home .group\\/card p {
+        html:not(.dark) body:not(.dark) .fisio-home .group\\/card :is(h4, p, span),
+        :root[data-theme="light"] .fisio-home .group\\/card :is(h4, p, span),
+        html.light .fisio-home .group\\/card :is(h4, p, span),
+        body.light .fisio-home .group\\/card :is(h4, p, span) {
           opacity: 1 !important;
         }
 
-        html:not(.dark) .fisio-home .group\\/btn,
-        :root[data-theme="light"] .fisio-home .group\\/btn,
-        html.light .fisio-home .group\\/btn {
+        html:not(.dark) body:not(.dark) .fisio-home .group\\/card h4,
+        :root[data-theme="light"] .fisio-home .group\\/card h4,
+        html.light .fisio-home .group\\/card h4,
+        body.light .fisio-home .group\\/card h4 {
+          color: #111827 !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .group\\/card .group\\/btn,
+        :root[data-theme="light"] .fisio-home .group\\/card .group\\/btn,
+        html.light .fisio-home .group\\/card .group\\/btn,
+        body.light .fisio-home .group\\/card .group\\/btn {
           background: #FFFFFF !important;
           color: #2563EB !important;
           border-color: #BFDBFE !important;
         }
 
-        html:not(.dark) .fisio-home .group\\/btn *,
-        :root[data-theme="light"] .fisio-home .group\\/btn *,
-        html.light .fisio-home .group\\/btn * {
+        html:not(.dark) body:not(.dark) .fisio-home .group\\/card .group\\/btn *,
+        :root[data-theme="light"] .fisio-home .group\\/card .group\\/btn *,
+        html.light .fisio-home .group\\/card .group\\/btn *,
+        body.light .fisio-home .group\\/card .group\\/btn * {
           color: #2563EB !important;
           stroke: #2563EB !important;
         }
 
-        /* Mantém bolinha online normal */
-        html:not(.dark) .fisio-home :is(.ping-online-circle, .ping-online-dot),
+        /* Cards do ecossistema e FisioStore */
+        html:not(.dark) body:not(.dark) .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
+        :root[data-theme="light"] .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
+        html.light .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$,
+        body.light .fisio-home .dark\\:bg-white\\/\$begin:math:display$0\\\\\.06\\$end:math:display$ {
+          background-color: #FFFFFF !important;
+        }
+
+        /* Números grandes decorativos não devem sumir totalmente */
+        html:not(.dark) body:not(.dark) .fisio-home .text-white\\/10,
+        :root[data-theme="light"] .fisio-home .text-white\\/10,
+        html.light .fisio-home .text-white\\/10,
+        body.light .fisio-home .text-white\\/10 {
+          color: rgba(37, 99, 235, 0.16) !important;
+        }
+
+        /* Dots/carrossel */
+        html:not(.dark) body:not(.dark) .fisio-home .bg-white\\/20,
+        :root[data-theme="light"] .fisio-home .bg-white\\/20,
+        html.light .fisio-home .bg-white\\/20,
+        body.light .fisio-home .bg-white\\/20 {
+          background-color: rgba(37, 99, 235, 0.25) !important;
+        }
+
+        /* Mantém bolinha online */
+        html:not(.dark) body:not(.dark) .fisio-home :is(.ping-online-circle, .ping-online-dot),
         :root[data-theme="light"] .fisio-home :is(.ping-online-circle, .ping-online-dot),
-        html.light .fisio-home :is(.ping-online-circle, .ping-online-dot) {
+        html.light .fisio-home :is(.ping-online-circle, .ping-online-dot),
+        body.light .fisio-home :is(.ping-online-circle, .ping-online-dot) {
           color: inherit !important;
         }
+      
       `}</style>
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
