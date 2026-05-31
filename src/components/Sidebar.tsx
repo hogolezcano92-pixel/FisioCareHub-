@@ -135,7 +135,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     }
   ], [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
-
   const getSidebarIconColor = (item: any) => {
     const key = `${item.path || ''} ${item.name || ''}`.toLowerCase();
 
@@ -204,8 +203,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) {
           background: rgba(255, 255, 255, 0.9) !important;
           color: #334155 !important;
-          border: 1px solid rgba(221, 214, 254, 0.72) !important;
-          box-shadow: 0 14px 36px -30px rgba(88, 28, 135, 0.45) !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover,
@@ -214,7 +213,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover {
           background: rgba(245, 243, 255, 0.98) !important;
           color: #6D28D9 !important;
-          border-color: rgba(167, 139, 250, 0.95) !important;
+          border-color: transparent !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
@@ -240,8 +239,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-active-item {
           background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%) !important;
           color: #FFFFFF !important;
-          border: 1px solid rgba(255, 255, 255, 0.42) !important;
-          box-shadow: 0 18px 42px -24px rgba(91, 33, 182, 0.72) !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-active-item *,
@@ -274,8 +273,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         html.light .fisio-sidebar-shell .fisio-sidebar-profile-card,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-profile-card {
           background: rgba(255, 255, 255, 0.92) !important;
-          border: 1px solid rgba(221, 214, 254, 0.9) !important;
-          box-shadow: 0 16px 40px -32px rgba(88, 28, 135, 0.5) !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-profile-card p:first-of-type,
@@ -383,7 +382,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             <img 
               src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`}
               alt="Avatar"
-              className="w-10 h-10 rounded-xl object-cover border-2 border-white/10 shadow-sm"
+              className="w-10 h-10 rounded-xl object-cover shadow-sm"
             />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-black text-white truncate">
