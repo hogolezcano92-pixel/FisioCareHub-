@@ -527,7 +527,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500">
       <style>{`
-        /* Dashboard: melhora o selo Story e os cards rápidos no tema claro, sem alterar o dark mode */
+        /* Dashboard: melhora o selo Story e força os ícones rápidos coloridos no tema claro sem alterar o dark mode */
         html:not(.dark) .dashboard-story-avatar > button,
         html.light .dashboard-story-avatar > button,
         body.light .dashboard-story-avatar > button,
@@ -561,6 +561,54 @@ export default function Dashboard() {
           background: #10B981;
           box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
           vertical-align: 1px;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-purple,
+        html.light .dashboard-quick-icon-purple,
+        body.light .dashboard-quick-icon-purple,
+        :root[data-theme="light"] .dashboard-quick-icon-purple {
+          color: #7C3AED !important;
+          stroke: #7C3AED !important;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-blue,
+        html.light .dashboard-quick-icon-blue,
+        body.light .dashboard-quick-icon-blue,
+        :root[data-theme="light"] .dashboard-quick-icon-blue {
+          color: #2563EB !important;
+          stroke: #2563EB !important;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-green,
+        html.light .dashboard-quick-icon-green,
+        body.light .dashboard-quick-icon-green,
+        :root[data-theme="light"] .dashboard-quick-icon-green {
+          color: #16A34A !important;
+          stroke: #16A34A !important;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-orange,
+        html.light .dashboard-quick-icon-orange,
+        body.light .dashboard-quick-icon-orange,
+        :root[data-theme="light"] .dashboard-quick-icon-orange {
+          color: #EA580C !important;
+          stroke: #EA580C !important;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-emerald,
+        html.light .dashboard-quick-icon-emerald,
+        body.light .dashboard-quick-icon-emerald,
+        :root[data-theme="light"] .dashboard-quick-icon-emerald {
+          color: #059669 !important;
+          stroke: #059669 !important;
+        }
+
+        html:not(.dark) .dashboard-quick-icon-amber,
+        html.light .dashboard-quick-icon-amber,
+        body.light .dashboard-quick-icon-amber,
+        :root[data-theme="light"] .dashboard-quick-icon-amber {
+          color: #D97706 !important;
+          stroke: #D97706 !important;
         }
       `}</style>
       <div className="absolute -top-4 md:-top-8 inset-x-0 bottom-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
@@ -715,19 +763,19 @@ export default function Dashboard() {
             className="grid grid-cols-2 md:grid-cols-3 gap-3"
           >
             <Link to="/patients" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-violet-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-violet-500/20 shadow-xl shadow-violet-900/10">
-              <Users className="mx-auto text-violet-600 dark:text-slate-400 group-hover:text-violet-700 dark:group-hover:text-sky-400 transition-colors" size={24} />
+              <Users className="dashboard-quick-icon-purple mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-sky-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-sky-400 tracking-widest">Pacientes</p>
             </Link>
             <Link to="/agenda" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-sky-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-sky-500/20 shadow-xl shadow-sky-900/10">
-              <Calendar className="mx-auto text-sky-600 dark:text-slate-400 group-hover:text-sky-700 dark:group-hover:text-sky-400 transition-colors" size={24} />
+              <Calendar className="dashboard-quick-icon-blue mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-sky-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-sky-700 dark:group-hover:text-sky-400 tracking-widest">Agenda</p>
             </Link>
             <Link to="/exercises" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-emerald-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-emerald-500/20 shadow-xl shadow-emerald-900/10">
-              <Activity className="mx-auto text-emerald-600 dark:text-slate-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors" size={24} />
+              <Activity className="dashboard-quick-icon-green mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-emerald-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 tracking-widest">Exercícios</p>
             </Link>
             <Link to="/records" className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-orange-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-orange-500/20 shadow-xl shadow-orange-900/10">
-              <FileText className="mx-auto text-orange-600 dark:text-slate-400 group-hover:text-orange-700 dark:group-hover:text-rose-400 transition-colors" size={24} />
+              <FileText className="dashboard-quick-icon-orange mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-rose-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-orange-700 dark:group-hover:text-rose-400 tracking-widest">Prontuários</p>
             </Link>
             <button 
@@ -738,14 +786,14 @@ export default function Dashboard() {
               }}
               className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-emerald-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-emerald-500/20 shadow-xl shadow-emerald-900/10"
             >
-              <DollarSign className="mx-auto text-emerald-600 dark:text-slate-400 group-hover:text-emerald-700 dark:group-hover:text-blue-400 transition-colors" size={24} />
+              <DollarSign className="dashboard-quick-icon-emerald mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-blue-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-emerald-700 dark:group-hover:text-blue-400 tracking-widest">Financeiro</p>
             </button>
             <Link
               to="/dashboard/fisio?tab=avaliacoes"
               className="p-4 bg-white/5 backdrop-blur-xl rounded-2xl hover:bg-amber-600/10 group transition-all text-center space-y-1.5 border border-white/10 hover:border-amber-500/20 shadow-xl shadow-amber-900/10"
             >
-              <Star className="mx-auto text-amber-500 dark:text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" size={24} />
+              <Star className="dashboard-quick-icon-amber mx-auto transition-colors dark:text-slate-400 dark:group-hover:text-amber-400" size={24} />
               <p className="text-[9px] font-black uppercase text-slate-600 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 tracking-widest">Reputação</p>
             </Link>
           </motion.div>
