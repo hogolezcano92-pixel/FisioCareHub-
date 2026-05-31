@@ -1050,10 +1050,56 @@ export default function Home() {
         html.light .fisio-home .home-cta-login-button,
         body.light .fisio-home .home-cta-login-button {
           background: rgba(15, 23, 42, 0.22) !important;
-          border-color: rgba(255, 255, 255, 0.45) !important;
+          border-color: rgba(oi 255, 255, 255, 0.45) !important;
           color: #FFFFFF !important;
         }
+              /* Ajuste final: badges/selo do Ecossistema e FisioStore no tema claro */
+        html:not(.dark) body:not(.dark) .fisio-home section [class*="Ecossistema"],
+        :root[data-theme="light"] .fisio-home section [class*="Ecossistema"],
+        html.light .fisio-home section [class*="Ecossistema"],
+        body.light .fisio-home section [class*="Ecossistema"] {
+          color: #6D28D9 !important;
+          opacity: 1 !important;
+        }
 
+        html:not(.dark) body:not(.dark) .fisio-home .inline-flex.items-center.gap-2.rounded-full,
+        :root[data-theme="light"] .fisio-home .inline-flex.items-center.gap-2.rounded-full,
+        html.light .fisio-home .inline-flex.items-center.gap-2.rounded-full,
+        body.light .fisio-home .inline-flex.items-center.gap-2.rounded-full {
+          background: #F3E8FF !important;
+          border-color: #C4B5FD !important;
+          color: #6D28D9 !important;
+          opacity: 1 !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .inline-flex.items-center.gap-2.rounded-full *,
+        :root[data-theme="light"] .fisio-home .inline-flex.items-center.gap-2.rounded-full *,
+        html.light .fisio-home .inline-flex.items-center.gap-2.rounded-full *,
+        body.light .fisio-home .inline-flex.items-center.gap-2.rounded-full * {
+          color: #6D28D9 !important;
+          stroke: #6D28D9 !important;
+          opacity: 1 !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .absolute.right-8.top-8.rounded-full,
+        :root[data-theme="light"] .fisio-home .absolute.right-8.top-8.rounded-full,
+        html.light .fisio-home .absolute.right-8.top-8.rounded-full,
+        body.light .fisio-home .absolute.right-8.top-8.rounded-full {
+          background: #FFFFFF !important;
+          border-color: #C4B5FD !important;
+          color: #2563EB !important;
+          opacity: 1 !important;
+          box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.55) !important;
+        }
+
+        html:not(.dark) body:not(.dark) .fisio-home .absolute.right-8.top-8.rounded-full *,
+        :root[data-theme="light"] .fisio-home .absolute.right-8.top-8.rounded-full *,
+        html.light .fisio-home .absolute.right-8.top-8.rounded-full *,
+        body.light .fisio-home .absolute.right-8.top-8.rounded-full * {
+          color: #2563EB !important;
+          stroke: #2563EB !important;
+          opacity: 1 !important;
+        }
       `}</style>
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
