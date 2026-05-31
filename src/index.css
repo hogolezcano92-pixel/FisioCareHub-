@@ -1026,3 +1026,58 @@ body.light {
   color: #64748B !important;
   opacity: 1 !important;
 }
+/* =========================================================
+   FisioCareHub — Sidebar roxo escuro somente no TEMA CLARO
+   Não altera o dark mode.
+   ========================================================= */
+
+:root[data-theme="light"] aside,
+html[data-theme="light"] aside,
+body[data-theme="light"] aside {
+  background: linear-gradient(180deg, #2E1065 0%, #4C1D95 45%, #1E1B4B 100%) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 18px 0 45px -30px rgba(46, 16, 101, 0.65) !important;
+}
+
+/* Textos e ícones dentro da sidebar */
+:root[data-theme="light"] aside :is(h1, h2, h3, h4, p, span, small, a, button, li, svg),
+html[data-theme="light"] aside :is(h1, h2, h3, h4, p, span, small, a, button, li, svg),
+body[data-theme="light"] aside :is(h1, h2, h3, h4, p, span, small, a, button, li, svg) {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Subtítulos da sidebar, tipo ATENDIMENTO, LEGAL, CONTATO */
+:root[data-theme="light"] aside :is(.text-slate-400, .text-slate-500, .text-gray-400, .text-gray-500, .text-white\/50, .text-white\/60),
+html[data-theme="light"] aside :is(.text-slate-400, .text-slate-500, .text-gray-400, .text-gray-500, .text-white\/50, .text-white\/60),
+body[data-theme="light"] aside :is(.text-slate-400, .text-slate-500, .text-gray-400, .text-gray-500, .text-white\/50, .text-white\/60) {
+  color: #EDE9FE !important;
+}
+
+/* Cards/botões da sidebar no tema claro */
+:root[data-theme="light"] aside :is(a, button),
+html[data-theme="light"] aside :is(a, button),
+body[data-theme="light"] aside :is(a, button) {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Item ativo da sidebar */
+:root[data-theme="light"] aside :is(a[aria-current="page"], .active, .sidebar-item-active),
+html[data-theme="light"] aside :is(a[aria-current="page"], .active, .sidebar-item-active),
+body[data-theme="light"] aside :is(a[aria-current="page"], .active, .sidebar-item-active) {
+  background: linear-gradient(135deg, #7C3AED, #2563EB) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 16px 35px -22px rgba(124, 58, 237, 0.9) !important;
+}
+
+/* Bloco do perfil no rodapé da sidebar */
+:root[data-theme="light"] aside [class*="bg-white"],
+html[data-theme="light"] aside [class*="bg-white"],
+body[data-theme="light"] aside [class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
