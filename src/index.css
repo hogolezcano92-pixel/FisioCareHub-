@@ -985,3 +985,10 @@ html.light .fixed:has(.lucide-settings) [class*="bg-blue"] *,
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
+/* Sidebar mobile - melhora apenas o logo no topo no tema claro */
+html:not(.dark) body:not(.dark) aside img:first-of-type,
+html.light aside img:first-of-type,
+:root[data-theme="light"] aside img:first-of-type,
+body.light aside img:first-of-type {
+  filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.22)) contrast(1.08) saturate(1.1);
+}
