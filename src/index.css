@@ -992,3 +992,78 @@ html.light aside img:first-of-type,
 body.light aside img:first-of-type {
   filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.22)) contrast(1.08) saturate(1.1);
 }
+/* Sidebar mobile - fundo roxo claro no tema claro */
+html:not(.dark) body:not(.dark) aside,
+html.light aside,
+:root[data-theme="light"] aside,
+body.light aside {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(124, 58, 237, 0.14), transparent 32%),
+    linear-gradient(180deg, #F5F0FF 0%, #FAF8FF 48%, #F3E8FF 100%) !important;
+  border-right: 1px solid rgba(196, 181, 253, 0.75) !important;
+}
+
+/* Melhora textos/títulos da sidebar no tema claro */
+html:not(.dark) body:not(.dark) aside :is(h1, h2, h3, h4, p, span, a, button),
+html.light aside :is(h1, h2, h3, h4, p, span, a, button),
+:root[data-theme="light"] aside :is(h1, h2, h3, h4, p, span, a, button),
+body.light aside :is(h1, h2, h3, h4, p, span, a, button) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Títulos de seção, tipo ATENDIMENTO */
+html:not(.dark) body:not(.dark) aside [class*="tracking"],
+html.light aside [class*="tracking"],
+:root[data-theme="light"] aside [class*="tracking"],
+body.light aside [class*="tracking"] {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+/* Cards/botões da sidebar no tema claro */
+html:not(.dark) body:not(.dark) aside a:not([class*="from-"]):not([class*="bg-gradient"]),
+html:not(.dark) body:not(.dark) aside button:not([class*="from-"]):not([class*="bg-gradient"]),
+html.light aside a:not([class*="from-"]):not([class*="bg-gradient"]),
+html.light aside button:not([class*="from-"]):not([class*="bg-gradient"]),
+:root[data-theme="light"] aside a:not([class*="from-"]):not([class*="bg-gradient"]),
+:root[data-theme="light"] aside button:not([class*="from-"]):not([class*="bg-gradient"]),
+body.light aside a:not([class*="from-"]):not([class*="bg-gradient"]),
+body.light aside button:not([class*="from-"]):not([class*="bg-gradient"]) {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(221, 214, 254, 0.9) !important;
+  box-shadow: 0 14px 36px -30px rgba(88, 28, 135, 0.45) !important;
+}
+
+/* Ícones dos itens não ativos */
+html:not(.dark) body:not(.dark) aside a:not([class*="from-"]) svg,
+html:not(.dark) body:not(.dark) aside button:not([class*="from-"]) svg,
+html.light aside a:not([class*="from-"]) svg,
+html.light aside button:not([class*="from-"]) svg,
+:root[data-theme="light"] aside a:not([class*="from-"]) svg,
+:root[data-theme="light"] aside button:not([class*="from-"]) svg,
+body.light aside a:not([class*="from-"]) svg,
+body.light aside button:not([class*="from-"]) svg {
+  stroke: #334155 !important;
+}
+
+/* Item ativo roxo continua com texto e ícone branco */
+html:not(.dark) body:not(.dark) aside :is(a, button)[class*="from-"],
+html:not(.dark) body:not(.dark) aside :is(a, button)[class*="from-"] *,
+html.light aside :is(a, button)[class*="from-"],
+html.light aside :is(a, button)[class*="from-"] *,
+:root[data-theme="light"] aside :is(a, button)[class*="from-"],
+:root[data-theme="light"] aside :is(a, button)[class*="from-"] *,
+body.light aside :is(a, button)[class*="from-"],
+body.light aside :is(a, button)[class*="from-"] * {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* Logo no topo da sidebar */
+html:not(.dark) body:not(.dark) aside img:first-of-type,
+html.light aside img:first-of-type,
+:root[data-theme="light"] aside img:first-of-type,
+body.light aside img:first-of-type {
+  filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.22)) contrast(1.12) saturate(1.12);
+}
