@@ -157,7 +157,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchProfessionals();
-    }, 300); // Debounce de 300ms
+    }, 300);
     return () => clearTimeout(timer);
   }, [nameQuery, locationQuery, specialtyFilter]);
 
@@ -183,17 +183,14 @@ export default function Home() {
         .eq('tipo_usuario', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado');
 
-      // Filtro por Nome ou E-mail (ilike para ignorar case)
       if (nameQuery) {
         query = query.or(`nome_completo.ilike.%${nameQuery}%,email.ilike.%${nameQuery}%`);
       }
 
-      // Filtro por Localização (ilike para ignorar case em localizacao ou cidade)
       if (locationQuery) {
         query = query.or(`localizacao.ilike.%${locationQuery}%,cidade.ilike.%${locationQuery}%`);
       }
 
-      // Filtro por Especialidade
       if (specialtyFilter && specialtyFilter !== 'Todos') {
         query = query.eq('especialidade', specialtyFilter);
       }
@@ -235,7 +232,6 @@ export default function Home() {
     }
   };
 
-
   const nextProSlide = () => {
     if (professionals.length === 0) return;
     setProSlideIndex((prev) => (prev + 1) % (professionals.length - itemsVisible + 1));
@@ -247,8 +243,155 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
+    <div className="fisio-home bg-[#FAF8FF] dark:bg-[#0B0F19] transition-colors duration-300 selection:bg-blue-500/30">
       <AnimatedBackground />
+
+      <style>{`
+        :root[data-theme="light"] .fisio-home,
+        html.light .fisio-home,
+        body.light .fisio-home {
+          background: #FAF8FF !important;
+          color: #0F172A !important;
+        }
+
+        :root[data-theme="light"] .fisio-home section,
+        html.light .fisio-home section,
+        body.light .fisio-home section {
+          color: #0F172A !important;
+        }
+
+        :root[data-theme="light"] .fisio-home h1,
+        :root[data-theme="light"] .fisio-home h2,
+        :root[data-theme="light"] .fisio-home h3,
+        :root[data-theme="light"] .fisio-home h4,
+        :root[data-theme="light"] .fisio-home h5,
+        :root[data-theme="light"] .fisio-home h6,
+        html.light .fisio-home h1,
+        html.light .fisio-home h2,
+        html.light .fisio-home h3,
+        html.light .fisio-home h4,
+        html.light .fisio-home h5,
+        html.light .fisio-home h6 {
+          color: #0F172A !important;
+          opacity: 1 !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.text-white, .text-gray-100, .text-gray-200, .text-slate-100, .text-slate-200),
+        html.light .fisio-home :is(.text-white, .text-gray-100, .text-gray-200, .text-slate-100, .text-slate-200),
+        body.light .fisio-home :is(.text-white, .text-gray-100, .text-gray-200, .text-slate-100, .text-slate-200) {
+          color: #0F172A !important;
+          opacity: 1 !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.text-gray-300, .text-gray-400, .text-slate-300, .text-slate-400, .text-slate-500, .text-white\\/70, .text-white\\/60, .text-white\\/50),
+        html.light .fisio-home :is(.text-gray-300, .text-gray-400, .text-slate-300, .text-slate-400, .text-slate-500, .text-white\\/70, .text-white\\/60, .text-white\\/50),
+        body.light .fisio-home :is(.text-gray-300, .text-gray-400, .text-slate-300, .text-slate-400, .text-slate-500, .text-white\\/70, .text-white\\/60, .text-white\\/50) {
+          color: #334155 !important;
+          opacity: 1 !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(
+          .bg-white\\/5,
+          .bg-white\\/10,
+          .bg-white\\/15,
+          .bg-slate-900\\/30,
+          .bg-slate-900\\/40,
+          .bg-slate-900\\/60,
+          .bg-slate-900\\/80,
+          .bg-black\\/20,
+          .bg-black\\/30,
+          .bg-black\\/40,
+          .bg-black\\/50
+        ),
+        html.light .fisio-home :is(
+          .bg-white\\/5,
+          .bg-white\\/10,
+          .bg-white\\/15,
+          .bg-slate-900\\/30,
+          .bg-slate-900\\/40,
+          .bg-slate-900\\/60,
+          .bg-slate-900\\/80,
+          .bg-black\\/20,
+          .bg-black\\/30,
+          .bg-black\\/40,
+          .bg-black\\/50
+        ) {
+          background-color: #F3E8FF !important;
+          color: #0F172A !important;
+          border-color: #C4B5FD !important;
+          box-shadow: 0 18px 45px -32px rgba(109, 40, 217, 0.45) !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.border-white\\/5, .border-white\\/10, .border-white\\/20),
+        html.light .fisio-home :is(.border-white\\/5, .border-white\\/10, .border-white\\/20) {
+          border-color: #C4B5FD !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(input, select, textarea),
+        html.light .fisio-home :is(input, select, textarea) {
+          background-color: #FFFFFF !important;
+          color: #0F172A !important;
+          border-color: #A78BFA !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(input::placeholder, textarea::placeholder),
+        html.light .fisio-home :is(input::placeholder, textarea::placeholder) {
+          color: #64748B !important;
+          opacity: 1 !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.bg-clip-text, .text-transparent),
+        html.light .fisio-home :is(.bg-clip-text, .text-transparent) {
+          color: transparent !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.text-blue-400, .text-blue-500, .text-indigo-400, .text-indigo-500),
+        html.light .fisio-home :is(.text-blue-400, .text-blue-500, .text-indigo-400, .text-indigo-500) {
+          color: #2563EB !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.text-violet-400, .text-purple-400),
+        html.light .fisio-home :is(.text-violet-400, .text-purple-400) {
+          color: #6D28D9 !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.bg-blue-600, .bg-indigo-600, .bg-violet-600, .bg-purple-600, .bg-emerald-600, .bg-green-600, .bg-red-600, .bg-rose-600),
+        :root[data-theme="light"] .fisio-home :is(.bg-blue-600, .bg-indigo-600, .bg-violet-600, .bg-purple-600, .bg-emerald-600, .bg-green-600, .bg-red-600, .bg-rose-600) *,
+        html.light .fisio-home :is(.bg-blue-600, .bg-indigo-600, .bg-violet-600, .bg-purple-600, .bg-emerald-600, .bg-green-600, .bg-red-600, .bg-rose-600),
+        html.light .fisio-home :is(.bg-blue-600, .bg-indigo-600, .bg-violet-600, .bg-purple-600, .bg-emerald-600, .bg-green-600, .bg-red-600, .bg-rose-600) * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+        }
+
+        :root[data-theme="light"] .fisio-home .home-image-showcase,
+        :root[data-theme="light"] .fisio-home .home-image-showcase *,
+        html.light .fisio-home .home-image-showcase,
+        html.light .fisio-home .home-image-showcase * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+        }
+
+        :root[data-theme="light"] .fisio-home .home-cta-card,
+        :root[data-theme="light"] .fisio-home .home-cta-card *,
+        html.light .fisio-home .home-cta-card,
+        html.light .fisio-home .home-cta-card * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+        }
+
+        :root[data-theme="light"] .fisio-home .home-cta-card a.bg-white,
+        :root[data-theme="light"] .fisio-home .home-cta-card a.bg-white *,
+        html.light .fisio-home .home-cta-card a.bg-white,
+        html.light .fisio-home .home-cta-card a.bg-white * {
+          color: #2563EB !important;
+          stroke: #2563EB !important;
+        }
+
+        :root[data-theme="light"] .fisio-home :is(.ping-online-circle, .ping-online-dot),
+        html.light .fisio-home :is(.ping-online-circle, .ping-online-dot) {
+          color: inherit !important;
+        }
+      `}</style>
 
       {/* Hero Section - Home Care Focus */}
       <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
@@ -368,14 +511,13 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex-1 relative min-h-[50vh] lg:min-h-full">
+        <div className="flex-1 relative min-h-[50vh] lg:min-h-full home-image-showcase">
           <motion.div 
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
-            {/* Using an abstract architectural medical background instead of humans */}
             <img 
               src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200" 
               className="w-full h-full object-cover animate-ken-burns"
@@ -386,7 +528,6 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
             
-            {/* Subtle floating tech elements */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                <motion.div
                  animate={{ 
@@ -406,7 +547,6 @@ export default function Home() {
                />
             </div>
 
-            {/* Floating Glass UI Element */}
             <motion.div
               animate={{ y: [0, -20, 0] }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
@@ -438,7 +578,6 @@ export default function Home() {
             </motion.div>
           </motion.div>
 
-          {/* Floating Feature Card */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -462,17 +601,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FisioStories - Conteúdo vivo dos fisioterapeutas */}
       <section className="relative z-20 px-6 lg:px-20 mt-6 mb-10 sm:mt-10 sm:mb-16">
         <div className="max-w-7xl mx-auto">
           <StoryRail compact className="max-w-full !shadow-none" />
         </div>
       </section>
 
-      {/* Mirrored Benefits Section */}
       <section className="pt-10 pb-14 sm:py-20 lg:py-24 px-6 lg:px-20 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Patient Card */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -497,7 +633,6 @@ export default function Home() {
             </ul>
           </motion.div>
 
-          {/* Physio Card */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -524,7 +659,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Specialties Slider Section - Modern & Professional */}
       <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div 
@@ -556,7 +690,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          <div className="relative h-[600px] rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] border border-white/5">
+          <div className="home-image-showcase relative h-[600px] rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] border border-white/5">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlide}
@@ -616,7 +750,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it Works Section - Bento Grid Style */}
       <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20 bg-slate-900/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 sm:mb-16 lg:mb-24 space-y-4 relative z-30">
@@ -678,7 +811,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Professionals Section - Dynamic Grid */}
       <section className="py-16 sm:py-24 lg:py-32 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 lg:mb-20 gap-6 sm:gap-8 relative z-30">
@@ -731,7 +863,6 @@ export default function Home() {
               </div>
             ) : professionals.length > 0 ? (
               <div className="relative">
-                {/* Navigation Buttons */}
                 <div className="absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => setProSlideIndex(prev => Math.max(0, prev - 1))}
@@ -832,7 +963,6 @@ export default function Home() {
                   </motion.div>
                 </div>
                 
-                {/* Pagination Dots */}
                 <div className="flex justify-center gap-2 mt-12">
                   {Array.from({ length: Math.max(0, professionals.length - itemsVisible + 1) }).map((_, i) => (
                     <button
@@ -859,8 +989,6 @@ export default function Home() {
         </div>
       </section>
 
-
-      {/* Marketplace Ecosystem Section */}
       <section className="relative overflow-hidden px-6 py-14 sm:py-20 lg:py-28">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.16),transparent_28%)] dark:opacity-70" />
         <div className="relative z-10 max-w-7xl mx-auto">
@@ -953,14 +1081,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* New Physio Highlight Section */}
       <PhysioHighlight />
 
-      {/* CTA Section - High Impact SaaS Style */}
       <section className="py-16 sm:py-24 lg:py-32 px-6">
         <div className="max-w-7xl mx-auto relative group">
           <div className="absolute inset-0 bg-blue-600 rounded-[4rem] blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity" />
-          <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-24 text-center text-white overflow-hidden shadow-2xl">
+          <div className="home-cta-card relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[4rem] p-12 md:p-24 text-center text-white overflow-hidden shadow-2xl">
             <div 
               className="absolute top-0 left-0 w-full h-full opacity-10 mix-blend-overlay" 
               style={{ backgroundImage: `url("${NOISE_SVG}")` }}
