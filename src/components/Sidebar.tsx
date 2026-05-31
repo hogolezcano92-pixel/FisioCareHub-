@@ -135,6 +135,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     }
   ], [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
+
+  const getSidebarIconColor = (item: any) => {
+    const key = `${item.path || ''} ${item.name || ''}`.toLowerCase();
+
+    if (item.variant === 'danger') return '#E11D48';
+    if (key.includes('agenda') || key.includes('calendar') || key.includes('appointments')) return '#2563EB';
+    if (key.includes('paciente') || key.includes('patients') || key.includes('jornada')) return '#7C3AED';
+    if (key.includes('oportunidade') || key.includes('buscar') || key.includes('search')) return '#0891B2';
+    if (key.includes('avalia') || key.includes('evaluation')) return '#059669';
+    if (key.includes('exerc') || key.includes('treino') || key.includes('workout')) return '#16A34A';
+    if (key.includes('loja') || key.includes('fisiostore')) return '#9333EA';
+    if (key.includes('triage') || key.includes('triagem') || key.includes('exames')) return '#0EA5E9';
+    if (key.includes('prontu') || key.includes('record')) return '#EA580C';
+    if (key.includes('document')) return '#DB2777';
+    if (key.includes('assinatura') || key.includes('subscription')) return '#CA8A04';
+    if (key.includes('chat') || key.includes('suporte') || key.includes('support')) return '#2563EB';
+    if (key.includes('perfil') || key.includes('profile')) return '#4F46E5';
+    if (key.includes('guia') || key.includes('library') || key.includes('biblioteca')) return '#0D9488';
+    if (key.includes('sobre') || key.includes('about') || key.includes('ajuda') || key.includes('help')) return '#64748B';
+    if (key.includes('finance') || key.includes('payment') || key.includes('pagamento')) return '#D97706';
+    if (key.includes('admin') || key.includes('settings')) return '#7C3AED';
+
+    return '#475569';
+  };
+
   const sidebarContent = (
     <>
       <style>{`
@@ -196,16 +221,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg {
-          color: #334155 !important;
-          stroke: #334155 !important;
+          color: var(--sidebar-icon-color, #334155) !important;
+          stroke: var(--sidebar-icon-color, #334155) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg {
-          color: #6D28D9 !important;
-          stroke: #6D28D9 !important;
+          color: var(--sidebar-icon-color, #6D28D9) !important;
+          stroke: var(--sidebar-icon-color, #6D28D9) !important;
+          filter: drop-shadow(0 8px 14px rgba(88, 28, 135, 0.18)) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-active-item,
@@ -319,10 +345,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     >
                       <div className="flex items-center gap-3">
                         <item.icon 
-                          size={20} 
+                          size={20}
+                          style={
+                            !isActive
+                              ? ({ '--sidebar-icon-color': getSidebarIconColor(item) } as React.CSSProperties)
+                              : undefined
+                          }
                           className={cn(
                             "transition-colors",
-                            isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-blue-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
+                            isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
                           )} 
                         />
                         <span>{item.name}</span>
