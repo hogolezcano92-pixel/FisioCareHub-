@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  Home, 
-  Calendar, 
-  FileText, 
-  FileSignature, 
+import {
+  Home,
+  Calendar,
+  FileText,
+  FileSignature,
   Stethoscope,
-  BrainCircuit, 
-  MessageSquare, 
-  User, 
+  BrainCircuit,
+  MessageSquare,
+  User,
   LogOut,
   ShieldCheck,
   Activity,
@@ -115,8 +115,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           title: t('nav.communication'),
           items: [
-            // Chat e Suporte precisam ficar liberados para fisioterapeuta gratuito,
-            // porque são o canal direto com administrador/suporte.
             { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
             { name: t('nav.support'), path: '/chat?support=true', icon: ShieldCheck },
           ]
@@ -162,31 +160,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const sidebarContent = (
     <>
       <style>{`
-        /* Sidebar FisioCareHub - tema claro premium sem mexer no dark mode */
+        /* Light mode: igual ao dark mode, sem cards nas abas */
         html:not(.dark) .fisio-sidebar-shell,
         body.light .fisio-sidebar-shell,
         html.light .fisio-sidebar-shell,
         :root[data-theme="light"] .fisio-sidebar-shell {
           background:
-            radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.24), transparent 34%),
-            radial-gradient(circle at 88% 22%, rgba(59, 130, 246, 0.10), transparent 28%),
-            linear-gradient(180deg, #E9DDFF 0%, #F2EAFF 45%, #EDE2FF 100%) !important;
-          border-right: 1px solid rgba(167, 139, 250, 0.9) !important;
+            radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.16), transparent 34%),
+            radial-gradient(circle at 88% 22%, rgba(59, 130, 246, 0.08), transparent 28%),
+            linear-gradient(180deg, #EFE8FF 0%, #F5F0FF 46%, #F0E9FF 100%) !important;
+          border-right: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-logo-area,
         body.light .fisio-sidebar-shell .fisio-sidebar-logo-area,
         html.light .fisio-sidebar-shell .fisio-sidebar-logo-area,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-logo-area {
-          background: rgba(255, 255, 255, 0.42) !important;
-          border-bottom: 1px solid rgba(167, 139, 250, 0.7) !important;
+          background: rgba(255, 255, 255, 0.14) !important;
+          border-bottom: 1px solid rgba(167, 139, 250, 0.24) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-logo-area img,
         body.light .fisio-sidebar-shell .fisio-sidebar-logo-area img,
         html.light .fisio-sidebar-shell .fisio-sidebar-logo-area img,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-logo-area img {
-          filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.18)) contrast(1.08) saturate(1.08) !important;
+          filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.16)) contrast(1.05) saturate(1.06) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-section-title,
@@ -197,12 +195,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           opacity: 1 !important;
         }
 
+        /* Sem card nas abas */
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) {
-          background: rgba(255, 255, 255, 0.9) !important;
-          color: #334155 !important;
+          background: transparent !important;
+          color: #475569 !important;
           border: none !important;
           box-shadow: none !important;
         }
@@ -211,26 +210,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover,
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover {
-          background: rgba(245, 243, 255, 0.98) !important;
-          color: #6D28D9 !important;
-          border-color: transparent !important;
+          background: rgba(255, 255, 255, 0.26) !important;
+          color: #4338CA !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg {
-          color: var(--sidebar-icon-color, #334155) !important;
-          stroke: var(--sidebar-icon-color, #334155) !important;
+          color: var(--sidebar-icon-color, #475569) !important;
+          stroke: var(--sidebar-icon-color, #475569) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg,
         :root[data-theme="light"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover svg {
-          color: var(--sidebar-icon-color, #6D28D9) !important;
-          stroke: var(--sidebar-icon-color, #6D28D9) !important;
-          filter: drop-shadow(0 8px 14px rgba(88, 28, 135, 0.18)) !important;
+          color: var(--sidebar-icon-color, #4338CA) !important;
+          stroke: var(--sidebar-icon-color, #4338CA) !important;
+          filter: none !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-active-item,
@@ -240,7 +240,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%) !important;
           color: #FFFFFF !important;
           border: none !important;
-          box-shadow: none !important;
+          box-shadow: 0 16px 34px -22px rgba(91, 33, 182, 0.58) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .sidebar-active-item *,
@@ -260,21 +260,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           stroke: #FFFFFF !important;
         }
 
+        /* Mantém o card do perfil como no dark mode */
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-profile-area,
         body.light .fisio-sidebar-shell .fisio-sidebar-profile-area,
         html.light .fisio-sidebar-shell .fisio-sidebar-profile-area,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-profile-area {
-          background: rgba(255, 255, 255, 0.38) !important;
-          border-top: 1px solid rgba(167, 139, 250, 0.7) !important;
+          background: transparent !important;
+          border-top: 1px solid rgba(167, 139, 250, 0.24) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-profile-card,
         body.light .fisio-sidebar-shell .fisio-sidebar-profile-card,
         html.light .fisio-sidebar-shell .fisio-sidebar-profile-card,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-profile-card {
-          background: rgba(255, 255, 255, 0.92) !important;
-          border: none !important;
-          box-shadow: none !important;
+          background: rgba(255, 255, 255, 0.5) !important;
+          border: 1px solid rgba(255, 255, 255, 0.35) !important;
+          box-shadow: 0 14px 30px -26px rgba(88, 28, 135, 0.4) !important;
+          backdrop-filter: blur(10px) !important;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-profile-card p:first-of-type,
@@ -291,6 +293,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-profile-card p:last-of-type {
           color: #334155 !important;
           opacity: 1 !important;
+        }
+
+        /* Esconde scrollbar para ficar igual ao dark */
+        .fisio-sidebar-shell nav::-webkit-scrollbar {
+          width: 0px;
+          height: 0px;
+        }
+
+        .fisio-sidebar-shell nav {
+          scrollbar-width: none;
         }
       `}</style>
 
@@ -323,8 +335,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         if (isLogout) {
                           handleLogout();
                         } else if (isHelp) {
-                          window.dispatchEvent(new CustomEvent('toggle-help-center', { 
-                            detail: { profile: profile?.tipo_usuario } 
+                          window.dispatchEvent(new CustomEvent('toggle-help-center', {
+                            detail: { profile: profile?.tipo_usuario }
                           }));
                         } else if (isLocked) {
                           navigate('/subscription');
@@ -335,15 +347,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       }}
                       className={cn(
                         "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-2xl text-sm font-bold transition-all group relative sidebar-item active:scale-95",
-                        isActive 
-                          ? "sidebar-active-item bg-gradient-to-r from-violet-700 to-blue-600 text-white shadow-lg shadow-violet-300/50 dark:shadow-premium" 
+                        isActive
+                          ? "sidebar-active-item bg-gradient-to-r from-violet-700 to-blue-600 text-white shadow-lg shadow-violet-300/50 dark:shadow-premium"
                           : item.variant === 'danger'
                             ? "text-rose-400 hover:bg-rose-500/10"
                             : "text-slate-400 hover:bg-white/5 hover:text-white"
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <item.icon 
+                        <item.icon
                           size={20}
                           style={
                             !isActive
@@ -352,8 +364,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                           }
                           className={cn(
                             "transition-colors",
-                            isActive ? "text-white" : item.variant === 'danger' ? "text-rose-400" : "text-slate-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
-                          )} 
+                            isActive
+                              ? "text-white"
+                              : item.variant === 'danger'
+                                ? "text-rose-400"
+                                : "text-slate-600 dark:text-slate-500 group-hover:text-violet-700 dark:group-hover:text-primary"
+                          )}
                         />
                         <span>{item.name}</span>
                       </div>
@@ -363,7 +379,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       )}
 
                       {isActive && (
-                        <motion.div 
+                        <motion.div
                           layoutId="activeIndicator"
                           className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
                         />
@@ -379,7 +395,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {/* User Profile Summary */}
         <div className="fisio-sidebar-profile-area p-4 border-t border-white/5">
           <div className="fisio-sidebar-profile-card flex items-center gap-3 p-3 rounded-2xl bg-white/5">
-            <img 
+            <img
               src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`}
               alt="Avatar"
               className="w-10 h-10 rounded-xl object-cover shadow-sm"
