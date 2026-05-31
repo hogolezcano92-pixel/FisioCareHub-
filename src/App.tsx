@@ -322,7 +322,7 @@ function Navbar() {
   ], [user, profile, isApproved, t]);
 
   return (
-    <nav className="bg-background/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
+    <nav className="public-navbar bg-background/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
@@ -419,7 +419,7 @@ function Navbar() {
             {user && <NotificationBell />}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-primary p-2"
+              className="public-navbar-menu-button text-white hover:text-primary p-2"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
