@@ -808,4 +808,68 @@ input:-webkit-autofill:active {
     font-size: 16px !important;
   }
 }
+/* Header público / Home - ajuste do tema claro sem alterar o dark mode */
+html:not(.dark) body:not(.dark) .public-navbar,
+:root[data-theme="light"] .public-navbar,
+html.light .public-navbar,
+body.light .public-navbar {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(245, 243, 255, 0.78)) !important;
+  border-bottom: 1px solid rgba(196, 181, 253, 0.72) !important;
+  box-shadow: 0 18px 50px -34px rgba(30, 41, 59, 0.45) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+}
 
+html:not(.dark) body:not(.dark) .public-navbar [class*="from-sky-400"][class*="via-violet-400"][class*="to-white"],
+:root[data-theme="light"] .public-navbar [class*="from-sky-400"][class*="via-violet-400"][class*="to-white"],
+html.light .public-navbar [class*="from-sky-400"][class*="via-violet-400"][class*="to-white"],
+body.light .public-navbar [class*="from-sky-400"][class*="via-violet-400"][class*="to-white"] {
+  background-image: linear-gradient(to right, #0EA5E9, #7C3AED, #1E293B) !important;
+  filter: drop-shadow(0 8px 18px rgba(37, 99, 235, 0.12)) !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar :is(.text-slate-200\/95, .text-slate-300, .text-slate-400, .text-slate-500),
+:root[data-theme="light"] .public-navbar :is(.text-slate-200\/95, .text-slate-300, .text-slate-400, .text-slate-500),
+html.light .public-navbar :is(.text-slate-200\/95, .text-slate-300, .text-slate-400, .text-slate-500),
+body.light .public-navbar :is(.text-slate-200\/95, .text-slate-300, .text-slate-400, .text-slate-500) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar .public-navbar-menu-button,
+:root[data-theme="light"] .public-navbar .public-navbar-menu-button,
+html.light .public-navbar .public-navbar-menu-button,
+body.light .public-navbar .public-navbar-menu-button {
+  color: #0F172A !important;
+  border-radius: 1rem !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar .public-navbar-menu-button svg,
+:root[data-theme="light"] .public-navbar .public-navbar-menu-button svg,
+html.light .public-navbar .public-navbar-menu-button svg,
+body.light .public-navbar .public-navbar-menu-button svg {
+  stroke: #0F172A !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar .public-navbar-menu-button:hover,
+:root[data-theme="light"] .public-navbar .public-navbar-menu-button:hover,
+html.light .public-navbar .public-navbar-menu-button:hover,
+body.light .public-navbar .public-navbar-menu-button:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #2563EB !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar a[href="/login"],
+:root[data-theme="light"] .public-navbar a[href="/login"],
+html.light .public-navbar a[href="/login"],
+body.light .public-navbar a[href="/login"] {
+  color: #334155 !important;
+}
+
+html:not(.dark) body:not(.dark) .public-navbar a[href="/login"]:hover,
+:root[data-theme="light"] .public-navbar a[href="/login"]:hover,
+html.light .public-navbar a[href="/login"]:hover,
+body.light .public-navbar a[href="/login"]:hover {
+  color: #2563EB !important;
+}
