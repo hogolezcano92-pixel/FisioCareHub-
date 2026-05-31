@@ -809,3 +809,220 @@ input:-webkit-autofill:active {
   }
 }
 
+/* =========================================================
+   FisioCareHub — CORREÇÃO SEGURA TEMA CLARO
+   Títulos, textos, cards, header/footer e botões coloridos
+   Não altera o dark mode.
+   ========================================================= */
+
+:root[data-theme="light"],
+html[data-theme="light"],
+body[data-theme="light"],
+html.light,
+body.light {
+  --theme-bg: #FAF8FF !important;
+  --theme-card: #F3E8FF !important;
+  --theme-card-hover: #EDE9FE !important;
+  --theme-border: #C4B5FD !important;
+  --theme-text: #0F172A !important;
+  --theme-text-muted: #334155 !important;
+  --field-bg: #FFFFFF !important;
+  --field-border: #A78BFA !important;
+  --field-text: #0F172A !important;
+  --field-placeholder: #64748B !important;
+}
+
+/* Fundo geral claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  body,
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  main,
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  .min-h-screen {
+  background-color: #FAF8FF !important;
+  color: #0F172A !important;
+}
+
+/* Títulos fortes no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(h1, h2, h3, h4, h5, h6) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+/* Textos principais e secundários */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white,
+    .text-white\/95,
+    .text-white\/90,
+    .text-white\/80,
+    .text-white\/75,
+    .text-white\/70,
+    .text-slate-50,
+    .text-slate-100,
+    .text-slate-200,
+    .text-gray-50,
+    .text-gray-100,
+    .text-gray-200,
+    .text-zinc-50,
+    .text-zinc-100,
+    .text-zinc-200
+  ) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .text-white\/60,
+    .text-white\/55,
+    .text-white\/50,
+    .text-white\/45,
+    .text-white\/40,
+    .text-white\/35,
+    .text-white\/30,
+    .text-slate-300,
+    .text-slate-400,
+    .text-slate-500,
+    .text-gray-300,
+    .text-gray-400,
+    .text-gray-500,
+    .text-zinc-300,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-muted,
+    .text-muted-foreground,
+    .text-text-muted,
+    .admin-text-secondary,
+    .text-ice
+  ) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Cards claros em roxo suave */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .glass-card,
+    .premium-card,
+    .admin-card,
+    .card,
+    article,
+    [class*="bg-white/5"],
+    [class*="bg-white/10"],
+    [class*="bg-white/15"],
+    [class*="bg-slate-900/"],
+    [class*="bg-slate-950/"],
+    [class*="bg-black/20"],
+    [class*="bg-black/30"],
+    [class*="bg-black/40"],
+    [class*="bg-black/50"]
+  ) {
+  background-color: #F3E8FF !important;
+  color: #0F172A !important;
+  border-color: #C4B5FD !important;
+  box-shadow: 0 16px 42px -30px rgba(109, 40, 217, 0.45) !important;
+}
+
+/* Textos dentro dos cards */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.glass-card, .premium-card, .admin-card, .card, article)
+  :is(h1, h2, h3, h4, h5, h6, p, span, label, small, strong, li) {
+  color: #0F172A !important;
+  opacity: 1 !important;
+}
+
+/* Ícones dentro de cards claros */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(.glass-card, .premium-card, .admin-card, .card, article)
+  svg {
+  color: #6D28D9 !important;
+  stroke: #6D28D9 !important;
+}
+
+/* Header e footer roxo escuro no modo claro */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(header, footer) {
+  background: linear-gradient(135deg, #2E1065, #6D28D9) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 12px 36px -24px rgba(46, 16, 101, 0.6) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(header, footer)
+  :is(h1, h2, h3, h4, p, span, a, li, small, strong, svg) {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Botões do header claros com ícones escuros */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #1E293B !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  header button svg {
+  color: #1E293B !important;
+  stroke: #1E293B !important;
+}
+
+/* Botões e áreas coloridas mantêm texto branco */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ),
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(
+    .btn-primary,
+    .btn-primary-compact,
+    .bg-primary,
+    [class*="bg-blue-600"],
+    [class*="bg-blue-700"],
+    [class*="bg-indigo-600"],
+    [class*="bg-violet-600"],
+    [class*="bg-purple-600"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-600"],
+    [class*="bg-red-600"],
+    [class*="bg-rose-600"],
+    [class*="bg-sky-600"],
+    [class*="bg-cyan-600"],
+    [class*="bg-gradient-to"]
+  ) * {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* Inputs */
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input, select, textarea, .input-compact) {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #A78BFA !important;
+}
+
+:where(:root[data-theme="light"], html[data-theme="light"], body[data-theme="light"], html.light, body.light)
+  :is(input::placeholder, textarea::placeholder) {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
