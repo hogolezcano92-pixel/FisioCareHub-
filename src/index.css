@@ -1849,3 +1849,17 @@ html:not(.dark) .dashboard-light-page [class*="to-[#"] {
 html:not(.dark) .dashboard-light-page svg {
   opacity: 1;
 }
+html:not(.dark) .route-optimizer-lightfix .route-osm-button {
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.24) !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .route-optimizer-lightfix .route-osm-button *,
+html:not(.dark) .route-optimizer-lightfix .route-osm-button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+}
