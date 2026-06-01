@@ -1595,3 +1595,80 @@ html:not(.dark) .fisiostore-light-page .fisiostore-footer-light p,
 html:not(.dark) .fisiostore-light-page .fisiostore-footer-light a {
   color: #475569 !important;
 }
+/* =========================================================
+   SOBRE NÓS — TEMA CLARO
+   Corrige contraste da imagem e textos no modo claro
+   sem alterar dark mode
+   ========================================================= */
+
+html:not(.dark) .about-light-page {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 55%, #eef4ff 100%) !important;
+  color: #0f172a !important;
+}
+
+/* Card da imagem principal */
+html:not(.dark) .about-light-page img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Remove aparência lavada da imagem quando houver overlay claro */
+html:not(.dark) .about-light-page [class*="grayscale"],
+html:not(.dark) .about-light-page [class*="opacity-"] {
+  opacity: 1 !important;
+}
+
+/* Overlay para o texto ficar legível por cima da imagem */
+html:not(.dark) .about-light-page [class*="absolute"][class*="inset-0"] {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.18) 0%,
+    rgba(15, 23, 42, 0.34) 45%,
+    rgba(15, 23, 42, 0.52) 100%
+  ) !important;
+}
+
+/* Texto sobre a imagem */
+html:not(.dark) .about-light-page h1,
+html:not(.dark) .about-light-page h2,
+html:not(.dark) .about-light-page h3,
+html:not(.dark) .about-light-page p,
+html:not(.dark) .about-light-page span {
+  opacity: 1 !important;
+}
+
+/* Mantém o texto da imagem branco e bem nítido */
+html:not(.dark) .about-light-page [class*="text-white"] {
+  color: #ffffff !important;
+  text-shadow: 0 4px 18px rgba(15, 23, 42, 0.55) !important;
+}
+
+/* Textos dos cards claros abaixo da imagem */
+html:not(.dark) .about-light-page [class*="text-slate-"],
+html:not(.dark) .about-light-page [class*="text-gray-"] {
+  color: #334155 !important;
+}
+
+/* Títulos fortes fora da imagem */
+html:not(.dark) .about-light-page [class*="font-black"],
+html:not(.dark) .about-light-page [class*="font-extrabold"],
+html:not(.dark) .about-light-page [class*="font-bold"] {
+  color: #0f172a !important;
+}
+
+/* Cards da seção */
+html:not(.dark) .about-light-page section,
+html:not(.dark) .about-light-page article,
+html:not(.dark) .about-light-page .rounded-\[2\.5rem\],
+html:not(.dark) .about-light-page .rounded-\[2rem\],
+html:not(.dark) .about-light-page .rounded-3xl,
+html:not(.dark) .about-light-page .rounded-2xl {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(167, 139, 250, 0.38) !important;
+  box-shadow: 0 18px 50px rgba(79, 70, 229, 0.10) !important;
+}
+
+/* Mantém gradientes funcionando */
+html:not(.dark) .about-light-page .text-transparent {
+  color: transparent !important;
+}
