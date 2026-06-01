@@ -625,7 +625,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 z-20 -translate-y-1/2 text-slate-400" size={20} />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-14 items-center justify-center text-slate-400">
+                    <Search size={20} />
+                  </div>
                   <input
                     type="text"
                     value={patientSearch}
@@ -634,7 +636,8 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       searchPatients(e.target.value);
                     }}
                     placeholder="Nome ou e-mail do paciente..."
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/5 py-0 pl-14 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:truncate placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
+                    style={{ paddingLeft: '3.5rem' }}
                   />
                 </div>
 

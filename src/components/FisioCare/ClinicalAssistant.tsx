@@ -463,26 +463,26 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
     <motion.div
       layout
       className={cn(
-        'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
-        isExpanded ? 'p-8' : 'p-6 cursor-pointer'
+        'w-full max-w-full min-w-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
+        isExpanded ? 'p-5 sm:p-8' : 'p-5 sm:p-6 cursor-pointer'
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
       <div className="absolute inset-0 bg-blue-400/10 animate-pulse pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between gap-3">
+      <div className="relative z-10 w-full max-w-full min-w-0 space-y-6 overflow-hidden">
+        <div className="flex w-full max-w-full min-w-0 items-center justify-between gap-3">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner group-hover:rotate-12 transition-transform shrink-0">
               <BrainCircuit size={24} className="animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-xl font-black tracking-tight flex items-center gap-2 flex-wrap">
+              <h3 className="text-lg sm:text-xl font-black tracking-tight flex items-center gap-2 flex-wrap leading-tight">
                 Assistente <span className="text-blue-200">Clínico</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
               </h3>
-              <p className="text-blue-100/70 text-[10px] font-black uppercase tracking-widest">Inteligência de dados reais</p>
+              <p className="text-blue-100/70 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.18em] sm:tracking-widest">Inteligência de dados reais</p>
             </div>
           </div>
 
@@ -542,7 +542,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-6 overflow-hidden"
+                  className="w-full max-w-full min-w-0 space-y-6 overflow-hidden"
                 >
                   {visibleAlerts.length > 0 ? (
                     <div className="space-y-3">
@@ -552,9 +552,9 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                       </div>
                       <div className="grid gap-2">
                         {visibleAlerts.map((alert, idx) => (
-                          <div key={`${alert}-${idx}`} className="flex gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-medium text-rose-100 leading-relaxed">
+                          <div key={`${alert}-${idx}`} className="flex max-w-full gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-medium text-rose-100 leading-relaxed">
                             <span className="shrink-0">⚠️</span>
-                            <span>{alert}</span>
+                            <span className="min-w-0 break-words">{alert}</span>
                           </div>
                         ))}
                       </div>
@@ -590,9 +590,9 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                           <button
                             type="button"
                             key={`${suggestion}-${idx}`}
-                            className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all text-left"
+                            className="flex w-full max-w-full items-center justify-between gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all text-left"
                           >
-                            <span className="flex-1">{suggestion}</span>
+                            <span className="min-w-0 flex-1 break-words">{suggestion}</span>
                             <ArrowUpRight size={14} className="text-emerald-400" />
                           </button>
                         ))}
@@ -607,7 +607,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                       handleAssistantSubmit();
                     }}
                   >
-                    <div className="flex w-full items-center gap-3">
+                    <div className="flex w-full max-w-full min-w-0 items-center gap-2 sm:gap-3">
                       <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 transition-all focus-within:border-sky-300/70 focus-within:bg-white/15 focus-within:ring-2 focus-within:ring-sky-300/30">
                         <MessageSquare
                           className="pointer-events-none h-4 w-4 shrink-0 text-white/35"
