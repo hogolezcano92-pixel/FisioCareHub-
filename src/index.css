@@ -2331,3 +2331,122 @@ html:not(.dark) .soap-record-lightfix .soap-card-description,
 html:not(.dark) .soap-record-lightfix .soap-card-content {
   color: #475569 !important;
 }
+/* =========================================================
+   FISIOCAREHUB - Ajustes tema claro
+   Assistente Clínico + Modal Atribuir Paciente
+   Não afeta dark mode
+   ========================================================= */
+
+/* ---------- Assistente Clínico no tema claro ---------- */
+
+html:not(.dark) .clinical-assistant,
+html:not(.dark) [class*="clinical-assistant"] {
+  color-scheme: light;
+}
+
+/* Corrige textos apagados dentro do Assistente Clínico */
+html:not(.dark) .clinical-assistant h1,
+html:not(.dark) .clinical-assistant h2,
+html:not(.dark) .clinical-assistant h3,
+html:not(.dark) .clinical-assistant h4,
+html:not(.dark) .clinical-assistant strong,
+html:not(.dark) .clinical-assistant .font-bold,
+html:not(.dark) .clinical-assistant .font-black,
+html:not(.dark) .clinical-assistant .font-extrabold {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-assistant p,
+html:not(.dark) .clinical-assistant span,
+html:not(.dark) .clinical-assistant div,
+html:not(.dark) .clinical-assistant label {
+  color: #334155 !important;
+}
+
+/* Força textos brancos apagados a ficarem legíveis no light */
+html:not(.dark) .clinical-assistant .text-white,
+html:not(.dark) .clinical-assistant .text-white\/70,
+html:not(.dark) .clinical-assistant .text-white\/80,
+html:not(.dark) .clinical-assistant .text-white\/90,
+html:not(.dark) .clinical-assistant .text-slate-100,
+html:not(.dark) .clinical-assistant .text-slate-200,
+html:not(.dark) .clinical-assistant .text-slate-300 {
+  color: #334155 !important;
+}
+
+/* Títulos principais */
+html:not(.dark) .clinical-assistant [class*="uppercase"],
+html:not(.dark) .clinical-assistant [class*="tracking"] {
+  color: #0f172a !important;
+}
+
+/* Cards brancos das sugestões */
+html:not(.dark) .clinical-assistant .bg-white,
+html:not(.dark) .clinical-assistant .bg-white\/90,
+html:not(.dark) .clinical-assistant .bg-white\/80,
+html:not(.dark) .clinical-assistant .bg-white\/70 {
+  color: #0f172a !important;
+}
+
+/* Cards de alerta/sugestões muito claros */
+html:not(.dark) .clinical-assistant .text-emerald-50,
+html:not(.dark) .clinical-assistant .text-blue-50,
+html:not(.dark) .clinical-assistant .text-violet-50,
+html:not(.dark) .clinical-assistant .text-pink-50,
+html:not(.dark) .clinical-assistant .text-rose-50 {
+  color: #334155 !important;
+}
+
+
+/* ---------- Modal Atribuir Paciente no tema claro ---------- */
+
+html:not(.dark) .soap-record-lightfix [role="dialog"],
+html:not(.dark) .soap-record-lightfix .patient-selector-modal {
+  color-scheme: light;
+}
+
+/* Como o modal está via createPortal, aplicar por conteúdo visual */
+html:not(.dark) body .fixed.z-\[10000\] .relative {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Título e textos do modal */
+html:not(.dark) body .fixed.z-\[10000\] h3,
+html:not(.dark) body .fixed.z-\[10000\] p,
+html:not(.dark) body .fixed.z-\[10000\] span,
+html:not(.dark) body .fixed.z-\[10000\] button {
+  color: #0f172a !important;
+}
+
+/* Texto secundário */
+html:not(.dark) body .fixed.z-\[10000\] p {
+  color: #475569 !important;
+}
+
+/* Campo de busca do modal */
+html:not(.dark) body .fixed.z-\[10000\] input {
+  color: #0f172a !important;
+  background: transparent !important;
+}
+
+html:not(.dark) body .fixed.z-\[10000\] input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Ícones do modal */
+html:not(.dark) body .fixed.z-\[10000\] svg {
+  color: #475569 !important;
+}
+
+/* Fundo do card do modal */
+html:not(.dark) body .fixed.z-\[10000\] .bg-slate-900,
+html:not(.dark) body .fixed.z-\[10000\] .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+/* Fundo escuro do overlay continua leve no tema claro */
+html:not(.dark) body .fixed.z-\[10000\] .bg-slate-950\/80 {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+}
