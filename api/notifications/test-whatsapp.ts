@@ -82,58 +82,102 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   : null;
 
 const PUBMED_QUERIES = [
-  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
-  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
-  { term: 'therapeutic exercise physical therapy', category: 'Exercício terapêutico' },
-  { term: 'musculoskeletal physiotherapy rehabilitation', category: 'Ortopedia' },
-  { term: 'low back pain rehabilitation physical therapy', category: 'Ortopedia' },
-  { term: 'knee osteoarthritis physical therapy exercise', category: 'Ortopedia' },
-  { term: 'shoulder pain physical therapy rehabilitation', category: 'Ortopedia' },
-  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
-  { term: 'neurological rehabilitation physical therapy', category: 'Neurológica' },
-  { term: 'Parkinson rehabilitation physical therapy', category: 'Neurológica' },
-  { term: 'cardiorespiratory physiotherapy rehabilitation', category: 'Cardiorrespiratória' },
-  { term: 'pulmonary rehabilitation physiotherapy', category: 'Cardiorrespiratória' },
-  { term: 'COPD pulmonary rehabilitation exercise', category: 'Cardiorrespiratória' },
-  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
-  { term: 'sports injury rehabilitation physical therapy', category: 'Esportiva' },
-  { term: 'geriatric rehabilitation physiotherapy', category: 'Geriatria' },
-  { term: 'balance training older adults physical therapy', category: 'Geriatria' },
-  { term: 'pelvic floor physical therapy rehabilitation', category: 'Saúde pélvica' },
+  { term: 'physiotherapy rehabilitation', category: 'Fisioterapia' },
+  { term: 'physical therapy exercise therapy', category: 'Fisioterapia' },
+  { term: 'therapeutic exercise rehabilitation', category: 'Exercício terapêutico' },
+  { term: 'musculoskeletal rehabilitation', category: 'Ortopedia' },
+  { term: 'low back pain rehabilitation', category: 'Ortopedia' },
+  { term: 'knee osteoarthritis exercise therapy', category: 'Ortopedia' },
+  { term: 'shoulder pain rehabilitation', category: 'Ortopedia' },
+  { term: 'sports injury rehabilitation', category: 'Esportiva' },
+  { term: 'stroke rehabilitation', category: 'Neurologia' },
+  { term: 'Parkinson disease rehabilitation', category: 'Neurologia' },
+  { term: 'neurorehabilitation exercise', category: 'Neurologia' },
+  { term: 'cardiac rehabilitation exercise', category: 'Cardiologia' },
+  { term: 'pulmonary rehabilitation COPD', category: 'Cardiorrespiratória' },
+  { term: 'intensive care early mobilization', category: 'UTI e cuidados críticos' },
+  { term: 'ICU acquired weakness rehabilitation', category: 'UTI e cuidados críticos' },
+  { term: 'geriatrics frailty falls prevention', category: 'Geriatria' },
+  { term: 'sarcopenia resistance training older adults', category: 'Geriatria' },
+  { term: 'chronic pain exercise therapy', category: 'Dor' },
+  { term: 'pelvic floor rehabilitation urinary incontinence', category: 'Saúde pélvica' },
+  { term: 'women health postpartum exercise', category: 'Saúde da mulher' },
+  { term: 'men health prostate cancer rehabilitation', category: 'Saúde do homem' },
+  { term: 'pediatric rehabilitation cerebral palsy', category: 'Pediatria' },
+  { term: 'mental health physical activity depression anxiety', category: 'Saúde mental' },
+  { term: 'diabetes exercise lifestyle intervention', category: 'Diabetes e metabolismo' },
+  { term: 'obesity exercise nutrition intervention', category: 'Nutrição e metabolismo' },
+  { term: 'hypertension exercise intervention', category: 'Cardiologia' },
+  { term: 'primary care prevention physical activity', category: 'Medicina geral' },
+  { term: 'public health physical activity prevention', category: 'Saúde pública' },
+  { term: 'digital health telehealth rehabilitation', category: 'Tecnologia em saúde' },
+  { term: 'artificial intelligence healthcare rehabilitation', category: 'Tecnologia em saúde' },
 ];
 
 const GNEWS_QUERIES = [
-  { term: 'fisioterapia reabilitação', category: 'Fisioterapia' },
-  { term: 'fisioterapia dor lombar', category: 'Ortopedia' },
-  { term: 'fisioterapia esportiva reabilitação', category: 'Esportiva' },
-  { term: 'fisioterapia respiratória reabilitação', category: 'Cardiorrespiratória' },
-  { term: 'fisioterapia neurológica reabilitação', category: 'Neurológica' },
-  { term: 'reabilitação AVC fisioterapia', category: 'Neurológica' },
-  { term: 'fisioterapia idosos quedas', category: 'Geriatria' },
-  { term: 'fisioterapia assoalho pélvico', category: 'Saúde pélvica' },
-  { term: 'rehabilitation physical therapy', category: 'Reabilitação' },
-  { term: 'physical therapy rehabilitation', category: 'Reabilitação' },
-  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
-  { term: 'pulmonary rehabilitation physical therapy', category: 'Cardiorrespiratória' },
+  { term: 'fisioterapia reabilitação evidências', category: 'Fisioterapia' },
+  { term: 'saúde reabilitação exercícios', category: 'Fisioterapia' },
+  { term: 'dor lombar tratamento exercício saúde', category: 'Dor' },
+  { term: 'artrose joelho exercício saúde', category: 'Ortopedia' },
+  { term: 'lesão esportiva reabilitação saúde', category: 'Esportiva' },
+  { term: 'AVC reabilitação saúde', category: 'Neurologia' },
+  { term: 'Parkinson exercício reabilitação', category: 'Neurologia' },
+  { term: 'reabilitação cardíaca exercício', category: 'Cardiologia' },
+  { term: 'reabilitação pulmonar DPOC', category: 'Cardiorrespiratória' },
+  { term: 'UTI mobilização precoce saúde', category: 'UTI e cuidados críticos' },
+  { term: 'idosos quedas prevenção saúde', category: 'Geriatria' },
+  { term: 'sarcopenia idosos exercício', category: 'Geriatria' },
+  { term: 'assoalho pélvico incontinência saúde', category: 'Saúde pélvica' },
+  { term: 'saúde da mulher pós-parto exercício', category: 'Saúde da mulher' },
+  { term: 'saúde do homem reabilitação próstata', category: 'Saúde do homem' },
+  { term: 'pediatria reabilitação desenvolvimento infantil', category: 'Pediatria' },
+  { term: 'saúde mental atividade física ansiedade depressão', category: 'Saúde mental' },
+  { term: 'diabetes exercício saúde', category: 'Diabetes e metabolismo' },
+  { term: 'obesidade nutrição exercício saúde', category: 'Nutrição e metabolismo' },
+  { term: 'telemedicina telessaúde saúde digital', category: 'Tecnologia em saúde' },
 ];
 
 const EUROPE_PMC_QUERIES = [
-  { term: 'physiotherapy rehabilitation', category: 'Reabilitação' },
-  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
-  { term: 'low back pain physiotherapy', category: 'Ortopedia' },
-  { term: 'stroke rehabilitation physiotherapy', category: 'Neurológica' },
-  { term: 'cardiorespiratory rehabilitation physiotherapy', category: 'Cardiorrespiratória' },
-  { term: 'sports physiotherapy rehabilitation', category: 'Esportiva' },
+  { term: 'physiotherapy rehabilitation', category: 'Fisioterapia' },
+  { term: 'exercise therapy rehabilitation', category: 'Exercício terapêutico' },
+  { term: 'low back pain rehabilitation', category: 'Ortopedia' },
+  { term: 'osteoarthritis exercise therapy', category: 'Ortopedia' },
+  { term: 'stroke rehabilitation', category: 'Neurologia' },
+  { term: 'Parkinson rehabilitation exercise', category: 'Neurologia' },
+  { term: 'cardiac rehabilitation exercise', category: 'Cardiologia' },
+  { term: 'pulmonary rehabilitation COPD', category: 'Cardiorrespiratória' },
+  { term: 'intensive care early mobilization', category: 'UTI e cuidados críticos' },
+  { term: 'frailty falls prevention older adults', category: 'Geriatria' },
+  { term: 'chronic pain exercise therapy', category: 'Dor' },
+  { term: 'pelvic floor urinary incontinence rehabilitation', category: 'Saúde pélvica' },
+  { term: 'postpartum exercise women health', category: 'Saúde da mulher' },
+  { term: 'pediatric rehabilitation cerebral palsy', category: 'Pediatria' },
+  { term: 'physical activity mental health depression anxiety', category: 'Saúde mental' },
+  { term: 'diabetes exercise lifestyle intervention', category: 'Diabetes e metabolismo' },
+  { term: 'nutrition obesity exercise intervention', category: 'Nutrição e metabolismo' },
+  { term: 'telehealth digital health rehabilitation', category: 'Tecnologia em saúde' },
 ];
 
 const CROSSREF_QUERIES = [
-  { term: '"physiotherapy" rehabilitation', category: 'Reabilitação' },
-  { term: '"physical therapy" rehabilitation', category: 'Reabilitação' },
-  { term: '"exercise therapy" physiotherapy', category: 'Exercício terapêutico' },
-  { term: '"low back pain" "physical therapy"', category: 'Ortopedia' },
-  { term: '"stroke rehabilitation" physiotherapy', category: 'Neurológica' },
-  { term: '"cardiorespiratory rehabilitation" physiotherapy', category: 'Cardiorrespiratória' },
-  { term: '"sports physiotherapy" rehabilitation', category: 'Esportiva' },
+  { term: '"physiotherapy" rehabilitation', category: 'Fisioterapia' },
+  { term: '"physical therapy" rehabilitation', category: 'Fisioterapia' },
+  { term: '"exercise therapy" rehabilitation', category: 'Exercício terapêutico' },
+  { term: '"low back pain" rehabilitation exercise', category: 'Ortopedia' },
+  { term: '"osteoarthritis" "exercise therapy"', category: 'Ortopedia' },
+  { term: '"stroke rehabilitation" exercise', category: 'Neurologia' },
+  { term: '"Parkinson" rehabilitation exercise', category: 'Neurologia' },
+  { term: '"cardiac rehabilitation" exercise', category: 'Cardiologia' },
+  { term: '"pulmonary rehabilitation" COPD', category: 'Cardiorrespiratória' },
+  { term: '"early mobilization" "intensive care"', category: 'UTI e cuidados críticos' },
+  { term: '"falls prevention" "older adults"', category: 'Geriatria' },
+  { term: '"chronic pain" "exercise therapy"', category: 'Dor' },
+  { term: '"pelvic floor" rehabilitation', category: 'Saúde pélvica' },
+  { term: '"postpartum" exercise "women health"', category: 'Saúde da mulher' },
+  { term: '"pediatric rehabilitation"', category: 'Pediatria' },
+  { term: '"physical activity" "mental health"', category: 'Saúde mental' },
+  { term: '"diabetes" exercise intervention', category: 'Diabetes e metabolismo' },
+  { term: '"obesity" nutrition exercise intervention', category: 'Nutrição e metabolismo' },
+  { term: '"digital health" telehealth healthcare', category: 'Tecnologia em saúde' },
 ];
 
 const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
@@ -182,10 +226,42 @@ const normalizeDate = (value: unknown) => {
 const isSafeClinicalTopic = (title: string, summary = '') => {
   const text = `${title} ${summary}`.toLowerCase();
   const includeTerms = [
+    // Fisioterapia, reabilitação e movimento
     'physiotherapy', 'physical therapy', 'rehabilitation', 'exercise therapy',
-    'fisioterapia', 'reabilitação', 'therapeutic exercise', 'musculoskeletal',
-    'stroke', 'low back pain', 'cardiorespiratory', 'sports', 'geriatric',
-    'dor lombar', 'cardiorrespiratória', 'idoso', 'neurológica',
+    'therapeutic exercise', 'musculoskeletal', 'sports injury', 'sports medicine',
+    'fisioterapia', 'reabilitação', 'reabilitacao', 'exercício terapêutico', 'exercicio terapeutico',
+
+    // Ortopedia, neuro, cardio, respiração, UTI e dor
+    'orthopedics', 'osteoarthritis', 'arthritis', 'low back pain', 'neck pain', 'chronic pain',
+    'neurology', 'stroke', 'parkinson', 'alzheimer', 'neurorehabilitation',
+    'cardiology', 'cardiac rehabilitation', 'heart failure', 'hypertension',
+    'pulmonary', 'copd', 'asthma', 'cardiorespiratory', 'respiratory',
+    'intensive care', 'critical care', 'early mobilization', 'ICU acquired weakness',
+    'ortopedia', 'artrose', 'artrite', 'dor lombar', 'dor cervical', 'dor crônica', 'dor cronica',
+    'neurologia', 'avc', 'cardiologia', 'hipertensão', 'hipertensao',
+    'cardiorrespiratória', 'cardiorrespiratoria', 'respiratória', 'respiratoria', 'uti',
+
+    // Saúde geral
+    'medicine', 'clinical medicine', 'primary care', 'internal medicine', 'public health',
+    'preventive medicine', 'health promotion', 'digital health', 'telehealth',
+    'artificial intelligence health', 'wearable devices',
+    'medicina', 'clínica médica', 'clinica medica', 'atenção primária', 'atencao primaria',
+    'saúde pública', 'saude publica', 'prevenção', 'prevencao', 'saúde digital', 'saude digital',
+
+    // Grupos e condições clínicas
+    'geriatrics', 'elderly', 'older adults', 'frailty', 'falls prevention', 'sarcopenia',
+    'pediatrics', 'child health', 'cerebral palsy', 'autism',
+    'women health', 'pregnancy', 'postpartum', 'pelvic floor', 'urinary incontinence',
+    'men health', 'prostate cancer rehabilitation',
+    'mental health', 'depression', 'anxiety',
+    'nutrition', 'obesity', 'diabetes', 'metabolic syndrome',
+    'geriatria', 'idoso', 'idosa', 'idosos', 'fragilidade', 'quedas', 'sarcopenia',
+    'pediatria', 'saúde da criança', 'saude da crianca', 'paralisia cerebral', 'autismo',
+    'saúde da mulher', 'saude da mulher', 'gestação', 'gestacao', 'pós-parto', 'pos-parto',
+    'assoalho pélvico', 'assoalho pelvico', 'incontinência', 'incontinencia',
+    'saúde do homem', 'saude do homem', 'próstata', 'prostata',
+    'saúde mental', 'saude mental', 'depressão', 'depressao', 'ansiedade',
+    'nutrição', 'nutricao', 'obesidade', 'diabetes', 'síndrome metabólica', 'sindrome metabolica',
   ];
   const blockedTerms = ['weapon', 'gun', 'gambling', 'casino', 'porn', 'suicide'];
 
@@ -196,30 +272,27 @@ const isStrictPhysioScientificTopic = (title: string, summary = '') => {
   const text = normalizeText(`${title} ${summary}`);
 
   const mustHaveClinicalTerm = [
-    'physiotherapy',
-    'physical therapy',
-    'fisioterapia',
-    'exercise therapy',
-    'therapeutic exercise',
-    'rehabilitation exercise',
-    'rehabilitation exercises',
-    'musculoskeletal',
-    'low back pain',
-    'dor lombar',
-    'stroke rehabilitation',
-    'avc',
-    'cardiorespiratory',
-    'cardiorrespiratory',
-    'pulmonary rehabilitation',
-    'reabilitacao pulmonar',
-    'sports physiotherapy',
-    'sports rehabilitation',
-    'neurological rehabilitation',
-    'geriatric rehabilitation',
-    'physical rehabilitation',
-    'clinical rehabilitation',
-  ];
+    'physiotherapy', 'physical therapy', 'fisioterapia', 'exercise therapy',
+    'therapeutic exercise', 'rehabilitation exercise', 'rehabilitation exercises',
+    'musculoskeletal', 'low back pain', 'dor lombar', 'stroke rehabilitation', 'avc',
+    'cardiorespiratory', 'cardiorrespiratory', 'pulmonary rehabilitation',
+    'sports physiotherapy', 'sports rehabilitation', 'neurological rehabilitation',
+    'geriatric rehabilitation', 'physical rehabilitation', 'clinical rehabilitation',
 
+    // Saúde geral confiável para Crossref sem fugir do foco clínico
+    'orthopedics', 'osteoarthritis', 'arthritis', 'sports medicine', 'chronic pain',
+    'neurology', 'stroke', 'parkinson', 'alzheimer', 'neurorehabilitation',
+    'cardiology', 'cardiac rehabilitation', 'heart failure', 'hypertension',
+    'pulmonary', 'copd', 'asthma', 'respiratory rehabilitation',
+    'intensive care', 'critical care', 'early mobilization', 'ICU acquired weakness',
+    'geriatrics', 'elderly', 'older adults', 'frailty', 'falls prevention', 'sarcopenia',
+    'pediatrics', 'child health', 'cerebral palsy',
+    'women health', 'pregnancy', 'postpartum', 'pelvic floor', 'urinary incontinence',
+    'men health', 'prostate cancer rehabilitation',
+    'mental health', 'depression', 'anxiety', 'physical activity',
+    'nutrition', 'obesity', 'diabetes', 'metabolic syndrome',
+    'primary care', 'public health', 'preventive medicine', 'digital health', 'telehealth',
+  ];
   const blockedTerms = [
     'water distribution',
     'distribution systems',
@@ -799,7 +872,7 @@ const fetchPubMed = async (maxQueries = PUBMED_QUERIES.length) => {
     searchUrl.searchParams.set('db', 'pubmed');
     searchUrl.searchParams.set('term', `${query.term} AND (2024:2026[pdat])`);
     searchUrl.searchParams.set('retmode', 'json');
-    searchUrl.searchParams.set('retmax', '4');
+    searchUrl.searchParams.set('retmax', '8');
     searchUrl.searchParams.set('sort', 'pub date');
     if (NCBI_API_KEY) searchUrl.searchParams.set('api_key', NCBI_API_KEY);
 
@@ -870,7 +943,7 @@ const fetchGNews = async (maxQueries = GNEWS_QUERIES.length) => {
     url.searchParams.set('q', query.term);
     url.searchParams.set('lang', query.term.includes('fisioterapia') ? 'pt' : 'en');
     url.searchParams.set('country', query.term.includes('fisioterapia') ? 'br' : 'us');
-    url.searchParams.set('max', '4');
+    url.searchParams.set('max', '6');
     url.searchParams.set('apikey', GNEWS_API_KEY);
 
     const response = await fetch(url.toString());
@@ -912,7 +985,7 @@ const fetchEuropePMC = async (maxQueries = EUROPE_PMC_QUERIES.length) => {
     const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
     url.searchParams.set('query', `${query.term} AND FIRST_PDATE:[2024-01-01 TO 2026-12-31]`);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('pageSize', '3');
+    url.searchParams.set('pageSize', '8');
     url.searchParams.set('sort', 'P_PDATE_D');
 
     try {
@@ -969,7 +1042,7 @@ const fetchCrossref = async (maxQueries = CROSSREF_QUERIES.length) => {
     const url = new URL('https://api.crossref.org/works');
     url.searchParams.set('query', query.term);
     url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
-    url.searchParams.set('rows', '3');
+    url.searchParams.set('rows', '6');
     url.searchParams.set('sort', 'published');
     url.searchParams.set('order', 'desc');
     if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
@@ -1065,24 +1138,27 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       ? {
           pubmedQueries: PUBMED_QUERIES.length,
           gnewsQueries: GNEWS_QUERIES.length,
-          europePmcQueries: 2,
-          crossrefQueries: 2,
-          newsSelect: 6,
-          pubmedSelect: 18,
-          europePmcSelect: 1,
-          crossrefSelect: 1,
-          total: 26,
+          europePmcQueries: EUROPE_PMC_QUERIES.length,
+          crossrefQueries: CROSSREF_QUERIES.length,
+
+          // Rodada grande manual: até 100 conteúdos, bem distribuídos entre fontes.
+          pubmedSelect: 45,
+          europePmcSelect: 25,
+          crossrefSelect: 15,
+          newsSelect: 15,
+          total: 100,
         }
       : {
-          pubmedQueries: 4,
-          gnewsQueries: 2,
-          europePmcQueries: 0,
-          crossrefQueries: 0,
-          newsSelect: 2,
-          pubmedSelect: 8,
-          europePmcSelect: 0,
-          crossrefSelect: 0,
-          total: 10,
+          // Modo leve do cron: mais amplo que antes, mas ainda seguro para timeout.
+          pubmedQueries: 8,
+          gnewsQueries: 4,
+          europePmcQueries: 4,
+          crossrefQueries: 3,
+          pubmedSelect: 12,
+          europePmcSelect: 5,
+          crossrefSelect: 2,
+          newsSelect: 4,
+          total: 23,
         };
 
     const [pubMedUpdates, newsUpdates, europePmcUpdates, crossrefUpdates] = await Promise.all([
