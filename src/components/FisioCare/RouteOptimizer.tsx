@@ -14,7 +14,7 @@ import {
 import { motion } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-
+import { cn } from '../../lib/utils';
 interface RoutePatient {
   id: string;
   appointmentId: string;
