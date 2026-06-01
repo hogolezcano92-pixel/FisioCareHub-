@@ -323,7 +323,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
            ========================================================= */
 
         .onboarding-video-bg {
-         filter: brightness(1.08) contrast(1.08) saturate(1.10);
+         filter: brightness(1.08) contrast(1.05) saturate(1.08);
          image-rendering: auto;
          backface-visibility: hidden;
          will-change: transform, filter, opacity;
@@ -331,7 +331,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
        @media (max-width: 768px) {
        .onboarding-video-bg {
-       filter: brightness(1.10) contrast(1.14) saturate(1.12);
+       filter: brightness(1.10) contrast(1.05) saturate(1.08);
       }
     }
 
