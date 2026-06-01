@@ -232,7 +232,7 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
   const displayImages = images.length > 0 ? images : [fallbackImage];
 
   return (
-    <div className="fisiostore-light-pagerelative h-52 overflow-hidden bg-slate-900">
+    <div className="fisiostore-light-page relative h-52 overflow-hidden bg-slate-900">
       <button
         type="button"
         onClick={onOpenGallery}
