@@ -1863,3 +1863,36 @@ html:not(.dark) .route-optimizer-lightfix .route-osm-button svg {
   stroke: #ffffff !important;
   opacity: 1 !important;
 }
+/* =========================================================
+   ROUTE OPTIMIZER — BOTÃO HOJE VISÍVEL NO TEMA CLARO
+   Corrige somente o botão Hoje dentro da Organização de Rota
+   ========================================================= */
+
+html:not(.dark) .route-optimizer-lightfix .route-date-today-button {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.14) !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .route-optimizer-lightfix .route-date-today-button *,
+html:not(.dark) .route-optimizer-lightfix .route-date-today-button svg {
+  color: #1d4ed8 !important;
+  stroke: #1d4ed8 !important;
+  opacity: 1 !important;
+}
+
+/* Caso o botão Hoje esteja selecionado com bg-blue-500/20 + text-white */
+html:not(.dark) .route-optimizer-lightfix button.route-date-today-button[class*="bg-blue"],
+html:not(.dark) .route-optimizer-lightfix button.route-date-today-button[class*="text-white"] {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+}
+
+html:not(.dark) .route-optimizer-lightfix button.route-date-today-button[class*="bg-blue"] *,
+html:not(.dark) .route-optimizer-lightfix button.route-date-today-button[class*="text-white"] * {
+  color: #1d4ed8 !important;
+  stroke: #1d4ed8 !important;
+}
