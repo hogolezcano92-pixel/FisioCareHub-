@@ -2284,3 +2284,50 @@ html:not(.dark) .triage-light-page input[type="range"] {
   box-shadow: none !important;
   accent-color: #2563eb !important;
 }
+/* =========================================================
+   SOAP RECORD - Correção tema claro
+   Corrige textos apagados nos cards S/O/A/P sem afetar dark mode
+   ========================================================= */
+
+html:not(.dark) .soap-record-lightfix,
+html:not(.dark) .soap-record-lightfix * {
+  color-scheme: light;
+}
+
+html:not(.dark) .soap-record-lightfix h1,
+html:not(.dark) .soap-record-lightfix h2,
+html:not(.dark) .soap-record-lightfix h3,
+html:not(.dark) .soap-record-lightfix h4,
+html:not(.dark) .soap-record-lightfix strong,
+html:not(.dark) .soap-record-lightfix .font-bold,
+html:not(.dark) .soap-record-lightfix .font-extrabold,
+html:not(.dark) .soap-record-lightfix .font-black {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .soap-record-lightfix p,
+html:not(.dark) .soap-record-lightfix span,
+html:not(.dark) .soap-record-lightfix div,
+html:not(.dark) .soap-record-lightfix label {
+  color: #334155 !important;
+}
+
+html:not(.dark) .soap-record-lightfix .text-white,
+html:not(.dark) .soap-record-lightfix .text-white\/70,
+html:not(.dark) .soap-record-lightfix .text-white\/80,
+html:not(.dark) .soap-record-lightfix .text-slate-100,
+html:not(.dark) .soap-record-lightfix .text-slate-200,
+html:not(.dark) .soap-record-lightfix .text-slate-300 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .soap-record-lightfix .soap-card-title,
+html:not(.dark) .soap-record-lightfix [class*="tracking"],
+html:not(.dark) .soap-record-lightfix [class*="uppercase"] {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .soap-record-lightfix .soap-card-description,
+html:not(.dark) .soap-record-lightfix .soap-card-content {
+  color: #475569 !important;
+}
