@@ -148,7 +148,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
     {
       id: 'welcome',
       role: 'model',
-      text: 'Olá! Sou a **KineAI**, sua assistente de reabilitação. Como posso ajudar com sua saúde ou suporte hoje? 🌟',
+      text: 'Olá! Sou a **KineAI**, sua assistente clínica do FisioCareHub. Posso ajudar pacientes com orientações seguras e apoiar fisioterapeutas com raciocínio clínico, SOAP, exercícios, reabilitação, sinais de alerta e dúvidas do app. Como posso ajudar hoje? 🌟',
       timestamp: new Date()
     }
   ]);
@@ -244,9 +244,10 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
   };
 
   const quickPills = [
+    { label: 'Dor Lombar', cmd: 'Sou paciente e estou com dor lombar. Quais sinais de alerta devo observar e o que posso fazer com segurança?' },
+    { label: 'Raciocínio Clínico', cmd: 'Sou fisioterapeuta. Me ajude a organizar o raciocínio clínico de um caso musculoesquelético.' },
+    { label: 'SOAP', cmd: 'Sou fisioterapeuta. Me ajude a montar um registro SOAP completo e profissional.' },
     { label: 'Encontrar Fisio', cmd: 'Quero encontrar um fisioterapeuta domiciliar' },
-    { label: 'Preço Sessão', cmd: 'Qual o valor médio das sessões de fisioterapia?' },
-    { label: 'Dor Lombar', cmd: 'Quais exercícios são bons para dor lombar?' },
     { label: 'Falar com Humano', cmd: 'Gostaria de falar com um atendente humano' },
   ];
 
