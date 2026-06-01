@@ -603,19 +603,28 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 z-20 -translate-y-1/2 text-slate-400" size={20} />
-                  <input
-                    type="text"
-                    value={patientSearch}
-                    onChange={(e) => {
-                      setPatientSearch(e.target.value);
-                      searchPatients(e.target.value);
-                    }}
-                    placeholder="Nome ou e-mail do paciente..."
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
-                    style={{ paddingLeft: '90px' }}
-                    />
-                </div>
+  <Search
+    className="pointer-events-none absolute top-1/2 z-20 -translate-y-1/2 text-slate-500"
+    style={{ left: '24px' }}
+    size={22}
+  />
+
+  <input
+    type="text"
+    value={patientSearch}
+    onChange={(e) => {
+      setPatientSearch(e.target.value);
+      searchPatients(e.target.value);
+    }}
+    placeholder="Nome ou e-mail do paciente..."
+    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
+    style={{
+      paddingLeft: '76px',
+      textIndent: '0px',
+    }}
+  />
+</div>
+                
 
                 <div className="custom-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1">
                   {searching ? (
