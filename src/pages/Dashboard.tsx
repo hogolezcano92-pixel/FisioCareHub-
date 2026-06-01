@@ -435,10 +435,7 @@ export default function Dashboard() {
         ? (linkedPatientProfileIds.length > 0
           ? supabase
             .from('triagens')
-            .select(`
-              *,
-              paciente:paciente_id (nome_completo, avatar_url, email)
-            `)
+            .select('*')
             .in('paciente_id', linkedPatientProfileIds)
             .order('created_at', { ascending: false })
             .limit(5)
@@ -446,10 +443,7 @@ export default function Dashboard() {
         : (patientTriageIds.length > 0
           ? supabase
             .from('triagens')
-            .select(`
-              *,
-              paciente:paciente_id (nome_completo, avatar_url, email)
-            `)
+            .select('*')
             .in('paciente_id', patientTriageIds)
             .order('created_at', { ascending: false })
             .limit(5)
@@ -602,7 +596,10 @@ export default function Dashboard() {
         setRecentAppointments(isPhysio ? appointmentsData.filter(hasConfirmedPayment) : appointmentsData);
       }
 
-      const recentTriagesData = triagesResult.status === 'fulfilled' ? (triagesResult.value.data || []) : [];
+      const recentTriagesData =
+        triagesResult.status === 'fulfilled' && !triagesResult.value.error
+          ? (triagesResult.value.data || [])
+          : [];
       const recentActivitiesData = activitiesResult && activitiesResult.status === 'fulfilled' ? (activitiesResult.value.data || []) : [];
       const recentAppointmentsForActivity = apptsResult.status === 'fulfilled' ? (apptsResult.value.data || []) : [];
       const recentProntuariosData = prontuariosResult && prontuariosResult.status === 'fulfilled' ? (prontuariosResult.value.data || []) : [];
@@ -1366,7 +1363,7 @@ export default function Dashboard() {
                             />
                             <div>
                               <p className="text-sm font-bold text-white">
-                                {isPhysio ? triage.paciente?.nome_completo : 'Sua Avaliação'}
+                                {isPhysio ? (triage.paciente?.nome_completo || triage.nome_paciente || 'Paciente') : `${triage.regiao_dor || 'Sua triagem'}${triage.tempo_sintomas ? ` • ${triage.tempo_sintomas}` : ''}`}
                               </p>
                               <p className="text-[9px] text-slate-500 font-medium">{formatDate(triage.created_at)}</p>
                             </div>
