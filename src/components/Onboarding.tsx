@@ -323,17 +323,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
            ========================================================= */
 
         .onboarding-video-bg {
-          filter: brightness(1.16) contrast(1.2) saturate(1.18);
-          image-rendering: auto;
-          backface-visibility: hidden;
-          will-change: transform, filter, opacity;
-        }
+         filter: brightness(1.08) contrast(1.12) saturate(1.10);
+         image-rendering: auto;
+         backface-visibility: hidden;
+         will-change: transform, filter, opacity;
+       }
 
-        @media (max-width: 768px) {
-          .onboarding-video-bg {
-            filter: brightness(1.18) contrast(1.24) saturate(1.2);
-          }
-        }
+       @media (max-width: 768px) {
+       .onboarding-video-bg {
+       filter: brightness(1.10) contrast(1.14) saturate(1.12);
+      }
+    }
 
         .onboarding-video-overlay {
           background:
