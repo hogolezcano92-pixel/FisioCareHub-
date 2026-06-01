@@ -104,6 +104,7 @@ const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail')
 const RecoveryJourney = lazy(() => import('./pages/RecoveryJourney'));
 const ClinicalUpdateDetail = lazy(() => import('./pages/ClinicalUpdateDetail'));
 const ExamAnalysis = lazy(() => import('./pages/ExamAnalysis'));
+const ClinicalTestsHub = lazy(() => import('./pages/ClinicalTestsHub'));
 
 const PageLoader = () => {
   const { t } = useTranslation();
@@ -738,6 +739,7 @@ function AppContent() {
                   <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
                   <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
                   <Route path="/exames-ia" element={<ProtectedRoute><ExamAnalysis /></ProtectedRoute>} />
+                  <Route path="/clinical-tests" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><ClinicalTestsHub /></ProGuard></ProtectedRoute>} />
                   <Route path="/exam-ai" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} />
