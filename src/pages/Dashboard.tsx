@@ -129,6 +129,108 @@ const getAppointmentProviderName = (appointment: any) =>
   appointment?.fisioterapeuta?.nome ||
   'Fisioterapeuta';
 
+const getTriageCreatedAt = (triage: any) =>
+  triage?.created_at || triage?.data_triagem || triage?.updated_at || new Date().toISOString();
+
+const getTriageRegion = (triage: any) =>
+  triage?.regiao_dor || triage?.regiao || triage?.queixa_principal || triage?.classificacao || 'Triagem IA';
+
+const buildDashboardActivities = (
+  savedActivities: any[] = [],
+  triages: any[] = [],
+  appointments: any[] = [],
+  prontuarios: any[] = [],
+  evolucoes: any[] = [],
+  registrosPaciente: any[] = [],
+  exerciciosPaciente: any[] = [],
+  documentos: any[] = [],
+) => {
+  const syntheticTriages = (triages || []).slice(0, 8).map((triage: any) => ({
+    id: `triage-${triage.id}`,
+    tipo_acao: 'triagem_realizada',
+    descricao: `Triagem IA realizada: ${getTriageRegion(triage)}${triage?.gravidade ? ` • ${triage.gravidade}` : ''}`,
+    created_at: getTriageCreatedAt(triage),
+    referencia_id: triage.id,
+  }));
+
+  const syntheticAppointments = (appointments || []).slice(0, 6).map((appointment: any) => ({
+    id: `appointment-${appointment.id}`,
+    tipo_acao: appointment?.status === 'concluido' ? 'agendamento_concluido' : 'agendamento_criado',
+    descricao: appointment?.status === 'concluido'
+      ? 'Consulta concluída'
+      : `Consulta ${appointment?.status || 'agendada'} com ${getAppointmentProviderName(appointment)}`,
+    created_at: appointment?.updated_at || appointment?.created_at || appointment?.data_servico || appointment?.data || new Date().toISOString(),
+    referencia_id: appointment.id,
+  }));
+
+  const syntheticProntuarios = (prontuarios || []).slice(0, 6).map((item: any) => ({
+    id: `prontuario-${item.id}`,
+    tipo_acao: 'prontuario_criado',
+    descricao: item?.tipo_atendimento ? `Prontuário ${item.tipo_atendimento} salvo` : 'Prontuário clínico salvo',
+    created_at: item?.data_registro || item?.created_at || item?.updated_at || new Date().toISOString(),
+    referencia_id: item.id,
+  }));
+
+  const syntheticEvolucoes = (evolucoes || []).slice(0, 6).map((item: any) => ({
+    id: `evolucao-${item.id}`,
+    tipo_acao: 'evolucao_registrada',
+    descricao: 'Evolução clínica registrada',
+    created_at: item?.data_evolucao || item?.created_at || item?.updated_at || new Date().toISOString(),
+    referencia_id: item.id,
+  }));
+
+  const syntheticRegistros = (registrosPaciente || []).slice(0, 6).map((item: any) => ({
+    id: `registro-paciente-${item.id || item.data_registro}`,
+    tipo_acao: 'diario_dor_registrado',
+    descricao: item?.nivel_dor !== undefined && item?.nivel_dor !== null
+      ? `Diário de dor registrado • Dor ${item.nivel_dor}/10`
+      : 'Registro de evolução do paciente salvo',
+    created_at: item?.created_at || item?.data_registro || item?.updated_at || new Date().toISOString(),
+    referencia_id: item.id || item.data_registro,
+  }));
+
+  const syntheticExercises = (exerciciosPaciente || []).slice(0, 6).map((item: any) => ({
+    id: `exercicio-${item.id}`,
+    tipo_acao: 'exercicio_prescrito',
+    descricao: item?.exercicio_nome || item?.nome || item?.exercicio?.nome
+      ? `Exercício prescrito: ${item.exercicio_nome || item.nome || item.exercicio?.nome}`
+      : 'Exercício prescrito para o paciente',
+    created_at: item?.created_at || item?.updated_at || new Date().toISOString(),
+    referencia_id: item.id,
+  }));
+
+  const syntheticDocuments = (documentos || []).slice(0, 6).map((item: any) => ({
+    id: `documento-${item.id}`,
+    tipo_acao: 'documento_gerado',
+    descricao: item?.tipo_documento || item?.tipo || item?.titulo
+      ? `Documento gerado: ${item.tipo_documento || item.tipo || item.titulo}`
+      : 'Documento clínico gerado',
+    created_at: item?.created_at || item?.data_geracao || item?.updated_at || new Date().toISOString(),
+    referencia_id: item.id,
+  }));
+
+  const unique = new Map<string, any>();
+  [
+    ...(savedActivities || []),
+    ...syntheticTriages,
+    ...syntheticAppointments,
+    ...syntheticProntuarios,
+    ...syntheticEvolucoes,
+    ...syntheticRegistros,
+    ...syntheticExercises,
+    ...syntheticDocuments,
+  ]
+    .filter(Boolean)
+    .forEach((activity: any) => {
+      const key = String(activity?.id || `${activity?.tipo_acao}-${activity?.referencia_id}-${activity?.created_at}`);
+      if (!unique.has(key)) unique.set(key, activity);
+    });
+
+  return Array.from(unique.values())
+    .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+    .slice(0, 12);
+};
+
 export default function Dashboard() {
   const { user, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -310,9 +412,24 @@ export default function Dashboard() {
         linkedPatientProfileIds = Array.from(linkedIds);
       }
 
+      const patientTriageIds = !isPhysio
+        ? Array.from(new Set([
+            data.id,
+            user?.id,
+            ...(await getPatientVisibleIds(data.id, data.email)),
+          ].filter(Boolean).map(String)))
+        : [];
+
+      const patientTriagesCountQuery = patientTriageIds.length > 0
+        ? supabase.from('triagens').select('*', { count: 'exact', head: true }).in('paciente_id', patientTriageIds)
+        : supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id);
+
       const physioTriagesCountQuery = linkedPatientProfileIds.length > 0
         ? supabase.from('triagens').select('*', { count: 'exact', head: true }).in('paciente_id', linkedPatientProfileIds)
         : Promise.resolve({ count: 0 });
+
+      const activityUserIds = Array.from(new Set([data.id, user?.id].filter(Boolean).map(String)));
+      const activityPatientIds = isPhysio ? linkedPatientProfileIds : patientTriageIds;
 
       const triagesListQuery = isPhysio
         ? (linkedPatientProfileIds.length > 0
@@ -326,15 +443,17 @@ export default function Dashboard() {
             .order('created_at', { ascending: false })
             .limit(5)
           : Promise.resolve({ data: [] }))
-        : supabase
-          .from('triagens')
-          .select(`
-            *,
-            paciente:paciente_id (nome_completo, avatar_url, email)
-          `)
-          .eq('paciente_id', data.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
+        : (patientTriageIds.length > 0
+          ? supabase
+            .from('triagens')
+            .select(`
+              *,
+              paciente:paciente_id (nome_completo, avatar_url, email)
+            `)
+            .in('paciente_id', patientTriageIds)
+            .order('created_at', { ascending: false })
+            .limit(5)
+          : Promise.resolve({ data: [] }));
 
       const queries = [
         isPhysio ? Promise.all([
@@ -347,7 +466,7 @@ export default function Dashboard() {
         ]) : Promise.all([
           supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
-          supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
+          patientTriagesCountQuery
         ]),
         (isPhysio
           ? supabase
@@ -377,9 +496,72 @@ export default function Dashboard() {
         supabase
           .from('historico_atividades')
           .select('*')
-          .eq('usuario_id', data.id)
+          .in('usuario_id', activityUserIds.length > 0 ? activityUserIds : [data.id])
           .order('created_at', { ascending: false })
-          .limit(5)
+          .limit(12),
+        isPhysio
+          ? supabase
+            .from('prontuarios')
+            .select('id, created_at, updated_at, data_registro, tipo_atendimento, paciente_id, fisio_id')
+            .eq('fisio_id', data.id)
+            .order('data_registro', { ascending: false })
+            .limit(8)
+          : (activityPatientIds.length > 0
+            ? supabase
+              .from('prontuarios')
+              .select('id, created_at, updated_at, data_registro, tipo_atendimento, paciente_id, fisio_id')
+              .in('paciente_id', activityPatientIds)
+              .order('data_registro', { ascending: false })
+              .limit(8)
+            : Promise.resolve({ data: [] })),
+        isPhysio
+          ? (agendamentoIds.length > 0
+            ? supabase
+              .from('evolucoes')
+              .select('id, created_at, updated_at, data_evolucao, paciente_id, atendimento_id')
+              .in('atendimento_id', agendamentoIds)
+              .order('created_at', { ascending: false })
+              .limit(8)
+            : Promise.resolve({ data: [] }))
+          : (activityPatientIds.length > 0
+            ? supabase
+              .from('evolucoes')
+              .select('id, created_at, updated_at, data_evolucao, paciente_id, atendimento_id')
+              .in('paciente_id', activityPatientIds)
+              .order('created_at', { ascending: false })
+              .limit(8)
+            : Promise.resolve({ data: [] })),
+        !isPhysio && activityPatientIds.length > 0
+          ? supabase
+            .from('registros_paciente')
+            .select('id, created_at, updated_at, data_registro, paciente_id, nivel_dor, exercicios_realizados')
+            .in('paciente_id', activityPatientIds)
+            .order('data_registro', { ascending: false })
+            .limit(8)
+          : Promise.resolve({ data: [] }),
+        activityPatientIds.length > 0
+          ? supabase
+            .from('exercicios_paciente')
+            .select('id, created_at, updated_at, paciente_id, exercicio_nome, nome, status')
+            .in('paciente_id', activityPatientIds)
+            .order('created_at', { ascending: false })
+            .limit(8)
+          : Promise.resolve({ data: [] }),
+        isPhysio
+          ? supabase
+            .from('documentos_gerados')
+            .select('id, created_at, updated_at, data_geracao, paciente_id, fisio_id, tipo_documento, tipo, titulo')
+            .eq('fisio_id', data.id)
+            .order('created_at', { ascending: false })
+            .limit(8)
+          : (activityPatientIds.length > 0
+            ? supabase
+              .from('documentos_gerados')
+              .select('id, created_at, updated_at, data_geracao, paciente_id, fisio_id, tipo_documento, tipo, titulo')
+              .in('paciente_id', activityPatientIds)
+              .order('created_at', { ascending: false })
+              .limit(8)
+            : Promise.resolve({ data: [] }))
       ];
 
       const results = await Promise.allSettled(queries as any[]);
@@ -387,6 +569,11 @@ export default function Dashboard() {
       const apptsResult = results[1];
       const triagesResult = results[2];
       const activitiesResult = results[3];
+      const prontuariosResult = results[4];
+      const evolucoesResult = results[5];
+      const registrosPacienteResult = results[6];
+      const exerciciosPacienteResult = results[7];
+      const documentosResult = results[8];
 
       if (statsResults.status === 'fulfilled') {
         const res = statsResults.value;
@@ -415,13 +602,26 @@ export default function Dashboard() {
         setRecentAppointments(isPhysio ? appointmentsData.filter(hasConfirmedPayment) : appointmentsData);
       }
 
-      if (triagesResult.status === 'fulfilled') {
-        setRecentTriages(triagesResult.value.data || []);
-      }
+      const recentTriagesData = triagesResult.status === 'fulfilled' ? (triagesResult.value.data || []) : [];
+      const recentActivitiesData = activitiesResult && activitiesResult.status === 'fulfilled' ? (activitiesResult.value.data || []) : [];
+      const recentAppointmentsForActivity = apptsResult.status === 'fulfilled' ? (apptsResult.value.data || []) : [];
+      const recentProntuariosData = prontuariosResult && prontuariosResult.status === 'fulfilled' ? (prontuariosResult.value.data || []) : [];
+      const recentEvolucoesData = evolucoesResult && evolucoesResult.status === 'fulfilled' ? (evolucoesResult.value.data || []) : [];
+      const recentRegistrosPacienteData = registrosPacienteResult && registrosPacienteResult.status === 'fulfilled' ? (registrosPacienteResult.value.data || []) : [];
+      const recentExerciciosPacienteData = exerciciosPacienteResult && exerciciosPacienteResult.status === 'fulfilled' ? (exerciciosPacienteResult.value.data || []) : [];
+      const recentDocumentosData = documentosResult && documentosResult.status === 'fulfilled' ? (documentosResult.value.data || []) : [];
 
-      if (activitiesResult && activitiesResult.status === 'fulfilled') {
-        setActivities(activitiesResult.value.data || []);
-      }
+      setRecentTriages(recentTriagesData);
+      setActivities(buildDashboardActivities(
+        recentActivitiesData,
+        recentTriagesData,
+        recentAppointmentsForActivity,
+        recentProntuariosData,
+        recentEvolucoesData,
+        recentRegistrosPacienteData,
+        recentExerciciosPacienteData,
+        recentDocumentosData,
+      ));
 
     } catch (err) {
       console.error('Erro ao carregar dados do dashboard:', err);
@@ -429,7 +629,7 @@ export default function Dashboard() {
       setStatsLoading(false);
       setApptsLoading(false);
     }
-  }, [fetchPatientWorkoutCount, checkPendingEvaluations]);
+  }, [fetchPatientWorkoutCount, checkPendingEvaluations, user?.id]);
 
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(() => ({
     isPhysio: profile?.tipo_usuario === 'fisioterapeuta',

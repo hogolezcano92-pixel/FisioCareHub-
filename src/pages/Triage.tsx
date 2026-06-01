@@ -33,6 +33,7 @@ import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { generateTriagePdf } from '../lib/triagePdf';
+import { logActivity } from '../services/activityService';
 
 const STEPS = [
   { id: 'basic', title: 'Dados Básicos', icon: User },
@@ -209,14 +210,33 @@ export default function Triage() {
       };
 
       // 3. Save to Database
-      const { error: saveError } = await supabase
+      const { data: savedTriage, error: saveError } = await supabase
         .from('triagens')
-        .insert(triageData);
+        .insert(triageData)
+        .select('id, created_at')
+        .single();
 
       if (saveError) {
         console.error("Erro ao salvar triagem no Supabase:", saveError);
         throw new Error("Erro ao salvar triagem no banco de dados. Tente novamente.");
       }
+
+      // 4. Register dashboard activity. This keeps "Histórico de Atividades" populated.
+      await logActivity(
+        user.id,
+        'paciente',
+        'triagem_realizada',
+        `Triagem IA realizada: ${formData.regiao_dor || 'Queixa não informada'}${aiResult?.gravidade ? ` • ${aiResult.gravidade}` : ''}`,
+        savedTriage?.id || null,
+        {
+          metadata: {
+            regiao_dor: formData.regiao_dor,
+            gravidade: aiResult?.gravidade,
+            classificacao: aiResult?.classificacao,
+            red_flag: !!aiResult?.red_flag_detected,
+          },
+        },
+      );
 
       toast.success("Triagem realizada e salva com sucesso!");
       setCurrentStep(STEPS.length);
@@ -286,6 +306,23 @@ export default function Triage() {
         });
 
       if (error) throw error;
+
+      await logActivity(
+        user.id,
+        'paciente',
+        'solicitacao_atendimento_criada',
+        `Solicitação de atendimento criada pela triagem IA${regiaoDor ? `: ${regiaoDor}` : ''}`,
+        null,
+        {
+          metadata: {
+            queixa_principal: queixaPrincipal,
+            tipo_atendimento: 'ambos',
+            cidade: (profile as any)?.cidade || null,
+            estado: (profile as any)?.estado || null,
+            origem: 'triagem_ia',
+          },
+        },
+      );
 
       toast.success('Sua solicitação foi enviada para a rede de fisioterapeutas!');
       navigate('/buscar-fisio');
