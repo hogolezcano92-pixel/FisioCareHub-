@@ -3,12 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
   Home, 
-  ShieldCheck, 
   Heart, 
-  Lock, 
   LineChart, 
   Rocket, 
-  CheckCircle2,
   Activity,
   UserCheck,
   Stethoscope,
@@ -296,24 +293,60 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           height: 8px;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         .swiper-pagination-bullet-active {
           opacity: 1;
           width: 36px;
           border-radius: 6px;
           background: #8B5CF6 !important;
         }
+
         .swiper-pagination {
           bottom: 125px !important;
           text-align: left !important;
           padding-left: 24px !important;
         }
+
         @media (min-width: 640px) {
           .swiper-pagination {
             padding-left: 32px !important;
           }
         }
+
         .swiper-slide {
           overflow: hidden;
+        }
+
+        /* =========================================================
+           ONBOARDING — VÍDEO DE FUNDO MAIS NÍTIDO
+           Melhora apenas o vídeo sem prejudicar textos/títulos
+           ========================================================= */
+
+        .onboarding-video-bg {
+          filter: brightness(1.16) contrast(1.2) saturate(1.18);
+          image-rendering: auto;
+          backface-visibility: hidden;
+          will-change: transform, filter, opacity;
+        }
+
+        @media (max-width: 768px) {
+          .onboarding-video-bg {
+            filter: brightness(1.18) contrast(1.24) saturate(1.2);
+          }
+        }
+
+        .onboarding-video-overlay {
+          background:
+            linear-gradient(
+              180deg,
+              rgba(11, 28, 44, 0.20) 0%,
+              rgba(11, 28, 44, 0.30) 42%,
+              rgba(11, 28, 44, 0.62) 100%
+            ) !important;
+        }
+
+        .onboarding-video-color-wash {
+          mix-blend-mode: soft-light;
         }
       `}</style>
     </div>
@@ -362,7 +395,7 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-[#0B1C2C]">
-      {/* Background Layer - Full screen coverage using img for priority loading */}
+      {/* Background Layer - Full screen coverage */}
       <div className="absolute inset-0 z-0">
         {slide.image.endsWith('.mp4') ? (
           <video
@@ -373,12 +406,12 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
             playsInline
             preload={isActive ? "auto" : "metadata"}
             disablePictureInPicture
-            className="w-full h-full object-cover"
+            className="onboarding-video-bg w-full h-full object-cover"
             onLoadedData={() => setIsLoaded(true)}
             style={{
-              transform: 'translateZ(0)',
+              transform: 'translateZ(0) scale(1.015)',
               backfaceVisibility: 'hidden',
-              willChange: 'opacity'
+              willChange: 'transform, filter, opacity'
             }}
           >
             <source src={slide.image} type="video/mp4" />
@@ -388,8 +421,8 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
             src={slide.image}
             alt=""
             className={cn(
-              "w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
-              isLoaded ? "grayscale-[0.2]" : "grayscale-0"
+              "onboarding-video-bg w-full h-full object-cover transition-all duration-1000 animate-ken-burns",
+              isLoaded ? "grayscale-[0.05]" : "grayscale-0"
             )}
             // @ts-ignore
             fetchPriority={isActive ? "high" : "low"}
@@ -398,30 +431,17 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
             onLoad={() => setIsLoaded(true)}
           />
         )}
+
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/40 to-[#0B1C2C]/60 transition-opacity duration-1000",
+          "onboarding-video-overlay absolute inset-0 transition-opacity duration-1000",
           isLoaded ? "opacity-100" : "opacity-0"
         )} />
       </div>
       
-      <div className={cn(
-        "absolute inset-0 z-0 transition-opacity duration-1000",
-        isLoaded ? "opacity-100" : "opacity-0"
-      )} />
-      
       <div 
-        className="absolute inset-0 z-0"
-        style={{
-          background: 'linear-gradient(180deg, rgba(11, 28, 44, 0.2) 0%, rgba(11, 28, 44, 0.8) 100%)'
-        }}
-      />
-      
-      <div className="absolute inset-0 z-0 bg-black/10" />
-      
-      <div 
-        className="absolute inset-0 z-0 opacity-15"
+        className="onboarding-video-color-wash absolute inset-0 z-0 opacity-20"
         style={{ 
-          background: `linear-gradient(135deg, ${color}30 0%, #8B5CF630 100%)` 
+          background: `linear-gradient(135deg, ${color}28 0%, #8B5CF628 100%)` 
         }} 
       />
 
@@ -567,12 +587,12 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   playsInline
                   preload={isActive ? "auto" : "metadata"}
                   disablePictureInPicture
-                  className="w-full h-full object-cover"
+                  className="onboarding-video-bg w-full h-full object-cover"
                   onLoadedData={() => setBgLoaded(true)}
                   style={{
-                    transform: 'translateZ(0)',
+                    transform: 'translateZ(0) scale(1.015)',
                     backfaceVisibility: 'hidden',
-                    willChange: 'opacity'
+                    willChange: 'transform, filter, opacity'
                   }}
                 >
                   <source src={slide.image} type="video/mp4" />
@@ -584,17 +604,19 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   animate={{ opacity: 1 }}
                   transition={{ duration: 3, ease: "easeOut" }}
                   alt=""
-                  className="w-full h-full object-cover object-center animate-ken-burns"
+                  className="onboarding-video-bg w-full h-full object-cover object-center animate-ken-burns"
                   decoding="async"
                   loading="eager"
-                  style={{ willChange: 'transform, opacity' }}
+                  style={{ willChange: 'transform, filter, opacity' }}
                   onLoad={() => setBgLoaded(true)}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0B1C2C]/30 via-[#0B1C2C]/50 to-[#0B1C2C]/70" />
-            </div>
 
-            <div className="absolute inset-0 z-0" />
+              <div className={cn(
+                "onboarding-video-overlay absolute inset-0 transition-opacity duration-1000",
+                bgLoaded ? "opacity-100" : "opacity-0"
+              )} />
+            </div>
 
             <div className="absolute inset-0 z-0">
               <AnimatePresence mode="wait">
@@ -602,7 +624,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   <motion.img 
                     key={selectedType}
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.15 }}
+                    animate={{ opacity: 0.12 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
                     src={selectedType === 'paciente' ? options[0].image : options[1].image} 
@@ -728,6 +750,3 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
     </div>
   );
 }
-
-
-
