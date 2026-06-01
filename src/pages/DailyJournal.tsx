@@ -24,6 +24,7 @@ import {
 import { cn, formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 import { toast } from 'sonner';
 import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
+import { logActivities } from '../services/activityService';
 import { 
   LineChart, 
   Line, 
@@ -258,6 +259,25 @@ export default function DailyJournal() {
         .upsert(entryData, { onConflict: 'paciente_id,data_registro' });
 
       if (error) throw error;
+
+      await logActivities([
+        {
+          userId: user?.id,
+          userType: 'paciente',
+          action: 'checkin_registrado',
+          description: `Check-in diário registrado • dor ${painLevel}/10 • ${completedCount}/${exercises.length} exercícios`,
+          referenceId: today,
+          details: { metadata: { painLevel, completedCount, totalExercises: exercises.length, source: 'daily_journal' } },
+        },
+        {
+          userId: linkedClinicalPatient?.fisioterapeuta_id,
+          userType: 'fisio',
+          action: 'checkin_registrado',
+          description: `Paciente registrou check-in diário • dor ${painLevel}/10 • ${completedCount}/${exercises.length} exercícios`,
+          referenceId: today,
+          details: { metadata: { patientId: user?.id, painLevel, completedCount, totalExercises: exercises.length, source: 'daily_journal' } },
+        },
+      ]);
 
       toast.success("Dados salvos e compartilhados com o fisioterapeuta em tempo real");
       fetchHistory();

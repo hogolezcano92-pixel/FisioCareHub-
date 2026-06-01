@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { uploadPatientDocument, getPrivateDocumentUrl } from '../services/supabaseStorage';
 import ProGuard from '../components/ProGuard';
 import FisioJourney from '../components/FisioJourney';
+import { logActivities } from '../services/activityService';
 
 const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
   if (!err) return fallback;
@@ -965,6 +966,25 @@ export default function PatientDetails() {
 
       if (error) throw error;
 
+      await logActivities([
+        {
+          userId: profile?.id || user?.id,
+          userType: 'fisio',
+          action: 'evolucao_registrada',
+          description: `Evolução clínica registrada para o paciente`,
+          referenceId: id,
+          details: { metadata: { patientId: id, dor_escala: evolucaoForm.dor_escala, source: 'patient_details' } },
+        },
+        {
+          userId: id,
+          userType: 'paciente',
+          action: 'evolucao_registrada',
+          description: `Seu fisioterapeuta registrou uma evolução clínica`,
+          referenceId: id,
+          details: { metadata: { source: 'patient_details' } },
+        },
+      ]);
+
       toast.success('Evolução registrada!');
       setShowEvolucaoModal(false);
       setEvolucaoForm({
@@ -1024,6 +1044,25 @@ export default function PatientDetails() {
         if (legacyError) throw legacyError;
       }
 
+      await logActivities([
+        {
+          userId: profile?.id || user?.id,
+          userType: 'fisio',
+          action: 'arquivo_enviado',
+          description: `Arquivo enviado para o paciente: ${arquivoForm.nome_arquivo || arquivoForm.tipo || 'Documento'}`,
+          referenceId: id,
+          details: { metadata: { patientId: id, tipo: arquivoForm.tipo, visible_to_patient: arquivoForm.visible_to_patient, source: 'patient_details' } },
+        },
+        {
+          userId: id,
+          userType: 'paciente',
+          action: 'arquivo_enviado',
+          description: `Novo arquivo disponível no seu prontuário: ${arquivoForm.nome_arquivo || arquivoForm.tipo || 'Documento'}`,
+          referenceId: id,
+          details: { metadata: { tipo: arquivoForm.tipo, source: 'patient_details' } },
+        },
+      ]);
+
       toast.success('Arquivo enviado com sucesso!');
       setShowArquivoModal(false);
       setArquivoForm({ tipo: 'Exame', nome_arquivo: '', visible_to_patient: true, file: null });
@@ -1064,6 +1103,25 @@ export default function PatientDetails() {
           ...current
         ]);
       }
+
+      await logActivities([
+        {
+          userId: profile?.id || user?.id,
+          userType: 'fisio',
+          action: 'exercicio_prescrito',
+          description: `Exercício prescrito para o paciente`,
+          referenceId: insertedData?.id || id,
+          details: { metadata: { patientId: id, exerciseId: prescricaoForm.exercicio_id, source: 'patient_details' } },
+        },
+        {
+          userId: id,
+          userType: 'paciente',
+          action: 'exercicio_prescrito',
+          description: `Novo exercício foi prescrito no seu plano`,
+          referenceId: insertedData?.id || id,
+          details: { metadata: { exerciseId: prescricaoForm.exercicio_id, source: 'patient_details' } },
+        },
+      ]);
 
       toast.success('Exercício prescrito!');
       setShowPrescricaoModal(false);
@@ -1115,6 +1173,25 @@ export default function PatientDetails() {
             : pres
         )
       );
+
+      await logActivities([
+        {
+          userId: profile?.id || user?.id,
+          userType: 'fisio',
+          action: 'exercicio_prescrito',
+          description: `Prescrição de exercício atualizada`,
+          referenceId: editingPrescricao.id,
+          details: { metadata: { patientId: id, exerciseId: prescricaoForm.exercicio_id, source: 'patient_details' } },
+        },
+        {
+          userId: id,
+          userType: 'paciente',
+          action: 'exercicio_prescrito',
+          description: `Uma prescrição de exercício foi atualizada no seu plano`,
+          referenceId: editingPrescricao.id,
+          details: { metadata: { exerciseId: prescricaoForm.exercicio_id, source: 'patient_details' } },
+        },
+      ]);
 
       toast.success('Prescrição atualizada!');
       setShowEditPrescricaoModal(false);
