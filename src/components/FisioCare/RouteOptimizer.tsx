@@ -621,18 +621,19 @@ export const RouteOptimizer = () => {
       <div className="grid grid-cols-3 gap-2">
         <button
           type="button"
+          data-route-date="today"
           onClick={() => {
             setSelectedDate(todayDateValue);
             setShowCustomDate(false);
           }}
           className={cn(
-            'route-date-today-button rounded-xl border px-3 py-2 text-xs font-black transition-all',
+            'route-date-today-button rounded-xl px-3 py-2 text-xs font-black transition-all ring-1',
             selectedDate === todayDateValue
-              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
-              : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
+              ? 'bg-blue-600 !text-white ring-blue-300 shadow-lg shadow-blue-500/20 dark:bg-blue-500/20 dark:!text-white dark:ring-blue-400'
+              : 'bg-blue-50 !text-blue-700 ring-blue-200 hover:bg-blue-100 dark:bg-white/5 dark:!text-slate-300 dark:ring-white/10 dark:hover:bg-white/10'
           )}
         >
-          Hoje
+          <span className="route-date-label" data-route-date-label="today">Hoje</span>
         </button>
 
         <button
