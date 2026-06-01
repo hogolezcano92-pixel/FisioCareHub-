@@ -409,10 +409,10 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
             className="onboarding-video-bg w-full h-full object-cover"
             onLoadedData={() => setIsLoaded(true)}
             style={{
-              transform: 'translateZ(0) scale(1.015)',
-              backfaceVisibility: 'hidden',
-              willChange: 'transform, filter, opacity'
-            }}
+            transform: 'translateZ(0) scale(1.008)',
+            backfaceVisibility: 'hidden',
+            willChange: 'transform, filter, opacity'
+           }}
           >
             <source src={slide.image} type="video/mp4" />
           </video>
