@@ -1346,3 +1346,252 @@ html:not(.dark) .exam-analysis-light-page article p,
 :root[data-theme="light"] .exam-analysis-light-page article p {
   color: #334155 !important;
 }
+/* =========================================================
+   FISIOSTORE — TEMA CLARO PREMIUM
+   Melhora visibilidade, nitidez e contraste no tema claro
+   sem alterar o dark mode
+   ========================================================= */
+
+html:not(.dark) .fisiostore-light-page {
+  background: linear-gradient(180deg, #f8f7ff 0%, #f4f7ff 42%, #eef4ff 100%) !important;
+  color: #0f172a !important;
+}
+
+/* Fundo decorativo */
+html:not(.dark) .fisiostore-light-page .pointer-events-none {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(37, 99, 235, 0.14), transparent 32%),
+    radial-gradient(circle at 82% 0%, rgba(124, 58, 237, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8f7ff 0%, #f4f7ff 42%, #eef4ff 100%) !important;
+}
+
+/* Cards principais */
+html:not(.dark) .fisiostore-light-page section,
+html:not(.dark) .fisiostore-light-page article,
+html:not(.dark) .fisiostore-light-page aside,
+html:not(.dark) .fisiostore-light-page .rounded-\[2\.5rem\],
+html:not(.dark) .fisiostore-light-page .rounded-\[2rem\],
+html:not(.dark) .fisiostore-light-page .rounded-\[1\.75rem\],
+html:not(.dark) .fisiostore-light-page .rounded-3xl,
+html:not(.dark) .fisiostore-light-page .rounded-2xl {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(167, 139, 250, 0.42) !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 50px rgba(79, 70, 229, 0.10) !important;
+}
+
+/* Remove fundos escuros vazando no claro */
+html:not(.dark) .fisiostore-light-page [class*="bg-slate-950"],
+html:not(.dark) .fisiostore-light-page [class*="bg-slate-900"],
+html:not(.dark) .fisiostore-light-page [class*="bg-[#070B14]"],
+html:not(.dark) .fisiostore-light-page [class*="bg-[#0"],
+html:not(.dark) .fisiostore-light-page [class*="bg-white/[0."],
+html:not(.dark) .fisiostore-light-page [class*="bg-white/5"],
+html:not(.dark) .fisiostore-light-page [class*="bg-white/10"] {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+/* Títulos */
+html:not(.dark) .fisiostore-light-page h1,
+html:not(.dark) .fisiostore-light-page h2,
+html:not(.dark) .fisiostore-light-page h3,
+html:not(.dark) .fisiostore-light-page h4 {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Textos gerais */
+html:not(.dark) .fisiostore-light-page p,
+html:not(.dark) .fisiostore-light-page span,
+html:not(.dark) .fisiostore-light-page label,
+html:not(.dark) .fisiostore-light-page small {
+  opacity: 1 !important;
+}
+
+/* Corrige textos apagados */
+html:not(.dark) .fisiostore-light-page [class*="text-slate-"],
+html:not(.dark) .fisiostore-light-page [class*="text-gray-"],
+html:not(.dark) .fisiostore-light-page [class*="text-white/"] {
+  color: #475569 !important;
+}
+
+/* Títulos/labels fortes */
+html:not(.dark) .fisiostore-light-page [class*="font-black"],
+html:not(.dark) .fisiostore-light-page [class*="font-extrabold"],
+html:not(.dark) .fisiostore-light-page [class*="font-bold"] {
+  color: #0f172a !important;
+}
+
+/* Mantém textos com gradiente */
+html:not(.dark) .fisiostore-light-page .text-transparent {
+  color: transparent !important;
+}
+
+/* Busca e inputs */
+html:not(.dark) .fisiostore-light-page input,
+html:not(.dark) .fisiostore-light-page select,
+html:not(.dark) .fisiostore-light-page textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(167, 139, 250, 0.52) !important;
+  box-shadow: 0 10px 28px rgba(79, 70, 229, 0.08) !important;
+}
+
+html:not(.dark) .fisiostore-light-page input::placeholder,
+html:not(.dark) .fisiostore-light-page textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Barra de busca */
+html:not(.dark) .fisiostore-light-page input[type="text"],
+html:not(.dark) .fisiostore-light-page input[type="search"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Chips / filtros / categorias */
+html:not(.dark) .fisiostore-light-page button,
+html:not(.dark) .fisiostore-light-page [role="button"] {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .fisiostore-light-page .rounded-full,
+html:not(.dark) .fisiostore-light-page [class*="pill"],
+html:not(.dark) .fisiostore-light-page [class*="chip"] {
+  border-color: rgba(167, 139, 250, 0.35) !important;
+}
+
+/* Botões secundários */
+html:not(.dark) .fisiostore-light-page button[type="button"] {
+  color: #0f172a;
+}
+
+/* Botões principais de ação */
+html:not(.dark) .fisiostore-light-page a[href*="shopee"],
+html:not(.dark) .fisiostore-light-page button[class*="from-blue-"],
+html:not(.dark) .fisiostore-light-page button[class*="to-violet-"],
+html:not(.dark) .fisiostore-light-page .bg-gradient-to-r {
+  color: #ffffff !important;
+  box-shadow: 0 18px 38px rgba(37, 99, 235, 0.22) !important;
+}
+
+/* Garante texto branco nos botões gradiente */
+html:not(.dark) .fisiostore-light-page .bg-gradient-to-r *,
+html:not(.dark) .fisiostore-light-page a[href*="shopee"] * {
+  color: #ffffff !important;
+}
+
+/* Botão "ver fotos" / "ver produto" com fundo claro */
+html:not(.dark) .fisiostore-light-page .border-sky-200,
+html:not(.dark) .fisiostore-light-page .border-blue-200 {
+  border-color: rgba(96, 165, 250, 0.45) !important;
+}
+
+html:not(.dark) .fisiostore-light-page .bg-sky-50,
+html:not(.dark) .fisiostore-light-page .bg-blue-50 {
+  background-color: #eaf4ff !important;
+  color: #0f172a !important;
+}
+
+/* Badges do topo do card */
+html:not(.dark) .fisiostore-light-page .bg-violet-50 {
+  background-color: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+
+html:not(.dark) .fisiostore-light-page .bg-amber-50 {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html:not(.dark) .fisiostore-light-page .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: rgba(16, 185, 129, 0.32) !important;
+}
+
+html:not(.dark) .fisiostore-light-page .bg-rose-50 {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+  border-color: rgba(244, 63, 94, 0.28) !important;
+}
+
+/* Caixas "Indicação clínica", "Preço", "Afiliado" etc */
+html:not(.dark) .fisiostore-light-page .border-emerald-200,
+html:not(.dark) .fisiostore-light-page .border-emerald-300 {
+  border-color: rgba(16, 185, 129, 0.38) !important;
+}
+
+html:not(.dark) .fisiostore-light-page .bg-emerald-500\/10,
+html:not(.dark) .fisiostore-light-page .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+}
+
+html:not(.dark) .fisiostore-light-page .text-emerald-700,
+html:not(.dark) .fisiostore-light-page .text-emerald-800,
+html:not(.dark) .fisiostore-light-page .text-emerald-900 {
+  color: #065f46 !important;
+}
+
+/* Card de produto */
+html:not(.dark) .fisiostore-light-page article img,
+html:not(.dark) .fisiostore-light-page .overflow-hidden img {
+  opacity: 1 !important;
+}
+
+/* Área branca das imagens/topo do produto */
+html:not(.dark) .fisiostore-light-page .bg-white {
+  background-color: #ffffff !important;
+}
+
+/* Parte inferior do produto */
+html:not(.dark) .fisiostore-light-page article p {
+  color: #475569 !important;
+}
+
+html:not(.dark) .fisiostore-light-page article h3,
+html:not(.dark) .fisiostore-light-page article h2 {
+  color: #0f172a !important;
+}
+
+/* Preço */
+html:not(.dark) .fisiostore-light-page [class*="preco"],
+html:not(.dark) .fisiostore-light-page [class*="price"],
+html:not(.dark) .fisiostore-light-page strong {
+  color: #0f172a !important;
+}
+
+/* Lista destaques / essenciais */
+html:not(.dark) .fisiostore-light-page ul li,
+html:not(.dark) .fisiostore-light-page .shadow-sm {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Bordas gerais */
+html:not(.dark) .fisiostore-light-page [class*="border-white/"],
+html:not(.dark) .fisiostore-light-page [class*="border-slate-"] {
+  border-color: rgba(167, 139, 250, 0.35) !important;
+}
+
+/* Ícones */
+html:not(.dark) .fisiostore-light-page svg {
+  opacity: 1 !important;
+}
+
+/* Footer interno da loja, se estiver dentro da página */
+html:not(.dark) .fisiostore-light-page footer,
+html:not(.dark) .fisiostore-light-page .fisiostore-footer-light {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%) !important;
+  color: #0f172a !important;
+  border-top: 1px solid rgba(167, 139, 250, 0.25) !important;
+}
+
+html:not(.dark) .fisiostore-light-page footer p,
+html:not(.dark) .fisiostore-light-page footer a,
+html:not(.dark) .fisiostore-light-page .fisiostore-footer-light p,
+html:not(.dark) .fisiostore-light-page .fisiostore-footer-light a {
+  color: #475569 !important;
+}
