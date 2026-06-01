@@ -601,7 +601,7 @@ export const RouteOptimizer = () => {
           <button
             onClick={openFullRoute}
             disabled={loading || patientsWithAddress.length === 0}
-            className="route-osm-buttonw-full px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="route-osm-button w-full px-4 py-2 bg-[#0047AB] text-white rounded-xl font-black text-[11px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading || routeLoading ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
             Abrir rota no OSM
