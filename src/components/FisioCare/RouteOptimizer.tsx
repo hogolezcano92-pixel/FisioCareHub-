@@ -586,6 +586,44 @@ export const RouteOptimizer = () => {
 
   return (
     <div className="route-optimizer-lightfix bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3">
+      <style>{`
+        /* Correção isolada: botões Hoje / Amanhã / Escolher data no tema claro.
+           Fica dentro do componente para não afetar outras áreas do Dashboard. */
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button] {
+          background: #ffffff !important;
+          color: #0f172a !important;
+          border-color: rgba(167, 139, 250, 0.75) !important;
+          box-shadow: 0 10px 24px rgba(99, 102, 241, 0.10) !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button] .route-date-button-label {
+          color: #0f172a !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button][data-route-date-state="active"] {
+          background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%) !important;
+          color: #ffffff !important;
+          border-color: #2563eb !important;
+          box-shadow: 0 14px 30px rgba(37, 99, 235, 0.24) !important;
+        }
+
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button][data-route-date-state="active"] .route-date-button-label {
+          color: #ffffff !important;
+        }
+
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button]:hover {
+          background: #eff6ff !important;
+          border-color: #60a5fa !important;
+        }
+
+        html:not(.dark) .route-optimizer-lightfix button[data-route-date-button][data-route-date-state="active"]:hover {
+          background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%) !important;
+        }
+      `}</style>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-0.5">
           <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
@@ -621,48 +659,53 @@ export const RouteOptimizer = () => {
       <div className="grid grid-cols-3 gap-2">
         <button
           type="button"
-          data-route-date="today"
+          data-route-date-button
+          data-route-date-state={selectedDate === todayDateValue && !showCustomDate ? 'active' : 'idle'}
           onClick={() => {
             setSelectedDate(todayDateValue);
             setShowCustomDate(false);
           }}
           className={cn(
-            'route-date-today-button rounded-xl px-3 py-2 text-xs font-black transition-all ring-1',
-            selectedDate === todayDateValue
-              ? 'bg-blue-600 !text-white ring-blue-300 shadow-lg shadow-blue-500/20 dark:bg-blue-500/20 dark:!text-white dark:ring-blue-400'
-              : 'bg-blue-50 !text-blue-700 ring-blue-200 hover:bg-blue-100 dark:bg-white/5 dark:!text-slate-300 dark:ring-white/10 dark:hover:bg-white/10'
+            'route-date-button route-date-today-button rounded-xl border px-3 py-2 text-xs font-black transition-all',
+            selectedDate === todayDateValue && !showCustomDate
+              ? 'border-blue-400 bg-blue-600 !text-white shadow-lg shadow-blue-500/20 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+              : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
           )}
         >
-          <span className="route-date-label" data-route-date-label="today">Hoje</span>
+          <span className="route-date-button-label">Hoje</span>
         </button>
 
         <button
           type="button"
+          data-route-date-button
+          data-route-date-state={selectedDate === tomorrowDateValue && !showCustomDate ? 'active' : 'idle'}
           onClick={() => {
             setSelectedDate(tomorrowDateValue);
             setShowCustomDate(false);
           }}
           className={cn(
-            'rounded-xl border px-3 py-2 text-xs font-black transition-all',
-            selectedDate === tomorrowDateValue
-              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+            'route-date-button rounded-xl border px-3 py-2 text-xs font-black transition-all',
+            selectedDate === tomorrowDateValue && !showCustomDate
+              ? 'border-blue-400 bg-blue-600 !text-white shadow-lg shadow-blue-500/20 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
               : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
           )}
         >
-          Amanhã
+          <span className="route-date-button-label">Amanhã</span>
         </button>
 
         <button
           type="button"
+          data-route-date-button
+          data-route-date-state={showCustomDate ? 'active' : 'idle'}
           onClick={() => setShowCustomDate((current) => !current)}
           className={cn(
-            'rounded-xl border px-3 py-2 text-[10px] font-black transition-all',
-            showCustomDate && selectedDate !== todayDateValue && selectedDate !== tomorrowDateValue
-              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+            'route-date-button rounded-xl border px-3 py-2 text-[10px] font-black transition-all',
+            showCustomDate
+              ? 'border-blue-400 bg-blue-600 !text-white shadow-lg shadow-blue-500/20 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
               : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
           )}
         >
-          Escolher data
+          <span className="route-date-button-label">Escolher data</span>
         </button>
       </div>
 
