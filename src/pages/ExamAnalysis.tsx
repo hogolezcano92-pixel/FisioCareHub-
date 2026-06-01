@@ -434,30 +434,30 @@ export default function ExamAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8FF] text-slate-900 dark:bg-[#070B14] dark:text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.10),transparent_32%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,0.10),transparent_30%)] dark:bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,0.18),transparent_30%)]" />
+    <div className="min-h-screen bg-gradient-to-br from-white via-violet-50/70 to-sky-50 text-slate-950 dark:bg-[#070B14] dark:bg-none dark:text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_82%_0%,rgba(124,58,237,0.14),transparent_32%)] dark:bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,0.18),transparent_30%)]" />
       <div className="relative mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden rounded-[2.5rem] border border-violet-100 bg-white p-6 shadow-2xl shadow-violet-200/45 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.055] dark:shadow-blue-950/20 sm:p-8 lg:p-10"
+          className="overflow-hidden rounded-[2.5rem] border border-violet-200/80 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-violet-200/60 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.055] dark:text-white dark:shadow-blue-950/20 sm:p-8 lg:p-10"
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-3xl space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-sky-800 shadow-sm dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200">
                 <Sparkles size={14} /> IA Groq Vision - Pre-laudo
               </div>
               <div>
-                <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+                <h1 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
                   Analise visual de <span className="bg-gradient-to-r from-sky-500 via-blue-600 to-violet-600 bg-clip-text text-transparent dark:from-sky-300 dark:via-blue-400 dark:to-violet-300">Exames</span>
                 </h1>
-                <p className="mt-4 max-w-2xl text-base font-semibold leading-8 text-slate-600 dark:text-slate-300 sm:text-lg">
+                <p className="mt-4 max-w-2xl text-base font-semibold leading-8 text-slate-700 dark:text-slate-300 sm:text-lg">
                   Envie uma imagem do exame para a IA analisar visualmente, gerar um pre-laudo de apoio e criar um PDF profissional para revisao humana.
                 </p>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm font-semibold leading-relaxed text-amber-900 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-100 lg:max-w-sm">
+            <div className="rounded-[2rem] border border-amber-300 bg-amber-50 p-5 text-sm font-bold leading-relaxed text-amber-950 shadow-sm dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-100 lg:max-w-sm">
               <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-200">
                 <AlertTriangle size={16} /> Aviso importante
               </div>
@@ -472,7 +472,7 @@ export default function ExamAnalysis() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
             onSubmit={handleSubmit}
-            className="space-y-5 rounded-[2.5rem] border border-violet-100 bg-white p-5 shadow-2xl shadow-violet-200/45 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65 dark:shadow-slate-950/30 sm:p-6"
+            className="space-y-5 rounded-[2.5rem] border border-violet-200/80 bg-white/95 p-5 text-slate-950 shadow-2xl shadow-violet-200/60 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65 dark:text-white dark:shadow-slate-950/30 sm:p-6"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 dark:bg-blue-500/15 dark:text-blue-200 dark:ring-blue-300/20">
@@ -480,45 +480,45 @@ export default function ExamAnalysis() {
               </div>
               <div>
                 <h2 className="text-xl font-black">Enviar exame</h2>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Imagem analisada visualmente pela IA</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">Imagem analisada visualmente pela IA</p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">Tipo de exame</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">Tipo de exame</span>
                 <select
                   value={examType}
                   onChange={(e) => setExamType(e.target.value)}
-                  className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 text-[16px] font-bold text-slate-900 outline-none focus:border-blue-400/60 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:border-blue-400/50"
+                  className="w-full rounded-2xl border border-violet-300 bg-white px-4 py-3 text-[16px] font-bold text-slate-950 shadow-sm outline-none focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:shadow-none dark:focus:border-blue-400/50"
                 >
                   {EXAM_TYPES.map((type) => <option key={type} value={type} className="bg-white text-slate-900 dark:bg-slate-950 dark:text-white">{type}</option>)}
                 </select>
               </label>
 
               <label className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">Paciente</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">Paciente</span>
                 <input
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   placeholder="Nome do paciente"
-                  className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 text-[16px] font-bold text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-600 dark:focus:border-blue-400/50"
+                  className="w-full rounded-2xl border border-violet-300 bg-white px-4 py-3 text-[16px] font-bold text-slate-950 shadow-sm outline-none placeholder:text-slate-500 focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-600 dark:shadow-none dark:focus:border-blue-400/50"
                 />
               </label>
             </div>
 
-            <label className="block cursor-pointer rounded-[2rem] border border-dashed border-sky-200 bg-sky-50/70 p-6 text-center transition hover:border-sky-300 hover:bg-sky-50 dark:border-sky-300/25 dark:bg-sky-500/5 dark:hover:border-sky-300/45 dark:hover:bg-sky-500/10">
+            <label className="block cursor-pointer rounded-[2rem] border-2 border-dashed border-sky-300 bg-sky-50/90 p-6 text-center shadow-inner transition hover:border-sky-400 hover:bg-sky-100/80 dark:border-sky-300/25 dark:bg-sky-500/5 dark:shadow-none dark:hover:border-sky-300/45 dark:hover:bg-sky-500/10">
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 className="hidden"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-sky-100 text-sky-800 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:ring-0">
                 {isImage ? <ImageIcon size={30} /> : <FileText size={30} />}
               </div>
-              <p className="text-sm font-black text-slate-900 dark:text-white">{file ? file.name : 'Toque para enviar imagem do exame'}</p>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500 dark:text-slate-500">
+              <p className="text-sm font-black text-slate-950 dark:text-white">{file ? file.name : 'Toque para enviar imagem do exame'}</p>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-500">
                 JPG, PNG ou WEBP para analise visual. PDF pode ser salvo, mas para analise visual envie foto/print da pagina.
               </p>
             </label>
@@ -534,13 +534,13 @@ export default function ExamAnalysis() {
             )}
 
             <label className="space-y-2 block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">Contexto clinico opcional</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">Contexto clinico opcional</span>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={5}
                 placeholder="Ex.: dor no joelho ha 3 meses, pos-operatorio, limitacao para subir escadas, irradiacao, queda recente..."
-                className="w-full resize-none rounded-[1.5rem] border border-violet-200 bg-white px-4 py-4 text-[16px] font-semibold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-600 dark:focus:border-blue-400/50"
+                className="w-full resize-none rounded-[1.5rem] border border-violet-300 bg-white px-4 py-4 text-[16px] font-semibold leading-relaxed text-slate-950 shadow-sm outline-none placeholder:text-slate-500 focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-600 dark:shadow-none dark:focus:border-blue-400/50"
               />
             </label>
 
@@ -558,12 +558,12 @@ export default function ExamAnalysis() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="space-y-5 rounded-[2.5rem] border border-violet-100 bg-white p-5 shadow-2xl shadow-violet-200/45 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65 dark:shadow-slate-950/30 sm:p-6"
+            className="space-y-5 rounded-[2.5rem] border border-violet-200/80 bg-white/95 p-5 text-slate-950 shadow-2xl shadow-violet-200/60 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65 dark:text-white dark:shadow-slate-950/30 sm:p-6"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-black">Resultado da IA</h2>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Pre-laudo seguro para revisao</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">Pre-laudo seguro para revisao</p>
               </div>
               <div className="flex items-center gap-2">
                 {result && resultMeta && (
@@ -582,7 +582,7 @@ export default function ExamAnalysis() {
             </div>
 
             {!result ? (
-              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[2rem] border border-violet-100 bg-violet-50/50 p-8 text-center dark:border-white/10 dark:bg-white/[0.035]">
+              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[2rem] border border-violet-200 bg-violet-50/80 p-8 text-center text-slate-950 dark:border-white/10 dark:bg-white/[0.035] dark:text-white">
                 <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-300/20">
                   <BrainCircuit size={40} />
                 </div>
@@ -625,11 +625,11 @@ export default function ExamAnalysis() {
           </motion.div>
         </div>
 
-        <section className="rounded-[2.5rem] border border-violet-100 bg-white p-5 shadow-2xl shadow-violet-200/45 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-slate-950/20 sm:p-6">
+        <section className="rounded-[2.5rem] border border-violet-200/80 bg-white/95 p-5 text-slate-950 shadow-2xl shadow-violet-200/60 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.045] dark:text-white dark:shadow-slate-950/20 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-black">Analises recentes</h2>
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Historico salvo com seguranca</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">Historico salvo com seguranca</p>
             </div>
           </div>
 
@@ -642,7 +642,7 @@ export default function ExamAnalysis() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {records.map((record) => (
-                <article key={record.id} className="rounded-[1.75rem] border border-violet-100 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-950/55 dark:shadow-none">
+                <article key={record.id} className="rounded-[1.75rem] border border-violet-200 bg-white p-5 shadow-sm shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950/55 dark:shadow-none">
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
                       <h3 className="line-clamp-1 text-base font-black text-slate-900 dark:text-white">{record.exam_type || 'Exame'}</h3>
@@ -650,8 +650,8 @@ export default function ExamAnalysis() {
                     </div>
                     <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">IA</span>
                   </div>
-                  <p className="line-clamp-4 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">{record.ai_summary}</p>
-                  <div className="mt-4 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-600">
+                  <p className="line-clamp-4 text-sm font-semibold leading-6 text-slate-800 dark:text-slate-300">{record.ai_summary}</p>
+                  <div className="mt-4 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-600">
                     <span>{new Date(record.created_at).toLocaleDateString('pt-BR')}</span>
                     <span>{record.ai_confidence || 'moderada'}</span>
                   </div>
