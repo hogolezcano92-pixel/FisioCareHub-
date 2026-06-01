@@ -65,6 +65,38 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   sistema: 'Sistema',
 };
 
+const PREFERRED_CLINICAL_CATEGORIES = [
+  'Fisioterapia',
+  'Reabilitação',
+  'Ortopedia',
+  'Neurologia',
+  'Cardiorrespiratória',
+  'UTI e cuidados críticos',
+  'Geriatria',
+  'Dor',
+  'Saúde da mulher',
+  'Saúde do homem',
+  'Saúde pélvica',
+  'Pediatria',
+  'Saúde mental',
+  'Diabetes e metabolismo',
+  'Nutrição e metabolismo',
+  'Cardiologia',
+  'Medicina geral',
+  'Saúde pública',
+  'Tecnologia em saúde',
+];
+
+const normalizeCategory = (value?: string | null) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim();
+
+const getDisplayCategory = (item: ClinicalUpdate) =>
+  String(item.category || '').trim() || resolveClinicalImageLabel(imageInputFromUpdate(item));
+
 const formatDate = (value?: string | null) => {
   if (!value) return 'Atualização recente';
   const date = new Date(value);
@@ -119,7 +151,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
         .eq('is_published', true)
         .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) {
         console.info('[ClinicalUpdatesCarousel] Tabela ainda não disponível ou sem permissão:', error.message);
@@ -141,13 +173,30 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
   }, [loadUpdates]);
 
   const categories = useMemo(() => {
-    const values = updates.map((item) => resolveClinicalImageLabel(imageInputFromUpdate(item)));
-    return ['Todos', ...Array.from(new Set(values)).slice(0, 7)];
+    const available = new Map<string, string>();
+
+    updates.forEach((item) => {
+      const category = getDisplayCategory(item);
+      if (category) available.set(normalizeCategory(category), category);
+    });
+
+    const ordered = PREFERRED_CLINICAL_CATEGORIES.filter((category) => available.has(normalizeCategory(category)));
+    const extras = Array.from(available.values()).filter(
+      (category) => !ordered.some((item) => normalizeCategory(item) === normalizeCategory(category))
+    );
+
+    return ['Todos', ...ordered, ...extras].slice(0, 18);
   }, [updates]);
 
   const visibleUpdates = useMemo(() => {
     if (selectedCategory === 'Todos') return updates;
-    return updates.filter((item) => resolveClinicalImageLabel(imageInputFromUpdate(item)) === selectedCategory);
+    const selected = normalizeCategory(selectedCategory);
+
+    return updates.filter((item) => {
+      const directCategory = normalizeCategory(item.category);
+      const imageCategory = normalizeCategory(resolveClinicalImageLabel(imageInputFromUpdate(item)));
+      return directCategory === selected || imageCategory === selected;
+    });
   }, [selectedCategory, updates]);
 
   const featuredUpdate = visibleUpdates[activeIndex] || visibleUpdates[0];
