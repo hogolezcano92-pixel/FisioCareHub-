@@ -421,12 +421,10 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                 <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
                   {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
                 </p>
-              </div>
-            </div>
-
-            
-
-        <AnimatePresence>
+                  </div>
+                 </div>
+               </div>
+           <AnimatePresence>
           {historySummary && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
