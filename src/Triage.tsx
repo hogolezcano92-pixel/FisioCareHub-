@@ -296,7 +296,7 @@ export default function Triage() {
   const hasRedFlags = Object.values(formData.red_flags).some(v => v);
 
   return (
-    <div className="w-full max-w-[700px] mx-auto space-y-6 pb-20 px-4">
+    <div className="triage-light-page w-full max-w-[700px] mx-auto space-y-6 pb-20 px-4">
       <header className="text-center space-y-3 pt-4">
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
