@@ -297,6 +297,49 @@ export default function Triage() {
     }
   };
 
+  const openHistoryTriage = (item: any) => {
+    const savedAnalysis = item?.ai_analysis && typeof item.ai_analysis === 'object' ? item.ai_analysis : {};
+    const relatorio = item?.relatorio || savedAnalysis?.relatorio || 'Relatório não disponível para esta triagem.';
+
+    const normalizedAnalysis = {
+      ...savedAnalysis,
+      classificacao: item?.classificacao || savedAnalysis?.classificacao || 'Triagem',
+      gravidade: item?.gravidade || savedAnalysis?.gravidade || 'Não definida',
+      red_flag_detected: Boolean(item?.red_flag || savedAnalysis?.red_flag_detected),
+      relatorio,
+    };
+
+    setAnalysis(normalizedAnalysis);
+    setDisplayedAnalysis(relatorio);
+    setCurrentStep(STEPS.length);
+
+    setFormData((previous) => ({
+      ...previous,
+      idade: item?.idade ? String(item.idade) : previous.idade,
+      sexo: item?.sexo || previous.sexo,
+      peso: item?.peso ? String(item.peso) : previous.peso,
+      altura: item?.altura ? String(item.altura) : previous.altura,
+      profissao: item?.profissao || previous.profissao,
+      atividade_fisica: item?.atividade_fisica || previous.atividade_fisica,
+      regiao_dor: item?.regiao_dor || previous.regiao_dor,
+      inicio_sintomas: item?.inicio_sintomas || previous.inicio_sintomas,
+      tempo_sintomas: item?.tempo_sintomas || previous.tempo_sintomas,
+      historico_clinico: item?.historico_clinico || previous.historico_clinico,
+      doencas_preexistentes: item?.doencas_preexistentes || previous.doencas_preexistentes,
+      escala_dor: typeof item?.escala_dor === 'number' ? item.escala_dor : previous.escala_dor,
+      avaliacao_funcional: {
+        ...previous.avaliacao_funcional,
+        limitacao_atividades: item?.limitacao_funcional || previous.avaliacao_funcional.limitacao_atividades,
+      },
+    }));
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    toast.info('Triagem aberta para visualização.');
+  };
+
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -972,7 +1015,12 @@ export default function Triage() {
               ) : (
                 <div className="divide-y divide-border-soft">
                   {history.map((item, i) => (
-                    <div key={i} className="p-8 hover:bg-bg-general transition-all group">
+                    <button
+                      key={item.id || i}
+                      type="button"
+                      onClick={() => openHistoryTriage(item)}
+                      className="w-full p-8 text-left hover:bg-bg-general transition-all group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                           <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">
@@ -990,7 +1038,11 @@ export default function Triage() {
                       <div className="text-text-muted text-sm line-clamp-3 prose prose-slate prose-sm max-w-none">
                         <ReactMarkdown>{item.relatorio}</ReactMarkdown>
                       </div>
-                    </div>
+                      <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary opacity-90 transition group-hover:bg-primary group-hover:text-white">
+                        Ver detalhes
+                        <ChevronRight size={12} />
+                      </div>
+                    </button>
                   ))}
                 </div>
               )}
