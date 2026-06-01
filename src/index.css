@@ -2049,3 +2049,238 @@ html:not(.dark) .soap-record-lightfix button[class*="from-green"] * {
   stroke: #ffffff !important;
   opacity: 1 !important;
 }
+/* =========================================================
+   TRIAGEM IA — LAYOUT PREMIUM NO TEMA CLARO
+   Escopado em .triage-light-page para não alterar o dark mode
+   ========================================================= */
+
+html:not(.dark) .triage-light-page {
+  position: relative;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .triage-light-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.14), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(124, 58, 237, 0.13), transparent 30%),
+    linear-gradient(180deg, #fbfaff 0%, #ffffff 42%, #f2f7ff 100%);
+}
+
+html:not(.dark) .triage-light-page .triage-hero,
+html:not(.dark) .triage-light-page .triage-progress-panel,
+html:not(.dark) .triage-light-page .triage-form-card,
+html:not(.dark) .triage-light-page section {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(196, 181, 253, 0.55) !important;
+  box-shadow: 0 28px 70px rgba(79, 70, 229, 0.12) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .triage-light-page .triage-hero {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(14, 165, 233, 0.12), transparent 35%),
+    radial-gradient(circle at 88% 10%, rgba(124, 58, 237, 0.12), transparent 36%),
+    rgba(255, 255, 255, 0.94) !important;
+}
+
+html:not(.dark) .triage-light-page .triage-hero-icon {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 20px 38px rgba(37, 99, 235, 0.26) !important;
+}
+
+html:not(.dark) .triage-light-page .triage-title,
+html:not(.dark) .triage-light-page .triage-progress-title,
+html:not(.dark) .triage-light-page h1,
+html:not(.dark) .triage-light-page h2,
+html:not(.dark) .triage-light-page h3,
+html:not(.dark) .triage-light-page h4,
+html:not(.dark) .triage-light-page label,
+html:not(.dark) .triage-light-page strong,
+html:not(.dark) .triage-light-page [class*="font-black"] {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page .triage-title span,
+html:not(.dark) .triage-light-page .triage-kicker,
+html:not(.dark) .triage-light-page .triage-progress-kicker,
+html:not(.dark) .triage-light-page .triage-progress-percent,
+html:not(.dark) .triage-light-page .text-sky-400,
+html:not(.dark) .triage-light-page .text-sky-300 {
+  color: #2563eb !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page .triage-subtitle,
+html:not(.dark) .triage-light-page p,
+html:not(.dark) .triage-light-page span,
+html:not(.dark) .triage-light-page .text-slate-400,
+html:not(.dark) .triage-light-page .text-slate-500,
+html:not(.dark) .triage-light-page .text-slate-600,
+html:not(.dark) .triage-light-page .text-slate-700 {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page .triage-intel-card {
+  background: rgba(248, 250, 252, 0.92) !important;
+  border-color: rgba(186, 230, 253, 0.8) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85) !important;
+}
+
+html:not(.dark) .triage-light-page .triage-intel-card svg,
+html:not(.dark) .triage-light-page .triage-progress-title svg,
+html:not(.dark) .triage-light-page .triage-step-active svg {
+  color: #2563eb !important;
+  stroke: #2563eb !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page .triage-step-dot {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.7) !important;
+  color: #64748b !important;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.08) !important;
+}
+
+html:not(.dark) .triage-light-page .triage-step-dot.triage-step-active {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 18px 32px rgba(37, 99, 235, 0.22) !important;
+}
+
+html:not(.dark) .triage-light-page .triage-step-dot.triage-step-active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html:not(.dark) .triage-light-page .triage-step-label {
+  color: #334155 !important;
+}
+
+html:not(.dark) .triage-light-page .triage-progress-track {
+  background: #e0e7ff !important;
+}
+
+html:not(.dark) .triage-light-page input,
+html:not(.dark) .triage-light-page select,
+html:not(.dark) .triage-light-page textarea {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.8) !important;
+  color: #0f172a !important;
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.08) !important;
+}
+
+html:not(.dark) .triage-light-page input::placeholder,
+html:not(.dark) .triage-light-page textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .triage-light-page button:not(:disabled) {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .triage-light-page button[class*="border-white/10"],
+html:not(.dark) .triage-light-page button[class*="bg-white/5"],
+html:not(.dark) .triage-light-page .bg-white\/5,
+html:not(.dark) .triage-light-page .bg-slate-900 {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.75) !important;
+  color: #334155 !important;
+}
+
+html:not(.dark) .triage-light-page button[class*="border-sky-500"],
+html:not(.dark) .triage-light-page button[class*="bg-sky-500/10"] {
+  background: #eff6ff !important;
+  border-color: #60a5fa !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.12) !important;
+}
+
+html:not(.dark) .triage-light-page button[class*="bg-sky-500"],
+html:not(.dark) .triage-light-page button[class*="bg-sky-600"],
+html:not(.dark) .triage-light-page button[class*="from-indigo-600"] {
+  background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.24) !important;
+}
+
+html:not(.dark) .triage-light-page button[class*="bg-sky-500"] *,
+html:not(.dark) .triage-light-page button[class*="bg-sky-600"] *,
+html:not(.dark) .triage-light-page button[class*="from-indigo-600"] * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html:not(.dark) .triage-light-page button:disabled {
+  background: #dbeafe !important;
+  color: #64748b !important;
+  opacity: 0.75 !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) .triage-light-page .bg-amber-500\/10,
+html:not(.dark) .triage-light-page [class*="bg-amber-500/10"] {
+  background: #fffbeb !important;
+  border-color: rgba(245, 158, 11, 0.38) !important;
+  color: #92400e !important;
+}
+
+html:not(.dark) .triage-light-page .text-amber-400,
+html:not(.dark) .triage-light-page .text-amber-500 {
+  color: #b45309 !important;
+}
+
+html:not(.dark) .triage-light-page .bg-rose-500\/10,
+html:not(.dark) .triage-light-page [class*="bg-rose-500/10"] {
+  background: #fff1f2 !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #be123c !important;
+}
+
+html:not(.dark) .triage-light-page .text-rose-400 {
+  color: #be123c !important;
+}
+
+html:not(.dark) .triage-light-page .bg-emerald-500\/10,
+html:not(.dark) .triage-light-page [class*="bg-emerald-500/10"] {
+  background: #ecfdf5 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #047857 !important;
+}
+
+html:not(.dark) .triage-light-page .text-emerald-400 {
+  color: #047857 !important;
+}
+
+html:not(.dark) .triage-light-page .prose,
+html:not(.dark) .triage-light-page .prose * {
+  color: #334155 !important;
+}
+
+html:not(.dark) .triage-light-page .prose h1,
+html:not(.dark) .triage-light-page .prose h2,
+html:not(.dark) .triage-light-page .prose h3,
+html:not(.dark) .triage-light-page .prose strong {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .triage-light-page input[type="range"] {
+  background: #dbeafe !important;
+  box-shadow: none !important;
+  accent-color: #2563eb !important;
+}
