@@ -297,8 +297,8 @@ export default function Appointments() {
         .eq(isPhysio ? 'fisio_id' : 'paciente_id', currentProfile.id);
 
       if (isPhysio) {
-        // O fisioterapeuta só vê consultas que já foram pagas/confirmadas ou criadas manualmente.
-        query = query.neq('status', 'pendente_pagamento');
+        // O fisioterapeuta só vê consultas com pagamento confirmado.
+        query = query.in('status_pagamento', PAID_PAYMENT_STATUSES);
       }
 
       const { data: basicData, error } = await query
@@ -307,7 +307,7 @@ export default function Appointments() {
 
       if (error) throw error;
 
-      const rows = basicData || [];
+      const rows = isPhysio ? (basicData || []).filter((app: any) => isPaidAppointment(app, sessions)) : (basicData || []);
       if (rows.length === 0) {
         setAppointments([]);
         return;

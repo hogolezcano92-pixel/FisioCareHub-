@@ -31,6 +31,14 @@ import ProGuard from '../components/ProGuard';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 
+
+const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+
+const hasConfirmedPayment = (appointment: any) => {
+  const paymentStatus = String(appointment?.status_pagamento || appointment?.payment_status || '').toLowerCase();
+  return PAID_APPOINTMENT_PAYMENT_STATUSES.includes(paymentStatus);
+};
+
 type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes';
 
 type Review = {
@@ -158,10 +166,10 @@ export default function PhysioDashboard() {
         `)
         .eq('fisio_id', user?.id);
 
-      appQuery = appQuery.neq('status', 'pendente_pagamento');
+      appQuery = appQuery.in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES);
 
       const { data: appData, error: appError } = await appQuery.order('data', { ascending: true });
-      if (!appError) setAppointments(appData || []);
+      if (!appError) setAppointments((appData || []).filter(hasConfirmedPayment));
 
       const { data: actData } = await supabase
         .from('historico_atividades')

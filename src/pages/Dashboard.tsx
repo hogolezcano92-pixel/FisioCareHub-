@@ -59,6 +59,14 @@ import FisioJourney from '../components/FisioJourney';
 import StoryAvatar from '../components/FisioStories/StoryAvatar';
 
 
+const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+
+const hasConfirmedPayment = (appointment: any) => {
+  const paymentStatus = String(appointment?.status_pagamento || appointment?.payment_status || '').toLowerCase();
+  return PAID_APPOINTMENT_PAYMENT_STATUSES.includes(paymentStatus);
+};
+
+
 const parseAppointmentDateTime = (appointment: any): Date | null => {
   const raw = appointment?.data_servico || appointment?.data || appointment?.data_agendamento || appointment?.created_at || appointment?.criado_em;
   if (!raw) return null;
@@ -330,7 +338,7 @@ export default function Dashboard() {
 
       const queries = [
         isPhysio ? Promise.all([
-          supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id),
+          supabase.from('agendamentos').select('*', { count: 'exact', head: true }).eq('fisio_id', data.id).in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES),
           supabase.from('pacientes').select('*', { count: 'exact', head: true }).eq('fisioterapeuta_id', data.id),
           agendamentoIds.length > 0 
             ? supabase.from('evolucoes').select('*', { count: 'exact', head: true }).in('atendimento_id', agendamentoIds)
@@ -341,17 +349,30 @@ export default function Dashboard() {
           supabase.from('evolucoes').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id),
           supabase.from('triagens').select('*', { count: 'exact', head: true }).eq('paciente_id', data.id)
         ]),
-        supabase
-          .from('agendamentos')
-          .select(`
-            *,
-            paciente:perfis(id, nome_completo, avatar_url),
-            fisioterapeuta:perfis(id, nome_completo, avatar_url)
-          `)
-          .eq(roleField, data.id)
-          .order('data', { ascending: false })
-          .order('hora', { ascending: false })
-          .limit(5),
+        (isPhysio
+          ? supabase
+            .from('agendamentos')
+            .select(`
+              *,
+              paciente:perfis(id, nome_completo, avatar_url),
+              fisioterapeuta:perfis(id, nome_completo, avatar_url)
+            `)
+            .eq(roleField, data.id)
+            .in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES)
+            .order('data', { ascending: false })
+            .order('hora', { ascending: false })
+            .limit(5)
+          : supabase
+            .from('agendamentos')
+            .select(`
+              *,
+              paciente:perfis(id, nome_completo, avatar_url),
+              fisioterapeuta:perfis(id, nome_completo, avatar_url)
+            `)
+            .eq(roleField, data.id)
+            .order('data', { ascending: false })
+            .order('hora', { ascending: false })
+            .limit(5)),
         triagesListQuery,
         supabase
           .from('historico_atividades')
@@ -390,7 +411,8 @@ export default function Dashboard() {
       }
 
       if (apptsResult.status === 'fulfilled') {
-        setRecentAppointments(apptsResult.value.data || []);
+        const appointmentsData = apptsResult.value.data || [];
+        setRecentAppointments(isPhysio ? appointmentsData.filter(hasConfirmedPayment) : appointmentsData);
       }
 
       if (triagesResult.status === 'fulfilled') {

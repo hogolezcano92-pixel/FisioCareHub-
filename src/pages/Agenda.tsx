@@ -30,6 +30,14 @@ import { logActivity } from '../services/activityService';
 import { availabilityService, AvailabilityRule, ScheduleBlock } from '../services/availabilityService';
 
 
+const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+
+const hasConfirmedPayment = (appointment: any) => {
+  const paymentStatus = String(appointment?.status_pagamento || appointment?.payment_status || '').toLowerCase();
+  return PAID_APPOINTMENT_PAYMENT_STATUSES.includes(paymentStatus);
+};
+
+
 const WEEKDAYS = [
   { value: 1, label: 'Segunda' },
   { value: 2, label: 'Terça' },
@@ -445,7 +453,7 @@ export default function Agenda() {
       }
 
       const { data, error: supabaseError } = await query
-        .neq('status', 'pendente_pagamento')
+        .in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES)
         .order('data', { ascending: false })
         .order('hora');
 
@@ -456,7 +464,7 @@ export default function Agenda() {
           .from('agendamentos')
           .select('*')
           .eq('fisio_id', user?.id)
-          .neq('status', 'pendente_pagamento');
+          .in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES);
         
         if (view === 'daily') {
           fallbackQuery = fallbackQuery.eq('data', selectedDate);
@@ -478,15 +486,16 @@ export default function Agenda() {
             ...a,
             paciente: profileMap[a.paciente_id]
           }));
-          setAppointments(enriched);
+          setAppointments(enriched.filter(hasConfirmedPayment));
         } else {
           setAppointments([]);
         }
         return;
       }
       
-      console.log('Agendamentos encontrados:', data?.length || 0);
-      setAppointments(data || []);
+      const paidAppointments = (data || []).filter(hasConfirmedPayment);
+      console.log('Agendamentos pagos encontrados:', paidAppointments.length);
+      setAppointments(paidAppointments);
     } catch (err: any) {
       console.error('Erro ao buscar agendamentos:', err);
       setAppointments([]);
