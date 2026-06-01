@@ -1295,8 +1295,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="min-w-0 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">Consultas <span className="text-blue-400 italic">Recentes</span></h2>
               <Link 
@@ -1450,7 +1450,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="min-w-0 space-y-8 overflow-hidden">
             {isPhysio && <ClinicalAssistant isPhysio={isPhysio} />}
             {!isPhysio && (
               <motion.div 
