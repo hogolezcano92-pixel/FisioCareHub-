@@ -463,7 +463,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
     <motion.div
       layout
       className={cn(
-        'clinical-assistant-mobilefix isolate box-border w-full max-w-full min-w-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
+        'clinical-assistant clinical-assistant-mobilefix isolate box-border w-full max-w-full min-w-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
         isExpanded ? 'p-4 sm:p-8' : 'p-4 sm:p-6 cursor-pointer'
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
