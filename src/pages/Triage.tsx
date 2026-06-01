@@ -26,7 +26,8 @@ import {
   AlertTriangle,
   Scale,
   FileText,
-  Download
+  Download,
+  ShieldCheck,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
