@@ -60,32 +60,32 @@ const soapSections = [
     key: 'subjective',
     description: 'Relato, queixas e percepção do paciente.',
     icon: ClipboardList,
-    color: 'border-amber-400/20 bg-amber-400/10 text-amber-100',
-    iconColor: 'text-amber-300',
+    color: 'border-amber-200 bg-amber-50 text-slate-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100',
+    iconColor: 'text-amber-500 dark:text-amber-300',
   },
   {
     label: 'O - Objetivo',
     key: 'objective',
     description: 'Achados, testes, sinais e observações clínicas.',
     icon: Activity,
-    color: 'border-blue-400/20 bg-blue-400/10 text-blue-100',
-    iconColor: 'text-blue-300',
+    color: 'border-blue-200 bg-blue-50 text-slate-800 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-100',
+    iconColor: 'text-blue-500 dark:text-blue-300',
   },
   {
     label: 'A - Avaliação',
     key: 'assessment',
     description: 'Interpretação fisioterapêutica da evolução.',
     icon: BrainCircuit,
-    color: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100',
-    iconColor: 'text-emerald-300',
+    color: 'border-emerald-200 bg-emerald-50 text-slate-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100',
+    iconColor: 'text-emerald-500 dark:text-emerald-300',
   },
   {
     label: 'P - Plano',
     key: 'plan',
     description: 'Conduta, orientações e próximos passos.',
     icon: Stethoscope,
-    color: 'border-purple-400/20 bg-purple-400/10 text-purple-100',
-    iconColor: 'text-purple-300',
+    color: 'border-purple-200 bg-purple-50 text-slate-800 dark:border-purple-400/20 dark:bg-purple-400/10 dark:text-purple-100',
+    iconColor: 'text-purple-500 dark:text-purple-300',
   },
 ];
 
@@ -395,36 +395,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           })}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div
-                className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all',
-                  selectedPatient ? 'bg-blue-600/20 shadow-lg shadow-blue-900/30' : 'bg-slate-800/80 text-slate-500',
-                )}
-              >
-                {selectedPatient ? (
-                  <img
-                    src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`}
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <User size={21} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className={cn('truncate text-sm font-black leading-tight', selectedPatient ? 'text-white' : 'text-slate-400')}>
-                  {selectedPatient ? selectedPatient.nome_completo || selectedPatient.nome : 'Vincular Paciente'}
-                </p>
-                <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
-                  {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
-                </p>
-                  </div>
-                 </div>
-               </div>
-           <AnimatePresence>
+        <AnimatePresence>
           {historySummary && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -517,11 +488,11 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               exit={{ opacity: 0, y: 16 }}
               className="space-y-4 border-t border-white/10 pt-4"
             >
-              <div className="flex items-center gap-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3">
-                <CheckCircle2 className="text-emerald-300" size={18} />
+              <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                <CheckCircle2 className="text-emerald-500 dark:text-emerald-300" size={18} />
                 <div>
-                  <p className="text-sm font-black text-white">SOAP estruturado</p>
-                  <p className="text-[10px] font-medium text-emerald-100/80">Revise antes de salvar no prontuário.</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-white">SOAP estruturado</p>
+                  <p className="text-[10px] font-medium text-slate-600 dark:text-emerald-100/80">Revise antes de salvar no prontuário.</p>
                 </div>
               </div>
 
@@ -534,11 +505,11 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       <div className="mb-2 flex items-start gap-2">
                         <Icon className={cn('mt-0.5 shrink-0', section.iconColor)} size={16} />
                         <div>
-                          <h4 className="text-[10px] font-black uppercase tracking-widest">{section.label}</h4>
-                          <p className="text-[10px] opacity-75">{section.description}</p>
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">{section.label}</h4>
+                          <p className="text-[10px] text-slate-600 dark:text-white/70">{section.description}</p>
                         </div>
                       </div>
-                      <p className="text-xs font-medium leading-relaxed">
+                      <p className="text-xs font-medium leading-relaxed text-slate-800 dark:text-white/90">
                         {typeof value === 'object' ? JSON.stringify(value) : value || 'Não informado.'}
                       </p>
                     </div>
