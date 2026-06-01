@@ -384,37 +384,38 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             );
           })}
         </div>
-
         <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div
-                className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all',
-                  selectedPatient ? 'bg-blue-600/20 shadow-lg shadow-blue-900/30' : 'bg-slate-800/80 text-slate-500',
-                )}
-              >
-                {selectedPatient ? (
-                  <img
-                    src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`}
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <User size={21} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className={cn('truncate text-sm font-black leading-tight', selectedPatient ? 'text-white' : 'text-slate-400')}>
-                  {selectedPatient ? selectedPatient.nome_completo || selectedPatient.nome : 'Vincular Paciente'}
-                </p>
-                <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
-                  {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
-                </p>
-              </div>
-            </div>
+  <div className="flex items-center justify-between gap-3">
+    <div className="flex min-w-0 items-center gap-3">
+      <div
+        className={cn(
+          'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all',
+          selectedPatient ? 'bg-blue-600/20 shadow-lg shadow-blue-900/30' : 'bg-slate-800/80 text-slate-500',
+        )}
+      >
+        {selectedPatient ? (
+          <img
+            src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`}
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <User size={21} />
+        )}
+      </div>
 
-          </div>
+      <div className="min-w-0">
+        <p className={cn('truncate text-sm font-black leading-tight', selectedPatient ? 'text-white' : 'text-slate-400')}>
+          {selectedPatient ? selectedPatient.nome_completo || selectedPatient.nome : 'Vincular Paciente'}
+        </p>
+        <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+          {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+        
         <AnimatePresence>
           {historySummary && (
             <motion.div
