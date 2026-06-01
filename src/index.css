@@ -1672,3 +1672,180 @@ html:not(.dark) .about-light-page .rounded-2xl {
 html:not(.dark) .about-light-page .text-transparent {
   color: transparent !important;
 }
+/* =========================================================
+   DASHBOARDS — TEMA CLARO
+   Paciente + Fisioterapeuta
+   Melhora contraste, nitidez e aparência sem mexer no dark mode
+   ========================================================= */
+
+html:not(.dark) .dashboard-light-page {
+  background: linear-gradient(180deg, #fcfbff 0%, #f7f6ff 45%, #eef4ff 100%) !important;
+  color: #0f172a !important;
+}
+
+/* Fundo geral de áreas internas */
+html:not(.dark) .dashboard-light-page [class*="bg-slate-950"],
+html:not(.dark) .dashboard-light-page [class*="bg-slate-900"],
+html:not(.dark) .dashboard-light-page [class*="bg-slate-800"],
+html:not(.dark) .dashboard-light-page [class*="bg-[#0"],
+html:not(.dark) .dashboard-light-page [class*="bg-[#1"] {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(246,247,255,0.96) 100%) !important;
+  color: #0f172a !important;
+}
+
+/* Cards principais */
+html:not(.dark) .dashboard-light-page article,
+html:not(.dark) .dashboard-light-page section,
+html:not(.dark) .dashboard-light-page [class*="rounded-3xl"],
+html:not(.dark) .dashboard-light-page [class*="rounded-[2rem]"],
+html:not(.dark) .dashboard-light-page [class*="rounded-[2.5rem]"],
+html:not(.dark) .dashboard-light-page [class*="rounded-[30px]"],
+html:not(.dark) .dashboard-light-page [class*="rounded-[32px]"] {
+  border-color: rgba(196, 181, 253, 0.55) !important;
+  box-shadow: 0 18px 45px rgba(99, 102, 241, 0.10) !important;
+}
+
+/* Cards muito escuros / translúcidos */
+html:not(.dark) .dashboard-light-page [class*="bg-white/[0."],
+html:not(.dark) .dashboard-light-page [class*="bg-slate-950/"],
+html:not(.dark) .dashboard-light-page [class*="bg-slate-900/"],
+html:not(.dark) .dashboard-light-page [class*="bg-violet-950/"] {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+}
+
+/* Títulos */
+html:not(.dark) .dashboard-light-page h1,
+html:not(.dark) .dashboard-light-page h2,
+html:not(.dark) .dashboard-light-page h3,
+html:not(.dark) .dashboard-light-page h4 {
+  color: #0f172a !important;
+}
+
+/* Textos secundários */
+html:not(.dark) .dashboard-light-page p,
+html:not(.dark) .dashboard-light-page span,
+html:not(.dark) .dashboard-light-page label,
+html:not(.dark) .dashboard-light-page small {
+  color: inherit;
+}
+
+/* Utilitários de texto */
+html:not(.dark) .dashboard-light-page [class*="text-slate-50"],
+html:not(.dark) .dashboard-light-page [class*="text-slate-100"],
+html:not(.dark) .dashboard-light-page [class*="text-slate-200"],
+html:not(.dark) .dashboard-light-page [class*="text-slate-300"],
+html:not(.dark) .dashboard-light-page [class*="text-slate-400"],
+html:not(.dark) .dashboard-light-page [class*="text-gray-300"],
+html:not(.dark) .dashboard-light-page [class*="text-gray-400"] {
+  color: #475569 !important;
+}
+
+html:not(.dark) .dashboard-light-page [class*="text-slate-500"],
+html:not(.dark) .dashboard-light-page [class*="text-gray-500"] {
+  color: #64748b !important;
+}
+
+html:not(.dark) .dashboard-light-page [class*="text-white"] {
+  color: #0f172a !important;
+}
+
+/* Texto forte */
+html:not(.dark) .dashboard-light-page [class*="font-black"],
+html:not(.dark) .dashboard-light-page [class*="font-extrabold"],
+html:not(.dark) .dashboard-light-page [class*="font-bold"] {
+  color: #0f172a !important;
+}
+
+/* Inputs / textarea / select */
+html:not(.dark) .dashboard-light-page input,
+html:not(.dark) .dashboard-light-page textarea,
+html:not(.dark) .dashboard-light-page select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(196, 181, 253, 0.55) !important;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.06) !important;
+}
+
+html:not(.dark) .dashboard-light-page input::placeholder,
+html:not(.dark) .dashboard-light-page textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Chips / tags / filtros */
+html:not(.dark) .dashboard-light-page [class*="rounded-full"] {
+  border-color: rgba(196, 181, 253, 0.45);
+}
+
+html:not(.dark) .dashboard-light-page [class*="bg-violet-50"],
+html:not(.dark) .dashboard-light-page [class*="bg-sky-50"],
+html:not(.dark) .dashboard-light-page [class*="bg-blue-50"],
+html:not(.dark) .dashboard-light-page [class*="bg-indigo-50"] {
+  background: #f8fafc !important;
+  color: #334155 !important;
+}
+
+/* Botões ghost / outline */
+html:not(.dark) .dashboard-light-page button {
+  text-shadow: none !important;
+}
+
+/* Botões sem gradiente que ficam apagados */
+html:not(.dark) .dashboard-light-page button[class*="border"] {
+  border-color: rgba(196, 181, 253, 0.55) !important;
+  background: rgba(255,255,255,0.95) !important;
+  color: #334155 !important;
+}
+
+/* Mantém botões com gradiente fortes */
+html:not(.dark) .dashboard-light-page button[class*="bg-gradient-to-r"] {
+  color: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22) !important;
+}
+
+/* Blocos de estatística / módulos / atalhos */
+html:not(.dark) .dashboard-light-page [class*="shadow"],
+html:not(.dark) .dashboard-light-page [class*="backdrop-blur"] {
+  backdrop-filter: blur(14px);
+}
+
+/* Carrossel / cards internos de conteúdo */
+html:not(.dark) .dashboard-light-page img {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .dashboard-light-page .swiper-slide,
+html:not(.dark) .dashboard-light-page [class*="embla"],
+html:not(.dark) .dashboard-light-page [class*="carousel"] {
+  color: #0f172a !important;
+}
+
+/* Skeleton / loading */
+html:not(.dark) .dashboard-light-page [class*="animate-pulse"] {
+  background-color: #eef2ff !important;
+}
+
+/* Cards clínicos com fundo muito pesado */
+html:not(.dark) .dashboard-light-page [class*="bg-emerald-"],
+html:not(.dark) .dashboard-light-page [class*="bg-green-"] {
+  color: inherit;
+}
+
+/* Bordas internas mais suaves */
+html:not(.dark) .dashboard-light-page [class*="border-white/10"],
+html:not(.dark) .dashboard-light-page [class*="border-white/20"],
+html:not(.dark) .dashboard-light-page [class*="border-slate-700"],
+html:not(.dark) .dashboard-light-page [class*="border-slate-800"] {
+  border-color: rgba(196, 181, 253, 0.45) !important;
+}
+
+/* Seções tipo biblioteca, loja, atualizações */
+html:not(.dark) .dashboard-light-page [class*="from-[#"],
+html:not(.dark) .dashboard-light-page [class*="to-[#"] {
+  color: inherit;
+}
+
+/* Mantém ícones coloridos vivos */
+html:not(.dark) .dashboard-light-page svg {
+  opacity: 1;
+}
