@@ -463,8 +463,8 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
     <motion.div
       layout
       className={cn(
-        'w-full max-w-full min-w-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
-        isExpanded ? 'p-5 sm:p-8' : 'p-5 sm:p-6 cursor-pointer'
+        'clinical-assistant-mobilefix isolate box-border w-full max-w-full min-w-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 group transition-all duration-500',
+        isExpanded ? 'p-4 sm:p-8' : 'p-4 sm:p-6 cursor-pointer'
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
@@ -473,8 +473,8 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
 
       <div className="relative z-10 w-full max-w-full min-w-0 space-y-6 overflow-hidden">
         <div className="flex w-full max-w-full min-w-0 items-center justify-between gap-3">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner group-hover:rotate-12 transition-transform shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="h-10 w-10 shrink-0 rounded-2xl border border-white/30 bg-white/20 backdrop-blur-md shadow-inner transition-transform group-hover:rotate-12 sm:h-12 sm:w-12 flex items-center justify-center">
               <BrainCircuit size={24} className="animate-pulse" />
             </div>
             <div className="min-w-0">
@@ -486,7 +486,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {isExpanded && (
               <button
                 type="button"
@@ -494,7 +494,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                   e.stopPropagation();
                   fetchClinicalDataAndGenerateInsights();
                 }}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                className="rounded-xl bg-white/10 p-2 transition-all hover:bg-white/20"
                 aria-label="Atualizar assistente clínico"
               >
                 <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -507,7 +507,7 @@ export default function ClinicalAssistant({ isPhysio }: ClinicalAssistantProps) 
                   e.stopPropagation();
                   setIsExpanded(false);
                 }}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                className="rounded-xl bg-white/10 p-2 transition-all hover:bg-white/20"
                 aria-label="Recolher assistente clínico"
               >
                 <ChevronRight size={20} className="rotate-90" />
