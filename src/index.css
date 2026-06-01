@@ -2025,3 +2025,27 @@ html:not(.dark) .soap-record-lightfix button[class*="bg-green"] * {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
+/* =========================================================
+   SOAP RECORD — BOTÃO SALVAR PRONTUÁRIO NO TEMA CLARO
+   Mantém o botão verde forte e texto branco
+   ========================================================= */
+
+html:not(.dark) .soap-record-lightfix button[class*="bg-emerald"],
+html:not(.dark) .soap-record-lightfix button[class*="bg-green"],
+html:not(.dark) .soap-record-lightfix button[class*="from-emerald"],
+html:not(.dark) .soap-record-lightfix button[class*="from-green"] {
+  background: linear-gradient(90deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+  box-shadow: 0 16px 34px rgba(5, 150, 105, 0.28) !important;
+}
+
+html:not(.dark) .soap-record-lightfix button[class*="bg-emerald"] *,
+html:not(.dark) .soap-record-lightfix button[class*="bg-green"] *,
+html:not(.dark) .soap-record-lightfix button[class*="from-emerald"] *,
+html:not(.dark) .soap-record-lightfix button[class*="from-green"] * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+}
