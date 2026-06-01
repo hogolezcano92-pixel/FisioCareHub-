@@ -338,7 +338,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   };
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-blue-950/30 backdrop-blur-xl sm:p-5">
+    <div className="soap-record-lightfix relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-blue-950/30 backdrop-blur-xl sm:p-5">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.22),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.16),transparent_34%)]" />
       <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/60 to-transparent" />
 
