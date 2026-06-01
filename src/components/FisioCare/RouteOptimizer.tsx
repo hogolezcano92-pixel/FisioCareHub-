@@ -620,43 +620,46 @@ export const RouteOptimizer = () => {
 
       <div className="grid grid-cols-3 gap-2">
         <button
-  type="button"
-  onClick={() => {
-    setSelectedDate(todayDateValue);
-    setShowCustomDate(false);
-  }}
-  className={cn(
-    'route-date-today-button rounded-xl border px-3 py-2 text-xs font-black transition-all',
-    selectedDate === todayDateValue
-      ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:bg-blue-500/20 dark:!text-white'
-      : 'border-white/10 bg-white/5 text-slate-700 hover:bg-white/10 dark:text-slate-300'
-  )}
->
-  Hoje
-</button>
+          type="button"
+          onClick={() => {
+            setSelectedDate(todayDateValue);
+            setShowCustomDate(false);
+          }}
+          className={cn(
+            'route-date-today-button rounded-xl border px-3 py-2 text-xs font-black transition-all',
+            selectedDate === todayDateValue
+              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+              : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
+          )}
+        >
+          Hoje
+        </button>
+
         <button
-  type="button"
-  onClick={() => {
-    setSelectedDate(tomorrowDateValue);
-    setShowCustomDate(false);
-  }}
-  className={cn(
-    'rounded-xl border px-3 py-2 text-xs font-black transition-all',
-    selectedDate === tomorrowDateValue
-      ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:bg-blue-500/20 dark:!text-white'
-      : 'border-white/10 bg-white/5 text-slate-700 hover:bg-white/10 dark:text-slate-300'
-  )}
->
-  Amanhã
-</button>
+          type="button"
+          onClick={() => {
+            setSelectedDate(tomorrowDateValue);
+            setShowCustomDate(false);
+          }}
+          className={cn(
+            'rounded-xl border px-3 py-2 text-xs font-black transition-all',
+            selectedDate === tomorrowDateValue
+              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+              : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
+          )}
+        >
+          Amanhã
+        </button>
+
         <button
           type="button"
           onClick={() => setShowCustomDate((current) => !current)}
-          className={`rounded-xl border px-3 py-2 text-[10px] font-black transition-all ${
+          className={cn(
+            'rounded-xl border px-3 py-2 text-[10px] font-black transition-all',
             showCustomDate && selectedDate !== todayDateValue && selectedDate !== tomorrowDateValue
-              ? 'border-blue-400 bg-blue-500/20 text-white shadow-lg shadow-blue-950/20'
-              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
-          }`}
+              ? 'border-blue-400 bg-blue-50 !text-blue-700 shadow-lg shadow-blue-500/10 dark:border-blue-400 dark:bg-blue-500/20 dark:!text-white'
+              : 'border-violet-200 bg-white !text-slate-800 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:!text-slate-300 dark:hover:bg-white/10'
+          )}
         >
           Escolher data
         </button>
