@@ -596,10 +596,55 @@ export default function Dashboard() {
         setRecentAppointments(isPhysio ? appointmentsData.filter(hasConfirmedPayment) : appointmentsData);
       }
 
-      const recentTriagesData =
+      let recentTriagesData =
         triagesResult.status === 'fulfilled' && !triagesResult.value.error
           ? (triagesResult.value.data || [])
           : [];
+
+      // Enriquecimento visual das triagens no dashboard do fisioterapeuta.
+      // A tabela triagens pode não trazer join com perfis/pacientes; por isso buscamos
+      // a foto/nome real do paciente sem alterar a lógica de listagem.
+      if (isPhysio && recentTriagesData.length > 0) {
+        const triagePatientIds = Array.from(new Set(
+          recentTriagesData
+            .map((triage: any) => triage.paciente_id)
+            .filter(Boolean)
+            .map(String)
+        ));
+
+        if (triagePatientIds.length > 0) {
+          const [profilePatientsResult, internalPatientsResult] = await Promise.allSettled([
+            supabase
+              .from('perfis')
+              .select('id, nome_completo, email, avatar_url, foto_url')
+              .in('id', triagePatientIds),
+            supabase
+              .from('pacientes')
+              .select('id, nome_completo, nome, email, avatar_url, foto_url')
+              .in('id', triagePatientIds)
+          ]);
+
+          const patientMap = new Map<string, any>();
+
+          if (profilePatientsResult.status === 'fulfilled' && !profilePatientsResult.value.error) {
+            (profilePatientsResult.value.data || []).forEach((patient: any) => {
+              patientMap.set(String(patient.id), patient);
+            });
+          }
+
+          if (internalPatientsResult.status === 'fulfilled' && !internalPatientsResult.value.error) {
+            (internalPatientsResult.value.data || []).forEach((patient: any) => {
+              const current = patientMap.get(String(patient.id)) || {};
+              patientMap.set(String(patient.id), { ...current, ...patient });
+            });
+          }
+
+          recentTriagesData = recentTriagesData.map((triage: any) => {
+            const realPatient = patientMap.get(String(triage.paciente_id));
+            return realPatient ? { ...triage, paciente: { ...(triage.paciente || {}), ...realPatient } } : triage;
+          });
+        }
+      }
       const recentActivitiesData = activitiesResult && activitiesResult.status === 'fulfilled' ? (activitiesResult.value.data || []) : [];
       const recentAppointmentsForActivity = apptsResult.status === 'fulfilled' ? (apptsResult.value.data || []) : [];
       const recentProntuariosData = prontuariosResult && prontuariosResult.status === 'fulfilled' ? (prontuariosResult.value.data || []) : [];
@@ -1356,14 +1401,14 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
                             <img
-                              src={isPhysio ? (triage.paciente?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${triage.paciente_id}`) : (profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`)}
-                              alt={isPhysio ? triage.paciente?.nome_completo : profile?.nome_completo}
+                              src={isPhysio ? (triage.paciente?.foto_url || triage.paciente?.avatar_url || triage.foto_url || triage.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${triage.paciente_id}`) : (profile?.foto_url || profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`)}
+                              alt={isPhysio ? (triage.paciente?.nome_completo || triage.paciente?.nome || triage.nome_paciente || 'Paciente') : (profile?.nome_completo || 'Paciente')}
                               className="w-9 h-9 rounded-lg object-cover border border-white/10"
                               referrerPolicy="no-referrer"
                             />
                             <div>
                               <p className="text-sm font-bold text-white">
-                                {isPhysio ? (triage.paciente?.nome_completo || triage.nome_paciente || 'Paciente') : `${triage.regiao_dor || 'Sua triagem'}${triage.tempo_sintomas ? ` • ${triage.tempo_sintomas}` : ''}`}
+                                {isPhysio ? (triage.paciente?.nome_completo || triage.paciente?.nome || triage.nome_paciente || 'Paciente') : `${triage.regiao_dor || 'Sua triagem'}${triage.tempo_sintomas ? ` • ${triage.tempo_sintomas}` : ''}`}
                               </p>
                               <p className="text-[9px] text-slate-500 font-medium">{formatDate(triage.created_at)}</p>
                             </div>
