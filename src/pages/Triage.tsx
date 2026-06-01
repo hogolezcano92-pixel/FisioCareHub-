@@ -264,8 +264,7 @@ export default function Triage() {
         analysis?.resumo ? `Resumo: ${analysis.resumo}` : '',
       ]
         .filter(Boolean)
-        .join('
-');
+        .join('\n');
 
       const { error } = await supabase
         .from('solicitacoes_atendimento')
