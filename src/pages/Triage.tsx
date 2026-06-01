@@ -294,44 +294,100 @@ export default function Triage() {
   };
 
   const hasRedFlags = Object.values(formData.red_flags).some(v => v);
+  const activeStepIndex = Math.min(currentStep, STEPS.length - 1);
+  const activeStep = STEPS[activeStepIndex] || STEPS[0];
+  const progressPercent = currentStep >= STEPS.length
+    ? 100
+    : Math.round(((activeStepIndex + 1) / STEPS.length) * 100);
+  const ActiveStepIcon = activeStep.icon;
 
   return (
-    <div className="w-full max-w-[700px] mx-auto space-y-6 pb-20 px-4">
-      <header className="text-center space-y-3 pt-4">
-        <motion.div 
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-primary text-white rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
+    <div className="triage-light-page w-full max-w-[760px] mx-auto space-y-6 pb-20 px-4">
+      <header className="triage-hero relative overflow-hidden rounded-[2.75rem] border border-white/10 p-5 pt-6 text-center shadow-2xl sm:p-7">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
+
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0, y: 8 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          className="triage-hero-icon mx-auto flex h-20 w-20 items-center justify-center rounded-[1.7rem] bg-gradient-to-br from-indigo-600 to-primary text-white shadow-xl shadow-primary/20"
         >
-          <BrainCircuit size={32} />
+          <BrainCircuit size={38} />
         </motion.div>
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-text-main tracking-tight">Triagem <span className="text-primary italic">Inteligente</span></h1>
-          <p className="text-sm text-text-muted font-medium">Avaliação clínica completa guiada por IA.</p>
+
+        <div className="mt-5 space-y-2">
+          <div className="triage-kicker mx-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-primary">
+            <ShieldCheck size={13} />
+            protocolo clínico guiado por IA
+          </div>
+          <h1 className="triage-title text-3xl font-black tracking-tight text-text-main sm:text-4xl">
+            Triagem Clínica <span className="text-primary italic">Inteligente</span>
+          </h1>
+          <p className="triage-subtitle mx-auto max-w-xl text-sm font-semibold leading-6 text-text-muted sm:text-base">
+            Coleta estruturada, sinais de alerta, classificação de prioridade e relatório de apoio para fisioterapia.
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            { icon: User, title: 'Perfil', text: 'Dados físicos e rotina' },
+            { icon: AlertTriangle, title: 'Alertas', text: 'Triagem de risco clínico' },
+            { icon: FileText, title: 'Relatório', text: 'Resumo seguro por IA' },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="triage-intel-card rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-left">
+                <Icon className="mb-3 text-primary" size={20} />
+                <p className="text-sm font-black text-text-main">{item.title}</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-text-muted">{item.text}</p>
+              </div>
+            );
+          })}
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="flex items-center justify-between px-2 overflow-x-auto pb-2 scrollbar-hide">
-        {STEPS.map((step, i) => (
-          <div key={step.id} className="flex items-center flex-shrink-0">
-            <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
-              currentStep >= i ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-bg-general text-text-muted"
-            )}>
-              <step.icon size={14} />
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={cn(
-                "w-4 h-0.5 mx-1 rounded-full transition-all duration-500",
-                currentStep > i ? "bg-primary" : "bg-bg-general"
-              )} />
-            )}
+      <div className="triage-progress-panel rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-xl">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="triage-progress-kicker text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+              Etapa {Math.min(currentStep + 1, STEPS.length)} de {STEPS.length}
+            </p>
+            <h2 className="triage-progress-title mt-1 flex items-center gap-2 text-base font-black text-text-main">
+              <ActiveStepIcon size={18} />
+              {currentStep >= STEPS.length ? 'Relatório final' : activeStep.title}
+            </h2>
           </div>
-        ))}
+          <div className="triage-progress-percent rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">
+            {progressPercent}%
+          </div>
+        </div>
+
+        <div className="triage-progress-track h-2 overflow-hidden rounded-full bg-bg-general">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-violet-600 transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <div className="mt-4 flex items-start justify-between gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {STEPS.map((step, i) => (
+            <div key={step.id} className="flex min-w-[72px] flex-col items-center gap-2 text-center">
+              <div className={cn(
+                'triage-step-dot flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-500',
+                currentStep >= i && 'triage-step-active'
+              )}>
+                <step.icon size={16} />
+              </div>
+              <span className="triage-step-label text-[9px] font-black uppercase tracking-wider text-text-muted">
+                {step.title}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="glass-card p-5 sm:p-8 rounded-[3rem] relative overflow-hidden">
+      <div className="triage-form-card glass-card p-5 sm:p-8 rounded-[3rem] relative overflow-hidden">
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div
