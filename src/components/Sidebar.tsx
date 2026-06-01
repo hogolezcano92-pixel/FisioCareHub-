@@ -71,47 +71,58 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       }
     ] : [
       {
-        title: t('nav.care'),
+        title: 'Principal',
         items: [
           { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
           ...(isPhysio && isApproved ? [
             { name: t('nav.my_patients'), path: '/patients', icon: Users },
             { name: 'Oportunidades', path: '/opportunities', icon: Search, pro: true },
             { name: 'Minha Agenda', path: '/agenda', icon: Calendar, pro: true },
+          ] : []),
+          ...(profile?.tipo_usuario === 'paciente' ? [
+            { name: 'Jornada', path: '/jornada', icon: HeartPulse },
+            { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
+            { name: 'Solicitar atendimento', path: '/patient/requests', icon: MessageSquare },
+            { name: t('nav.agenda'), path: '/appointments', icon: Calendar },
+          ] : [])
+        ]
+      },
+      {
+        title: 'Clínica',
+        items: [
+          ...(isPhysio && isApproved ? [
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
             { name: 'Clinical Tests Hub', path: '/clinical-tests', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
-            { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
             { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
-            { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
-            { name: 'Jornada', path: '/jornada', icon: HeartPulse },
             { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
-            { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
-            { name: 'Solicitar atendimento', path: '/patient/requests', icon: MessageSquare },
-            { name: t('nav.agenda'), path: '/appointments', icon: Calendar },
             { name: t('nav.workouts'), path: '/treinos', icon: Activity },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
             { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
             { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
             { name: t('nav.library'), path: '/patient/library', icon: BookOpen },
+          ] : [])
+        ]
+      },
+      {
+        title: 'Negócios',
+        items: [
+          ...(isPhysio && isApproved ? [
+            { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
+            { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign, pro: true },
+            { name: t('nav.subscription'), path: '/subscription', icon: Crown },
+          ] : []),
+          ...(profile?.tipo_usuario === 'paciente' ? [
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
           ] : [])
         ]
       },
-      ...(isPhysio && isApproved ? [
-        {
-          title: t('nav.finance'),
-          items: [
-            { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign, pro: true },
-          ]
-        }
-      ] : []),
       ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
         {
           title: t('nav.communication'),
@@ -132,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         { name: t('nav.logout'), path: '#logout', icon: LogOut, variant: 'danger' },
       ]
     }
-  ], [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
+  ].filter((section) => section.items.length > 0), [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
   const getSidebarIconColor = (item: any) => {
     const key = `${item.path || ''} ${item.name || ''}`.toLowerCase();
@@ -316,10 +327,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </div>
 
         {/* Navigation Sections */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-2">
-              <h3 className="sidebar-section-title px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+        <nav className="flex-1 overflow-y-auto py-5 px-4 space-y-5 custom-scrollbar">
+          {sections.map((section, sectionIndex) => (
+            <div
+              key={section.title}
+              className={cn(
+                "space-y-2",
+                sectionIndex > 0 && "border-t border-white/10 pt-5 dark:border-white/10"
+              )}
+            >
+              <h3 className="sidebar-section-title px-4 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500/90 dark:text-slate-500">
                 {section.title}
               </h3>
               <div className="space-y-1">
