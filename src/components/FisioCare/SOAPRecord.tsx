@@ -612,8 +612,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
                       searchPatients(e.target.value);
                     }}
                     placeholder="Nome ou e-mail do paciente..."
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-16 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
-                  />
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
+                    style={{ paddingLeft: '72px' }}
+                    />
                 </div>
 
                 <div className="custom-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1">
