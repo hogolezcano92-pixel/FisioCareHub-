@@ -27,7 +27,7 @@ import {
   Scale,
   FileText,
   Download,
-  ShieldCheck,
+  ShieldCheck
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
@@ -247,26 +247,52 @@ export default function Triage() {
 
   const shareWithPhysio = async () => {
     if (!user || !analysis) return;
-    
+
     setLoading(true);
     try {
+      const regiaoDor = String(formData.regiao_dor || '').trim();
+      const queixaPrincipal =
+        regiaoDor ||
+        String((analysis as any)?.classificacao || '').trim() ||
+        'Solicitação gerada pela triagem IA';
+
+      const descricao = [
+        'Triagem IA realizada pelo paciente.',
+        regiaoDor ? `Região/queixa principal: ${regiaoDor}.` : '',
+        analysis?.gravidade ? `Gravidade: ${analysis.gravidade}.` : '',
+        analysis?.classificacao ? `Classificação: ${analysis.classificacao}.` : '',
+        analysis?.resumo ? `Resumo: ${analysis.resumo}` : '',
+      ]
+        .filter(Boolean)
+        .join('
+');
+
       const { error } = await supabase
         .from('solicitacoes_atendimento')
         .insert({
           paciente_id: user.id,
-          descricao: `Triagem IA realizada para ${formData.regiao_dor}. Gravidade: ${analysis.gravidade}. Classificação: ${analysis.classificacao}.`,
-          localizacao: profile?.localizacao || 'Não informada',
-          especialidade: formData.regiao_dor,
-          status: 'pendente'
+          titulo: regiaoDor
+            ? `Solicitação de atendimento - ${regiaoDor}`
+            : 'Solicitação de atendimento pela Triagem IA',
+          descricao,
+          queixa_principal: queixaPrincipal,
+          tipo_atendimento: 'ambos',
+          cidade: (profile as any)?.cidade || null,
+          estado: (profile as any)?.estado || null,
+          bairro: (profile as any)?.bairro || null,
+          preferencia_horario: null,
+          observacoes_privadas: null,
+          visivel_para_profissionais: true,
+          status: 'aberta',
         });
 
       if (error) throw error;
 
-      toast.success("Sua solicitação foi enviada para a rede de fisioterapeutas!");
+      toast.success('Sua solicitação foi enviada para a rede de fisioterapeutas!');
       navigate('/buscar-fisio');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao criar solicitação:', err);
-      toast.error('Erro ao enviar solicitação');
+      toast.error(err?.message || 'Erro ao enviar solicitação');
     } finally {
       setLoading(false);
     }
