@@ -239,7 +239,7 @@ export default function PhysioDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="dashboard-light-page min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex flex-col gap-6 bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
