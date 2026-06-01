@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateIntegrityHash } from '../../lib/security';
-import { logActivity } from '../../services/activityService';
+import { logActivities } from '../../services/activityService';
 
 interface SOAPData {
   subjective: string;
@@ -312,14 +312,24 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
 
       if (onSave) onSave();
 
-      logActivity(
-        profile.id,
-        'fisio',
-        'prontuario_criado',
-        `Prontuário SOAP criado para o paciente ${finalPacienteId}`,
-        finalPacienteId,
-        { metadata: { targetType: 'paciente', integrityHash } },
-      );
+      await logActivities([
+        {
+          userId: profile.id,
+          userType: 'fisio',
+          action: 'prontuario_criado',
+          description: `Prontuário SOAP salvo para ${selectedPatient?.nome_completo || 'o paciente'}`,
+          referenceId: finalPacienteId,
+          details: { metadata: { targetType: 'paciente', integrityHash, source: 'soap_record' } },
+        },
+        {
+          userId: finalPacienteId,
+          userType: 'paciente',
+          action: 'prontuario_criado',
+          description: `Seu fisioterapeuta registrou uma evolução SOAP no prontuário`,
+          referenceId: finalPacienteId,
+          details: { metadata: { targetType: 'prontuario', integrityHash, source: 'soap_record' } },
+        },
+      ]);
     } catch (error: any) {
       console.error('[SOAPRecord] Erro ao salvar prontuário:', error);
       toast.error(error?.message || 'Erro ao salvar prontuário.');
@@ -338,7 +348,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   };
 
   return (
-    <div className="soap-record-lightfix relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-blue-950/30 backdrop-blur-xl sm:p-5">
+    <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-blue-950/30 backdrop-blur-xl sm:p-5">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.22),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.16),transparent_34%)]" />
       <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/60 to-transparent" />
 
@@ -384,38 +394,50 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
             );
           })}
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-3">
-  <div className="flex items-center justify-between gap-3">
-    <div className="flex min-w-0 items-center gap-3">
-      <div
-        className={cn(
-          'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all',
-          selectedPatient ? 'bg-blue-600/20 shadow-lg shadow-blue-900/30' : 'bg-slate-800/80 text-slate-500',
-        )}
-      >
-        {selectedPatient ? (
-          <img
-            src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`}
-            className="h-full w-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <User size={21} />
-        )}
-      </div>
 
-      <div className="min-w-0">
-        <p className={cn('truncate text-sm font-black leading-tight', selectedPatient ? 'text-white' : 'text-slate-400')}>
-          {selectedPatient ? selectedPatient.nome_completo || selectedPatient.nome : 'Vincular Paciente'}
-        </p>
-        <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
-          {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-        
+        <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div
+                className={cn(
+                  'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all',
+                  selectedPatient ? 'bg-blue-600/20 shadow-lg shadow-blue-900/30' : 'bg-slate-800/80 text-slate-500',
+                )}
+              >
+                {selectedPatient ? (
+                  <img
+                    src={selectedPatient.avatar_url || selectedPatient.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPatient.id}`}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User size={21} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className={cn('truncate text-sm font-black leading-tight', selectedPatient ? 'text-white' : 'text-slate-400')}>
+                  {selectedPatient ? selectedPatient.nome_completo || selectedPatient.nome : 'Vincular Paciente'}
+                </p>
+                <p className="mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  {selectedPatient ? 'Prontuário identificado' : 'Obrigatório para salvar'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPatientSelector(true)}
+              className={cn(
+                'shrink-0 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all',
+                selectedPatient
+                  ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                  : 'border-blue-400/40 bg-blue-600 text-white shadow-lg shadow-blue-900/30 hover:bg-blue-500',
+              )}
+            >
+              {selectedPatient ? 'Trocar' : 'Atribuir'}
+            </button>
+          </div>
+        </div>
+
         <AnimatePresence>
           {historySummary && (
             <motion.div
@@ -602,24 +624,19 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               </div>
 
               <div className="space-y-4">
-             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 focus-within:ring-2 focus-within:ring-blue-500/30">
-             <Search
-             className="shrink-0 text-slate-500"
-             size={22}
-            />
-
-           <input
-           type="text"
-           value={patientSearch}
-           onChange={(e) => {
-          setPatientSearch(e.target.value);
-          searchPatients(e.target.value);
-       }}
-          placeholder="Nome ou e-mail do paciente..."
-         className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-600"
-       />
-     </div>
-                
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 z-20 -translate-y-1/2 text-slate-400" size={20} />
+                  <input
+                    type="text"
+                    value={patientSearch}
+                    onChange={(e) => {
+                      setPatientSearch(e.target.value);
+                      searchPatients(e.target.value);
+                    }}
+                    placeholder="Nome ou e-mail do paciente..."
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/30"
+                  />
+                </div>
 
                 <div className="custom-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1">
                   {searching ? (

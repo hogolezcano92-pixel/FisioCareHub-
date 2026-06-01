@@ -6,6 +6,7 @@ import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { logActivity } from '../../services/activityService';
 
 interface Exercise {
   id: string;
@@ -41,6 +42,14 @@ export const PainDiary = () => {
         }
         
         console.log('Diário de dor salvo com sucesso:', data);
+        await logActivity(
+          profile.id,
+          'paciente',
+          'diario_dor_registrado',
+          `Diário de dor registrado • intensidade ${intensity}/10`,
+          data?.[0]?.id || null,
+          { metadata: { intensidade: intensity, source: 'pain_diary' } },
+        );
         toast.success('Diário de dor atualizado!');
         setIntensity(null);
       } catch (err: any) {
@@ -195,6 +204,14 @@ export const ExerciseChecklist = () => {
       }
       
       setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex));
+      await logActivity(
+        profile.id,
+        'paciente',
+        newCompleted ? 'exercicio_concluido' : 'exercicio_desmarcado',
+        newCompleted ? `Exercício concluído: ${exercise.title}` : `Exercício desmarcado: ${exercise.title}`,
+        id,
+        { metadata: { exerciseTitle: exercise.title, source: 'exercise_checklist' } },
+      );
       toast.success(newCompleted ? 'Exercício concluído!' : 'Exercício desmarcado');
     } catch (err: any) {
       console.error('Erro ao atualizar exercício:', err);
