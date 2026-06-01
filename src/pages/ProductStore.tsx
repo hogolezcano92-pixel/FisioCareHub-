@@ -232,7 +232,7 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
   const displayImages = images.length > 0 ? images : [fallbackImage];
 
   return (
-    <div className="fisiostore-light-page relative h-52 overflow-hidden bg-slate-900">
+    <div className="relative h-52 overflow-hidden bg-slate-900">
       <button
         type="button"
         onClick={onOpenGallery}
@@ -488,7 +488,7 @@ export default function ProductStore() {
     : 'Produtos úteis para apoiar seus exercícios e cuidados em casa.';
 
   return (
-    <div className="min-h-screen overflow-hidden rounded-[28px] border border-violet-100 bg-[#f8f6ff] text-slate-950 shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-none">
+    <div className="fisiostore-light-page min-h-screen overflow-hidden rounded-[28px] border border-violet-100 bg-[#f8f6ff] text-slate-950 shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-none">
       <div className="relative isolate">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_34%),linear-gradient(180deg,#f8f6ff_0%,#ffffff_48%,#f3f7ff_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_36%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.2),transparent_34%),linear-gradient(180deg,#020617_0%,#0f172a_55%,#020617_100%)]" />
         <div className="absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-200/60 blur-3xl dark:bg-cyan-400/10" />
