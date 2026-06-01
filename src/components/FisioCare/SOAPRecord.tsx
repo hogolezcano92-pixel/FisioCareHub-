@@ -414,9 +414,6 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               </div>
             </div>
 
-            
-        </div>
-
         <AnimatePresence>
           {historySummary && (
             <motion.div
