@@ -3,7 +3,7 @@ import { Link2, Zap, ShieldCheck } from 'lucide-react';
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-slate-950 pt-32 pb-20 overflow-x-hidden relative">
+    <div className="about-light-page min-h-screen bg-slate-950 pt-32 pb-20 overflow-x-hidden relative">
       {/* Background Accents */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] -z-10" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-sky-600/10 rounded-full blur-[120px] -z-10" />
