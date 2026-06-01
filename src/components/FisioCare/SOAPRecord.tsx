@@ -414,18 +414,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
               </div>
             </div>
 
-            <button
-              onClick={() => setShowPatientSelector(true)}
-              className={cn(
-                'shrink-0 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all',
-                selectedPatient
-                  ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
-                  : 'border-blue-400/40 bg-blue-600 text-white shadow-lg shadow-blue-900/30 hover:bg-blue-500',
-              )}
-            >
-              {selectedPatient ? 'Trocar' : 'Atribuir'}
-            </button>
-          </div>
+            
         </div>
 
         <AnimatePresence>
