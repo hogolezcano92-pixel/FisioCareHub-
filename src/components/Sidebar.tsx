@@ -79,6 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: 'Oportunidades', path: '/opportunities', icon: Search, pro: true },
             { name: 'Minha Agenda', path: '/agenda', icon: Calendar, pro: true },
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
+            { name: 'Clinical Tests Hub', path: '/clinical-tests', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
             { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
