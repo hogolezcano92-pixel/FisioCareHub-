@@ -1928,3 +1928,100 @@ html.dark .route-optimizer-lightfix button[data-route-date="today"] span,
 html.dark .route-optimizer-lightfix span[data-route-date-label="today"] {
   color: #ffffff !important;
 }
+/* =========================================================
+   SOAP RECORD — RESULTADO SOAP NO TEMA CLARO
+   Corrige apenas a área do prontuário SOAP
+   Não altera dark mode
+   ========================================================= */
+
+html:not(.dark) .soap-record-lightfix {
+  color: #0f172a !important;
+}
+
+/* Cards do SOAP estruturado */
+html:not(.dark) .soap-record-lightfix [class*="bg-yellow"],
+html:not(.dark) .soap-record-lightfix [class*="bg-amber"],
+html:not(.dark) .soap-record-lightfix [class*="bg-blue"],
+html:not(.dark) .soap-record-lightfix [class*="bg-emerald"],
+html:not(.dark) .soap-record-lightfix [class*="bg-purple"],
+html:not(.dark) .soap-record-lightfix [class*="bg-violet"] {
+  opacity: 1 !important;
+}
+
+/* Textos dentro dos cards claros */
+html:not(.dark) .soap-record-lightfix [class*="text-white"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-50"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-100"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-200"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-300"] {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Textos secundários */
+html:not(.dark) .soap-record-lightfix [class*="text-slate-400"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-500"],
+html:not(.dark) .soap-record-lightfix [class*="text-slate-600"] {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+/* Card S - Subjetivo */
+html:not(.dark) .soap-record-lightfix [class*="bg-amber"],
+html:not(.dark) .soap-record-lightfix [class*="bg-yellow"] {
+  background: #fffbeb !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+/* Card O - Objetivo */
+html:not(.dark) .soap-record-lightfix [class*="bg-blue"] {
+  background: #eff6ff !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Card A - Avaliação */
+html:not(.dark) .soap-record-lightfix [class*="bg-emerald"],
+html:not(.dark) .soap-record-lightfix [class*="bg-green"] {
+  background: #ecfdf5 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Card P - Plano */
+html:not(.dark) .soap-record-lightfix [class*="bg-purple"],
+html:not(.dark) .soap-record-lightfix [class*="bg-violet"] {
+  background: #f5f3ff !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+}
+
+/* Títulos dos cards SOAP */
+html:not(.dark) .soap-record-lightfix h3,
+html:not(.dark) .soap-record-lightfix h4,
+html:not(.dark) .soap-record-lightfix strong,
+html:not(.dark) .soap-record-lightfix [class*="font-black"] {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Parágrafos do resultado */
+html:not(.dark) .soap-record-lightfix p {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Botão descartar */
+html:not(.dark) .soap-record-lightfix button[class*="bg-white"],
+html:not(.dark) .soap-record-lightfix button[class*="border"] {
+  color: #334155 !important;
+}
+
+/* Botão salvar prontuário permanece branco no texto */
+html:not(.dark) .soap-record-lightfix button[class*="bg-emerald"],
+html:not(.dark) .soap-record-lightfix button[class*="bg-green"] {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .soap-record-lightfix button[class*="bg-emerald"] *,
+html:not(.dark) .soap-record-lightfix button[class*="bg-green"] * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
