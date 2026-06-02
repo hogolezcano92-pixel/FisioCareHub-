@@ -109,6 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let finalProfile = data;
 
       if (!finalProfile && !error) {
+        const registrationInProgress = localStorage.getItem('registration_in_progress') === '1';
+
+        // Durante o cadastro por e-mail/senha, o Register.tsx é quem salva o perfil completo.
+        // Evita criar um perfil básico antes e deixar só nome/e-mail caso o fluxo ainda esteja em andamento.
+        if (registrationInProgress) {
+          return { profile: null, subscription: null };
+        }
+
         // Create default profile if missing (e.g. first login)
         const pendingRole = localStorage.getItem('pending_role');
         const finalRole = userMetadata?.role || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
@@ -148,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           preco_sessao: null,
           experiencia_profissional: null,
           observacoes_saude: null,
-          documentos: [],
+          documentos: JSON.stringify([]),
           formacao_academica: [],
           servicos_ofertados: [],
           created_at: new Date().toISOString(),
