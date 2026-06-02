@@ -404,9 +404,9 @@ export default function ClinicalTestsHub() {
                   key={selectedTest.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-full min-w-0 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl shadow-blue-200/50 dark:border-white/10 dark:bg-slate-950/75 dark:shadow-blue-950/30 sm:rounded-[2.2rem]"
+                  className="clinical-test-detail w-full min-w-0 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl shadow-blue-200/50 dark:border-white/10 dark:bg-slate-950/75 dark:shadow-blue-950/30 sm:rounded-[2.2rem]"
                 >
-                  <div className={cn('relative overflow-hidden bg-gradient-to-br p-5 text-white sm:p-6', selectedTest.gradient)}>
+                  <div className={cn('clinical-test-hero relative overflow-hidden bg-gradient-to-br p-5 text-white sm:p-6', selectedTest.gradient)}>
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.32),transparent_34%)]" />
                     <div className="relative flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="w-full min-w-0 flex-1">
@@ -436,7 +436,7 @@ export default function ClinicalTestsHub() {
                         <div className="w-full min-w-0 flex-1">
                           <h3 className="text-sm font-black uppercase tracking-widest text-cyan-800 dark:text-cyan-200" style={safeWrapStyle}>Vídeo ou imagem demonstrativa</h3>
                           <p className="mt-2 text-sm font-medium leading-relaxed text-cyan-900 dark:text-cyan-50/90" style={safeWrapStyle}>{selectedTest.demo}</p>
-                          <div className="mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100" style={safeWrapStyle}>
+                          <div className="clinical-test-media-placeholder mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100" style={safeWrapStyle}>
                             Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
                           </div>
                         </div>
@@ -452,7 +452,7 @@ export default function ClinicalTestsHub() {
                           <button
                             type="button"
                             onClick={() => handleAddToRecord(selectedTest)}
-                            className="mt-4 flex w-full min-w-0 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/60 transition hover:bg-emerald-500 dark:shadow-emerald-950/30"
+                            className="clinical-test-add-button mt-4 flex w-full min-w-0 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/60 transition hover:bg-emerald-500 dark:shadow-emerald-950/30"
                           >
                             <ClipboardCheck className="shrink-0" size={18} />
                             <span style={safeWrapStyle}>Adicionar ao prontuário</span>
@@ -487,7 +487,7 @@ function InfoCard({ icon: Icon, title, content, tone }: { icon: typeof Activity;
   }[tone];
 
   return (
-    <div className={cn('w-full min-w-0 overflow-hidden rounded-[1.5rem] border p-4', toneClass)}>
+    <div className={cn('clinical-test-info-box w-full min-w-0 overflow-hidden rounded-[1.5rem] border p-4', toneClass)}>
       <div className="mb-2 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
         <Icon className="shrink-0" size={18} />
         <h3 className="min-w-0 text-[11px] font-black uppercase tracking-widest" style={safeWrapStyle}>{title}</h3>
