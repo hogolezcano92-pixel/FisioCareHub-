@@ -964,16 +964,23 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_18px_45px_rgba(88,28,135,0.12)]">
-              <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-100 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-blue-100 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_18px_45px_rgba(88,28,135,0.12)] dark:border-white/10 dark:bg-slate-950/80 dark:shadow-violet-950/25">
+              <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-200/80 blur-3xl dark:bg-violet-600/25" />
+              <div className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-cyan-200/70 blur-3xl dark:bg-cyan-500/20" />
 
               <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-black text-slate-950">Ações rápidas</h2>
-                  <p className="mt-1 text-xs font-bold text-slate-500">Atalhos principais da sua jornada</p>
+                  <h2 className="text-xl font-black text-slate-950 dark:text-white">Ações rápidas</h2>
+                  <p className="mt-1 text-xs font-black text-slate-700 dark:text-slate-200">Atalhos principais da sua jornada</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 shadow-sm">
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                    color: '#7c3aed',
+                    boxShadow: '0 12px 30px rgba(124, 58, 237, 0.24)',
+                  }}
+                >
                   <Sparkles size={20} />
                 </div>
               </div>
@@ -983,55 +990,78 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                   <button
                     type="button"
                     onClick={() => setCheckinOpen(true)}
-                    className="group flex w-full items-center justify-between rounded-[1.35rem] border border-violet-300 px-4 py-4 text-left shadow-lg shadow-violet-200/60 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                    className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
                     style={{
-                      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 48%, #2563eb 100%)',
+                      background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 42%, #2563eb 100%)',
                       color: '#ffffff',
+                      borderColor: 'rgba(255, 255, 255, 0.34)',
+                      boxShadow: '0 18px 40px rgba(109, 40, 217, 0.34)',
                     }}
                   >
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/18 text-white ring-1 ring-white/25">
-                        <HeartPulse size={23} />
+                      <span
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-white/30"
+                        style={{ background: 'rgba(255, 255, 255, 0.22)', color: '#ffffff' }}
+                      >
+                        <HeartPulse size={24} strokeWidth={2.8} />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-base font-black leading-tight text-white">Registrar evolução</span>
-                        <span className="mt-1 block text-[11px] font-bold text-white/80">Dor, humor e exercícios de hoje</span>
+                        <span className="block text-base font-black leading-tight" style={{ color: '#ffffff' }}>Registrar evolução</span>
+                        <span className="mt-1 block text-[12px] font-black leading-snug" style={{ color: 'rgba(255, 255, 255, 0.94)' }}>Dor, humor e exercícios de hoje</span>
                       </span>
                     </span>
-                    <ArrowRight className="shrink-0 text-white transition-transform group-hover:translate-x-1" size={20} />
+                    <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={21} strokeWidth={2.9} style={{ color: '#ffffff', stroke: '#ffffff' }} />
                   </button>
                 )}
 
                 <Link
                   to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'}
-                  className="group flex w-full items-center justify-between rounded-[1.35rem] border border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg"
+                  className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 48%, #2563eb 100%)',
+                    color: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.32)',
+                    boxShadow: '0 18px 40px rgba(14, 165, 233, 0.26)',
+                  }}
                 >
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-200/70">
-                      <Activity size={23} />
+                    <span
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-white/30"
+                      style={{ background: 'rgba(255, 255, 255, 0.22)', color: '#ffffff' }}
+                    >
+                      <Activity size={24} strokeWidth={2.8} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-base font-black leading-tight text-slate-950">{isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'}</span>
-                      <span className="mt-1 block text-[11px] font-bold text-slate-500">Plano terapêutico e prescrições</span>
+                      <span className="block text-base font-black leading-tight" style={{ color: '#ffffff' }}>{isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'}</span>
+                      <span className="mt-1 block text-[12px] font-black leading-snug" style={{ color: 'rgba(255, 255, 255, 0.94)' }}>Plano terapêutico e prescrições</span>
                     </span>
                   </span>
-                  <ArrowRight className="shrink-0 text-blue-700 transition-transform group-hover:translate-x-1" size={20} />
+                  <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={21} strokeWidth={2.9} style={{ color: '#ffffff', stroke: '#ffffff' }} />
                 </Link>
 
                 <Link
                   to="/chat"
-                  className="group flex w-full items-center justify-between rounded-[1.35rem] border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
+                  className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 46%, #0f766e 100%)',
+                    color: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.32)',
+                    boxShadow: '0 18px 40px rgba(16, 185, 129, 0.26)',
+                  }}
                 >
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-200/70">
-                      <MessageCircle size={23} />
+                    <span
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-white/30"
+                      style={{ background: 'rgba(255, 255, 255, 0.22)', color: '#ffffff' }}
+                    >
+                      <MessageCircle size={24} strokeWidth={2.8} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-base font-black leading-tight text-slate-950">Mensagens</span>
-                      <span className="mt-1 block text-[11px] font-bold text-slate-500">Fale com seu fisioterapeuta</span>
+                      <span className="block text-base font-black leading-tight" style={{ color: '#ffffff' }}>Mensagens</span>
+                      <span className="mt-1 block text-[12px] font-black leading-snug" style={{ color: 'rgba(255, 255, 255, 0.94)' }}>Fale com seu fisioterapeuta</span>
                     </span>
                   </span>
-                  <ArrowRight className="shrink-0 text-emerald-700 transition-transform group-hover:translate-x-1" size={20} />
+                  <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={21} strokeWidth={2.9} style={{ color: '#ffffff', stroke: '#ffffff' }} />
                 </Link>
               </div>
             </div>
