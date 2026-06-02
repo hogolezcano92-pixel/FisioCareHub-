@@ -703,7 +703,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
   }
 
   return (
-    <section className="min-h-full bg-white text-slate-950">
+    <section className="quick-action-register-evolution min-h-full">
       <div className={cn(compact ? 'p-0' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8', 'space-y-6')}>
         {checkinOpen && !isPhysioMode && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-4 sm:items-center">
