@@ -41,7 +41,9 @@ export default function FindPhysio() {
         .from('perfis')
         .select('*')
         .eq('role', 'fisioterapeuta')
-        .eq('status_aprovacao', 'aprovado');
+        .eq('status_aprovacao', 'aprovado')
+        // Visibilidade pública/captação de pacientes é exclusiva para fisioterapeutas PRO.
+        .or('is_pro.eq.true,plano.eq.pro,plan_type.eq.pro');
 
       if (profilesError) throw profilesError;
 

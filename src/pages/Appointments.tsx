@@ -238,14 +238,14 @@ export default function Appointments() {
       
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
+        .select('id, nome_completo, email, plano, plan_type, is_pro, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
       
       const { data, error } = await query.order('nome_completo');
       
       if (error) {
         console.error("Erro ao buscar usuários disponíveis:", error);
         // Retry without ordering if it failed
-        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
+        const { data: retryData, error: retryError } = await supabase.from('perfis').select('id, nome_completo, email, plano, plan_type, is_pro, status_aprovacao, tipo_usuario, telefone, endereco, cidade, estado, cep, data_nascimento, avatar_url');
         if (retryError) throw retryError;
         filterAndSetUsers(retryData || [], isPatient, targetRoles);
       } else {
@@ -262,9 +262,11 @@ export default function Appointments() {
       
       if (!isTargetRole) return false;
       
-      // Se for paciente buscando fisioterapeuta, filtrar aprovados ou pendentes para visibilidade
+      // Se for paciente buscando fisioterapeuta, só profissionais aprovados e PRO aparecem para captação/agendamento.
       if (isPatient) {
-        return u.status_aprovacao === 'aprovado' || u.status_aprovacao === 'pendente';
+        const normalizedPlan = String(u.plan_type || u.plano || '').trim().toLowerCase();
+        const isProPhysio = u.is_pro === true || normalizedPlan === 'pro' || normalizedPlan === 'premium';
+        return u.status_aprovacao === 'aprovado' && isProPhysio;
       }
       
       return true;

@@ -124,6 +124,9 @@ export default function ProfessionalProfile() {
           .select('*')
           .eq('id', id)
           .eq('tipo_usuario', 'fisioterapeuta')
+          .eq('status_aprovacao', 'aprovado')
+          // Perfil público/agendamento por pacientes só fica disponível para PRO.
+          .or('is_pro.eq.true,plano.eq.pro,plan_type.eq.pro')
           .single();
 
         if (error) {
