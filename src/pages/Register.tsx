@@ -93,6 +93,27 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const normalizeCurrencyToNumber = (value: string): number | null => {
+    const raw = value.trim();
+    if (!raw) return null;
+
+    const normalized = raw
+      .replace(/R\$\s?/gi, '')
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    const parsed = Number(normalized.replace(/[^0-9.]/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const splitLines = (value: string): string[] =>
+    value
+      .split('\n')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
@@ -230,8 +251,10 @@ export default function Register() {
         return;
       }
 
-      if (!formData.preco_sessao.trim()) {
-        setError("O preço da sessão é obrigatório para fisioterapeutas.");
+      const normalizedSessionPrice = normalizeCurrencyToNumber(formData.preco_sessao);
+
+      if (!formData.preco_sessao.trim() || normalizedSessionPrice === null || normalizedSessionPrice <= 0) {
+        setError("Informe um preço de sessão válido. Exemplo: 120 ou 120,00.");
         setLoading(false);
         return;
       }
@@ -355,16 +378,34 @@ export default function Register() {
 
       console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
 
+      const normalizedSessionPrice = role === 'fisioterapeuta'
+        ? normalizeCurrencyToNumber(formData.preco_sessao)
+        : null;
+
+      const formacaoAcademica = role === 'fisioterapeuta'
+        ? splitLines(formData.formacao_academica)
+        : [];
+
+      const servicosOfertados = role === 'fisioterapeuta'
+        ? splitLines(formData.servicos_ofertados)
+        : [];
+
+      const defaultAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName.replace(/\s+/g, '_'))}`;
+
       const fullProfileData = {
         id: authData.user.id,
+
+        // Identificação básica
         nome_completo: cleanName,
         email: cleanEmail,
         telefone: formData.telefone.trim() || null,
         cpf: cleanCpf || null,
         cpf_cnpj: cleanCpf || null,
         data_nascimento: formData.data_nascimento || null,
+        genero: formData.gender || null,
         bio: formData.bio.trim() || '',
 
+        // Endereço/localização
         cep: cleanZip || null,
         cidade: cleanCity || null,
         estado: cleanState || null,
@@ -372,41 +413,46 @@ export default function Register() {
         pais: cleanCountry,
         localizacao: cleanCity && cleanState ? `${cleanCity}, ${cleanState}` : null,
 
+        // Permissões/plano/status
         role,
         tipo_usuario: role,
+        status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+        aprovado: role === 'paciente',
+        is_pro: isPro,
+        plano: isPro ? 'pro' : 'free',
+        plan_type: isPro ? 'pro' : 'free',
+        plan_intro_seen: false,
+        welcome_seen: false,
+        theme: 'blue',
+        idioma: 'pt',
 
+        // Dados profissionais
         crefito: role === 'fisioterapeuta' ? formData.crefito.trim() : null,
         especialidade: role === 'fisioterapeuta' ? formData.specialty.trim() : null,
         tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-        preco_sessao: role === 'fisioterapeuta' ? formData.preco_sessao.trim() : null,
+        preco_sessao: normalizedSessionPrice,
+        experiencia_profissional: role === 'fisioterapeuta' ? formData.bio.trim() || null : null,
+        formacao_academica: formacaoAcademica,
+        servicos_ofertados: servicosOfertados,
 
-        genero: formData.gender || null,
+        // Dados de saúde do paciente
+        observacoes_saude: role === 'paciente' ? formData.bio.trim() || null : null,
 
-        formacao_academica: role === 'fisioterapeuta' && formData.formacao_academica
-          ? formData.formacao_academica.split('\n').map(s => s.trim()).filter(Boolean)
-          : [],
-
-        servicos_ofertados: role === 'fisioterapeuta' && formData.servicos_ofertados
-          ? formData.servicos_ofertados.split('\n').map(s => s.trim()).filter(Boolean)
-          : [],
-
-        status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
-        is_pro: isPro,
-        plano: isPro ? 'pro' : 'free',
-        plan_intro_seen: false,
-
+        // Imagens/documentos
         foto_url: docUrls.foto_perfil || null,
-        avatar_url: docUrls.foto_perfil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName.replace(/\s+/g, '_'))}`,
-
+        avatar_url: docUrls.foto_perfil || defaultAvatarUrl,
         rg_frente_url: docUrls.rg_frente,
         rg_verso_url: docUrls.rg_verso,
         crefito_frente_url: docUrls.crefito_frente,
         crefito_verso_url: docUrls.crefito_verso,
+        documentos: uploadedDocUrls,
 
-        documentos: uploadedDocUrls.length > 0
-          ? JSON.stringify(uploadedDocUrls)
-          : null,
+        // Campos financeiros/integrações começam vazios e serão preenchidos depois
+        stripe_account_id: null,
+        asaas_customer_id: null,
+        chave_pix: null,
 
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
