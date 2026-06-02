@@ -63,7 +63,9 @@ export default function PhysioHighlight() {
         .from('perfis')
         .select('*', { count: 'exact', head: true })
         .eq('tipo_usuario', 'fisioterapeuta')
-        .eq('status_aprovacao', 'aprovado');
+        .eq('status_aprovacao', 'aprovado')
+        // Estatística pública deve contar apenas profissionais PRO visíveis para pacientes.
+        .or('is_pro.eq.true,plano.eq.pro,plan_type.eq.pro');
       
       if (!error && count !== null) {
         setTotalFisios(count);
