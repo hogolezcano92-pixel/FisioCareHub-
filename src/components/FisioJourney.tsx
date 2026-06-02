@@ -64,6 +64,7 @@ const uniqueByKey = (items: any[], getKey: (item: any) => string) => {
     return true;
   });
 };
+
 const safeDate = (value: any) => {
   if (!value) return null;
 
@@ -84,6 +85,7 @@ const safeDate = (value: any) => {
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
 };
+
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
 
 const getPainValue = (entry: any) => {
@@ -964,25 +966,23 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
 
             <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
-              <div className="mt-4 grid gap-
+              <div className="mt-4 grid gap-3">
+                {!isPhysioMode && (
+                  <button
+                    type="button"
+                    onClick={() => setCheckinOpen(true)}
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 font-black transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%)',
+                      color: '#ffffff',
+                      borderColor: 'transparent',
+                      boxShadow: '0 18px 40px rgba(109, 40, 217, 0.28)',
+                    }}
+                  >
+                    <span style={{ color: '#ffffff' }}>Registrar evolução</span>
+                    <ArrowRight size={18} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+                  </button>
                 )}
-              {!isPhysioMode && (
-  <button
-    type="button"
-    onClick={() => setCheckinOpen(true)}
-    className="flex items-center justify-between rounded-2xl px-4 py-3 font-black transition-all"
-    style={{
-      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%)',
-      color: '#ffffff',
-      borderColor: 'transparent',
-      boxShadow: '0 18px 40px rgba(109, 40, 217, 0.28)',
-    }}
-  >
-    <span style={{ color: '#ffffff' }}>Registrar evolução</span>
-    <ArrowRight size={18} style={{ color: '#ffffff', stroke: '#ffffff' }} />
-  </button>
-)}
-                
                 <Link to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
