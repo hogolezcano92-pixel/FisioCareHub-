@@ -120,7 +120,6 @@ export default function Register() {
       .map(item => item.trim())
       .filter(Boolean);
 
-
   const ensureRegistrationSession = async (userId: string, email: string, password: string) => {
     const { data: currentSessionData, error: sessionError } = await supabase.auth.getSession();
 
@@ -265,15 +264,61 @@ export default function Register() {
 
       localStorage.setItem('pending_role', role);
 
+      const normalizedSessionPriceForMetadata = role === 'fisioterapeuta'
+        ? normalizeCurrencyToText(formData.preco_sessao)
+        : null;
+
+      const formacaoAcademicaMetadata = role === 'fisioterapeuta'
+        ? splitLines(formData.formacao_academica)
+        : [];
+
+      const servicosOfertadosMetadata = role === 'fisioterapeuta'
+        ? splitLines(formData.servicos_ofertados)
+        : [];
+
+      const signUpMetadata = {
+        nome_completo: cleanName,
+        full_name: cleanName,
+        name: cleanName,
+
+        role,
+        tipo_usuario: role,
+
+        telefone: formData.telefone.trim() || '',
+        cpf: cleanCpf || '',
+        cpf_cnpj: cleanCpf || '',
+        data_nascimento: formData.data_nascimento || '',
+        genero: formData.gender || '',
+        bio: formData.bio.trim() || '',
+        observacoes_saude: role === 'paciente' ? formData.bio.trim() || '' : '',
+
+        cep: cleanZip || '',
+        cidade: cleanCity || '',
+        estado: cleanState || '',
+        endereco: cleanAddress || '',
+        pais: cleanCountry || 'Brasil',
+        localizacao: cleanCity && cleanState ? `${cleanCity}, ${cleanState}` : '',
+
+        status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
+        aprovado: role === 'paciente',
+        plano: isPro ? 'pro' : 'free',
+        plan_type: isPro ? 'pro' : 'free',
+        is_pro: isPro,
+
+        crefito: role === 'fisioterapeuta' ? formData.crefito.trim() : '',
+        especialidade: role === 'fisioterapeuta' ? formData.specialty.trim() : '',
+        tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : '',
+        preco_sessao: normalizedSessionPriceForMetadata || '',
+        experiencia_profissional: role === 'fisioterapeuta' ? formData.bio.trim() || '' : '',
+        formacao_academica: formacaoAcademicaMetadata,
+        servicos_ofertados: servicosOfertadosMetadata,
+      };
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
         options: {
-          data: {
-            nome_completo: cleanName,
-            role,
-            tipo_usuario: role
-          }
+          data: signUpMetadata,
         }
       });
 
@@ -380,7 +425,6 @@ export default function Register() {
       const fullProfileData = {
         id: authData.user.id,
 
-        // Identificação básica
         nome_completo: cleanName,
         email: cleanEmail,
         telefone: formData.telefone.trim() || null,
@@ -390,7 +434,6 @@ export default function Register() {
         genero: formData.gender || null,
         bio: formData.bio.trim() || '',
 
-        // Endereço/localização
         cep: cleanZip || null,
         cidade: cleanCity || null,
         estado: cleanState || null,
@@ -398,7 +441,6 @@ export default function Register() {
         pais: cleanCountry,
         localizacao: cleanCity && cleanState ? `${cleanCity}, ${cleanState}` : null,
 
-        // Permissões/plano/status
         role,
         tipo_usuario: role,
         status_aprovacao: role === 'paciente' ? 'aprovado' : 'pendente',
@@ -411,32 +453,24 @@ export default function Register() {
         theme: 'blue',
         idioma: 'pt',
 
-        // Dados profissionais
         crefito: role === 'fisioterapeuta' ? formData.crefito.trim() : null,
         especialidade: role === 'fisioterapeuta' ? formData.specialty.trim() : null,
         tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
-        // A coluna preco_sessao está como TEXT no Supabase atual.
-        // Enviamos texto limpo para manter compatibilidade com o Admin e as views existentes.
         preco_sessao: normalizedSessionPrice,
         experiencia_profissional: role === 'fisioterapeuta' ? formData.bio.trim() || null : null,
         formacao_academica: formacaoAcademica,
         servicos_ofertados: servicosOfertados,
 
-        // Dados de saúde do paciente
         observacoes_saude: role === 'paciente' ? formData.bio.trim() || null : null,
 
-        // Imagens/documentos
         foto_url: docUrls.foto_perfil || null,
         avatar_url: docUrls.foto_perfil || defaultAvatarUrl,
         rg_frente_url: docUrls.rg_frente,
         rg_verso_url: docUrls.rg_verso,
         crefito_frente_url: docUrls.crefito_frente,
         crefito_verso_url: docUrls.crefito_verso,
-        // A coluna documentos está como TEXT no Supabase atual.
-        // O Perfil já salva documentos como JSON string, então o cadastro usa o mesmo formato.
         documentos: JSON.stringify(uploadedDocUrls),
 
-        // Campos financeiros/integrações começam vazios e serão preenchidos depois
         stripe_account_id: null,
         asaas_customer_id: null,
         chave_pix: null,
@@ -472,8 +506,6 @@ export default function Register() {
 
       console.log("[Register] [FLOW-AUDIT] Profile Upsert Success:", savedProfile);
 
-      // Garante que o app não continue usando o perfil básico criado pelo trigger/AuthContext
-      // durante o cadastro. A chave é a mesma usada no AuthContext.
       localStorage.setItem('fch_profile_cache', JSON.stringify(savedProfile));
 
       if (isPro) {
@@ -562,7 +594,6 @@ export default function Register() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Decorative Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]" />
