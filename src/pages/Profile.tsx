@@ -785,13 +785,13 @@ export default function Profile() {
         throw new Error('Sessão expirada. Faça login novamente antes de apagar a conta.');
       }
 
-      const response = await fetch('/api/account/delete-me', {
+      const response = await fetch('/api/admin/delete-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ confirm: true }),
+        body: JSON.stringify({ userId: user.id, accessToken, selfDelete: true }),
       });
 
       const result = await response.json().catch(() => null);
