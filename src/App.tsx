@@ -700,7 +700,15 @@ function AppContent() {
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
-              <Logo variant="light" size="sm" />
+              <div className="flex items-center">
+              <div className="dark:hidden">
+              <Logo variant="dark" size="sm" />
+              </div>
+
+             <div className="hidden dark:block">
+             <Logo variant="light" size="sm" />
+             </div>
+            </div>
               <div className="flex items-center gap-3">
                 <ThemeQuickToggle />
                 <NotificationBell />
