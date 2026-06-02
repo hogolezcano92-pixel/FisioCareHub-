@@ -55,7 +55,6 @@ import EvaluationModal from '../components/FisioCare/EvaluationModal';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
-import FisioJourney from '../components/FisioJourney';
 import StoryAvatar from '../components/FisioStories/StoryAvatar';
 
 
@@ -1068,22 +1067,47 @@ export default function Dashboard() {
         <ProductStoreCarousel audience={isPhysio ? 'physio' : 'patient'} />
 
         {!isPhysio && (
-          <div className="rounded-[2rem] border border-purple-100 bg-white p-4 md:p-5 shadow-[0_18px_60px_rgba(88,28,135,0.10)]">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-purple-700">Nova experiência</p>
-                <h2 className="text-2xl font-black text-purple-800 tracking-tight">Jornada de Recuperação</h2>
-                <p className="text-sm font-semibold text-slate-700">Seu progresso, diário, exercícios e próximos passos em uma visão moderna.</p>
+          <div className="relative overflow-hidden rounded-[2rem] border border-purple-100 bg-white p-4 md:p-5 shadow-[0_18px_60px_rgba(88,28,135,0.10)] dark:border-white/10 dark:bg-white/5">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-purple-200/50 blur-3xl dark:bg-purple-700/20" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-blue-200/50 blur-3xl dark:bg-blue-700/20" />
+
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 shadow-inner shadow-purple-200/60 dark:bg-purple-500/10 dark:text-purple-200">
+                  <Route size={26} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-purple-700 dark:text-purple-300">Nova experiência</p>
+                  <h2 className="text-2xl font-black text-slate-950 tracking-tight dark:text-white">Jornada de Recuperação</h2>
+                  <p className="mt-1 max-w-xl text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Acompanhe sua evolução, dor, exercícios e próximos passos em uma tela exclusiva.
+                  </p>
+                </div>
               </div>
+
               <button
                 onClick={() => navigate('/jornada')}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-purple-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-purple-900/20 hover:bg-purple-800 transition-all"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-purple-900/20 transition-all hover:-translate-y-0.5 hover:bg-purple-800 sm:w-auto"
               >
                 Abrir jornada
                 <ChevronRight size={18} />
               </button>
             </div>
-            <FisioJourney compact mode="patient" />
+
+            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-purple-100 bg-purple-50/60 p-2 dark:border-white/10 dark:bg-white/5">
+              <div className="rounded-2xl bg-white p-3 text-center shadow-sm dark:bg-white/10">
+                <Activity className="mx-auto mb-1 text-purple-700 dark:text-purple-200" size={18} />
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Progresso</p>
+              </div>
+              <div className="rounded-2xl bg-white p-3 text-center shadow-sm dark:bg-white/10">
+                <Zap className="mx-auto mb-1 text-purple-700 dark:text-purple-200" size={18} />
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Dor</p>
+              </div>
+              <div className="rounded-2xl bg-white p-3 text-center shadow-sm dark:bg-white/10">
+                <Calendar className="mx-auto mb-1 text-purple-700 dark:text-purple-200" size={18} />
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Sessões</p>
+              </div>
+            </div>
           </div>
         )}
 
