@@ -93,7 +93,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const normalizeCurrencyToNumber = (value: string): number | null => {
+  const normalizeCurrencyToText = (value: string): string | null => {
     const raw = value.trim();
     if (!raw) return null;
 
@@ -104,6 +104,13 @@ export default function Register() {
       .replace(',', '.');
 
     const parsed = Number(normalized.replace(/[^0-9.]/g, ''));
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : null;
+  };
+
+  const normalizeCurrencyToNumber = (value: string): number | null => {
+    const normalizedText = normalizeCurrencyToText(value);
+    if (!normalizedText) return null;
+    const parsed = Number(normalizedText);
     return Number.isFinite(parsed) ? parsed : null;
   };
 
@@ -357,7 +364,7 @@ export default function Register() {
       console.log("[Register] [FLOW-AUDIT] Preparing profile payload");
 
       const normalizedSessionPrice = role === 'fisioterapeuta'
-        ? normalizeCurrencyToNumber(formData.preco_sessao)
+        ? normalizeCurrencyToText(formData.preco_sessao)
         : null;
 
       const formacaoAcademica = role === 'fisioterapeuta'
@@ -408,6 +415,8 @@ export default function Register() {
         crefito: role === 'fisioterapeuta' ? formData.crefito.trim() : null,
         especialidade: role === 'fisioterapeuta' ? formData.specialty.trim() : null,
         tipo_servico: role === 'fisioterapeuta' ? formData.serviceType : null,
+        // A coluna preco_sessao está como TEXT no Supabase atual.
+        // Enviamos texto limpo para manter compatibilidade com o Admin e as views existentes.
         preco_sessao: normalizedSessionPrice,
         experiencia_profissional: role === 'fisioterapeuta' ? formData.bio.trim() || null : null,
         formacao_academica: formacaoAcademica,
@@ -423,7 +432,9 @@ export default function Register() {
         rg_verso_url: docUrls.rg_verso,
         crefito_frente_url: docUrls.crefito_frente,
         crefito_verso_url: docUrls.crefito_verso,
-        documentos: uploadedDocUrls,
+        // A coluna documentos está como TEXT no Supabase atual.
+        // O Perfil já salva documentos como JSON string, então o cadastro usa o mesmo formato.
+        documentos: JSON.stringify(uploadedDocUrls),
 
         // Campos financeiros/integrações começam vazios e serão preenchidos depois
         stripe_account_id: null,
