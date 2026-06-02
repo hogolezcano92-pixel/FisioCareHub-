@@ -2726,3 +2726,26 @@ html:not(.dark) .quick-action-register-evolution button {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%) !important;
   border-color: transparent !important;
 }
+/* =========================================================
+   FisioJourney - Botão Registrar evolução no tema claro
+   Correção final: classe aplicada direto no botão
+   ========================================================= */
+
+html:not(.dark) .quick-action-register-evolution {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 40px rgba(109, 40, 217, 0.28) !important;
+}
+
+html:not(.dark) .quick-action-register-evolution *,
+html:not(.dark) .quick-action-register-evolution svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+html:not(.dark) .quick-action-register-evolution:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 45%, #4338ca 100%) !important;
+  color: #ffffff !important;
+}
