@@ -97,6 +97,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!forceRefresh && lastFetchedUserId.current === userId && profile && !isInitialMount.current) {
       return { profile, subscription };
     }
+
+    const registrationInProgress = localStorage.getItem('registration_in_progress') === '1';
+
+    // Durante o cadastro, o trigger do Supabase pode criar um perfil básico
+    // imediatamente após o signUp. Não devemos ler/cachear esse perfil básico,
+    // senão o app acha que o cadastro está incompleto mesmo depois do Register
+    // salvar o payload completo. O Register força a leitura final após o upsert.
+    if (registrationInProgress && !forceRefresh) {
+      return { profile: null, subscription: null };
+    }
     
     try {
       // Use maybeSingle to avoid errors if profile doesn't exist yet
@@ -109,14 +119,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let finalProfile = data;
 
       if (!finalProfile && !error) {
-        const registrationInProgress = localStorage.getItem('registration_in_progress') === '1';
-
-        // Durante o cadastro por e-mail/senha, o Register.tsx é quem salva o perfil completo.
-        // Evita criar um perfil básico antes e deixar só nome/e-mail caso o fluxo ainda esteja em andamento.
-        if (registrationInProgress) {
-          return { profile: null, subscription: null };
-        }
-
         // Create default profile if missing (e.g. first login)
         const pendingRole = localStorage.getItem('pending_role');
         const finalRole = userMetadata?.role || userMetadata?.tipo_usuario || (pendingRole === 'fisioterapeuta' ? 'fisioterapeuta' : 'paciente');
@@ -212,12 +214,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      // Force a fresh Supabase read after profile edits. Without this, the local
+    // Durante o cadastro, o estado React `user` pode ainda não ter sido atualizado
+    // mesmo com a sessão já criada. Por isso buscamos a sessão atual do Supabase
+    // como fallback para garantir que o perfil completo recém-salvo seja carregado.
+    const activeUser = user || session?.user || (await supabase.auth.getSession()).data.session?.user || null;
+
+    if (activeUser) {
+      // Force a fresh Supabase read after profile edits/register. Without this, the local
       // profile cache can make fields like bio/observacoes_saude appear unsaved.
-      const { profile: p, subscription: s } = await fetchProfile(user.id, user.user_metadata, true);
+      const { profile: p, subscription: s } = await fetchProfile(activeUser.id, activeUser.user_metadata, true);
       setProfile(p);
       setSubscription(s);
+      if (p) {
+        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(p));
+      }
     }
   };
 
