@@ -472,6 +472,10 @@ export default function Register() {
 
       console.log("[Register] [FLOW-AUDIT] Profile Upsert Success:", savedProfile);
 
+      // Garante que o app não continue usando o perfil básico criado pelo trigger/AuthContext
+      // durante o cadastro. A chave é a mesma usada no AuthContext.
+      localStorage.setItem('fch_profile_cache', JSON.stringify(savedProfile));
+
       if (isPro) {
         console.log("Creating subscription record for Pro Key...");
 
