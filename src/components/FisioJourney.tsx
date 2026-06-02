@@ -971,7 +971,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                   <button
                     type="button"
                     onClick={() => setCheckinOpen(true)}
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 font-black transition-all"
+                    className="quick-action-register-evolution flex items-center justify-between rounded-2xl border px-4 py-3 font-black transition-all"
                     style={{
                       background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%)',
                       color: '#ffffff',
