@@ -6,7 +6,8 @@ import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
-import { logActivity } from '../../services/activityService';
+import { logActivity, logActivities } from '../../services/activityService';
+import { getLinkedClinicalPatients } from '../../services/patientLinkService';
 
 interface Exercise {
   id: string;
@@ -22,18 +23,39 @@ export const PainDiary = () => {
   const [isSaving, setIsSaving] = useState(false);
   const emojis = ['😊', '🙂', '😐', '🙁', '😟', '😣', '😖', '😫', '😭', '💀'];
 
+  const todayDateKeyBR = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    return year && month && day ? `${year}-${month}-${day}` : new Date().toISOString().slice(0, 10);
+  };
+
   const handleSave = async () => {
     if (intensity !== null && profile) {
       setIsSaving(true);
       console.log('Salvando diário de dor:', { intensity, paciente_id: profile.id });
       try {
+        const today = todayDateKeyBR();
+        const linkedPatients = await getLinkedClinicalPatients(profile.id, profile.email);
+        const linkedClinicalPatient = linkedPatients[0];
+
         const { data, error } = await supabase
-          .from('diario_dor')
-          .insert({
+          .from('registros_paciente')
+          .upsert({
             paciente_id: profile.id,
-            intensidade: intensity,
-            data_registro: new Date().toISOString()
-          })
+            fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+            nivel_dor: intensity,
+            data_registro: today,
+            notas: 'Registro rápido de dor pelo Dashboard',
+          }, { onConflict: 'paciente_id,data_registro' })
           .select();
 
         if (error) {
@@ -41,15 +63,25 @@ export const PainDiary = () => {
           throw error;
         }
         
-        console.log('Diário de dor salvo com sucesso:', data);
-        await logActivity(
-          profile.id,
-          'paciente',
-          'diario_dor_registrado',
-          `Diário de dor registrado • intensidade ${intensity}/10`,
-          data?.[0]?.id || null,
-          { metadata: { intensidade: intensity, source: 'pain_diary' } },
-        );
+        console.log('Diário de dor salvo com sucesso em registros_paciente:', data);
+        await logActivities([
+          {
+            userId: profile.id,
+            userType: 'paciente',
+            action: 'diario_dor_registrado',
+            description: `Diário de dor registrado • intensidade ${intensity}/10`,
+            referenceId: data?.[0]?.id || today,
+            details: { metadata: { intensidade: intensity, source: 'pain_diary_dashboard' } },
+          },
+          {
+            userId: linkedClinicalPatient?.fisioterapeuta_id,
+            userType: 'fisio',
+            action: 'diario_dor_registrado',
+            description: `Paciente registrou dor no Dashboard • intensidade ${intensity}/10`,
+            referenceId: data?.[0]?.id || today,
+            details: { metadata: { patientId: profile.id, intensidade: intensity, source: 'pain_diary_dashboard' } },
+          },
+        ]);
         toast.success('Diário de dor atualizado!');
         setIntensity(null);
       } catch (err: any) {
