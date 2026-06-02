@@ -733,7 +733,7 @@ function AppContent() {
                 </button>
               </div>
             </header>
-          ))}
+          ) : null}
 
           <main className={cn(
             "flex-1 w-full flex flex-col min-w-0 bg-background rounded-t-[20px] shadow-2xl relative z-10",
