@@ -136,7 +136,7 @@ const Logo: React.FC<LogoProps> = ({
               "drop-shadow-[0_0_18px_rgba(56,189,248,0.18)]",
               sizeClasses[size].text,
               variant === 'dark'
-                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-slate-900"
+                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-violet-900"
                 : "bg-gradient-to-r from-sky-400 via-violet-400 to-white"
             )}
           >
