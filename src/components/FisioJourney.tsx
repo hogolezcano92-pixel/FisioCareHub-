@@ -703,7 +703,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
   }
 
   return (
-    <section className="quick-action-register-evolution min-h-full">
+    <section className="min-h-full">
       <div className={cn(compact ? 'p-0' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8', 'space-y-6')}>
         {checkinOpen && !isPhysioMode && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-4 sm:items-center">
@@ -965,7 +965,14 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
             <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
               <div className="mt-4 grid gap-3">
-                {!isPhysioMode && <button onClick={() => setCheckinOpen(true)} className="flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all">Registrar evolução <ArrowRight size={18} /></button>}
+                {!isPhysioMode && (
+                  <button
+                    onClick={() => setCheckinOpen(true)}
+                    className="quick-action-register-evolution flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all"
+                  >
+                    Registrar evolução <ArrowRight size={18} />
+                  </button>
+                )}
                 <Link to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
