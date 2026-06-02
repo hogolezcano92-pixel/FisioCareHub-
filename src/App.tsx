@@ -328,7 +328,28 @@ function Navbar() {
         <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to={user ? "/dashboard" : "/"} className="group transition-transform active:scale-95">
-              <Logo variant="light" size="sm" />
+              <div className="flex items-center gap-2">
+                <Logo iconOnly size="sm" />
+                <div className="flex flex-col leading-none">
+                  <span className="text-lg sm:text-xl font-sans font-black tracking-tighter bg-gradient-to-r from-sky-600 via-violet-700 to-slate-950 dark:from-sky-400 dark:via-violet-400 dark:to-white bg-clip-text text-transparent">
+                    FisioCareHub
+                  </span>
+                  <div className="flex flex-col mt-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-[2px] w-3 rounded-full bg-sky-600 dark:bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.45)]" />
+                      <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+                        Reabilitação
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-[1px] w-3 bg-transparent" />
+                      <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+                        & Performance
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Link>
           </div>
 
@@ -699,8 +720,29 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
-              <Logo variant="light" size="sm" />
+            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg">
+              <div className="flex items-center gap-2">
+                <Logo iconOnly size="sm" />
+                <div className="flex flex-col leading-none">
+                  <span className="text-lg sm:text-xl font-sans font-black tracking-tighter bg-gradient-to-r from-sky-600 via-violet-700 to-slate-950 dark:from-sky-400 dark:via-violet-400 dark:to-white bg-clip-text text-transparent">
+                    FisioCareHub
+                  </span>
+                  <div className="flex flex-col mt-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-[2px] w-3 rounded-full bg-sky-600 dark:bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.45)]" />
+                      <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+                        Reabilitação
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-[1px] w-3 bg-transparent" />
+                      <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+                        & Performance
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
                 <ThemeQuickToggle />
                 <NotificationBell />
