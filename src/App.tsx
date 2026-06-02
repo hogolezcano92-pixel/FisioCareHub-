@@ -699,14 +699,18 @@ function AppContent() {
 
         <div className="flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen pt-header">
           {!showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-lg">
-              <Logo variant="light" size="sm" />
+            <header className="lg:hidden fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 min-h-[4rem] pt-[env(safe-area-inset-top)] w-full flex items-center justify-between bg-white/90 dark:bg-background/80 backdrop-blur-md border-b border-violet-200/70 dark:border-white/10 shadow-lg shadow-violet-200/20 dark:shadow-black/20 transition-colors duration-300">
+              <div className="flex items-center min-w-0">
+                <Logo variant="dark" size="sm" className="dark:hidden" />
+                <Logo variant="light" size="sm" className="hidden dark:flex" />
+              </div>
               <div className="flex items-center gap-3">
                 <ThemeQuickToggle />
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-white/5"
+                  className="p-2 text-slate-700 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-900/5 dark:hover:bg-white/5"
+                  aria-label="Abrir menu"
                 >
                   <Menu size={24} />
                 </button>
