@@ -964,15 +964,25 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
 
             <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
               <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
-              <div className="mt-4 grid gap-3">
-                {!isPhysioMode && (
-                  <button
-                    onClick={() => setCheckinOpen(true)}
-                    className="quick-action-register-evolution flex items-center justify-between rounded-2xl bg-violet-700 px-4 py-3 font-black text-white hover:bg-violet-800 transition-all"
-                  >
-                    Registrar evolução <ArrowRight size={18} />
-                  </button>
+              <div className="mt-4 grid gap-
                 )}
+              {!isPhysioMode && (
+  <button
+    type="button"
+    onClick={() => setCheckinOpen(true)}
+    className="flex items-center justify-between rounded-2xl px-4 py-3 font-black transition-all"
+    style={{
+      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%)',
+      color: '#ffffff',
+      borderColor: 'transparent',
+      boxShadow: '0 18px 40px rgba(109, 40, 217, 0.28)',
+    }}
+  >
+    <span style={{ color: '#ffffff' }}>Registrar evolução</span>
+    <ArrowRight size={18} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+  </button>
+)}
+                
                 <Link to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
                   {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
                 </Link>
