@@ -32,11 +32,26 @@ import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
 
 
-const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado', 'confirmed', 'recebido', 'received'];
+const REAL_APPOINTMENT_STATUSES = ['confirmado', 'concluido', 'concluído'];
+const BLOCKED_APPOINTMENT_STATUSES = ['cancelado', 'cancelada', 'recusado', 'recusada', 'pendente', 'pendente_pagamento', 'aguardando_pagamento', 'solicitado', 'solicitada'];
+
+const normalizeStatus = (value: unknown) => String(value || '').trim().toLowerCase();
 
 const hasConfirmedPayment = (appointment: any) => {
-  const paymentStatus = String(appointment?.status_pagamento || appointment?.payment_status || '').toLowerCase();
-  return PAID_APPOINTMENT_PAYMENT_STATUSES.includes(paymentStatus);
+  const paymentCandidates = [
+    appointment?.status_pagamento,
+    appointment?.payment_status,
+    appointment?.pagamento_status,
+    appointment?.status_payment,
+  ].map(normalizeStatus);
+  return paymentCandidates.some((status) => PAID_APPOINTMENT_PAYMENT_STATUSES.includes(status));
+};
+
+const hasRealConfirmedAppointment = (appointment: any) => {
+  const status = normalizeStatus(appointment?.status);
+  if (!status || BLOCKED_APPOINTMENT_STATUSES.includes(status)) return false;
+  return hasConfirmedPayment(appointment) && REAL_APPOINTMENT_STATUSES.includes(status);
 };
 
 type ActiveTab = 'requests' | 'agenda' | 'financeiro' | 'historico' | 'avaliacoes';
@@ -153,7 +168,7 @@ export default function PhysioDashboard() {
           *,
           paciente:perfis!paciente_id(nome_completo, avatar_url)
         `)
-        .eq('status', 'pendente')
+        .in('status', ['pendente', 'aberta'])
         .order('created_at', { ascending: false });
 
       if (!reqError) setRequests(reqData || []);
@@ -166,10 +181,10 @@ export default function PhysioDashboard() {
         `)
         .eq('fisio_id', user?.id);
 
-      appQuery = appQuery.in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES);
+      appQuery = appQuery.in('status', REAL_APPOINTMENT_STATUSES);
 
       const { data: appData, error: appError } = await appQuery.order('data', { ascending: true });
-      if (!appError) setAppointments((appData || []).filter(hasConfirmedPayment));
+      if (!appError) setAppointments((appData || []).filter(hasRealConfirmedAppointment));
 
       const { data: actData } = await supabase
         .from('historico_atividades')

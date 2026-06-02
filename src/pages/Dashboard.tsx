@@ -119,7 +119,8 @@ const buildWeeklyChartData = (
 ): WeeklyChartData => {
   const week = getCurrentWeekKeys();
   const painByDay = new Map<string, any>();
-  const completedByDay = new Map<string, number>();
+  const journalCompletedByDay = new Map<string, number>();
+  const checklistCompletedByDay = new Map<string, number>();
 
   registrosPaciente.forEach((registro: any) => {
     const dateKey = getSaoPauloDateKey(getRecordDate(registro));
@@ -138,14 +139,30 @@ const buildWeeklyChartData = (
         painByDay.set(dateKey, registro);
     }
 
+    const completedFromJournal = Number(
+      registro?.concluidos_count ?? registro?.exercicios_concluidos_count,
+    );
+    const completedFromList = Array.isArray(registro?.exercicios_concluidos)
+      ? registro.exercicios_concluidos.filter((exercise: any) => Boolean(exercise?.completed)).length
+      : 0;
     const rawDone = registro?.exercicios_realizados;
-    if (
+    const completedFallback =
       rawDone === true ||
       rawDone === 1 ||
       rawDone === "1" ||
       String(rawDone || "").toLowerCase() === "true"
-    ) {
-      completedByDay.set(dateKey, (completedByDay.get(dateKey) || 0) + 1);
+        ? 1
+        : 0;
+    const completedCount = Math.max(
+      Number.isFinite(completedFromJournal) ? completedFromJournal : 0,
+      completedFromList,
+      completedFallback,
+    );
+    if (completedCount > 0) {
+      journalCompletedByDay.set(
+        dateKey,
+        Math.max(journalCompletedByDay.get(dateKey) || 0, completedCount),
+      );
     }
   });
 
@@ -155,7 +172,15 @@ const buildWeeklyChartData = (
     );
     if (!dateKey) return;
     if (item?.concluido === false) return;
-    completedByDay.set(dateKey, (completedByDay.get(dateKey) || 0) + 1);
+    checklistCompletedByDay.set(dateKey, (checklistCompletedByDay.get(dateKey) || 0) + 1);
+  });
+
+  const completedByDay = new Map<string, number>();
+  week.forEach(({ key }) => {
+    const journalCount = journalCompletedByDay.get(key) || 0;
+    const checklistCount = checklistCompletedByDay.get(key) || 0;
+    const realCount = Math.max(journalCount, checklistCount);
+    if (realCount > 0) completedByDay.set(key, realCount);
   });
 
   const painData = week.map(({ label, key }) => {
@@ -229,22 +254,46 @@ const PAID_APPOINTMENT_PAYMENT_STATUSES = [
   "paid",
   "pago",
   "confirmado",
+  "confirmed",
+  "recebido",
+  "received",
 ];
-const REAL_APPOINTMENT_STATUSES = ["confirmado", "concluido"];
+const REAL_APPOINTMENT_STATUSES = ["confirmado", "concluido", "concluído"];
+const BLOCKED_APPOINTMENT_STATUSES = [
+  "cancelado",
+  "cancelada",
+  "recusado",
+  "recusada",
+  "pendente",
+  "pendente_pagamento",
+  "aguardando_pagamento",
+  "solicitado",
+  "solicitada",
+];
+
+const normalizeStatus = (value: unknown) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
 
 const hasConfirmedPayment = (appointment: any) => {
-  const paymentStatus = String(
-    appointment?.status_pagamento || appointment?.payment_status || "",
-  ).toLowerCase();
-  return PAID_APPOINTMENT_PAYMENT_STATUSES.includes(paymentStatus);
+  const paymentCandidates = [
+    appointment?.status_pagamento,
+    appointment?.payment_status,
+    appointment?.pagamento_status,
+    appointment?.status_payment,
+  ].map(normalizeStatus);
+
+  return paymentCandidates.some((status) =>
+    PAID_APPOINTMENT_PAYMENT_STATUSES.includes(status),
+  );
 };
 
 const hasRealConfirmedAppointment = (appointment: any) => {
-  const status = String(appointment?.status || "").toLowerCase();
-  return (
-    hasConfirmedPayment(appointment) &&
-    REAL_APPOINTMENT_STATUSES.includes(status)
-  );
+  const status = normalizeStatus(appointment?.status);
+  if (!status || BLOCKED_APPOINTMENT_STATUSES.includes(status)) return false;
+
+  return hasConfirmedPayment(appointment) && REAL_APPOINTMENT_STATUSES.includes(status);
 };
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -679,15 +728,15 @@ export default function Dashboard() {
 
           const { data: appts } = await supabase
             .from("agendamentos")
-            .select("id, paciente_id, status, status_pagamento, payment_status")
+            .select("id, paciente_id, status, status_pagamento, payment_status, pagamento_status, status_payment")
             .eq("fisio_id", data.id)
-            .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
             .in("status", REAL_APPOINTMENT_STATUSES);
 
-          agendamentoIds = (appts || [])
+          const realLinkedAppointments = (appts || []).filter(hasRealConfirmedAppointment);
+          agendamentoIds = realLinkedAppointments
             .map((appt: any) => appt.id)
             .filter(Boolean);
-          (appts || []).forEach((appt: any) => {
+          realLinkedAppointments.forEach((appt: any) => {
             if (appt.paciente_id) linkedIds.add(appt.paciente_id);
           });
 
@@ -736,7 +785,26 @@ export default function Dashboard() {
             )
           : [];
 
+        let realAppointmentsData: any[] = [];
         let patientRealAppointmentIds: string[] = [];
+
+        if (isPhysio) {
+          const { data: fetchedRealAppointments, error: fetchedRealAppointmentsError } = await supabase
+            .from("agendamentos")
+            .select("*")
+            .eq("fisio_id", data.id)
+            .in("status", REAL_APPOINTMENT_STATUSES);
+
+          if (fetchedRealAppointmentsError) {
+            console.error(
+              "Erro ao buscar atendimentos reais do fisioterapeuta no dashboard:",
+              fetchedRealAppointmentsError,
+            );
+          }
+
+          realAppointmentsData = (fetchedRealAppointments || []).filter(hasRealConfirmedAppointment);
+          agendamentoIds = realAppointmentsData.map((appointment: any) => appointment.id).filter(Boolean);
+        }
 
         if (!isPhysio) {
           const {
@@ -746,15 +814,13 @@ export default function Dashboard() {
             patientTriageIds.length > 0
               ? await supabase
                   .from("agendamentos")
-                  .select("id, status, status_pagamento, payment_status")
+                  .select("*")
                   .in("paciente_id", patientTriageIds)
-                  .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
                   .in("status", REAL_APPOINTMENT_STATUSES)
               : await supabase
                   .from("agendamentos")
-                  .select("id, status, status_pagamento, payment_status")
+                  .select("*")
                   .eq("paciente_id", data.id)
-                  .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
                   .in("status", REAL_APPOINTMENT_STATUSES);
 
           if (realPatientAppointmentsError) {
@@ -764,8 +830,8 @@ export default function Dashboard() {
             );
           }
 
-          patientRealAppointmentIds = (realPatientAppointments || [])
-            .filter(hasRealConfirmedAppointment)
+          realAppointmentsData = (realPatientAppointments || []).filter(hasRealConfirmedAppointment);
+          patientRealAppointmentIds = realAppointmentsData
             .map((appointment: any) => appointment.id)
             .filter(Boolean);
         }
@@ -817,12 +883,7 @@ export default function Dashboard() {
         const queries = [
           isPhysio
             ? Promise.all([
-                supabase
-                  .from("agendamentos")
-                  .select("*", { count: "exact", head: true })
-                  .eq("fisio_id", data.id)
-                  .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
-                  .in("status", REAL_APPOINTMENT_STATUSES),
+                Promise.resolve({ count: realAppointmentsData.length }),
                 supabase
                   .from("pacientes")
                   .select("*", { count: "exact", head: true })
@@ -836,19 +897,7 @@ export default function Dashboard() {
                 physioTriagesCountQuery,
               ])
             : Promise.all([
-                patientTriageIds.length > 0
-                  ? supabase
-                      .from("agendamentos")
-                      .select("*", { count: "exact", head: true })
-                      .in("paciente_id", patientTriageIds)
-                      .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
-                      .in("status", REAL_APPOINTMENT_STATUSES)
-                  : supabase
-                      .from("agendamentos")
-                      .select("*", { count: "exact", head: true })
-                      .eq("paciente_id", data.id)
-                      .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
-                      .in("status", REAL_APPOINTMENT_STATUSES),
+Promise.resolve({ count: realAppointmentsData.length }),
                 patientRealAppointmentIds.length > 0
                   ? supabase
                       .from("evolucoes")
@@ -857,37 +906,15 @@ export default function Dashboard() {
                   : Promise.resolve({ count: 0 }),
                 patientTriagesCountQuery,
               ]),
-          isPhysio
-            ? supabase
-                .from("agendamentos")
-                .select(
-                  `
-              *,
-              paciente:perfis(id, nome_completo, avatar_url),
-              fisioterapeuta:perfis(id, nome_completo, avatar_url)
-            `,
-                )
-                .eq(roleField, data.id)
-                .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
-                .in("status", REAL_APPOINTMENT_STATUSES)
-                .order("data", { ascending: false })
-                .order("hora", { ascending: false })
-                .limit(5)
-            : supabase
-                .from("agendamentos")
-                .select(
-                  `
-              *,
-              paciente:perfis(id, nome_completo, avatar_url),
-              fisioterapeuta:perfis(id, nome_completo, avatar_url)
-            `,
-                )
-                .eq(roleField, data.id)
-                .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
-                .in("status", REAL_APPOINTMENT_STATUSES)
-                .order("data", { ascending: false })
-                .order("hora", { ascending: false })
-                .limit(5),
+          Promise.resolve({
+            data: [...realAppointmentsData]
+              .sort((a: any, b: any) => {
+                const dateA = parseAppointmentDateTime(a)?.getTime() || 0;
+                const dateB = parseAppointmentDateTime(b)?.getTime() || 0;
+                return dateB - dateA;
+              })
+              .slice(0, 5),
+          }),
           triagesListQuery,
           supabase
             .from("historico_atividades")
@@ -938,17 +965,17 @@ export default function Dashboard() {
                   .order("created_at", { ascending: false })
                   .limit(8)
               : Promise.resolve({ data: [] }),
-          !isPhysio && activityPatientIds.length > 0
+          activityPatientIds.length > 0
             ? supabase
                 .from("registros_paciente")
                 .select(
-                  "id, created_at, updated_at, data_registro, paciente_id, nivel_dor, exercicios_realizados",
+                  "id, created_at, updated_at, data_registro, paciente_id, nivel_dor, exercicios_realizados, exercicios_concluidos, concluidos_count, total_exercicios",
                 )
                 .in("paciente_id", activityPatientIds)
                 .order("data_registro", { ascending: false })
                 .limit(14)
             : Promise.resolve({ data: [] }),
-          !isPhysio && activityPatientIds.length > 0
+          activityPatientIds.length > 0
             ? supabase
                 .from("checklist_exercicios")
                 .select(
