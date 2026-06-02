@@ -441,25 +441,88 @@ export default function Patients() {
     );
   };
 
-  const deletePatientLinkedRows = async (patientId: string) => {
-    const linkedTables = [
+  const isRpcUnavailableError = (error: any) => {
+    const message = String(error?.message || error?.details || error?.hint || '').toLowerCase();
+    return (
+      message.includes('function') ||
+      message.includes('rpc') ||
+      message.includes('schema cache') ||
+      message.includes('could not find') ||
+      message.includes('does not exist')
+    );
+  };
+
+  const resolvePatientDeleteIds = (patient: any) => {
+    return Array.from(new Set([
+      patient?.id,
+      patient?.perfil_id,
+      patient?.profile_id,
+      patient?.user_id,
+      patient?.auth_user_id,
+      patient?.paciente_id,
+      patient?.linked_profile?.id,
+    ].filter(Boolean).map(String)));
+  };
+
+  const deleteFromTableByPatientIds = async (table: string, patientIds: string[]) => {
+    if (patientIds.length === 0) return;
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .in('paciente_id', patientIds);
+
+    if (error && !ignoreMissingRelationError(error)) {
+      throw error;
+    }
+  };
+
+  const deletePatientLinkedRowsFallback = async (patient: any) => {
+    const patientIds = resolvePatientDeleteIds(patient);
+
+    // Apaga primeiro filhos/dependências para evitar bloqueio por FK e dados órfãos.
+    const linkedTablesByPacienteId = [
+      'protocolo_itens',
+      'protocolos_prescricao',
+      'checklist_exercicios',
+      'diario_dor',
+      'registros_paciente',
       'exercicios_paciente',
       'evolucoes',
       'arquivos_paciente',
       'triagens',
       'prontuarios',
       'avaliacoes',
-      'diario_dor',
       'documentos_gerados',
       'fichas_avaliacao',
-      'registros_paciente'
+      'sessoes',
+      'soap_notes',
+      'patient_exercises',
+      'exam_analyses',
+      'solicitacoes_atendimento',
     ];
 
-    for (const table of linkedTables) {
+    for (const table of linkedTablesByPacienteId) {
+      await deleteFromTableByPatientIds(table, patientIds);
+    }
+
+    // Agendamentos desse fisioterapeuta podem estar salvos com pacientes.id ou perfis.id.
+    const { error: appointmentsError } = await supabase
+      .from('agendamentos')
+      .delete()
+      .eq('fisio_id', user!.id)
+      .in('paciente_id', patientIds);
+
+    if (appointmentsError && !ignoreMissingRelationError(appointmentsError)) {
+      throw appointmentsError;
+    }
+
+    // Logs/notificações podem guardar o ID como texto em referencia_id.
+    for (const referenceTable of ['historico_atividades', 'notificacoes']) {
       const { error } = await supabase
-        .from(table)
+        .from(referenceTable)
         .delete()
-        .eq('paciente_id', patientId);
+        .in('referencia_id', patientIds);
 
       if (error && !ignoreMissingRelationError(error)) {
         throw error;
@@ -467,31 +530,49 @@ export default function Patients() {
     }
   };
 
+  const deletePatientCascade = async (patient: any) => {
+    const { data, error } = await supabase.rpc('delete_clinical_patient_cascade', {
+      p_patient_id: patient.id,
+    });
+
+    if (!error) return data;
+
+    // Enquanto a RPC ainda não estiver aplicada no Supabase, usamos fallback no frontend.
+    // Se a RPC existir e falhar por permissão/vínculo, o erro é exibido para não dar falso sucesso.
+    if (!isRpcUnavailableError(error)) {
+      throw error;
+    }
+
+    console.warn('RPC delete_clinical_patient_cascade indisponível. Usando fallback frontend:', error);
+    await deletePatientLinkedRowsFallback(patient);
+
+    const { error: deleteError } = await supabase
+      .from('pacientes')
+      .delete()
+      .eq('id', patient.id)
+      .eq('fisioterapeuta_id', user!.id);
+
+    if (deleteError) throw deleteError;
+  };
+
   const handleDeletePatient = async (patient: any) => {
     if (!user || !patient?.id) return;
 
-    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'}? Essa ação não pode ser desfeita.`);
+    const confirmed = window.confirm(`Deseja apagar o paciente ${patient.nome_completo || 'selecionado'} e todos os dados clínicos vinculados? Essa ação não pode ser desfeita.`);
     if (!confirmed) return;
 
     setSubmitting(true);
     try {
-      await deletePatientLinkedRows(patient.id);
+      await deletePatientCascade(patient);
 
-      const { error: deleteError } = await supabase
-        .from('pacientes')
-        .delete()
-        .eq('id', patient.id)
-        .eq('fisioterapeuta_id', user.id);
-
-      if (deleteError) throw deleteError;
-
-      setPatients((current) => current.filter((item) => item.id !== patient.id));
+      const patientIds = resolvePatientDeleteIds(patient);
+      setPatients((current) => current.filter((item) => !patientIds.includes(String(item.id))));
       toast.success('Paciente apagado com sucesso!');
       setMenuPatientId(null);
-      fetchPatients();
+      await fetchPatients();
     } catch (err: any) {
       console.error('Erro ao apagar paciente:', err);
-      toast.error(err?.message || 'Erro ao apagar paciente. Verifique se existem registros vinculados.');
+      toast.error(err?.message || 'Erro ao apagar paciente. Verifique as permissões/RLS ou aplique a função SQL de exclusão em cascata.');
     } finally {
       setSubmitting(false);
     }
