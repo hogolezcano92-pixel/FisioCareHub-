@@ -207,15 +207,15 @@ export default function ClinicalTestsHub() {
   }, [activeCategory, query]);
 
   return (
-    <div className="clinical-tests-hub min-h-screen w-full max-w-full overflow-x-hidden bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl min-w-0 space-y-8 overflow-hidden">
+    <div className="clinical-tests-hub min-h-screen w-full min-w-0 max-w-full overflow-x-clip bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full min-w-0 max-w-full space-y-8 overflow-hidden xl:max-w-7xl">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative w-full max-w-full overflow-hidden rounded-[2rem] border border-violet-200/70 bg-white p-4 shadow-2xl shadow-blue-200/40 dark:border-white/10 dark:bg-slate-950/70 dark:shadow-blue-950/30 sm:p-8"
+          className="relative w-full min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-violet-200/70 bg-white p-4 shadow-2xl shadow-blue-200/40 dark:border-white/10 dark:bg-slate-950/70 dark:shadow-blue-950/30 sm:p-8"
         >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.20),transparent_34%),radial-gradient(circle_at_85%_15%,rgba(168,85,247,0.20),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.14),transparent_30%)]" />
-          <div className="relative grid min-w-0 gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="relative grid w-full min-w-0 max-w-full grid-cols-1 gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200">
                 <Sparkles size={14} /> Premium Clinical Intelligence
@@ -311,7 +311,7 @@ export default function ClinicalTestsHub() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="w-full min-w-0 max-w-full space-y-3 overflow-hidden">
               {filteredTests.map((test) => {
                 const Icon = test.icon;
                 const isActive = selectedTest?.id === test.id;
@@ -320,25 +320,25 @@ export default function ClinicalTestsHub() {
                     key={test.id}
                     onClick={() => setSelectedTest(test)}
                     className={cn(
-                      'group w-full max-w-full overflow-hidden rounded-[1.75rem] border p-3 text-left transition-all sm:p-4',
+                      'group w-full min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border p-3 text-left transition-all sm:p-4',
                       isActive
                         ? 'border-blue-300 bg-white shadow-2xl shadow-blue-200/60 dark:border-blue-300/30 dark:bg-white/10 dark:shadow-blue-950/20'
                         : 'border-slate-200 bg-white/80 shadow-lg shadow-slate-200/40 hover:border-violet-300 hover:bg-white dark:border-white/10 dark:bg-slate-950/60 dark:shadow-none dark:hover:bg-white/5',
                     )}
                   >
-                    <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                    <div className="flex w-full min-w-0 items-start gap-3 sm:gap-4">
                       <div className={cn('flex h-12 w-12 shrink-0 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', test.gradient)}>
                         <Icon size={24} />
                       </div>
                       <div className="min-w-0 flex-1 overflow-hidden">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                          <h3 className="min-w-0 break-words text-base font-black text-slate-950 dark:text-white">{test.name}</h3>
+                          <h3 className="min-w-0 whitespace-normal break-words text-base font-black leading-tight text-slate-950 [overflow-wrap:anywhere] dark:text-white">{test.name}</h3>
                           <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">{test.level}</span>
                         </div>
-                        <p className="mt-1 break-words text-xs font-bold uppercase tracking-widest text-slate-400">{test.region} • {test.category}</p>
-                        <p className="mt-2 line-clamp-2 break-words text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300">{test.objective}</p>
+                        <p className="mt-1 whitespace-normal break-words text-xs font-bold uppercase tracking-widest text-slate-400 [overflow-wrap:anywhere]">{test.region} • {test.category}</p>
+                        <p className="mt-2 whitespace-normal break-words text-sm font-medium leading-relaxed text-slate-600 [overflow-wrap:anywhere] dark:text-slate-300">{test.objective}</p>
                       </div>
-                      <ChevronRight className={cn('mt-4 shrink-0 transition-transform group-hover:translate-x-1', isActive ? 'text-blue-500' : 'text-slate-300')} size={20} />
+                      <ChevronRight className={cn('mt-4 hidden shrink-0 transition-transform group-hover:translate-x-1 sm:block', isActive ? 'text-blue-500' : 'text-slate-300')} size={20} />
                     </div>
                   </button>
                 );
@@ -354,15 +354,15 @@ export default function ClinicalTestsHub() {
                 key={selectedTest.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-blue-200/50 dark:border-white/10 dark:bg-slate-950/75 dark:shadow-blue-950/30 sm:rounded-[2.2rem]"
+                className="w-full min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-blue-200/50 dark:border-white/10 dark:bg-slate-950/75 dark:shadow-blue-950/30 sm:rounded-[2.2rem]"
               >
                 <div className={cn('relative overflow-hidden bg-gradient-to-br p-5 text-white sm:p-6', selectedTest.gradient)}>
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.32),transparent_34%)]" />
-                  <div className="relative flex min-w-0 items-start justify-between gap-3 sm:gap-4">
-                    <div className="min-w-0">
-                      <p className="break-words text-[10px] font-black uppercase tracking-[0.24em] text-white/75">{selectedTest.region} • {selectedTest.category}</p>
-                      <h2 className="mt-2 break-words text-2xl font-black tracking-tight sm:text-3xl">{selectedTest.name}</h2>
-                      <p className="mt-3 max-w-xl break-words text-sm font-medium leading-relaxed text-white/85">{selectedTest.objective}</p>
+                  <div className="relative flex w-full min-w-0 items-start justify-between gap-3 sm:gap-4">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <p className="whitespace-normal break-words text-[10px] font-black uppercase tracking-[0.18em] text-white/75 [overflow-wrap:anywhere] sm:tracking-[0.24em]">{selectedTest.region} • {selectedTest.category}</p>
+                      <h2 className="mt-2 whitespace-normal break-words text-2xl font-black tracking-tight [overflow-wrap:anywhere] sm:text-3xl">{selectedTest.name}</h2>
+                      <p className="mt-3 max-w-xl whitespace-normal break-words text-sm font-medium leading-relaxed text-white/85 [overflow-wrap:anywhere]">{selectedTest.objective}</p>
                     </div>
                     <div className="flex h-12 w-12 shrink-0 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
                       <SelectedIcon size={28} />
@@ -377,12 +377,12 @@ export default function ClinicalTestsHub() {
                   <InfoCard icon={Eye} title="Interpretação" content={selectedTest.interpretation} tone="amber" />
                   <InfoCard icon={AlertTriangle} title="Cuidados e contraindicações" content={selectedTest.precautions} tone="rose" />
 
-                  <div className="max-w-full overflow-hidden rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10">
+                  <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10">
                     <div className="flex items-start gap-3">
                       <BadgeCheck className="mt-1 shrink-0 text-emerald-600 dark:text-emerald-300" size={22} />
-                      <div>
-                        <h3 className="text-sm font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">Sugestão para prontuário</h3>
-                        <p className="mt-2 break-words text-sm font-medium leading-relaxed text-emerald-900 dark:text-emerald-50/90">
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <h3 className="whitespace-normal break-words text-sm font-black uppercase tracking-widest text-emerald-800 [overflow-wrap:anywhere] dark:text-emerald-200">Sugestão para prontuário</h3>
+                        <p className="mt-2 whitespace-normal break-words text-sm font-medium leading-relaxed text-emerald-900 [overflow-wrap:anywhere] dark:text-emerald-50/90">
                           {selectedTest.name}: registrar lado avaliado, resposta dolorosa, comparação bilateral e relação com queixa funcional do paciente.
                         </p>
                       </div>
@@ -415,12 +415,12 @@ function InfoCard({ icon: Icon, title, content, tone }: { icon: typeof Activity;
   }[tone];
 
   return (
-    <div className={cn('max-w-full overflow-hidden rounded-[1.5rem] border p-4', toneClass)}>
-      <div className="mb-2 flex items-center gap-2">
+    <div className={cn('w-full min-w-0 max-w-full overflow-hidden rounded-[1.5rem] border p-4', toneClass)}>
+      <div className="mb-2 flex min-w-0 items-center gap-2">
         <Icon size={18} />
-        <h3 className="text-[11px] font-black uppercase tracking-widest">{title}</h3>
+        <h3 className="min-w-0 whitespace-normal break-words text-[11px] font-black uppercase tracking-widest [overflow-wrap:anywhere]">{title}</h3>
       </div>
-      <p className="break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-white/85">{content}</p>
+      <p className="whitespace-normal break-words text-sm font-medium leading-relaxed text-slate-700 [overflow-wrap:anywhere] dark:text-white/85">{content}</p>
     </div>
   );
 }
