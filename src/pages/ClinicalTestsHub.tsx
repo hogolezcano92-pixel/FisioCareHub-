@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 interface ClinicalTest {
   id: string;
@@ -32,8 +33,11 @@ interface ClinicalTest {
   objective: string;
   execution: string;
   positive: string;
+  negative: string;
   interpretation: string;
   precautions: string;
+  demo: string;
+  recordSuggestion: string;
   level: 'Essencial' | 'Intermediário' | 'Avançado';
   gradient: string;
   icon: typeof Activity;
@@ -60,8 +64,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Investigar sinais compatíveis com impacto subacromial e irritação dolorosa no ombro.',
     execution: 'Elevação passiva do membro superior em flexão, com estabilização escapular e observação da resposta dolorosa.',
     positive: 'Dor na região anterior ou lateral do ombro durante a elevação passiva.',
+    negative: 'Ausência de dor ou desconforto relevante durante a elevação controlada.',
     interpretation: 'Pode sugerir irritação subacromial, tendinopatia do manguito rotador ou conflito mecânico funcional.',
     precautions: 'Evite força excessiva e correlacione com história clínica, arco doloroso e outros testes do ombro.',
+    demo: 'Imagem/vídeo sugerido: paciente sentado, terapeuta estabiliza a escápula e eleva passivamente o braço no plano sagital.',
+    recordSuggestion: 'Teste de Neer: registrar lado avaliado, presença ou ausência de dor, intensidade, arco doloroso e comparação bilateral.',
     level: 'Essencial',
     gradient: 'from-sky-500 via-blue-500 to-indigo-600',
     icon: Bone,
@@ -74,8 +81,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Avaliar possível compressão subacromial durante rotação interna do ombro.',
     execution: 'Ombro e cotovelo a 90°, realizando rotação interna controlada do ombro.',
     positive: 'Reprodução de dor no ombro durante a manobra.',
+    negative: 'Sem reprodução de dor ou sintomas durante a rotação interna controlada.',
     interpretation: 'Achado compatível com síndrome do impacto quando associado a outros sinais clínicos.',
     precautions: 'Não interpretar isoladamente; observar irritabilidade, amplitude e tolerância do paciente.',
+    demo: 'Imagem/vídeo sugerido: ombro e cotovelo a 90°, terapeuta realiza rotação interna controlada.',
+    recordSuggestion: 'Hawkins-Kennedy: registrar lado, resposta dolorosa, localização da dor e relação com sintomas funcionais.',
     level: 'Essencial',
     gradient: 'from-cyan-500 via-blue-500 to-violet-600',
     icon: Target,
@@ -88,8 +98,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Avaliar dor ou déficit de força relacionado ao supraespinal.',
     execution: 'Elevar os braços no plano da escápula com polegares para baixo e aplicar resistência manual.',
     positive: 'Dor, fraqueza ou incapacidade de sustentar a posição contra resistência.',
+    negative: 'Mantém a posição contra resistência sem dor relevante ou perda de força comparativa.',
     interpretation: 'Pode sugerir disfunção do supraespinal, tendinopatia ou alteração de controle escapular.',
     precautions: 'Comparar bilateralmente e diferenciar dor de fraqueza real.',
+    demo: 'Imagem/vídeo sugerido: braços no plano da escápula, polegares para baixo e resistência manual bilateral.',
+    recordSuggestion: 'Teste de Jobe: registrar dor, força, compensações escapulares e diferença entre os lados.',
     level: 'Intermediário',
     gradient: 'from-indigo-500 via-violet-500 to-fuchsia-600',
     icon: Activity,
@@ -102,8 +115,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Avaliar estabilidade anterior do joelho e possível comprometimento do LCA.',
     execution: 'Joelho em leve flexão, estabilizando fêmur e tracionando a tíbia anteriormente.',
     positive: 'Translação anterior aumentada ou sensação de parada final amolecida.',
+    negative: 'Parada final firme e translação semelhante ao joelho contralateral.',
     interpretation: 'Achado sugestivo de instabilidade anterior, especialmente quando comparado ao lado contralateral.',
     precautions: 'Evitar em trauma agudo muito doloroso sem avaliação médica; observar edema e proteção muscular.',
+    demo: 'Imagem/vídeo sugerido: joelho em leve flexão, uma mão estabiliza o fêmur e a outra traciona a tíbia anteriormente.',
+    recordSuggestion: 'Lachman: registrar lado, grau de translação, qualidade da parada final, dor, edema e comparação bilateral.',
     level: 'Avançado',
     gradient: 'from-emerald-500 via-teal-500 to-cyan-600',
     icon: ShieldCheck,
@@ -116,8 +132,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Investigar sinais compatíveis com lesão meniscal.',
     execution: 'Flexão e extensão do joelho associadas a rotação tibial e estresse em varo ou valgo.',
     positive: 'Dor articular, estalo doloroso ou bloqueio durante a manobra.',
+    negative: 'Sem dor articular, estalo doloroso ou sensação de bloqueio durante o movimento.',
     interpretation: 'Pode indicar envolvimento meniscal, especialmente com dor localizada e história compatível.',
     precautions: 'Executar com suavidade; não forçar amplitudes dolorosas.',
+    demo: 'Imagem/vídeo sugerido: terapeuta mobiliza o joelho em flexão/extensão com rotações tibiais e estresse controlado.',
+    recordSuggestion: 'McMurray: registrar compartimento suspeito, dor, estalo, bloqueio e resposta durante rotação medial/lateral.',
     level: 'Intermediário',
     gradient: 'from-lime-500 via-emerald-500 to-teal-600',
     icon: ClipboardCheck,
@@ -130,8 +149,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Avaliar mecanossensibilidade neural e sintomas irradiados em membros inferiores.',
     execution: 'Paciente sentado, flexão cervical/torácica, extensão de joelho e dorsiflexão, modulando os sintomas.',
     positive: 'Reprodução dos sintomas neurais com alteração pela posição cervical ou tornozelo.',
+    negative: 'Ausência de sintomas neurais ou desconforto apenas muscular sem modulação cervical/tornozelo.',
     interpretation: 'Pode sugerir sensibilização neural ou componente neurodinâmico nos sintomas.',
     precautions: 'Diferenciar tensão muscular de sintoma neural; respeitar irritabilidade.',
+    demo: 'Imagem/vídeo sugerido: paciente sentado, progressão com flexão torácica/cervical, extensão de joelho e dorsiflexão.',
+    recordSuggestion: 'Slump Test: registrar lado, sintomas reproduzidos, modulação com cervical/tornozelo e irritabilidade neural.',
     level: 'Avançado',
     gradient: 'from-orange-500 via-rose-500 to-pink-600',
     icon: Zap,
@@ -144,8 +166,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Investigar reprodução de sintomas cervicobraquiais por compressão foraminal.',
     execution: 'Extensão, inclinação e rotação cervical com compressão axial controlada.',
     positive: 'Reprodução de dor irradiada ou sintomas no membro superior.',
+    negative: 'Não reproduz dor irradiada ou sintomas neurológicos no membro superior.',
     interpretation: 'Pode indicar envolvimento radicular quando associado a exame neurológico e história clínica.',
     precautions: 'Evitar em sinais neurológicos graves, trauma, tontura intensa ou suspeita vascular.',
+    demo: 'Imagem/vídeo sugerido: posicionamento cervical em extensão/inclinação/rotação com compressão axial leve e controlada.',
+    recordSuggestion: 'Spurling: registrar direção testada, sintomas irradiados, dermátomo provável, intensidade e sinais neurológicos associados.',
     level: 'Avançado',
     gradient: 'from-amber-500 via-orange-500 to-red-600',
     icon: Brain,
@@ -158,8 +183,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Avaliar mobilidade funcional, equilíbrio dinâmico e risco funcional em idosos ou pacientes frágeis.',
     execution: 'Paciente levanta da cadeira, caminha 3 metros, retorna e senta; registrar o tempo total.',
     positive: 'Tempo elevado, instabilidade, hesitação ou necessidade de ajuda durante o percurso.',
+    negative: 'Realiza a tarefa com segurança, sem instabilidade relevante e dentro do esperado para o perfil funcional.',
     interpretation: 'Ajuda a monitorar evolução funcional e risco de queda no contexto clínico.',
     precautions: 'Garantir segurança, cadeira adequada e supervisão próxima.',
+    demo: 'Imagem/vídeo sugerido: cadeira, marcação de 3 metros, levantar, caminhar, retornar e sentar com cronômetro.',
+    recordSuggestion: 'Timed Up and Go: registrar tempo total, necessidade de auxílio, instabilidade, dor e estratégia de marcha.',
     level: 'Essencial',
     gradient: 'from-purple-500 via-violet-500 to-indigo-600',
     icon: HeartPulse,
@@ -172,8 +200,11 @@ const clinicalTests: ClinicalTest[] = [
     objective: 'Mensurar tolerância ao esforço, capacidade funcional e resposta cardiorrespiratória.',
     execution: 'Paciente caminha por 6 minutos em percurso padronizado, monitorando sintomas e sinais vitais.',
     positive: 'Queda importante de desempenho, dispneia intensa, dessaturação ou sintomas limitantes.',
+    negative: 'Completa o teste sem sinais limitantes relevantes e com resposta cardiorrespiratória compatível.',
     interpretation: 'Útil para evolução, prescrição de exercício e acompanhamento cardiorrespiratório.',
     precautions: 'Monitorar segurança, Borg, pressão, frequência cardíaca e saturação quando indicado.',
+    demo: 'Imagem/vídeo sugerido: percurso padronizado, cronômetro de 6 minutos, registro de distância, Borg e sinais vitais.',
+    recordSuggestion: 'Teste de Caminhada 6 Min: registrar distância, pausas, Borg, FC, SpO₂, sintomas e tolerância ao esforço.',
     level: 'Intermediário',
     gradient: 'from-red-500 via-rose-500 to-fuchsia-600',
     icon: HeartPulse,
@@ -205,6 +236,16 @@ export default function ClinicalTestsHub() {
       return matchesCategory && matchesSearch;
     });
   }, [activeCategory, query]);
+
+  const handleAddToRecord = (test: ClinicalTest) => {
+    const note = `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(note).catch(() => undefined);
+    }
+
+    toast.success('Sugestão copiada para adicionar ao prontuário.');
+  };
 
   return (
     <div className="clinical-tests-hub min-h-screen w-full min-w-0 max-w-full overflow-x-clip bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8">
@@ -371,20 +412,42 @@ export default function ClinicalTestsHub() {
                 </div>
 
                 <div className="min-w-0 space-y-4 p-4 sm:p-6">
+                  <InfoCard icon={Stethoscope} title="Nome do teste" content={selectedTest.name} tone="blue" />
                   <InfoCard icon={Target} title="Objetivo clínico" content={selectedTest.objective} tone="blue" />
                   <InfoCard icon={Activity} title="Como executar" content={selectedTest.execution} tone="violet" />
-                  <InfoCard icon={CheckCircle2} title="Resultado positivo" content={selectedTest.positive} tone="emerald" />
+                  <InfoCard icon={CheckCircle2} title="Resultado positivo/negativo" content={`Positivo: ${selectedTest.positive} Negativo: ${selectedTest.negative}`} tone="emerald" />
                   <InfoCard icon={Eye} title="Interpretação" content={selectedTest.interpretation} tone="amber" />
-                  <InfoCard icon={AlertTriangle} title="Cuidados e contraindicações" content={selectedTest.precautions} tone="rose" />
+                  <InfoCard icon={AlertTriangle} title="Contraindicações/cuidados" content={selectedTest.precautions} tone="rose" />
+
+                  <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-cyan-200 bg-cyan-50 p-4 dark:border-cyan-400/20 dark:bg-cyan-500/10">
+                    <div className="flex items-start gap-3">
+                      <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', selectedTest.gradient)}>
+                        <SelectedIcon size={22} />
+                      </div>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <h3 className="whitespace-normal break-words text-sm font-black uppercase tracking-widest text-cyan-800 [overflow-wrap:anywhere] dark:text-cyan-200">Vídeo ou imagem demonstrativa</h3>
+                        <p className="mt-2 whitespace-normal break-words text-sm font-medium leading-relaxed text-cyan-900 [overflow-wrap:anywhere] dark:text-cyan-50/90">{selectedTest.demo}</p>
+                        <div className="mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100">
+                          Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10">
                     <div className="flex items-start gap-3">
                       <BadgeCheck className="mt-1 shrink-0 text-emerald-600 dark:text-emerald-300" size={22} />
                       <div className="min-w-0 flex-1 overflow-hidden">
                         <h3 className="whitespace-normal break-words text-sm font-black uppercase tracking-widest text-emerald-800 [overflow-wrap:anywhere] dark:text-emerald-200">Sugestão para prontuário</h3>
-                        <p className="mt-2 whitespace-normal break-words text-sm font-medium leading-relaxed text-emerald-900 [overflow-wrap:anywhere] dark:text-emerald-50/90">
-                          {selectedTest.name}: registrar lado avaliado, resposta dolorosa, comparação bilateral e relação com queixa funcional do paciente.
-                        </p>
+                        <p className="mt-2 whitespace-normal break-words text-sm font-medium leading-relaxed text-emerald-900 [overflow-wrap:anywhere] dark:text-emerald-50/90">{selectedTest.recordSuggestion}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleAddToRecord(selectedTest)}
+                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/60 transition hover:bg-emerald-500 dark:shadow-emerald-950/30"
+                        >
+                          <ClipboardCheck size={18} />
+                          Adicionar ao prontuário
+                        </button>
                       </div>
                     </div>
                   </div>
