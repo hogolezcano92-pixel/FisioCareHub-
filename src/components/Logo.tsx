@@ -44,6 +44,8 @@ const Logo: React.FC<LogoProps> = ({
     }
   };
 
+  const isLightLogo = variant === 'light';
+
   return (
     <div className={cn("flex items-center select-none group", sizeClasses[size].gap, className)}>
       {!textOnly && (
@@ -133,33 +135,47 @@ const Logo: React.FC<LogoProps> = ({
           <span
             className={cn(
               "font-sans font-black tracking-tighter bg-clip-text text-transparent",
-              "drop-shadow-[0_0_18px_rgba(56,189,248,0.18)]",
               sizeClasses[size].text,
-              variant === 'dark'
-                ? "bg-gradient-to-r from-sky-600 via-violet-600 to-slate-900"
-                : "bg-gradient-to-r from-sky-400 via-violet-400 to-white"
+              isLightLogo
+                ? "bg-gradient-to-r from-sky-300 via-violet-300 to-white drop-shadow-[0_0_18px_rgba(255,255,255,0.20)]"
+                : "bg-gradient-to-r from-sky-600 via-violet-700 to-slate-950 drop-shadow-[0_1px_2px_rgba(15,23,42,0.18)]"
             )}
           >
             FisioCareHub
           </span>
+
           <div className="flex flex-col mt-1">
             <div className="flex items-center gap-2">
-              <div className={cn("h-[2px] w-3 rounded-full shadow-[0_0_12px_rgba(56,189,248,0.45)]", variant === 'dark' ? "bg-[#0EA5E9]" : "bg-[#38BDF8]")} />
-              <span className={cn(
-                "font-black uppercase tracking-[0.15em]",
-                sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
-              )}>
+              <div
+                className={cn(
+                  "h-[2px] w-3 rounded-full shadow-[0_0_12px_rgba(56,189,248,0.45)]",
+                  isLightLogo ? "bg-[#38BDF8]" : "bg-[#0EA5E9]"
+                )}
+              />
+              <span
+                className={cn(
+                  "font-black uppercase tracking-[0.15em]",
+                  sizeClasses[size].tagline,
+                  isLightLogo
+                    ? "text-white/90 drop-shadow-[0_1px_4px_rgba(15,23,42,0.35)]"
+                    : "text-slate-700"
+                )}
+              >
                 Reabilitação
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <div className="h-[1px] w-3 bg-transparent" />
-              <span className={cn(
-                "font-black uppercase tracking-[0.15em]",
-                sizeClasses[size].tagline,
-                variant === 'dark' ? "text-slate-500" : "text-slate-200/95"
-              )}>
+              <span
+                className={cn(
+                  "font-black uppercase tracking-[0.15em]",
+                  sizeClasses[size].tagline,
+                  isLightLogo
+                    ? "text-white/90 drop-shadow-[0_1px_4px_rgba(15,23,42,0.35)]"
+                    : "text-slate-700"
+                )}
+              >
                 & Performance
               </span>
             </div>
