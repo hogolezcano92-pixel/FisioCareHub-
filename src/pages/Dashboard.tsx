@@ -38,7 +38,7 @@ import { motion } from "motion/react";
 import { cn, formatDate } from "../lib/utils";
 import { formatHourBR } from "../utils/date";
 import { toast } from "sonner";
-import { getPatientVisibleIds } from "../services/patientLinkService";
+import { getLinkedClinicalPatients } from "../services/patientLinkService";
 
 // New FisioCare Components
 import {
@@ -771,14 +771,31 @@ export default function Dashboard() {
           linkedPatientProfileIds = Array.from(linkedIds);
         }
 
+        const linkedClinicalPatientsForPatient = !isPhysio
+          ? await getLinkedClinicalPatients(data.id, data.email)
+          : [];
+
         const patientTriageIds = !isPhysio
           ? Array.from(
               new Set(
                 [
                   data.id,
                   user?.id,
-                  ...(await getPatientVisibleIds(data.id, data.email)),
+                  ...linkedClinicalPatientsForPatient
+                    .map((patient: any) => patient.id)
+                    .filter(Boolean),
                 ]
+                  .filter(Boolean)
+                  .map(String),
+              ),
+            )
+          : [];
+
+        const linkedPhysioIdsForPatient = !isPhysio
+          ? Array.from(
+              new Set(
+                linkedClinicalPatientsForPatient
+                  .map((patient: any) => patient.fisioterapeuta_id)
                   .filter(Boolean)
                   .map(String),
               ),
@@ -1045,7 +1062,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
             patientWorkoutsCount = workoutsCount;
             setStats({
               appointments: res[0].count || 0,
-              patients: 1,
+              patients: linkedPhysioIdsForPatient.length,
               records: res[1].count || 0,
               pendingTriages: res[2].count || 0,
               workouts: workoutsCount,
