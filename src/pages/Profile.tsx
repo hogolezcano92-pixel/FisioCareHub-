@@ -775,51 +775,39 @@ export default function Profile() {
     setUpdating(true);
 
     try {
-      console.log("Iniciando processo de exclusão segura para:", user.id);
-      loadingToast = toast.loading("Excluindo sua conta e dados permanentemente...");
+      console.log('Iniciando exclusão definitiva da própria conta:', user.id);
+      loadingToast = toast.loading('Excluindo sua conta e todos os dados vinculados...');
 
-      // 1. Call Edge Function for complete deletion (Auth + DB + Storage)
-      const response = await invokeFunction('delete-user', { userId: user.id });
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (sessionError || !accessToken) {
+        throw new Error('Sessão expirada. Faça login novamente antes de apagar a conta.');
+      }
+
+      const response = await fetch('/api/account/delete-me', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ confirm: true }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || `Erro ao apagar conta (HTTP ${response.status}).`);
+      }
 
       if (loadingToast) toast.dismiss(loadingToast);
-
-      if (response && !response.error) {
-        console.log("Edge Function 'delete-user' executada com sucesso:", response.message);
-
-        // 2. Final Sign Out and Redirect
-        await signOut();
-
-        toast.success("Sua conta e todos os seus dados foram apagados.");
-        navigate('/');
-      } else {
-        const errorMsg = response?.error || "Erro ao conectar com servidor de exclusão.";
-        console.error("Erro retornado pela Edge Function:", errorMsg, response?.details);
-
-        // Se o erro for "User not found", talvez a conta já tenha sido excluída parcialmente
-        if (errorMsg.includes("not found") || errorMsg.includes("404") || errorMsg.includes("Function not found")) {
-          console.warn("Conta não encontrada ou função não configurada. Forçando saída.");
-          await signOut();
-          toast.success("Você foi desconectado. A conta será removida em breve.");
-          navigate('/');
-          return;
-        }
-
-        throw new Error(errorMsg);
-      }
+      await signOut();
+      toast.success('Sua conta e todos os seus dados foram apagados permanentemente.');
+      navigate('/');
     } catch (err: any) {
       if (loadingToast) toast.dismiss(loadingToast);
-      console.error("Erro fatal ao excluir conta:", err);
-
-      const errorMsg = err.message || "Erro desconhecido.";
-
-      // Fallback: Se a função falhou mas o erro indica que o usuário não existe mais no Auth
-      if (errorMsg.includes("not found") || errorMsg.includes("404")) {
-        await signOut();
-        navigate('/');
-        return;
-      }
-
-      toast.error(`Não foi possível excluir sua conta: ${errorMsg}`);
+      console.error('Erro fatal ao excluir conta:', err);
+      toast.error(err?.message || 'Erro ao apagar conta. Tente novamente.');
     } finally {
       setUpdating(false);
       setShowDeleteConfirm(false);
