@@ -2450,3 +2450,162 @@ html:not(.dark) body .fixed.z-\[10000\] .bg-slate-950 {
 html:not(.dark) body .fixed.z-\[10000\] .bg-slate-950\/80 {
   background-color: rgba(15, 23, 42, 0.35) !important;
 }
+/* =========================================================
+   CLINICAL TESTS HUB - Ajuste tema claro
+   Mantém dark mode intacto
+   ========================================================= */
+
+html:not(.dark) .clinical-tests-hub {
+  color-scheme: light;
+  background: #f8fbff !important;
+  color: #0f172a !important;
+}
+
+/* Fundo geral da página */
+html:not(.dark) .clinical-tests-hub,
+html:not(.dark) .clinical-tests-hub section,
+html:not(.dark) .clinical-tests-hub main {
+  background-color: #f8fbff !important;
+}
+
+/* Títulos principais */
+html:not(.dark) .clinical-tests-hub h1,
+html:not(.dark) .clinical-tests-hub h2,
+html:not(.dark) .clinical-tests-hub h3,
+html:not(.dark) .clinical-tests-hub h4,
+html:not(.dark) .clinical-tests-hub .font-black,
+html:not(.dark) .clinical-tests-hub .font-extrabold,
+html:not(.dark) .clinical-tests-hub .font-bold {
+  color: #0f172a !important;
+}
+
+/* Textos comuns */
+html:not(.dark) .clinical-tests-hub p,
+html:not(.dark) .clinical-tests-hub span,
+html:not(.dark) .clinical-tests-hub label,
+html:not(.dark) .clinical-tests-hub div {
+  color: #334155 !important;
+}
+
+/* Corrige classes claras herdadas do dark */
+html:not(.dark) .clinical-tests-hub .text-white,
+html:not(.dark) .clinical-tests-hub .text-white\/70,
+html:not(.dark) .clinical-tests-hub .text-white\/80,
+html:not(.dark) .clinical-tests-hub .text-white\/90,
+html:not(.dark) .clinical-tests-hub .text-slate-100,
+html:not(.dark) .clinical-tests-hub .text-slate-200,
+html:not(.dark) .clinical-tests-hub .text-slate-300,
+html:not(.dark) .clinical-tests-hub .text-blue-100,
+html:not(.dark) .clinical-tests-hub .text-cyan-100,
+html:not(.dark) .clinical-tests-hub .text-emerald-100,
+html:not(.dark) .clinical-tests-hub .text-purple-100,
+html:not(.dark) .clinical-tests-hub .text-amber-100,
+html:not(.dark) .clinical-tests-hub .text-rose-100 {
+  color: #334155 !important;
+}
+
+/* Cards principais */
+html:not(.dark) .clinical-tests-hub .bg-slate-950,
+html:not(.dark) .clinical-tests-hub .bg-slate-950\/70,
+html:not(.dark) .clinical-tests-hub .bg-slate-950\/80,
+html:not(.dark) .clinical-tests-hub .bg-slate-900,
+html:not(.dark) .clinical-tests-hub .bg-slate-900\/70,
+html:not(.dark) .clinical-tests-hub .bg-slate-900\/80,
+html:not(.dark) .clinical-tests-hub .bg-white\/5,
+html:not(.dark) .clinical-tests-hub .bg-white\/10 {
+  background-color: #ffffff !important;
+}
+
+/* Bordas no tema claro */
+html:not(.dark) .clinical-tests-hub .border-white\/10,
+html:not(.dark) .clinical-tests-hub .border-white\/15,
+html:not(.dark) .clinical-tests-hub .border-slate-800,
+html:not(.dark) .clinical-tests-hub .border-slate-700 {
+  border-color: #dbeafe !important;
+}
+
+/* Cards da lista de testes */
+html:not(.dark) .clinical-tests-hub .clinical-test-card {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Card selecionado */
+html:not(.dark) .clinical-tests-hub .clinical-test-card-active {
+  background: linear-gradient(135deg, #eef6ff 0%, #ffffff 55%, #f5f3ff 100%) !important;
+  border-color: #93c5fd !important;
+}
+
+/* Badges */
+html:not(.dark) .clinical-tests-hub .clinical-test-badge {
+  background: #eff6ff !important;
+  color: #1e3a8a !important;
+  border-color: #bfdbfe !important;
+}
+
+/* Filtros */
+html:not(.dark) .clinical-tests-hub button {
+  color: #0f172a;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-filter {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: #dbeafe !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-filter-active {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+
+/* Painel de detalhes */
+html:not(.dark) .clinical-tests-hub .clinical-test-detail {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Blocos internos do detalhe */
+html:not(.dark) .clinical-tests-hub .clinical-test-info-box {
+  background: #f8fafc !important;
+  border-color: #dbeafe !important;
+}
+
+/* Mantém os títulos dos blocos mais fortes */
+html:not(.dark) .clinical-tests-hub .clinical-test-info-box h4,
+html:not(.dark) .clinical-tests-hub .clinical-test-info-box .uppercase {
+  color: #0f172a !important;
+}
+
+/* Botão adicionar ao prontuário */
+html:not(.dark) .clinical-tests-hub .clinical-test-add-button {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-add-button * {
+  color: #ffffff !important;
+}
+
+/* Inputs / busca */
+html:not(.dark) .clinical-tests-hub input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #dbeafe !important;
+}
+
+html:not(.dark) .clinical-tests-hub input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Evita estouro horizontal no mobile */
+html:not(.dark) .clinical-tests-hub,
+html:not(.dark) .clinical-tests-hub * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
