@@ -964,29 +964,75 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.10)]">
-              <h2 className="text-lg font-black text-violet-800">Ações rápidas</h2>
-              <div className="mt-4 grid gap-3">
+            <div className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_18px_45px_rgba(88,28,135,0.12)]">
+              <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-100 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-blue-100 blur-3xl" />
+
+              <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-black text-slate-950">Ações rápidas</h2>
+                  <p className="mt-1 text-xs font-bold text-slate-500">Atalhos principais da sua jornada</p>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 shadow-sm">
+                  <Sparkles size={20} />
+                </div>
+              </div>
+
+              <div className="relative z-10 grid gap-3">
                 {!isPhysioMode && (
                   <button
                     type="button"
                     onClick={() => setCheckinOpen(true)}
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 font-black transition-all"
+                    className="group flex w-full items-center justify-between rounded-[1.35rem] border border-violet-300 px-4 py-4 text-left shadow-lg shadow-violet-200/60 transition-all hover:-translate-y-0.5 hover:shadow-xl"
                     style={{
-                      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #4f46e5 100%)',
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 48%, #2563eb 100%)',
                       color: '#ffffff',
-                      borderColor: 'transparent',
-                      boxShadow: '0 18px 40px rgba(109, 40, 217, 0.28)',
                     }}
                   >
-                    <span style={{ color: '#ffffff' }}>Registrar evolução</span>
-                    <ArrowRight size={18} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/18 text-white ring-1 ring-white/25">
+                        <HeartPulse size={23} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-base font-black leading-tight text-white">Registrar evolução</span>
+                        <span className="mt-1 block text-[11px] font-bold text-white/80">Dor, humor e exercícios de hoje</span>
+                      </span>
+                    </span>
+                    <ArrowRight className="shrink-0 text-white transition-transform group-hover:translate-x-1" size={20} />
                   </button>
                 )}
-                <Link to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'} className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 font-black text-violet-800 hover:bg-purple-100 transition-all">
-                  {isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'} <Activity size={18} />
+
+                <Link
+                  to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'}
+                  className="group flex w-full items-center justify-between rounded-[1.35rem] border border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-200/70">
+                      <Activity size={23} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-base font-black leading-tight text-slate-950">{isPhysioMode ? 'Ver dados do paciente' : 'Ver exercícios'}</span>
+                      <span className="mt-1 block text-[11px] font-bold text-slate-500">Plano terapêutico e prescrições</span>
+                    </span>
+                  </span>
+                  <ArrowRight className="shrink-0 text-blue-700 transition-transform group-hover:translate-x-1" size={20} />
                 </Link>
-                <Link to="/chat" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-950 hover:border-violet-300 transition-all">Mensagens <MessageCircle size={18} /></Link>
+
+                <Link
+                  to="/chat"
+                  className="group flex w-full items-center justify-between rounded-[1.35rem] border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-200/70">
+                      <MessageCircle size={23} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-base font-black leading-tight text-slate-950">Mensagens</span>
+                      <span className="mt-1 block text-[11px] font-bold text-slate-500">Fale com seu fisioterapeuta</span>
+                    </span>
+                  </span>
+                  <ArrowRight className="shrink-0 text-emerald-700 transition-transform group-hover:translate-x-1" size={20} />
+                </Link>
               </div>
             </div>
 
