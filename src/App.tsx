@@ -697,43 +697,49 @@ function AppContent() {
           <ThemeQuickToggle className="hidden lg:inline-flex fixed top-5 right-6 z-[60]" />
         )}
 
-        <div className="flex items-center gap-2">
-  <Logo iconOnly size="sm" />
+       {!showSidebar && !isAdminPage && !isWaitingPage && (
+  <header className="lg:hidden bg-background/80 backdrop-blur-xl border-b border-border/50 p-4 flex items-center justify-between sticky top-0 z-40">
+    <div className="flex items-center gap-2">
+      <Logo iconOnly size="sm" />
 
-  <div className="flex flex-col leading-none">
-    <span className="text-lg sm:text-xl font-sans font-black tracking-tighter bg-gradient-to-r from-sky-600 via-violet-700 to-slate-950 dark:from-sky-400 dark:via-violet-400 dark:to-white bg-clip-text text-transparent">
-      FisioCareHub
-    </span>
-
-    <div className="flex flex-col mt-1">
-      <div className="flex items-center gap-2">
-        <div className="h-[2px] w-3 rounded-full bg-sky-600 dark:bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.45)]" />
-        <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
-          Reabilitação
+      <div className="flex flex-col leading-none">
+        <span className="text-lg sm:text-xl font-sans font-black tracking-tighter bg-gradient-to-r from-sky-600 via-violet-700 to-slate-950 dark:from-sky-400 dark:via-violet-400 dark:to-white bg-clip-text text-transparent">
+          FisioCareHub
         </span>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <div className="h-[1px] w-3 bg-transparent" />
-        <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
-          & Performance
-        </span>
+        <div className="flex flex-col mt-1">
+          <div className="flex items-center gap-2">
+            <div className="h-[2px] w-3 rounded-full bg-sky-600 dark:bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.45)]" />
+            <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+              Reabilitação
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="h-[1px] w-3 bg-transparent" />
+            <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-200">
+              & Performance
+            </span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-              <div className="flex items-center gap-3">
-                <ThemeQuickToggle />
-                <NotificationBell />
-                <button 
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-white/5"
-                >
-                  <Menu size={24} />
-                </button>
-              </div>
-            </header>
-          ) : null}
+
+    <div className="flex items-center gap-3">
+      <ThemeQuickToggle />
+      <NotificationBell />
+      <button
+        onClick={() => setIsSidebarOpen(true)}
+        className="p-2 text-slate-300 hover:text-white"
+      >
+        <Menu size={24} />
+      </button>
+    </div>
+  </header>
+)}
+
+        
+        
 
           <main className={cn(
             "flex-1 w-full flex flex-col min-w-0 bg-background rounded-t-[20px] shadow-2xl relative z-10",
