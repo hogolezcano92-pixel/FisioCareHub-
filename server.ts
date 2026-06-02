@@ -946,6 +946,130 @@ async function startServer() {
     }
   });
 
+  // Account Deletion (Secure Self-Service Endpoint)
+  app.post("/api/account/delete-me", async (req, res) => {
+    console.log("[Account API] Received request to /api/account/delete-me");
+    try {
+      const authHeader = req.headers.authorization || '';
+      const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.body?.accessToken;
+      if (!accessToken) {
+        return res.status(401).json({ success: false, error: "Sessão ausente. Faça login novamente." });
+      }
+
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+      if (authError || !user) {
+        return res.status(401).json({ success: false, error: "Sessão inválida ou expirada. Faça login novamente." });
+      }
+
+      const requestedUserId = req.body?.userId;
+      if (requestedUserId && requestedUserId !== user.id) {
+        return res.status(403).json({ success: false, error: "Você só pode apagar a sua própria conta." });
+      }
+
+      const patientIdsSet = new Set<string>([user.id]);
+      for (const [column, value] of [['perfil_id', user.id], ['id', user.id], ['fisioterapeuta_id', user.id], ['fisio_id', user.id]]) {
+        try {
+          const { data } = await supabaseAdmin.from('pacientes').select('id, perfil_id').eq(column, value);
+          (data || []).forEach((row: any) => {
+            if (row?.id) patientIdsSet.add(row.id);
+            if (row?.perfil_id) patientIdsSet.add(row.perfil_id);
+          });
+        } catch {}
+      }
+      const patientIds = Array.from(patientIdsSet);
+
+      const safeDelete = async (table: string, column: string, values: string[]) => {
+        const clean = Array.from(new Set(values.filter(Boolean)));
+        if (!clean.length) return;
+        try {
+          const { error } = await supabaseAdmin.from(table).delete().in(column, clean);
+          if (error && !['42P01', '42703', 'PGRST204', 'PGRST116'].includes(String(error.code || ''))) {
+            console.warn(`[Account Delete] ${table}.${column}:`, error.message);
+          }
+        } catch (error: any) {
+          console.warn(`[Account Delete] ${table}.${column}:`, error?.message || error);
+        }
+      };
+
+      const selectIds = async (table: string, idColumn: string, filterColumn: string, values: string[]) => {
+        try {
+          const { data } = await supabaseAdmin.from(table).select(idColumn).in(filterColumn, values);
+          return Array.from(new Set((data || []).map((row: any) => row?.[idColumn]).filter(Boolean)));
+        } catch { return []; }
+      };
+
+      const appointmentIds = Array.from(new Set([
+        ...await selectIds('agendamentos', 'id', 'paciente_id', patientIds),
+        ...await selectIds('agendamentos', 'id', 'fisioterapeuta_id', [user.id]),
+        ...await selectIds('agendamentos', 'id', 'fisio_id', [user.id]),
+      ]));
+      const protocolIds = Array.from(new Set([
+        ...await selectIds('protocolos_prescricao', 'id', 'paciente_id', patientIds),
+        ...await selectIds('protocolos_prescricao', 'id', 'fisioterapeuta_id', [user.id]),
+        ...await selectIds('protocolos_prescricao', 'id', 'fisio_id', [user.id]),
+      ]));
+      const ticketIds = Array.from(new Set([
+        ...await selectIds('suporte_tickets', 'id', 'usuario_id', [user.id]),
+        ...await selectIds('suporte_tickets', 'id', 'user_id', [user.id]),
+        ...await selectIds('suporte_tickets', 'id', 'paciente_id', patientIds),
+      ]));
+      const storyIds = Array.from(new Set([
+        ...await selectIds('fisio_stories', 'id', 'user_id', [user.id]),
+        ...await selectIds('fisio_stories', 'id', 'fisioterapeuta_id', [user.id]),
+      ]));
+
+      await safeDelete('protocolo_itens', 'protocolo_id', protocolIds as string[]);
+      await safeDelete('mensagens', 'ticket_id', ticketIds as string[]);
+      await safeDelete('fisio_story_events', 'story_id', storyIds as string[]);
+
+      for (const table of ['checklist_exercicios','diario_dor','registros_paciente','exercicios_paciente','evolucoes','arquivos_paciente','triagens','prontuarios','avaliacoes','documentos_gerados','fichas_avaliacao','sessoes','patient_exercises','exam_analyses','soap_notes','material_purchases','solicitacoes_atendimento','video_calls','protocolos_prescricao']) {
+        await safeDelete(table, 'paciente_id', patientIds);
+        await safeDelete(table, 'patient_id', patientIds);
+      }
+
+      for (const table of ['configuracao_servicos','service_packages','opcoes_precos','servicos_fisio','physiotherapist_services','physio_availability_rules','physio_schedule_blocks','solicitacoes_saque','clinical_updates','protocolos_prescricao','exercicios_paciente','evolucoes','documentos_gerados','fichas_avaliacao','prontuarios','sessoes','soap_notes','fisio_stories']) {
+        await safeDelete(table, 'fisioterapeuta_id', [user.id]);
+        await safeDelete(table, 'fisio_id', [user.id]);
+        await safeDelete(table, 'profissional_id', [user.id]);
+      }
+
+      for (const table of ['webauthn_credentials','assinaturas','payment_methods','pagamentos','material_purchases','notificacoes','notificacoes_admin','historico_atividades','suporte_tickets','interesses_solicitacao','fisio_story_events','fisio_stories','exam_analyses','clinical_updates','mensagens']) {
+        await safeDelete(table, 'usuario_id', [user.id]);
+        await safeDelete(table, 'user_id', [user.id]);
+        await safeDelete(table, 'perfil_id', [user.id]);
+        await safeDelete(table, 'created_by', [user.id]);
+        await safeDelete(table, 'remetente_id', [user.id]);
+        await safeDelete(table, 'destinatario_id', [user.id]);
+      }
+
+      await safeDelete('pagamentos', 'agendamento_id', appointmentIds as string[]);
+      await safeDelete('pagamentos', 'external_reference', appointmentIds as string[]);
+      await safeDelete('notificacoes', 'referencia_id', [...patientIds, ...(appointmentIds as string[])]);
+      await safeDelete('historico_atividades', 'referencia_id', [...patientIds, ...(appointmentIds as string[])]);
+      await safeDelete('agendamentos', 'id', appointmentIds as string[]);
+      await safeDelete('agendamentos', 'paciente_id', patientIds);
+      await safeDelete('agendamentos', 'fisioterapeuta_id', [user.id]);
+      await safeDelete('agendamentos', 'fisio_id', [user.id]);
+      await safeDelete('pacientes', 'id', patientIds);
+      await safeDelete('pacientes', 'perfil_id', [user.id]);
+      await safeDelete('pacientes', 'fisioterapeuta_id', [user.id]);
+      await safeDelete('pacientes', 'fisio_id', [user.id]);
+      await safeDelete('profiles', 'id', [user.id]);
+      await safeDelete('perfis', 'id', [user.id]);
+
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id, false as any);
+      if (authDeleteError) {
+        return res.status(500).json({ success: false, error: `Auth deletion failed: ${authDeleteError.message}` });
+      }
+
+      return res.json({ success: true, message: "Conta e dados vinculados apagados permanentemente.", deletedUserId: user.id });
+    } catch (err: any) {
+      console.error("[Account Delete] Error:", err);
+      return res.status(500).json({ success: false, error: err.message || "Erro fatal ao apagar conta." });
+    }
+  });
+
   // User Deletion (Secure Admin Endpoint)
   app.post("/api/admin/delete-user", async (req, res) => {
     console.log("[Admin API] Received request to /api/admin/delete-user");
