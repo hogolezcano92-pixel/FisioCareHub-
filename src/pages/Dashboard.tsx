@@ -58,6 +58,134 @@ import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCaro
 import StoryAvatar from '../components/FisioStories/StoryAvatar';
 
 
+
+const WEEK_DAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+type WeeklyChartData = {
+  painData: { day: string; level: number | null }[];
+  exerciseData: { day: string; completed: number; total: number }[];
+  melhora: number;
+};
+
+const getSaoPauloDateKey = (value?: string | Date | null) => {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return '';
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+
+  return year && month && day ? `${year}-${month}-${day}` : '';
+};
+
+const getCurrentWeekKeys = () => {
+  const todayKey = getSaoPauloDateKey();
+  const [year, month, day] = todayKey.split('-').map(Number);
+  const today = new Date(Date.UTC(year, month - 1, day, 12));
+  const dayOfWeek = today.getUTCDay();
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setUTCDate(today.getUTCDate() + diffToMonday);
+
+  return WEEK_DAY_LABELS.map((label, index) => {
+    const date = new Date(monday);
+    date.setUTCDate(monday.getUTCDate() + index);
+    return {
+      label,
+      key: date.toISOString().slice(0, 10),
+    };
+  });
+};
+
+const getRecordDate = (item: any) => item?.data_registro || item?.data_conclusao || item?.created_at || item?.updated_at || null;
+
+const buildWeeklyChartData = (
+  registrosPaciente: any[] = [],
+  checklistExercicios: any[] = [],
+  totalWorkouts = 0,
+): WeeklyChartData => {
+  const week = getCurrentWeekKeys();
+  const painByDay = new Map<string, any>();
+  const completedByDay = new Map<string, number>();
+
+  registrosPaciente.forEach((registro: any) => {
+    const dateKey = getSaoPauloDateKey(getRecordDate(registro));
+    if (!dateKey) return;
+
+    const painValue = Number(registro?.nivel_dor ?? registro?.intensidade ?? registro?.dor_escala);
+    if (Number.isFinite(painValue)) {
+      const previous = painByDay.get(dateKey);
+      const previousTime = previous ? new Date(getRecordDate(previous) || 0).getTime() : 0;
+      const currentTime = new Date(getRecordDate(registro) || 0).getTime();
+      if (!previous || currentTime >= previousTime) painByDay.set(dateKey, registro);
+    }
+
+    const rawDone = registro?.exercicios_realizados;
+    if (rawDone === true || rawDone === 1 || rawDone === '1' || String(rawDone || '').toLowerCase() === 'true') {
+      completedByDay.set(dateKey, (completedByDay.get(dateKey) || 0) + 1);
+    }
+  });
+
+  checklistExercicios.forEach((item: any) => {
+    const dateKey = getSaoPauloDateKey(item?.data_conclusao || item?.created_at || item?.updated_at);
+    if (!dateKey) return;
+    if (item?.concluido === false) return;
+    completedByDay.set(dateKey, (completedByDay.get(dateKey) || 0) + 1);
+  });
+
+  const painData = week.map(({ label, key }) => {
+    const registro = painByDay.get(key);
+    const level = registro ? Number(registro?.nivel_dor ?? registro?.intensidade ?? registro?.dor_escala) : null;
+    return {
+      day: label,
+      level: typeof level === 'number' && Number.isFinite(level) ? Math.min(Math.max(level, 0), 10) : null,
+    };
+  });
+
+  const completedSum = Array.from(completedByDay.values()).reduce((acc, value) => acc + value, 0);
+  let remainingWeeklyTarget = Math.max(totalWorkouts - completedSum, 0);
+  const todayKey = getSaoPauloDateKey();
+
+  const exerciseData = week.map(({ label, key }) => {
+    const completed = completedByDay.get(key) || 0;
+    const shouldReceiveOpenTarget = remainingWeeklyTarget > 0 && (key === todayKey || (completedSum > 0 && completed > 0));
+    const extraTarget = shouldReceiveOpenTarget ? remainingWeeklyTarget : 0;
+    if (shouldReceiveOpenTarget) remainingWeeklyTarget = 0;
+
+    return {
+      day: label,
+      completed,
+      total: Math.max(completed, completed + extraTarget),
+    };
+  });
+
+  if (remainingWeeklyTarget > 0 && exerciseData.length > 0) {
+    const todayIndex = week.findIndex((item) => item.key === todayKey);
+    const targetIndex = todayIndex >= 0 ? todayIndex : exerciseData.length - 1;
+    exerciseData[targetIndex] = {
+      ...exerciseData[targetIndex],
+      total: exerciseData[targetIndex].total + remainingWeeklyTarget,
+    };
+  }
+
+  const painLevels = painData
+    .map((item) => item.level)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+
+  const firstPain = painLevels[0] || 0;
+  const lastPain = painLevels.length > 0 ? painLevels[painLevels.length - 1] : firstPain;
+  const melhora = firstPain > 0 ? Math.max(0, Math.round(((firstPain - lastPain) / firstPain) * 100)) : 0;
+
+  return { painData, exerciseData, melhora };
+};
+
 const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
 
 const hasConfirmedPayment = (appointment: any) => {
@@ -243,6 +371,7 @@ export default function Dashboard() {
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [recentTriages, setRecentTriages] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [weeklyChartData, setWeeklyChartData] = useState<WeeklyChartData>(() => buildWeeklyChartData([], [], 0));
   const [statsLoading, setStatsLoading] = useState(true);
   const [apptsLoading, setApptsLoading] = useState(true);
   const [patientSearch, setPatientSearch] = useState('');
@@ -530,7 +659,15 @@ export default function Dashboard() {
             .select('id, created_at, updated_at, data_registro, paciente_id, nivel_dor, exercicios_realizados')
             .in('paciente_id', activityPatientIds)
             .order('data_registro', { ascending: false })
-            .limit(8)
+            .limit(14)
+          : Promise.resolve({ data: [] }),
+        !isPhysio && activityPatientIds.length > 0
+          ? supabase
+            .from('checklist_exercicios')
+            .select('id, created_at, updated_at, paciente_id, exercicio_id, concluido, data_conclusao')
+            .in('paciente_id', activityPatientIds)
+            .order('data_conclusao', { ascending: false })
+            .limit(80)
           : Promise.resolve({ data: [] }),
         activityPatientIds.length > 0
           ? supabase
@@ -565,8 +702,11 @@ export default function Dashboard() {
       const prontuariosResult = results[4];
       const evolucoesResult = results[5];
       const registrosPacienteResult = results[6];
-      const exerciciosPacienteResult = results[7];
-      const documentosResult = results[8];
+      const checklistExerciciosResult = results[7];
+      const exerciciosPacienteResult = results[8];
+      const documentosResult = results[9];
+
+      let patientWorkoutsCount = 0;
 
       if (statsResults.status === 'fulfilled') {
         const res = statsResults.value;
@@ -580,6 +720,7 @@ export default function Dashboard() {
           });
         } else {
           const workoutsCount = await fetchPatientWorkoutCount(data);
+          patientWorkoutsCount = workoutsCount;
           setStats({
             appointments: res[0].count || 0,
             patients: 1,
@@ -649,8 +790,13 @@ export default function Dashboard() {
       const recentProntuariosData = prontuariosResult && prontuariosResult.status === 'fulfilled' ? (prontuariosResult.value.data || []) : [];
       const recentEvolucoesData = evolucoesResult && evolucoesResult.status === 'fulfilled' ? (evolucoesResult.value.data || []) : [];
       const recentRegistrosPacienteData = registrosPacienteResult && registrosPacienteResult.status === 'fulfilled' ? (registrosPacienteResult.value.data || []) : [];
+      const recentChecklistExerciciosData = checklistExerciciosResult && checklistExerciciosResult.status === 'fulfilled' && !checklistExerciciosResult.value.error ? (checklistExerciciosResult.value.data || []) : [];
       const recentExerciciosPacienteData = exerciciosPacienteResult && exerciciosPacienteResult.status === 'fulfilled' ? (exerciciosPacienteResult.value.data || []) : [];
       const recentDocumentosData = documentosResult && documentosResult.status === 'fulfilled' ? (documentosResult.value.data || []) : [];
+
+      if (!isPhysio) {
+        setWeeklyChartData(buildWeeklyChartData(recentRegistrosPacienteData, recentChecklistExerciciosData, patientWorkoutsCount));
+      }
 
       setRecentTriages(recentTriagesData);
       setActivities(buildDashboardActivities(
@@ -1176,15 +1322,15 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-white tracking-tight">Evolução da <span className="text-sky-400 italic">Dor</span></h2>
-              {stats.records > 0 && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">
+              {weeklyChartData.melhora > 0 && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 rounded-full text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">
                   <TrendingUp size={10} />
-                  +75% de Melhora
+                  +{weeklyChartData.melhora}% de Melhora
                 </div>
               )}
             </div>
             <div className="premium-card">
-              <EvolutionCharts melhora={stats.records > 0 ? 75 : 0} />
+              <EvolutionCharts painData={weeklyChartData.painData} exerciseData={weeklyChartData.exerciseData} melhora={weeklyChartData.melhora} />
             </div>
           </div>
         )}
