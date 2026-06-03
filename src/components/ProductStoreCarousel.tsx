@@ -36,43 +36,15 @@ const normalizePriceLabel = (value?: string | null) => {
   return `A partir de R$ ${text}`;
 };
 
-const getAffiliateStoreName = (url?: string | null) => {
-  const normalizedUrl = String(url || '').trim().toLowerCase();
-
-  if (!normalizedUrl) return 'Ver na loja';
-
-  if (normalizedUrl.includes('amazon.') || normalizedUrl.includes('amzn.to')) {
-    return 'Ver na Amazon';
-  }
-
-  if (
-    normalizedUrl.includes('mercadolivre.') ||
-    normalizedUrl.includes('mercadolivre.com') ||
-    normalizedUrl.includes('mercadolivre.com.br') ||
-    normalizedUrl.includes('meli.') ||
-    normalizedUrl.includes('mercadolibre.')
-  ) {
-    return 'Ver no Mercado Livre';
-  }
-
-  if (
-    normalizedUrl.includes('shopee.') ||
-    normalizedUrl.includes('shope.ee') ||
-    normalizedUrl.includes('s.shopee')
-  ) {
-    return 'Ver na Shopee';
-  }
-
-  return 'Ver oferta';
-};
-
 export default function ProductStoreCarousel({ audience = 'patient', className }: ProductStoreCarouselProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollResetTimeoutRef = useRef<number | null>(null);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAutoPaused, setIsAutoPaused] = useState(false);
   const [activeProductIndex, setActiveProductIndex] = useState(0);
+  const [currentProductRenderIndex, setCurrentProductRenderIndex] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -112,58 +84,97 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
 
   const carouselProducts = useMemo(() => products, [products]);
 
-  const scrollToProduct = useCallback((index: number) => {
+  const loopedCarouselProducts = useMemo(() => {
+    if (carouselProducts.length <= 1) return carouselProducts;
+    return Array.from({ length: 3 }, () => carouselProducts).flat();
+  }, [carouselProducts]);
+
+  const scrollToRenderedProduct = useCallback((renderIndex: number, behavior: ScrollBehavior = 'smooth') => {
     const container = scrollRef.current;
     if (!container || carouselProducts.length === 0) return;
 
-    const safeIndex = ((index % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
-    const target = container.children.item(safeIndex) as HTMLElement | null;
+    const target = container.children.item(renderIndex) as HTMLElement | null;
+    if (!target) return;
 
-    const centeredLeft = target
-      ? target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2
-      : 0;
+    const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
 
     container.scrollTo({
       left: Math.max(centeredLeft, 0),
-      behavior: 'smooth',
+      behavior,
     });
-
-    setActiveProductIndex(safeIndex);
   }, [carouselProducts.length]);
+
+  const scheduleInvisibleReset = useCallback((renderIndex: number) => {
+    if (carouselProducts.length <= 1) return;
+
+    if (scrollResetTimeoutRef.current) {
+      window.clearTimeout(scrollResetTimeoutRef.current);
+    }
+
+    scrollResetTimeoutRef.current = window.setTimeout(() => {
+      const logicalIndex = ((renderIndex % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
+      setCurrentProductRenderIndex(logicalIndex);
+      scrollToRenderedProduct(logicalIndex, 'auto');
+      scrollResetTimeoutRef.current = null;
+    }, 520);
+  }, [carouselProducts.length, scrollToRenderedProduct]);
+
+  const scrollToProduct = useCallback((targetRenderIndex: number) => {
+    if (carouselProducts.length === 0) return;
+
+    const logicalIndex = ((targetRenderIndex % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
+
+    setCurrentProductRenderIndex(targetRenderIndex);
+    setActiveProductIndex(logicalIndex);
+    scrollToRenderedProduct(targetRenderIndex, 'smooth');
+
+    if (targetRenderIndex >= carouselProducts.length || targetRenderIndex < 0) {
+      scheduleInvisibleReset(targetRenderIndex);
+    }
+  }, [carouselProducts.length, scheduleInvisibleReset, scrollToRenderedProduct]);
 
   const scrollProducts = useCallback((direction: 'left' | 'right') => {
-    scrollToProduct(activeProductIndex + (direction === 'left' ? -1 : 1));
-  }, [activeProductIndex, scrollToProduct]);
+    if (carouselProducts.length <= 1) return;
+
+    if (direction === 'left' && currentProductRenderIndex === 0) {
+      const mirroredFirstIndex = carouselProducts.length;
+      setCurrentProductRenderIndex(mirroredFirstIndex);
+      scrollToRenderedProduct(mirroredFirstIndex, 'auto');
+      window.requestAnimationFrame(() => scrollToProduct(mirroredFirstIndex - 1));
+      return;
+    }
+
+    scrollToProduct(currentProductRenderIndex + (direction === 'left' ? -1 : 1));
+  }, [carouselProducts.length, currentProductRenderIndex, scrollToProduct, scrollToRenderedProduct]);
 
   useEffect(() => {
+    if (scrollResetTimeoutRef.current) {
+      window.clearTimeout(scrollResetTimeoutRef.current);
+      scrollResetTimeoutRef.current = null;
+    }
+
     setActiveProductIndex(0);
+    setCurrentProductRenderIndex(0);
     scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
   }, [carouselProducts.length]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollResetTimeoutRef.current) {
+        window.clearTimeout(scrollResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (loading || carouselProducts.length <= 1 || isAutoPaused) return;
 
     const intervalId = window.setInterval(() => {
-      setActiveProductIndex((currentIndex) => {
-        const nextIndex = currentIndex + 1 >= carouselProducts.length ? 0 : currentIndex + 1;
-        const container = scrollRef.current;
-        const target = container?.children.item(nextIndex) as HTMLElement | null;
-
-        if (container && target) {
-          const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
-
-          container.scrollTo({
-            left: Math.max(centeredLeft, 0),
-            behavior: 'smooth',
-          });
-        }
-
-        return nextIndex;
-      });
+      scrollProducts('right');
     }, 3000);
 
     return () => window.clearInterval(intervalId);
-  }, [carouselProducts.length, isAutoPaused, loading]);
+  }, [carouselProducts.length, isAutoPaused, loading, scrollProducts]);
 
   const openProduct = (product: StoreProduct) => {
     const url = String(product.affiliate_url || '').trim();
@@ -259,13 +270,13 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             onTouchEnd={() => setIsAutoPaused(false)}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 px-[calc((100%-235px)/2)] sm:px-[calc((100%-270px)/2)] md:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {carouselProducts.map((product) => {
+            {loopedCarouselProducts.map((product, renderIndex) => {
               const priceLabel = normalizePriceLabel(product.price_label);
               const hasAffiliateUrl = Boolean(String(product.affiliate_url || '').trim());
 
               return (
                 <article
-                  key={product.id}
+                  key={`${product.id}-${renderIndex}`}
                   className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-violet-100 bg-white overflow-hidden shadow-xl shadow-violet-100/60 hover:-translate-y-1 hover:border-violet-300 transition-all duration-300 dark:border-white/10 dark:bg-slate-950/55 dark:shadow-none dark:hover:border-sky-400/40"
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-100 dark:bg-slate-900">
@@ -308,7 +319,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                       onClick={() => openProduct(product)}
                       className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-violet-500/20 hover:from-violet-600 hover:to-blue-500 transition-all"
                     >
-                      {getAffiliateStoreName(product.affiliate_url)}
+                      {hasAffiliateUrl ? 'Ver na Shopee' : 'Ver na loja'}
                       {hasAffiliateUrl ? <ExternalLink size={15} /> : <ShoppingBag size={15} />}
                     </button>
                   </div>
