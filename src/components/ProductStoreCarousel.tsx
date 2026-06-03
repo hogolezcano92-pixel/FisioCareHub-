@@ -36,6 +36,36 @@ const normalizePriceLabel = (value?: string | null) => {
   return `A partir de R$ ${text}`;
 };
 
+const getAffiliateStoreName = (url?: string | null) => {
+  const normalizedUrl = String(url || '').trim().toLowerCase();
+
+  if (!normalizedUrl) return 'Ver na loja';
+
+  if (normalizedUrl.includes('amazon.') || normalizedUrl.includes('amzn.to')) {
+    return 'Ver na Amazon';
+  }
+
+  if (
+    normalizedUrl.includes('mercadolivre.') ||
+    normalizedUrl.includes('mercadolivre.com') ||
+    normalizedUrl.includes('mercadolivre.com.br') ||
+    normalizedUrl.includes('meli.') ||
+    normalizedUrl.includes('mercadolibre.')
+  ) {
+    return 'Ver no Mercado Livre';
+  }
+
+  if (
+    normalizedUrl.includes('shopee.') ||
+    normalizedUrl.includes('shope.ee') ||
+    normalizedUrl.includes('s.shopee')
+  ) {
+    return 'Ver na Shopee';
+  }
+
+  return 'Ver oferta';
+};
+
 export default function ProductStoreCarousel({ audience = 'patient', className }: ProductStoreCarouselProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -278,7 +308,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                       onClick={() => openProduct(product)}
                       className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-violet-500/20 hover:from-violet-600 hover:to-blue-500 transition-all"
                     >
-                      {hasAffiliateUrl ? 'Ver na Shopee' : 'Ver na loja'}
+                      {getAffiliateStoreName(product.affiliate_url)}
                       {hasAffiliateUrl ? <ExternalLink size={15} /> : <ShoppingBag size={15} />}
                     </button>
                   </div>
