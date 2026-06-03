@@ -113,10 +113,12 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
 
     scrollResetTimeoutRef.current = window.setTimeout(() => {
       const logicalIndex = ((renderIndex % carouselProducts.length) + carouselProducts.length) % carouselProducts.length;
-      setCurrentProductRenderIndex(logicalIndex);
-      scrollToRenderedProduct(logicalIndex, 'auto');
+      const middleLoopIndex = carouselProducts.length + logicalIndex;
+
+      setCurrentProductRenderIndex(middleLoopIndex);
+      scrollToRenderedProduct(middleLoopIndex, 'auto');
       scrollResetTimeoutRef.current = null;
-    }, 520);
+    }, 560);
   }, [carouselProducts.length, scrollToRenderedProduct]);
 
   const scrollToProduct = useCallback((targetRenderIndex: number) => {
@@ -128,7 +130,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
     setActiveProductIndex(logicalIndex);
     scrollToRenderedProduct(targetRenderIndex, 'smooth');
 
-    if (targetRenderIndex >= carouselProducts.length || targetRenderIndex < 0) {
+    if (targetRenderIndex >= carouselProducts.length * 2 || targetRenderIndex < carouselProducts.length) {
       scheduleInvisibleReset(targetRenderIndex);
     }
   }, [carouselProducts.length, scheduleInvisibleReset, scrollToRenderedProduct]);
@@ -136,16 +138,9 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   const scrollProducts = useCallback((direction: 'left' | 'right') => {
     if (carouselProducts.length <= 1) return;
 
-    if (direction === 'left' && currentProductRenderIndex === 0) {
-      const mirroredFirstIndex = carouselProducts.length;
-      setCurrentProductRenderIndex(mirroredFirstIndex);
-      scrollToRenderedProduct(mirroredFirstIndex, 'auto');
-      window.requestAnimationFrame(() => scrollToProduct(mirroredFirstIndex - 1));
-      return;
-    }
-
-    scrollToProduct(currentProductRenderIndex + (direction === 'left' ? -1 : 1));
-  }, [carouselProducts.length, currentProductRenderIndex, scrollToProduct, scrollToRenderedProduct]);
+    const currentIndex = currentProductRenderIndex || carouselProducts.length;
+    scrollToProduct(currentIndex + (direction === 'left' ? -1 : 1));
+  }, [carouselProducts.length, currentProductRenderIndex, scrollToProduct]);
 
   useEffect(() => {
     if (scrollResetTimeoutRef.current) {
@@ -153,10 +148,19 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
       scrollResetTimeoutRef.current = null;
     }
 
+    const middleLoopIndex = carouselProducts.length > 1 ? carouselProducts.length : 0;
+
     setActiveProductIndex(0);
-    setCurrentProductRenderIndex(0);
-    scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
-  }, [carouselProducts.length]);
+    setCurrentProductRenderIndex(middleLoopIndex);
+
+    window.requestAnimationFrame(() => {
+      if (carouselProducts.length > 1) {
+        scrollToRenderedProduct(middleLoopIndex, 'auto');
+      } else {
+        scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+      }
+    });
+  }, [carouselProducts.length, scrollToRenderedProduct]);
 
   useEffect(() => {
     return () => {
