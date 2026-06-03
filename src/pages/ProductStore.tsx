@@ -273,17 +273,17 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
 
   return (
     <div className="overflow-hidden border-b border-violet-100/80 bg-white dark:border-white/10 dark:bg-transparent">
-      <div className="relative h-56 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="relative h-64 overflow-hidden bg-white dark:bg-white">
         <button
           type="button"
           onClick={onOpenGallery}
-          className="flex h-full w-full items-center justify-center p-4 text-left"
+          className="flex h-full w-full items-center justify-center p-1 text-left"
           aria-label={`Abrir galeria de imagens de ${product.name}`}
         >
           <img
             src={activeImage || fallbackImage}
             alt={product.name}
-            className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+            className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.01]"
           />
         </button>
 
