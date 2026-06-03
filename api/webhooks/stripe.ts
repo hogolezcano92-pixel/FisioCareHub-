@@ -283,6 +283,37 @@ const notifyAfterPaidAppointment = async (appointment: any, paymentInfo: { id: s
   });
 };
 
+
+const getAppointmentPackageInfo = async (appointment: any, amountPaid: number) => {
+  const serviceLabel = String(appointment?.servico || appointment?.tipo || '');
+  const match = serviceLabel.match(/^Pacote:\s*(.+)$/i);
+  if (!match) {
+    return { totalSessions: 1, valuePerSession: amountPaid, isPackage: false };
+  }
+
+  const packageName = match[1].trim();
+  let totalSessions = Number(appointment?.pacote_total_sessoes || 0);
+
+  if (!totalSessions || totalSessions < 1) {
+    const { data: pkg } = await supabase
+      .from('service_packages')
+      .select('sessions_quantity, total_price')
+      .eq('physiotherapist_id', appointment.fisio_id || appointment.fisioterapeuta_id)
+      .eq('name', packageName)
+      .maybeSingle();
+
+    totalSessions = Number((pkg as any)?.sessions_quantity || 0);
+  }
+
+  if (!totalSessions || totalSessions < 1) totalSessions = 1;
+
+  return {
+    totalSessions,
+    valuePerSession: amountPaid / totalSessions,
+    isPackage: totalSessions > 1,
+  };
+};
+
 const getAppointmentIdFromSession = (session: Stripe.Checkout.Session) => {
   const metadata = session.metadata || {};
   return metadata.appointment_id || metadata.appointmentId || metadata.agendamento_id || metadata.agendamentoId || null;
@@ -374,6 +405,19 @@ const upsertAppointmentPayment = async (session: Stripe.Checkout.Session) => {
 
   if (paymentError) console.error('[Stripe Webhook] Erro ao registrar pagamento:', paymentError);
 
+  const packageInfo = await getAppointmentPackageInfo(appointment, amountPaid);
+
+  if (packageInfo.isPackage) {
+    await supabase
+      .from('agendamentos')
+      .update({
+        pacote_total_sessoes: packageInfo.totalSessions,
+        pacote_sessoes_usadas: 0,
+        valor_por_sessao: packageInfo.valuePerSession,
+      })
+      .eq('id', appointmentId);
+  }
+
   const { data: existingSessions } = await supabase
     .from('sessoes')
     .select('id')
@@ -386,8 +430,11 @@ const upsertAppointmentPayment = async (session: Stripe.Checkout.Session) => {
     agendamento_id: appointmentId,
     data: appointment.data || appointment.data_servico || null,
     hora: appointment.hora || formatTimeBR(appointment),
-    valor_sessao: amountPaid || Number(appointment.valor || 0),
+    valor_sessao: packageInfo.valuePerSession || amountPaid || Number(appointment.valor || 0),
     status_pagamento: 'pago_app',
+    status_atendimento: 'agendado',
+    numero_sessao: 1,
+    total_sessoes: packageInfo.totalSessions,
     stripe_payment_intent: externalId,
     status_repasse: 'pendente',
   };
