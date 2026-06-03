@@ -50,9 +50,49 @@ const categories = [
 
 const normalizePriceLabel = (priceLabel?: string | null) => {
   const text = String(priceLabel || '').trim();
-  if (!text || text.toLowerCase() === 'adicionar link shopee') return '';
+  const normalizedText = text.toLowerCase();
+
+  if (
+    !text ||
+    normalizedText === 'adicionar link shopee' ||
+    normalizedText === 'adicionar link amazon' ||
+    normalizedText === 'adicionar link de afiliado'
+  ) {
+    return '';
+  }
+
   if (/^r\$|^a partir de/i.test(text)) return text;
   return `A partir de R$ ${text}`;
+};
+
+const getAffiliateStoreName = (url?: string | null) => {
+  const normalizedUrl = String(url || '').trim().toLowerCase();
+
+  if (!normalizedUrl) return 'Aguardando link';
+
+  if (normalizedUrl.includes('amazon.') || normalizedUrl.includes('amzn.to')) {
+    return 'Ver na Amazon';
+  }
+
+  if (
+    normalizedUrl.includes('mercadolivre.') ||
+    normalizedUrl.includes('mercadolivre.com') ||
+    normalizedUrl.includes('mercadolivre.com.br') ||
+    normalizedUrl.includes('meli.') ||
+    normalizedUrl.includes('mercadolibre.')
+  ) {
+    return 'Ver no Mercado Livre';
+  }
+
+  if (
+    normalizedUrl.includes('shopee.') ||
+    normalizedUrl.includes('shope.ee') ||
+    normalizedUrl.includes('s.shopee')
+  ) {
+    return 'Ver na Shopee';
+  }
+
+  return 'Ver oferta';
 };
 
 
@@ -65,7 +105,7 @@ const fallbackProducts: Product[] = [
     category: 'Fortalecimento',
     clinical_indication: 'Quadril, joelho, dor femoropatelar e reabilitação funcional.',
     recommended_for: ['Abdução de quadril', 'Clamshell', 'Ponte com abdução'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Mais usado',
@@ -79,7 +119,7 @@ const fallbackProducts: Product[] = [
     category: 'Fortalecimento',
     clinical_indication: 'Ombro, manguito rotador, quadríceps, tornozelo e reabilitação domiciliar.',
     recommended_for: ['Rotação externa de ombro', 'Extensão terminal de joelho', 'Eversão de tornozelo'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1591291621164-2c6367723315?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Essencial',
@@ -93,7 +133,7 @@ const fallbackProducts: Product[] = [
     category: 'Equilíbrio',
     clinical_indication: 'Entorse de tornozelo, instabilidade, idosos e treino proprioceptivo.',
     recommended_for: ['Apoio unipodal', 'Transferência de peso', 'Treino de equilíbrio'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Propriocepção',
@@ -107,7 +147,7 @@ const fallbackProducts: Product[] = [
     category: 'Mobilidade',
     clinical_indication: 'Rigidez muscular, mobilidade, recovery e exercícios complementares.',
     recommended_for: ['Mobilidade de quadril', 'Panturrilha', 'Cadeia posterior'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1576678927484-cc907957088c?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Recovery',
@@ -121,7 +161,7 @@ const fallbackProducts: Product[] = [
     category: 'Conforto',
     clinical_indication: 'Lombalgia, exercícios no solo, alongamentos e treino domiciliar.',
     recommended_for: ['Ponte glútea', 'Bird dog', 'Dead bug', 'Alongamentos'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Domiciliar',
@@ -135,7 +175,7 @@ const fallbackProducts: Product[] = [
     category: 'Mobilidade',
     clinical_indication: 'Fascite plantar, rigidez do pé e exercícios sensoriais.',
     recommended_for: ['Rolamento plantar', 'Mobilidade do pé', 'Autocuidado'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1571019613576-2b22c76fd955?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Pé e tornozelo',
@@ -149,7 +189,7 @@ const fallbackProducts: Product[] = [
     category: 'Fortalecimento',
     clinical_indication: 'Quadríceps, quadril, joelho e progressão de fortalecimento.',
     recommended_for: ['Elevação da perna estendida', 'Abdução de quadril', 'Extensão de joelho'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Progressão',
@@ -163,7 +203,7 @@ const fallbackProducts: Product[] = [
     category: 'Pós-operatório',
     clinical_indication: 'Mobilidade assistida de ombro, pós-operatório e ganho gradual de amplitude.',
     recommended_for: ['Mobilidade assistida de ombro', 'Postura', 'Alongamentos leves'],
-    price_label: 'Adicionar link Shopee',
+    price_label: 'Adicionar link de afiliado',
     image_url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&q=80&w=900',
     affiliate_url: '',
     badge: 'Ombro',
@@ -474,7 +514,7 @@ export default function ProductStore() {
 
   const handleOpenProduct = (product: Product) => {
     if (!product.affiliate_url) {
-      toast.info('Produto pronto para receber o link da Shopee.', {
+      toast.info('Produto pronto para receber o link de afiliado.', {
         description: 'Depois que você se afiliar, cadastre o link do produto para ativar este botão.',
       });
       return;
@@ -508,14 +548,14 @@ export default function ProductStore() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
-                  {roleLabel} Encontre materiais para exercícios, postura, fortalecimento, recuperação e autocuidado. A compra acontece fora do FisioCareHub, diretamente na Shopee ou loja parceira, usando links externos.
+                  {roleLabel} Encontre materiais para exercícios, postura, fortalecimento, recuperação e autocuidado. A compra acontece fora do FisioCareHub, diretamente na Amazon, Shopee, Mercado Livre ou loja parceira, usando links externos.
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   {[
                     { icon: ShieldCheck, title: 'Sem estoque', text: 'Você apenas indica o produto.' },
                     { icon: ExternalLink, title: 'Link externo', text: 'Compra finalizada fora do app.' },
-                    { icon: Sparkles, title: 'Afiliado', text: 'Pronto para links da Shopee.' },
+                    { icon: Sparkles, title: 'Afiliado', text: 'Pronto para links da Amazon, Shopee e Mercado Livre.' },
                   ].map((item) => (
                     <div key={item.title} className="rounded-3xl border border-violet-100 bg-violet-50/70 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none">
                       <item.icon className="mb-3 text-violet-700 dark:text-sky-300" size={22} />
@@ -690,7 +730,7 @@ export default function ProductStore() {
                       >
                         {hasLink ? (
                           <>
-                            Ver na Shopee
+                            {getAffiliateStoreName(product.affiliate_url)}
                             <ExternalLink size={18} />
                           </>
                         ) : (
@@ -716,7 +756,7 @@ export default function ProductStore() {
                 <h3 className="font-black">Como vai funcionar</h3>
               </div>
               <p className="text-sm font-semibold leading-7 text-slate-600 dark:text-slate-400">
-                O FisioCareHub recomenda o produto, o usuário clica no botão e é direcionado para a Shopee. Pagamento, entrega, garantia e suporte da compra ficam com a Shopee/vendedor.
+                O FisioCareHub recomenda o produto, o usuário clica no botão e é direcionado para a Amazon, Shopee, Mercado Livre ou outro parceiro cadastrado. Pagamento, entrega, garantia e suporte da compra ficam com a loja parceira/vendedor.
               </p>
             </div>
 
