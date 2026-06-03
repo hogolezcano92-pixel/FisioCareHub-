@@ -992,22 +992,38 @@ Promise.resolve({ count: realAppointmentsData.length }),
                   .order("created_at", { ascending: false })
                   .limit(8)
               : Promise.resolve({ data: [] }),
-          activityPatientIds.length > 0
+          !isPhysio
             ? supabase
                 .from("registros_paciente")
                 .select("*")
-                .in("paciente_id", activityPatientIds)
+                // No painel do paciente, deixamos o RLS do Supabase devolver todos os registros
+                // que a conta logada pode ler. Isso evita perder registros quando o paciente_id
+                // salvo é o ID clínico da tabela pacientes, e não exatamente auth.uid().
                 .order("data_registro", { ascending: false })
-                .limit(14)
-            : Promise.resolve({ data: [] }),
-          activityPatientIds.length > 0
+                .limit(30)
+            : activityPatientIds.length > 0
+              ? supabase
+                  .from("registros_paciente")
+                  .select("*")
+                  .in("paciente_id", activityPatientIds)
+                  .order("data_registro", { ascending: false })
+                  .limit(30)
+              : Promise.resolve({ data: [] }),
+          !isPhysio
             ? supabase
                 .from("checklist_exercicios")
                 .select("*")
-                .in("paciente_id", activityPatientIds)
+                // Mesmo motivo acima: no painel do paciente, o RLS é a fonte segura.
                 .order("data_conclusao", { ascending: false })
-                .limit(80)
-            : Promise.resolve({ data: [] }),
+                .limit(100)
+            : activityPatientIds.length > 0
+              ? supabase
+                  .from("checklist_exercicios")
+                  .select("*")
+                  .in("paciente_id", activityPatientIds)
+                  .order("data_conclusao", { ascending: false })
+                  .limit(100)
+              : Promise.resolve({ data: [] }),
           activityPatientIds.length > 0
             ? supabase
                 .from("exercicios_paciente")
