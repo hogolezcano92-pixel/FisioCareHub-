@@ -135,9 +135,11 @@ const imageInputFromUpdate = (item: ClinicalUpdate) => ({
 export default function ClinicalUpdatesCarousel({ className }: { className?: string }) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollResetTimeoutRef = useRef<number | null>(null);
   const [updates, setUpdates] = useState<ClinicalUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [currentRenderIndex, setCurrentRenderIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [autoPlay, setAutoPlay] = useState(true);
 
@@ -201,46 +203,93 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
 
   const featuredUpdate = visibleUpdates[activeIndex] || visibleUpdates[0];
 
-  const scrollToUpdate = useCallback((index: number) => {
+  const loopedVisibleUpdates = useMemo(() => {
+    if (visibleUpdates.length <= 1) return visibleUpdates;
+    return Array.from({ length: 3 }, () => visibleUpdates).flat();
+  }, [visibleUpdates]);
+
+  const scrollToRenderedUpdate = useCallback((renderIndex: number, behavior: ScrollBehavior = 'smooth') => {
     const container = scrollRef.current;
     if (!container || visibleUpdates.length === 0) return;
 
-    const safeIndex = ((index % visibleUpdates.length) + visibleUpdates.length) % visibleUpdates.length;
-    const target = container.children.item(safeIndex) as HTMLElement | null;
+    const target = container.children.item(renderIndex) as HTMLElement | null;
+    if (!target) return;
 
-    if (target) {
-      const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
-      container.scrollTo({ left: Math.max(centeredLeft, 0), behavior: 'smooth' });
-    }
-
-    setActiveIndex(safeIndex);
+    const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
+    container.scrollTo({ left: Math.max(centeredLeft, 0), behavior });
   }, [visibleUpdates.length]);
 
+  const scheduleInvisibleReset = useCallback((renderIndex: number) => {
+    if (visibleUpdates.length <= 1) return;
+
+    if (scrollResetTimeoutRef.current) {
+      window.clearTimeout(scrollResetTimeoutRef.current);
+    }
+
+    scrollResetTimeoutRef.current = window.setTimeout(() => {
+      const logicalIndex = ((renderIndex % visibleUpdates.length) + visibleUpdates.length) % visibleUpdates.length;
+      setCurrentRenderIndex(logicalIndex);
+      scrollToRenderedUpdate(logicalIndex, 'auto');
+      scrollResetTimeoutRef.current = null;
+    }, 620);
+  }, [scrollToRenderedUpdate, visibleUpdates.length]);
+
+  const scrollToUpdate = useCallback((targetRenderIndex: number) => {
+    if (visibleUpdates.length === 0) return;
+
+    const logicalIndex = ((targetRenderIndex % visibleUpdates.length) + visibleUpdates.length) % visibleUpdates.length;
+
+    setCurrentRenderIndex(targetRenderIndex);
+    setActiveIndex(logicalIndex);
+    scrollToRenderedUpdate(targetRenderIndex, 'smooth');
+
+    if (targetRenderIndex >= visibleUpdates.length || targetRenderIndex < 0) {
+      scheduleInvisibleReset(targetRenderIndex);
+    }
+  }, [scheduleInvisibleReset, scrollToRenderedUpdate, visibleUpdates.length]);
+
+  const scrollUpdates = useCallback((direction: 'left' | 'right') => {
+    if (visibleUpdates.length <= 1) return;
+
+    if (direction === 'left' && currentRenderIndex === 0) {
+      const mirroredFirstIndex = visibleUpdates.length;
+      setCurrentRenderIndex(mirroredFirstIndex);
+      scrollToRenderedUpdate(mirroredFirstIndex, 'auto');
+      window.requestAnimationFrame(() => scrollToUpdate(mirroredFirstIndex - 1));
+      return;
+    }
+
+    scrollToUpdate(currentRenderIndex + (direction === 'left' ? -1 : 1));
+  }, [currentRenderIndex, scrollToRenderedUpdate, scrollToUpdate, visibleUpdates.length]);
+
   useEffect(() => {
+    if (scrollResetTimeoutRef.current) {
+      window.clearTimeout(scrollResetTimeoutRef.current);
+      scrollResetTimeoutRef.current = null;
+    }
+
     setActiveIndex(0);
+    setCurrentRenderIndex(0);
     scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
   }, [selectedCategory, updates.length]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollResetTimeoutRef.current) {
+        window.clearTimeout(scrollResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!autoPlay || loading || visibleUpdates.length <= 1) return;
 
     const intervalId = window.setInterval(() => {
-      setActiveIndex((currentIndex) => {
-        const nextIndex = currentIndex + 1 >= visibleUpdates.length ? 0 : currentIndex + 1;
-        const container = scrollRef.current;
-        const target = container?.children.item(nextIndex) as HTMLElement | null;
-
-        if (container && target) {
-          const centeredLeft = target.offsetLeft - container.clientWidth / 2 + target.clientWidth / 2;
-          container.scrollTo({ left: Math.max(centeredLeft, 0), behavior: 'smooth' });
-        }
-
-        return nextIndex;
-      });
+      scrollUpdates('right');
     }, 5200);
 
     return () => window.clearInterval(intervalId);
-  }, [autoPlay, loading, visibleUpdates.length]);
+  }, [autoPlay, loading, scrollUpdates, visibleUpdates.length]);
 
   const openUpdate = (item: ClinicalUpdate) => {
     setAutoPlay(false);
@@ -356,7 +405,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
               </button>
               <button
                 type="button"
-                onClick={() => scrollToUpdate(activeIndex - 1)}
+                onClick={() => scrollUpdates('left')}
                 className="h-10 w-10 rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white flex items-center justify-center"
                 aria-label="Ver conteúdo anterior"
               >
@@ -364,7 +413,7 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
               </button>
               <button
                 type="button"
-                onClick={() => scrollToUpdate(activeIndex + 1)}
+                onClick={() => scrollUpdates('right')}
                 className="h-10 w-10 rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white flex items-center justify-center"
                 aria-label="Ver próximo conteúdo"
               >
@@ -387,11 +436,12 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
               onTouchStart={() => setAutoPlay(false)}
               className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 px-[calc((100%-245px)/2)] sm:px-[calc((100%-285px)/2)] lg:px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {visibleUpdates.map((item, index) => {
+              {loopedVisibleUpdates.map((item, renderIndex) => {
+                const index = visibleUpdates.length ? renderIndex % visibleUpdates.length : 0;
                 const imageInput = imageInputFromUpdate(item);
                 return (
                   <article
-                    key={item.id}
+                    key={`${item.id}-${renderIndex}`}
                     onClick={() => {
                       setActiveIndex(index);
                       openUpdate(item);
