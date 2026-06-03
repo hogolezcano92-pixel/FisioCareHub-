@@ -38,7 +38,7 @@ import { motion } from "motion/react";
 import { cn, formatDate } from "../lib/utils";
 import { formatHourBR } from "../utils/date";
 import { toast } from "sonner";
-import { getLinkedClinicalPatients } from "../services/patientLinkService";
+import { getLinkedClinicalPatients, getPatientVisibleIds } from "../services/patientLinkService";
 
 // New FisioCare Components
 import {
@@ -68,18 +68,19 @@ type WeeklyChartData = {
   melhora: number;
 };
 
-const getSaoPauloDateKey = (value?: string | Date | null) => {
-  if (!value) value = new Date();
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-  // Datas vindas do Supabase no formato DATE chegam como "YYYY-MM-DD".
-  // O JavaScript interpreta esse formato como UTC; em São Paulo isso pode voltar 1 dia.
-  // Para filtros e gráficos semanais, DATE deve ser tratado como data local pura.
+const getSaoPauloDateKey = (value?: string | Date | null) => {
   if (typeof value === "string") {
-    const pureDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (pureDateMatch) return value;
+    const trimmed = value.trim();
+
+    // data_registro vem do Supabase como YYYY-MM-DD.
+    // Não pode passar por new Date(YYYY-MM-DD), porque o JS interpreta como UTC
+    // e em America/Sao_Paulo pode cair no dia anterior.
+    if (DATE_ONLY_PATTERN.test(trimmed)) return trimmed;
   }
 
-  const date = value instanceof Date ? value : new Date(value);
+  const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) return "";
 
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -122,6 +123,12 @@ const getRecordDate = (item: any) =>
   item?.updated_at ||
   null;
 
+const getRecordTimestamp = (item: any) => {
+  const raw = item?.created_at || item?.updated_at || getRecordDate(item);
+  const time = raw ? new Date(raw).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+};
+
 const buildWeeklyChartData = (
   registrosPaciente: any[] = [],
   checklistExercicios: any[] = [],
@@ -141,10 +148,8 @@ const buildWeeklyChartData = (
     );
     if (Number.isFinite(painValue)) {
       const previous = painByDay.get(dateKey);
-      const previousTime = previous
-        ? new Date(getRecordDate(previous) || 0).getTime()
-        : 0;
-      const currentTime = new Date(getRecordDate(registro) || 0).getTime();
+      const previousTime = previous ? getRecordTimestamp(previous) : 0;
+      const currentTime = getRecordTimestamp(registro);
       if (!previous || currentTime >= previousTime)
         painByDay.set(dateKey, registro);
     }
@@ -752,8 +757,15 @@ export default function Dashboard() {
 
           const { data: internalPatients } = await supabase
             .from("pacientes")
-            .select("email")
+            .select("id, perfil_id, email")
             .eq("fisioterapeuta_id", data.id);
+
+          (internalPatients || []).forEach((patient: any) => {
+            // O app pode salvar paciente_id como pacientes.id ou como perfis.id.
+            // Por isso o Dashboard considera os dois identificadores.
+            if (patient?.id) linkedIds.add(String(patient.id));
+            if (patient?.perfil_id) linkedIds.add(String(patient.perfil_id));
+          });
 
           const internalPatientEmails = Array.from(
             new Set(
@@ -792,7 +804,7 @@ export default function Dashboard() {
                   data.id,
                   user?.id,
                   ...linkedClinicalPatientsForPatient
-                    .map((patient: any) => patient.id)
+                    .flatMap((patient: any) => [patient.id, patient.perfil_id])
                     .filter(Boolean),
                 ]
                   .filter(Boolean)
@@ -992,38 +1004,26 @@ Promise.resolve({ count: realAppointmentsData.length }),
                   .order("created_at", { ascending: false })
                   .limit(8)
               : Promise.resolve({ data: [] }),
-          !isPhysio
+          activityPatientIds.length > 0
             ? supabase
                 .from("registros_paciente")
-                .select("*")
-                // No painel do paciente, deixamos o RLS do Supabase devolver todos os registros
-                // que a conta logada pode ler. Isso evita perder registros quando o paciente_id
-                // salvo é o ID clínico da tabela pacientes, e não exatamente auth.uid().
+                .select(
+                  "id, created_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios",
+                )
+                .in("paciente_id", activityPatientIds)
                 .order("data_registro", { ascending: false })
-                .limit(30)
-            : activityPatientIds.length > 0
-              ? supabase
-                  .from("registros_paciente")
-                  .select("*")
-                  .in("paciente_id", activityPatientIds)
-                  .order("data_registro", { ascending: false })
-                  .limit(30)
-              : Promise.resolve({ data: [] }),
-          !isPhysio
+                .limit(40)
+            : Promise.resolve({ data: [] }),
+          activityPatientIds.length > 0
             ? supabase
                 .from("checklist_exercicios")
-                .select("*")
-                // Mesmo motivo acima: no painel do paciente, o RLS é a fonte segura.
+                .select(
+                  "id, created_at, updated_at, paciente_id, exercicio_id, concluido, data_conclusao",
+                )
+                .in("paciente_id", activityPatientIds)
                 .order("data_conclusao", { ascending: false })
-                .limit(100)
-            : activityPatientIds.length > 0
-              ? supabase
-                  .from("checklist_exercicios")
-                  .select("*")
-                  .in("paciente_id", activityPatientIds)
-                  .order("data_conclusao", { ascending: false })
-                  .limit(100)
-              : Promise.resolve({ data: [] }),
+                .limit(120)
+            : Promise.resolve({ data: [] }),
           activityPatientIds.length > 0
             ? supabase
                 .from("exercicios_paciente")
@@ -1187,11 +1187,65 @@ Promise.resolve({ count: realAppointmentsData.length }),
           evolucoesResult && evolucoesResult.status === "fulfilled"
             ? evolucoesResult.value.data || []
             : [];
-        const recentRegistrosPacienteData =
+        let recentRegistrosPacienteData =
           registrosPacienteResult &&
-          registrosPacienteResult.status === "fulfilled"
+          registrosPacienteResult.status === "fulfilled" &&
+          !registrosPacienteResult.value.error
             ? registrosPacienteResult.value.data || []
             : [];
+
+        if (
+          registrosPacienteResult &&
+          registrosPacienteResult.status === "fulfilled" &&
+          registrosPacienteResult.value.error
+        ) {
+          console.error(
+            "Erro ao buscar registros_paciente no Dashboard:",
+            registrosPacienteResult.value.error,
+          );
+        }
+
+        // Segurança extra para o Dashboard do paciente:
+        // se a busca geral não trouxer os registros, busca diretamente por todos os IDs possíveis.
+        // No FisioCareHub existem registros antigos usando perfis.id/auth.uid() e registros
+        // clínicos usando pacientes.id. O Dashboard precisa aceitar os dois formatos.
+        if (!isPhysio && recentRegistrosPacienteData.length === 0) {
+          const directPatientIds = Array.from(
+            new Set(
+              [
+                data.id,
+                user?.id,
+                ...linkedClinicalPatientsForPatient
+                  .flatMap((patient: any) => [patient.id, patient.perfil_id])
+                  .filter(Boolean),
+              ]
+                .filter(Boolean)
+                .map(String),
+            ),
+          );
+
+          if (directPatientIds.length > 0) {
+            // Select mínimo e compatível: evita quebrar caso a tabela não tenha
+            // colunas opcionais como updated_at/exercicios_realizados em algum ambiente.
+            const { data: directRegistros, error: directRegistrosError } = await supabase
+              .from("registros_paciente")
+              .select(
+                "id, created_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios",
+              )
+              .in("paciente_id", directPatientIds)
+              .order("data_registro", { ascending: false })
+              .limit(40);
+
+            if (directRegistrosError) {
+              console.error(
+                "Erro ao buscar registros diretos do paciente no dashboard:",
+                directRegistrosError,
+              );
+            } else {
+              recentRegistrosPacienteData = directRegistros || [];
+            }
+          }
+        }
         const recentChecklistExerciciosData =
           checklistExerciciosResult &&
           checklistExerciciosResult.status === "fulfilled" &&
@@ -1240,6 +1294,15 @@ Promise.resolve({ count: realAppointmentsData.length }),
     },
     [fetchPatientWorkoutCount, checkPendingEvaluations, user?.id],
   );
+
+  useEffect(() => {
+    const handlePatientProgressUpdated = () => {
+      if (profile) fetchDashboardData(profile);
+    };
+
+    window.addEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
+    return () => window.removeEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
+  }, [fetchDashboardData, profile]);
 
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(
     () => ({
@@ -2503,10 +2566,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
               <div className="grid lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2 space-y-5">
                   <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
-                    <PainDiary />
+                    <PainDiary onSaved={() => fetchDashboardData(profile)} />
                   </div>
                   <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
-                    <ExerciseChecklist />
+                    <ExerciseChecklist onUpdated={() => fetchDashboardData(profile)} />
                   </div>
                 </div>
                 <div className="space-y-5">
