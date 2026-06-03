@@ -50,8 +50,18 @@ export const FinancialDashboard = () => {
         const netFactor = (100 - rate) / 100;
         const getNetAmount = (appointment: any) => getGrossAmount(appointment) * netFactor;
 
-        // Saldo disponível: somente atendimentos concluídos, menos saques já pagos.
-        // Isso evita mostrar como saldo valores apenas pagos/confirmados, mas ainda não concluídos.
+        // Saldo disponível: prioriza a tabela sessoes, porque ela libera valor por sessão
+        // confirmada. Isso evita liberar o valor total de um pacote na primeira sessão.
+        const { data: completedSessions, error: completedSessionsError } = await supabase
+          .from('sessoes')
+          .select('id, data, valor_sessao, valor_liquido_fisio, status_atendimento, status_repasse, confirmado_paciente_em')
+          .eq('fisioterapeuta_id', profile.id)
+          .in('status_repasse', ['liberado', 'repassado_fisio']);
+
+        if (completedSessionsError) {
+          console.warn('Não foi possível carregar sessões liberadas. Usando agendamentos concluídos como fallback:', completedSessionsError);
+        }
+
         const { data: completedAppointments, error: completedError } = await supabase
           .from('agendamentos')
           .select('id, data, data_servico, valor, valor_cobrado, status')
@@ -71,31 +81,54 @@ export const FinancialDashboard = () => {
           console.warn('Não foi possível carregar saques pagos:', withdrawalsError);
         }
 
-        const totalCompletedNet = (completedAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
+        const hasSessionLedger = (completedSessions || []).length > 0;
+        const getSessionNetAmount = (session: any) => Number(session?.valor_liquido_fisio || 0) || getNetAmount(session);
+        const totalCompletedNet = hasSessionLedger
+          ? (completedSessions || []).reduce((acc, curr) => acc + getSessionNetAmount(curr), 0)
+          : (completedAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
         const totalPaidWithdrawals = (withdrawals || []).reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
         const availableBalance = Math.max(0, totalCompletedNet - totalPaidWithdrawals);
 
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthlyEarnings = (completedAppointments || []).reduce((acc, curr) => {
-          const rawDate = curr.data || curr.data_servico;
-          if (!rawDate) return acc;
-          const appointmentDate = new Date(rawDate);
-          return appointmentDate >= startOfMonth ? acc + getNetAmount(curr) : acc;
-        }, 0);
+        const monthlyEarnings = hasSessionLedger
+          ? (completedSessions || []).reduce((acc, curr) => {
+              const rawDate = curr.confirmado_paciente_em || curr.data;
+              if (!rawDate) return acc;
+              const sessionDate = new Date(rawDate);
+              return sessionDate >= startOfMonth ? acc + getSessionNetAmount(curr) : acc;
+            }, 0)
+          : (completedAppointments || []).reduce((acc, curr) => {
+              const rawDate = curr.data || curr.data_servico;
+              if (!rawDate) return acc;
+              const appointmentDate = new Date(rawDate);
+              return appointmentDate >= startOfMonth ? acc + getNetAmount(curr) : acc;
+            }, 0);
 
-        // Previsão: agendamentos já pagos/confirmados, mas ainda não concluídos.
+        // Previsão: sessões/agendamentos pagos ou confirmados, mas ainda não liberados.
+        const { data: forecastSessions, error: forecastSessionsError } = await supabase
+          .from('sessoes')
+          .select('id, valor_sessao, valor_liquido_fisio, status_atendimento, status_repasse')
+          .eq('fisioterapeuta_id', profile.id)
+          .in('status_repasse', ['pendente', 'bloqueado']);
+
+        if (forecastSessionsError) {
+          console.warn('Não foi possível carregar previsão por sessões:', forecastSessionsError);
+        }
+
         const { data: forecastAppointments, error: forecastError } = await supabase
           .from('agendamentos')
           .select('id, valor, valor_cobrado, status')
           .eq('fisio_id', profile.id)
-          .in('status', ['confirmado', 'pago', 'pago_app', 'agendado']);
+          .in('status', ['confirmado', 'pago', 'pago_app', 'agendado', 'aguardando_confirmacao_paciente']);
 
         if (forecastError) {
           console.warn('Não foi possível carregar previsão de recebimento:', forecastError);
         }
 
-        const forecast = (forecastAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
+        const forecast = (forecastSessions || []).length > 0
+          ? (forecastSessions || []).reduce((acc, curr) => acc + getSessionNetAmount(curr), 0)
+          : (forecastAppointments || []).reduce((acc, curr) => acc + getNetAmount(curr), 0);
 
         setFinancialStats({
           balance: availableBalance,
@@ -112,8 +145,9 @@ export const FinancialDashboard = () => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        (completedAppointments || []).forEach((appointment) => {
-          const rawDate = appointment.data || appointment.data_servico;
+        const weeklySource = hasSessionLedger ? (completedSessions || []) : (completedAppointments || []);
+        weeklySource.forEach((item: any) => {
+          const rawDate = item.confirmado_paciente_em || item.data || item.data_servico;
           if (!rawDate) return;
           const date = new Date(rawDate);
           if (date >= oneWeekAgo) {
