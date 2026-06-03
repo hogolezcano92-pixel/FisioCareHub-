@@ -272,46 +272,72 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
   const displayImages = images.length > 0 ? images : [fallbackImage];
 
   return (
-    <div className="relative h-52 overflow-hidden bg-slate-900">
-      <button
-        type="button"
-        onClick={onOpenGallery}
-        className="h-full w-full text-left"
-        aria-label={`Abrir galeria de imagens de ${product.name}`}
-      >
-        <img
-          src={activeImage || fallbackImage}
-          alt={product.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-      </button>
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+    <div className="overflow-hidden border-b border-violet-100/80 bg-white dark:border-white/10 dark:bg-transparent">
+      <div className="relative h-56 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <button
+          type="button"
+          onClick={onOpenGallery}
+          className="flex h-full w-full items-center justify-center p-4 text-left"
+          aria-label={`Abrir galeria de imagens de ${product.name}`}
+        >
+          <img
+            src={activeImage || fallbackImage}
+            alt={product.name}
+            className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+          />
+        </button>
 
-      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-        {product.badge && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg">
-            <Sparkles size={12} />
-            {product.badge}
-          </span>
-        )}
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
-          <Tag size={12} />
-          {product.category}
-        </span>
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          {displayImages.length > 1 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-lg backdrop-blur">
+              {displayImages.length} fotos
+            </span>
+          )}
+        </div>
+
         {displayImages.length > 1 && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-lg">
-            {displayImages.length} fotos
-          </span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenGallery();
+            }}
+            className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-sky-400"
+          >
+            Ver fotos
+          </button>
         )}
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-200">Produto recomendado</p>
-        <h2 className="mt-1 text-2xl font-black leading-tight text-white">{product.name}</h2>
+      <div className="space-y-4 p-5">
+        <div className="flex flex-wrap gap-2">
+          {product.badge && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+              <Sparkles size={12} />
+              {product.badge}
+            </span>
+          )}
+          {!!product.category && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-violet-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-200">
+              <Tag size={12} />
+              {product.category}
+            </span>
+          )}
+          {displayImages.length > 1 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-200">
+              {displayImages.length} fotos
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-sky-600 dark:text-sky-300">Produto recomendado</p>
+          <h2 className="text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white">{product.name}</h2>
+        </div>
 
         {displayImages.length > 1 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {displayImages.slice(0, 7).map((url, index) => (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {displayImages.slice(0, 6).map((url, index) => (
               <button
                 key={`${url}-${index}`}
                 type="button"
@@ -320,8 +346,8 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
                   setActiveImage(url);
                 }}
                 className={cn(
-                  'h-11 w-11 shrink-0 overflow-hidden rounded-xl border-2 bg-slate-800 transition-all',
-                  activeImage === url ? 'border-sky-300 opacity-100' : 'border-white/20 opacity-70 hover:opacity-100'
+                  'h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 bg-slate-100 transition-all dark:bg-slate-800',
+                  activeImage === url ? 'border-sky-400 opacity-100' : 'border-violet-100 opacity-80 hover:opacity-100 dark:border-white/10'
                 )}
                 aria-label={`Ver imagem ${index + 1} de ${product.name}`}
               >
@@ -334,9 +360,9 @@ function ProductImageGallery({ product, onOpenGallery }: { product: Product; onO
                 event.stopPropagation();
                 onOpenGallery();
               }}
-              className="flex h-11 shrink-0 items-center rounded-xl border border-sky-300/40 bg-sky-500/90 px-3 text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-sky-400"
+              className="shrink-0 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] font-black text-sky-700 transition hover:border-sky-300 hover:bg-sky-100 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-100"
             >
-              Ver fotos
+              Ver todas
             </button>
           </div>
         )}
@@ -608,7 +634,7 @@ export default function ProductStore() {
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por produto, indicação ou exercício..."
+                  placeholder="Buscar produto, indicação ou exercício"
                   className="h-14 w-full rounded-2xl border border-violet-100 bg-violet-50/70 pl-12 pr-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-violet-300 focus:ring-4 focus:ring-violet-200/50 dark:border-white/10 dark:bg-slate-950/70 dark:text-white dark:focus:border-sky-400/60 dark:focus:ring-sky-400/10"
                 />
               </div>
