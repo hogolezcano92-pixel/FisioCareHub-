@@ -6,6 +6,7 @@ export interface LinkedClinicalPatient {
   fisioterapeuta_id?: string | null;
   perfil_id?: string | null;
   email?: string | null;
+  convite_email?: string | null;
 }
 
 /**
@@ -27,10 +28,10 @@ export async function getLinkedClinicalPatients(userId: string, email?: string |
   // Também aceitamos pacientes.id = userId para cobrir cadastros antigos/inconsistentes.
   let query = supabase
     .from('pacientes')
-    .select('id, nome_completo, fisioterapeuta_id, perfil_id, email');
+    .select('id, nome_completo, fisioterapeuta_id, perfil_id, email, convite_email');
 
   if (normalizedEmail) {
-    query = query.or(`perfil_id.eq.${userId},id.eq.${userId},email.ilike.${normalizedEmail}`);
+    query = query.or(`perfil_id.eq.${userId},id.eq.${userId},email.ilike.${normalizedEmail},convite_email.ilike.${normalizedEmail}`);
   } else {
     query = query.or(`perfil_id.eq.${userId},id.eq.${userId}`);
   }
@@ -47,5 +48,14 @@ export async function getLinkedClinicalPatients(userId: string, email?: string |
 
 export async function getPatientVisibleIds(userId: string, email?: string | null): Promise<string[]> {
   const linkedPatients = await getLinkedClinicalPatients(userId, email);
-  return Array.from(new Set([userId, ...linkedPatients.map((patient) => patient.id).filter(Boolean)]));
+  return Array.from(
+    new Set(
+      [
+        userId,
+        ...linkedPatients
+          .flatMap((patient) => [patient.id, patient.perfil_id])
+          .filter(Boolean),
+      ].map(String),
+    ),
+  );
 }
