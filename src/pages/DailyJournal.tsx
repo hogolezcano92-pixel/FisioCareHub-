@@ -253,10 +253,22 @@ export default function DailyJournal() {
         data_registro: today
       };
 
-      // Tenta Upsert (se já existir hoje, atualiza)
-      const { error } = await supabase
+      const { data: existingEntry, error: findError } = await supabase
         .from('registros_paciente')
-        .upsert(entryData, { onConflict: 'paciente_id,data_registro' });
+        .select('id')
+        .eq('paciente_id', user?.id)
+        .eq('data_registro', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      const saveQuery = existingEntry?.id
+        ? supabase.from('registros_paciente').update(entryData).eq('id', existingEntry.id)
+        : supabase.from('registros_paciente').insert(entryData);
+
+      const { error } = await saveQuery;
 
       if (error) throw error;
 
@@ -280,6 +292,7 @@ export default function DailyJournal() {
       ]);
 
       toast.success("Dados salvos e compartilhados com o fisioterapeuta em tempo real");
+      window.dispatchEvent(new CustomEvent('fisiocare:patient-progress-updated'));
       fetchHistory();
     } catch (err) {
       console.error('Erro ao salvar diário:', err);

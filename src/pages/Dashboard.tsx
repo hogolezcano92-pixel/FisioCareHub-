@@ -38,7 +38,7 @@ import { motion } from "motion/react";
 import { cn, formatDate } from "../lib/utils";
 import { formatHourBR } from "../utils/date";
 import { toast } from "sonner";
-import { getLinkedClinicalPatients } from "../services/patientLinkService";
+import { getLinkedClinicalPatients, getPatientVisibleIds } from "../services/patientLinkService";
 
 // New FisioCare Components
 import {
@@ -990,7 +990,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 )
                 .in("paciente_id", activityPatientIds)
                 .order("data_registro", { ascending: false })
-                .limit(14)
+                .limit(40)
             : Promise.resolve({ data: [] }),
           activityPatientIds.length > 0
             ? supabase
@@ -1000,7 +1000,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 )
                 .in("paciente_id", activityPatientIds)
                 .order("data_conclusao", { ascending: false })
-                .limit(80)
+                .limit(120)
             : Promise.resolve({ data: [] }),
           activityPatientIds.length > 0
             ? supabase
@@ -1218,6 +1218,15 @@ Promise.resolve({ count: realAppointmentsData.length }),
     },
     [fetchPatientWorkoutCount, checkPendingEvaluations, user?.id],
   );
+
+  useEffect(() => {
+    const handlePatientProgressUpdated = () => {
+      if (profile) fetchDashboardData(profile);
+    };
+
+    window.addEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
+    return () => window.removeEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
+  }, [fetchDashboardData, profile]);
 
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(
     () => ({
@@ -2481,10 +2490,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
               <div className="grid lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2 space-y-5">
                   <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
-                    <PainDiary />
+                    <PainDiary onSaved={() => fetchDashboardData(profile)} />
                   </div>
                   <div className="bg-card/50 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl shadow-premium/20">
-                    <ExerciseChecklist />
+                    <ExerciseChecklist onUpdated={() => fetchDashboardData(profile)} />
                   </div>
                 </div>
                 <div className="space-y-5">
