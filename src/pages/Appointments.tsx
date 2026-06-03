@@ -22,6 +22,7 @@ import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import PaymentModal from '../components/PaymentModal';
 import { Wallet } from 'lucide-react';
+import { confirmAppointmentAsPatient, disputeAppointmentAsPatient, markAppointmentAsPerformed } from '../services/sessionCompletionService';
 
 const getAppointmentDate = (app: any) => formatDateKeyBR(app?.data || app?.data_servico, 'Data não informada');
 const getAppointmentTime = (app: any) => formatTimeBR(app?.hora || app?.data_servico, 'Horário não informado');
@@ -49,7 +50,9 @@ const getAppointmentUiStatus = (app: any, sessions: any[] = []) => {
   const paid = isPaidAppointment(app, sessions);
 
   if (status === 'cancelado' || status === 'recusado') return 'cancelado';
-  if (status === 'concluido') return 'concluido';
+  if (status === 'concluido' || status === 'realizado') return 'concluido';
+  if (status === 'aguardando_confirmacao_paciente') return 'aguardando_confirmacao_paciente';
+  if (status === 'em_disputa') return 'em_disputa';
   if (status === 'confirmado') return 'confirmado';
   if (paid && (status === 'pendente' || status === 'pendente_pagamento' || !status)) return 'aguardando_confirmacao';
   if (status === 'pendente_pagamento') return 'pendente_pagamento';
@@ -65,6 +68,8 @@ const getAppointmentStatusLabel = (status: string) => {
     case 'pendente': return 'Pendente';
     case 'cancelado': return 'Cancelado';
     case 'concluido': return 'Concluído';
+    case 'aguardando_confirmacao_paciente': return 'Aguardando confirmação do paciente';
+    case 'em_disputa': return 'Em disputa';
     default: return 'Pendente';
   }
 };
@@ -613,12 +618,96 @@ export default function Appointments() {
     if (!app?.id) return;
 
     const confirmed = window.confirm(
-      'Deseja concluir este atendimento? Após concluir, o valor líquido deste agendamento será liberado em Saldo Disponível para saque.'
+      'Deseja marcar esta sessão como realizada? O saldo só será liberado depois que o paciente confirmar, ou automaticamente pela regra administrativa definida.'
     );
 
     if (!confirmed) return;
 
-    await updateStatus(app.id, 'concluido');
+    try {
+      const markedAt = await markAppointmentAsPerformed(app.id);
+      setAppointments((current) => current.map((item) => item.id === app.id ? {
+        ...item,
+        status: 'aguardando_confirmacao_paciente',
+        fisioterapeuta_marcou_realizado_em: markedAt,
+      } : item));
+
+      await supabase.from('notificacoes').insert({
+        user_id: app.paciente_id,
+        titulo: 'Confirme sua sessão',
+        mensagem: `O fisioterapeuta marcou a sessão de ${getAppointmentDate(app)} como realizada. Confirme para liberar o repasse ou conteste se houver divergência.`,
+        tipo: 'appointment',
+        lida: false,
+        link: '/appointments'
+      });
+
+      import('sonner').then(({ toast }) => toast.success('Sessão marcada como realizada. Aguardando confirmação do paciente para liberar o saldo.'));
+    } catch (err) {
+      console.error('Erro ao marcar sessão como realizada:', err);
+      import('sonner').then(({ toast }) => toast.error('Erro ao marcar sessão como realizada.'));
+    }
+  };
+
+  const handlePatientConfirmCompletion = async (app: any) => {
+    if (!app?.id) return;
+
+    const confirmed = window.confirm('Você confirma que esta sessão foi realizada? Após confirmar, o saldo líquido será liberado para o fisioterapeuta.');
+    if (!confirmed) return;
+
+    try {
+      const confirmedAt = await confirmAppointmentAsPatient(app.id);
+      setAppointments((current) => current.map((item) => item.id === app.id ? {
+        ...item,
+        status: 'concluido',
+        concluido_em: confirmedAt,
+        paciente_confirmou_realizacao_em: confirmedAt,
+        repasse_liberado_em: confirmedAt,
+      } : item));
+
+      await supabase.from('notificacoes').insert({
+        user_id: app.fisio_id,
+        titulo: 'Sessão confirmada pelo paciente',
+        mensagem: `O paciente confirmou a sessão de ${getAppointmentDate(app)}. O valor líquido foi liberado no saldo disponível.`,
+        tipo: 'payment',
+        lida: false,
+        link: '/dashboard'
+      });
+
+      import('sonner').then(({ toast }) => toast.success('Sessão confirmada. Obrigado!'));
+    } catch (err) {
+      console.error('Erro ao confirmar sessão:', err);
+      import('sonner').then(({ toast }) => toast.error('Erro ao confirmar sessão.'));
+    }
+  };
+
+  const handlePatientDisputeCompletion = async (app: any) => {
+    if (!app?.id) return;
+
+    const reason = window.prompt('Explique rapidamente por que você está contestando esta sessão:');
+    if (reason === null) return;
+
+    try {
+      const disputedAt = await disputeAppointmentAsPatient(app.id, reason || undefined);
+      setAppointments((current) => current.map((item) => item.id === app.id ? {
+        ...item,
+        status: 'em_disputa',
+        paciente_contestou_em: disputedAt,
+        contestacao_motivo: reason || 'Paciente contestou a realização da sessão.',
+      } : item));
+
+      await supabase.from('notificacoes').insert({
+        user_id: app.fisio_id,
+        titulo: 'Sessão contestada pelo paciente',
+        mensagem: `O paciente contestou a sessão de ${getAppointmentDate(app)}. O repasse ficará bloqueado até análise.`,
+        tipo: 'appointment',
+        lida: false,
+        link: '/appointments'
+      });
+
+      import('sonner').then(({ toast }) => toast.success('Contestação registrada. O suporte poderá analisar o caso.'));
+    } catch (err) {
+      console.error('Erro ao contestar sessão:', err);
+      import('sonner').then(({ toast }) => toast.error('Erro ao contestar sessão.'));
+    }
   };
 
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
@@ -675,6 +764,8 @@ export default function Appointments() {
                   "w-12 h-12 rounded-xl flex items-center justify-center",
                   uiStatus === 'concluido' ? "bg-emerald-500/10 text-emerald-300" :
                   uiStatus === 'confirmado' ? "bg-emerald-500/10 text-emerald-400" :
+                  uiStatus === 'aguardando_confirmacao_paciente' ? "bg-violet-500/10 text-violet-300" :
+                  uiStatus === 'em_disputa' ? "bg-red-500/10 text-red-300" :
                   uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/10 text-blue-400" :
                   uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/10 text-amber-400" :
                   "bg-slate-800 text-slate-600"
@@ -697,6 +788,8 @@ export default function Appointments() {
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                   uiStatus === 'concluido' ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/20" :
                   uiStatus === 'confirmado' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
+                  uiStatus === 'aguardando_confirmacao_paciente' ? "bg-violet-500/20 text-violet-300 border border-violet-500/20" :
+                  uiStatus === 'em_disputa' ? "bg-red-500/20 text-red-300 border border-red-500/20" :
                   uiStatus === 'aguardando_confirmacao' ? "bg-blue-500/20 text-blue-400 border border-blue-500/20" :
                   uiStatus === 'pendente' || uiStatus === 'pendente_pagamento' ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
                   uiStatus === 'cancelado' ? "bg-red-500/20 text-red-400 border border-red-500/20" :
@@ -726,11 +819,31 @@ export default function Appointments() {
                   <button
                     onClick={() => handleCompleteAppointment(app)}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
-                    title="Concluir atendimento e liberar saldo"
+                    title="Marcar como realizada e aguardar confirmação do paciente"
                   >
                     <Check size={14} />
-                    Concluir atendimento
+                    Marcar realizada
                   </button>
+                )}
+
+
+                {!isPhysio && uiStatus === 'aguardando_confirmacao_paciente' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePatientConfirmCompletion(app)}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/20"
+                    >
+                      <Check size={14} />
+                      Confirmar sessão
+                    </button>
+                    <button
+                      onClick={() => handlePatientDisputeCompletion(app)}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all border border-red-500/20"
+                    >
+                      <XCircle size={14} />
+                      Contestar
+                    </button>
+                  </div>
                 )}
 
                 {(uiStatus === 'pendente' || uiStatus === 'aguardando_confirmacao') && (

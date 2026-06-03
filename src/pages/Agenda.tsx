@@ -28,6 +28,7 @@ import { sendAppointmentConfirmation } from '../services/emailService';
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { logActivity } from '../services/activityService';
 import { availabilityService, AvailabilityRule, ScheduleBlock } from '../services/availabilityService';
+import { markAppointmentAsPerformed } from '../services/sessionCompletionService';
 
 
 const PAID_APPOINTMENT_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
@@ -742,12 +743,44 @@ export default function Agenda() {
     if (!appointment?.id) return;
 
     const confirmed = window.confirm(
-      'Deseja concluir este atendimento? Após concluir, o valor líquido será liberado em Saldo Disponível para saque.'
+      'Deseja marcar esta sessão como realizada? O saldo só será liberado depois que o paciente confirmar, ou após análise/regra administrativa.'
     );
 
     if (!confirmed) return;
 
-    await updateStatus(appointment.id, 'concluido');
+    try {
+      const markedAt = await markAppointmentAsPerformed(appointment.id);
+      setAppointments((current) => current.map((item) => item.id === appointment.id ? {
+        ...item,
+        status: 'aguardando_confirmacao_paciente',
+        fisioterapeuta_marcou_realizado_em: markedAt,
+      } : item));
+
+      if (appointment?.paciente_id) {
+        await logActivity(
+          appointment.paciente_id,
+          'paciente',
+          'sessao_aguardando_confirmacao',
+          'O profissional marcou uma sessão como realizada. Confirme no app para liberar o repasse.',
+          String(appointment.id)
+        );
+      }
+
+      await supabase.from('notificacoes').insert({
+        user_id: appointment.paciente_id,
+        titulo: 'Confirme sua sessão',
+        mensagem: 'O fisioterapeuta marcou a sessão como realizada. Confirme no app para liberar o repasse ou conteste se houver divergência.',
+        tipo: 'appointment',
+        lida: false,
+        link: '/appointments'
+      });
+
+      toast.success('Sessão marcada como realizada. Aguardando confirmação do paciente para liberar o saldo.');
+      setShowDetailsModal(false);
+    } catch (err) {
+      console.error('Erro ao marcar sessão como realizada:', err);
+      toast.error('Erro ao marcar sessão como realizada');
+    }
   };
 
   const changeDate = (days: number) => {
@@ -787,6 +820,8 @@ export default function Agenda() {
   const getStatusLabel = (status: string) => {
     const normalized = String(status || '').toLowerCase();
     if (normalized === 'concluido' || normalized === 'realizado') return 'Concluído';
+    if (normalized === 'aguardando_confirmacao_paciente') return 'Aguardando paciente';
+    if (normalized === 'em_disputa') return 'Em disputa';
     if (normalized === 'confirmado') return 'Confirmado';
     if (['agendado', 'pendente', 'pago'].includes(normalized)) return 'Pendente';
     if (normalized === 'cancelado') return 'Cancelado';
@@ -795,6 +830,8 @@ export default function Agenda() {
   const getStatusClass = (status: string) => {
     const normalized = String(status || '').toLowerCase();
     if (normalized === 'concluido' || normalized === 'realizado') return 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20';
+    if (normalized === 'aguardando_confirmacao_paciente') return 'bg-violet-500/10 text-violet-300 border border-violet-500/20';
+    if (normalized === 'em_disputa') return 'bg-red-500/10 text-red-300 border border-red-500/20';
     if (normalized === 'confirmado') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
     if (['agendado', 'pendente', 'pago'].includes(normalized)) return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
     return 'bg-red-500/10 text-red-400 border border-red-500/20';
@@ -1276,7 +1313,7 @@ export default function Agenda() {
                             handleCompleteAppointment(app);
                           }}
                           className="hidden md:flex p-2 bg-emerald-500/10 text-emerald-300 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
-                          title="Concluir atendimento"
+                          title="Marcar como realizada e aguardar confirmação do paciente"
                         >
                           <Check size={16} />
                         </button>
@@ -1394,7 +1431,7 @@ export default function Agenda() {
                         className="flex-1 h-11 bg-emerald-600/20 text-emerald-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600/30 transition-all flex items-center justify-center gap-2 border border-emerald-500/20"
                       >
                         <Check size={16} />
-                        Concluir
+                        Marcar realizada
                       </button>
                     )}
                     {selectedAppointment.status !== 'cancelado' && selectedAppointment.status !== 'concluido' && (
