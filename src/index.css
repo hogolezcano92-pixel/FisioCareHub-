@@ -1469,6 +1469,10 @@ html:not(.dark) .fisiostore-light-page button[type="button"] {
 
 /* Botões principais de ação */
 html:not(.dark) .fisiostore-light-page a[href*="shopee"],
+html:not(.dark) .fisiostore-light-page a[href*="amazon"],
+html:not(.dark) .fisiostore-light-page a[href*="amzn.to"],
+html:not(.dark) .fisiostore-light-page a[href*="mercadolivre"],
+html:not(.dark) .fisiostore-light-page a[href*="meli"],
 html:not(.dark) .fisiostore-light-page button[class*="from-blue-"],
 html:not(.dark) .fisiostore-light-page button[class*="to-violet-"],
 html:not(.dark) .fisiostore-light-page .bg-gradient-to-r {
@@ -1478,7 +1482,11 @@ html:not(.dark) .fisiostore-light-page .bg-gradient-to-r {
 
 /* Garante texto branco nos botões gradiente */
 html:not(.dark) .fisiostore-light-page .bg-gradient-to-r *,
-html:not(.dark) .fisiostore-light-page a[href*="shopee"] * {
+html:not(.dark) .fisiostore-light-page a[href*="shopee"] *,
+html:not(.dark) .fisiostore-light-page a[href*="amazon"] *,
+html:not(.dark) .fisiostore-light-page a[href*="amzn.to"] *,
+html:not(.dark) .fisiostore-light-page a[href*="mercadolivre"] *,
+html:not(.dark) .fisiostore-light-page a[href*="meli"] * {
   color: #ffffff !important;
 }
 
