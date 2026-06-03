@@ -17,7 +17,11 @@ interface Exercise {
   completed: boolean;
 }
 
-export const PainDiary = () => {
+interface PainDiaryProps {
+  onSaved?: () => void;
+}
+
+export const PainDiary = ({ onSaved }: PainDiaryProps) => {
   const { profile } = useAuth();
   const [intensity, setIntensity] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,16 +51,47 @@ export const PainDiary = () => {
         const linkedPatients = await getLinkedClinicalPatients(profile.id, profile.email);
         const linkedClinicalPatient = linkedPatients[0];
 
-        const { data, error } = await supabase
+        const payload = {
+          paciente_id: profile.id,
+          fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+          nivel_dor: intensity,
+          data_registro: today,
+          notas: 'Registro rápido de dor pelo Dashboard',
+        };
+
+        const { data: existingEntry, error: findError } = await supabase
           .from('registros_paciente')
-          .upsert({
-            paciente_id: profile.id,
-            fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
-            nivel_dor: intensity,
-            data_registro: today,
-            notas: 'Registro rápido de dor pelo Dashboard',
-          }, { onConflict: 'paciente_id,data_registro' })
-          .select();
+          .select('id, exercicios_concluidos, total_exercicios, concluidos_count')
+          .eq('paciente_id', profile.id)
+          .eq('data_registro', today)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (findError) throw findError;
+
+        const saveQuery = existingEntry?.id
+          ? supabase
+              .from('registros_paciente')
+              .update({
+                ...payload,
+                exercicios_concluidos: existingEntry.exercicios_concluidos || [],
+                total_exercicios: existingEntry.total_exercicios || 0,
+                concluidos_count: existingEntry.concluidos_count || 0,
+              })
+              .eq('id', existingEntry.id)
+              .select()
+          : supabase
+              .from('registros_paciente')
+              .insert({
+                ...payload,
+                exercicios_concluidos: [],
+                total_exercicios: 0,
+                concluidos_count: 0,
+              })
+              .select();
+
+        const { data, error } = await saveQuery;
 
         if (error) {
           console.error('Erro detalhado do Supabase ao salvar diário de dor:', error);
@@ -84,6 +119,8 @@ export const PainDiary = () => {
         ]);
         toast.success('Diário de dor atualizado!');
         setIntensity(null);
+        onSaved?.();
+        window.dispatchEvent(new CustomEvent('fisiocare:patient-progress-updated'));
       } catch (err: any) {
         console.error('Erro ao salvar no diário:', err);
         toast.error('Erro ao salvar no diário: ' + (err.message || 'Erro desconhecido'));
@@ -146,7 +183,11 @@ export const PainDiary = () => {
   );
 };
 
-export const ExerciseChecklist = () => {
+interface ExerciseChecklistProps {
+  onUpdated?: () => void;
+}
+
+export const ExerciseChecklist = ({ onUpdated }: ExerciseChecklistProps) => {
   const { profile } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([
     { id: '1', title: 'Alongamento de Isquiotibiais', description: 'Mantenha a perna esticada por 30 segundos.', duration: 30, completed: false },
@@ -158,11 +199,26 @@ export const ExerciseChecklist = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
 
+  const todayDateKeyBR = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    return year && month && day ? `${year}-${month}-${day}` : new Date().toISOString().slice(0, 10);
+  };
+
   useEffect(() => {
     const fetchCompletions = async () => {
       if (!profile) return;
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayDateKeyBR();
         const { data, error } = await supabase
           .from('checklist_exercicios')
           .select('exercicio_id')
@@ -226,7 +282,7 @@ export const ExerciseChecklist = () => {
         });
         if (error) throw error;
       } else {
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayDateKeyBR();
         const { error } = await supabase.from('checklist_exercicios')
           .delete()
           .eq('paciente_id', profile.id)
@@ -235,7 +291,51 @@ export const ExerciseChecklist = () => {
         if (error) throw error;
       }
       
-      setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex));
+      const updatedExercises = exercises.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex);
+      const today = todayDateKeyBR();
+      const linkedPatients = await getLinkedClinicalPatients(profile.id, profile.email);
+      const linkedClinicalPatient = linkedPatients[0];
+      const completedCount = updatedExercises.filter(ex => ex.completed).length;
+      const journalExercises = updatedExercises.map(ex => ({
+        id: ex.id,
+        name: ex.title,
+        completed: ex.completed,
+      }));
+
+      const { data: existingEntry, error: findError } = await supabase
+        .from('registros_paciente')
+        .select('id, nivel_dor, notas')
+        .eq('paciente_id', profile.id)
+        .eq('data_registro', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      if (existingEntry?.id) {
+        const registroPayload = {
+          paciente_id: profile.id,
+          fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+          nivel_dor: Number(existingEntry.nivel_dor),
+          exercicios_concluidos: journalExercises,
+          total_exercicios: updatedExercises.length,
+          concluidos_count: completedCount,
+          notas: existingEntry?.notas || 'Registro automático dos exercícios pelo Dashboard',
+          data_registro: today,
+        };
+
+        const { error: registroError } = await supabase
+          .from('registros_paciente')
+          .update(registroPayload)
+          .eq('id', existingEntry.id);
+
+        if (registroError) throw registroError;
+      }
+
+      setExercises(updatedExercises);
+      onUpdated?.();
+      window.dispatchEvent(new CustomEvent('fisiocare:patient-progress-updated'));
       await logActivity(
         profile.id,
         'paciente',
