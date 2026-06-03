@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Activity,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 interface ClinicalTest {
   id: string;
@@ -37,6 +38,8 @@ interface ClinicalTest {
   interpretation: string;
   precautions: string;
   demo: string;
+  image_url?: string | null;
+  video_url?: string | null;
   recordSuggestion: string;
   level: 'Essencial' | 'Intermediário' | 'Avançado';
   gradient: string;
@@ -226,12 +229,64 @@ const safeWrapStyle = {
 export default function ClinicalTestsHub() {
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [query, setQuery] = useState('');
+  const [tests, setTests] = useState<ClinicalTest[]>(clinicalTests);
   const [selectedTest, setSelectedTest] = useState<ClinicalTest | null>(clinicalTests[0]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadClinicalTestMedia = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clinical_tests')
+          .select('id, image_url, video_url, demo, is_active');
+
+        if (error) {
+          console.warn('Clinical tests media not loaded:', error.message);
+          return;
+        }
+
+        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+
+        const mediaById = new Map(
+          data
+            .filter((item: any) => item?.is_active !== false)
+            .map((item: any) => [String(item.id), item])
+        );
+
+        const nextTests = clinicalTests.map((test) => {
+          const media = mediaById.get(test.id) as any;
+          if (!media) return test;
+
+          return {
+            ...test,
+            demo: String(media.demo || test.demo),
+            image_url: media.image_url || test.image_url || null,
+            video_url: media.video_url || test.video_url || null,
+          };
+        });
+
+        setTests(nextTests);
+        setSelectedTest((current) => {
+          if (!current) return nextTests[0] || null;
+          return nextTests.find((test) => test.id === current.id) || current;
+        });
+      } catch (error) {
+        console.warn('Clinical tests media fetch failed:', error);
+      }
+    };
+
+    loadClinicalTestMedia();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredTests = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return clinicalTests.filter((test) => {
+    return tests.filter((test) => {
       const matchesCategory = activeCategory === 'Todos' || test.region === activeCategory || test.category === activeCategory;
       const matchesSearch = !normalizedQuery
         || test.name.toLowerCase().includes(normalizedQuery)
@@ -241,7 +296,7 @@ export default function ClinicalTestsHub() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, query]);
+  }, [activeCategory, query, tests]);
 
   const handleAddToRecord = (test: ClinicalTest) => {
     const note = `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
@@ -436,9 +491,31 @@ export default function ClinicalTestsHub() {
                         <div className="w-full min-w-0 flex-1">
                           <h3 className="text-sm font-black uppercase tracking-widest text-cyan-800 dark:text-cyan-200" style={safeWrapStyle}>Vídeo ou imagem demonstrativa</h3>
                           <p className="mt-2 text-sm font-medium leading-relaxed text-cyan-900 dark:text-cyan-50/90" style={safeWrapStyle}>{selectedTest.demo}</p>
-                          <div className="clinical-test-media-placeholder mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100" style={safeWrapStyle}>
-                            Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
-                          </div>
+                          {selectedTest.image_url ? (
+                            <div className="mt-4 overflow-hidden rounded-2xl border border-cyan-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950/40">
+                              <img
+                                src={selectedTest.image_url}
+                                alt={`Imagem demonstrativa - ${selectedTest.name}`}
+                                className="h-auto max-h-[420px] w-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div className="clinical-test-media-placeholder mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100" style={safeWrapStyle}>
+                              Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
+                            </div>
+                          )}
+                          {selectedTest.video_url && (
+                            <a
+                              href={selectedTest.video_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-cyan-700 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-200/50 transition hover:bg-cyan-600 dark:shadow-none"
+                            >
+                              Abrir vídeo demonstrativo
+                              <ArrowRight size={14} />
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>
