@@ -68,7 +68,18 @@ type WeeklyChartData = {
   melhora: number;
 };
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 const getSaoPauloDateKey = (value?: string | Date | null) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    // data_registro vem do Supabase como YYYY-MM-DD.
+    // Não pode passar por new Date(YYYY-MM-DD), porque o JS interpreta como UTC
+    // e em America/Sao_Paulo pode cair no dia anterior.
+    if (DATE_ONLY_PATTERN.test(trimmed)) return trimmed;
+  }
+
   const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) return "";
 
@@ -112,6 +123,12 @@ const getRecordDate = (item: any) =>
   item?.updated_at ||
   null;
 
+const getRecordTimestamp = (item: any) => {
+  const raw = item?.created_at || item?.updated_at || getRecordDate(item);
+  const time = raw ? new Date(raw).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+};
+
 const buildWeeklyChartData = (
   registrosPaciente: any[] = [],
   checklistExercicios: any[] = [],
@@ -131,10 +148,8 @@ const buildWeeklyChartData = (
     );
     if (Number.isFinite(painValue)) {
       const previous = painByDay.get(dateKey);
-      const previousTime = previous
-        ? new Date(getRecordDate(previous) || 0).getTime()
-        : 0;
-      const currentTime = new Date(getRecordDate(registro) || 0).getTime();
+      const previousTime = previous ? getRecordTimestamp(previous) : 0;
+      const currentTime = getRecordTimestamp(registro);
       if (!previous || currentTime >= previousTime)
         painByDay.set(dateKey, registro);
     }
@@ -782,7 +797,7 @@ export default function Dashboard() {
                   data.id,
                   user?.id,
                   ...linkedClinicalPatientsForPatient
-                    .map((patient: any) => patient.id)
+                    .flatMap((patient: any) => [patient.id, patient.perfil_id])
                     .filter(Boolean),
                 ]
                   .filter(Boolean)
@@ -1165,11 +1180,42 @@ Promise.resolve({ count: realAppointmentsData.length }),
           evolucoesResult && evolucoesResult.status === "fulfilled"
             ? evolucoesResult.value.data || []
             : [];
-        const recentRegistrosPacienteData =
+        let recentRegistrosPacienteData =
           registrosPacienteResult &&
-          registrosPacienteResult.status === "fulfilled"
+          registrosPacienteResult.status === "fulfilled" &&
+          !registrosPacienteResult.value.error
             ? registrosPacienteResult.value.data || []
             : [];
+
+        // Segurança extra para o Dashboard do paciente:
+        // se a busca geral não trouxer os registros, busca diretamente pelo auth.uid()/perfil.id.
+        // Isso cobre cadastros onde registros_paciente.paciente_id está no id da conta real
+        // e outros módulos usam o id clínico da tabela pacientes.
+        if (!isPhysio && recentRegistrosPacienteData.length === 0) {
+          const directPatientIds = Array.from(
+            new Set([data.id, user?.id].filter(Boolean).map(String)),
+          );
+
+          if (directPatientIds.length > 0) {
+            const { data: directRegistros, error: directRegistrosError } = await supabase
+              .from("registros_paciente")
+              .select(
+                "id, created_at, updated_at, data_registro, paciente_id, nivel_dor, notas, exercicios_realizados, exercicios_concluidos, concluidos_count, total_exercicios",
+              )
+              .in("paciente_id", directPatientIds)
+              .order("data_registro", { ascending: false })
+              .limit(40);
+
+            if (directRegistrosError) {
+              console.error(
+                "Erro ao buscar registros diretos do paciente no dashboard:",
+                directRegistrosError,
+              );
+            } else {
+              recentRegistrosPacienteData = directRegistros || [];
+            }
+          }
+        }
         const recentChecklistExerciciosData =
           checklistExerciciosResult &&
           checklistExerciciosResult.status === "fulfilled" &&
