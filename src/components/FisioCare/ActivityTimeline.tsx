@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Calendar,
@@ -29,7 +30,59 @@ interface ActivityItem {
 interface ActivityTimelineProps {
   activities: ActivityItem[];
   loading?: boolean;
+  mode?: 'patient' | 'physio';
 }
+
+const normalizeAction = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const getActivityDetailsPath = (activity: ActivityItem, mode: 'patient' | 'physio' = 'patient') => {
+  const action = normalizeAction(activity.tipo_acao || '');
+  const reference = activity.referencia_id ? encodeURIComponent(String(activity.referencia_id)) : '';
+  const query = reference ? `?ref=${reference}` : '';
+
+  if (action.includes('triagem')) {
+    return mode === 'physio' ? `/physio/triages${query}` : `/triage${query}`;
+  }
+
+  if (action.includes('agendamento')) {
+    return mode === 'physio' ? `/agenda${query}` : `/appointments${query}`;
+  }
+
+  if (
+    action.includes('diario') ||
+    action.includes('dor') ||
+    action.includes('registro_paciente') ||
+    action.includes('registro paciente')
+  ) {
+    return `/diario${query}`;
+  }
+
+  if (action.includes('exercicio')) {
+    return mode === 'physio' ? `/exercises${query}` : `/patient/exercises${query}`;
+  }
+
+  if (action.includes('documento')) {
+    return `/documents${query}`;
+  }
+
+  if (action.includes('prontuario') || action.includes('evolucao') || action.includes('avaliacao')) {
+    return mode === 'physio' ? `/patients${query}` : `/records${query}`;
+  }
+
+  if (action.includes('mensagem') || action.includes('chat')) {
+    return `/chat${query}`;
+  }
+
+  if (action.includes('perfil')) {
+    return '/profile';
+  }
+
+  return `/jornada${query}`;
+};
 
 const getActionStyles = (type: string) => {
   const normalized = type.toLowerCase();
@@ -142,7 +195,8 @@ const formatActionLabel = (type: string) => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-export default function ActivityTimeline({ activities, loading }: ActivityTimelineProps) {
+export default function ActivityTimeline({ activities, loading, mode = 'patient' }: ActivityTimelineProps) {
+  const navigate = useNavigate();
   if (loading) {
     return (
       <div className="space-y-5 animate-pulse">
@@ -169,6 +223,7 @@ export default function ActivityTimeline({ activities, loading }: ActivityTimeli
       {activities.map((activity, index) => {
         const style = getActionStyles(activity.tipo_acao);
         const Icon = style.icon;
+        const detailsPath = getActivityDetailsPath(activity, mode);
 
         return (
           <motion.div
@@ -222,7 +277,11 @@ export default function ActivityTimeline({ activities, loading }: ActivityTimeli
               </div>
 
               {activity.referencia_id && (
-                <button className={cn('relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link', style.actionColor)}>
+                <button
+                  type="button"
+                  onClick={() => navigate(detailsPath, { state: { activityId: activity.id, referenciaId: activity.referencia_id, tipoAcao: activity.tipo_acao } })}
+                  className={cn('relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link', style.actionColor)}
+                >
                   Ver detalhes
                   <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
                 </button>
