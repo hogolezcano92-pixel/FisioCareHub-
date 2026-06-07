@@ -1973,7 +1973,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
             </h2>
           </div>
           <div className="premium-card">
-            <ActivityTimeline activities={activities} />
+            <ActivityTimeline activities={activities} mode={isPhysio ? "physio" : "patient"} />
           </div>
         </div>
 
