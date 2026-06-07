@@ -25,6 +25,9 @@ interface ActivityItem {
   descricao: string;
   created_at: string;
   referencia_id?: string;
+  paciente_id?: string;
+  atendimento_id?: string;
+  source_table?: string;
 }
 
 interface ActivityTimelineProps {
@@ -39,49 +42,103 @@ const normalizeAction = (value: string) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-const getActivityDetailsPath = (activity: ActivityItem, mode: 'patient' | 'physio' = 'patient') => {
-  const action = normalizeAction(activity.tipo_acao || '');
-  const reference = activity.referencia_id ? encodeURIComponent(String(activity.referencia_id)) : '';
-  const query = reference ? `?ref=${reference}` : '';
+const buildQuery = (params: Record<string, string | undefined>) => {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value);
+  });
+  const queryString = query.toString();
+  return queryString ? `?${queryString}` : '';
+};
+
+const getActivityDetailsTarget = (activity: ActivityItem, mode: 'patient' | 'physio' = 'patient') => {
+  const action = normalizeAction(`${activity.tipo_acao || ''} ${activity.descricao || ''} ${activity.source_table || ''}`);
+  const reference = activity.referencia_id ? String(activity.referencia_id) : '';
+  const patientId = activity.paciente_id ? String(activity.paciente_id) : '';
+  const commonState = {
+    activityId: activity.id,
+    referenciaId: activity.referencia_id,
+    tipoAcao: activity.tipo_acao,
+    pacienteId: activity.paciente_id,
+    sourceTable: activity.source_table,
+  };
 
   if (action.includes('triagem')) {
-    return mode === 'physio' ? `/physio/triages${query}` : `/triage${query}`;
+    return {
+      path: mode === 'physio'
+        ? `/physio/triages${buildQuery({ triagem: reference, ref: reference, from: 'timeline' })}`
+        : `/triage${buildQuery({ triagem: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
-  if (action.includes('agendamento')) {
-    return mode === 'physio' ? `/agenda${query}` : `/appointments${query}`;
+  if (action.includes('agendamento') || action.includes('consulta')) {
+    return {
+      path: mode === 'physio'
+        ? `/agenda${buildQuery({ agendamento: reference, ref: reference, from: 'timeline' })}`
+        : `/appointments${buildQuery({ agendamento: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
   if (
     action.includes('diario') ||
     action.includes('dor') ||
+    action.includes('checkin') ||
+    action.includes('check-in') ||
     action.includes('registro_paciente') ||
     action.includes('registro paciente')
   ) {
-    return `/diario${query}`;
+    return {
+      path: mode === 'physio'
+        ? patientId
+          ? `/patients/${encodeURIComponent(patientId)}${buildQuery({ tab: 'diario', registro: reference, ref: reference, from: 'timeline' })}`
+          : `/patients${buildQuery({ tab: 'diario', registro: reference, ref: reference, from: 'timeline' })}`
+        : `/diario${buildQuery({ tab: 'historico', registro: reference, entry: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
-  if (action.includes('exercicio')) {
-    return mode === 'physio' ? `/exercises${query}` : `/patient/exercises${query}`;
+  if (action.includes('exercicio') || action.includes('treino')) {
+    return {
+      path: mode === 'physio'
+        ? `/exercises${buildQuery({ exercicio: reference, ref: reference, from: 'timeline' })}`
+        : `/patient/exercises${buildQuery({ exercicio: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
-  if (action.includes('documento')) {
-    return `/documents${query}`;
+  if (action.includes('documento') || action.includes('pdf') || action.includes('contrato')) {
+    return {
+      path: `/documents${buildQuery({ documento: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
   if (action.includes('prontuario') || action.includes('evolucao') || action.includes('avaliacao')) {
-    return mode === 'physio' ? `/patients${query}` : `/records${query}`;
+    return {
+      path: mode === 'physio'
+        ? `/patients${buildQuery({ prontuario: reference, evolucao: reference, ref: reference, from: 'timeline' })}`
+        : `/records${buildQuery({ prontuario: reference, evolucao: reference, ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
   if (action.includes('mensagem') || action.includes('chat')) {
-    return `/chat${query}`;
+    return {
+      path: `/chat${buildQuery({ ref: reference, from: 'timeline' })}`,
+      state: commonState,
+    };
   }
 
   if (action.includes('perfil')) {
-    return '/profile';
+    return { path: '/profile', state: commonState };
   }
 
-  return `/jornada${query}`;
+  return {
+    path: `/jornada${buildQuery({ ref: reference, from: 'timeline' })}`,
+    state: commonState,
+  };
 };
 
 const getActionStyles = (type: string) => {
@@ -223,7 +280,7 @@ export default function ActivityTimeline({ activities, loading, mode = 'patient'
       {activities.map((activity, index) => {
         const style = getActionStyles(activity.tipo_acao);
         const Icon = style.icon;
-        const detailsPath = getActivityDetailsPath(activity, mode);
+        const detailsTarget = getActivityDetailsTarget(activity, mode);
 
         return (
           <motion.div
@@ -276,16 +333,14 @@ export default function ActivityTimeline({ activities, loading, mode = 'patient'
                 </div>
               </div>
 
-              {activity.referencia_id && (
-                <button
-                  type="button"
-                  onClick={() => navigate(detailsPath, { state: { activityId: activity.id, referenciaId: activity.referencia_id, tipoAcao: activity.tipo_acao } })}
-                  className={cn('relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link', style.actionColor)}
-                >
-                  Ver detalhes
-                  <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => navigate(detailsTarget.path, { state: detailsTarget.state })}
+                className={cn('relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link', style.actionColor)}
+              >
+                Ver detalhes
+                <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
+              </button>
             </div>
           </motion.div>
         );
