@@ -433,6 +433,8 @@ const buildDashboardActivities = (
     descricao: `Triagem IA realizada: ${getTriageRegion(triage)}${triage?.gravidade ? ` • ${triage.gravidade}` : ""}`,
     created_at: getTriageCreatedAt(triage),
     referencia_id: triage.id,
+    paciente_id: triage.paciente_id,
+    source_table: "triagens",
   }));
 
   const syntheticAppointments = (appointments || [])
@@ -454,6 +456,8 @@ const buildDashboardActivities = (
         appointment?.data ||
         new Date().toISOString(),
       referencia_id: appointment.id,
+      paciente_id: appointment.paciente_id,
+      source_table: "agendamentos",
     }));
 
   const syntheticProntuarios = (prontuarios || [])
@@ -470,6 +474,8 @@ const buildDashboardActivities = (
         item?.updated_at ||
         new Date().toISOString(),
       referencia_id: item.id,
+      paciente_id: item.paciente_id,
+      source_table: "prontuarios",
     }));
 
   const syntheticEvolucoes = (evolucoes || []).slice(0, 6).map((item: any) => ({
@@ -482,6 +488,9 @@ const buildDashboardActivities = (
       item?.updated_at ||
       new Date().toISOString(),
     referencia_id: item.id,
+    paciente_id: item.paciente_id,
+    atendimento_id: item.atendimento_id,
+    source_table: "evolucoes",
   }));
 
   const syntheticRegistros = (registrosPaciente || [])
@@ -499,6 +508,8 @@ const buildDashboardActivities = (
         item?.updated_at ||
         new Date().toISOString(),
       referencia_id: item.id || item.data_registro,
+      paciente_id: item.paciente_id,
+      source_table: "registros_paciente",
     }));
 
   const syntheticExercises = (exerciciosPaciente || [])
@@ -513,6 +524,8 @@ const buildDashboardActivities = (
       created_at:
         item?.created_at || item?.updated_at || new Date().toISOString(),
       referencia_id: item.id,
+      paciente_id: item.paciente_id,
+      source_table: "exercicios_paciente",
     }));
 
   const syntheticDocuments = (documentos || [])
@@ -530,6 +543,8 @@ const buildDashboardActivities = (
         item?.updated_at ||
         new Date().toISOString(),
       referencia_id: item.id,
+      paciente_id: item.paciente_id,
+      source_table: "documentos_gerados",
     }));
 
   const unique = new Map<string, any>();
