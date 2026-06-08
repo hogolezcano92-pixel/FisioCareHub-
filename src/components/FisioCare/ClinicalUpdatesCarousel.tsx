@@ -57,6 +57,7 @@ const FALLBACK_UPDATES: ClinicalUpdate[] = [
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
   pubmed: 'Artigo científico',
+  frontiers: 'Artigo Frontiers',
   gnews: 'Notícia',
   europepmc: 'Artigo Europe PMC',
   crossref: 'Artigo científico',
@@ -324,16 +325,16 @@ export default function ClinicalUpdatesCarousel({ className }: { className?: str
 
           <div className="space-y-3">
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Evidências, notícias e tendências para sua prática
+              Evidências científicas para sua prática
             </h2>
             <p className="max-w-xl text-sm font-semibold leading-6 text-slate-300">
-              Conteúdos buscados por API e organizados para o fisioterapeuta acompanhar novidades sem sair do FisioCareHub.
+              Artigos da Frontiers e de bases científicas organizados por áreas da fisioterapia, com links para a fonte original.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-2">
-            <MetricPill icon={<BookOpenCheck size={16} />} label="Artigos" value="PubMed" />
-            <MetricPill icon={<Newspaper size={16} />} label="Notícias" value="API" />
+            <MetricPill icon={<BookOpenCheck size={16} />} label="Fonte" value="Frontiers" />
+            <MetricPill icon={<Newspaper size={16} />} label="Bases" value="PubMed+" />
             <MetricPill icon={<Stethoscope size={16} />} label="Foco" value="Fisio" />
           </div>
 
