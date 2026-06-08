@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Activity,
@@ -231,6 +231,7 @@ export default function ClinicalTestsHub() {
   const [query, setQuery] = useState('');
   const [tests, setTests] = useState<ClinicalTest[]>(clinicalTests);
   const [selectedTest, setSelectedTest] = useState<ClinicalTest | null>(clinicalTests[0]);
+  const selectedTestDetailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -297,6 +298,17 @@ export default function ClinicalTestsHub() {
       return matchesCategory && matchesSearch;
     });
   }, [activeCategory, query, tests]);
+
+  const handleSelectTest = (test: ClinicalTest) => {
+    setSelectedTest(test);
+
+    window.requestAnimationFrame(() => {
+      selectedTestDetailRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
 
   const handleAddToRecord = (test: ClinicalTest) => {
     const note = `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
@@ -424,7 +436,7 @@ export default function ClinicalTestsHub() {
                   <button
                     key={test.id}
                     type="button"
-                    onClick={() => setSelectedTest(test)}
+                    onClick={() => handleSelectTest(test)}
                     className={cn(
                       'group block w-full min-w-0 overflow-hidden rounded-[1.5rem] border p-3 text-left transition-all sm:rounded-[1.75rem] sm:p-4',
                       isActive
@@ -451,7 +463,7 @@ export default function ClinicalTestsHub() {
             </div>
           </div>
 
-          <div className="w-full min-w-0 overflow-x-hidden lg:sticky lg:top-24 lg:self-start">
+          <div ref={selectedTestDetailRef} className="w-full min-w-0 scroll-mt-24 overflow-x-hidden lg:sticky lg:top-24 lg:self-start">
             {selectedTest ? (() => {
               const SelectedIcon = selectedTest.icon;
               return (
