@@ -31,6 +31,7 @@ type ClinicalUpdate = {
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
   pubmed: 'Artigo científico',
+  frontiers: 'Artigo Frontiers',
   gnews: 'Notícia',
   scielo: 'Artigo SciELO',
   manual: 'Conteúdo FisioCareHub',
