@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -80,6 +80,7 @@ const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
 export default function PatientDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile } = useAuth();
   const [patient, setPatient] = useState<any>(null);
@@ -227,6 +228,193 @@ export default function PatientDetails() {
     patientData?.paciente_id,
     linkedProfile?.id,
   ].filter(Boolean).map(String)));
+
+  const uniqueStrings = (values: unknown[]) => Array.from(new Set(values.filter(Boolean).map(String)));
+
+  const getRouteAndTimelineCandidates = () => {
+    const locationState = (location.state || {}) as Record<string, any>;
+
+    return uniqueStrings([
+      id,
+      searchParams.get('id'),
+      searchParams.get('paciente'),
+      searchParams.get('paciente_id'),
+      searchParams.get('patient'),
+      searchParams.get('patient_id'),
+      locationState.pacienteId,
+      locationState.paciente_id,
+      locationState.patientId,
+      locationState.patient_id,
+    ]);
+  };
+
+  const getTimelineReferenceCandidates = () => {
+    const locationState = (location.state || {}) as Record<string, any>;
+
+    return uniqueStrings([
+      searchParams.get('agendamento'),
+      searchParams.get('atendimento'),
+      searchParams.get('consulta'),
+      searchParams.get('registro'),
+      searchParams.get('entry'),
+      searchParams.get('evolucao'),
+      searchParams.get('avaliacao'),
+      searchParams.get('documento'),
+      searchParams.get('arquivo'),
+      searchParams.get('prontuario'),
+      searchParams.get('ref'),
+      locationState.referenciaId,
+      locationState.referencia_id,
+      locationState.ref,
+      locationState.activityId,
+    ]);
+  };
+
+  const isSafeMissingColumnError = (error: any) => {
+    const message = String(error?.message || error?.details || error?.hint || '').toLowerCase();
+    return (
+      message.includes('does not exist') ||
+      message.includes('could not find') ||
+      message.includes('schema cache') ||
+      message.includes('column') ||
+      message.includes('relation')
+    );
+  };
+
+  const getFirstPatientByColumn = async (column: string, values: string[]) => {
+    if (!values.length) return null;
+
+    const { data, error } = await supabase
+      .from('pacientes')
+      .select('*')
+      .in(column, values)
+      .limit(1);
+
+    if (error) {
+      if (!isSafeMissingColumnError(error)) {
+        console.warn(`Não foi possível buscar paciente por ${column}:`, error);
+      }
+      return null;
+    }
+
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+  };
+
+  const getPatientByEmail = async (email: string) => {
+    const patientEmail = normalizeEmail(email);
+    if (!patientEmail) return null;
+
+    const { data, error } = await supabase
+      .from('pacientes')
+      .select('*')
+      .ilike('email', patientEmail)
+      .limit(1);
+
+    if (error) {
+      if (!isSafeMissingColumnError(error)) {
+        console.warn('Não foi possível buscar paciente por e-mail:', error);
+      }
+      return null;
+    }
+
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+  };
+
+  const getProfileById = async (profileId: string) => {
+    if (!profileId) return null;
+
+    const { data, error } = await supabase
+      .from('perfis')
+      .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url, tipo_usuario, role')
+      .eq('id', profileId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Não foi possível buscar perfil para resolver paciente:', error);
+      return null;
+    }
+
+    return data || null;
+  };
+
+  const getReferencePatientIds = async (references: string[]) => {
+    if (!references.length) return { ids: [] as string[], emails: [] as string[] };
+
+    const ids: string[] = [];
+    const emails: string[] = [];
+
+    const readReferenceTable = async (table: string, select: string, idColumn = 'id') => {
+      const { data, error } = await supabase
+        .from(table)
+        .select(select)
+        .in(idColumn, references)
+        .limit(20);
+
+      if (error) {
+        if (!isSafeMissingColumnError(error)) {
+          console.warn(`Não foi possível resolver referência em ${table}:`, error);
+        }
+        return;
+      }
+
+      (data || []).forEach((row: any) => {
+        ids.push(row?.paciente_id, row?.patient_id, row?.perfil_id, row?.profile_id, row?.user_id, row?.auth_user_id);
+        emails.push(row?.patient_email, row?.paciente_email, row?.email);
+      });
+    };
+
+    await Promise.all([
+      readReferenceTable('agendamentos', '*'),
+      readReferenceTable('registros_paciente', '*'),
+      readReferenceTable('evolucoes', '*'),
+      readReferenceTable('fichas_avaliacao', '*'),
+      readReferenceTable('documentos_gerados', '*'),
+      readReferenceTable('arquivos_paciente', '*'),
+    ]);
+
+    return {
+      ids: uniqueStrings(ids),
+      emails: uniqueStrings(emails).map((item) => normalizeEmail(item)).filter(Boolean),
+    };
+  };
+
+  const resolvePatientFromCurrentRoute = async () => {
+    const directCandidates = getRouteAndTimelineCandidates();
+    const referenceCandidates = getTimelineReferenceCandidates();
+    const referenceMatch = await getReferencePatientIds(referenceCandidates);
+    const candidates = uniqueStrings([...directCandidates, ...referenceMatch.ids]);
+
+    const directPatient =
+      await getFirstPatientByColumn('id', candidates) ||
+      await getFirstPatientByColumn('perfil_id', candidates) ||
+      await getFirstPatientByColumn('profile_id', candidates) ||
+      await getFirstPatientByColumn('user_id', candidates) ||
+      await getFirstPatientByColumn('auth_user_id', candidates) ||
+      await getFirstPatientByColumn('paciente_id', candidates);
+
+    if (directPatient?.id) return directPatient;
+
+    for (const candidate of candidates) {
+      const profileCandidate = await getProfileById(candidate);
+      if (!profileCandidate?.id) continue;
+
+      const patientByProfile =
+        await getFirstPatientByColumn('perfil_id', [profileCandidate.id]) ||
+        await getFirstPatientByColumn('profile_id', [profileCandidate.id]) ||
+        await getFirstPatientByColumn('user_id', [profileCandidate.id]) ||
+        await getFirstPatientByColumn('auth_user_id', [profileCandidate.id]) ||
+        await getPatientByEmail(profileCandidate.email);
+
+      if (patientByProfile?.id) return patientByProfile;
+    }
+
+    for (const email of referenceMatch.emails) {
+      const patientByReferenceEmail = await getPatientByEmail(email);
+      if (patientByReferenceEmail?.id) return patientByReferenceEmail;
+    }
+
+    return null;
+  };
 
   const resolvePatientAccessStatus = (patientData: any) => {
     const status = String(patientData?.acesso_status || '').trim().toLowerCase();
@@ -499,72 +687,16 @@ export default function PatientDetails() {
   };
 
   const fetchPatientData = async () => {
+    setLoading(true);
+
     try {
-      // Fetch Patient
-      // A timeline pode receber tanto o ID clínico de public.pacientes.id
-      // quanto o ID real da conta do paciente em public.perfis.id.
-      // Antes, quando o registro vinha de registros_paciente/diário de dor,
-      // o botão "Ver detalhes" abria /patients/:id com o perfil_id e a busca
-      // procurava apenas por pacientes.id, causando "Paciente não encontrado".
-      let patientData: any = null;
+      // Resolve o paciente clínico correto.
+      // A linha do tempo pode enviar pacientes.id, perfis.id, ou apenas a referência
+      // de um agendamento/diário/evolução/documento. Antes a tela buscava somente
+      // pacientes.id e por isso caía em "Paciente não encontrado" para registros reais.
+      const patientData = await resolvePatientFromCurrentRoute();
 
-      const { data: directPatientData, error: directPatientError } = await supabase
-        .from('pacientes')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (directPatientError) throw directPatientError;
-      patientData = directPatientData;
-
-      if (!patientData && id) {
-        const { data: patientByProfileId, error: patientByProfileIdError } = await supabase
-          .from('pacientes')
-          .select('*')
-          .eq('perfil_id', id)
-          .eq('fisioterapeuta_id', user!.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (patientByProfileIdError && !ignoreMissingRelationError(patientByProfileIdError)) {
-          throw patientByProfileIdError;
-        }
-
-        patientData = patientByProfileId || null;
-      }
-
-      if (!patientData && id) {
-        const { data: linkedProfileById, error: linkedProfileByIdError } = await supabase
-          .from('perfis')
-          .select('id, email')
-          .eq('id', id)
-          .maybeSingle();
-
-        if (linkedProfileByIdError && !ignoreMissingRelationError(linkedProfileByIdError)) {
-          throw linkedProfileByIdError;
-        }
-
-        const linkedEmail = normalizeEmail(linkedProfileById?.email);
-        if (linkedEmail) {
-          const { data: patientByEmail, error: patientByEmailError } = await supabase
-            .from('pacientes')
-            .select('*')
-            .ilike('email', linkedEmail)
-            .eq('fisioterapeuta_id', user!.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (patientByEmailError && !ignoreMissingRelationError(patientByEmailError)) {
-            throw patientByEmailError;
-          }
-
-          patientData = patientByEmail || null;
-        }
-      }
-
-      if (!patientData) {
+      if (!patientData?.id) {
         setPatient(null);
         return;
       }
