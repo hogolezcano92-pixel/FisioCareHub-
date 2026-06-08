@@ -889,17 +889,46 @@ const backfillTranslateClinicalUpdates = async (req: VercelRequest, res: VercelR
 
 
 const FRONTIERS_BASE_URL = 'https://search-api.frontiersin.org';
+const FRONTIERS_SWAGGER_URL = `${FRONTIERS_BASE_URL}/api/V1/swagger`;
+const FRONTIERS_DOI_PREFIX = '10.3389';
 
-const FRONTIERS_ENDPOINTS = [
-  '/api/v1/articles/search',
-  '/api/v1/article/search',
-  '/api/v1/articles',
-  '/api/v1/article',
-  '/api/V1/articles/search',
-  '/api/V1/article/search',
-  '/api/V1/articles',
-  '/api/V1/article',
+type FrontiersEndpointCandidate = {
+  endpoint: string;
+  method: 'GET' | 'POST';
+  queryParamNames: string[];
+  source: 'swagger' | 'fallback';
+};
+
+type FrontiersDebugEntry = {
+  source: string;
+  method?: string;
+  endpoint?: string;
+  url?: string;
+  status?: number;
+  ok?: boolean;
+  items?: number;
+  error?: string;
+  responseKeys?: string[];
+};
+
+let FRONTIERS_SWAGGER_CANDIDATES_CACHE: FrontiersEndpointCandidate[] | null = null;
+let FRONTIERS_LAST_DEBUG: FrontiersDebugEntry[] = [];
+
+const FRONTIERS_FALLBACK_ENDPOINTS: FrontiersEndpointCandidate[] = [
+  { endpoint: '/api/v1/articles/search', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/v1/article/search', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/v1/articles', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/v1/article', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/V1/articles/search', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/V1/article/search', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/V1/articles', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
+  { endpoint: '/api/V1/article', method: 'GET', queryParamNames: ['query', 'q'], source: 'fallback' },
 ];
+
+const pushFrontiersDebug = (entry: FrontiersDebugEntry) => {
+  if (FRONTIERS_LAST_DEBUG.length >= 24) return;
+  FRONTIERS_LAST_DEBUG.push(entry);
+};
 
 const getAnyValue = (source: any, keys: string[]): unknown => {
   if (!source || typeof source !== 'object') return '';
@@ -983,39 +1012,186 @@ const normalizeFrontiersUrl = (item: any) => {
   return 'https://www.frontiersin.org/search';
 };
 
-const fetchFrontiersEndpoint = async (endpoint: string, term: string) => {
-  const url = new URL(`${FRONTIERS_BASE_URL}${endpoint}`);
-  url.searchParams.set('query', term);
-  url.searchParams.set('q', term);
-  url.searchParams.set('search', term);
-  url.searchParams.set('term', term);
-  url.searchParams.set('page', '1');
-  url.searchParams.set('pageSize', '8');
-  url.searchParams.set('size', '8');
-  url.searchParams.set('limit', '8');
-  url.searchParams.set('sort', 'publishedDate');
-  url.searchParams.set('order', 'desc');
+const getFrontiersSwaggerCandidates = async (): Promise<FrontiersEndpointCandidate[]> => {
+  if (FRONTIERS_SWAGGER_CANDIDATES_CACHE) return FRONTIERS_SWAGGER_CANDIDATES_CACHE;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+  const candidates: FrontiersEndpointCandidate[] = [];
 
   try {
-    const response = await fetch(url.toString(), {
-      signal: controller.signal,
+    const response = await fetch(FRONTIERS_SWAGGER_URL, {
       headers: {
         Accept: 'application/json',
         'User-Agent': 'FisioCareHub/1.0 (https://www.fisiocarehub.company)',
       },
     });
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      pushFrontiersDebug({ source: 'swagger', url: FRONTIERS_SWAGGER_URL, status: response.status, ok: false });
+      FRONTIERS_SWAGGER_CANDIDATES_CACHE = FRONTIERS_FALLBACK_ENDPOINTS;
+      return FRONTIERS_SWAGGER_CANDIDATES_CACHE;
+    }
+
+    const swagger: any = await response.json();
+    const paths = swagger?.paths && typeof swagger.paths === 'object' ? swagger.paths : {};
+
+    for (const [endpoint, config] of Object.entries(paths)) {
+      if (!config || typeof config !== 'object') continue;
+
+      for (const method of ['get', 'post'] as const) {
+        const operation = (config as any)[method];
+        if (!operation || typeof operation !== 'object') continue;
+
+        const tags = Array.isArray(operation.tags) ? operation.tags.join(' ') : '';
+        const operationId = String(operation.operationId || '');
+        const summary = String(operation.summary || '');
+        const haystack = normalizeText(`${endpoint} ${tags} ${operationId} ${summary}`);
+
+        if (!/(article|document)/.test(haystack)) continue;
+        if (/(archive|administration|recurring|hangfire)/.test(haystack)) continue;
+
+        const parameters = Array.isArray(operation.parameters) ? operation.parameters : [];
+        const queryParamNames = parameters
+          .filter((param: any) => param?.in === 'query' && param?.name)
+          .map((param: any) => String(param.name));
+
+        candidates.push({
+          endpoint,
+          method: method.toUpperCase() as 'GET' | 'POST',
+          queryParamNames,
+          source: 'swagger',
+        });
+      }
+    }
+
+    candidates.sort((a, b) => {
+      const score = (candidate: FrontiersEndpointCandidate) => {
+        const text = normalizeText(candidate.endpoint);
+        return (text.includes('article') ? 10 : 0)
+          + (text.includes('search') ? 8 : 0)
+          + (candidate.method === 'GET' ? 3 : 0)
+          + (candidate.queryParamNames.length ? 2 : 0);
+      };
+      return score(b) - score(a);
+    });
+
+    const deduped = [...candidates, ...FRONTIERS_FALLBACK_ENDPOINTS].filter((candidate, index, all) =>
+      all.findIndex((item) => item.endpoint === candidate.endpoint && item.method === candidate.method) === index,
+    );
+
+    FRONTIERS_SWAGGER_CANDIDATES_CACHE = deduped.slice(0, 18);
+    pushFrontiersDebug({
+      source: 'swagger',
+      url: FRONTIERS_SWAGGER_URL,
+      status: response.status,
+      ok: true,
+      items: FRONTIERS_SWAGGER_CANDIDATES_CACHE.length,
+      responseKeys: Object.keys(swagger || {}).slice(0, 8),
+    });
+    return FRONTIERS_SWAGGER_CANDIDATES_CACHE;
+  } catch (error: any) {
+    pushFrontiersDebug({ source: 'swagger', url: FRONTIERS_SWAGGER_URL, error: error?.message || String(error) });
+    FRONTIERS_SWAGGER_CANDIDATES_CACHE = FRONTIERS_FALLBACK_ENDPOINTS;
+    return FRONTIERS_SWAGGER_CANDIDATES_CACHE;
+  }
+};
+
+const addFrontiersSearchParams = (url: URL, term: string, queryParamNames: string[]) => {
+  const normalizedParamNames = queryParamNames.length
+    ? queryParamNames
+    : ['query', 'q', 'search', 'term', 'keyword'];
+
+  for (const name of normalizedParamNames) {
+    const normalizedName = normalizeText(name);
+    if (/page(size)?|rows|limit|take|count|size|max/.test(normalizedName)) continue;
+    if (/sort|order|from|to|date|year|type|category|journal|section/.test(normalizedName)) continue;
+    url.searchParams.set(name, term);
+  }
+
+  const params = new Set(queryParamNames.map((name) => normalizeText(name)));
+  const setIfKnownOrFallback = (name: string, value: string) => {
+    if (!queryParamNames.length || params.has(normalizeText(name))) url.searchParams.set(name, value);
+  };
+
+  setIfKnownOrFallback('page', '1');
+  setIfKnownOrFallback('pageSize', '8');
+  setIfKnownOrFallback('size', '8');
+  setIfKnownOrFallback('limit', '8');
+  setIfKnownOrFallback('rows', '8');
+  setIfKnownOrFallback('sort', 'publishedDate');
+  setIfKnownOrFallback('order', 'desc');
+};
+
+const fetchFrontiersEndpoint = async (candidate: FrontiersEndpointCandidate, term: string) => {
+  const url = new URL(`${FRONTIERS_BASE_URL}${candidate.endpoint}`);
+  addFrontiersSearchParams(url, term, candidate.queryParamNames);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const init: any = {
+      method: candidate.method,
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'FisioCareHub/1.0 (https://www.fisiocarehub.company)',
+      },
+    };
+
+    if (candidate.method === 'POST') {
+      init.headers = { ...init.headers, 'Content-Type': 'application/json' };
+      init.body = JSON.stringify({
+        query: term,
+        q: term,
+        search: term,
+        term,
+        page: 1,
+        pageSize: 8,
+        size: 8,
+        limit: 8,
+        sort: 'publishedDate',
+        order: 'desc',
+      });
+    }
+
+    const response = await fetch(url.toString(), init);
+    const status = response.status;
+
+    if (!response.ok) {
+      pushFrontiersDebug({
+        source: candidate.source,
+        method: candidate.method,
+        endpoint: candidate.endpoint,
+        url: url.toString(),
+        status,
+        ok: false,
+      });
+      return [];
+    }
 
     const text = await response.text();
     if (!text.trim()) return [];
 
     const payload = JSON.parse(text);
-    return pickLikelyArticleObjects(payload);
-  } catch (error) {
+    const items = pickLikelyArticleObjects(payload);
+    pushFrontiersDebug({
+      source: candidate.source,
+      method: candidate.method,
+      endpoint: candidate.endpoint,
+      status,
+      ok: true,
+      items: items.length,
+      responseKeys: Object.keys(payload || {}).slice(0, 8),
+    });
+    return items;
+  } catch (error: any) {
+    pushFrontiersDebug({
+      source: candidate.source,
+      method: candidate.method,
+      endpoint: candidate.endpoint,
+      url: url.toString(),
+      error: error?.message || String(error),
+    });
     return [];
   } finally {
     clearTimeout(timeout);
@@ -1039,7 +1215,10 @@ const fetchFrontiersWebsiteSearch = async (term: string) => {
       },
     });
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      pushFrontiersDebug({ source: 'website', url: url.toString(), status: response.status, ok: false });
+      return [];
+    }
 
     const html = await response.text();
     const items: any[] = [];
@@ -1064,62 +1243,145 @@ const fetchFrontiersWebsiteSearch = async (term: string) => {
       });
     }
 
+    pushFrontiersDebug({ source: 'website', url: url.toString(), status: response.status, ok: true, items: items.length });
     return items;
-  } catch (error) {
+  } catch (error: any) {
+    pushFrontiersDebug({ source: 'website', url: url.toString(), error: error?.message || String(error) });
     return [];
   } finally {
     clearTimeout(timeout);
   }
 };
 
-const fetchFrontiers = async (maxQueries = FRONTIERS_QUERIES.length) => {
+const mapFrontiersItemsToUpdates = (items: any[], query: { term: string; category: string }) => {
   const updates: ClinicalUpdateInsert[] = [];
 
-  for (const query of FRONTIERS_QUERIES.slice(0, maxQueries)) {
-    let items: any[] = [];
+  for (const item of items.slice(0, 6)) {
+    const title = stripHtml(getFirstString(getAnyValue(item, [
+      'title', 'articleTitle', 'documentTitle', 'displayTitle', 'name', 'Title', 'ArticleTitle',
+    ])), 240);
+    const abstract = stripHtml(getFirstString(getAnyValue(item, [
+      'abstract', 'summary', 'description', 'teaser', 'shortDescription', 'plainLanguageSummary', 'articleAbstract',
+    ])), 520);
+    const journal = stripHtml(getFirstString(getAnyValue(item, [
+      'journal', 'journalTitle', 'journalName', 'publicationTitle', 'source', 'sourceTitle', 'containerTitle',
+    ])) || 'Frontiers', 140);
+    const doi = getFirstString(getAnyValue(item, ['doi', 'DOI', 'articleDoi', 'articleDOI']));
+    const sourceUrl = normalizeFrontiersUrl(item);
+    const idSeed = doi || getFirstString(getAnyValue(item, ['id', 'articleId', 'documentId'])) || sourceUrl || title;
+    const summary = abstract || `${journal}. Artigo científico da Frontiers relacionado a ${query.term}. Abra a fonte original para conferir resumo, autores e método.`;
 
-    for (const endpoint of FRONTIERS_ENDPOINTS) {
-      items = await fetchFrontiersEndpoint(endpoint, query.term);
-      if (items.length) break;
+    if (!title || !isSafeClinicalTopic(title, `${summary} ${query.term}`)) continue;
+    if (!isStrictPhysioScientificTopic(title, `${summary} ${query.term} ${journal}`)) continue;
+
+    const imageFields = buildImageFields(title, summary, query.category);
+
+    updates.push({
+      title,
+      summary,
+      source: journal || 'Frontiers',
+      source_url: sourceUrl,
+      source_type: 'frontiers',
+      category: query.category,
+      external_id: `frontiers:${Buffer.from(idSeed).toString('base64url').slice(0, 96)}`,
+      published_at: normalizeFrontiersDate(item),
+      ...imageFields,
+      is_published: true,
+      is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
+    });
+  }
+
+  return updates;
+};
+
+const fetchFrontiersViaCrossref = async (query: { term: string; category: string }) => {
+  const url = new URL(`https://api.crossref.org/prefixes/${FRONTIERS_DOI_PREFIX}/works`);
+  url.searchParams.set('query', query.term);
+  url.searchParams.set('filter', 'type:journal-article,from-pub-date:2024-01-01');
+  url.searchParams.set('rows', '6');
+  url.searchParams.set('sort', 'published');
+  url.searchParams.set('order', 'desc');
+  if (CROSSREF_MAILTO) url.searchParams.set('mailto', CROSSREF_MAILTO);
+
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': `FisioCareHub/1.0 (${CROSSREF_MAILTO || 'contact@fisiocarehub.company'})`,
+      },
+    });
+
+    if (!response.ok) {
+      pushFrontiersDebug({ source: 'crossref-prefix', url: url.toString(), status: response.status, ok: false });
+      return [] as ClinicalUpdateInsert[];
     }
 
-    if (!items.length) {
-      items = await fetchFrontiersWebsiteSearch(query.term);
-    }
+    const data: any = await response.json();
+    const items = Array.isArray(data?.message?.items) ? data.message.items : [];
+    pushFrontiersDebug({
+      source: 'crossref-prefix',
+      url: url.toString(),
+      status: response.status,
+      ok: true,
+      items: items.length,
+      responseKeys: Object.keys(data?.message || {}).slice(0, 8),
+    });
 
-    for (const item of items.slice(0, 6)) {
-      const title = stripHtml(getFirstString(getAnyValue(item, [
-        'title', 'articleTitle', 'documentTitle', 'displayTitle', 'name', 'Title', 'ArticleTitle',
-      ])), 240);
-      const abstract = stripHtml(getFirstString(getAnyValue(item, [
-        'abstract', 'summary', 'description', 'teaser', 'shortDescription', 'plainLanguageSummary', 'articleAbstract',
-      ])), 520);
-      const journal = stripHtml(getFirstString(getAnyValue(item, [
-        'journal', 'journalTitle', 'journalName', 'publicationTitle', 'source', 'sourceTitle', 'containerTitle',
-      ])) || 'Frontiers', 140);
-      const doi = getFirstString(getAnyValue(item, ['doi', 'DOI', 'articleDoi', 'articleDOI']));
-      const sourceUrl = normalizeFrontiersUrl(item);
-      const idSeed = doi || getFirstString(getAnyValue(item, ['id', 'articleId', 'documentId'])) || sourceUrl || title;
-      const summary = abstract || `${journal}. Artigo científico da Frontiers relacionado a ${query.term}. Abra a fonte original para conferir resumo, autores e método.`;
+    const mappedItems = items.map((item: any) => {
+      const doi = String(item.DOI || '').trim();
+      const title = stripHtml(getFirstArrayString(item.title), 240);
+      const abstract = stripHtml(item.abstract || item.subtitle?.[0] || '', 520);
+      const containerTitle = stripHtml(getFirstArrayString(item['container-title']) || 'Frontiers', 140);
+      const publishedParts = item.published?.['date-parts']?.[0] || item['published-print']?.['date-parts']?.[0] || item['published-online']?.['date-parts']?.[0];
+      const publishedAt = Array.isArray(publishedParts) && publishedParts.length
+        ? normalizeDate(`${publishedParts[0]}-${String(publishedParts[1] || 1).padStart(2, '0')}-${String(publishedParts[2] || 1).padStart(2, '0')}`)
+        : null;
 
-      if (!title || !isSafeClinicalTopic(title, `${summary} ${query.term}`)) continue;
-      if (!isStrictPhysioScientificTopic(title, `${summary} ${query.term} ${journal}`)) continue;
-
-      const imageFields = buildImageFields(title, summary, query.category);
-
-      updates.push({
+      return {
         title,
-        summary,
-        source: journal || 'Frontiers',
-        source_url: sourceUrl,
-        source_type: 'frontiers',
-        category: query.category,
-        external_id: `frontiers:${Buffer.from(idSeed).toString('base64url').slice(0, 96)}`,
-        published_at: normalizeFrontiersDate(item),
-        ...imageFields,
-        is_published: true,
-        is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
-      });
+        abstract,
+        journal: containerTitle,
+        doi,
+        url: doi ? `https://doi.org/${doi}` : String(item.URL || 'https://www.frontiersin.org/search').trim(),
+        publishedAt,
+      };
+    });
+
+    return mapFrontiersItemsToUpdates(mappedItems, query);
+  } catch (error: any) {
+    pushFrontiersDebug({ source: 'crossref-prefix', url: url.toString(), error: error?.message || String(error) });
+    return [] as ClinicalUpdateInsert[];
+  }
+};
+
+const fetchFrontiers = async (maxQueries = FRONTIERS_QUERIES.length) => {
+  FRONTIERS_LAST_DEBUG = [];
+  const updates: ClinicalUpdateInsert[] = [];
+  const seen = new Set<string>();
+  const candidates = await getFrontiersSwaggerCandidates();
+
+  for (const query of FRONTIERS_QUERIES.slice(0, maxQueries)) {
+    let queryUpdates: ClinicalUpdateInsert[] = [];
+
+    for (const candidate of candidates) {
+      const items = await fetchFrontiersEndpoint(candidate, query.term);
+      queryUpdates = mapFrontiersItemsToUpdates(items, query);
+      if (queryUpdates.length) break;
+    }
+
+    if (!queryUpdates.length) {
+      const websiteItems = await fetchFrontiersWebsiteSearch(query.term);
+      queryUpdates = mapFrontiersItemsToUpdates(websiteItems, query);
+    }
+
+    if (!queryUpdates.length) {
+      queryUpdates = await fetchFrontiersViaCrossref(query);
+    }
+
+    for (const update of queryUpdates) {
+      if (!update.external_id || seen.has(update.external_id)) continue;
+      seen.add(update.external_id);
+      updates.push(update);
     }
   }
 
@@ -1503,6 +1765,9 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
         crossref: Math.min(crossrefUpdates.length, limits.crossrefSelect),
         total: updates.length,
       },
+      frontiers_debug: req.query.frontiers_debug === '1' || frontiersUpdates.length === 0
+        ? FRONTIERS_LAST_DEBUG
+        : undefined,
     });
   } catch (error: any) {
     console.error('[Clinical Updates Sync] Erro:', error);
