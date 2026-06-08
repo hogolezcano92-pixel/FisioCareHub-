@@ -501,12 +501,73 @@ export default function PatientDetails() {
   const fetchPatientData = async () => {
     try {
       // Fetch Patient
-      const { data: patientData, error: pError } = await supabase
+      // A timeline pode receber tanto o ID clínico de public.pacientes.id
+      // quanto o ID real da conta do paciente em public.perfis.id.
+      // Antes, quando o registro vinha de registros_paciente/diário de dor,
+      // o botão "Ver detalhes" abria /patients/:id com o perfil_id e a busca
+      // procurava apenas por pacientes.id, causando "Paciente não encontrado".
+      let patientData: any = null;
+
+      const { data: directPatientData, error: directPatientError } = await supabase
         .from('pacientes')
         .select('*')
         .eq('id', id)
-        .single();
-      if (pError) throw pError;
+        .maybeSingle();
+
+      if (directPatientError) throw directPatientError;
+      patientData = directPatientData;
+
+      if (!patientData && id) {
+        const { data: patientByProfileId, error: patientByProfileIdError } = await supabase
+          .from('pacientes')
+          .select('*')
+          .eq('perfil_id', id)
+          .eq('fisioterapeuta_id', user!.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (patientByProfileIdError && !ignoreMissingRelationError(patientByProfileIdError)) {
+          throw patientByProfileIdError;
+        }
+
+        patientData = patientByProfileId || null;
+      }
+
+      if (!patientData && id) {
+        const { data: linkedProfileById, error: linkedProfileByIdError } = await supabase
+          .from('perfis')
+          .select('id, email')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (linkedProfileByIdError && !ignoreMissingRelationError(linkedProfileByIdError)) {
+          throw linkedProfileByIdError;
+        }
+
+        const linkedEmail = normalizeEmail(linkedProfileById?.email);
+        if (linkedEmail) {
+          const { data: patientByEmail, error: patientByEmailError } = await supabase
+            .from('pacientes')
+            .select('*')
+            .ilike('email', linkedEmail)
+            .eq('fisioterapeuta_id', user!.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (patientByEmailError && !ignoreMissingRelationError(patientByEmailError)) {
+            throw patientByEmailError;
+          }
+
+          patientData = patientByEmail || null;
+        }
+      }
+
+      if (!patientData) {
+        setPatient(null);
+        return;
+      }
 
       const linkedProfile = await fetchLinkedPatientProfile(patientData);
       const resolvedPatient = mergePatientWithProfile(patientData, linkedProfile);
