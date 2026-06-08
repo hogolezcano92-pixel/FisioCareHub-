@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-type ClinicalSourceType = 'pubmed' | 'gnews' | 'europepmc' | 'crossref';
+type ClinicalSourceType = 'pubmed' | 'gnews' | 'europepmc' | 'crossref' | 'frontiers';
 
 type ClinicalUpdateInsert = {
   title: string;
@@ -178,6 +178,29 @@ const CROSSREF_QUERIES = [
   { term: '"diabetes" exercise intervention', category: 'Diabetes e metabolismo' },
   { term: '"obesity" nutrition exercise intervention', category: 'Nutrição e metabolismo' },
   { term: '"digital health" telehealth healthcare', category: 'Tecnologia em saúde' },
+];
+
+const FRONTIERS_QUERIES = [
+  { term: 'physiotherapy rehabilitation', category: 'Fisioterapia' },
+  { term: 'physical therapy exercise therapy', category: 'Exercício terapêutico' },
+  { term: 'musculoskeletal physiotherapy', category: 'Ortopedia' },
+  { term: 'low back pain physiotherapy', category: 'Ortopedia' },
+  { term: 'sports injury rehabilitation', category: 'Esportiva' },
+  { term: 'stroke rehabilitation physiotherapy', category: 'Neurologia' },
+  { term: 'Parkinson rehabilitation exercise', category: 'Neurologia' },
+  { term: 'pulmonary rehabilitation physiotherapy', category: 'Cardiorrespiratória' },
+  { term: 'cardiac rehabilitation exercise', category: 'Cardiologia' },
+  { term: 'early mobilization intensive care rehabilitation', category: 'UTI e cuidados críticos' },
+  { term: 'falls prevention older adults rehabilitation', category: 'Geriatria' },
+  { term: 'sarcopenia resistance training older adults', category: 'Geriatria' },
+  { term: 'chronic pain exercise therapy', category: 'Dor' },
+  { term: 'pelvic floor rehabilitation urinary incontinence', category: 'Saúde pélvica' },
+  { term: 'postpartum exercise rehabilitation', category: 'Saúde da mulher' },
+  { term: 'prostate cancer rehabilitation exercise', category: 'Saúde do homem' },
+  { term: 'pediatric rehabilitation cerebral palsy', category: 'Pediatria' },
+  { term: 'physical activity depression anxiety rehabilitation', category: 'Saúde mental' },
+  { term: 'diabetes exercise rehabilitation', category: 'Diabetes e metabolismo' },
+  { term: 'telehealth digital rehabilitation physiotherapy', category: 'Tecnologia em saúde' },
 ];
 
 const stripHtml = (value: unknown, maxLength = 420) => String(value || '')
@@ -864,6 +887,245 @@ const backfillTranslateClinicalUpdates = async (req: VercelRequest, res: VercelR
 };
 
 
+
+const FRONTIERS_BASE_URL = 'https://search-api.frontiersin.org';
+
+const FRONTIERS_ENDPOINTS = [
+  '/api/v1/articles/search',
+  '/api/v1/article/search',
+  '/api/v1/articles',
+  '/api/v1/article',
+  '/api/V1/articles/search',
+  '/api/V1/article/search',
+  '/api/V1/articles',
+  '/api/V1/article',
+];
+
+const getAnyValue = (source: any, keys: string[]): unknown => {
+  if (!source || typeof source !== 'object') return '';
+
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  }
+
+  const normalizedKeys = keys.map((key) => normalizeText(key).replace(/[^a-z0-9]/g, ''));
+  for (const [key, value] of Object.entries(source)) {
+    const normalizedKey = normalizeText(key).replace(/[^a-z0-9]/g, '');
+    if (normalizedKeys.includes(normalizedKey)) return value;
+  }
+
+  return '';
+};
+
+const collectObjectArrays = (value: unknown, depth = 0): any[][] => {
+  if (depth > 5 || !value) return [];
+
+  if (Array.isArray(value)) {
+    const objectItems = value.filter((item) => item && typeof item === 'object' && !Array.isArray(item));
+    const nested = value.flatMap((item) => collectObjectArrays(item, depth + 1));
+    return objectItems.length ? [objectItems, ...nested] : nested;
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap((item) => collectObjectArrays(item, depth + 1));
+  }
+
+  return [];
+};
+
+const pickLikelyArticleObjects = (payload: unknown) => {
+  const arrays = collectObjectArrays(payload);
+  const scored = arrays
+    .map((items) => {
+      const score = items.reduce((total, item) => {
+        const title = getFirstString(getAnyValue(item, [
+          'title', 'articleTitle', 'documentTitle', 'displayTitle', 'name', 'Title', 'ArticleTitle',
+        ]));
+        const doi = getFirstString(getAnyValue(item, ['doi', 'DOI', 'articleDoi', 'articleDOI']));
+        const url = getFirstString(getAnyValue(item, ['url', 'URL', 'articleUrl', 'articleURL', 'fullTextUrl', 'webUrl']));
+        return total + (title ? 3 : 0) + (doi ? 2 : 0) + (url ? 1 : 0);
+      }, 0);
+      return { items, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0]?.items || [];
+};
+
+const normalizeFrontiersDate = (item: any) => {
+  const direct = getFirstString(getAnyValue(item, [
+    'published_at', 'publishedAt', 'publishedDate', 'publicationDate', 'datePublished',
+    'firstPublicationDate', 'articlePublicationDate', 'acceptedDate', 'date', 'year', 'publicationYear',
+  ]));
+
+  if (direct) return normalizeDate(direct);
+
+  const year = getFirstString(getAnyValue(item, ['publicationYear', 'year']));
+  const month = getFirstString(getAnyValue(item, ['publicationMonth', 'month']));
+  const day = getFirstString(getAnyValue(item, ['publicationDay', 'day']));
+
+  if (year) return normalizeDate(`${year}-${String(month || 1).padStart(2, '0')}-${String(day || 1).padStart(2, '0')}`);
+  return null;
+};
+
+const normalizeFrontiersUrl = (item: any) => {
+  const url = getFirstString(getAnyValue(item, [
+    'url', 'URL', 'articleUrl', 'articleURL', 'fullTextUrl', 'webUrl', 'htmlUrl', 'link', 'canonicalUrl',
+  ]));
+
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/')) return `https://www.frontiersin.org${url}`;
+
+  const doi = getFirstString(getAnyValue(item, ['doi', 'DOI', 'articleDoi', 'articleDOI']));
+  if (doi) return `https://doi.org/${doi.replace(/^https?:\/\/doi\.org\//i, '')}`;
+
+  return 'https://www.frontiersin.org/search';
+};
+
+const fetchFrontiersEndpoint = async (endpoint: string, term: string) => {
+  const url = new URL(`${FRONTIERS_BASE_URL}${endpoint}`);
+  url.searchParams.set('query', term);
+  url.searchParams.set('q', term);
+  url.searchParams.set('search', term);
+  url.searchParams.set('term', term);
+  url.searchParams.set('page', '1');
+  url.searchParams.set('pageSize', '8');
+  url.searchParams.set('size', '8');
+  url.searchParams.set('limit', '8');
+  url.searchParams.set('sort', 'publishedDate');
+  url.searchParams.set('order', 'desc');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const response = await fetch(url.toString(), {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'FisioCareHub/1.0 (https://www.fisiocarehub.company)',
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const text = await response.text();
+    if (!text.trim()) return [];
+
+    const payload = JSON.parse(text);
+    return pickLikelyArticleObjects(payload);
+  } catch (error) {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const fetchFrontiersWebsiteSearch = async (term: string) => {
+  const url = new URL('https://www.frontiersin.org/search');
+  url.searchParams.set('query', term);
+  url.searchParams.set('tab', 'articles');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const response = await fetch(url.toString(), {
+      signal: controller.signal,
+      headers: {
+        Accept: 'text/html,application/xhtml+xml',
+        'User-Agent': 'FisioCareHub/1.0 (https://www.fisiocarehub.company)',
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const html = await response.text();
+    const items: any[] = [];
+    const seen = new Set<string>();
+    const linkRegex = /<a[^>]+href=["']([^"']*\/journals\/[^"']+\/articles\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let match: RegExpExecArray | null;
+
+    while ((match = linkRegex.exec(html)) && items.length < 8) {
+      const rawHref = String(match[1] || '').replace(/&amp;/g, '&');
+      const href = rawHref.startsWith('http') ? rawHref : `https://www.frontiersin.org${rawHref}`;
+      const title = stripHtml(match[2], 240);
+
+      if (!title || title.length < 24 || seen.has(href)) continue;
+      if (/^(view|read|download|submit|articles|research topics)$/i.test(title)) continue;
+
+      seen.add(href);
+      items.push({
+        title,
+        url: href,
+        source: 'Frontiers',
+        summary: `Resultado encontrado na busca pública da Frontiers para ${term}. Abra a fonte original para conferir o resumo, autores e detalhes metodológicos.`,
+      });
+    }
+
+    return items;
+  } catch (error) {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const fetchFrontiers = async (maxQueries = FRONTIERS_QUERIES.length) => {
+  const updates: ClinicalUpdateInsert[] = [];
+
+  for (const query of FRONTIERS_QUERIES.slice(0, maxQueries)) {
+    let items: any[] = [];
+
+    for (const endpoint of FRONTIERS_ENDPOINTS) {
+      items = await fetchFrontiersEndpoint(endpoint, query.term);
+      if (items.length) break;
+    }
+
+    if (!items.length) {
+      items = await fetchFrontiersWebsiteSearch(query.term);
+    }
+
+    for (const item of items.slice(0, 6)) {
+      const title = stripHtml(getFirstString(getAnyValue(item, [
+        'title', 'articleTitle', 'documentTitle', 'displayTitle', 'name', 'Title', 'ArticleTitle',
+      ])), 240);
+      const abstract = stripHtml(getFirstString(getAnyValue(item, [
+        'abstract', 'summary', 'description', 'teaser', 'shortDescription', 'plainLanguageSummary', 'articleAbstract',
+      ])), 520);
+      const journal = stripHtml(getFirstString(getAnyValue(item, [
+        'journal', 'journalTitle', 'journalName', 'publicationTitle', 'source', 'sourceTitle', 'containerTitle',
+      ])) || 'Frontiers', 140);
+      const doi = getFirstString(getAnyValue(item, ['doi', 'DOI', 'articleDoi', 'articleDOI']));
+      const sourceUrl = normalizeFrontiersUrl(item);
+      const idSeed = doi || getFirstString(getAnyValue(item, ['id', 'articleId', 'documentId'])) || sourceUrl || title;
+      const summary = abstract || `${journal}. Artigo científico da Frontiers relacionado a ${query.term}. Abra a fonte original para conferir resumo, autores e método.`;
+
+      if (!title || !isSafeClinicalTopic(title, `${summary} ${query.term}`)) continue;
+      if (!isStrictPhysioScientificTopic(title, `${summary} ${query.term} ${journal}`)) continue;
+
+      const imageFields = buildImageFields(title, summary, query.category);
+
+      updates.push({
+        title,
+        summary,
+        source: journal || 'Frontiers',
+        source_url: sourceUrl,
+        source_type: 'frontiers',
+        category: query.category,
+        external_id: `frontiers:${Buffer.from(idSeed).toString('base64url').slice(0, 96)}`,
+        published_at: normalizeFrontiersDate(item),
+        ...imageFields,
+        is_published: true,
+        is_featured: query.category === 'Fisioterapia' || query.category === 'Reabilitação',
+      });
+    }
+  }
+
+  return updates;
+};
+
 const fetchPubMed = async (maxQueries = PUBMED_QUERIES.length) => {
   const updates: ClinicalUpdateInsert[] = [];
 
@@ -1140,13 +1402,15 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
           gnewsQueries: GNEWS_QUERIES.length,
           europePmcQueries: EUROPE_PMC_QUERIES.length,
           crossrefQueries: CROSSREF_QUERIES.length,
+          frontiersQueries: FRONTIERS_QUERIES.length,
 
-          // Rodada grande manual: até 100 conteúdos, bem distribuídos entre fontes.
-          pubmedSelect: 45,
-          europePmcSelect: 25,
-          crossrefSelect: 15,
-          newsSelect: 15,
-          total: 100,
+          // Rodada grande manual: até 120 conteúdos, bem distribuídos entre fontes.
+          frontiersSelect: 28,
+          pubmedSelect: 42,
+          europePmcSelect: 24,
+          crossrefSelect: 12,
+          newsSelect: 14,
+          total: 120,
         }
       : {
           // Modo leve do cron: mais amplo que antes, mas ainda seguro para timeout.
@@ -1154,14 +1418,17 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
           gnewsQueries: 4,
           europePmcQueries: 4,
           crossrefQueries: 3,
-          pubmedSelect: 12,
-          europePmcSelect: 5,
+          frontiersQueries: 5,
+          frontiersSelect: 8,
+          pubmedSelect: 10,
+          europePmcSelect: 4,
           crossrefSelect: 2,
-          newsSelect: 4,
-          total: 23,
+          newsSelect: 3,
+          total: 27,
         };
 
-    const [pubMedUpdates, newsUpdates, europePmcUpdates, crossrefUpdates] = await Promise.all([
+    const [frontiersUpdates, pubMedUpdates, newsUpdates, europePmcUpdates, crossrefUpdates] = await Promise.all([
+      limits.frontiersQueries > 0 ? fetchFrontiers(limits.frontiersQueries) : Promise.resolve([] as ClinicalUpdateInsert[]),
       fetchPubMed(limits.pubmedQueries),
       fetchGNews(limits.gnewsQueries),
       limits.europePmcQueries > 0 ? fetchEuropePMC(limits.europePmcQueries) : Promise.resolve([] as ClinicalUpdateInsert[]),
@@ -1170,6 +1437,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
 
     const uniqueMap = new Map<string, ClinicalUpdateInsert>();
     [
+      ...frontiersUpdates.slice(0, limits.frontiersSelect),
       ...newsUpdates.slice(0, limits.newsSelect),
       ...pubMedUpdates.slice(0, limits.pubmedSelect),
       ...europePmcUpdates.slice(0, limits.europePmcSelect),
@@ -1220,6 +1488,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       fallback_count: fallbackCount,
       skipped_untranslated: updates.length - adaptedUpdates.length,
       sources: {
+        frontiers: frontiersUpdates.length,
         pubmed: pubMedUpdates.length,
         gnews: newsUpdates.length,
         europepmc: europePmcUpdates.length,
@@ -1227,6 +1496,7 @@ const syncClinicalUpdates = async (req: VercelRequest, res: VercelResponse) => {
       },
       mode: fullMode ? 'full' : 'light',
       selected_for_save: {
+        frontiers: Math.min(frontiersUpdates.length, limits.frontiersSelect),
         pubmed: Math.min(pubMedUpdates.length, limits.pubmedSelect),
         gnews: Math.min(newsUpdates.length, limits.newsSelect),
         europepmc: Math.min(europePmcUpdates.length, limits.europePmcSelect),
