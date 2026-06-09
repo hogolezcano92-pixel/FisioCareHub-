@@ -53,6 +53,7 @@ import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
 import IncomingVideoCallListener from './components/IncomingVideoCallListener';
+import WelcomeVideoModal from './components/WelcomeVideoModal';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -688,6 +689,7 @@ function AppContent() {
       <LGPDModal />
       <Toaster position="top-right" richColors closeButton />
       <IncomingVideoCallListener />
+      <WelcomeVideoModal userId={user?.id} userRole={profile?.tipo_usuario} />
 
       <ErrorBoundary>
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
