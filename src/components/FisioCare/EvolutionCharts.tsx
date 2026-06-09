@@ -132,37 +132,71 @@ export function EvolutionCharts({
           </div>
 
           <div className="h-[170px] min-w-0 rounded-3xl border border-slate-100 bg-white/45 p-2 dark:border-white/5 dark:bg-white/[0.03]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={displayPainData} margin={{ top: 12, right: 10, left: -24, bottom: 8 }}>
-                <defs>
-                  <linearGradient id="painPremiumGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.38} />
-                    <stop offset="48%" stopColor="#38bdf8" stopOpacity={0.18} />
-                    <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="day"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }}
-                  interval={0}
-                  dy={8}
-                />
-                <YAxis hide domain={[0, 10]} />
-                <Area
-                  type="monotone"
-                  dataKey="level"
-                  stroke={hasPainRecords ? '#3b82f6' : '#94a3b8'}
-                  strokeWidth={4}
-                  fill="url(#painPremiumGradient)"
-                  connectNulls
-                  dot={hasPainRecords ? { r: 4, fill: '#ffffff', stroke: '#3b82f6', strokeWidth: 3 } : false}
-                  activeDot={{ r: 6, fill: '#8b5cf6', stroke: '#ffffff', strokeWidth: 3 }}
-                  animationDuration={1200}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {!hasPainRecords ? (
+              <div className="flex h-full flex-col justify-between rounded-[1.35rem] border border-dashed border-sky-200/80 bg-sky-50/70 p-3 text-center dark:border-sky-400/20 dark:bg-sky-400/5">
+                <div className="grid grid-cols-7 gap-1">
+                  {WEEK_DAYS.map((day) => (
+                    <div key={day} className="flex flex-col items-center gap-1">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-sky-200 bg-white text-[9px] font-black text-sky-700 shadow-sm dark:border-sky-400/20 dark:bg-white/5 dark:text-sky-200">
+                        {day.slice(0, 1)}
+                      </span>
+                      <span className="text-[8px] font-black text-slate-500 dark:text-slate-400">
+                        {day}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mx-auto max-w-[260px] space-y-2">
+                  <p className="text-sm font-black text-slate-950 dark:text-white">
+                    Registre sua dor diariamente
+                  </p>
+                  <p className="text-[11px] font-bold leading-relaxed text-slate-500 dark:text-slate-400">
+                    Assim o FisioCareHub monta sua evolução semanal completa de segunda a domingo.
+                  </p>
+                  <a
+                    href="/diario"
+                    className="inline-flex items-center justify-center rounded-full bg-sky-600 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700"
+                  >
+                    Registrar dor
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={displayPainData} margin={{ top: 12, right: 12, left: 6, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="painPremiumGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.38} />
+                      <stop offset="48%" stopColor="#38bdf8" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }}
+                    interval={0}
+                    minTickGap={0}
+                    padding={{ left: 4, right: 4 }}
+                    dy={8}
+                  />
+                  <YAxis hide domain={[0, 10]} />
+                  <Area
+                    type="monotone"
+                    dataKey="level"
+                    stroke="#3b82f6"
+                    strokeWidth={4}
+                    fill="url(#painPremiumGradient)"
+                    connectNulls
+                    dot={{ r: 4, fill: '#ffffff', stroke: '#3b82f6', strokeWidth: 3 }}
+                    activeDot={{ r: 6, fill: '#8b5cf6', stroke: '#ffffff', strokeWidth: 3 }}
+                    animationDuration={1200}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </motion.div>
