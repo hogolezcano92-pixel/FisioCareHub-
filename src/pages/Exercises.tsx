@@ -31,7 +31,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
+import { buildPrescriptionWhatsAppMessage, createPrescriptionPdfShareAsset, downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
+import { logActivities } from '../services/activityService';
 import { 
   OBJETIVOS_TERAPEUTICOS, 
   CONTEXTOS_FUNCIONAIS, 
@@ -73,6 +74,13 @@ interface PrescriptionItem extends Exercise {
 const getExercisePdfUrl = (exercise?: Pick<Exercise, 'pdf_url' | 'arquivo_url'> | null) =>
   String(exercise?.pdf_url || exercise?.arquivo_url || '').trim();
 
+const isInternalPatient = (patient: any) => {
+  const type = String(patient?.tipo_paciente || '').toLowerCase();
+  return Boolean(patient?.perfil_id) || type === 'interno';
+};
+
+const getPatientTypeLabel = (patient: any) => (isInternalPatient(patient) ? 'interno' : 'externo');
+
 export default function Exercises() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -95,8 +103,12 @@ export default function Exercises() {
   const [isPrescriptionMode, setIsPrescriptionMode] = useState(false);
   const [prescriptionCart, setPrescriptionCart] = useState<PrescriptionItem[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<'internal_account' | 'external_whatsapp'>('internal_account');
   const [showPrescriptionReview, setShowPrescriptionReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const selectedPatient = patients.find((patient) => patient.id === selectedPatientId) || null;
+  const selectedPatientCanUseAccount = isInternalPatient(selectedPatient);
 
   useEffect(() => {
     if (authLoading) return;
@@ -153,6 +165,14 @@ export default function Exercises() {
     });
   };
 
+  const handleSelectedPatientChange = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    const patient = patients.find((item) => item.id === patientId);
+    if (patient) {
+      setDeliveryMode(isInternalPatient(patient) ? 'internal_account' : 'external_whatsapp');
+    }
+  };
+
   const handleSendPrescription = async () => {
     if (!selectedPatientId) {
       toast.error('Selecione um paciente');
@@ -163,9 +183,23 @@ export default function Exercises() {
       return;
     }
 
+    const selectedPatient = patients.find((p) => p.id === selectedPatientId);
+    if (!selectedPatient) {
+      toast.error('Paciente não encontrado');
+      return;
+    }
+
+    const effectiveMode = deliveryMode === 'internal_account' && isInternalPatient(selectedPatient)
+      ? 'internal_account'
+      : 'external_whatsapp';
+
+    if (effectiveMode === 'external_whatsapp' && !selectedPatient?.telefone) {
+      toast.error('Cadastre um telefone / WhatsApp para este paciente antes de enviar.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // 1. Criar o Protocolo
       const { data: protocol, error: pError } = await supabase
         .from('protocolos_prescricao')
         .insert({
@@ -178,7 +212,6 @@ export default function Exercises() {
 
       if (pError) throw pError;
 
-      // 2. Criar os Itens do Protocolo
       const items = prescriptionCart.map((item, index) => ({
         protocolo_id: protocol.id,
         exercicio_id: item.id,
@@ -187,7 +220,7 @@ export default function Exercises() {
         carga: item.customWeight,
         frequencia: item.customFreq,
         observacoes_especificas: item.customObs,
-        ordem: index
+        ordem: index,
       }));
 
       const { error: iError } = await supabase
@@ -196,19 +229,119 @@ export default function Exercises() {
 
       if (iError) throw iError;
 
-      const selectedPatient = patients.find(p => p.id === selectedPatientId);
-      await downloadPrescriptionPdf({ patientId: selectedPatientId, protocolId: protocol.id, physioProfile: profile });
-      openWhatsAppShare({ patientName: selectedPatient?.nome_completo, phone: selectedPatient?.telefone });
+      const fallbackShareItems = prescriptionCart.map((item) => ({
+        series: item.customSeries,
+        repeticoes: item.customReps,
+        carga: item.customWeight,
+        frequencia: item.customFreq,
+        observacoes_especificas: item.customObs,
+        exercicio: {
+          nome: item.nome,
+          video_url: item.video_url,
+        },
+      }));
 
-      toast.success('Protocolo salvo e PDF gerado!', {
-        description: 'O WhatsApp foi aberto para você enviar a prescrição ao paciente.'
-      });
+      if (effectiveMode === 'internal_account') {
+        const linkedAccountId = selectedPatient?.perfil_id || selectedPatient?.id;
+
+        if (selectedPatient?.perfil_id) {
+          await supabase.from('notificacoes').insert({
+            user_id: selectedPatient.perfil_id,
+            titulo: 'Nova prescrição de exercícios',
+            mensagem: 'Seu fisioterapeuta vinculou uma nova prescrição. Acesse sua conta para visualizar os exercícios.',
+            tipo: 'exercise',
+            lida: false,
+            link: '/patient-exercises',
+          });
+        }
+
+        await logActivities([
+          {
+            userId: linkedAccountId,
+            userType: 'paciente',
+            action: 'exercicio_prescrito',
+            description: 'Nova prescrição de exercícios vinculada à sua conta.',
+            referenceId: protocol.id,
+            details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
+          },
+          {
+            userId: user?.id,
+            userType: 'fisio',
+            action: 'exercicio_prescrito',
+            description: `Prescrição vinculada à conta do paciente ${selectedPatient.nome_completo}.`,
+            referenceId: protocol.id,
+            details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
+          },
+        ]);
+
+        toast.success('Prescrição vinculada à conta do paciente!', {
+          description: 'O paciente interno já pode visualizar os exercícios diretamente no app.',
+        });
+      } else {
+        let shareAsset: Awaited<ReturnType<typeof createPrescriptionPdfShareAsset>> | null = null;
+
+        try {
+          shareAsset = await createPrescriptionPdfShareAsset({
+            patientId: selectedPatientId,
+            protocolId: protocol.id,
+            physioProfile: profile,
+          });
+        } catch (shareError) {
+          console.error('Erro ao preparar link compartilhável do PDF:', shareError);
+        }
+
+        await downloadPrescriptionPdf({
+          patientId: selectedPatientId,
+          protocolId: protocol.id,
+          physioProfile: profile,
+        });
+
+        const message = buildPrescriptionWhatsAppMessage({
+          patientName: selectedPatient?.nome_completo,
+          pdfUrl: shareAsset?.fileUrl || null,
+          items: shareAsset?.items || fallbackShareItems,
+        });
+
+        openWhatsAppShare({
+          patientName: selectedPatient?.nome_completo,
+          phone: selectedPatient?.telefone,
+          message,
+        });
+
+        await logActivities([
+          {
+            userId: selectedPatient?.perfil_id || selectedPatient?.id,
+            userType: 'paciente',
+            action: 'exercicio_prescrito',
+            description: 'Nova prescrição de exercícios enviada pelo fisioterapeuta.',
+            referenceId: protocol.id,
+            details: { metadata: { source: 'clinical_library', mode: 'external_whatsapp', patientId: selectedPatientId } },
+          },
+          {
+            userId: user?.id,
+            userType: 'fisio',
+            action: 'exercicio_prescrito',
+            description: `Prescrição enviada por WhatsApp para ${selectedPatient.nome_completo}.`,
+            referenceId: protocol.id,
+            details: { metadata: { source: 'clinical_library', mode: 'external_whatsapp', patientId: selectedPatientId } },
+          },
+        ]);
+
+        toast.success('PDF preparado e WhatsApp aberto!', {
+          description: shareAsset?.fileUrl
+            ? 'A mensagem inclui o link do PDF e os vídeos dos exercícios.'
+            : 'O WhatsApp foi aberto com a prescrição. Você também recebeu o PDF para compartilhar.',
+        });
+      }
+
       setPrescriptionCart([]);
+      setSelectedPatientId('');
+      setDeliveryMode('internal_account');
       setIsPrescriptionMode(false);
       setShowPrescriptionReview(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || 'Erro ao salvar protocolo e gerar PDF.');
+      toast.error(err?.message || 'Erro ao salvar e enviar a prescrição.');
     } finally {
       setSubmitting(false);
     }
@@ -662,14 +795,79 @@ export default function Exercises() {
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Paciente Destinatário</label>
                   <select
                     value={selectedPatientId}
-                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                    onChange={(e) => handleSelectedPatientChange(e.target.value)}
                     className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none cursor-pointer"
                   >
                     <option value="" className="bg-slate-900">Selecione o paciente...</option>
-                    {patients.map(p => (
-                      <option key={p.id} value={p.id} className="bg-slate-900">{p.nome_completo}</option>
+                    {patients.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-slate-900">
+                        {`${p.nome_completo} • ${getPatientTypeLabel(p)}`}
+                      </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Destino da Prescrição</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      disabled={!selectedPatientCanUseAccount}
+                      onClick={() => selectedPatientCanUseAccount && setDeliveryMode('internal_account')}
+                      className={cn(
+                        'text-left rounded-[2rem] border px-5 py-5 transition-all',
+                        deliveryMode === 'internal_account'
+                          ? 'border-sky-400 bg-sky-500/10 shadow-lg shadow-sky-900/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/[0.07]',
+                        !selectedPatientCanUseAccount && 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-white font-black text-lg">Vincular à conta do paciente</p>
+                          <p className="text-slate-400 text-sm mt-1">
+                            Pacientes internos visualizam a prescrição automaticamente dentro do app.
+                          </p>
+                        </div>
+                        <User className={cn('mt-1', deliveryMode === 'internal_account' ? 'text-sky-400' : 'text-slate-500')} size={20} />
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryMode('external_whatsapp')}
+                      className={cn(
+                        'text-left rounded-[2rem] border px-5 py-5 transition-all',
+                        deliveryMode === 'external_whatsapp'
+                          ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-900/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-white font-black text-lg">Gerar PDF / enviar no WhatsApp</p>
+                          <p className="text-slate-400 text-sm mt-1">
+                            Ideal para pacientes externos. A mensagem incluirá o PDF e os links dos vídeos dos exercícios.
+                          </p>
+                        </div>
+                        <Send className={cn('mt-1', deliveryMode === 'external_whatsapp' ? 'text-emerald-400' : 'text-slate-500')} size={20} />
+                      </div>
+                    </button>
+                  </div>
+
+                  {selectedPatient && (
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
+                      <p className="text-sm font-semibold text-slate-200">
+                        Paciente selecionado: <span className="font-black text-white">{selectedPatient.nome_completo}</span>
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Tipo: <span className="font-bold text-slate-200">{getPatientTypeLabel(selectedPatient)}</span>
+                        {selectedPatientCanUseAccount
+                          ? ' • pode receber a prescrição direto na conta.'
+                          : ' • use o envio por WhatsApp para compartilhar o PDF e os vídeos.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -751,8 +949,8 @@ export default function Exercises() {
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : (
                     <>
-                      <Send size={24} />
-                      Salvar PDF / WhatsApp
+                      {deliveryMode === 'internal_account' ? <User size={24} /> : <Send size={24} />}
+                      {deliveryMode === 'internal_account' ? 'Vincular à conta do paciente' : 'Gerar PDF / WhatsApp'}
                     </>
                   )}
                 </button>
