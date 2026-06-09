@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { buildPrescriptionWhatsAppMessage, createPrescriptionPdfShareAsset, downloadPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
+import { buildPrescriptionWhatsAppMessage, downloadExternalPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 import { logActivities } from '../services/activityService';
 import { 
   OBJETIVOS_TERAPEUTICOS, 
@@ -103,7 +103,7 @@ export default function Exercises() {
   const [isPrescriptionMode, setIsPrescriptionMode] = useState(false);
   const [prescriptionCart, setPrescriptionCart] = useState<PrescriptionItem[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'internal_account' | 'external_whatsapp'>('internal_account');
+  const [deliveryMode, setDeliveryMode] = useState<'internal_account' | 'external_whatsapp'>('external_whatsapp');
   const [showPrescriptionReview, setShowPrescriptionReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -168,38 +168,100 @@ export default function Exercises() {
   const handleSelectedPatientChange = (patientId: string) => {
     setSelectedPatientId(patientId);
     const patient = patients.find((item) => item.id === patientId);
-    if (patient) {
-      setDeliveryMode(isInternalPatient(patient) ? 'internal_account' : 'external_whatsapp');
-    }
-  };
 
-  const handleSendPrescription = async () => {
-    if (!selectedPatientId) {
-      toast.error('Selecione um paciente');
+    if (!patient) {
+      setDeliveryMode('external_whatsapp');
       return;
     }
+
+    setDeliveryMode(isInternalPatient(patient) ? 'internal_account' : 'external_whatsapp');
+  };
+
+  const buildShareItemsFromCart = () => prescriptionCart.map((item) => ({
+    series: item.customSeries,
+    repeticoes: item.customReps,
+    carga: item.customWeight,
+    frequencia: item.customFreq,
+    observacoes_especificas: item.customObs,
+    exercicio: {
+      nome: item.nome,
+      descricao: item.descricao,
+      objetivo_principal: item.objetivo_principal,
+      subcategoria: item.subcategoria,
+      indicacao_clinica: item.indicacao_clinica,
+      precaucoes: item.precaucoes,
+      dificuldade: item.dificuldade,
+      video_url: item.video_url,
+      pdf_url: item.pdf_url,
+      arquivo_url: item.arquivo_url,
+    },
+  }));
+
+  const handleSendPrescription = async () => {
     if (prescriptionCart.length === 0) {
       toast.error('Adicione exercícios à prescrição');
       return;
     }
 
-    const selectedPatient = patients.find((p) => p.id === selectedPatientId);
-    if (!selectedPatient) {
+    const isInternalDelivery = deliveryMode === 'internal_account';
+
+    if (isInternalDelivery && !selectedPatientId) {
+      toast.error('Selecione um paciente interno para vincular à conta');
+      return;
+    }
+
+    const selectedPatient = selectedPatientId ? patients.find((p) => p.id === selectedPatientId) : null;
+
+    if (isInternalDelivery && !selectedPatient) {
       toast.error('Paciente não encontrado');
       return;
     }
 
-    const effectiveMode = deliveryMode === 'internal_account' && isInternalPatient(selectedPatient)
-      ? 'internal_account'
-      : 'external_whatsapp';
-
-    if (effectiveMode === 'external_whatsapp' && !selectedPatient?.telefone) {
-      toast.error('Cadastre um telefone / WhatsApp para este paciente antes de enviar.');
+    if (isInternalDelivery && selectedPatient && !isInternalPatient(selectedPatient)) {
+      toast.error('Este paciente é externo. Use a opção WhatsApp.');
       return;
     }
 
     setSubmitting(true);
     try {
+      const fallbackShareItems = buildShareItemsFromCart();
+
+      if (!isInternalDelivery) {
+        await downloadExternalPrescriptionPdf({
+          items: fallbackShareItems,
+          physioProfile: profile,
+        });
+
+        const message = buildPrescriptionWhatsAppMessage({
+          patientName: null,
+          pdfUrl: null,
+          items: fallbackShareItems,
+        });
+
+        openWhatsAppShare({ message });
+
+        await logActivities([
+          {
+            userId: user?.id,
+            userType: 'fisio',
+            action: 'exercicio_prescrito',
+            description: 'Prescrição externa preparada para envio por WhatsApp.',
+            details: { metadata: { source: 'clinical_library', mode: 'external_whatsapp_without_patient' } },
+          },
+        ]);
+
+        toast.success('WhatsApp aberto!', {
+          description: 'O PDF foi baixado e a mensagem já inclui os links dos vídeos/PDFs dos exercícios.',
+        });
+
+        setPrescriptionCart([]);
+        setSelectedPatientId('');
+        setDeliveryMode('external_whatsapp');
+        setIsPrescriptionMode(false);
+        setShowPrescriptionReview(false);
+        return;
+      }
+
       const { data: protocol, error: pError } = await supabase
         .from('protocolos_prescricao')
         .insert({
@@ -229,114 +291,45 @@ export default function Exercises() {
 
       if (iError) throw iError;
 
-      const fallbackShareItems = prescriptionCart.map((item) => ({
-        series: item.customSeries,
-        repeticoes: item.customReps,
-        carga: item.customWeight,
-        frequencia: item.customFreq,
-        observacoes_especificas: item.customObs,
-        exercicio: {
-          nome: item.nome,
-          video_url: item.video_url,
-        },
-      }));
+      const linkedAccountId = selectedPatient?.perfil_id || selectedPatient?.id;
 
-      if (effectiveMode === 'internal_account') {
-        const linkedAccountId = selectedPatient?.perfil_id || selectedPatient?.id;
-
-        if (selectedPatient?.perfil_id) {
-          await supabase.from('notificacoes').insert({
-            user_id: selectedPatient.perfil_id,
-            titulo: 'Nova prescrição de exercícios',
-            mensagem: 'Seu fisioterapeuta vinculou uma nova prescrição. Acesse sua conta para visualizar os exercícios.',
-            tipo: 'exercise',
-            lida: false,
-            link: '/patient-exercises',
-          });
-        }
-
-        await logActivities([
-          {
-            userId: linkedAccountId,
-            userType: 'paciente',
-            action: 'exercicio_prescrito',
-            description: 'Nova prescrição de exercícios vinculada à sua conta.',
-            referenceId: protocol.id,
-            details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
-          },
-          {
-            userId: user?.id,
-            userType: 'fisio',
-            action: 'exercicio_prescrito',
-            description: `Prescrição vinculada à conta do paciente ${selectedPatient.nome_completo}.`,
-            referenceId: protocol.id,
-            details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
-          },
-        ]);
-
-        toast.success('Prescrição vinculada à conta do paciente!', {
-          description: 'O paciente interno já pode visualizar os exercícios diretamente no app.',
-        });
-      } else {
-        let shareAsset: Awaited<ReturnType<typeof createPrescriptionPdfShareAsset>> | null = null;
-
-        try {
-          shareAsset = await createPrescriptionPdfShareAsset({
-            patientId: selectedPatientId,
-            protocolId: protocol.id,
-            physioProfile: profile,
-          });
-        } catch (shareError) {
-          console.error('Erro ao preparar link compartilhável do PDF:', shareError);
-        }
-
-        await downloadPrescriptionPdf({
-          patientId: selectedPatientId,
-          protocolId: protocol.id,
-          physioProfile: profile,
-        });
-
-        const message = buildPrescriptionWhatsAppMessage({
-          patientName: selectedPatient?.nome_completo,
-          pdfUrl: shareAsset?.fileUrl || null,
-          items: shareAsset?.items || fallbackShareItems,
-        });
-
-        openWhatsAppShare({
-          patientName: selectedPatient?.nome_completo,
-          phone: selectedPatient?.telefone,
-          message,
-        });
-
-        await logActivities([
-          {
-            userId: selectedPatient?.perfil_id || selectedPatient?.id,
-            userType: 'paciente',
-            action: 'exercicio_prescrito',
-            description: 'Nova prescrição de exercícios enviada pelo fisioterapeuta.',
-            referenceId: protocol.id,
-            details: { metadata: { source: 'clinical_library', mode: 'external_whatsapp', patientId: selectedPatientId } },
-          },
-          {
-            userId: user?.id,
-            userType: 'fisio',
-            action: 'exercicio_prescrito',
-            description: `Prescrição enviada por WhatsApp para ${selectedPatient.nome_completo}.`,
-            referenceId: protocol.id,
-            details: { metadata: { source: 'clinical_library', mode: 'external_whatsapp', patientId: selectedPatientId } },
-          },
-        ]);
-
-        toast.success('PDF preparado e WhatsApp aberto!', {
-          description: shareAsset?.fileUrl
-            ? 'A mensagem inclui o link do PDF e os vídeos dos exercícios.'
-            : 'O WhatsApp foi aberto com a prescrição. Você também recebeu o PDF para compartilhar.',
+      if (selectedPatient?.perfil_id) {
+        await supabase.from('notificacoes').insert({
+          user_id: selectedPatient.perfil_id,
+          titulo: 'Nova prescrição de exercícios',
+          mensagem: 'Seu fisioterapeuta vinculou uma nova prescrição. Acesse sua conta para visualizar os exercícios.',
+          tipo: 'exercise',
+          lida: false,
+          link: '/patient-exercises',
         });
       }
 
+      await logActivities([
+        {
+          userId: linkedAccountId,
+          userType: 'paciente',
+          action: 'exercicio_prescrito',
+          description: 'Nova prescrição de exercícios vinculada à sua conta.',
+          referenceId: protocol.id,
+          details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
+        },
+        {
+          userId: user?.id,
+          userType: 'fisio',
+          action: 'exercicio_prescrito',
+          description: `Prescrição vinculada à conta do paciente ${selectedPatient?.nome_completo}.`,
+          referenceId: protocol.id,
+          details: { metadata: { source: 'clinical_library', mode: 'internal_account', patientId: selectedPatientId } },
+        },
+      ]);
+
+      toast.success('Prescrição vinculada à conta do paciente!', {
+        description: 'O paciente interno já pode visualizar os exercícios diretamente no app.',
+      });
+
       setPrescriptionCart([]);
       setSelectedPatientId('');
-      setDeliveryMode('internal_account');
+      setDeliveryMode('external_whatsapp');
       setIsPrescriptionMode(false);
       setShowPrescriptionReview(false);
     } catch (err: any) {
@@ -792,13 +785,13 @@ export default function Exercises() {
 
               <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-8">
                 <div className="space-y-3">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Paciente Destinatário</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Paciente interno para vincular na conta</label>
                   <select
                     value={selectedPatientId}
                     onChange={(e) => handleSelectedPatientChange(e.target.value)}
                     className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black focus:ring-2 focus:ring-sky-500 outline-none transition-all appearance-none cursor-pointer"
                   >
-                    <option value="" className="bg-slate-900">Selecione o paciente...</option>
+                    <option value="" className="bg-slate-900">Opcional para WhatsApp. Selecione apenas para vincular...</option>
                     {patients.map((p) => (
                       <option key={p.id} value={p.id} className="bg-slate-900">
                         {`${p.nome_completo} • ${getPatientTypeLabel(p)}`}
@@ -847,7 +840,7 @@ export default function Exercises() {
                         <div>
                           <p className="text-white font-black text-lg">Gerar PDF / enviar no WhatsApp</p>
                           <p className="text-slate-400 text-sm mt-1">
-                            Ideal para pacientes externos. A mensagem incluirá o PDF e os links dos vídeos dos exercícios.
+                            Ideal para pacientes externos. Não precisa vincular paciente: o WhatsApp abre direto com os links dos vídeos/PDFs.
                           </p>
                         </div>
                         <Send className={cn('mt-1', deliveryMode === 'external_whatsapp' ? 'text-emerald-400' : 'text-slate-500')} size={20} />
@@ -950,7 +943,7 @@ export default function Exercises() {
                   {submitting ? <Loader2 className="animate-spin" /> : (
                     <>
                       {deliveryMode === 'internal_account' ? <User size={24} /> : <Send size={24} />}
-                      {deliveryMode === 'internal_account' ? 'Vincular à conta do paciente' : 'Gerar PDF / WhatsApp'}
+                      {deliveryMode === 'internal_account' ? 'Vincular à conta do paciente' : 'Enviar por WhatsApp'}
                     </>
                   )}
                 </button>
