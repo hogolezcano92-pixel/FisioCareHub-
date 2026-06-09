@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -18,6 +18,7 @@ import {
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, EffectFade } from 'swiper/modules';
 import { cn } from '../lib/utils';
+import { preloadOnboardingBranchAssets, preloadOnboardingCriticalAssets } from '../utils/preloadOnboardingAssets';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -111,13 +112,15 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   });
   const swiperRef = useRef<any>(null);
 
-  useLayoutEffect(() => {
-    // Preload first video
-    const video = document.createElement('video');
-    video.src = '/onboarding/welcome.mp4';
-    video.preload = 'auto';
-    return () => {};
+  useEffect(() => {
+    preloadOnboardingCriticalAssets();
   }, []);
+
+  useEffect(() => {
+    if (userType) {
+      preloadOnboardingBranchAssets(userType);
+    }
+  }, [userType]);
 
   const allSlides = [
     ...commonSlides,
@@ -179,7 +182,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
       {/* Hidden Preloader */}
       {nextVideoUrl && (
-        <video key={`preload-${nextVideoUrl}`} preload="auto" className="hidden">
+        <video
+          key={`preload-${nextVideoUrl}`}
+          preload="auto"
+          muted
+          playsInline
+          aria-hidden="true"
+          className="pointer-events-none absolute -z-10 h-px w-px opacity-0"
+        >
           <source src={nextVideoUrl} type="video/mp4" />
         </video>
       )}
@@ -404,10 +414,11 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
             muted
             loop
             playsInline
-            preload={isActive ? "auto" : "metadata"}
+            preload={isActive || isPriority ? "auto" : "metadata"}
             disablePictureInPicture
             className="onboarding-video-bg w-full h-full object-cover"
             onLoadedData={() => setIsLoaded(true)}
+            onCanPlay={() => setIsLoaded(true)}
             style={{
             transform: 'translateZ(0) scale(1.008)',
             backfaceVisibility: 'hidden',
@@ -589,6 +600,7 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
                   disablePictureInPicture
                   className="onboarding-video-bg w-full h-full object-cover"
                   onLoadedData={() => setBgLoaded(true)}
+                  onCanPlay={() => setBgLoaded(true)}
                   style={{
                     transform: 'translateZ(0) scale(1.015)',
                     backfaceVisibility: 'hidden',

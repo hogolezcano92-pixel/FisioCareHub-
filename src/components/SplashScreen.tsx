@@ -12,6 +12,11 @@ export default function SplashScreen() {
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
   useEffect(() => {
+    splashImages.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
     const timer = setInterval(() => {
       setCurrentImageIdx((prev) => (prev + 1) % splashImages.length);
     }, 3000);
