@@ -54,6 +54,7 @@ import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
 import IncomingVideoCallListener from './components/IncomingVideoCallListener';
 import WelcomeVideoModal from './components/WelcomeVideoModal';
+import { preloadOnboardingCriticalAssets } from './utils/preloadOnboardingAssets';
 
 // Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
@@ -833,6 +834,7 @@ export default function App() {
     if (configLoaded) {
       const hasCompletedOnboarding = localStorage.getItem('onboarding_completed');
       if (!hasCompletedOnboarding) {
+        preloadOnboardingCriticalAssets();
         setShowOnboarding(true);
       }
       setShowSplash(false);
