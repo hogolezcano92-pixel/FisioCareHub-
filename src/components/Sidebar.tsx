@@ -19,6 +19,7 @@ import {
   Smartphone,
   LayoutDashboard,
   DollarSign,
+  Wallet,
   Settings,
   Search,
   HelpCircle,
@@ -115,6 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         items: [
           ...(isPhysio && isApproved ? [
             { name: 'FisioStore', path: '/loja', icon: ShoppingBag },
+            { name: 'Financeiro', path: '/profile?tab=earnings', icon: Wallet, pro: true },
             { name: t('nav.finance_settings'), path: '/finance/settings', icon: DollarSign, pro: true },
             { name: t('nav.subscription'), path: '/subscription', icon: Crown },
           ] : []),
@@ -145,6 +147,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     }
   ].filter((section) => section.items.length > 0), [isAdmin, isApproved, isPhysio, isPro, isBasic, profile, user, t]);
 
+
+  const isItemActive = (path: string) => {
+    if (!path || path.startsWith('#')) return false;
+
+    const [itemPathname, itemSearch = ''] = path.split('?');
+
+    if (location.pathname !== itemPathname) return false;
+
+    // Quando o item tem query string, compara também os parâmetros.
+    // Isso deixa ativo links como /profile?tab=earnings e /admin?tab=users.
+    if (itemSearch) {
+      const itemParams = new URLSearchParams(itemSearch);
+      return Array.from(itemParams.entries()).every(
+        ([key, value]) => location.search ? new URLSearchParams(location.search).get(key) === value : false
+      );
+    }
+
+    // Para rotas sem query, só marca ativo quando a página atual também não tem query.
+    // Assim "Minha conta" não fica ativo junto com "Financeiro".
+    return !location.search;
+  };
+
   const getSidebarIconColor = (item: any) => {
     const key = `${item.path || ''} ${item.name || ''}`.toLowerCase();
 
@@ -159,6 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     if (key.includes('prontu') || key.includes('record')) return '#EA580C';
     if (key.includes('document')) return '#DB2777';
     if (key.includes('assinatura') || key.includes('subscription')) return '#CA8A04';
+    if (key.includes('financeiro') || key.includes('earnings') || key.includes('saque')) return '#D97706';
     if (key.includes('chat') || key.includes('suporte') || key.includes('support')) return '#2563EB';
     if (key.includes('perfil') || key.includes('profile')) return '#4F46E5';
     if (key.includes('guia') || key.includes('library') || key.includes('biblioteca')) return '#0D9488';
@@ -341,7 +366,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               </h3>
               <div className="space-y-1">
                 {section.items.map((item: any) => {
-                  const isActive = location.pathname === item.path;
+                  const isActive = isItemActive(item.path);
                   const isLogout = item.path === '#logout';
                   const isHelp = item.path === '#help';
                   const isLocked = (item.pro && !isPro) || (item.basic && !isBasic);
