@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,11 @@ import {
   CreditCard,
   Building2,
   DollarSign,
+  Wallet,
+  TrendingUp,
+  Receipt,
+  CalendarDays,
+  ArrowDownToLine,
   Shield,
   Eye,
   Crown,
@@ -272,15 +277,94 @@ export default function Profile() {
     }
   }, [profile, user, authLoading, navigate]);
 
-  const [earningsStats, setEarningsStats] = useState({ balance: 0, pending: 0 });
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
+
+  const formatDateBR = (date?: string | null) => {
+    if (!date) return '—';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return '—';
+
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(parsed);
+  };
+
+  const getMonthKey = (date?: string | null) => {
+    if (!date) return new Date().toISOString().slice(0, 7);
+    if (/^\d{4}-\d{2}/.test(date)) return date.slice(0, 7);
+
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return new Date().toISOString().slice(0, 7);
+    return parsed.toISOString().slice(0, 7);
+  };
+
+  const getMonthLabel = (monthKey: string) => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, (month || 1) - 1, 1);
+
+    return new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+  };
+
+  const [earningsStats, setEarningsStats] = useState({
+    balance: 0,
+    pending: 0,
+    grossTotal: 0,
+    commissionTotal: 0,
+    netTotal: 0,
+    paidWithdrawals: 0,
+    commissionRate: 12,
+  });
   const [earningsList, setEarningsList] = useState<any[]>([]);
+  const [withdrawalList, setWithdrawalList] = useState<any[]>([]);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
+  const [financeSubTab, setFinanceSubTab] = useState<'summary' | 'payments' | 'withdrawals' | 'reports'>('summary');
+  const [selectedFinanceMonth, setSelectedFinanceMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [downloadingFinanceReport, setDownloadingFinanceReport] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'earnings' && user) {
       fetchEarnings();
     }
   }, [activeTab, user]);
+
+  const monthlyPayments = useMemo(() => (
+    earningsList.filter((item) => item.monthKey === selectedFinanceMonth)
+  ), [earningsList, selectedFinanceMonth]);
+
+  const monthlyWithdrawals = useMemo(() => (
+    withdrawalList.filter((item) => item.monthKey === selectedFinanceMonth)
+  ), [withdrawalList, selectedFinanceMonth]);
+
+  const availableFinanceMonths = useMemo(() => {
+    const months = new Set<string>([selectedFinanceMonth, new Date().toISOString().slice(0, 7)]);
+    earningsList.forEach((item) => item.monthKey && months.add(item.monthKey));
+    withdrawalList.forEach((item) => item.monthKey && months.add(item.monthKey));
+
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [earningsList, withdrawalList, selectedFinanceMonth]);
+
+  const monthlySummary = useMemo(() => {
+    const gross = monthlyPayments.reduce((acc, item) => acc + item.gross, 0);
+    const commission = monthlyPayments.reduce((acc, item) => acc + item.commission, 0);
+    const net = monthlyPayments.reduce((acc, item) => acc + item.net, 0);
+    const withdrawals = monthlyWithdrawals.reduce((acc, item) => acc + item.amount, 0);
+
+    return {
+      gross,
+      commission,
+      net,
+      withdrawals,
+      availableInMonth: Math.max(0, net - withdrawals),
+      paidAppointments: monthlyPayments.length,
+    };
+  }, [monthlyPayments, monthlyWithdrawals]);
 
   const fetchEarnings = async () => {
     if (!user) return;
@@ -306,7 +390,6 @@ export default function Profile() {
 
       const netFactor = (100 - commissionRate) / 100;
       const getGrossAmount = (appointment: any) => Number(appointment?.valor_cobrado ?? appointment?.valor ?? 0) || 0;
-      const getNetAmount = (appointment: any) => getGrossAmount(appointment) * netFactor;
 
       // Atendimentos concluídos entram como saldo líquido do fisioterapeuta.
       const { data: completed } = await supabase
@@ -319,11 +402,13 @@ export default function Profile() {
       // Saques já pagos saem do saldo disponível.
       const { data: withdrawals } = await supabase
         .from('solicitacoes_saque')
-        .select('valor')
+        .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'pago');
+        .order('created_at', { ascending: false });
 
-      const totalPaidWithdrawals = withdrawals?.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0) || 0;
+      const totalPaidWithdrawals = withdrawals
+        ?.filter((curr) => curr.status === 'pago')
+        .reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0) || 0;
 
       // A receber também precisa ser líquido, não bruto.
       const { data: pending } = await supabase
@@ -332,36 +417,156 @@ export default function Profile() {
         .eq('fisio_id', user.id)
         .in('status', ['pendente', 'confirmado']);
 
-      const netCompleted = completed?.reduce((acc, curr) => acc + getNetAmount(curr), 0) || 0;
+      const patientIds = Array.from(new Set((completed || []).map((a: any) => a.paciente_id))).filter(Boolean);
+      const { data: patients } = patientIds.length > 0
+        ? await supabase
+            .from('perfis')
+            .select('id, nome_completo, avatar_url')
+            .in('id', patientIds)
+        : { data: [] as any[] };
+
+      const list = (completed || []).map((a: any) => {
+        const gross = getGrossAmount(a);
+        const commission = gross * (commissionRate / 100);
+        const net = gross * netFactor;
+        const patient = patients?.find((p: any) => p.id === a.paciente_id);
+        const dateISO = a.data || a.created_at || a.updated_at;
+
+        return {
+          id: a.id,
+          patient: patient?.nome_completo || 'Paciente',
+          avatar: patient?.avatar_url,
+          service: a.tipo_servico || a.servico || a.tipo_atendimento || 'Consulta fisioterapêutica',
+          method: a.metodo_pagamento || a.payment_method || a.forma_pagamento || 'Plataforma',
+          status: a.status_pagamento || a.pagamento_status || 'pago',
+          dateISO,
+          date: formatDateBR(dateISO),
+          monthKey: getMonthKey(dateISO),
+          gross,
+          commission,
+          net,
+          val: net,
+        };
+      });
+
+      const grossTotal = list.reduce((acc, curr) => acc + curr.gross, 0);
+      const commissionTotal = list.reduce((acc, curr) => acc + curr.commission, 0);
+      const netCompleted = list.reduce((acc, curr) => acc + curr.net, 0);
+      const netPending = pending?.reduce((acc, curr) => acc + (getGrossAmount(curr) * netFactor), 0) || 0;
       const availableBalance = netCompleted - totalPaidWithdrawals;
-      const netPending = pending?.reduce((acc, curr) => acc + getNetAmount(curr), 0) || 0;
 
       setEarningsStats({
         balance: Math.max(0, availableBalance),
-        pending: Math.max(0, netPending)
+        pending: Math.max(0, netPending),
+        grossTotal,
+        commissionTotal,
+        netTotal: netCompleted,
+        paidWithdrawals: totalPaidWithdrawals,
+        commissionRate,
       });
 
-      if (completed) {
-        const patientIds = Array.from(new Set(completed.map(a => a.paciente_id))).filter(Boolean);
-        const { data: patients } = patientIds.length > 0
-          ? await supabase
-              .from('perfis')
-              .select('id, nome_completo, avatar_url')
-              .in('id', patientIds)
-          : { data: [] as any[] };
+      setEarningsList(list);
+      setWithdrawalList((withdrawals || []).map((item: any) => {
+        const displayDate = item.status === 'pago' ? (item.pago_em || item.processado_em || item.updated_at || item.created_at) : item.created_at;
 
-        const list = completed.map(a => ({
-          patient: patients?.find(p => p.id === a.paciente_id)?.nome_completo || 'Paciente',
-          avatar: patients?.find(p => p.id === a.paciente_id)?.avatar_url,
-          date: new Date(a.data).toLocaleDateString('pt-BR'),
-          val: getNetAmount(a)
-        }));
-        setEarningsList(list);
-      }
+        return {
+          id: item.id,
+          amount: Number(item.valor) || 0,
+          status: item.status || 'pendente',
+          dateISO: displayDate,
+          date: formatDateBR(displayDate),
+          monthKey: getMonthKey(displayDate),
+        };
+      }));
     } catch (err) {
       console.error("Erro ao buscar ganhos:", err);
     } finally {
       setLoadingEarnings(false);
+    }
+  };
+
+  const handleDownloadFinanceReport = async () => {
+    if (downloadingFinanceReport) return;
+    setDownloadingFinanceReport(true);
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+      const doc = new jsPDF();
+      const monthLabel = getMonthLabel(selectedFinanceMonth);
+      const professionalName = profile?.nome_completo || formData.name || 'Fisioterapeuta';
+
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, 210, 32, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(17);
+      doc.text('Relatório Financeiro Mensal', 14, 15);
+      doc.setFontSize(10);
+      doc.text(`FisioCareHub • ${monthLabel}`, 14, 23);
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(11);
+      doc.text(`Profissional: ${professionalName}`, 14, 44);
+      doc.text(`E-mail: ${user?.email || '—'}`, 14, 51);
+      doc.text(`CREFITO: ${profile?.crefito || formData.crefito || '—'}`, 14, 58);
+      doc.text(`Período: ${monthLabel}`, 14, 65);
+
+      autoTable(doc, {
+        startY: 74,
+        head: [['Resumo do mês', 'Valor']],
+        body: [
+          ['Receita bruta', formatCurrency(monthlySummary.gross)],
+          [`Comissão da plataforma (${earningsStats.commissionRate}%)`, formatCurrency(monthlySummary.commission)],
+          ['Receita líquida estimada', formatCurrency(monthlySummary.net)],
+          ['Consultas pagas/concluídas', String(monthlySummary.paidAppointments)],
+          ['Saques no período', formatCurrency(monthlySummary.withdrawals)],
+          ['Saldo estimado do período', formatCurrency(monthlySummary.availableInMonth)],
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [37, 99, 235] },
+      });
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        head: [['Data', 'Paciente', 'Serviço', 'Bruto', 'Comissão', 'Líquido', 'Status']],
+        body: monthlyPayments.length > 0
+          ? monthlyPayments.map((item) => [
+              item.date,
+              item.patient,
+              item.service,
+              formatCurrency(item.gross),
+              formatCurrency(item.commission),
+              formatCurrency(item.net),
+              item.status,
+            ])
+          : [['—', 'Nenhum pagamento no período', '—', '—', '—', '—', '—']],
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [15, 23, 42] },
+      });
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        head: [['Data', 'Valor', 'Status']],
+        body: monthlyWithdrawals.length > 0
+          ? monthlyWithdrawals.map((item) => [item.date, formatCurrency(item.amount), item.status])
+          : [['—', 'Nenhum saque no período', '—']],
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [2, 132, 199] },
+      });
+
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Relatório gerado automaticamente pela FisioCareHub. Valores sujeitos à conciliação administrativa.', 14, pageHeight - 12);
+
+      doc.save(`relatorio-financeiro-fisiocarehub-${selectedFinanceMonth}.pdf`);
+    } catch (err) {
+      console.error('Erro ao gerar relatório financeiro:', err);
+      const { toast } = await import('sonner');
+      toast.error('Não foi possível gerar o relatório financeiro em PDF.');
+    } finally {
+      setDownloadingFinanceReport(false);
     }
   };
 
@@ -1814,77 +2019,294 @@ export default function Profile() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-8"
                   >
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
-                      <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3">
-                        <DollarSign className="text-emerald-400" size={24} />
-                        Pagamentos Recebidos
-                      </h3>
+                    <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20 sm:p-8 lg:p-10">
+                      <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20" />
+                      <div className="absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl dark:bg-emerald-500/20" />
 
-                      <div className="grid md:grid-cols-3 gap-6 mb-8">
-                        <div className="p-8 bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 space-y-1">
-                          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saldo Disponível</p>
-                          <p className="text-3xl font-black text-white">R$ {earningsStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-3">
+                          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300">
+                            <Wallet size={14} /> Central Financeira
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                              Financeiro do fisioterapeuta
+                            </h3>
+                            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+                              Acompanhe ganhos, pagamentos recebidos, comissão da plataforma, saques e relatórios mensais em PDF.
+                            </p>
+                          </div>
                         </div>
-                        <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 space-y-1">
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A Receber</p>
-                          <p className="text-3xl font-black text-white">R$ {earningsStats.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        </div>
-                        <div className="p-8 bg-white/5 border border-blue-500/30 bg-blue-500/5 rounded-[2.5rem] space-y-4 flex flex-col justify-center">
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Configuração</p>
-                          <button 
-                            onClick={() => navigate('/dashboard?action=services')}
-                            className="w-full py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <select
+                            value={selectedFinanceMonth}
+                            onChange={(event) => setSelectedFinanceMonth(event.target.value)}
+                            className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
                           >
-                            Custos e Serviços
+                            {availableFinanceMonths.map((month) => (
+                              <option key={month} value={month}>{getMonthLabel(month)}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleDownloadFinanceReport}
+                            disabled={downloadingFinanceReport}
+                            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-slate-300/60 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:shadow-black/20 dark:hover:bg-blue-100"
+                          >
+                            {downloadingFinanceReport ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                            Baixar PDF
                           </button>
                         </div>
                       </div>
 
-                      {/* Withdrawal Section */}
-                      <div className="mb-12 pt-8 border-t border-white/5">
-                        <PhysioWithdrawal 
-                          userId={user?.id || ''} 
-                          availableBalance={earningsStats.balance}
-                          onSuccess={() => fetchEarnings()} 
-                        />
-                      </div>
+                      <div className="relative mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        {[
+                          {
+                            label: 'Saldo disponível',
+                            value: formatCurrency(earningsStats.balance),
+                            helper: 'líquido após saques pagos',
+                            icon: Wallet,
+                            tone: 'emerald',
+                          },
+                          {
+                            label: `Ganhos de ${getMonthLabel(selectedFinanceMonth)}`,
+                            value: formatCurrency(monthlySummary.gross),
+                            helper: `${monthlySummary.paidAppointments} consultas pagas`,
+                            icon: TrendingUp,
+                            tone: 'blue',
+                          },
+                          {
+                            label: `Comissão ${earningsStats.commissionRate}%`,
+                            value: formatCurrency(monthlySummary.commission),
+                            helper: 'retida pela plataforma',
+                            icon: Receipt,
+                            tone: 'amber',
+                          },
+                          {
+                            label: 'Líquido do mês',
+                            value: formatCurrency(monthlySummary.net),
+                            helper: 'estimativa para o profissional',
+                            icon: DollarSign,
+                            tone: 'violet',
+                          },
+                        ].map((card) => {
+                          const Icon = card.icon;
+                          const toneClass = card.tone === 'emerald'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
+                            : card.tone === 'blue'
+                              ? 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20'
+                              : card.tone === 'amber'
+                                ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20'
+                                : 'bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20';
 
-                      {/* Payment Data Section */}
-                      <div className="mb-12 pt-8 border-t border-white/5">
-                        <PhysioPaymentData userId={user?.id || ''} />
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Últimos Lançamentos</h4>
-                        {loadingEarnings ? (
-                          <div className="flex justify-center py-10">
-                            <Loader2 className="animate-spin text-blue-500" size={32} />
-                          </div>
-                        ) : earningsList.length > 0 ? (
-                          earningsList.map((item, i) => (
-                            <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black overflow-hidden">
-                                  {item.avatar ? (
-                                    <img src={item.avatar} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    item.patient[0]
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-white">{item.patient}</p>
-                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.date}</p>
+                          return (
+                            <div key={card.label} className="rounded-[2rem] border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
+                              <div className="mb-5 flex items-center justify-between gap-3">
+                                <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl border', toneClass)}>
+                                  <Icon size={22} />
                                 </div>
                               </div>
-                              <p className="font-black text-emerald-400">+ R$ {item.val.toFixed(2)}</p>
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{card.label}</p>
+                              <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{card.value}</p>
+                              <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">{card.helper}</p>
                             </div>
-                          ))
+                          );
+                        })}
+                      </div>
+
+                      <div className="relative mt-8 flex flex-wrap gap-2 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-2 dark:border-white/10 dark:bg-slate-950/40">
+                        {[
+                          { id: 'summary', label: 'Resumo', icon: TrendingUp },
+                          { id: 'payments', label: 'Pagamentos', icon: Receipt },
+                          { id: 'withdrawals', label: 'Saques', icon: ArrowDownToLine },
+                          { id: 'reports', label: 'Relatórios', icon: FileText },
+                        ].map((tab) => {
+                          const Icon = tab.icon;
+                          const active = financeSubTab === tab.id;
+
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => setFinanceSubTab(tab.id as typeof financeSubTab)}
+                              className={cn(
+                                'flex flex-1 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition-all sm:flex-none',
+                                active
+                                  ? 'bg-white text-blue-700 shadow-lg shadow-slate-200/70 dark:bg-white/10 dark:text-white dark:shadow-black/10'
+                                  : 'text-slate-500 hover:bg-white/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
+                              )}
+                            >
+                              <Icon size={15} />
+                              {tab.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="relative mt-8">
+                        {loadingEarnings ? (
+                          <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 py-16 dark:border-white/10 dark:bg-white/5">
+                            <Loader2 className="animate-spin text-blue-500" size={32} />
+                            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Carregando financeiro...</p>
+                          </div>
+                        ) : financeSubTab === 'summary' ? (
+                          <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+                            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                              <div className="mb-6 flex items-center justify-between gap-4">
+                                <div>
+                                  <h4 className="text-lg font-black text-slate-950 dark:text-white">Resumo mensal</h4>
+                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{getMonthLabel(selectedFinanceMonth)}</p>
+                                </div>
+                                <CalendarDays className="text-blue-500" size={24} />
+                              </div>
+
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                {[
+                                  ['Receita bruta', monthlySummary.gross],
+                                  ['Comissão da plataforma', monthlySummary.commission],
+                                  ['Receita líquida', monthlySummary.net],
+                                  ['Saques no período', monthlySummary.withdrawals],
+                                  ['Saldo estimado do mês', monthlySummary.availableInMonth],
+                                  ['A receber geral', earningsStats.pending],
+                                ].map(([label, value]) => (
+                                  <div key={String(label)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/40">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</p>
+                                    <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{formatCurrency(Number(value))}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-950/40">
+                              <div className="mb-5 flex items-center justify-between gap-4">
+                                <div>
+                                  <h4 className="text-lg font-black text-slate-950 dark:text-white">Últimos lançamentos</h4>
+                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Movimentações mais recentes</p>
+                                </div>
+                                <Receipt className="text-emerald-500" size={22} />
+                              </div>
+
+                              <div className="space-y-3">
+                                {earningsList.slice(0, 5).length > 0 ? earningsList.slice(0, 5).map((item, i) => (
+                                  <div key={item.id || i} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-emerald-100 text-sm font-black text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                                        {item.avatar ? <img src={item.avatar} alt="" className="h-full w-full object-cover" /> : item.patient[0]}
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-black text-slate-900 dark:text-white">{item.patient}</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{item.date}</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">+ {formatCurrency(item.net)}</p>
+                                  </div>
+                                )) : (
+                                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center dark:border-white/10 dark:bg-white/5">
+                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Nenhum lançamento encontrado.</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : financeSubTab === 'payments' ? (
+                          <div className="rounded-[2rem] border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
+                            <div className="flex flex-col gap-3 border-b border-slate-200 p-6 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <h4 className="text-lg font-black text-slate-950 dark:text-white">Pagamentos recebidos</h4>
+                                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Consultas concluídas no período selecionado.</p>
+                              </div>
+                              <span className="rounded-full bg-emerald-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                {monthlyPayments.length} registros
+                              </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="w-full min-w-[760px] text-left">
+                                <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:bg-slate-950/40 dark:text-slate-500">
+                                  <tr>
+                                    <th className="px-6 py-4">Data</th>
+                                    <th className="px-6 py-4">Paciente</th>
+                                    <th className="px-6 py-4">Serviço</th>
+                                    <th className="px-6 py-4">Bruto</th>
+                                    <th className="px-6 py-4">Comissão</th>
+                                    <th className="px-6 py-4">Líquido</th>
+                                    <th className="px-6 py-4">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                                  {monthlyPayments.length > 0 ? monthlyPayments.map((item, i) => (
+                                    <tr key={item.id || i} className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                      <td className="px-6 py-5">{item.date}</td>
+                                      <td className="px-6 py-5 text-slate-950 dark:text-white">{item.patient}</td>
+                                      <td className="px-6 py-5">{item.service}</td>
+                                      <td className="px-6 py-5">{formatCurrency(item.gross)}</td>
+                                      <td className="px-6 py-5 text-amber-600 dark:text-amber-400">-{formatCurrency(item.commission)}</td>
+                                      <td className="px-6 py-5 text-emerald-600 dark:text-emerald-400">{formatCurrency(item.net)}</td>
+                                      <td className="px-6 py-5">
+                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                          {item.status}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  )) : (
+                                    <tr>
+                                      <td colSpan={7} className="px-6 py-12 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
+                                        Nenhum pagamento encontrado para {getMonthLabel(selectedFinanceMonth)}.
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ) : financeSubTab === 'withdrawals' ? (
+                          <div className="space-y-8 rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                            <PhysioWithdrawal
+                              userId={user?.id || ''}
+                              availableBalance={earningsStats.balance}
+                              onSuccess={() => fetchEarnings()}
+                            />
+                          </div>
                         ) : (
-                          <div className="text-center py-12 bg-white/5 rounded-[2rem] border border-dashed border-white/10 space-y-3">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto text-slate-500">
-                              <DollarSign size={24} />
+                          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                                <FileText size={26} />
+                              </div>
+                              <h4 className="text-xl font-black text-slate-950 dark:text-white">Relatório mensal em PDF</h4>
+                              <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+                                Baixe um relatório com resumo financeiro, pagamentos, comissão da plataforma, valor líquido e saques do mês selecionado.
+                              </p>
+
+                              <div className="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/40">
+                                <div className="flex items-center justify-between gap-4 text-sm font-bold">
+                                  <span className="text-slate-500 dark:text-slate-400">Período</span>
+                                  <span className="text-slate-950 dark:text-white">{getMonthLabel(selectedFinanceMonth)}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 text-sm font-bold">
+                                  <span className="text-slate-500 dark:text-slate-400">Receita líquida</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(monthlySummary.net)}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 text-sm font-bold">
+                                  <span className="text-slate-500 dark:text-slate-400">Consultas</span>
+                                  <span className="text-slate-950 dark:text-white">{monthlySummary.paidAppointments}</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={handleDownloadFinanceReport}
+                                disabled={downloadingFinanceReport}
+                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-blue-900/20 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {downloadingFinanceReport ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                                Baixar relatório em PDF
+                              </button>
                             </div>
-                            <p className="text-slate-400 font-medium">Nenhum pagamento recebido até o momento.</p>
+
+                            <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-950/40">
+                              <h4 className="text-lg font-black text-slate-950 dark:text-white">Dados de pagamento</h4>
+                              <p className="mb-6 mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">Confira a chave PIX e dados usados para repasse.</p>
+                              <PhysioPaymentData userId={user?.id || ''} />
+                            </div>
                           </div>
                         )}
                       </div>
