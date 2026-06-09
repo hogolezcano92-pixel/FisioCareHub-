@@ -1872,9 +1872,9 @@ Promise.resolve({ count: realAppointmentsData.length }),
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {nextPatientAppointment ? (
-              <div className="relative overflow-hidden rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50 via-cyan-50 to-blue-100 p-4 shadow-[0_18px_45px_rgba(14,165,233,0.16)] transition-all group hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(14,165,233,0.24)] dark:border-sky-400/20 dark:from-sky-500/25 dark:via-cyan-500/15 dark:to-blue-600/25 flex items-center justify-between">
+              <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-blue-600 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-500/25 dark:shadow-sky-900/40">
+                  <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
                     <span className="text-[9px] font-black uppercase opacity-80">
                       {formatAppointmentMonth(nextPatientAppointment)}
                     </span>
@@ -1883,36 +1883,36 @@ Promise.resolve({ count: realAppointmentsData.length }),
                     </span>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-sky-700 dark:text-sky-300 uppercase tracking-[0.15em] mb-0.5">
+                    <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em] mb-0.5">
                       Próxima Consulta
                     </p>
-                    <p className="text-lg font-black text-slate-950 dark:text-white tracking-tight">
+                    <p className="text-lg font-black text-white tracking-tight">
                       {getAppointmentProviderName(nextPatientAppointment)}
                     </p>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                    <p className="text-xs text-slate-400 font-bold">
                       {formatAppointmentTime(nextPatientAppointment)} •{" "}
-                      <span className="text-sky-700 dark:text-sky-300">Presencial</span>
+                      <span className="text-sky-400">Presencial</span>
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate("/appointments")}
-                  className="p-3 bg-white/70 text-sky-700 rounded-xl group-hover:bg-sky-600 group-hover:text-white transition-all shadow-sm dark:bg-white/10 dark:text-sky-200"
+                  className="p-3 bg-white/5 text-slate-400 rounded-xl group-hover:bg-sky-500 group-hover:text-white transition-all shadow-sm"
                 >
                   <ChevronRight size={20} />
                 </button>
               </div>
             ) : (
-              <div className="relative overflow-hidden rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-4 shadow-[0_18px_45px_rgba(14,165,233,0.12)] transition-all group hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(14,165,233,0.20)] dark:border-sky-400/20 dark:from-sky-500/20 dark:via-slate-900/70 dark:to-cyan-500/15 flex items-center justify-between">
+              <div className="bg-white/5 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-cyan-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/25">
+                  <div className="w-14 h-14 bg-white/5 text-slate-400 rounded-xl flex items-center justify-center shadow-inner border border-white/5">
                     <Calendar size={24} />
                   </div>
                   <div>
-                    <p className="text-lg font-black text-slate-950 dark:text-white tracking-tight">
+                    <p className="text-lg font-black text-white tracking-tight">
                       Agendar Consulta
                     </p>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                    <p className="text-xs text-slate-400 font-bold">
                       Você não tem consultas pendentes.
                     </p>
                   </div>
@@ -1926,31 +1926,31 @@ Promise.resolve({ count: realAppointmentsData.length }),
               </div>
             )}
 
-            <div className="relative overflow-hidden rounded-2xl border border-purple-200/70 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-indigo-100 p-5 text-slate-950 shadow-[0_18px_45px_rgba(124,58,237,0.16)] transition-all group hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(124,58,237,0.24)] dark:border-purple-400/20 dark:from-purple-500/25 dark:via-fuchsia-500/15 dark:to-indigo-600/25 dark:text-white flex items-center justify-around">
-              <div className="absolute -right-12 -top-14 h-32 w-32 rounded-full bg-white/35 blur-3xl dark:bg-purple-300/10 transition-opacity duration-700" />
+            <div className="bg-card backdrop-blur-xl p-5 rounded-2xl text-white shadow-2xl border border-white/10 flex items-center justify-around relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <div className="text-center relative z-10">
-                <p className="text-2xl font-black text-slate-950 dark:text-white">
+                <p className="text-2xl font-black text-white">
                   {stats.records > 0 ? "75%" : "0%"}
                 </p>
-                <p className="text-[9px] font-bold text-purple-700/80 dark:text-purple-200/80 uppercase tracking-[0.2em]">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                   Melhora
                 </p>
               </div>
-              <div className="w-px h-8 bg-purple-900/10 dark:bg-white/15 relative z-10" />
+              <div className="w-px h-8 bg-white/10 relative z-10" />
               <div className="text-center relative z-10">
-                <p className="text-2xl font-black text-slate-950 dark:text-white">
+                <p className="text-2xl font-black text-white">
                   {stats.appointments}
                 </p>
-                <p className="text-[9px] font-bold text-purple-700/80 dark:text-purple-200/80 uppercase tracking-[0.2em]">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                   Sessões
                 </p>
               </div>
-              <div className="w-px h-8 bg-purple-900/10 dark:bg-white/15 relative z-10" />
+              <div className="w-px h-8 bg-white/10 relative z-10" />
               <div className="text-center relative z-10">
-                <p className="text-2xl font-black text-slate-950 dark:text-white">
+                <p className="text-2xl font-black text-white">
                   {stats.workouts}
                 </p>
-                <p className="text-[9px] font-bold text-purple-700/80 dark:text-purple-200/80 uppercase tracking-[0.2em]">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                   Treinos
                 </p>
               </div>
@@ -2034,25 +2034,11 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className={cn(
-                  "group relative overflow-hidden !p-4 md:!p-6 transition-all duration-300",
-                  isPhysio
-                    ? "premium-card"
-                    : "rounded-2xl border bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,23,42,0.13)] dark:bg-white/5 dark:backdrop-blur-xl dark:shadow-2xl",
-                  !isPhysio && stat.color === "sky" &&
-                    "border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:border-sky-400/20 dark:from-sky-500/20 dark:via-slate-900/70 dark:to-blue-600/15",
-                  !isPhysio && stat.color === "emerald" &&
-                    "border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:border-emerald-400/20 dark:from-emerald-500/20 dark:via-slate-900/70 dark:to-teal-600/15",
-                  !isPhysio && stat.color === "indigo" &&
-                    "border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:border-indigo-400/20 dark:from-indigo-500/20 dark:via-slate-900/70 dark:to-violet-600/15",
-                  !isPhysio && stat.color === "rose" &&
-                    "border-rose-200/70 bg-gradient-to-br from-rose-50 via-white to-pink-50 dark:border-rose-400/20 dark:from-rose-500/20 dark:via-slate-900/70 dark:to-pink-600/15",
-                )}
+                className="premium-card group relative overflow-hidden !p-4 md:!p-6"
               >
                 <div
                   className={cn(
-                    "absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full transition-transform group-hover:scale-110",
-                    isPhysio ? "opacity-[0.05]" : "opacity-10 dark:opacity-[0.08]",
+                    "absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-[0.05] transition-transform group-hover:scale-110",
                     stat.color === "sky"
                       ? "bg-sky-600"
                       : stat.color === "emerald"
@@ -2066,24 +2052,15 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 <div className="flex justify-between items-start mb-3">
                   <div
                     className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all border",
-                      isPhysio ? "border-white/5" : "border-white/70 dark:border-white/10",
+                      "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all border border-white/5",
                       stat.color === "sky" &&
-                        (isPhysio
-                          ? "bg-sky-500/10 text-sky-400 shadow-sky-900/20"
-                          : "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sky-500/25"),
+                        "bg-sky-500/10 text-sky-400 shadow-sky-900/20",
                       stat.color === "emerald" &&
-                        (isPhysio
-                          ? "bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20"
-                          : "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/25"),
+                        "bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20",
                       stat.color === "indigo" &&
-                        (isPhysio
-                          ? "bg-indigo-500/10 text-indigo-400 shadow-indigo-900/20"
-                          : "bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-indigo-500/25"),
+                        "bg-indigo-500/10 text-indigo-400 shadow-indigo-900/20",
                       stat.color === "rose" &&
-                        (isPhysio
-                          ? "bg-rose-500/10 text-rose-400 shadow-rose-900/20"
-                          : "bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-rose-500/25"),
+                        "bg-rose-500/10 text-rose-400 shadow-rose-900/20",
                     )}
                   >
                     <stat.icon size={20} />
@@ -2093,8 +2070,8 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       className={cn(
                         "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black tracking-tighter",
                         stat.trend.startsWith("+")
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-rose-500/10 text-rose-400",
                       )}
                     >
                       {stat.trend.startsWith("+") ? (
@@ -2108,20 +2085,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 </div>
 
                 <div>
-                  <p
-                    className={cn(
-                      "text-xl font-black tracking-tight",
-                      isPhysio ? "text-white" : "text-slate-950 dark:text-white",
-                    )}
-                  >
+                  <p className="text-xl font-black text-white tracking-tight">
                     {stat.value}
                   </p>
-                  <p
-                    className={cn(
-                      "text-[8px] font-bold uppercase tracking-widest",
-                      isPhysio ? "text-slate-500" : "text-slate-600 dark:text-slate-500",
-                    )}
-                  >
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
                     {stat.label}
                   </p>
                 </div>
