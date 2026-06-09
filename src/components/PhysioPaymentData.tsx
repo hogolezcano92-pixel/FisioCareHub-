@@ -110,7 +110,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
           <DollarSign size={20} />
         </div>
         <div>
-          <h3 className="text-xl font-black text-white tracking-tight uppercase">Dados de Pagamento</h3>
+          <h3 className="text-xl font-black text-slate-950 dark:text-white tracking-tight uppercase">Dados de Pagamento</h3>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Informações para recebimento de honorários</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
             <select
               value={formData.tipo_chave_pix}
               onChange={(e) => setFormData({ ...formData, tipo_chave_pix: e.target.value as any })}
-              className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold appearance-none transition-all"
+              className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold appearance-none transition-all"
             >
               <option value="CPF">CPF</option>
               <option value="Email">Email</option>
@@ -154,15 +154,15 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
               value={formData.chave_pix}
               onChange={(e) => setFormData({ ...formData, chave_pix: e.target.value })}
               placeholder="Digite sua chave PIX..."
-              className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold transition-all placeholder:text-slate-600"
+              className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
           </div>
         </div>
 
-        <div className="pt-4 border-t border-white/5 space-y-6">
+        <div className="pt-4 border-t border-slate-200 dark:border-white/5 space-y-6">
           <div className="flex items-center gap-3">
             <Building2 className="text-slate-500" size={18} />
-            <h4 className="text-sm font-black text-white uppercase tracking-widest">Dados Bancários (Opcional)</h4>
+            <h4 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-widest">Dados Bancários (Opcional)</h4>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -173,7 +173,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
                 value={formData.banco}
                 onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
                 placeholder="Ex: Itaú, Bradesco..."
-                className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold transition-all placeholder:text-slate-700"
+                className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
               />
             </div>
             <div className="space-y-2">
@@ -181,7 +181,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
               <select
                 value={formData.tipo_conta}
                 onChange={(e) => setFormData({ ...formData, tipo_conta: e.target.value as any })}
-                className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold appearance-none transition-all"
+                className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold appearance-none transition-all"
               >
                 <option value="">Selecione...</option>
                 <option value="Corrente">Corrente</option>
@@ -195,7 +195,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
                 value={formData.agencia}
                 onChange={(e) => setFormData({ ...formData, agencia: e.target.value })}
                 placeholder="0000"
-                className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold transition-all placeholder:text-slate-700"
+                className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
               />
             </div>
             <div className="space-y-2">
@@ -205,7 +205,7 @@ export default function PhysioPaymentData({ userId }: PhysioPaymentDataProps) {
                 value={formData.conta}
                 onChange={(e) => setFormData({ ...formData, conta: e.target.value })}
                 placeholder="000000-0"
-                className="w-full p-4 bg-slate-950 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-white font-bold transition-all placeholder:text-slate-700"
+                className="w-full p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-950 dark:text-white font-bold transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700"
               />
             </div>
           </div>

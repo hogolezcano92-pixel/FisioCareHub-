@@ -208,7 +208,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
             <TrendingUp size={20} />
           </div>
           <div>
-            <h3 className="text-xl font-black text-white tracking-tight uppercase">Saques</h3>
+            <h3 className="text-xl font-black text-slate-950 dark:text-white tracking-tight uppercase">Saques</h3>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Gerencie suas retiradas de saldo</p>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
         <div className="flex items-center gap-4">
           <div className="text-right hidden md:block">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Saldo para Retirada</p>
-            <p className="text-xl font-black text-white">R$ {availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-xl font-black text-slate-950 dark:text-white">R$ {availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           </div>
 
           <button
@@ -274,7 +274,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
         </div>
 
         {history.length === 0 ? (
-          <div className="p-12 text-center border-2 border-dashed border-white/5 rounded-[2.5rem]">
+          <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2.5rem]">
             <p className="text-slate-500 font-bold text-sm">Nenhum saque solicitado até o momento.</p>
           </div>
         ) : (
@@ -284,7 +284,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
                 key={request.id}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between"
+                className="p-5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex items-center justify-between"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -297,7 +297,7 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
                      <Clock size={20} />}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white">R$ {request.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-sm font-black text-slate-950 dark:text-white">R$ {request.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                       {formatDateTimeBR(getWithdrawalDisplayDate(request))}
                     </p>
