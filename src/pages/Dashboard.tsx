@@ -1463,7 +1463,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
     );
 
   return (
-    <div className="dashboard-light-page min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500">
+    <div className="dashboard-light-page patient-dashboard-shell min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500">
       <style>{`
         /* Dashboard: melhora o selo Story e força os ícones rápidos coloridos no tema claro sem alterar o dark mode */
         html:not(.dark) .dashboard-story-avatar > button,
@@ -1555,7 +1555,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-10 relative z-10">
-        <header className="mt-1 md:mt-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
+        <header className={cn("mt-1 md:mt-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden", !isPhysio && "patient-card-purple")}>
           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[60px] -mr-24 -mt-24 pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
@@ -1802,10 +1802,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
         {isPhysio && <ClinicalUpdatesCarousel />}
 
-        <ProductStoreCarousel audience={isPhysio ? "physio" : "patient"} />
+        <ProductStoreCarousel audience={isPhysio ? "physio" : "patient"} className={!isPhysio ? "patient-card-orange patient-store-card" : undefined} />
 
         {!isPhysio && (
-          <div className="relative overflow-hidden rounded-[2rem] border border-orange-200/70 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-4 md:p-5 shadow-[0_18px_60px_rgba(251,146,60,0.16)] dark:border-orange-400/20 dark:bg-gradient-to-br dark:from-orange-500/15 dark:via-white/[0.055] dark:to-sky-500/15 dark:shadow-orange-950/20">
+          <div className="relative overflow-hidden rounded-[2rem] border border-orange-200/70 patient-card-orange p-4 md:p-5">
             <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-orange-200/70 blur-3xl dark:bg-orange-500/20" />
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-sky-200/70 blur-3xl dark:bg-sky-500/20" />
 
@@ -1830,17 +1830,17 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
               <button
                 onClick={() => navigate("/jornada")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/25 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl patient-solid-button-orange px-5 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 sm:w-auto"
               >
                 Abrir jornada
                 <ChevronRight size={18} />
               </button>
             </div>
 
-            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-sky-100 bg-white/70 p-2 shadow-inner shadow-sky-100/70 dark:border-white/10 dark:bg-slate-950/25 dark:shadow-none">
-              <div className="rounded-2xl bg-sky-50 p-3 text-center shadow-sm ring-1 ring-sky-100 dark:bg-sky-500/10 dark:ring-sky-400/15">
+            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-orange-200/70 bg-orange-50/80 p-2 shadow-inner shadow-orange-100/70 dark:border-orange-400/15 dark:bg-orange-500/10 dark:shadow-none">
+              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
                 <Activity
-                  className="mx-auto mb-1 text-sky-600 dark:text-sky-300"
+                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
                   size={18}
                 />
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
@@ -1856,9 +1856,9 @@ Promise.resolve({ count: realAppointmentsData.length }),
                   Dor
                 </p>
               </div>
-              <div className="rounded-2xl bg-emerald-50 p-3 text-center shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-400/15">
+              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
                 <Calendar
-                  className="mx-auto mb-1 text-emerald-600 dark:text-emerald-300"
+                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
                   size={18}
                 />
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
@@ -1872,7 +1872,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
         {!isPhysio && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {nextPatientAppointment ? (
-              <div className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 backdrop-blur-xl p-4 rounded-2xl border border-sky-100/80 shadow-xl shadow-sky-100/50 flex items-center justify-between group hover:-translate-y-0.5 hover:shadow-sky-200/70 transition-all dark:from-sky-500/12 dark:via-white/[0.055] dark:to-emerald-500/12 dark:border-sky-400/15 dark:shadow-sky-950/20">
+              <div className="patient-card-green p-4 rounded-2xl flex items-center justify-between group hover:-translate-y-0.5 transition-all">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-sky-500 text-white rounded-xl flex flex-col items-center justify-center shadow-lg shadow-sky-900/40">
                     <span className="text-[9px] font-black uppercase opacity-80">
@@ -1903,7 +1903,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 </button>
               </div>
             ) : (
-              <div className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 backdrop-blur-xl p-4 rounded-2xl border border-sky-100/80 shadow-xl shadow-sky-100/50 flex items-center justify-between group hover:-translate-y-0.5 hover:shadow-sky-200/70 transition-all dark:from-sky-500/12 dark:via-white/[0.055] dark:to-emerald-500/12 dark:border-sky-400/15 dark:shadow-sky-950/20">
+              <div className="patient-card-green p-4 rounded-2xl flex items-center justify-between group hover:-translate-y-0.5 transition-all">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-sky-100 to-emerald-100 text-sky-700 rounded-xl flex items-center justify-center shadow-inner border border-sky-100 dark:from-sky-500/20 dark:to-emerald-500/20 dark:text-sky-300 dark:border-sky-400/15">
                     <Calendar size={24} />
@@ -1926,7 +1926,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
               </div>
             )}
 
-            <div className="bg-gradient-to-br from-blue-50 via-emerald-50 to-orange-50 backdrop-blur-xl p-5 rounded-2xl text-slate-950 shadow-2xl shadow-sky-100/60 border border-sky-100/80 flex items-center justify-around relative overflow-hidden group dark:from-blue-500/15 dark:via-emerald-500/10 dark:to-orange-500/15 dark:text-white dark:border-white/10 dark:shadow-blue-950/20">
+            <div className="patient-card-blue p-5 rounded-2xl text-slate-950 flex items-center justify-around relative overflow-hidden group dark:text-white">
               <div className="absolute inset-0 bg-gradient-to-br from-sky-400/10 via-emerald-300/10 to-orange-300/10 opacity-70 group-hover:opacity-100 transition-opacity duration-700" />
               <div className="text-center relative z-10">
                 <p className="text-2xl font-black text-white">
@@ -1970,7 +1970,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 </div>
               )}
             </div>
-            <div className="premium-card bg-gradient-to-br from-sky-50 via-white to-blue-50 border-sky-100/80 shadow-sky-100/60 dark:from-sky-500/10 dark:via-white/[0.045] dark:to-blue-500/10 dark:border-sky-400/15">
+            <div className="premium-card patient-card-blue">
               <EvolutionCharts
                 painData={weeklyChartData.painData}
                 exerciseData={weeklyChartData.exerciseData}
@@ -1987,7 +1987,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
               <span className="text-blue-400 italic">Atividades</span>
             </h2>
           </div>
-          <div className="premium-card bg-gradient-to-br from-orange-50 via-white to-sky-50 border-orange-100/80 shadow-orange-100/60 dark:from-orange-500/10 dark:via-white/[0.045] dark:to-sky-500/10 dark:border-orange-400/15">
+          <div className="premium-card patient-card-purple">
             <ActivityTimeline activities={activities} mode={isPhysio ? "physio" : "patient"} />
           </div>
         </div>
@@ -2218,7 +2218,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
               </Link>
             </div>
 
-            <div className="premium-card !p-0 overflow-hidden">
+            <div className="premium-card !p-0 overflow-hidden patient-card-blue">
               {apptsLoading ? (
                 <div className="p-4">
                   <ListSkeleton count={3} />
@@ -2316,7 +2316,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 </Link>
               </div>
 
-              <div className="premium-card !p-0 overflow-hidden">
+              <div className="premium-card !p-0 overflow-hidden patient-card-purple">
                 {recentTriages.length === 0 ? (
                   <div className="p-8 text-center space-y-2">
                     <div className="w-10 h-10 bg-white/5 text-slate-500 rounded-full flex items-center justify-center mx-auto border border-white/5">
@@ -2439,7 +2439,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 layout
                 onClick={() => setIsAiExpanded(!isAiExpanded)}
                 className={cn(
-                  "bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 p-6 rounded-2xl text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 cursor-pointer group",
+                  "patient-card-purple p-6 rounded-2xl text-white relative overflow-hidden cursor-pointer group",
                   isAiExpanded ? "lg:col-span-1 h-auto" : "h-fit",
                 )}
               >
@@ -2586,22 +2586,22 @@ Promise.resolve({ count: realAppointmentsData.length }),
             <div className="space-y-6">
               <div className="grid lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2 space-y-5">
-                  <div className="bg-gradient-to-br from-sky-50 via-white to-cyan-50 backdrop-blur-xl p-4 rounded-2xl border border-sky-100/80 shadow-2xl shadow-sky-100/60 dark:from-sky-500/12 dark:via-white/[0.055] dark:to-cyan-500/12 dark:border-sky-400/15 dark:shadow-sky-950/20">
+                  <div className="patient-card-blue p-4 rounded-2xl">
                     <PainDiary onSaved={() => fetchDashboardData(profile)} />
                   </div>
-                  <div className="bg-gradient-to-br from-emerald-50 via-white to-lime-50 backdrop-blur-xl p-4 rounded-2xl border border-emerald-100/80 shadow-2xl shadow-emerald-100/60 dark:from-emerald-500/12 dark:via-white/[0.055] dark:to-lime-500/12 dark:border-emerald-400/15 dark:shadow-emerald-950/20">
+                  <div className="patient-card-green p-4 rounded-2xl">
                     <ExerciseChecklist onUpdated={() => fetchDashboardData(profile)} />
                   </div>
                 </div>
                 <div className="space-y-5">
-                  <div className="bg-gradient-to-br from-orange-50 via-white to-sky-50 backdrop-blur-xl p-5 rounded-2xl border border-orange-100/80 shadow-2xl shadow-orange-100/60 space-y-3.5 dark:from-orange-500/12 dark:via-white/[0.055] dark:to-sky-500/12 dark:border-orange-400/15 dark:shadow-orange-950/20">
+                  <div className="patient-card-purple p-5 rounded-2xl space-y-3.5">
                     <h3 className="text-base font-black text-slate-950 dark:text-white">
                       Ações Rápidas
                     </h3>
                     <div className="grid grid-cols-2 gap-2.5">
                       <Link
                         to="/chat"
-                        className="p-3 rounded-2xl bg-sky-50 border border-sky-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-sky-200/70 group transition-all dark:bg-sky-500/10 dark:border-sky-400/15"
+                        className="patient-subcard-purple p-3 rounded-2xl text-center space-y-1 shadow-sm hover:-translate-y-0.5 group transition-all"
                       >
                         <MessageSquare
                           className="mx-auto text-sky-600 dark:text-sky-300 group-hover:scale-110 transition-all"
@@ -2613,7 +2613,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       </Link>
                       <Link
                         to="/treinos"
-                        className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-emerald-200/70 group transition-all dark:bg-emerald-500/10 dark:border-emerald-400/15"
+                        className="patient-subcard-purple p-3 rounded-2xl text-center space-y-1 shadow-sm hover:-translate-y-0.5 group transition-all"
                       >
                         <Activity
                           className="mx-auto text-emerald-600 dark:text-emerald-300 group-hover:scale-110 transition-all"
@@ -2630,7 +2630,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                             "_blank",
                           )
                         }
-                        className="p-3 rounded-2xl bg-orange-50 border border-orange-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-orange-200/70 group transition-all dark:bg-orange-500/10 dark:border-orange-400/15"
+                        className="patient-subcard-purple p-3 rounded-2xl text-center space-y-1 shadow-sm hover:-translate-y-0.5 group transition-all"
                       >
                         <Video
                           className="mx-auto text-orange-600 dark:text-orange-300 group-hover:scale-110 transition-all"
@@ -2642,7 +2642,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       </button>
                       <Link
                         to="/triage"
-                        className="p-3 rounded-2xl bg-blue-50 border border-blue-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-blue-200/70 group transition-all dark:bg-blue-500/10 dark:border-blue-400/15"
+                        className="patient-subcard-purple p-3 rounded-2xl text-center space-y-1 shadow-sm hover:-translate-y-0.5 group transition-all"
                       >
                         <BrainCircuit
                           className="mx-auto text-blue-600 dark:text-blue-300 group-hover:scale-110 transition-all"
@@ -2655,7 +2655,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-emerald-50 via-white to-orange-50 backdrop-blur-xl p-5 rounded-2xl border border-emerald-100/80 shadow-2xl shadow-emerald-100/60 space-y-3.5 dark:from-emerald-500/12 dark:via-white/[0.055] dark:to-orange-500/12 dark:border-emerald-400/15 dark:shadow-emerald-950/20">
+                  <div className="patient-card-orange p-5 rounded-2xl space-y-3.5">
                     <h3 className="text-base font-black text-slate-950 dark:text-white flex items-center gap-2">
                       <Trophy className="text-amber-500" size={18} />
                       Conquistas
@@ -2692,8 +2692,8 @@ Promise.resolve({ count: realAppointmentsData.length }),
                           className={cn(
                             "flex items-center gap-2.5 p-2.5 rounded-xl border transition-all shadow-sm",
                             i === 0 && "bg-orange-50 border-orange-100 hover:border-orange-200 dark:bg-orange-500/10 dark:border-orange-400/15",
-                            i === 1 && "bg-sky-50 border-sky-100 hover:border-sky-200 dark:bg-sky-500/10 dark:border-sky-400/15",
-                            i === 2 && "bg-emerald-50 border-emerald-100 hover:border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-400/15",
+                            i === 1 && "bg-orange-50 border-orange-100 hover:border-orange-200 dark:bg-orange-500/10 dark:border-orange-400/15",
+                            i === 2 && "bg-orange-50 border-orange-100 hover:border-orange-200 dark:bg-orange-500/10 dark:border-orange-400/15",
                           )}
                         >
                           <div
