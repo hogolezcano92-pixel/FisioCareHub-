@@ -6,34 +6,66 @@ import { Play, RotateCcw, Volume2, X } from 'lucide-react';
 interface WelcomeVideoModalProps {
   userId?: string | null;
   userRole?: string | null;
-  videoSrc?: string;
 }
 
-/**
- * O parâmetro v força o navegador/Vercel a buscar o arquivo novo,
- * evitando tela preta por cache antigo do MP4.
- */
-const DEFAULT_VIDEO_SRC = '/onboarding/fisiocarehub-welcome.mp4?v=4';
+type WelcomeVideoStep = {
+  id: 'welcome' | 'paciente' | 'fisioterapeuta';
+  src: string;
+};
+
+const VIDEO_VERSION = 'v=5';
+
+const GENERAL_VIDEO: WelcomeVideoStep = {
+  id: 'welcome',
+  src: `/onboarding/fisiocarehub-welcome.mp4?${VIDEO_VERSION}`,
+};
+
+const ROLE_VIDEOS: Record<string, WelcomeVideoStep> = {
+  paciente: {
+    id: 'paciente',
+    src: `/onboarding/fisiocarehub-paciente.mp4?${VIDEO_VERSION}`,
+  },
+  fisioterapeuta: {
+    id: 'fisioterapeuta',
+    src: `/onboarding/fisiocarehub-fisioterapeuta.mp4?${VIDEO_VERSION}`,
+  },
+};
 
 const getStorageKey = (userId?: string | null) =>
-  userId ? `fisiocarehub_welcome_video_seen_${userId}` : 'fisiocarehub_welcome_video_seen_guest';
+  userId
+    ? `fisiocarehub_welcome_video_sequence_seen_${userId}_${VIDEO_VERSION}`
+    : `fisiocarehub_welcome_video_sequence_seen_guest_${VIDEO_VERSION}`;
 
-export default function WelcomeVideoModal({
-  userId,
-  userRole,
-  videoSrc = DEFAULT_VIDEO_SRC,
-}: WelcomeVideoModalProps) {
+const normalizeRole = (role?: string | null) => String(role || '').toLowerCase();
+
+export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModalProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const startedRef = useRef(false);
+  const closingRef = useRef(false);
 
   const [isVisible, setIsVisible] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [needsSoundTap, setNeedsSoundTap] = useState(false);
   const [showPlayButton, setShowPlayButton] = useState(false);
   const [hasVideoError, setHasVideoError] = useState(false);
 
-  const storageKey = useMemo(() => getStorageKey(userId), [userId]);
-  const normalizedRole = String(userRole || '').toLowerCase();
+  const normalizedRole = normalizeRole(userRole);
   const shouldShowForRole = normalizedRole === 'paciente' || normalizedRole === 'fisioterapeuta';
+  const storageKey = useMemo(() => getStorageKey(userId), [userId]);
+
+  const videoSteps = useMemo<WelcomeVideoStep[]>(() => {
+    const steps = [GENERAL_VIDEO];
+    const roleVideo = ROLE_VIDEOS[normalizedRole];
+
+    if (roleVideo) {
+      steps.push(roleVideo);
+    }
+
+    return steps;
+  }, [normalizedRole]);
+
+  const currentStep = videoSteps[currentStepIndex] || GENERAL_VIDEO;
+  const isLastStep = currentStepIndex >= videoSteps.length - 1;
 
   useEffect(() => {
     if (!userId || !shouldShowForRole) return;
@@ -49,7 +81,27 @@ export default function WelcomeVideoModal({
     }
   }, [storageKey, shouldShowForRole, userId]);
 
+  useEffect(() => {
+    if (!isVisible || videoSteps.length === 0) return;
+
+    videoSteps.forEach((step) => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'video';
+      link.href = step.src;
+      document.head.appendChild(link);
+
+      return () => {
+        try {
+          document.head.removeChild(link);
+        } catch {}
+      };
+    });
+  }, [isVisible, videoSteps]);
+
   const markAsSeenAndClose = () => {
+    closingRef.current = true;
+
     try {
       localStorage.setItem(storageKey, 'true');
     } catch {}
@@ -63,9 +115,22 @@ export default function WelcomeVideoModal({
     setIsVisible(false);
   };
 
+  const goToNextVideoOrClose = () => {
+    if (!isLastStep) {
+      startedRef.current = false;
+      setNeedsSoundTap(false);
+      setShowPlayButton(false);
+      setHasVideoError(false);
+      setCurrentStepIndex((index) => index + 1);
+      return;
+    }
+
+    markAsSeenAndClose();
+  };
+
   const startVideo = async (preferSound = true) => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || closingRef.current) return;
 
     setHasVideoError(false);
     setShowPlayButton(false);
@@ -139,6 +204,7 @@ export default function WelcomeVideoModal({
   useEffect(() => {
     if (!isVisible) return;
 
+    closingRef.current = false;
     startedRef.current = false;
     setNeedsSoundTap(false);
     setShowPlayButton(false);
@@ -148,6 +214,8 @@ export default function WelcomeVideoModal({
     if (!video) return;
 
     try {
+      video.pause();
+      video.currentTime = 0;
       video.load();
     } catch {}
 
@@ -158,7 +226,27 @@ export default function WelcomeVideoModal({
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [isVisible, videoSrc]);
+  }, [currentStep.src, isVisible]);
+
+  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('[WelcomeVideoModal] Erro ao carregar vídeo de boas-vindas.', {
+      step: currentStep.id,
+      src: currentStep.src,
+      event,
+    });
+
+    /**
+     * Se o vídeo por tipo de conta ainda não existir no projeto,
+     * não deixa o usuário preso em tela preta: fecha normalmente após o vídeo geral.
+     */
+    if (currentStep.id !== 'welcome') {
+      markAsSeenAndClose();
+      return;
+    }
+
+    setHasVideoError(true);
+    setShowPlayButton(true);
+  };
 
   if (!isVisible) return null;
 
@@ -174,10 +262,10 @@ export default function WelcomeVideoModal({
         aria-label="Vídeo de boas-vindas FisioCareHub"
       >
         <video
+          key={currentStep.src}
           ref={videoRef}
           className="absolute inset-0 h-full w-full bg-black object-cover"
           playsInline
-          webkit-playsinline="true"
           autoPlay
           controls={false}
           preload="auto"
@@ -187,15 +275,11 @@ export default function WelcomeVideoModal({
           onCanPlay={() => {
             if (!startedRef.current) startVideo(true);
           }}
-          onEnded={markAsSeenAndClose}
-          onError={(event) => {
-            console.error('[WelcomeVideoModal] Erro ao carregar vídeo de boas-vindas.', event);
-            setHasVideoError(true);
-            setShowPlayButton(true);
-          }}
+          onEnded={goToNextVideoOrClose}
+          onError={handleVideoError}
           onClick={needsSoundTap ? handleEnableSound : undefined}
         >
-          <source src={videoSrc} type="video/mp4" />
+          <source src={currentStep.src} type="video/mp4" />
         </video>
 
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-28 bg-gradient-to-b from-black/45 to-transparent" />
