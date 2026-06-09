@@ -229,12 +229,12 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   const isPhysio = audience === 'physio';
 
   return (
-    <section className={cn('relative overflow-hidden rounded-[2rem] border border-violet-100 bg-white shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.055] dark:shadow-blue-950/20', className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(124,58,237,0.12),transparent_28%),radial-gradient(circle_at_90%_0%,rgba(56,189,248,0.14),transparent_30%)] pointer-events-none dark:opacity-80" />
+    <section className={cn('relative overflow-hidden rounded-[2rem] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 shadow-2xl shadow-sky-100/60 dark:border-sky-400/15 dark:bg-gradient-to-br dark:from-sky-500/12 dark:via-white/[0.055] dark:to-emerald-500/12 dark:shadow-blue-950/20', className)}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_90%_0%,rgba(52,211,153,0.18),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(251,146,60,0.14),transparent_34%)] pointer-events-none dark:opacity-80" />
       <div className="relative z-10 p-4 sm:p-5 md:p-6 space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-orange-700 dark:border-orange-400/20 dark:bg-orange-500/10 dark:text-orange-300">
               <Sparkles size={12} /> FisioStore
             </div>
             <div>
@@ -253,7 +253,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => scrollProducts('left')}
-              className="h-10 w-10 rounded-2xl border border-violet-100 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="h-10 w-10 rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label="Ver produtos anteriores"
             >
               <ChevronLeft size={18} />
@@ -261,7 +261,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => scrollProducts('right')}
-              className="h-10 w-10 rounded-2xl border border-violet-100 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="h-10 w-10 rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label="Ver próximos produtos"
             >
               <ChevronRight size={18} />
@@ -269,7 +269,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => navigate('/loja')}
-              className="hidden sm:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-violet-500/20 hover:scale-[1.02] transition-all"
+              className="hidden sm:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25 hover:scale-[1.02] transition-all"
             >
               Ver loja
               <ChevronRight size={16} />
@@ -277,14 +277,14 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
           </div>
         </div>
 
-        <div className="grid gap-3 rounded-[1.6rem] border border-violet-100 bg-violet-50/60 p-3 dark:border-white/10 dark:bg-white/[0.04] sm:grid-cols-3">
+        <div className="grid gap-3 rounded-[1.6rem] border border-sky-100 bg-white/70 p-3 shadow-inner shadow-sky-100/70 dark:border-white/10 dark:bg-slate-950/25 dark:shadow-none sm:grid-cols-3">
           {[
             { label: 'Apoio ao tratamento', icon: HeartPulse },
             { label: 'Links externos', icon: ExternalLink },
             { label: 'Seleção terapêutica', icon: ShoppingBag },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm dark:bg-slate-950/40 dark:text-slate-300">
-              <item.icon size={15} className="text-violet-700 dark:text-sky-300" />
+            <div key={item.label} className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-50 to-emerald-50 px-3 py-2 text-xs font-black text-slate-700 shadow-sm ring-1 ring-sky-100/70 dark:from-sky-500/10 dark:to-emerald-500/10 dark:text-slate-300 dark:ring-sky-400/15">
+              <item.icon size={15} className="text-sky-600 dark:text-sky-300" />
               {item.label}
             </div>
           ))}
@@ -312,7 +312,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
               return (
                 <article
                   key={`${product.id}-${renderIndex}`}
-                  className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-violet-100 bg-white overflow-hidden shadow-xl shadow-violet-100/60 hover:-translate-y-1 hover:border-violet-300 transition-all duration-300 dark:border-white/10 dark:bg-slate-950/55 dark:shadow-none dark:hover:border-sky-400/40"
+                  className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50/80 to-emerald-50/80 overflow-hidden shadow-xl shadow-sky-100/60 hover:-translate-y-1 hover:border-sky-300 transition-all duration-300 dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-950/70 dark:via-sky-500/10 dark:to-emerald-500/10 dark:shadow-none dark:hover:border-sky-400/40"
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-100 dark:bg-slate-900">
                     <img
@@ -352,7 +352,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                     <button
                       type="button"
                       onClick={() => openProduct(product)}
-                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-violet-500/20 hover:from-violet-600 hover:to-blue-500 transition-all"
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/25 hover:from-violet-600 hover:to-blue-500 transition-all"
                     >
                       {hasAffiliateUrl ? getAffiliateStoreName(product.affiliate_url) : 'Ver na loja'}
                       {hasAffiliateUrl ? <ExternalLink size={15} /> : <ShoppingBag size={15} />}
@@ -367,7 +367,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         <button
           type="button"
           onClick={() => navigate('/loja')}
-          className="sm:hidden w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-blue-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-violet-500/20"
+          className="sm:hidden w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25"
         >
           Abrir loja completa
           <ChevronRight size={16} />
