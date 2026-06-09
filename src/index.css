@@ -2968,3 +2968,15 @@ html:not(.dark) .fch-dashboard-mobile-logo span.uppercase {
   color: #FFFFFF !important;
   stroke: currentColor !important;
 }
+/* Correção: impede que elementos decorativos absolutos dos cards ocupem espaço no layout */
+.patient-dashboard-premium-card > *:not(.absolute):not([class*="absolute"]) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Garante que brilhos, overlays e elementos decorativos continuem flutuando */
+.patient-dashboard-premium-card > .absolute,
+.patient-dashboard-premium-card > [class*="absolute"] {
+  position: absolute;
+  pointer-events: none;
+}
