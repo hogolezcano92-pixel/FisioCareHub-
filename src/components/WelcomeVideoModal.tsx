@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Volume2, VolumeX, X, Sparkles } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Play, Volume2, X, Sparkles } from 'lucide-react';
 
 interface WelcomeVideoModalProps {
   userId?: string | null;
@@ -184,7 +183,7 @@ export default function WelcomeVideoModal({
             <video
               ref={videoRef}
               src={videoSrc}
-              className="aspect-video w-full bg-black object-cover"
+              className="aspect-video w-full bg-black object-contain"
               playsInline
               autoPlay
               controls={false}
@@ -208,16 +207,14 @@ export default function WelcomeVideoModal({
             )}
 
             {needsSoundTap && (
-              <div className="absolute bottom-5 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
-                <button
-                  type="button"
-                  onClick={handleEnableSound}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-black text-slate-950 shadow-2xl transition-all hover:scale-[1.01] hover:bg-cyan-50"
-                >
-                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                  Ativar som da apresentação
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleEnableSound}
+                className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/45 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-white shadow-2xl backdrop-blur-md transition-all hover:bg-black/65"
+              >
+                <Volume2 size={16} />
+                Som
+              </button>
             )}
           </div>
 
@@ -228,25 +225,11 @@ export default function WelcomeVideoModal({
                 Tecnologia, cuidado e reabilitação em um só lugar.
               </h2>
               <p className="mt-2 text-sm font-medium leading-relaxed text-slate-300">
-                Assista à apresentação rápida do FisioCareHub. Tentamos iniciar com som automaticamente; se o navegador bloquear, toque em ativar som.
+                Uma apresentação rápida e divertida para começar sua experiência no FisioCareHub.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={handleEnableSound}
-                className={cn(
-                  'flex flex-1 items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-black transition-all',
-                  isMuted || needsSoundTap
-                    ? 'bg-cyan-400 text-slate-950 hover:bg-cyan-300'
-                    : 'bg-white/10 text-white hover:bg-white/15'
-                )}
-              >
-                <Volume2 size={18} />
-                {isMuted || needsSoundTap ? 'Ativar som' : 'Som ativado'}
-              </button>
-
               <button
                 type="button"
                 onClick={markAsSeenAndClose}
