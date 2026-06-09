@@ -133,7 +133,7 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
   };
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
+    <div className="patient-pain-diary-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <h3 className="text-sm font-black text-white tracking-tight">Como está sua dor agora?</h3>
@@ -358,7 +358,7 @@ export const ExerciseChecklist = ({ onUpdated }: ExerciseChecklistProps) => {
   };
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-2.5 w-full">
+    <div className="patient-exercise-checklist-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-2.5 w-full">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <h3 className="text-sm font-black text-white tracking-tight">Checklist de Treinos</h3>
