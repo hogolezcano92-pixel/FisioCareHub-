@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -42,6 +42,21 @@ export function EvolutionCharts({
   className,
 }: EvolutionChartsProps) {
   const hasPainRecords = painData.some((item) => getOptionalNumber(item?.level ?? item?.nivel_dor ?? item?.intensidade) !== null);
+  const [showEmptyPainState, setShowEmptyPainState] = useState(false);
+
+  useEffect(() => {
+    if (hasPainRecords) {
+      setShowEmptyPainState(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowEmptyPainState(true);
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [hasPainRecords, painData.length]);
+
   const displayPainData = (hasPainRecords ? painData : EMPTY_PAIN_DATA).map((item, index) => ({
     day: item?.day || WEEK_DAYS[index] || '',
     level: hasPainRecords ? getOptionalNumber(item?.level ?? item?.nivel_dor ?? item?.intensidade) : 0,
@@ -132,7 +147,14 @@ export function EvolutionCharts({
           </div>
 
           <div className="h-[170px] min-w-0 rounded-3xl border border-slate-100 bg-white/45 p-2 dark:border-white/5 dark:bg-white/[0.03]">
-            {!hasPainRecords ? (
+            {!hasPainRecords && !showEmptyPainState ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 rounded-[1.35rem] border border-slate-100 bg-white/45 p-3 text-center dark:border-white/5 dark:bg-white/[0.03]">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-200 border-t-sky-500 dark:border-sky-400/20 dark:border-t-sky-300" />
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  Carregando evolução
+                </p>
+              </div>
+            ) : !hasPainRecords && showEmptyPainState ? (
               <div className="flex h-full flex-col justify-between rounded-[1.35rem] border border-dashed border-sky-200/80 bg-sky-50/70 p-3 text-center dark:border-sky-400/20 dark:bg-sky-400/5">
                 <div className="grid grid-cols-7 gap-1">
                   {WEEK_DAYS.map((day) => (
