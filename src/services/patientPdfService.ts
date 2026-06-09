@@ -365,7 +365,8 @@ export function buildPrescriptionWhatsAppMessage(params: {
       item.frequencia ? `freq. ${item.frequencia}` : null,
     ].filter(Boolean).join(' • ');
     const videoUrl = String(item.exercicio?.video_url || '').trim();
-    return `${index + 1}. ${title}${config ? ` (${config})` : ''}${videoUrl ? `\n🎥 Vídeo: ${videoUrl}` : ''}`;
+    const exercisePdfUrl = String(item.exercicio?.pdf_url || item.exercicio?.arquivo_url || '').trim();
+    return `${index + 1}. ${title}${config ? ` (${config})` : ''}${videoUrl ? `\n🎥 Vídeo: ${videoUrl}` : ''}${exercisePdfUrl ? `\n📄 PDF do exercício: ${exercisePdfUrl}` : ''}`;
   });
 
   const exercisesBlock = exerciseLines.length
@@ -373,6 +374,118 @@ export function buildPrescriptionWhatsAppMessage(params: {
     : 'Exercícios prescritos no PDF.';
 
   return [intro, pdfBlock, exercisesBlock, 'Qualquer dúvida sobre a execução, me chame por aqui.'].join('\n\n');
+}
+
+
+export async function downloadExternalPrescriptionPdf(params: {
+  items: PdfProtocolItem[];
+  physioProfile?: PatientPdfProfile | null;
+}) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 16;
+
+  doc.setFillColor(2, 132, 199);
+  doc.rect(0, 0, pageWidth, 34, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('Prescrição de Exercícios', 14, 15);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('FisioCareHub', 14, 23);
+  doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth - 14, 23, { align: 'right' });
+
+  y = 44;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Dados do fisioterapeuta', 14, y);
+  y += 7;
+
+  autoTable(doc, {
+    startY: y,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 2.5, textColor: [15, 23, 42] },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
+    head: [['Fisioterapeuta', 'CREFITO', 'Contato']],
+    body: [[
+      valueOrDash(params.physioProfile?.nome_completo),
+      valueOrDash(params.physioProfile?.crefito),
+      valueOrDash(params.physioProfile?.telefone || params.physioProfile?.email),
+    ]],
+  });
+
+  y = ((doc as any).lastAutoTable?.finalY || y + 18) + 10;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Exercícios prescritos', 14, y);
+  y += 7;
+
+  autoTable(doc, {
+    startY: y,
+    theme: 'striped',
+    styles: { fontSize: 8.5, cellPadding: 2.2, valign: 'top', textColor: [15, 23, 42] },
+    headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255] },
+    columnStyles: {
+      0: { cellWidth: 8 },
+      1: { cellWidth: 36 },
+      2: { cellWidth: 44 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 26 },
+      7: { cellWidth: 18 },
+    },
+    head: [['#', 'Exercício', 'Descrição', 'Séries', 'Repetições', 'Carga', 'Frequência', 'Vídeo']],
+    body: (params.items || []).map((item, index) => [
+      String(index + 1),
+      valueOrDash(item.exercicio?.nome),
+      valueOrDash(item.exercicio?.descricao),
+      valueOrDash(item.series),
+      valueOrDash(item.repeticoes),
+      valueOrDash(item.carga),
+      valueOrDash(item.frequencia),
+      item.exercicio?.video_url ? 'Sim' : '-',
+    ]),
+  });
+
+  y = ((doc as any).lastAutoTable?.finalY || y + 20) + 10;
+
+  (params.items || []).forEach((item, index) => {
+    const videoUrl = String(item.exercicio?.video_url || '').trim();
+    const exercisePdfUrl = String(item.exercicio?.pdf_url || item.exercicio?.arquivo_url || '').trim();
+    const details = [
+      item.observacoes_especificas ? `Orientação específica: ${item.observacoes_especificas}` : '',
+      item.exercicio?.indicacao_clinica ? `Indicação clínica: ${item.exercicio.indicacao_clinica}` : '',
+      item.exercicio?.precaucoes ? `Precauções: ${item.exercicio.precaucoes}` : '',
+      videoUrl ? `Vídeo: ${videoUrl}` : '',
+      exercisePdfUrl ? `PDF do exercício: ${exercisePdfUrl}` : '',
+    ].filter(Boolean).join('\n');
+
+    if (!details) return;
+
+    if (y > 250) {
+      doc.addPage();
+      y = 16;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${index + 1}. ${valueOrDash(item.exercicio?.nome)}`, 14, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    y = addWrappedText(doc, details, 14, y, pageWidth - 28, 5);
+    y += 5;
+  });
+
+  addFooter(doc);
+
+  const fileName = `prescricao-whatsapp-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+  doc.save(fileName);
+  return { fileName };
 }
 
 export function openWhatsAppShare(params: { patientName?: string | null; phone?: string | null; message?: string | null }) {
