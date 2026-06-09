@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '../lib/supabase';
+import { getPrivateDocumentUrl, uploadPatientDocument } from './supabaseStorage';
 
 export type PatientPdfProfile = {
   nome_completo?: string | null;
@@ -45,6 +46,9 @@ type PdfProtocolItem = {
     indicacao_clinica?: string | null;
     precaucoes?: string | null;
     dificuldade?: string | null;
+    video_url?: string | null;
+    pdf_url?: string | null;
+    arquivo_url?: string | null;
   } | null;
 };
 
@@ -63,7 +67,7 @@ const formatDate = (value?: string | null) => {
 const sanitizeFileName = (name: string) =>
   name
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
@@ -137,7 +141,10 @@ async function getProtocolItems(protocolId: string): Promise<PdfProtocolItem[]> 
         subcategoria,
         indicacao_clinica,
         precaucoes,
-        dificuldade
+        dificuldade,
+        video_url,
+        pdf_url,
+        arquivo_url
       )
     `)
     .eq('protocolo_id', protocolId)
@@ -159,7 +166,7 @@ async function getPhysioProfile(fisioterapeutaId: string, fallback?: PatientPdfP
   return (data as PatientPdfProfile) || fallback || {};
 }
 
-export async function downloadPrescriptionPdf(params: {
+async function buildPrescriptionPdf(params: {
   patientId: string;
   protocolId?: string;
   physioProfile?: PatientPdfProfile | null;
@@ -313,13 +320,63 @@ export async function downloadPrescriptionPdf(params: {
   addFooter(doc);
 
   const fileName = `prescricao-${sanitizeFileName(patient.nome_completo || 'paciente')}-${formatDate(protocol.created_at || new Date().toISOString()).replace(/\//g, '-')}.pdf`;
-  doc.save(fileName);
 
+  return { doc, patient, protocol, items, physio, fileName };
+}
+
+export async function downloadPrescriptionPdf(params: {
+  patientId: string;
+  protocolId?: string;
+  physioProfile?: PatientPdfProfile | null;
+}) {
+  const { doc, patient, protocol, items, fileName } = await buildPrescriptionPdf(params);
+  doc.save(fileName);
   return { patient, protocol, items, fileName };
 }
 
-export function openWhatsAppShare(params: { patientName?: string | null; phone?: string | null }) {
-  const message = `Olá${params.patientName ? ` ${params.patientName}` : ''}! Estou enviando sua prescrição de exercícios em PDF. Siga as orientações e me avise se tiver qualquer dúvida.`;
+export async function createPrescriptionPdfShareAsset(params: {
+  patientId: string;
+  protocolId?: string;
+  physioProfile?: PatientPdfProfile | null;
+  expiresInSeconds?: number;
+}) {
+  const { doc, patient, protocol, items, fileName } = await buildPrescriptionPdf(params);
+  const pdfBlob = doc.output('blob');
+  const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+  const storagePath = await uploadPatientDocument(protocol.fisioterapeuta_id, patient.id, pdfFile);
+  const fileUrl = await getPrivateDocumentUrl(storagePath, params.expiresInSeconds || 60 * 60 * 24 * 7);
+
+  return { patient, protocol, items, fileName, storagePath, fileUrl };
+}
+
+export function buildPrescriptionWhatsAppMessage(params: {
+  patientName?: string | null;
+  pdfUrl?: string | null;
+  items?: PdfProtocolItem[];
+}) {
+  const intro = `Olá${params.patientName ? ` ${params.patientName}` : ''}! Estou enviando sua prescrição de exercícios.`;
+  const pdfBlock = params.pdfUrl ? `📄 PDF da prescrição:\n${params.pdfUrl}` : '📄 O PDF da prescrição será enviado nesta conversa.';
+  const exerciseLines = (params.items || []).map((item, index) => {
+    const title = item.exercicio?.nome || `Exercício ${index + 1}`;
+    const config = [
+      item.series ? `${item.series} séries` : null,
+      item.repeticoes ? `${item.repeticoes} repetições` : null,
+      item.carga ? `carga ${item.carga}` : null,
+      item.frequencia ? `freq. ${item.frequencia}` : null,
+    ].filter(Boolean).join(' • ');
+    const videoUrl = String(item.exercicio?.video_url || '').trim();
+    return `${index + 1}. ${title}${config ? ` (${config})` : ''}${videoUrl ? `\n🎥 Vídeo: ${videoUrl}` : ''}`;
+  });
+
+  const exercisesBlock = exerciseLines.length
+    ? `Exercícios prescritos:\n${exerciseLines.join('\n\n')}`
+    : 'Exercícios prescritos no PDF.';
+
+  return [intro, pdfBlock, exercisesBlock, 'Qualquer dúvida sobre a execução, me chame por aqui.'].join('\n\n');
+}
+
+export function openWhatsAppShare(params: { patientName?: string | null; phone?: string | null; message?: string | null }) {
+  const message = params.message || `Olá${params.patientName ? ` ${params.patientName}` : ''}! Estou enviando sua prescrição de exercícios em PDF. Siga as orientações e me avise se tiver qualquer dúvida.`;
   const onlyDigits = (params.phone || '').replace(/\D/g, '');
   const phoneWithCountry = onlyDigits.startsWith('55') ? onlyDigits : `55${onlyDigits}`;
   const baseUrl = onlyDigits ? `https://wa.me/${phoneWithCountry}` : 'https://wa.me/';
