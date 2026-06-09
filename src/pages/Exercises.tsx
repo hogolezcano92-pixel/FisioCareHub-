@@ -33,6 +33,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { buildPrescriptionWhatsAppMessage, downloadExternalPrescriptionPdf, openWhatsAppShare } from '../services/patientPdfService';
 import { logActivities } from '../services/activityService';
+import { notifyExercisePrescription } from '../services/notificationCenter';
 import { 
   OBJETIVOS_TERAPEUTICOS, 
   CONTEXTOS_FUNCIONAIS, 
@@ -293,16 +294,15 @@ export default function Exercises() {
 
       const linkedAccountId = selectedPatient?.perfil_id || selectedPatient?.id;
 
-      if (selectedPatient?.perfil_id) {
-        await supabase.from('notificacoes').insert({
-          user_id: selectedPatient.perfil_id,
-          titulo: 'Nova prescrição de exercícios',
-          mensagem: 'Seu fisioterapeuta vinculou uma nova prescrição. Acesse sua conta para visualizar os exercícios.',
-          tipo: 'exercise',
-          lida: false,
-          link: '/patient-exercises',
-        });
-      }
+      await notifyExercisePrescription({
+        patientUserId: linkedAccountId,
+        patientEmail: selectedPatient?.email,
+        patientName: selectedPatient?.nome_completo,
+        physioName: profile?.nome_completo || user?.email || 'Seu fisioterapeuta',
+        exerciseCount: prescriptionCart.length,
+        protocolId: protocol.id,
+        protocolTitle: protocol.titulo,
+      });
 
       await logActivities([
         {
