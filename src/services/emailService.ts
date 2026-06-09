@@ -339,3 +339,58 @@ export const sendEvaluationReceivedEmail = async (
   }
 };
 
+/**
+ * Sends an email to the patient when the physiotherapist prescribes exercises.
+ */
+export const sendExercisePrescriptionEmail = async (
+  email: string | undefined | null,
+  name: string | undefined | null,
+  details: {
+    physioName?: string | null;
+    exerciseCount?: number | null;
+    protocolTitle?: string | null;
+    appUrl?: string | null;
+  } = {}
+) => {
+  if (!email) return { success: false, error: 'Email do paciente não fornecido' };
+
+  const safeName = name || 'Paciente';
+  const exerciseCount = Number(details.exerciseCount || 0);
+  const plural = exerciseCount === 1 ? 'exercício' : 'exercícios';
+  const appUrl = details.appUrl || 'https://fisiocarehub.company/patient-exercises';
+
+  const html = generateFisioCareHubEmailHTML({
+    title: 'Nova prescrição de exercícios',
+    subtitle: 'Seu fisioterapeuta vinculou novos exercícios ao seu plano terapêutico.',
+    preheader: 'Você recebeu uma nova prescrição de exercícios no FisioCareHub.',
+    greetingName: safeName,
+    variant: 'exercise',
+    contentHtml: `
+      <p style="margin:0 0 14px;">Seu fisioterapeuta prescreveu novos exercícios para você no <strong>FisioCareHub</strong>.</p>
+      <p style="margin:0 0 14px;">Acesse sua área do paciente para visualizar orientações, séries, repetições, frequência e vídeos cadastrados para ajudar na execução correta.</p>
+      <p style="margin:0;">Siga as orientações com atenção e fale com seu fisioterapeuta em caso de dúvida, dor diferente ou dificuldade durante a execução.</p>
+    `,
+    details: [
+      { label: 'Profissional', value: details.physioName || 'Seu fisioterapeuta' },
+      { label: 'Prescrição', value: details.protocolTitle || 'Nova prescrição de exercícios' },
+      { label: 'Quantidade', value: exerciseCount > 0 ? `${exerciseCount} ${plural}` : 'Exercícios prescritos' },
+      { label: 'Área do app', value: 'Meus exercícios / Prescrições' },
+    ],
+    ctas: [{ label: 'Ver meus exercícios', href: appUrl }],
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: 'Nova prescrição de exercícios - FisioCareHub',
+      html,
+    });
+
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Exercise prescription email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[EmailService] [FLOW-AUDIT] FAILED to send exercise prescription email:', error);
+    return { success: false, error };
+  }
+};
+
