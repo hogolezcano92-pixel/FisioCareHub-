@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "../lib/supabase";
+import { kineAIService } from "../services/kineAI";
 import { useAuth } from "../contexts/AuthContext";
 import { getEffectivePlan, hasPlanAccess } from "../lib/planAccess";
 import {
@@ -38,7 +39,10 @@ import { motion } from "motion/react";
 import { cn, formatDate } from "../lib/utils";
 import { formatHourBR } from "../utils/date";
 import { toast } from "sonner";
-import { getLinkedClinicalPatients, getPatientVisibleIds } from "../services/patientLinkService";
+import {
+  getLinkedClinicalPatients,
+  getPatientVisibleIds,
+} from "../services/patientLinkService";
 
 // New FisioCare Components
 import {
@@ -158,7 +162,9 @@ const buildWeeklyChartData = (
       registro?.concluidos_count ?? registro?.exercicios_concluidos_count,
     );
     const completedFromList = Array.isArray(registro?.exercicios_concluidos)
-      ? registro.exercicios_concluidos.filter((exercise: any) => Boolean(exercise?.completed)).length
+      ? registro.exercicios_concluidos.filter((exercise: any) =>
+          Boolean(exercise?.completed),
+        ).length
       : 0;
     const rawDone = registro?.exercicios_realizados;
     const completedFallback =
@@ -187,7 +193,10 @@ const buildWeeklyChartData = (
     );
     if (!dateKey) return;
     if (item?.concluido === false) return;
-    checklistCompletedByDay.set(dateKey, (checklistCompletedByDay.get(dateKey) || 0) + 1);
+    checklistCompletedByDay.set(
+      dateKey,
+      (checklistCompletedByDay.get(dateKey) || 0) + 1,
+    );
   });
 
   const completedByDay = new Map<string, number>();
@@ -308,7 +317,10 @@ const hasRealConfirmedAppointment = (appointment: any) => {
   const status = normalizeStatus(appointment?.status);
   if (!status || BLOCKED_APPOINTMENT_STATUSES.includes(status)) return false;
 
-  return hasConfirmedPayment(appointment) && REAL_APPOINTMENT_STATUSES.includes(status);
+  return (
+    hasConfirmedPayment(appointment) &&
+    REAL_APPOINTMENT_STATUSES.includes(status)
+  );
 };
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -605,6 +617,11 @@ export default function Dashboard() {
   const [searching, setSearching] = useState(false);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantHistory, setAssistantHistory] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
   const patientAssistantInitializedRef = useRef(false);
 
   const [showEvaluation, setShowEvaluation] = useState(false);
@@ -759,11 +776,15 @@ export default function Dashboard() {
 
           const { data: appts } = await supabase
             .from("agendamentos")
-            .select("id, paciente_id, status, status_pagamento, payment_status, pagamento_status, status_payment")
+            .select(
+              "id, paciente_id, status, status_pagamento, payment_status, pagamento_status, status_payment",
+            )
             .eq("fisio_id", data.id)
             .in("status", REAL_APPOINTMENT_STATUSES);
 
-          const realLinkedAppointments = (appts || []).filter(hasRealConfirmedAppointment);
+          const realLinkedAppointments = (appts || []).filter(
+            hasRealConfirmedAppointment,
+          );
           agendamentoIds = realLinkedAppointments
             .map((appt: any) => appt.id)
             .filter(Boolean);
@@ -844,7 +865,10 @@ export default function Dashboard() {
         let patientRealAppointmentIds: string[] = [];
 
         if (isPhysio) {
-          const { data: fetchedRealAppointments, error: fetchedRealAppointmentsError } = await supabase
+          const {
+            data: fetchedRealAppointments,
+            error: fetchedRealAppointmentsError,
+          } = await supabase
             .from("agendamentos")
             .select("*")
             .eq("fisio_id", data.id)
@@ -857,8 +881,12 @@ export default function Dashboard() {
             );
           }
 
-          realAppointmentsData = (fetchedRealAppointments || []).filter(hasRealConfirmedAppointment);
-          agendamentoIds = realAppointmentsData.map((appointment: any) => appointment.id).filter(Boolean);
+          realAppointmentsData = (fetchedRealAppointments || []).filter(
+            hasRealConfirmedAppointment,
+          );
+          agendamentoIds = realAppointmentsData
+            .map((appointment: any) => appointment.id)
+            .filter(Boolean);
         }
 
         if (!isPhysio) {
@@ -885,7 +913,9 @@ export default function Dashboard() {
             );
           }
 
-          realAppointmentsData = (realPatientAppointments || []).filter(hasRealConfirmedAppointment);
+          realAppointmentsData = (realPatientAppointments || []).filter(
+            hasRealConfirmedAppointment,
+          );
           patientRealAppointmentIds = realAppointmentsData
             .map((appointment: any) => appointment.id)
             .filter(Boolean);
@@ -952,7 +982,7 @@ export default function Dashboard() {
                 physioTriagesCountQuery,
               ])
             : Promise.all([
-Promise.resolve({ count: realAppointmentsData.length }),
+                Promise.resolve({ count: realAppointmentsData.length }),
                 patientRealAppointmentIds.length > 0
                   ? supabase
                       .from("evolucoes")
@@ -1243,14 +1273,15 @@ Promise.resolve({ count: realAppointmentsData.length }),
           if (directPatientIds.length > 0) {
             // Select mínimo e compatível: evita quebrar caso a tabela não tenha
             // colunas opcionais como updated_at/exercicios_realizados em algum ambiente.
-            const { data: directRegistros, error: directRegistrosError } = await supabase
-              .from("registros_paciente")
-              .select(
-                "id, created_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios",
-              )
-              .in("paciente_id", directPatientIds)
-              .order("data_registro", { ascending: false })
-              .limit(40);
+            const { data: directRegistros, error: directRegistrosError } =
+              await supabase
+                .from("registros_paciente")
+                .select(
+                  "id, created_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios",
+                )
+                .in("paciente_id", directPatientIds)
+                .order("data_registro", { ascending: false })
+                .limit(40);
 
             if (directRegistrosError) {
               console.error(
@@ -1316,8 +1347,15 @@ Promise.resolve({ count: realAppointmentsData.length }),
       if (profile) fetchDashboardData(profile);
     };
 
-    window.addEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
-    return () => window.removeEventListener("fisiocare:patient-progress-updated", handlePatientProgressUpdated);
+    window.addEventListener(
+      "fisiocare:patient-progress-updated",
+      handlePatientProgressUpdated,
+    );
+    return () =>
+      window.removeEventListener(
+        "fisiocare:patient-progress-updated",
+        handlePatientProgressUpdated,
+      );
   }, [fetchDashboardData, profile]);
 
   const { isPhysio, isApproved, isPro, isAdmin } = useMemo(
@@ -1454,6 +1492,75 @@ Promise.resolve({ count: realAppointmentsData.length }),
     { label: "Nova Triagem", path: "/triage" },
     { label: "Meu Prontuário", path: "/records" },
   ];
+
+  const getPatientAssistantFallback = (question: string) => {
+    const text = question.toLowerCase();
+
+    if (text.includes("dor") || text.includes("doendo")) {
+      return "Posso te ajudar a organizar esse registro. Me diga onde é a dor, de 0 a 10 quanto está agora, há quanto tempo começou e o que melhora ou piora. Se houver perda de força, formigamento forte, febre, trauma importante, dor no peito ou falta de ar, procure atendimento imediatamente.";
+    }
+
+    if (text.includes("exerc") || text.includes("treino")) {
+      return "Para os treinos, mantenha a execução sem aumentar a dor. Faça com controle, respeite pausas e registre no diário se algum exercício piorar os sintomas. Posso te orientar melhor se você me disser qual exercício está em dúvida.";
+    }
+
+    if (
+      text.includes("consulta") ||
+      text.includes("sess") ||
+      text.includes("agendar")
+    ) {
+      return "Você pode acompanhar suas próximas sessões pelo Dashboard e pela área de agendamentos. Se quiser, toque em ‘Próxima Sessão’ ou ‘Agendar’ para verificar os horários disponíveis.";
+    }
+
+    if (
+      text.includes("prontu") ||
+      text.includes("document") ||
+      text.includes("exame")
+    ) {
+      return "Seu prontuário reúne registros de dor, triagens, documentos, exames e evoluções. Para conferir tudo, toque em ‘Meu Prontuário’.";
+    }
+
+    return "Entendi. Posso te ajudar com dor, exercícios, evolução, sessões, triagem e prontuário. Me conte um pouco mais do que aconteceu, quando começou e qual sua principal dúvida agora.";
+  };
+
+  const handlePatientAssistantSend = async () => {
+    const question = assistantInput.trim();
+    if (!question || assistantLoading) return;
+
+    setAssistantInput("");
+    setAssistantLoading(true);
+
+    const userMessage = { role: "user" as const, content: question };
+    const historyForAi = [...assistantHistory, userMessage].slice(-8);
+    setAssistantHistory(historyForAi);
+    setAiMessage("Estou analisando sua pergunta...");
+
+    try {
+      const response = await kineAIService.chat(
+        question,
+        assistantHistory.slice(-6),
+      );
+      const responseText = response?.trim() || "";
+      const safeResponse = responseText
+        .toLowerCase()
+        .includes("configuração de ia incompleta")
+        ? getPatientAssistantFallback(question)
+        : responseText || getPatientAssistantFallback(question);
+      setAiMessage(safeResponse);
+      setAssistantHistory((prev) =>
+        [...prev, { role: "assistant", content: safeResponse }].slice(-10),
+      );
+    } catch (error) {
+      console.error("Erro no Assistente Viva:", error);
+      const fallback = getPatientAssistantFallback(question);
+      setAiMessage(fallback);
+      setAssistantHistory((prev) =>
+        [...prev, { role: "assistant", content: fallback }].slice(-10),
+      );
+    } finally {
+      setAssistantLoading(false);
+    }
+  };
 
   if (authLoading)
     return (
@@ -2014,7 +2121,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
             </h2>
           </div>
           <div className="premium-card bg-gradient-to-br from-orange-50 via-white to-sky-50 border-orange-100/80 shadow-orange-100/60 dark:from-orange-500/10 dark:via-white/[0.045] dark:to-sky-500/10 dark:border-orange-400/15">
-            <ActivityTimeline activities={activities} mode={isPhysio ? "physio" : "patient"} />
+            <ActivityTimeline
+              activities={activities}
+              mode={isPhysio ? "physio" : "patient"}
+            />
           </div>
         </div>
 
@@ -2062,10 +2172,14 @@ Promise.resolve({ count: realAppointmentsData.length }),
                 transition={{ delay: i * 0.1 }}
                 className={cn(
                   "group relative overflow-hidden !p-4 md:!p-6 rounded-2xl sm:rounded-3xl border backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-0.5",
-                  stat.color === "sky" && "bg-gradient-to-br from-sky-50 via-white to-blue-50 border-sky-100 shadow-sky-100/60 dark:from-sky-500/15 dark:via-white/[0.055] dark:to-blue-500/10 dark:border-sky-400/15 dark:shadow-sky-950/20",
-                  stat.color === "emerald" && "bg-gradient-to-br from-emerald-50 via-white to-lime-50 border-emerald-100 shadow-emerald-100/60 dark:from-emerald-500/15 dark:via-white/[0.055] dark:to-lime-500/10 dark:border-emerald-400/15 dark:shadow-emerald-950/20",
-                  stat.color === "indigo" && "bg-gradient-to-br from-orange-50 via-white to-amber-50 border-orange-100 shadow-orange-100/60 dark:from-orange-500/15 dark:via-white/[0.055] dark:to-amber-500/10 dark:border-orange-400/15 dark:shadow-orange-950/20",
-                  stat.color === "rose" && "bg-gradient-to-br from-sky-50 via-white to-emerald-50 border-sky-100 shadow-sky-100/60 dark:from-sky-500/15 dark:via-white/[0.055] dark:to-emerald-500/10 dark:border-sky-400/15 dark:shadow-sky-950/20",
+                  stat.color === "sky" &&
+                    "bg-gradient-to-br from-sky-50 via-white to-blue-50 border-sky-100 shadow-sky-100/60 dark:from-sky-500/15 dark:via-white/[0.055] dark:to-blue-500/10 dark:border-sky-400/15 dark:shadow-sky-950/20",
+                  stat.color === "emerald" &&
+                    "bg-gradient-to-br from-emerald-50 via-white to-lime-50 border-emerald-100 shadow-emerald-100/60 dark:from-emerald-500/15 dark:via-white/[0.055] dark:to-lime-500/10 dark:border-emerald-400/15 dark:shadow-emerald-950/20",
+                  stat.color === "indigo" &&
+                    "bg-gradient-to-br from-orange-50 via-white to-amber-50 border-orange-100 shadow-orange-100/60 dark:from-orange-500/15 dark:via-white/[0.055] dark:to-amber-500/10 dark:border-orange-400/15 dark:shadow-orange-950/20",
+                  stat.color === "rose" &&
+                    "bg-gradient-to-br from-sky-50 via-white to-emerald-50 border-sky-100 shadow-sky-100/60 dark:from-sky-500/15 dark:via-white/[0.055] dark:to-emerald-500/10 dark:border-sky-400/15 dark:shadow-sky-950/20",
                 )}
               >
                 <div
@@ -2481,7 +2595,11 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       type="button"
                       onClick={() => setIsAiExpanded((prev) => !prev)}
                       className="text-white/70 hover:text-white transition-colors rounded-lg p-1"
-                      aria-label={isAiExpanded ? "Recolher Assistente Viva" : "Expandir Assistente Viva"}
+                      aria-label={
+                        isAiExpanded
+                          ? "Recolher Assistente Viva"
+                          : "Expandir Assistente Viva"
+                      }
                     >
                       <ChevronRight
                         size={18}
@@ -2533,11 +2651,32 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       <div className="flex gap-2">
                         <input
                           type="text"
+                          value={assistantInput}
+                          onChange={(event) =>
+                            setAssistantInput(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              handlePatientAssistantSend();
+                            }
+                          }}
                           placeholder="Pergunte algo..."
-                          className="flex-1 bg-white/92 border border-white/30 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-white/40 transition-all"
+                          disabled={assistantLoading}
+                          className="patient-assistant-input flex-1 bg-white/92 border border-white/30 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-white/40 transition-all disabled:cursor-not-allowed disabled:opacity-70"
                         />
-                        <button className="patient-assistant-send p-2 bg-white text-violet-900 rounded-lg font-bold hover:bg-violet-50 transition-all shadow-lg">
-                          <ArrowUpRight size={18} />
+                        <button
+                          type="button"
+                          onClick={handlePatientAssistantSend}
+                          disabled={assistantLoading || !assistantInput.trim()}
+                          className="patient-assistant-send p-2 bg-white text-violet-900 rounded-lg font-bold hover:bg-violet-50 transition-all shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                          aria-label="Enviar pergunta para o Assistente Viva"
+                        >
+                          {assistantLoading ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <ArrowUpRight size={18} />
+                          )}
                         </button>
                       </div>
                     </motion.div>
@@ -2620,18 +2759,20 @@ Promise.resolve({ count: realAppointmentsData.length }),
                     <PainDiary onSaved={() => fetchDashboardData(profile)} />
                   </div>
                   <div className="bg-gradient-to-br from-emerald-50 via-white to-lime-50 backdrop-blur-xl p-4 rounded-2xl border border-emerald-100/80 shadow-2xl shadow-emerald-100/60 dark:from-emerald-500/12 dark:via-white/[0.055] dark:to-lime-500/12 dark:border-emerald-400/15 dark:shadow-emerald-950/20">
-                    <ExerciseChecklist onUpdated={() => fetchDashboardData(profile)} />
+                    <ExerciseChecklist
+                      onUpdated={() => fetchDashboardData(profile)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-5">
-                  <div className="bg-gradient-to-br from-orange-50 via-white to-sky-50 backdrop-blur-xl p-5 rounded-2xl border border-orange-100/80 shadow-2xl shadow-orange-100/60 space-y-3.5 dark:from-orange-500/12 dark:via-white/[0.055] dark:to-sky-500/12 dark:border-orange-400/15 dark:shadow-orange-950/20">
+                  <div className="patient-quick-actions-card bg-gradient-to-br from-orange-50 via-white to-sky-50 backdrop-blur-xl p-5 rounded-2xl border border-orange-100/80 shadow-2xl shadow-orange-100/60 space-y-3.5 dark:from-orange-500/12 dark:via-white/[0.055] dark:to-sky-500/12 dark:border-orange-400/15 dark:shadow-orange-950/20">
                     <h3 className="text-base font-black text-slate-950 dark:text-white">
                       Ações Rápidas
                     </h3>
                     <div className="grid grid-cols-2 gap-2.5">
                       <Link
                         to="/chat"
-                        className="p-3 rounded-2xl bg-sky-50 border border-sky-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-sky-200/70 group transition-all dark:bg-sky-500/10 dark:border-sky-400/15"
+                        className="patient-quick-action-item p-3 rounded-2xl bg-sky-50 border border-sky-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-sky-200/70 group transition-all dark:bg-sky-500/10 dark:border-sky-400/15"
                       >
                         <MessageSquare
                           className="mx-auto text-sky-600 dark:text-sky-300 group-hover:scale-110 transition-all"
@@ -2643,7 +2784,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       </Link>
                       <Link
                         to="/treinos"
-                        className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-emerald-200/70 group transition-all dark:bg-emerald-500/10 dark:border-emerald-400/15"
+                        className="patient-quick-action-item p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-emerald-200/70 group transition-all dark:bg-emerald-500/10 dark:border-emerald-400/15"
                       >
                         <Activity
                           className="mx-auto text-emerald-600 dark:text-emerald-300 group-hover:scale-110 transition-all"
@@ -2660,7 +2801,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                             "_blank",
                           )
                         }
-                        className="p-3 rounded-2xl bg-orange-50 border border-orange-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-orange-200/70 group transition-all dark:bg-orange-500/10 dark:border-orange-400/15"
+                        className="patient-quick-action-item p-3 rounded-2xl bg-orange-50 border border-orange-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-orange-200/70 group transition-all dark:bg-orange-500/10 dark:border-orange-400/15"
                       >
                         <Video
                           className="mx-auto text-orange-600 dark:text-orange-300 group-hover:scale-110 transition-all"
@@ -2672,7 +2813,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       </button>
                       <Link
                         to="/triage"
-                        className="p-3 rounded-2xl bg-blue-50 border border-blue-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-blue-200/70 group transition-all dark:bg-blue-500/10 dark:border-blue-400/15"
+                        className="patient-quick-action-item p-3 rounded-2xl bg-blue-50 border border-blue-100 text-center space-y-1 shadow-sm hover:-translate-y-0.5 hover:shadow-blue-200/70 group transition-all dark:bg-blue-500/10 dark:border-blue-400/15"
                       >
                         <BrainCircuit
                           className="mx-auto text-blue-600 dark:text-blue-300 group-hover:scale-110 transition-all"
@@ -2685,7 +2826,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-emerald-50 via-white to-orange-50 backdrop-blur-xl p-5 rounded-2xl border border-emerald-100/80 shadow-2xl shadow-emerald-100/60 space-y-3.5 dark:from-emerald-500/12 dark:via-white/[0.055] dark:to-orange-500/12 dark:border-emerald-400/15 dark:shadow-emerald-950/20">
+                  <div className="patient-achievements-card bg-gradient-to-br from-emerald-50 via-white to-orange-50 backdrop-blur-xl p-5 rounded-2xl border border-emerald-100/80 shadow-2xl shadow-emerald-100/60 space-y-3.5 dark:from-emerald-500/12 dark:via-white/[0.055] dark:to-orange-500/12 dark:border-emerald-400/15 dark:shadow-emerald-950/20">
                     <h3 className="text-base font-black text-slate-950 dark:text-white flex items-center gap-2">
                       <Trophy className="text-amber-500" size={18} />
                       Conquistas
@@ -2720,10 +2861,13 @@ Promise.resolve({ count: realAppointmentsData.length }),
                         <div
                           key={i}
                           className={cn(
-                            "flex items-center gap-2.5 p-2.5 rounded-xl border transition-all shadow-sm",
-                            i === 0 && "bg-orange-50 border-orange-100 hover:border-orange-200 dark:bg-orange-500/10 dark:border-orange-400/15",
-                            i === 1 && "bg-sky-50 border-sky-100 hover:border-sky-200 dark:bg-sky-500/10 dark:border-sky-400/15",
-                            i === 2 && "bg-emerald-50 border-emerald-100 hover:border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-400/15",
+                            "patient-achievement-item flex items-center gap-2.5 p-2.5 rounded-xl border transition-all shadow-sm",
+                            i === 0 &&
+                              "bg-orange-50 border-orange-100 hover:border-orange-200 dark:bg-orange-500/10 dark:border-orange-400/15",
+                            i === 1 &&
+                              "bg-sky-50 border-sky-100 hover:border-sky-200 dark:bg-sky-500/10 dark:border-sky-400/15",
+                            i === 2 &&
+                              "bg-emerald-50 border-emerald-100 hover:border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-400/15",
                           )}
                         >
                           <div
@@ -2736,7 +2880,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                             <badge.icon size={18} />
                           </div>
                           <div className="flex-1 space-y-0.5">
-                            <p className="text-[11px] font-black text-white">
+                            <p className="text-[11px] font-black text-slate-950 dark:text-white">
                               {badge.label}
                             </p>
                             <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">
