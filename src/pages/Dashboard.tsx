@@ -720,13 +720,21 @@ export default function Dashboard() {
     return protocolItemsCount + (directPrescriptionsCount || 0);
   }, []);
 
-  const checkPendingEvaluations = useCallback(async (userId: string) => {
+  const checkPendingEvaluations = useCallback(async (userId: string, email?: string | null) => {
     try {
+      const visiblePatientIds = await getPatientVisibleIds(userId, email);
+
+      if (visiblePatientIds.length === 0) {
+        console.warn("[Dashboard] Nenhum vínculo de paciente encontrado para verificar avaliações.");
+        return;
+      }
+
       const { data: appointments, error: apptError } = await supabase
         .from("agendamentos")
         .select(
           `
           id,
+          paciente_id,
           fisio_id,
           status,
           status_pagamento,
@@ -740,21 +748,25 @@ export default function Dashboard() {
           fisioterapeuta:perfis!fisio_id(nome_completo)
         `,
         )
-        .eq("paciente_id", userId)
+        .in("paciente_id", visiblePatientIds)
         .order("data_servico", { ascending: false, nullsFirst: false })
         .order("data", { ascending: false, nullsFirst: false });
 
       if (apptError) throw apptError;
 
       const appointmentsToCheck = (appointments || []).filter(hasCompletedPaidAppointment);
-      if (appointmentsToCheck.length === 0) return;
+      if (appointmentsToCheck.length === 0) {
+        setPendingEvaluation(null);
+        setShowEvaluation(false);
+        return;
+      }
 
       const appointmentIds = appointmentsToCheck.map((appointment: any) => appointment.id).filter(Boolean);
 
       const { data: evaluations, error: evalError } = await supabase
         .from("avaliacoes")
-        .select("agendamento_id, nota_profissional, nota_plataforma, comentario")
-        .eq("paciente_id", userId)
+        .select("agendamento_id, paciente_id, nota_profissional, nota_plataforma, comentario")
+        .in("paciente_id", visiblePatientIds)
         .in("agendamento_id", appointmentIds);
 
       if (evalError) throw evalError;
@@ -769,12 +781,16 @@ export default function Dashboard() {
       if (apptToEvaluate) {
         setPendingEvaluation({
           id: apptToEvaluate.id,
+          paciente_id: apptToEvaluate.paciente_id,
           fisio_id: apptToEvaluate.fisio_id,
           fisio_nome: Array.isArray(apptToEvaluate.fisioterapeuta)
             ? apptToEvaluate.fisioterapeuta[0]?.nome_completo
             : (apptToEvaluate.fisioterapeuta as any)?.nome_completo,
         });
         setShowEvaluation(true);
+      } else {
+        setPendingEvaluation(null);
+        setShowEvaluation(false);
       }
     } catch (err) {
       console.error("Erro ao verificar avaliações pendentes:", err);
@@ -789,7 +805,7 @@ export default function Dashboard() {
       setApptsLoading(true);
 
       if (data.tipo_usuario === "paciente") {
-        checkPendingEvaluations(data.id);
+        checkPendingEvaluations(data.id, data.email);
       }
 
       try {
