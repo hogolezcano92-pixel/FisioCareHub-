@@ -605,6 +605,7 @@ export default function Dashboard() {
   const [searching, setSearching] = useState(false);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
+  const patientAssistantInitializedRef = useRef(false);
 
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
@@ -1434,6 +1435,26 @@ Promise.resolve({ count: realAppointmentsData.length }),
     );
   }, [profile, isPhysio, authLoading, user]);
 
+  useEffect(() => {
+    if (!profile || isPhysio || authLoading || !user) return;
+    if (patientAssistantInitializedRef.current) return;
+
+    patientAssistantInitializedRef.current = true;
+    setIsAiExpanded(true);
+    setAiMessage(
+      `Olá, ${profile.nome_completo.split(" ")[0]}. Já deixei algumas sugestões prontas para você registrar sua dor, abrir sua jornada e acompanhar a recuperação de forma rápida.`,
+    );
+  }, [profile, isPhysio, authLoading, user]);
+
+  const patientAssistantSuggestions = [
+    { label: "Treino de Hoje", path: "/treinos" },
+    { label: "Relatar Dor", path: "/diario" },
+    { label: "Minha Evolução", path: "/jornada" },
+    { label: "Próxima Sessão", path: "/appointments" },
+    { label: "Nova Triagem", path: "/triage" },
+    { label: "Meu Prontuário", path: "/records" },
+  ];
+
   if (authLoading)
     return (
       <div className="min-h-screen pt-20 bg-[#0B1120] px-4 sm:px-6 lg:px-8">
@@ -1805,17 +1826,17 @@ Promise.resolve({ count: realAppointmentsData.length }),
         <ProductStoreCarousel audience={isPhysio ? "physio" : "patient"} />
 
         {!isPhysio && (
-          <div className="relative overflow-hidden rounded-[2rem] border border-orange-200/70 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-4 md:p-5 shadow-[0_18px_60px_rgba(251,146,60,0.16)] dark:border-orange-400/20 dark:bg-gradient-to-br dark:from-orange-500/15 dark:via-white/[0.055] dark:to-sky-500/15 dark:shadow-orange-950/20">
-            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-orange-200/70 blur-3xl dark:bg-orange-500/20" />
-            <div className="pointer-events-none absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-sky-200/70 blur-3xl dark:bg-sky-500/20" />
+          <div className="patient-journey-card relative overflow-hidden rounded-[2rem] border border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-4 md:p-5 shadow-[0_20px_64px_rgba(124,58,237,0.18)] dark:border-violet-400/20 dark:bg-gradient-to-br dark:from-violet-500/18 dark:via-white/[0.055] dark:to-fuchsia-500/14 dark:shadow-violet-950/30">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-violet-200/70 blur-3xl dark:bg-violet-500/20" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-fuchsia-200/70 blur-3xl dark:bg-fuchsia-500/20" />
 
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100 to-sky-100 text-orange-700 shadow-inner shadow-orange-200/70 dark:from-orange-500/20 dark:to-sky-500/20 dark:text-orange-200">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-700 shadow-inner shadow-violet-200/70 dark:from-violet-500/20 dark:to-fuchsia-500/20 dark:text-violet-200">
                   <Route size={26} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-700 dark:text-orange-300">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-violet-700 dark:text-violet-300">
                     Nova experiência
                   </p>
                   <h2 className="text-2xl font-black text-slate-950 tracking-tight dark:text-white">
@@ -1830,35 +1851,35 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
               <button
                 onClick={() => navigate("/jornada")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-500/25 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/25 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 via-purple-600 to-indigo-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/25 transition-all hover:-translate-y-0.5 hover:shadow-violet-500/30 sm:w-auto"
               >
                 Abrir jornada
                 <ChevronRight size={18} />
               </button>
             </div>
 
-            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-sky-100 bg-white/70 p-2 shadow-inner shadow-sky-100/70 dark:border-white/10 dark:bg-slate-950/25 dark:shadow-none">
-              <div className="rounded-2xl bg-sky-50 p-3 text-center shadow-sm ring-1 ring-sky-100 dark:bg-sky-500/10 dark:ring-sky-400/15">
+            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-violet-100 bg-white/80 p-2 shadow-inner shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950/25 dark:shadow-none">
+              <div className="rounded-2xl bg-violet-50 p-3 text-center shadow-sm ring-1 ring-violet-100 dark:bg-violet-500/10 dark:ring-violet-400/20">
                 <Activity
-                  className="mx-auto mb-1 text-sky-600 dark:text-sky-300"
+                  className="mx-auto mb-1 text-violet-600 dark:text-violet-300"
                   size={18}
                 />
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
                   Progresso
                 </p>
               </div>
-              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
+              <div className="rounded-2xl bg-fuchsia-50 p-3 text-center shadow-sm ring-1 ring-fuchsia-100 dark:bg-fuchsia-500/10 dark:ring-fuchsia-400/20">
                 <Zap
-                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
+                  className="mx-auto mb-1 text-fuchsia-600 dark:text-fuchsia-300"
                   size={18}
                 />
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
                   Dor
                 </p>
               </div>
-              <div className="rounded-2xl bg-emerald-50 p-3 text-center shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-400/15">
+              <div className="rounded-2xl bg-indigo-50 p-3 text-center shadow-sm ring-1 ring-indigo-100 dark:bg-indigo-500/10 dark:ring-indigo-400/20">
                 <Calendar
-                  className="mx-auto mb-1 text-emerald-600 dark:text-emerald-300"
+                  className="mx-auto mb-1 text-indigo-600 dark:text-indigo-300"
                   size={18}
                 />
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
@@ -2437,36 +2458,45 @@ Promise.resolve({ count: realAppointmentsData.length }),
             {!isPhysio && (
               <motion.div
                 layout
-                onClick={() => setIsAiExpanded(!isAiExpanded)}
                 className={cn(
-                  "bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 p-6 rounded-2xl text-white shadow-2xl shadow-blue-900/40 relative overflow-hidden border border-white/10 cursor-pointer group",
+                  "patient-card-assistant bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-700 p-6 rounded-2xl text-white shadow-2xl shadow-violet-900/35 relative overflow-hidden border border-violet-300/25 group",
                   isAiExpanded ? "lg:col-span-1 h-auto" : "h-fit",
                 )}
               >
-                <div className="absolute inset-0 bg-blue-400/10 animate-pulse pointer-events-none" />
+                <div className="absolute inset-0 bg-violet-200/10 animate-pulse pointer-events-none" />
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-fuchsia-300/15 rounded-full -ml-16 -mb-16 blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-inner">
+                    <div className="w-10 h-10 bg-white/18 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-inner shadow-violet-950/20">
                       <BrainCircuit size={20} className="animate-bounce" />
                     </div>
-                    {isAiExpanded && (
-                      <button className="text-white/60 hover:text-white transition-colors">
-                        <ChevronRight size={18} className="rotate-90" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsAiExpanded((prev) => !prev)}
+                      className="text-white/70 hover:text-white transition-colors rounded-lg p-1"
+                      aria-label={isAiExpanded ? "Recolher Assistente Viva" : "Expandir Assistente Viva"}
+                    >
+                      <ChevronRight
+                        size={18}
+                        className={cn(
+                          "transition-transform duration-300",
+                          isAiExpanded ? "rotate-90" : "rotate-0",
+                        )}
+                      />
+                    </button>
                   </div>
 
                   <div className="space-y-2">
                     <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
                       Assistente{" "}
-                      <span className="text-blue-200">
+                      <span className="text-violet-100">
                         {isPhysio ? "Clínico" : "Viva"}
                       </span>
-                      <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_0_4px_rgba(74,222,128,0.16)]" />
                     </h3>
-                    <p className="text-blue-50/90 text-sm leading-relaxed font-medium">
+                    <p className="text-violet-50/95 text-sm leading-relaxed font-medium">
                       {aiMessage}
                     </p>
                   </div>
@@ -2475,25 +2505,23 @@ Promise.resolve({ count: realAppointmentsData.length }),
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4 pt-3 border-t border-white/10"
+                      className="space-y-4 pt-3 border-t border-white/15"
                     >
-                      <div className="bg-black/20 backdrop-blur-xl p-3 rounded-xl space-y-2">
-                        <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest">
+                      <div className="bg-white/10 backdrop-blur-xl p-3 rounded-xl space-y-3 border border-white/10 shadow-inner shadow-violet-950/10">
+                        <p className="text-[9px] font-bold text-violet-100 uppercase tracking-widest">
                           Sugestões
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            onClick={() => navigate("/treinos")}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
-                          >
-                            Treino de Hoje
-                          </button>
-                          <button
-                            onClick={() => navigate("/diario")}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
-                          >
-                            Relatar Dor
-                          </button>
+                        <div className="flex flex-wrap gap-2">
+                          {patientAssistantSuggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.label}
+                              type="button"
+                              onClick={() => navigate(suggestion.path)}
+                              className="px-3 py-1.5 bg-white/85 text-violet-900 hover:bg-white rounded-full text-[10px] font-black transition-all border border-white/30 shadow-sm hover:-translate-y-0.5"
+                            >
+                              {suggestion.label}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
@@ -2501,10 +2529,9 @@ Promise.resolve({ count: realAppointmentsData.length }),
                         <input
                           type="text"
                           placeholder="Pergunte algo..."
-                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs placeholder-white/50 outline-none focus:ring-2 focus:ring-white/30 transition-all"
-                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 bg-white/92 border border-white/30 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-white/40 transition-all"
                         />
-                        <button className="p-2 bg-white text-blue-900 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-lg">
+                        <button className="p-2 bg-white text-violet-900 rounded-lg font-bold hover:bg-violet-50 transition-all shadow-lg">
                           <ArrowUpRight size={18} />
                         </button>
                       </div>
@@ -2513,13 +2540,11 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
                   {!isAiExpanded && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/triage");
-                      }}
-                      className="w-full py-3 bg-white text-blue-900 rounded-xl font-black text-sm hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                      type="button"
+                      onClick={() => setIsAiExpanded(true)}
+                      className="w-full py-3 bg-white text-violet-900 rounded-xl font-black text-sm hover:bg-violet-50 transition-all shadow-lg flex items-center justify-center gap-2"
                     >
-                      Iniciar Triagem
+                      Abrir Assistente Viva
                     </button>
                   )}
                 </div>
