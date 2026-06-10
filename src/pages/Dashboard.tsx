@@ -272,8 +272,28 @@ const PAID_APPOINTMENT_PAYMENT_STATUSES = [
   "confirmed",
   "recebido",
   "received",
+  "recebido_manual",
+  "payment_received",
 ];
-const REAL_APPOINTMENT_STATUSES = ["confirmado", "concluido", "concluído"];
+const REAL_APPOINTMENT_STATUSES = [
+  "confirmado",
+  "concluido",
+  "concluído",
+  "concluida",
+  "concluída",
+  "finalizado",
+  "finalizada",
+  "completed",
+];
+const EVALUABLE_APPOINTMENT_STATUSES = [
+  "concluido",
+  "concluído",
+  "concluida",
+  "concluída",
+  "finalizado",
+  "finalizada",
+  "completed",
+];
 const BLOCKED_APPOINTMENT_STATUSES = [
   "cancelado",
   "cancelada",
@@ -309,6 +329,21 @@ const hasRealConfirmedAppointment = (appointment: any) => {
   if (!status || BLOCKED_APPOINTMENT_STATUSES.includes(status)) return false;
 
   return hasConfirmedPayment(appointment) && REAL_APPOINTMENT_STATUSES.includes(status);
+};
+
+const hasCompletedPaidAppointment = (appointment: any) => {
+  const status = normalizeStatus(appointment?.status);
+  if (!status || BLOCKED_APPOINTMENT_STATUSES.includes(status)) return false;
+
+  return hasConfirmedPayment(appointment) && EVALUABLE_APPOINTMENT_STATUSES.includes(status);
+};
+
+const hasPatientSubmittedEvaluation = (evaluation: any) => {
+  const profissionalRating = Number(evaluation?.nota_profissional || 0);
+  const platformRating = Number(evaluation?.nota_plataforma || 0);
+  const comment = String(evaluation?.comentario || "").trim();
+
+  return profissionalRating > 0 || platformRating > 0 || comment.length > 0;
 };
 
 const parseAppointmentDateTime = (appointment: any): Date | null => {
@@ -701,30 +736,33 @@ export default function Dashboard() {
           data,
           hora,
           data_servico,
+          concluido_em,
           fisioterapeuta:perfis!fisio_id(nome_completo)
         `,
         )
         .eq("paciente_id", userId)
-        .in("status", REAL_APPOINTMENT_STATUSES)
-        .order("data_servico", { ascending: false });
+        .order("data_servico", { ascending: false, nullsFirst: false })
+        .order("data", { ascending: false, nullsFirst: false });
 
       if (apptError) throw apptError;
 
-      const appointmentsToCheck = (appointments || []).filter(hasRealConfirmedAppointment);
+      const appointmentsToCheck = (appointments || []).filter(hasCompletedPaidAppointment);
       if (appointmentsToCheck.length === 0) return;
 
       const appointmentIds = appointmentsToCheck.map((appointment: any) => appointment.id).filter(Boolean);
 
       const { data: evaluations, error: evalError } = await supabase
         .from("avaliacoes")
-        .select("agendamento_id")
+        .select("agendamento_id, nota_profissional, nota_plataforma, comentario")
         .eq("paciente_id", userId)
         .in("agendamento_id", appointmentIds);
 
       if (evalError) throw evalError;
 
       const evaluatedIds = new Set(
-        evaluations?.map((e) => e.agendamento_id) || [],
+        (evaluations || [])
+          .filter(hasPatientSubmittedEvaluation)
+          .map((evaluation: any) => evaluation.agendamento_id),
       );
       const apptToEvaluate = appointmentsToCheck.find((a) => !evaluatedIds.has(a.id));
 
