@@ -438,6 +438,80 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           border: 1px solid rgba(148, 163, 184, 0.10) !important;
           box-shadow: 0 16px 34px -28px rgba(59, 130, 246, 0.45) !important;
         }
+
+        /* =========================================================
+           Figuras de fisioterapia no fundo do Sidebar
+           Sem afetar header/logo
+           ========================================================= */
+        .fisio-sidebar-shell {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .fisio-sidebar-physio-bg {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 116px;
+          bottom: 96px;
+          z-index: 0;
+          pointer-events: none;
+          overflow: hidden;
+        }
+
+        .fisio-sidebar-physio-bg svg {
+          position: absolute;
+          color: rgba(124, 58, 237, 0.24);
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 1.8;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
+        .fisio-bg-dots {
+          position: absolute;
+          width: 76px;
+          height: 76px;
+          opacity: 0.28;
+          background-image: radial-gradient(circle, rgba(124, 58, 237, 0.48) 1.5px, transparent 1.5px);
+          background-size: 13px 13px;
+        }
+
+        .fisio-bg-line {
+          position: absolute;
+          width: 220px;
+          height: 120px;
+          border: 2px dashed rgba(124, 58, 237, 0.16);
+          border-color: rgba(124, 58, 237, 0.16) transparent transparent transparent;
+          border-radius: 50%;
+          transform: rotate(-18deg);
+        }
+
+        .fisio-sidebar-shell nav,
+        .fisio-sidebar-profile-area {
+          position: relative;
+          z-index: 2;
+        }
+
+        html.dark .fisio-sidebar-physio-bg svg,
+        body.dark .fisio-sidebar-physio-bg svg,
+        :root[data-theme="dark"] .fisio-sidebar-physio-bg svg {
+          color: rgba(96, 165, 250, 0.12);
+        }
+
+        html.dark .fisio-bg-dots,
+        body.dark .fisio-bg-dots,
+        :root[data-theme="dark"] .fisio-bg-dots {
+          opacity: 0.15;
+          background-image: radial-gradient(circle, rgba(96, 165, 250, 0.42) 1.5px, transparent 1.5px);
+        }
+
+        html.dark .fisio-bg-line,
+        body.dark .fisio-bg-line,
+        :root[data-theme="dark"] .fisio-bg-line {
+          border-color: rgba(96, 165, 250, 0.11) transparent transparent transparent;
+        }
       `}</style>
 
       <div className="fisio-sidebar-shell flex flex-col h-full bg-background border-r border-white/5">
@@ -448,8 +522,92 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           </Link>
         </div>
 
+        {/* Background physiotherapy illustrations - abaixo do header */}
+        <div className="fisio-sidebar-physio-bg" aria-hidden="true">
+          <div className="fisio-bg-dots" style={{ top: 28, right: 34 }} />
+          <div className="fisio-bg-dots" style={{ top: 330, right: 52 }} />
+          <div className="fisio-bg-dots" style={{ bottom: 130, left: 56 }} />
+          <div className="fisio-bg-line" style={{ top: 70, right: -42 }} />
+          <div className="fisio-bg-line" style={{ top: 420, left: 110, transform: 'rotate(22deg)' }} />
+
+          {/* Alongamento cervical / tronco */}
+          <svg width="150" height="170" viewBox="0 0 150 170" style={{ top: 6, right: 8, opacity: 0.48 }}>
+            <path d="M75 28c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20Z" />
+            <path d="M75 69v54" />
+            <path d="M48 91c18 5 36 5 54 0" />
+            <path d="M75 83c-15 16-25 31-31 50" />
+            <path d="M75 83c16 16 28 31 35 50" />
+            <path d="M45 45c-18 7-29 20-34 39" />
+            <path d="M105 45c16-4 27-14 34-30" />
+          </svg>
+
+          {/* Fisioterapeuta mobilizando perna */}
+          <svg width="230" height="160" viewBox="0 0 230 160" style={{ top: 160, right: -28, opacity: 0.46 }}>
+            <path d="M60 120h92" />
+            <path d="M45 118c21-18 48-18 72 0" />
+            <path d="M112 112c16-21 23-39 28-62" />
+            <path d="M140 50c10 6 17 15 22 27" />
+            <path d="M162 76c13 2 25 0 38-7" />
+            <path d="M169 35c9 0 16 7 16 16s-7 16-16 16-16-7-16-16 7-16 16-16Z" />
+            <path d="M169 68v43" />
+            <path d="M151 88c13 7 27 9 42 4" />
+            <path d="M92 108c23-6 39-15 48-58" />
+            <path d="M44 120c-17 0-31 7-39 20" />
+          </svg>
+
+          {/* Coluna */}
+          <svg width="90" height="250" viewBox="0 0 90 250" style={{ top: 330, left: -6, opacity: 0.44 }}>
+            <path d="M46 8c-8 16-9 29-2 42 8 15 6 26-2 41-8 14-8 28 0 42 8 13 8 27 0 42-8 14-7 29 3 45" />
+            {Array.from({ length: 12 }).map((_, i) => (
+              <path
+                key={i}
+                d={`M38 ${22 + i * 17}c12-5 24-5 36 0M36 ${30 + i * 17}c14 5 27 5 40 0`}
+              />
+            ))}
+          </svg>
+
+          {/* Joelho */}
+          <svg width="120" height="150" viewBox="0 0 120 150" style={{ top: 390, right: 20, opacity: 0.42 }}>
+            <path d="M42 8c10 29 13 52 8 74" />
+            <path d="M78 8c-10 29-13 52-8 74" />
+            <path d="M50 83c-8 10-10 22-6 34" />
+            <path d="M70 83c8 10 10 22 6 34" />
+            <path d="M39 74c14 10 28 10 42 0" />
+            <path d="M43 118c9 14 25 17 35 0" />
+          </svg>
+
+          {/* Faixa elástica */}
+          <svg width="160" height="90" viewBox="0 0 160 90" style={{ top: 525, right: 44, opacity: 0.46 }}>
+            <path d="M18 48c23-30 54-30 77 0 16 21 31 21 47 0" />
+            <path d="M18 60c23-30 54-30 77 0 16 21 31 21 47 0" />
+          </svg>
+
+          {/* Exercício com elástico */}
+          <svg width="180" height="210" viewBox="0 0 180 210" style={{ bottom: 8, right: 0, opacity: 0.46 }}>
+            <path d="M82 22c10 0 18 8 18 18s-8 18-18 18-18-8-18-18 8-18 18-18Z" />
+            <path d="M82 60v58" />
+            <path d="M82 83c-22 10-35 26-42 49" />
+            <path d="M82 83c20 9 35 24 45 45" />
+            <path d="M72 118l-22 58" />
+            <path d="M96 118l38 54" />
+            <path d="M48 176h32" />
+            <path d="M121 174h36" />
+            <path d="M42 132c26-9 57-10 91-4" />
+          </svg>
+
+          {/* Halter e banco */}
+          <svg width="170" height="120" viewBox="0 0 170 120" style={{ bottom: 20, left: 66, opacity: 0.34 }}>
+            <path d="M20 48h42" />
+            <path d="M108 48h42" />
+            <path d="M62 48h46" />
+            <path d="M18 31v34M32 27v42M148 31v34M134 27v42" />
+            <path d="M34 96h92" />
+            <path d="M48 96l-12 20M112 96l18 20" />
+          </svg>
+        </div>
+
         {/* Navigation Sections */}
-        <nav className="flex-1 overflow-y-auto py-5 px-4 space-y-5 custom-scrollbar">
+        <nav className="relative z-10 flex-1 overflow-y-auto py-5 px-4 space-y-5 custom-scrollbar">
           {sections.map((section, sectionIndex) => (
             <div
               key={section.title}
@@ -533,7 +691,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </nav>
 
         {/* User Profile Summary */}
-        <div className="fisio-sidebar-profile-area p-4 border-t border-white/5">
+        <div className="relative z-10 fisio-sidebar-profile-area p-4 border-t border-white/5">
           <div className="fisio-sidebar-profile-card flex items-center gap-3 p-3 rounded-2xl bg-white/5">
             <img
               src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`}
