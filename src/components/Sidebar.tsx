@@ -342,12 +342,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           scrollbar-width: none;
         }
 
-        /* Imagem de fundo do Sidebar - apenas abaixo do header/logo */
+        /* Imagem de fundo do Sidebar - suave, sem parecer foto cortada */
         .fisio-sidebar-shell {
           position: relative;
           overflow: hidden;
         }
-
 
         .fisio-sidebar-image-bg {
           position: absolute;
@@ -364,9 +363,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          object-position: center top;
-          opacity: 0.34;
-          filter: saturate(1.08) contrast(1.04);
+          object-position: center 42%;
+          opacity: 0.16;
+          filter: saturate(1.02) contrast(0.98);
           user-select: none;
           -webkit-user-drag: none;
         }
@@ -376,32 +375,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           inset: 108px 0 92px 0;
           z-index: 1;
           pointer-events: none;
-          background: linear-gradient(
-            180deg,
-            rgba(255,255,255,0.04) 0%,
-            rgba(255,255,255,0.00) 22%,
-            rgba(255,255,255,0.00) 56%,
-            rgba(255,255,255,0.05) 100%
-          );
+          background:
+            linear-gradient(
+              180deg,
+              rgba(245, 240, 255, 0.94) 0%,
+              rgba(245, 240, 255, 0.66) 18%,
+              rgba(245, 240, 255, 0.38) 45%,
+              rgba(245, 240, 255, 0.78) 100%
+            ),
+            radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.28), transparent 45%);
         }
 
         html.dark .fisio-sidebar-image-bg img,
         body.dark .fisio-sidebar-image-bg img,
         :root[data-theme="dark"] .fisio-sidebar-image-bg img {
-          opacity: 0.22;
-          filter: brightness(1.08) saturate(1.05) contrast(1.08);
+          opacity: 0.10;
+          filter: brightness(0.85) saturate(0.95) contrast(1.05);
         }
 
         html.dark .fisio-sidebar-image-overlay,
         body.dark .fisio-sidebar-image-overlay,
         :root[data-theme="dark"] .fisio-sidebar-image-overlay {
-          background: linear-gradient(
-            180deg,
-            rgba(9, 13, 26, 0.06) 0%,
-            rgba(9, 13, 26, 0.00) 28%,
-            rgba(9, 13, 26, 0.00) 58%,
-            rgba(9, 13, 26, 0.12) 100%
-          );
+          background:
+            linear-gradient(
+              180deg,
+              rgba(9, 13, 26, 0.90) 0%,
+              rgba(9, 13, 26, 0.62) 22%,
+              rgba(9, 13, 26, 0.42) 48%,
+              rgba(9, 13, 26, 0.84) 100%
+            ),
+            radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.08), transparent 44%);
         }
 
         /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
