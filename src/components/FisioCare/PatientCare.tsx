@@ -134,7 +134,7 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
   };
 
   return (
-    <div className="patient-pain-diary-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
+    <div className="patient-pain-diary-card dashboard-daily-pain-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <h3 className="text-sm font-black text-white tracking-tight">Como está sua dor agora?</h3>
@@ -149,11 +149,14 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
         {Array.from({ length: 10 }).map((_, i) => (
           <button
             key={i}
+            type="button"
+            aria-pressed={intensity === i + 1}
+            data-pain-level={i + 1}
             onClick={() => setIntensity(i + 1)}
             className={cn(
-              "flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all group",
+              "dashboard-daily-pain-option flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all group",
               intensity === i + 1 
-                ? "border-[#0047AB] bg-[#0047AB] text-white shadow-lg shadow-blue-900/20" 
+                ? "dashboard-daily-pain-selected border-[#0047AB] bg-[#0047AB] text-white shadow-lg shadow-blue-900/20" 
                 : "border-white/5 bg-white/5 hover:border-white/10 text-slate-500 hover:text-white"
             )}
           >
@@ -167,10 +170,10 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
         onClick={handleSave}
         disabled={intensity === null || isSaving}
         className={cn(
-          "w-full h-10 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2",
+          "dashboard-daily-pain-submit w-full h-10 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2",
           intensity !== null 
-            ? "bg-[#0047AB] text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95" 
-            : "bg-white/5 text-slate-600 cursor-not-allowed"
+            ? "dashboard-daily-pain-submit-active bg-[#0047AB] text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95" 
+            : "dashboard-daily-pain-submit-disabled bg-white/5 text-slate-600 cursor-not-allowed"
         )}
       >
         {isSaving ? (
