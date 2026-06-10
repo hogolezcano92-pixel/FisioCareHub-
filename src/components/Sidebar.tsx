@@ -385,20 +385,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           );
         }
 
-        html.dark .fisio-sidebar-image-bg,
-        body.dark .fisio-sidebar-image-bg,
-        :root[data-theme="dark"] .fisio-sidebar-image-bg {
-          opacity: 0.11;
-          mix-blend-mode: screen;
-          filter: saturate(0.75) contrast(1.05) brightness(0.9);
+        html.dark .fisio-sidebar-image-bg img,
+        body.dark .fisio-sidebar-image-bg img,
+        :root[data-theme="dark"] .fisio-sidebar-image-bg img {
+          opacity: 0.22;
+          filter: brightness(1.08) saturate(1.05) contrast(1.08);
         }
 
-        html.dark .fisio-sidebar-image-bg::after,
-        body.dark .fisio-sidebar-image-bg::after,
-        :root[data-theme="dark"] .fisio-sidebar-image-bg::after {
-          background:
-            linear-gradient(180deg, rgba(9, 13, 26, 0.28), rgba(9, 13, 26, 0.04) 44%, rgba(9, 13, 26, 0.44)),
-            linear-gradient(90deg, rgba(9, 13, 26, 0.18), transparent 42%);
+        html.dark .fisio-sidebar-image-overlay,
+        body.dark .fisio-sidebar-image-overlay,
+        :root[data-theme="dark"] .fisio-sidebar-image-overlay {
+          background: linear-gradient(
+            180deg,
+            rgba(9, 13, 26, 0.06) 0%,
+            rgba(9, 13, 26, 0.00) 28%,
+            rgba(9, 13, 26, 0.00) 58%,
+            rgba(9, 13, 26, 0.12) 100%
+          );
         }
 
         /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
@@ -509,7 +512,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {/* Imagem de fundo do Sidebar - coloque o arquivo em public/images/sidebar/physio-bg.png */}
         <div className="fisio-sidebar-image-bg" aria-hidden="true">
           <img
-            src="/images/sidebar/physio-bg.jpeg"
+            src="/images/sidebar/physio-bg.png"
             alt=""
             loading="eager"
           />
