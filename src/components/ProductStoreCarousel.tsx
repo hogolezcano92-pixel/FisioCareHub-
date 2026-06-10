@@ -229,8 +229,8 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
   const isPhysio = audience === 'physio';
 
   return (
-    <section className={cn('relative overflow-hidden rounded-[2rem] border border-orange-100 bg-orange-50 shadow-2xl shadow-orange-100/60 dark:border-orange-400/15 dark:bg-orange-500/10 dark:shadow-orange-950/20', className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(251,146,60,0.22),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(249,115,22,0.16),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(234,88,12,0.12),transparent_34%)] pointer-events-none dark:opacity-80" />
+    <section className={cn('relative overflow-hidden rounded-[2rem] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 shadow-2xl shadow-sky-100/60 dark:border-sky-400/15 dark:bg-gradient-to-br dark:from-sky-500/12 dark:via-white/[0.055] dark:to-emerald-500/12 dark:shadow-blue-950/20', className)}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_90%_0%,rgba(52,211,153,0.18),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(251,146,60,0.14),transparent_34%)] pointer-events-none dark:opacity-80" />
       <div className="relative z-10 p-4 sm:p-5 md:p-6 space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
@@ -253,7 +253,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => scrollProducts('left')}
-              className="h-10 w-10 rounded-2xl border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-all flex items-center justify-center dark:border-orange-400/15 dark:bg-orange-500/10 dark:text-orange-200 dark:hover:bg-orange-500/20 dark:hover:text-white"
+              className="h-10 w-10 rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label="Ver produtos anteriores"
             >
               <ChevronLeft size={18} />
@@ -261,7 +261,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => scrollProducts('right')}
-              className="h-10 w-10 rounded-2xl border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-all flex items-center justify-center dark:border-orange-400/15 dark:bg-orange-500/10 dark:text-orange-200 dark:hover:bg-orange-500/20 dark:hover:text-white"
+              className="h-10 w-10 rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-all flex items-center justify-center dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label="Ver próximos produtos"
             >
               <ChevronRight size={18} />
@@ -269,7 +269,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
             <button
               type="button"
               onClick={() => navigate('/loja')}
-              className="hidden sm:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25 hover:scale-[1.02] transition-all"
+              className="hidden sm:flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25 hover:scale-[1.02] transition-all"
             >
               Ver loja
               <ChevronRight size={16} />
@@ -277,14 +277,14 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
           </div>
         </div>
 
-        <div className="grid gap-3 rounded-[1.6rem] border border-orange-100 bg-white/70 p-3 shadow-inner shadow-orange-100/70 dark:border-orange-400/15 dark:bg-orange-500/10 dark:shadow-none sm:grid-cols-3">
+        <div className="grid gap-3 rounded-[1.6rem] border border-sky-100 bg-white/70 p-3 shadow-inner shadow-sky-100/70 dark:border-white/10 dark:bg-slate-950/25 dark:shadow-none sm:grid-cols-3">
           {[
             { label: 'Apoio ao tratamento', icon: HeartPulse },
             { label: 'Links externos', icon: ExternalLink },
             { label: 'Seleção terapêutica', icon: ShoppingBag },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2 rounded-2xl bg-orange-50 px-3 py-2 text-xs font-black text-slate-700 shadow-sm ring-1 ring-orange-100/70 dark:bg-orange-500/10 dark:text-orange-100 dark:ring-orange-400/15">
-              <item.icon size={15} className="text-orange-600 dark:text-orange-300" />
+            <div key={item.label} className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-50 to-emerald-50 px-3 py-2 text-xs font-black text-slate-700 shadow-sm ring-1 ring-sky-100/70 dark:from-sky-500/10 dark:to-emerald-500/10 dark:text-slate-300 dark:ring-sky-400/15">
+              <item.icon size={15} className="text-sky-600 dark:text-sky-300" />
               {item.label}
             </div>
           ))}
@@ -293,7 +293,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         {loading ? (
           <div className="flex gap-4 overflow-hidden">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="min-w-[230px] sm:min-w-[260px] h-72 rounded-[1.75rem] bg-orange-50 border border-orange-100 animate-pulse dark:bg-orange-500/10 dark:border-orange-400/15" />
+              <div key={index} className="min-w-[230px] sm:min-w-[260px] h-72 rounded-[1.75rem] bg-violet-50 border border-violet-100 animate-pulse dark:bg-white/5 dark:border-white/10" />
             ))}
           </div>
         ) : (
@@ -312,7 +312,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
               return (
                 <article
                   key={`${product.id}-${renderIndex}`}
-                  className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-orange-100 bg-gradient-to-br from-white via-orange-50/80 to-orange-100/70 overflow-hidden shadow-xl shadow-orange-100/60 hover:-translate-y-1 hover:border-orange-300 transition-all duration-300 dark:border-orange-400/15 dark:bg-gradient-to-br dark:from-slate-950/70 dark:via-orange-500/10 dark:to-orange-500/15 dark:shadow-none dark:hover:border-orange-400/40"
+                  className="group w-[235px] sm:w-[270px] shrink-0 snap-center rounded-[1.75rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50/80 to-emerald-50/80 overflow-hidden shadow-xl shadow-sky-100/60 hover:-translate-y-1 hover:border-sky-300 transition-all duration-300 dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-950/70 dark:via-sky-500/10 dark:to-emerald-500/10 dark:shadow-none dark:hover:border-sky-400/40"
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-100 dark:bg-slate-900">
                     <img
@@ -323,7 +323,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent dark:from-slate-950 dark:via-slate-950/10" />
                     {(product.badge || product.category) && (
-                      <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-orange-700 backdrop-blur-xl dark:border-white/20 dark:bg-slate-950/70 dark:text-white">
+                      <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-violet-700 backdrop-blur-xl dark:border-white/20 dark:bg-slate-950/70 dark:text-white">
                         {product.badge || product.category}
                       </span>
                     )}
@@ -339,8 +339,8 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-3 py-2 dark:border-orange-500/15 dark:bg-orange-500/10">
-                      <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 dark:border-emerald-500/15 dark:bg-emerald-500/10">
+                      <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                         <Tag size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Preço</span>
                       </div>
@@ -352,7 +352,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
                     <button
                       type="button"
                       onClick={() => openProduct(product)}
-                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 transition-all"
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/25 hover:from-violet-600 hover:to-blue-500 transition-all"
                     >
                       {hasAffiliateUrl ? getAffiliateStoreName(product.affiliate_url) : 'Ver na loja'}
                       {hasAffiliateUrl ? <ExternalLink size={15} /> : <ShoppingBag size={15} />}
@@ -367,7 +367,7 @@ export default function ProductStoreCarousel({ audience = 'patient', className }
         <button
           type="button"
           onClick={() => navigate('/loja')}
-          className="sm:hidden w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25"
+          className="sm:hidden w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 via-emerald-400 to-sky-500 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/25"
         >
           Abrir loja completa
           <ChevronRight size={16} />
