@@ -638,7 +638,7 @@ export default function Dashboard() {
   const [patientSearch, setPatientSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
-  const [isAiExpanded, setIsAiExpanded] = useState(false);
+  const [isAiExpanded, setIsAiExpanded] = useState(true);
   const [aiMessage, setAiMessage] = useState("");
 
   const [showEvaluation, setShowEvaluation] = useState(false);
@@ -1868,23 +1868,26 @@ Promise.resolve({ count: realAppointmentsData.length }),
         <ProductStoreCarousel audience={isPhysio ? "physio" : "patient"} className={!isPhysio ? "patient-card-orange patient-store-card" : undefined} />
 
         {!isPhysio && (
-          <div className="relative overflow-hidden rounded-[2rem] border border-orange-200/70 patient-card-orange p-4 md:p-5">
-            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-orange-200/70 blur-3xl dark:bg-orange-500/20" />
-            <div className="pointer-events-none absolute -bottom-20 -left-16 h-44 w-44 rounded-full bg-sky-200/70 blur-3xl dark:bg-sky-500/20" />
+          <div className="relative overflow-hidden rounded-[2rem] border border-violet-200/80 bg-gradient-to-br from-white via-violet-50/90 to-purple-100/80 p-4 shadow-2xl shadow-violet-300/20 ring-1 ring-white/80 dark:border-violet-400/25 dark:from-slate-950 dark:via-violet-950/45 dark:to-purple-950/35 dark:shadow-violet-950/30 dark:ring-violet-400/10 md:p-5">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-violet-300/45 blur-3xl dark:bg-violet-500/20" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-fuchsia-200/60 blur-3xl dark:bg-fuchsia-500/15" />
+            <div className="pointer-events-none absolute right-6 top-8 hidden h-32 w-56 rounded-full border border-white/40 opacity-60 dark:border-violet-200/10 sm:block" />
+            <Sparkles className="pointer-events-none absolute right-14 top-9 text-violet-500/70 dark:text-violet-300/60" size={18} />
+            <Sparkles className="pointer-events-none absolute right-8 top-16 text-purple-500/60 dark:text-purple-300/50" size={14} />
 
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex flex-col gap-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100 to-sky-100 text-orange-700 shadow-inner shadow-orange-200/70 dark:from-orange-500/20 dark:to-sky-500/20 dark:text-orange-200">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-100 via-white to-purple-100 text-violet-800 shadow-inner shadow-violet-200/70 dark:border-violet-400/20 dark:from-violet-500/15 dark:via-violet-950/40 dark:to-purple-500/10 dark:text-violet-200">
                   <Route size={26} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-700 dark:text-orange-300">
+                  <p className="text-[10px] font-black uppercase tracking-[0.26em] text-violet-700 dark:text-violet-300">
                     Nova experiência
                   </p>
-                  <h2 className="text-2xl font-black text-slate-950 tracking-tight dark:text-white">
+                  <h2 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
                     Jornada de Recuperação
                   </h2>
-                  <p className="mt-1 max-w-xl text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <p className="mt-2 max-w-xl text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-300">
                     Acompanhe sua evolução, dor, exercícios e próximos passos em
                     uma tela exclusiva.
                   </p>
@@ -1893,38 +1896,38 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
               <button
                 onClick={() => navigate("/jornada")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl patient-solid-button-orange px-5 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-700 via-purple-700 to-violet-950 px-5 py-3.5 text-sm font-black text-white shadow-xl shadow-violet-700/25 transition-all hover:-translate-y-0.5 hover:shadow-violet-700/35 active:translate-y-0 dark:from-violet-500 dark:via-purple-600 dark:to-violet-800"
               >
                 Abrir jornada
-                <ChevronRight size={18} />
+                <ChevronRight size={20} />
               </button>
             </div>
 
-            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-orange-200/70 bg-orange-50/80 p-2 shadow-inner shadow-orange-100/70 dark:border-orange-400/15 dark:bg-orange-500/10 dark:shadow-none">
-              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
+            <div className="relative mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-violet-200/80 bg-white/65 p-2 shadow-inner shadow-violet-100/80 backdrop-blur-xl dark:border-violet-400/15 dark:bg-white/5 dark:shadow-none">
+              <div className="rounded-2xl bg-gradient-to-br from-white to-violet-100/90 p-3 text-center shadow-lg shadow-violet-200/40 ring-1 ring-violet-100 dark:from-violet-500/15 dark:to-purple-500/10 dark:shadow-none dark:ring-violet-400/15">
                 <Activity
-                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
-                  size={18}
+                  className="mx-auto mb-1 text-violet-700 dark:text-violet-300"
+                  size={20}
                 />
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-800 dark:text-slate-200">
                   Progresso
                 </p>
               </div>
-              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
+              <div className="rounded-2xl bg-gradient-to-br from-white to-violet-100/90 p-3 text-center shadow-lg shadow-violet-200/40 ring-1 ring-violet-100 dark:from-violet-500/15 dark:to-purple-500/10 dark:shadow-none dark:ring-violet-400/15">
                 <Zap
-                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
-                  size={18}
+                  className="mx-auto mb-1 text-violet-700 dark:text-violet-300"
+                  size={20}
                 />
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-800 dark:text-slate-200">
                   Dor
                 </p>
               </div>
-              <div className="rounded-2xl bg-orange-50 p-3 text-center shadow-sm ring-1 ring-orange-100 dark:bg-orange-500/10 dark:ring-orange-400/15">
+              <div className="rounded-2xl bg-gradient-to-br from-white to-violet-100/90 p-3 text-center shadow-lg shadow-violet-200/40 ring-1 ring-violet-100 dark:from-violet-500/15 dark:to-purple-500/10 dark:shadow-none dark:ring-violet-400/15">
                 <Calendar
-                  className="mx-auto mb-1 text-orange-600 dark:text-orange-300"
-                  size={18}
+                  className="mx-auto mb-1 text-violet-700 dark:text-violet-300"
+                  size={20}
                 />
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-800 dark:text-slate-200">
                   Sessões
                 </p>
               </div>
@@ -2500,62 +2503,99 @@ Promise.resolve({ count: realAppointmentsData.length }),
             {!isPhysio && (
               <motion.div
                 layout
-                onClick={() => setIsAiExpanded(!isAiExpanded)}
                 className={cn(
-                  "patient-card-purple p-6 rounded-2xl text-white relative overflow-hidden cursor-pointer group",
+                  "relative overflow-hidden rounded-[2rem] border border-violet-200/80 bg-gradient-to-br from-white via-violet-50/95 to-purple-100/85 p-5 text-slate-950 shadow-2xl shadow-violet-300/20 ring-1 ring-white/80 dark:border-violet-400/25 dark:from-slate-950 dark:via-violet-950/45 dark:to-purple-950/35 dark:text-white dark:shadow-violet-950/30 dark:ring-violet-400/10 md:p-6",
                   isAiExpanded ? "lg:col-span-1 h-auto" : "h-fit",
                 )}
               >
-                <div className="absolute inset-0 bg-blue-400/10 animate-pulse pointer-events-none" />
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+                <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-300/45 blur-3xl dark:bg-violet-500/20" />
+                <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-fuchsia-200/60 blur-3xl dark:bg-fuchsia-500/15" />
+                <div className="pointer-events-none absolute inset-x-10 top-[7.9rem] h-px bg-gradient-to-r from-transparent via-violet-300 to-transparent dark:via-violet-400/30" />
+                <Sparkles className="pointer-events-none absolute left-1/2 top-[7.45rem] -translate-x-1/2 text-violet-500/70 dark:text-violet-300/60" size={18} />
 
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-inner">
-                      <BrainCircuit size={20} className="animate-bounce" />
+                <div className="relative z-10 space-y-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-4">
+                      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-100 via-white to-purple-100 text-violet-900 shadow-inner shadow-violet-200/70 dark:border-violet-400/20 dark:from-violet-500/15 dark:via-violet-950/40 dark:to-purple-500/10 dark:text-violet-200">
+                        <BrainCircuit size={24} />
+                        <Sparkles className="absolute -bottom-1 -right-1 text-violet-500 dark:text-violet-300" size={14} />
+                      </div>
+                      <div className="min-w-0 pt-1">
+                        <h3 className="flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-violet-950 dark:text-white">
+                          Assistente Viva
+                          <span className="flex h-2.5 w-2.5 rounded-full bg-violet-600 shadow-lg shadow-violet-500/40 dark:bg-violet-300" />
+                        </h3>
+                        <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600 dark:text-violet-100/80">
+                          Seu assistente inteligente para te apoiar na sua recuperação.
+                        </p>
+                      </div>
                     </div>
-                    {isAiExpanded && (
-                      <button className="text-white/60 hover:text-white transition-colors">
-                        <ChevronRight size={18} className="rotate-90" />
-                      </button>
-                    )}
-                  </div>
 
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
-                      Assistente{" "}
-                      <span className="text-blue-200">
-                        {isPhysio ? "Clínico" : "Viva"}
-                      </span>
-                      <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    </h3>
-                    <p className="text-blue-50/90 text-sm leading-relaxed font-medium">
-                      {aiMessage}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsAiExpanded((value) => !value)}
+                      aria-label={isAiExpanded ? "Recolher assistente" : "Expandir assistente"}
+                      className="rounded-full p-2 text-violet-950 transition-all hover:bg-violet-100 dark:text-violet-100 dark:hover:bg-white/10"
+                    >
+                      <ChevronRight
+                        size={20}
+                        className={cn("transition-transform", isAiExpanded ? "-rotate-90" : "rotate-90")}
+                      />
+                    </button>
                   </div>
 
                   {isAiExpanded && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4 pt-3 border-t border-white/10"
+                      className="space-y-4 pt-4"
                     >
-                      <div className="bg-black/20 backdrop-blur-xl p-3 rounded-xl space-y-2">
-                        <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest">
+                      <div className="space-y-3 rounded-3xl border border-violet-200/80 bg-white/60 p-3 shadow-inner shadow-violet-100/80 backdrop-blur-xl dark:border-violet-400/15 dark:bg-white/5 dark:shadow-none">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-violet-700 dark:text-violet-300">
                           Sugestões
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                           <button
                             onClick={() => navigate("/treinos")}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
                           >
+                            <Activity size={14} />
                             Treino de Hoje
                           </button>
                           <button
                             onClick={() => navigate("/diario")}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all border border-white/10"
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
                           >
+                            <Zap size={14} />
                             Relatar Dor
+                          </button>
+                          <button
+                            onClick={() => navigate("/treinos")}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
+                          >
+                            <FileText size={14} />
+                            Ver Exercícios
+                          </button>
+                          <button
+                            onClick={() => navigate("/appointments")}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
+                          >
+                            <Calendar size={14} />
+                            Próxima Sessão
+                          </button>
+                          <button
+                            onClick={() => navigate("/chat")}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
+                          >
+                            <MessageSquare size={14} />
+                            Falar com IA
+                          </button>
+                          <button
+                            onClick={() => navigate("/jornada")}
+                            className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-black text-violet-900 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:border-violet-400 hover:text-violet-700 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none"
+                          >
+                            <TrendingUp size={14} />
+                            Minha Evolução
                           </button>
                         </div>
                       </div>
@@ -2564,11 +2604,10 @@ Promise.resolve({ count: realAppointmentsData.length }),
                         <input
                           type="text"
                           placeholder="Pergunte algo..."
-                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs placeholder-white/50 outline-none focus:ring-2 focus:ring-white/30 transition-all"
-                          onClick={(e) => e.stopPropagation()}
+                          className="min-w-0 flex-1 rounded-2xl border border-violet-200 bg-white/85 px-4 py-3 text-sm font-semibold text-violet-950 placeholder-violet-300 shadow-lg shadow-violet-200/30 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:border-violet-400/20 dark:bg-white/10 dark:text-white dark:placeholder-violet-200/40 dark:shadow-none"
                         />
-                        <button className="p-2 bg-white text-blue-900 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-lg">
-                          <ArrowUpRight size={18} />
+                        <button className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-white text-violet-800 shadow-lg shadow-violet-200/40 transition-all hover:-translate-y-0.5 hover:bg-violet-50 dark:border-violet-400/20 dark:bg-white/10 dark:text-violet-100 dark:shadow-none">
+                          <ArrowUpRight size={22} />
                         </button>
                       </div>
                     </motion.div>
@@ -2576,11 +2615,8 @@ Promise.resolve({ count: realAppointmentsData.length }),
 
                   {!isAiExpanded && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/triage");
-                      }}
-                      className="w-full py-3 bg-white text-blue-900 rounded-xl font-black text-sm hover:bg-blue-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                      onClick={() => navigate("/triage")}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 via-purple-700 to-violet-950 py-3 text-sm font-black text-white shadow-xl shadow-violet-700/25 transition-all hover:-translate-y-0.5 dark:from-violet-500 dark:via-purple-600 dark:to-violet-800"
                     >
                       Iniciar Triagem
                     </button>
