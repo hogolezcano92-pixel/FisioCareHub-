@@ -50,6 +50,82 @@ const safeText = (value: any, fallback = 'Não informado') => {
   return text || fallback;
 };
 
+const firstFilled = (...values: any[]) => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'string' && value.trim() === '') continue;
+    return value;
+  }
+  return null;
+};
+
+const getPainLevel = (record: any) => {
+  const value = firstFilled(
+    record?.nivel_dor,
+    record?.dor_escala,
+    record?.escala_dor,
+    record?.pain_level,
+    record?.dor,
+    record?.intensidade_dor,
+  );
+
+  if (value === null) return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : value;
+};
+
+const formatPainLevel = (record: any) => {
+  const pain = getPainLevel(record);
+  return pain === null ? null : `${pain}/10`;
+};
+
+const getPainLocation = (record: any) => {
+  return firstFilled(
+    record?.local_dor,
+    record?.regiao_dor,
+    record?.regiao,
+    record?.local,
+    record?.area_dor,
+  );
+};
+
+const getPainDescription = (record: any) => {
+  return firstFilled(
+    record?.descricao,
+    record?.observacoes,
+    record?.notas,
+    record?.relato,
+    record?.comentario,
+  );
+};
+
+const getExerciseSummary = (record: any) => {
+  const completed = Number(record?.concluidos_count ?? 0);
+  const total = Number(record?.total_exercicios ?? 0);
+
+  if (total > 0) return `${completed} de ${total} exercícios concluídos`;
+
+  const exercises = Array.isArray(record?.exercicios_concluidos)
+    ? record.exercicios_concluidos
+    : [];
+
+  if (exercises.length === 0) return null;
+
+  const done = exercises.filter((exercise: any) => Boolean(exercise?.completed)).length;
+  return `${done} de ${exercises.length} exercícios concluídos`;
+};
+
+const getPainFactors = (record: any) => {
+  return firstFilled(
+    record?.fatores,
+    record?.fatores_melhora_piora,
+    record?.fatores_melhora,
+    record?.fatores_piora,
+    record?.gatilhos,
+    getExerciseSummary(record),
+  );
+};
+
 const getPatientName = (patient?: ClinicalPatient | null) => {
   return safeText(patient?.nome_completo || patient?.nome, 'Paciente sem nome');
 };
@@ -770,12 +846,12 @@ function RecordsSection({
   return (
     <div className="space-y-5">
       {painRecords.length === 0 ? <EmptyCard icon={HeartPulse} text="Nenhum registro de diário de dor encontrado." /> : painRecords.map((item) => (
-        <ClinicalCard key={item.id} icon={HeartPulse} title="Registro de dor" date={item.created_at || item.data_registro} badge={item.dor_escala ? `Dor ${item.dor_escala}/10` : 'Diário'}>
+        <ClinicalCard key={item.id} icon={HeartPulse} title="Registro de dor" date={item.created_at || item.data_registro} badge={formatPainLevel(item) ? `Dor ${formatPainLevel(item)}` : 'Diário'}>
           <InfoGrid rows={[
-            ['Dor', item.dor_escala ? `${item.dor_escala}/10` : null],
-            ['Local', item.local_dor || item.regiao],
-            ['Descrição', item.descricao || item.observacoes],
-            ['Fatores de melhora/piora', item.fatores],
+            ['Dor', formatPainLevel(item)],
+            ['Local', getPainLocation(item)],
+            ['Descrição', getPainDescription(item)],
+            ['Fatores de melhora/piora', getPainFactors(item)],
           ]} />
         </ClinicalCard>
       ))}
