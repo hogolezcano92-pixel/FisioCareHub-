@@ -2512,8 +2512,8 @@ Promise.resolve({ count: realAppointmentsData.length }),
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4 pt-3 border-t border-white/15"
                     >
-                      <div className="bg-white/10 backdrop-blur-xl p-3 rounded-xl space-y-3 border border-white/10 shadow-inner shadow-violet-950/10">
-                        <p className="text-[9px] font-bold text-violet-100 uppercase tracking-widest">
+                      <div className="patient-assistant-suggestions bg-white/10 backdrop-blur-xl p-3 rounded-xl space-y-3 border border-white/10 shadow-inner shadow-violet-950/10">
+                        <p className="patient-assistant-suggestions-title text-[9px] font-bold text-violet-100 uppercase tracking-widest">
                           Sugestões
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -2522,7 +2522,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                               key={suggestion.label}
                               type="button"
                               onClick={() => navigate(suggestion.path)}
-                              className="px-3 py-1.5 bg-white/85 text-violet-900 hover:bg-white rounded-full text-[10px] font-black transition-all border border-white/30 shadow-sm hover:-translate-y-0.5"
+                              className="patient-assistant-suggestion-btn px-3 py-1.5 bg-white/85 text-violet-900 hover:bg-white rounded-full text-[10px] font-black transition-all border border-white/30 shadow-sm hover:-translate-y-0.5"
                             >
                               {suggestion.label}
                             </button>
@@ -2536,7 +2536,7 @@ Promise.resolve({ count: realAppointmentsData.length }),
                           placeholder="Pergunte algo..."
                           className="flex-1 bg-white/92 border border-white/30 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-white/40 transition-all"
                         />
-                        <button className="p-2 bg-white text-violet-900 rounded-lg font-bold hover:bg-violet-50 transition-all shadow-lg">
+                        <button className="patient-assistant-send p-2 bg-white text-violet-900 rounded-lg font-bold hover:bg-violet-50 transition-all shadow-lg">
                           <ArrowUpRight size={18} />
                         </button>
                       </div>

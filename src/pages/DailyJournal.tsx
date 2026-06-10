@@ -329,7 +329,7 @@ export default function DailyJournal() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+    <div className="daily-journal-page max-w-6xl mx-auto space-y-8 pb-20">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -584,7 +584,7 @@ export default function DailyJournal() {
         </div>
       ) : (
         /* Progress Dashboard */
-        <div className="space-y-8">
+        <div className="daily-journal-progress space-y-8">
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Pain Evolution Line Chart */}
               <section className="bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-8 md:p-10 space-y-8 shadow-2xl">
