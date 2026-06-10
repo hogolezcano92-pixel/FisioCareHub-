@@ -11,6 +11,7 @@ interface EvaluationModalProps {
   onClose: () => void;
   appointment: {
     id: string;
+    paciente_id?: string;
     fisio_id: string;
     fisio_nome?: string;
   };
@@ -36,8 +37,10 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
     setError(null);
 
     try {
+      const evaluationPacienteId = appointment.paciente_id || userId;
+
       const evaluationPayload = {
-        paciente_id: userId,
+        paciente_id: evaluationPacienteId,
         profissional_id: appointment.fisio_id,
         agendamento_id: appointment.id,
         nota_profissional: ratingPhysio,
@@ -49,7 +52,7 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
         .from('avaliacoes')
         .select('id')
         .eq('agendamento_id', appointment.id)
-        .eq('paciente_id', userId)
+        .eq('paciente_id', evaluationPacienteId)
         .eq('profissional_id', appointment.fisio_id)
         .limit(1)
         .maybeSingle();
