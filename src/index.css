@@ -3897,3 +3897,228 @@ html:not(.dark) .patient-card-assistant input + button svg {
   color: #5b21b6 !important;
   stroke: #5b21b6 !important;
 }
+
+/* =========================================================
+   Correção controlada — somente tema claro
+   Áreas: Assistente Viva, Jornada/Ações rápidas, Modo família
+   e gráficos do Diário/Jornada. Dark mode preservado.
+   ========================================================= */
+
+/* ---------- Assistente Viva: sugestões legíveis no tema claro ---------- */
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.20), transparent 30%),
+    radial-gradient(circle at 12% 100%, rgba(196, 181, 253, 0.22), transparent 34%),
+    linear-gradient(135deg, #a78bfa 0%, #8b5cf6 48%, #7c3aed 100%) !important;
+  border-color: rgba(109, 40, 217, 0.55) !important;
+  box-shadow:
+    0 20px 46px rgba(91, 33, 182, 0.22),
+    inset 0 1px 0 rgba(255,255,255,0.25) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant :is(h1,h2,h3,h4,p) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestions {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1.5px solid rgba(221, 214, 254, 0.95) !important;
+  box-shadow:
+    0 14px 30px rgba(76, 29, 149, 0.14),
+    inset 0 1px 0 rgba(255,255,255,1) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestions-title {
+  color: #6d28d9 !important;
+  -webkit-text-fill-color: #6d28d9 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestion-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%) !important;
+  color: #4c1d95 !important;
+  -webkit-text-fill-color: #4c1d95 !important;
+  border: 1.5px solid rgba(167, 139, 250, 0.55) !important;
+  box-shadow: 0 8px 18px rgba(91, 33, 182, 0.14) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestion-btn:hover {
+  background: #ede9fe !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input {
+  background: rgba(255,255,255,0.97) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border: 1.5px solid rgba(221,214,254,0.95) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.12) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-send {
+  background: #ffffff !important;
+  color: #6d28d9 !important;
+  -webkit-text-fill-color: #6d28d9 !important;
+  border: 1.5px solid rgba(221,214,254,0.95) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-send svg {
+  color: #6d28d9 !important;
+  stroke: #6d28d9 !important;
+}
+
+/* ---------- Jornada: Ações rápidas e Modo família no tema claro ---------- */
+html:not(.dark) .journey-quick-actions-card {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(167, 139, 250, 0.18), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(125, 211, 252, 0.18), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #f5f3ff 100%) !important;
+  border-color: rgba(167, 139, 250, 0.38) !important;
+  box-shadow: 0 20px 46px rgba(88, 28, 135, 0.12) !important;
+}
+
+html:not(.dark) .journey-quick-actions-card h2 {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html:not(.dark) .journey-quick-actions-card p {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+html:not(.dark) .journey-quick-action-link {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .journey-quick-action-link:hover {
+  border-color: rgba(139, 92, 246, 0.42) !important;
+  box-shadow: 0 16px 34px rgba(91, 33, 182, 0.12) !important;
+}
+
+html:not(.dark) .journey-quick-action-link :is(span, div) {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html:not(.dark) .journey-quick-action-link span span:last-child {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+html:not(.dark) .journey-quick-action-link > span > span:first-child {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+}
+
+html:not(.dark) .journey-quick-action-purple > span > span:first-child {
+  color: #7c3aed !important;
+  background: #f5f3ff !important;
+}
+
+html:not(.dark) .journey-quick-action-blue > span > span:first-child {
+  color: #0284c7 !important;
+  background: #e0f2fe !important;
+}
+
+html:not(.dark) .journey-quick-action-green > span > span:first-child {
+  color: #059669 !important;
+  background: #d1fae5 !important;
+}
+
+html:not(.dark) .journey-quick-action-link svg {
+  color: #334155 !important;
+  stroke: #334155 !important;
+}
+
+html:not(.dark) .journey-family-card {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(167, 139, 250, 0.20), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f5f3ff 50%, #ede9fe 100%) !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 38px rgba(91, 33, 182, 0.12) !important;
+}
+
+html:not(.dark) .journey-family-card :is(h2,p,span,div,svg) {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html:not(.dark) .journey-family-card p {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* ---------- Diário/Progresso: cards e gráficos legíveis no tema claro ---------- */
+html:not(.dark) .daily-journal-page :is(h1,h2,h3) {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html:not(.dark) .daily-journal-page :is(p,span,label) {
+  text-shadow: none !important;
+}
+
+html:not(.dark) .daily-journal-page section,
+html:not(.dark) .daily-journal-page .daily-journal-progress > .grid > section,
+html:not(.dark) .daily-journal-page .daily-journal-progress .grid.grid-cols-1.md\:grid-cols-3 > div {
+  background: #ffffff !important;
+  border-color: rgba(221, 214, 254, 0.95) !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .daily-journal-page textarea,
+html:not(.dark) .daily-journal-page input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+}
+
+html:not(.dark) .daily-journal-page textarea::placeholder,
+html:not(.dark) .daily-journal-page input::placeholder {
+  color: #64748b !important;
+}
+
+html:not(.dark) .daily-journal-progress .recharts-cartesian-grid line {
+  stroke: rgba(148, 163, 184, 0.30) !important;
+}
+
+html:not(.dark) .daily-journal-progress .recharts-text,
+html:not(.dark) .daily-journal-progress .recharts-cartesian-axis-tick-value {
+  fill: #475569 !important;
+  color: #475569 !important;
+  font-weight: 800 !important;
+}
+
+html:not(.dark) .daily-journal-progress .recharts-line-dot circle,
+html:not(.dark) .daily-journal-progress .recharts-active-dot circle {
+  stroke: #1e293b !important;
+}
+
+html:not(.dark) .daily-journal-progress .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid rgba(203, 213, 225, 0.95) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12) !important;
+}
+
+html:not(.dark) .daily-journal-progress .recharts-tooltip-wrapper :is(.recharts-tooltip-label, .recharts-tooltip-item, .recharts-tooltip-item-name, .recharts-tooltip-item-value) {
+  color: #0f172a !important;
+}
