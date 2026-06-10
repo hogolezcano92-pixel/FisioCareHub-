@@ -652,17 +652,30 @@ function HeaderObserver() {
   return null;
 }
 
+const isPasswordRecoveryUrl = (location: ReturnType<typeof useLocation>) => {
+  const rawUrl = `${location.pathname}${location.search}${location.hash}`;
+
+  return (
+    location.pathname === '/reset-password' ||
+    rawUrl.includes('type=recovery') ||
+    rawUrl.includes('access_token=') ||
+    rawUrl.includes('refresh_token=') ||
+    rawUrl.includes('error_code=otp_expired')
+  );
+};
+
 function AppContent() {
   const { user, profile } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const isPasswordRecovery = isPasswordRecoveryUrl(location);
 
   const isPatientArea = useMemo(() => user && profile?.tipo_usuario === 'paciente', [user, profile]);
   const isPhysioArea = useMemo(() => user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin', [user, profile]);
   const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]);
-  const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname);
-  const isLandingPage = location.pathname === '/' || location.pathname === '/home';
+  const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname) || isPasswordRecovery;
+  const isLandingPage = !isPasswordRecovery && (location.pathname === '/' || location.pathname === '/home');
   const isAdminPage = useMemo(() => location.pathname.startsWith('/admin') || location.pathname === '/preview', [location.pathname]);
 
   const isApproved = profile?.status_aprovacao === 'aprovado';
@@ -674,14 +687,18 @@ function AppContent() {
   );
 
   useEffect(() => {
+    if (isPasswordRecovery && location.pathname !== '/reset-password') {
+      navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        navigate('/reset-password');
+        navigate('/reset-password', { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [isPasswordRecovery, location.pathname, location.search, location.hash, navigate]);
 
   return (
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
@@ -728,8 +745,8 @@ function AppContent() {
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
-                  <Route path="/home" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
+                  <Route path="/" element={isPasswordRecovery ? <Navigate to={`/reset-password${location.search}${location.hash}`} replace /> : (user ? <Navigate to="/dashboard" replace /> : <Home />)} />
+                  <Route path="/home" element={isPasswordRecovery ? <Navigate to={`/reset-password${location.search}${location.hash}`} replace /> : (user ? <Navigate to="/dashboard" replace /> : <Home />)} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
