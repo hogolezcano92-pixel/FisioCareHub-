@@ -3794,3 +3794,106 @@ html:not(.dark) .patient-dashboard-shell .backdrop-blur-3xl,
 html:not(.dark) .patient-dashboard-shell .backdrop-blur-md {
   backdrop-filter: blur(14px);
 }
+/* =========================================================
+   Correção tema claro — Assistente Viva
+   Mantém roxo premium, mas deixa textos e sugestões legíveis
+   ========================================================= */
+
+html:not(.dark) .patient-card-assistant {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(255, 255, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 10% 100%, rgba(216, 180, 254, 0.26), transparent 34%),
+    linear-gradient(135deg, #a78bfa 0%, #8b5cf6 44%, #7c3aed 100%) !important;
+
+  border: 1.5px solid rgba(109, 40, 217, 0.55) !important;
+  box-shadow:
+    0 22px 48px rgba(124, 58, 237, 0.22),
+    0 10px 22px rgba(91, 33, 182, 0.12) !important;
+}
+
+/* Título e texto principal */
+html:not(.dark) .patient-card-assistant h3,
+html:not(.dark) .patient-card-assistant h3 span,
+html:not(.dark) .patient-card-assistant p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 2px rgba(76, 29, 149, 0.18) !important;
+}
+
+/* Ícone e seta */
+html:not(.dark) .patient-card-assistant svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Linha divisória */
+html:not(.dark) .patient-card-assistant .border-t {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+/* Caixa das sugestões */
+html:not(.dark) .patient-card-assistant div[class*="bg-white/10"],
+html:not(.dark) .patient-card-assistant div[class*="bg-black/20"] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(221, 214, 254, 0.95) !important;
+  box-shadow:
+    0 14px 28px rgba(76, 29, 149, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Texto "Sugestões" */
+html:not(.dark) .patient-card-assistant div[class*="bg-white/10"] > p,
+html:not(.dark) .patient-card-assistant div[class*="bg-black/20"] > p {
+  color: #5b21b6 !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.18em !important;
+  text-shadow: none !important;
+}
+
+/* Botões das sugestões */
+html:not(.dark) .patient-card-assistant div[class*="bg-white/10"] button,
+html:not(.dark) .patient-card-assistant div[class*="bg-black/20"] button {
+  background: #ffffff !important;
+  color: #4c1d95 !important;
+  border: 1.5px solid rgba(167, 139, 250, 0.55) !important;
+  box-shadow:
+    0 8px 18px rgba(124, 58, 237, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-card-assistant div[class*="bg-white/10"] button *,
+html:not(.dark) .patient-card-assistant div[class*="bg-black/20"] button * {
+  color: #4c1d95 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Input */
+html:not(.dark) .patient-card-assistant input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  border: 1.5px solid rgba(221, 214, 254, 0.95) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.12) !important;
+}
+
+html:not(.dark) .patient-card-assistant input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Botão enviar */
+html:not(.dark) .patient-card-assistant input + button {
+  background: #ffffff !important;
+  color: #5b21b6 !important;
+  border: 1.5px solid rgba(221, 214, 254, 0.95) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+}
+
+html:not(.dark) .patient-card-assistant input + button svg {
+  color: #5b21b6 !important;
+  stroke: #5b21b6 !important;
+}
