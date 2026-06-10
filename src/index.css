@@ -4322,3 +4322,99 @@ html:not(.dark) .patient-dashboard-shell .patient-achievements-card {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
+
+/* =========================================================
+   Ajuste 106 — Assistente Viva roxo IA estável
+   Remove luz piscando/pulse e mantém visual moderno intenso
+   ========================================================= */
+.patient-card-assistant {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 38%),
+    radial-gradient(circle at 86% 12%, rgba(168, 85, 247, 0.30), transparent 34%),
+    radial-gradient(circle at 8% 100%, rgba(79, 70, 229, 0.26), transparent 36%),
+    linear-gradient(135deg, #7c3aed 0%, #6d28d9 42%, #4c1d95 100%) !important;
+  border: 1.5px solid rgba(196, 181, 253, 0.38) !important;
+  box-shadow:
+    0 24px 58px rgba(76, 29, 149, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 36%),
+    radial-gradient(circle at 84% 10%, rgba(192, 132, 252, 0.34), transparent 32%),
+    radial-gradient(circle at 8% 100%, rgba(99, 102, 241, 0.28), transparent 36%),
+    linear-gradient(135deg, #8b5cf6 0%, #7c3aed 44%, #5b21b6 100%) !important;
+  border: 1.5px solid rgba(91, 33, 182, 0.74) !important;
+  box-shadow:
+    0 24px 54px rgba(91, 33, 182, 0.28),
+    0 10px 24px rgba(124, 58, 237, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26) !important;
+}
+
+.patient-card-assistant .patient-assistant-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(135deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  opacity: 0.42;
+  animation: none !important;
+}
+
+.patient-card-assistant .patient-assistant-orb {
+  filter: blur(34px);
+  opacity: 0.42;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.patient-card-assistant .patient-assistant-orb-top {
+  background: rgba(216, 180, 254, 0.42);
+}
+
+.patient-card-assistant .patient-assistant-orb-bottom {
+  background: rgba(99, 102, 241, 0.28);
+}
+
+.patient-card-assistant .patient-assistant-icon {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 12px 24px rgba(76, 29, 149, 0.20) !important;
+}
+
+.patient-card-assistant .patient-assistant-icon svg,
+.patient-card-assistant .patient-assistant-status,
+.patient-card-assistant [class*="animate-pulse"],
+.patient-card-assistant [class*="animate-bounce"] {
+  animation: none !important;
+}
+
+.patient-card-assistant .patient-assistant-status {
+  background: #34d399 !important;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18), 0 0 14px rgba(52, 211, 153, 0.42) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestions {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1.5px solid rgba(196, 181, 253, 0.96) !important;
+  box-shadow:
+    0 14px 30px rgba(76, 29, 149, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestion-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f3e8ff 100%) !important;
+  color: #4c1d95 !important;
+  -webkit-text-fill-color: #4c1d95 !important;
+  border: 1.5px solid rgba(139, 92, 246, 0.62) !important;
+  box-shadow: 0 8px 18px rgba(91, 33, 182, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-input,
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-send {
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+}
