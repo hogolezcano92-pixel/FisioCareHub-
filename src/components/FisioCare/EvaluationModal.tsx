@@ -36,20 +36,48 @@ export default function EvaluationModal({ isOpen, onClose, appointment, userId, 
     setError(null);
 
     try {
-      const { data: insertedEvaluation, error: submitError } = await supabase
-        .from('avaliacoes')
-        .insert({
-          paciente_id: userId,
-          profissional_id: appointment.fisio_id,
-          agendamento_id: appointment.id,
-          nota_profissional: ratingPhysio,
-          nota_plataforma: ratingPlatform,
-          comentario: comment || null
-        })
-        .select('id')
-        .single();
+      const evaluationPayload = {
+        paciente_id: userId,
+        profissional_id: appointment.fisio_id,
+        agendamento_id: appointment.id,
+        nota_profissional: ratingPhysio,
+        nota_plataforma: ratingPlatform,
+        comentario: comment || null
+      };
 
-      if (submitError) throw submitError;
+      const { data: existingEvaluation, error: existingError } = await supabase
+        .from('avaliacoes')
+        .select('id')
+        .eq('agendamento_id', appointment.id)
+        .eq('paciente_id', userId)
+        .eq('profissional_id', appointment.fisio_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      let insertedEvaluation: { id: string } | null = null;
+
+      if (existingEvaluation?.id) {
+        const { data: updatedEvaluation, error: updateError } = await supabase
+          .from('avaliacoes')
+          .update(evaluationPayload)
+          .eq('id', existingEvaluation.id)
+          .select('id')
+          .single();
+
+        if (updateError) throw updateError;
+        insertedEvaluation = updatedEvaluation;
+      } else {
+        const { data: createdEvaluation, error: submitError } = await supabase
+          .from('avaliacoes')
+          .insert(evaluationPayload)
+          .select('id')
+          .single();
+
+        if (submitError) throw submitError;
+        insertedEvaluation = createdEvaluation;
+      }
 
       const [{ data: patientProfile }, { data: physioProfile }, { data: appointmentDetails }] = await Promise.all([
         supabase
