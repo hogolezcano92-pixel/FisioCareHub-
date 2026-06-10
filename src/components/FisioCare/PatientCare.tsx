@@ -61,7 +61,7 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
 
         const { data: existingEntry, error: findError } = await supabase
           .from('registros_paciente')
-          .select('id, exercicios_concluidos, total_exercicios, concluidos_count')
+          .select('id, exercicios_concluidos, total_exercicios, concluidos_count, notas')
           .eq('paciente_id', profile.id)
           .eq('data_registro', today)
           .order('created_at', { ascending: false })
@@ -75,6 +75,7 @@ export const PainDiary = ({ onSaved }: PainDiaryProps) => {
               .from('registros_paciente')
               .update({
                 ...payload,
+                notas: existingEntry.notas || payload.notas,
                 exercicios_concluidos: existingEntry.exercicios_concluidos || [],
                 total_exercicios: existingEntry.total_exercicios || 0,
                 concluidos_count: existingEntry.concluidos_count || 0,
