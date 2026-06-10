@@ -3218,194 +3218,37 @@ html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div span {
     color: #334155 !important;
   }
 }
-/* =========================================================
-   Correção do espaço vazio da Jornada de Recuperação
-   Tema claro - mobile
-   Cola no final do index.css
-========================================================= */
-
-html:not(.dark) .patient-store-card + div {
+/* Correção: remove espaço grande no card Jornada de Recuperação - tema claro */
+html:not(.dark) .patient-journey-card,
+html:not(.dark) [data-card="patient-journey"],
+html:not(.dark) section:has(button[aria-label="Abrir jornada"]),
+html:not(.dark) div:has(> button):has(h2):has(svg) {
   min-height: auto !important;
   height: auto !important;
-  max-height: none !important;
-
-  padding-top: 28px !important;
-  padding-bottom: 26px !important;
-  padding-left: 24px !important;
-  padding-right: 24px !important;
-
-  display: block !important;
-  overflow: hidden !important;
 }
 
-/* Garante que o conteúdo da Jornada fique no topo do card */
-html:not(.dark) .patient-store-card + div > div {
-  position: relative !important;
-  z-index: 5 !important;
-  transform: none !important;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+/* Ajuste específico para o bloco visual da Jornada */
+html:not(.dark) .patient-journey-card,
+html:not(.dark) [data-card="patient-journey"] {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
 }
 
-/* Remove qualquer espaçador invisível acima do conteúdo */
-html:not(.dark) .patient-store-card + div > div:first-child {
-  margin-top: 0 !important;
+/* Se o espaço foi causado por pseudo-elemento/blur decorativo */
+html:not(.dark) .patient-journey-card::before,
+html:not(.dark) .patient-journey-card::after,
+html:not(.dark) [data-card="patient-journey"]::before,
+html:not(.dark) [data-card="patient-journey"]::after {
+  max-height: 180px !important;
 }
 
-/* Ajuste fino do bloco de texto */
-html:not(.dark) .patient-store-card + div h2 {
-  margin-top: 4px !important;
-  margin-bottom: 14px !important;
-  line-height: 1.08 !important;
-}
-
-html:not(.dark) .patient-store-card + div h2 + p {
-  margin-bottom: 24px !important;
-  line-height: 1.35 !important;
-}
-
-/* Botão mais próximo do texto */
-html:not(.dark) .patient-store-card + div button {
-  margin-top: 0 !important;
-  margin-bottom: 22px !important;
-}
-
-/* Progresso / Dor / Sessões mais compacto */
-html:not(.dark) .patient-store-card + div .grid.grid-cols-3 {
-  margin-top: 0 !important;
-  padding: 8px !important;
-}
-
-/* Corrige altura exagerada em telas pequenas */
+/* Mobile: deixa o card compacto novamente */
 @media (max-width: 768px) {
-  html:not(.dark) .patient-store-card + div {
+  html:not(.dark) .patient-journey-card,
+  html:not(.dark) [data-card="patient-journey"],
+  html:not(.dark) section:has(button[aria-label="Abrir jornada"]) {
     min-height: auto !important;
-    height: auto !important;
-    padding-top: 24px !important;
-    padding-bottom: 24px !important;
-  }
-}
-/* =========================================================
-   FIX DEFINITIVO - Jornada de Recuperação sem espaço vazio
-   Tema claro / mobile
-   Cole no FINAL do index.css
-========================================================= */
-
-@media (max-width: 768px) {
-  html:not(.dark) .patient-store-card + div:has(h2),
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) {
-    min-height: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    aspect-ratio: auto !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-    align-items: stretch !important;
-
-    padding: 24px !important;
-    margin-top: 28px !important;
-    overflow: hidden !important;
-
-    background:
-      radial-gradient(circle at 92% 18%, rgba(139, 92, 246, 0.18), transparent 32%),
-      radial-gradient(circle at 8% 8%, rgba(124, 58, 237, 0.12), transparent 30%),
-      linear-gradient(135deg, #ffffff 0%, #fbf8ff 45%, #f1e8ff 100%) !important;
-
-    border: 1.5px solid rgba(139, 92, 246, 0.42) !important;
-    border-radius: 32px !important;
-    box-shadow:
-      0 22px 44px rgba(109, 40, 217, 0.16),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
-  }
-
-  /* Remove qualquer espaçador invisível no topo */
-  html:not(.dark) .patient-store-card + div:has(h2)::before,
-  html:not(.dark) .patient-store-card + div:has(h2)::after,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3)::before,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3)::after {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* Faz o bloco principal subir para o topo */
-  html:not(.dark) .patient-store-card + div:has(h2) > div,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) > div {
-    position: relative !important;
-    top: auto !important;
-    bottom: auto !important;
-    transform: none !important;
-
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-  }
-
-  /* Esconde bolhas absolutas que estavam criando área visual grande */
-  html:not(.dark) .patient-store-card + div:has(h2) > div[class*="absolute"],
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) > div[class*="absolute"] {
-    display: none !important;
-  }
-
-  /* Cabeçalho da Jornada */
-  html:not(.dark) .patient-store-card + div:has(h2) .flex.items-start,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .flex.items-start {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    align-items: flex-start !important;
-  }
-
-  html:not(.dark) .patient-store-card + div:has(h2) h2,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) h2 {
-    margin-top: 4px !important;
-    margin-bottom: 10px !important;
-    color: #111827 !important;
-    opacity: 1 !important;
-    line-height: 1.08 !important;
-  }
-
-  html:not(.dark) .patient-store-card + div:has(h2) h2 + p,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) h2 + p {
-    margin-top: 8px !important;
-    margin-bottom: 18px !important;
-    color: #334155 !important;
-    opacity: 1 !important;
-    font-weight: 800 !important;
-    line-height: 1.35 !important;
-  }
-
-  /* Botão */
-  html:not(.dark) .patient-store-card + div:has(h2) button,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) button {
-    margin-top: 0 !important;
-    margin-bottom: 18px !important;
-    min-height: 58px !important;
-
-    background: linear-gradient(90deg, #a855f7 0%, #7c3aed 48%, #4c1d95 100%) !important;
-    color: #ffffff !important;
-    box-shadow:
-      0 16px 32px rgba(109, 40, 217, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
-  }
-
-  /* Progresso / Dor / Sessões */
-  html:not(.dark) .patient-store-card + div:has(h2) .grid.grid-cols-3,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .grid.grid-cols-3 {
-    margin-top: 0 !important;
-    padding: 8px !important;
-    gap: 8px !important;
-
-    background: rgba(255, 255, 255, 0.88) !important;
-    border: 1.5px solid rgba(139, 92, 246, 0.26) !important;
-  }
-
-  html:not(.dark) .patient-store-card + div:has(h2) .grid.grid-cols-3 > div,
-  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .grid.grid-cols-3 > div {
-    padding: 12px 8px !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f4edff 100%) !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
 }
