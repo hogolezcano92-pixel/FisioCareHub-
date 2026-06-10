@@ -440,8 +440,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         }
 
         /* =========================================================
-           Figuras de fisioterapia no fundo do Sidebar
-           Sem afetar header/logo
+           Figuras reais de fisioterapia no fundo do Sidebar
+           - Sem entrar no header/logo
+           - Ilustrações mais nítidas no tema claro
+           - Discretas no dark mode
            ========================================================= */
         .fisio-sidebar-shell {
           position: relative;
@@ -452,40 +454,64 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           position: absolute;
           left: 0;
           right: 0;
-          top: 116px;
+          top: 118px;
           bottom: 96px;
           z-index: 0;
           pointer-events: none;
           overflow: hidden;
+          opacity: 1;
         }
 
         .fisio-sidebar-physio-bg svg {
           position: absolute;
-          color: rgba(124, 58, 237, 0.24);
+          overflow: visible;
+        }
+
+        .fisio-illustration {
+          color: rgba(124, 58, 237, 0.30);
           stroke: currentColor;
           fill: none;
-          stroke-width: 1.8;
+          stroke-width: 2.05;
           stroke-linecap: round;
           stroke-linejoin: round;
+          filter: drop-shadow(0 10px 26px rgba(124, 58, 237, 0.08));
+        }
+
+        .fisio-illustration .soft-fill {
+          fill: currentColor;
+          opacity: 0.075;
+          stroke: none;
+        }
+
+        .fisio-illustration .detail-soft {
+          opacity: 0.72;
         }
 
         .fisio-bg-dots {
           position: absolute;
-          width: 76px;
-          height: 76px;
+          width: 82px;
+          height: 82px;
           opacity: 0.28;
-          background-image: radial-gradient(circle, rgba(124, 58, 237, 0.48) 1.5px, transparent 1.5px);
+          background-image: radial-gradient(circle, rgba(124, 58, 237, 0.42) 1.45px, transparent 1.45px);
           background-size: 13px 13px;
         }
 
-        .fisio-bg-line {
+        .fisio-bg-orb {
           position: absolute;
-          width: 220px;
-          height: 120px;
-          border: 2px dashed rgba(124, 58, 237, 0.16);
-          border-color: rgba(124, 58, 237, 0.16) transparent transparent transparent;
+          width: 126px;
+          height: 126px;
+          border-radius: 999px;
+          background: radial-gradient(circle, rgba(124, 58, 237, 0.11), transparent 68%);
+          filter: blur(1px);
+        }
+
+        .fisio-bg-flow-line {
+          position: absolute;
+          width: 260px;
+          height: 130px;
+          border: 2px dashed rgba(124, 58, 237, 0.15);
+          border-color: rgba(124, 58, 237, 0.15) transparent transparent transparent;
           border-radius: 50%;
-          transform: rotate(-18deg);
         }
 
         .fisio-sidebar-shell nav,
@@ -494,23 +520,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           z-index: 2;
         }
 
-        html.dark .fisio-sidebar-physio-bg svg,
-        body.dark .fisio-sidebar-physio-bg svg,
-        :root[data-theme="dark"] .fisio-sidebar-physio-bg svg {
-          color: rgba(96, 165, 250, 0.12);
+        html.dark .fisio-illustration,
+        body.dark .fisio-illustration,
+        :root[data-theme="dark"] .fisio-illustration {
+          color: rgba(96, 165, 250, 0.13);
+          filter: drop-shadow(0 8px 22px rgba(59, 130, 246, 0.06));
+        }
+
+        html.dark .fisio-illustration .soft-fill,
+        body.dark .fisio-illustration .soft-fill,
+        :root[data-theme="dark"] .fisio-illustration .soft-fill {
+          opacity: 0.055;
         }
 
         html.dark .fisio-bg-dots,
         body.dark .fisio-bg-dots,
         :root[data-theme="dark"] .fisio-bg-dots {
-          opacity: 0.15;
-          background-image: radial-gradient(circle, rgba(96, 165, 250, 0.42) 1.5px, transparent 1.5px);
+          opacity: 0.13;
+          background-image: radial-gradient(circle, rgba(96, 165, 250, 0.40) 1.45px, transparent 1.45px);
         }
 
-        html.dark .fisio-bg-line,
-        body.dark .fisio-bg-line,
-        :root[data-theme="dark"] .fisio-bg-line {
-          border-color: rgba(96, 165, 250, 0.11) transparent transparent transparent;
+        html.dark .fisio-bg-orb,
+        body.dark .fisio-bg-orb,
+        :root[data-theme="dark"] .fisio-bg-orb {
+          background: radial-gradient(circle, rgba(59, 130, 246, 0.09), transparent 68%);
+        }
+
+        html.dark .fisio-bg-flow-line,
+        body.dark .fisio-bg-flow-line,
+        :root[data-theme="dark"] .fisio-bg-flow-line {
+          border-color: rgba(96, 165, 250, 0.09) transparent transparent transparent;
         }
       `}</style>
 
@@ -524,85 +563,169 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
         {/* Background physiotherapy illustrations - abaixo do header */}
         <div className="fisio-sidebar-physio-bg" aria-hidden="true">
-          <div className="fisio-bg-dots" style={{ top: 28, right: 34 }} />
-          <div className="fisio-bg-dots" style={{ top: 330, right: 52 }} />
-          <div className="fisio-bg-dots" style={{ bottom: 130, left: 56 }} />
-          <div className="fisio-bg-line" style={{ top: 70, right: -42 }} />
-          <div className="fisio-bg-line" style={{ top: 420, left: 110, transform: 'rotate(22deg)' }} />
+          <div className="fisio-bg-orb" style={{ top: 0, right: 28 }} />
+          <div className="fisio-bg-orb" style={{ top: 360, right: -42 }} />
+          <div className="fisio-bg-orb" style={{ bottom: 70, left: 10 }} />
+          <div className="fisio-bg-dots" style={{ top: 34, right: 28 }} />
+          <div className="fisio-bg-dots" style={{ top: 285, right: 54 }} />
+          <div className="fisio-bg-dots" style={{ bottom: 150, left: 58 }} />
+          <div className="fisio-bg-flow-line" style={{ top: 78, right: -60, transform: 'rotate(-18deg)' }} />
+          <div className="fisio-bg-flow-line" style={{ top: 430, left: 92, transform: 'rotate(19deg)' }} />
 
-          {/* Alongamento cervical / tronco */}
-          <svg width="150" height="170" viewBox="0 0 150 170" style={{ top: 6, right: 8, opacity: 0.48 }}>
-            <path d="M75 28c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20Z" />
-            <path d="M75 69v54" />
-            <path d="M48 91c18 5 36 5 54 0" />
-            <path d="M75 83c-15 16-25 31-31 50" />
-            <path d="M75 83c16 16 28 31 35 50" />
-            <path d="M45 45c-18 7-29 20-34 39" />
-            <path d="M105 45c16-4 27-14 34-30" />
+          {/* Anatomia posterior: coluna, escápulas e músculos */}
+          <svg
+            className="fisio-illustration"
+            width="210"
+            height="210"
+            viewBox="0 0 210 210"
+            style={{ top: 0, right: -18, opacity: 0.62 }}
+          >
+            <path className="soft-fill" d="M105 28c36 0 65 30 65 68 0 32-18 52-28 77H68c-11-25-28-45-28-77 0-38 29-68 65-68Z" />
+            <path d="M105 18c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20Z" />
+            <path d="M105 58c-4 17-4 36 0 56 4 21 3 42-2 64" />
+            <path d="M95 64c-18 7-31 20-39 40" />
+            <path d="M115 64c18 7 31 20 39 40" />
+            <path d="M70 83c12 7 23 10 34 8" />
+            <path d="M140 83c-12 7-23 10-34 8" />
+            <path d="M78 118c17-6 35-7 54 0" />
+            <path d="M67 152c26 8 50 8 76 0" />
+            <path className="detail-soft" d="M105 73c-6 7-6 14 0 21M105 94c-7 8-7 16 0 24M105 118c-6 9-6 18 0 28M105 146c-6 8-6 17-2 27" />
+            <path className="detail-soft" d="M62 107c-12 10-20 25-22 43M148 107c12 10 20 25 22 43" />
+            <path d="M40 153c11 9 24 13 38 13" />
+            <path d="M170 153c-11 9-24 13-38 13" />
           </svg>
 
-          {/* Fisioterapeuta mobilizando perna */}
-          <svg width="230" height="160" viewBox="0 0 230 160" style={{ top: 160, right: -28, opacity: 0.46 }}>
-            <path d="M60 120h92" />
-            <path d="M45 118c21-18 48-18 72 0" />
-            <path d="M112 112c16-21 23-39 28-62" />
-            <path d="M140 50c10 6 17 15 22 27" />
-            <path d="M162 76c13 2 25 0 38-7" />
-            <path d="M169 35c9 0 16 7 16 16s-7 16-16 16-16-7-16-16 7-16 16-16Z" />
-            <path d="M169 68v43" />
-            <path d="M151 88c13 7 27 9 42 4" />
-            <path d="M92 108c23-6 39-15 48-58" />
-            <path d="M44 120c-17 0-31 7-39 20" />
+          {/* Atendimento fisioterapêutico: mobilização de joelho/perna */}
+          <svg
+            className="fisio-illustration"
+            width="255"
+            height="190"
+            viewBox="0 0 255 190"
+            style={{ top: 150, right: -38, opacity: 0.64 }}
+          >
+            <path className="soft-fill" d="M38 137c42-39 96-35 146-6 18 10 36 14 62 10v21H22c1-10 6-18 16-25Z" />
+            <path d="M31 146h122" />
+            <path d="M42 142c26-22 58-23 91-4" />
+            <path d="M23 147c-9 6-15 13-18 23" />
+            <path d="M78 122c28-3 54-17 75-47" />
+            <path d="M151 75c13 7 25 16 38 29" />
+            <path d="M187 103c18 0 33-5 50-17" />
+            <path d="M70 122c-16-6-30-3-43 8" />
+            <path d="M182 30c10 0 18 8 18 18s-8 18-18 18-18-8-18-18 8-18 18-18Z" />
+            <path d="M182 67v58" />
+            <path d="M158 91c18 11 37 13 56 5" />
+            <path d="M161 123c-10 16-17 31-20 48" />
+            <path d="M199 124c10 14 23 25 38 33" />
+            <path d="M146 78c3-20 10-35 22-45" />
+            <path d="M142 80c9-3 18-2 27 3" />
+            <path className="detail-soft" d="M86 126c21-8 39-21 54-42" />
+            <path className="detail-soft" d="M146 84c5 10 9 20 12 30" />
           </svg>
 
-          {/* Coluna */}
-          <svg width="90" height="250" viewBox="0 0 90 250" style={{ top: 330, left: -6, opacity: 0.44 }}>
-            <path d="M46 8c-8 16-9 29-2 42 8 15 6 26-2 41-8 14-8 28 0 42 8 13 8 27 0 42-8 14-7 29 3 45" />
-            {Array.from({ length: 12 }).map((_, i) => (
-              <path
-                key={i}
-                d={`M38 ${22 + i * 17}c12-5 24-5 36 0M36 ${30 + i * 17}c14 5 27 5 40 0`}
-              />
-            ))}
+          {/* Joelho anatômico */}
+          <svg
+            className="fisio-illustration"
+            width="145"
+            height="170"
+            viewBox="0 0 145 170"
+            style={{ top: 335, right: 18, opacity: 0.58 }}
+          >
+            <path className="soft-fill" d="M38 12h69c-4 29-5 51-2 69 3 19 12 36 22 57H18c10-21 19-38 22-57 3-18 2-40-2-69Z" />
+            <path d="M47 10c10 31 13 56 8 80" />
+            <path d="M98 10c-10 31-13 56-8 80" />
+            <path d="M55 89c-11 10-16 25-13 43" />
+            <path d="M90 89c11 10 16 25 13 43" />
+            <path d="M43 76c18 13 40 13 59 0" />
+            <path d="M48 132c15 17 34 17 49 0" />
+            <path d="M59 96c9 7 18 7 27 0" />
+            <path className="detail-soft" d="M35 63c22 8 49 8 76 0" />
+            <path className="detail-soft" d="M53 145c13 8 26 8 39 0" />
           </svg>
 
-          {/* Joelho */}
-          <svg width="120" height="150" viewBox="0 0 120 150" style={{ top: 390, right: 20, opacity: 0.42 }}>
-            <path d="M42 8c10 29 13 52 8 74" />
-            <path d="M78 8c-10 29-13 52-8 74" />
-            <path d="M50 83c-8 10-10 22-6 34" />
-            <path d="M70 83c8 10 10 22 6 34" />
-            <path d="M39 74c14 10 28 10 42 0" />
-            <path d="M43 118c9 14 25 17 35 0" />
+          {/* Pessoa alongando lateral */}
+          <svg
+            className="fisio-illustration"
+            width="215"
+            height="230"
+            viewBox="0 0 215 230"
+            style={{ top: 418, right: -12, opacity: 0.58 }}
+          >
+            <path className="soft-fill" d="M79 74c42-9 82 20 87 63 5 44-25 75-68 76-42 0-73-27-77-68-4-34 19-62 58-71Z" />
+            <path d="M118 24c10 0 18 8 18 18s-8 18-18 18-18-8-18-18 8-18 18-18Z" />
+            <path d="M117 62c-17 20-26 41-28 65" />
+            <path d="M107 79c-28 2-49 14-64 36" />
+            <path d="M107 79c25 11 45 29 60 55" />
+            <path d="M91 127c-22 19-43 33-65 42" />
+            <path d="M90 128c20 21 45 36 75 46" />
+            <path d="M24 170h55" />
+            <path d="M143 174h54" />
+            <path d="M82 119c-7 18-17 34-30 49" />
+            <path d="M119 34c19 2 33-5 43-22" />
+            <path className="detail-soft" d="M64 92c21-11 43-14 67-8" />
+            <path className="detail-soft" d="M125 93c14 10 25 22 34 38" />
           </svg>
 
-          {/* Faixa elástica */}
-          <svg width="160" height="90" viewBox="0 0 160 90" style={{ top: 525, right: 44, opacity: 0.46 }}>
-            <path d="M18 48c23-30 54-30 77 0 16 21 31 21 47 0" />
-            <path d="M18 60c23-30 54-30 77 0 16 21 31 21 47 0" />
+          {/* Faixa elástica / equipamento funcional */}
+          <svg
+            className="fisio-illustration"
+            width="185"
+            height="112"
+            viewBox="0 0 185 112"
+            style={{ top: 568, right: 36, opacity: 0.56 }}
+          >
+            <path className="soft-fill" d="M21 58c31-39 73-39 104 0 17 21 30 23 39 6 5-9 5-18 0-26-11 21-23 18-39-2C94-3 52-3 21 36c-9 11-9 22 0 22Z" />
+            <path d="M16 50c29-38 71-39 101-2 17 20 31 22 45 1" />
+            <path d="M19 70c29-38 71-39 101-2 17 20 31 22 45 1" />
+            <path d="M17 50c-10 4-14 12-10 21 4 9 13 12 22 6" />
+            <path d="M165 49c11-3 19 3 20 13 1 10-6 17-18 16" />
+            <path className="detail-soft" d="M59 29c14-8 29-8 44 0" />
           </svg>
 
-          {/* Exercício com elástico */}
-          <svg width="180" height="210" viewBox="0 0 180 210" style={{ bottom: 8, right: 0, opacity: 0.46 }}>
-            <path d="M82 22c10 0 18 8 18 18s-8 18-18 18-18-8-18-18 8-18 18-18Z" />
-            <path d="M82 60v58" />
-            <path d="M82 83c-22 10-35 26-42 49" />
-            <path d="M82 83c20 9 35 24 45 45" />
-            <path d="M72 118l-22 58" />
-            <path d="M96 118l38 54" />
-            <path d="M48 176h32" />
-            <path d="M121 174h36" />
-            <path d="M42 132c26-9 57-10 91-4" />
+          {/* Mesa/aparelho de fisioterapia + halter */}
+          <svg
+            className="fisio-illustration"
+            width="210"
+            height="160"
+            viewBox="0 0 210 160"
+            style={{ bottom: 18, right: -10, opacity: 0.52 }}
+          >
+            <path className="soft-fill" d="M20 96h114v24H20z" />
+            <path d="M20 96h114" />
+            <path d="M34 96l-16 44" />
+            <path d="M115 96l20 44" />
+            <path d="M137 95h45c8 0 14 6 14 14v31" />
+            <path d="M150 109h34" />
+            <path d="M167 109v31" />
+            <path d="M155 140h36" />
+            <path d="M38 50h34" />
+            <path d="M118 50h34" />
+            <path d="M72 50h46" />
+            <path d="M35 34v32M50 29v42M155 34v32M140 29v42" />
+            <path d="M46 126c-7 0-13 6-13 13s6 13 13 13 13-6 13-13-6-13-13-13Z" />
+            <path d="M83 126c-7 0-13 6-13 13s6 13 13 13 13-6 13-13-6-13-13-13Z" />
+            <path d="M59 139h11" />
           </svg>
 
-          {/* Halter e banco */}
-          <svg width="170" height="120" viewBox="0 0 170 120" style={{ bottom: 20, left: 66, opacity: 0.34 }}>
-            <path d="M20 48h42" />
-            <path d="M108 48h42" />
-            <path d="M62 48h46" />
-            <path d="M18 31v34M32 27v42M148 31v34M134 27v42" />
-            <path d="M34 96h92" />
-            <path d="M48 96l-12 20M112 96l18 20" />
+          {/* Coluna lateral detalhada */}
+          <svg
+            className="fisio-illustration"
+            width="82"
+            height="260"
+            viewBox="0 0 82 260"
+            style={{ top: 470, left: -3, opacity: 0.50 }}
+          >
+            <path className="soft-fill" d="M34 8c28 33 28 70 6 111-17 31-14 70 15 119H24c-27-47-30-85-11-118C36 80 37 44 34 8Z" />
+            <path d="M39 8c-11 20-11 37-1 55 11 20 9 36-2 56-11 20-10 39 2 58 10 17 11 34 2 55" />
+            <path d="M32 24c13-6 27-5 41 2" />
+            <path d="M29 42c14-5 28-4 42 3" />
+            <path d="M30 61c14-5 27-4 40 3" />
+            <path d="M28 81c15-6 30-5 44 3" />
+            <path d="M26 103c14-5 29-5 45 2" />
+            <path d="M24 126c16-6 32-5 48 4" />
+            <path d="M25 150c16-5 32-4 47 4" />
+            <path d="M27 174c15-4 29-2 43 6" />
+            <path d="M30 198c13-3 26-1 38 6" />
+            <path d="M34 222c10-1 20 2 30 8" />
           </svg>
         </div>
 
