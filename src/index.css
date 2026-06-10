@@ -4122,3 +4122,203 @@ html:not(.dark) .daily-journal-progress .recharts-tooltip-wrapper .recharts-defa
 html:not(.dark) .daily-journal-progress .recharts-tooltip-wrapper :is(.recharts-tooltip-label, .recharts-tooltip-item, .recharts-tooltip-item-name, .recharts-tooltip-item-value) {
   color: #0f172a !important;
 }
+
+/* =========================================================
+   Ajuste 105 — Assistente Viva funcional + cores solicitadas
+   - Assistente Viva: roxo premium mais forte no tema claro
+   - Ações rápidas: azul premium no claro e no dark
+   - Conquistas: roxo premium no claro e no dark
+   ========================================================= */
+
+.patient-card-assistant {
+  background:
+    radial-gradient(circle at 90% 8%, rgba(255, 255, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(217, 70, 239, 0.20), transparent 34%),
+    linear-gradient(135deg, #8b5cf6 0%, #7c3aed 42%, #5b21b6 100%) !important;
+  border-color: rgba(196, 181, 253, 0.34) !important;
+  box-shadow: 0 22px 52px rgba(76, 29, 149, 0.30) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 12% 100%, rgba(217, 70, 239, 0.24), transparent 34%),
+    linear-gradient(135deg, #9f5cff 0%, #7c3aed 46%, #5b21b6 100%) !important;
+  border: 1.5px solid rgba(91, 33, 182, 0.72) !important;
+  box-shadow:
+    0 24px 54px rgba(91, 33, 182, 0.26),
+    0 10px 24px rgba(124, 58, 237, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant :is(h1,h2,h3,h4,p,span) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestions {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1.5px solid rgba(196, 181, 253, 0.96) !important;
+  box-shadow:
+    0 14px 30px rgba(76, 29, 149, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestions-title {
+  color: #5b21b6 !important;
+  -webkit-text-fill-color: #5b21b6 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-suggestion-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f3e8ff 100%) !important;
+  color: #4c1d95 !important;
+  -webkit-text-fill-color: #4c1d95 !important;
+  border: 1.5px solid rgba(139, 92, 246, 0.58) !important;
+  box-shadow: 0 8px 18px rgba(91, 33, 182, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-input {
+  background: rgba(255, 255, 255, 0.97) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border: 1.5px solid rgba(221, 214, 254, 0.96) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-send {
+  background: #ffffff !important;
+  color: #5b21b6 !important;
+  -webkit-text-fill-color: #5b21b6 !important;
+  border: 1.5px solid rgba(221, 214, 254, 0.96) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant .patient-assistant-send svg {
+  color: #5b21b6 !important;
+  stroke: #5b21b6 !important;
+}
+
+/* Ações Rápidas — azul premium em ambos os temas */
+.patient-dashboard-shell .patient-quick-actions-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(56, 189, 248, 0.22), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(59, 130, 246, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(37, 99, 235, 0.12)) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.34) !important;
+  box-shadow: 0 20px 46px rgba(2, 132, 199, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-quick-actions-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(125, 211, 252, 0.36), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(191, 219, 254, 0.50), transparent 34%),
+    linear-gradient(135deg, #eff9ff 0%, #ffffff 48%, #dff4ff 100%) !important;
+  border-color: rgba(14, 165, 233, 0.58) !important;
+  box-shadow: 0 20px 46px rgba(14, 165, 233, 0.18) !important;
+}
+
+.dark .patient-dashboard-shell .patient-quick-actions-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(14, 165, 233, 0.22), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(37, 99, 235, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.78)) !important;
+  border-color: rgba(56, 189, 248, 0.34) !important;
+}
+
+.patient-dashboard-shell .patient-quick-actions-card h3 {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.dark .patient-dashboard-shell .patient-quick-actions-card h3 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.patient-dashboard-shell .patient-quick-action-item {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(125, 211, 252, 0.82) !important;
+  box-shadow: 0 12px 26px rgba(14, 165, 233, 0.12) !important;
+}
+
+.dark .patient-dashboard-shell .patient-quick-action-item {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+  box-shadow: 0 12px 26px rgba(2, 132, 199, 0.10) !important;
+}
+
+.patient-dashboard-shell .patient-quick-action-item p {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.dark .patient-dashboard-shell .patient-quick-action-item p {
+  color: #e0f2fe !important;
+  -webkit-text-fill-color: #e0f2fe !important;
+}
+
+/* Conquistas — roxo premium em ambos os temas */
+.patient-dashboard-shell .patient-achievements-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(167, 139, 250, 0.22), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(217, 70, 239, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(91, 33, 182, 0.10)) !important;
+  border: 1.5px solid rgba(139, 92, 246, 0.36) !important;
+  box-shadow: 0 20px 46px rgba(91, 33, 182, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-achievements-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(221, 214, 254, 0.52), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(243, 232, 255, 0.72), transparent 34%),
+    linear-gradient(135deg, #faf5ff 0%, #ffffff 46%, #f3e8ff 100%) !important;
+  border-color: rgba(139, 92, 246, 0.54) !important;
+  box-shadow: 0 20px 46px rgba(91, 33, 182, 0.16) !important;
+}
+
+.dark .patient-dashboard-shell .patient-achievements-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(139, 92, 246, 0.20), transparent 30%),
+    radial-gradient(circle at 8% 100%, rgba(168, 85, 247, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(46, 16, 101, 0.72)) !important;
+  border-color: rgba(167, 139, 250, 0.28) !important;
+}
+
+.patient-dashboard-shell .patient-achievements-card h3 {
+  color: #2e1065 !important;
+  -webkit-text-fill-color: #2e1065 !important;
+}
+
+.dark .patient-dashboard-shell .patient-achievements-card h3 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.patient-dashboard-shell .patient-achievement-item {
+  background: rgba(255, 255, 255, 0.90) !important;
+  border-color: rgba(196, 181, 253, 0.80) !important;
+  box-shadow: 0 12px 26px rgba(91, 33, 182, 0.10) !important;
+}
+
+.dark .patient-dashboard-shell .patient-achievement-item {
+  background: rgba(15, 23, 42, 0.74) !important;
+  border-color: rgba(167, 139, 250, 0.22) !important;
+  box-shadow: 0 12px 26px rgba(91, 33, 182, 0.10) !important;
+}
+
+.patient-dashboard-shell .patient-achievement-item p:first-child {
+  color: #1e1b4b !important;
+  -webkit-text-fill-color: #1e1b4b !important;
+}
+
+.dark .patient-dashboard-shell .patient-achievement-item p:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
