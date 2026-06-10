@@ -2831,11 +2831,16 @@ html:not(.dark) .fch-dashboard-mobile-logo span.uppercase {
   box-shadow: 0 22px 65px -35px rgba(14, 165, 233, 0.70) !important;
 }
 
-.patient-dashboard-shell .patient-card-orange,
-.patient-store-card {
+.patient-dashboard-shell .patient-card-orange {
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(251, 146, 60, 0.10)) !important;
   border: 1px solid rgba(251, 146, 60, 0.30) !important;
   box-shadow: 0 22px 65px -35px rgba(249, 115, 22, 0.72) !important;
+}
+
+.patient-store-card {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.20), rgba(56, 189, 248, 0.12)) !important;
+  border: 1px solid rgba(125, 211, 252, 0.34) !important;
+  box-shadow: 0 22px 65px -35px rgba(14, 165, 233, 0.72) !important;
 }
 
 .patient-dashboard-shell .patient-card-green {
@@ -2858,8 +2863,8 @@ html:not(.dark) .fch-dashboard-mobile-logo span.uppercase {
 
 .patient-dashboard-shell .patient-card-purple::before { background: radial-gradient(circle at 82% 10%, rgba(167, 139, 250, 0.24), transparent 35%); }
 .patient-dashboard-shell .patient-card-blue::before { background: radial-gradient(circle at 82% 10%, rgba(125, 211, 252, 0.24), transparent 35%); }
-.patient-dashboard-shell .patient-card-orange::before,
-.patient-store-card::before { background: radial-gradient(circle at 82% 10%, rgba(251, 146, 60, 0.25), transparent 35%); }
+.patient-dashboard-shell .patient-card-orange::before { background: radial-gradient(circle at 82% 10%, rgba(251, 146, 60, 0.25), transparent 35%); }
+.patient-store-card::before { background: radial-gradient(circle at 82% 10%, rgba(125, 211, 252, 0.28), transparent 35%); }
 .patient-dashboard-shell .patient-card-green::before { background: radial-gradient(circle at 82% 10%, rgba(110, 231, 183, 0.24), transparent 35%); }
 
 .patient-dashboard-shell .patient-card-purple > *,
@@ -2902,11 +2907,16 @@ html:not(.dark) .fch-dashboard-mobile-logo span.uppercase {
   box-shadow: 0 22px 55px -34px rgba(14, 165, 233, 0.45) !important;
 }
 
-:root[data-theme="light"] .patient-dashboard-shell .patient-card-orange,
-:root[data-theme="light"] .patient-store-card {
+:root[data-theme="light"] .patient-dashboard-shell .patient-card-orange {
   background: linear-gradient(135deg, #FFF3E8, #FFFFFF) !important;
   border-color: #FDBA74 !important;
   box-shadow: 0 22px 55px -34px rgba(249, 115, 22, 0.42) !important;
+}
+
+:root[data-theme="light"] .patient-store-card {
+  background: linear-gradient(135deg, #E0F2FE, #F8FCFF) !important;
+  border-color: #7DD3FC !important;
+  box-shadow: 0 22px 55px -34px rgba(14, 165, 233, 0.45) !important;
 }
 
 :root[data-theme="light"] .patient-dashboard-shell .patient-card-green {
@@ -3070,9 +3080,18 @@ html:not(.dark) .patient-store-card + div > div[class*="absolute"] {
 }
 
 /* Garante que conteúdo fique acima de qualquer efeito */
-html:not(.dark) .patient-store-card + div > * {
+html:not(.dark) .patient-store-card + div > *:not(.absolute) {
   position: relative !important;
   z-index: 5 !important;
+}
+
+html:not(.dark) .patient-store-card + div > .absolute,
+html:not(.dark) .patient-store-card + div > [class~="absolute"] {
+  position: absolute !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Ícone principal */
@@ -3262,5 +3281,50 @@ html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(
   html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) > div {
     margin-top: 0 !important;
     padding-top: 0 !important;
+  }
+}
+
+
+/* =========================================================
+   Fix final — Jornada de Recuperação sem espaço gigante
+   O espaço era causado por overrides no index que transformavam
+   elementos absolute em blocos normais no tema claro.
+   ========================================================= */
+html:not(.dark) .patient-journey-card {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+html:not(.dark) .patient-journey-card > *:not(.absolute) {
+  position: relative !important;
+  z-index: 5 !important;
+  margin-top: 0 !important;
+}
+
+html:not(.dark) .patient-journey-card > .absolute,
+html:not(.dark) .patient-journey-card > [class~="absolute"] {
+  position: absolute !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html:not(.dark) .patient-journey-card > .relative.flex {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html:not(.dark) .patient-journey-card .grid.grid-cols-3 {
+  margin-top: 1rem !important;
+}
+
+@media (max-width: 640px) {
+  html:not(.dark) .patient-journey-card {
+    padding: 1rem !important;
   }
 }
