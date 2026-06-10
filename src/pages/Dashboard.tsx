@@ -1484,7 +1484,12 @@ Promise.resolve({ count: realAppointmentsData.length }),
     );
 
   return (
-    <div className="dashboard-light-page min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500">
+    <div
+      className={cn(
+        "dashboard-light-page min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500",
+        !isPhysio && "patient-dashboard-shell",
+      )}
+    >
       <style>{`
         /* Dashboard: melhora o selo Story e força os ícones rápidos coloridos no tema claro sem alterar o dark mode */
         html:not(.dark) .dashboard-story-avatar > button,
