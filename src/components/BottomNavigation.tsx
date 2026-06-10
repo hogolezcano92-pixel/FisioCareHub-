@@ -39,21 +39,21 @@ const BottomNavigation: React.FC = () => {
   const items = useMemo(() => {
     if (isPatient) {
       return [
-        { name: 'Início', path: '/dashboard', icon: Home },
-        { name: 'Buscar', path: '/buscar-fisio', icon: Search },
-        { name: 'Jornada', path: '/jornada', icon: HeartPulse },
-        { name: 'Agenda', path: '/appointments', icon: Calendar },
-        { name: 'Perfil', path: '/profile', icon: User },
+        { name: 'Início', path: '/dashboard', icon: Home, iconClass: 'text-blue-600 dark:text-slate-300' },
+        { name: 'Buscar', path: '/buscar-fisio', icon: Search, iconClass: 'text-cyan-600 dark:text-slate-300' },
+        { name: 'Jornada', path: '/jornada', icon: HeartPulse, iconClass: 'text-violet-600 dark:text-slate-300' },
+        { name: 'Agenda', path: '/appointments', icon: Calendar, iconClass: 'text-indigo-600 dark:text-slate-300' },
+        { name: 'Perfil', path: '/profile', icon: User, iconClass: 'text-emerald-600 dark:text-slate-300' },
       ];
     }
 
     if (isPhysio) {
       return [
-        { name: 'Início', path: '/dashboard', icon: Home },
-        { name: 'Pacientes', path: '/patients', icon: Users },
-        { name: 'Agenda', path: '/agenda', icon: Calendar },
-        { name: 'Chat', path: '/chat', icon: MessageSquare },
-        { name: 'Perfil', path: '/profile', icon: User },
+        { name: 'Início', path: '/dashboard', icon: Home, iconClass: 'text-blue-600 dark:text-slate-300' },
+        { name: 'Pacientes', path: '/patients', icon: Users, iconClass: 'text-violet-600 dark:text-slate-300' },
+        { name: 'Agenda', path: '/agenda', icon: Calendar, iconClass: 'text-indigo-600 dark:text-slate-300' },
+        { name: 'Chat', path: '/chat', icon: MessageSquare, iconClass: 'text-cyan-600 dark:text-slate-300' },
+        { name: 'Perfil', path: '/profile', icon: User, iconClass: 'text-emerald-600 dark:text-slate-300' },
       ];
     }
 
@@ -68,9 +68,9 @@ const BottomNavigation: React.FC = () => {
       className="fixed bottom-0 left-0 right-0 z-[70] md:hidden pointer-events-none pb-[max(0.75rem,env(safe-area-inset-bottom))] px-3"
     >
       <div className="mx-auto max-w-md pointer-events-auto">
-        <div className="relative overflow-hidden rounded-[2rem] border border-indigo-100/90 bg-white/95 shadow-[0_18px_45px_rgba(59,130,246,0.20)] backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/82 dark:shadow-[0_24px_70px_rgba(2,6,23,0.55)]">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/80 via-violet-50/70 to-cyan-50/80 dark:from-blue-500/12 dark:via-violet-500/10 dark:to-cyan-400/10" />
-          <div className="absolute inset-x-8 -top-10 h-20 rounded-full bg-blue-300/25 blur-3xl dark:bg-blue-500/20" />
+        <div className="relative overflow-hidden rounded-[2rem] border border-indigo-100 bg-white shadow-[0_18px_45px_rgba(59,130,246,0.20)] backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/82 dark:shadow-[0_24px_70px_rgba(2,6,23,0.55)]">
+          <div className="absolute inset-0 bg-white dark:bg-gradient-to-r dark:from-blue-500/12 dark:via-violet-500/10 dark:to-cyan-400/10" />
+          <div className="absolute inset-x-8 -top-10 h-20 rounded-full bg-blue-100/60 blur-3xl dark:bg-blue-500/20" />
           <div className="relative grid grid-cols-5 items-center gap-1 px-2 py-2">
             {items.map((item) => {
               const Icon = item.icon;
@@ -82,7 +82,7 @@ const BottomNavigation: React.FC = () => {
                   to={item.path}
                   className={cn(
                     'relative flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[1.45rem] px-1 text-[10px] font-black transition-all active:scale-95',
-                    active ? 'text-white' : 'text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-white'
+                    active ? 'text-white' : 'text-slate-800 hover:text-blue-700 dark:text-slate-300 dark:hover:text-white'
                   )}
                 >
                   {active && (
@@ -96,12 +96,12 @@ const BottomNavigation: React.FC = () => {
                   <span
                     className={cn(
                       'relative flex h-6 w-6 items-center justify-center transition-transform duration-200',
-                      active ? 'scale-110 drop-shadow-[0_0_12px_rgba(255,255,255,0.55)]' : 'text-slate-700 dark:text-slate-300'
+                      active ? 'scale-110 drop-shadow-[0_0_12px_rgba(255,255,255,0.55)]' : item.iconClass
                     )}
                   >
                     <Icon size={22} strokeWidth={active ? 3 : 2.5} />
                   </span>
-                  <span className={cn('relative leading-none tracking-tight', active ? 'opacity-100' : 'opacity-85')}>
+                  <span className={cn('relative leading-none tracking-tight', active ? 'opacity-100' : 'text-slate-800 opacity-95 dark:text-slate-300 dark:opacity-85')}>
                     {item.name}
                   </span>
                 </Link>
