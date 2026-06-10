@@ -52,6 +52,7 @@ import LGPDModal from './components/LGPDModal';
 import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
+import BottomNavigation from './components/BottomNavigation';
 import IncomingVideoCallListener from './components/IncomingVideoCallListener';
 import WelcomeVideoModal from './components/WelcomeVideoModal';
 import { preloadOnboardingCriticalAssets } from './utils/preloadOnboardingAssets';
@@ -686,6 +687,11 @@ function AppContent() {
     [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]
   );
 
+  const showMobileBottomNavigation = useMemo(() =>
+    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage),
+    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage]
+  );
+
   useEffect(() => {
     if (isPasswordRecovery && location.pathname !== '/reset-password') {
       navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
@@ -741,7 +747,8 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
-              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10"
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10",
+              showMobileBottomNavigation && "pb-28 md:pb-0"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -810,6 +817,8 @@ function AppContent() {
 
             {!isAdminPage && location.pathname !== '/chat' && <Footer />}
           </main>
+
+          {showMobileBottomNavigation && <BottomNavigation />}
         </div>
       </ErrorBoundary>
     </div>
