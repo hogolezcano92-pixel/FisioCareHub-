@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,11 +39,56 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
+const SIDEBAR_BG_CANDIDATES = [
+  '/images/sidebar/physio-bg.png',
+  '/images/sidebar/physio-bg.jpg',
+  '/images/sidebar/physio-bg.jpeg',
+  '/images/sidebar/physio-bg.webp',
+  '/images/sidebar/physio-bg.avif',
+  '/images/sidebar/physio-bg.svg',
+];
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, subscription, signOut } = useAuth();
+
+  const [sidebarBgUrl, setSidebarBgUrl] = useState(SIDEBAR_BG_CANDIDATES[0]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCandidate = (index: number) => {
+      const candidate = SIDEBAR_BG_CANDIDATES[index];
+
+      if (!candidate || typeof window === 'undefined') {
+        return;
+      }
+
+      const image = new Image();
+
+      image.onload = () => {
+        if (!cancelled) {
+          setSidebarBgUrl(candidate);
+        }
+      };
+
+      image.onerror = () => {
+        if (!cancelled && index < SIDEBAR_BG_CANDIDATES.length - 1) {
+          loadCandidate(index + 1);
+        }
+      };
+
+      image.src = candidate;
+    };
+
+    loadCandidate(0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -356,9 +401,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           bottom: 96px;
           z-index: 0;
           pointer-events: none;
-          background-image: url('/images/sidebar/physio-bg.png');
-          background-size: cover;
-          background-position: center top;
+          background-image: var(--sidebar-bg-image, url('/images/sidebar/physio-bg.png'));
+          background-size: contain;
+          background-position: center center;
           background-repeat: no-repeat;
           opacity: 0.22;
           mix-blend-mode: multiply;
@@ -503,7 +548,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </div>
 
         {/* Imagem de fundo do Sidebar - coloque o arquivo em public/images/sidebar/physio-bg.png */}
-        <div className="fisio-sidebar-image-bg" aria-hidden="true" />
+        <div
+          className="fisio-sidebar-image-bg"
+          aria-hidden="true"
+          style={{ '--sidebar-bg-image': `url(${sidebarBgUrl})` } as React.CSSProperties}
+        />
 
         {/* Navigation Sections */}
         <nav className="relative z-10 flex-1 overflow-y-auto py-5 px-4 space-y-5 custom-scrollbar">
