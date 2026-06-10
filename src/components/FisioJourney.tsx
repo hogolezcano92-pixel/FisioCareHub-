@@ -964,7 +964,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_18px_45px_rgba(88,28,135,0.12)] dark:border-white/10 dark:bg-slate-950/80 dark:shadow-violet-950/25">
+            <div className="journey-quick-actions-card relative overflow-hidden rounded-[2rem] border border-violet-200 bg-white p-5 shadow-[0_18px_45px_rgba(88,28,135,0.12)] dark:border-white/10 dark:bg-slate-950/80 dark:shadow-violet-950/25">
               <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-violet-200/80 blur-3xl dark:bg-violet-600/25" />
               <div className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-cyan-200/70 blur-3xl dark:bg-cyan-500/20" />
 
@@ -990,7 +990,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
                   <button
                     type="button"
                     onClick={() => setCheckinOpen(true)}
-                    className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+                    className="journey-quick-action-link journey-quick-action-purple group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
                     style={{
                       background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 42%, #2563eb 100%)',
                       color: '#ffffff',
@@ -1016,7 +1016,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
 
                 <Link
                   to={isPhysioMode ? `${patientDetailsPath}?tab=ficha` : '/treinos'}
-                  className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+                  className="journey-quick-action-link journey-quick-action-blue group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
                   style={{
                     background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 48%, #2563eb 100%)',
                     color: '#ffffff',
@@ -1041,7 +1041,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
 
                 <Link
                   to="/chat"
-                  className="group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+                  className="journey-quick-action-link journey-quick-action-green group flex w-full items-center justify-between rounded-[1.35rem] border px-4 py-4 text-left shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
                   style={{
                     background: 'linear-gradient(135deg, #10b981 0%, #059669 46%, #0f766e 100%)',
                     color: '#ffffff',
@@ -1066,7 +1066,7 @@ export default function FisioJourney({ patientId, patient, mode = 'patient', com
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-violet-200 bg-violet-700 p-5 text-white shadow-sm">
+            <div className="journey-family-card rounded-[2rem] border border-violet-200 bg-violet-700 p-5 text-white shadow-sm">
               <div className="flex items-center gap-3"><Users size={24} /><div><h2 className="text-lg font-black">Modo família</h2><p className="text-sm font-semibold text-violet-100">Preparado para uma próxima fase com convite seguro para cuidador/familiar.</p></div></div>
             </div>
           </aside>
