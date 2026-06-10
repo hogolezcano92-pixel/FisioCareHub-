@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,56 +39,11 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const SIDEBAR_BG_CANDIDATES = [
-  '/images/sidebar/physio-bg.png',
-  '/images/sidebar/physio-bg.jpg',
-  '/images/sidebar/physio-bg.jpeg',
-  '/images/sidebar/physio-bg.webp',
-  '/images/sidebar/physio-bg.avif',
-  '/images/sidebar/physio-bg.svg',
-];
-
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, subscription, signOut } = useAuth();
-
-  const [sidebarBgUrl, setSidebarBgUrl] = useState(SIDEBAR_BG_CANDIDATES[0]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCandidate = (index: number) => {
-      const candidate = SIDEBAR_BG_CANDIDATES[index];
-
-      if (!candidate || typeof window === 'undefined') {
-        return;
-      }
-
-      const image = new Image();
-
-      image.onload = () => {
-        if (!cancelled) {
-          setSidebarBgUrl(candidate);
-        }
-      };
-
-      image.onerror = () => {
-        if (!cancelled && index < SIDEBAR_BG_CANDIDATES.length - 1) {
-          loadCandidate(index + 1);
-        }
-      };
-
-      image.src = candidate;
-    };
-
-    loadCandidate(0);
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -199,8 +154,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
     if (location.pathname !== itemPathname) return false;
 
-    // Quando o item tem query string, compara também os parâmetros.
-    // Isso deixa ativo links como /profile?tab=earnings e /admin?tab=users.
     if (itemSearch) {
       const itemParams = new URLSearchParams(itemSearch);
       return Array.from(itemParams.entries()).every(
@@ -208,8 +161,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       );
     }
 
-    // Para rotas sem query, só marca ativo quando a página atual também não tem query.
-    // Assim "Minha conta" não fica ativo junto com "Financeiro".
     return !location.search;
   };
 
@@ -242,7 +193,48 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const sidebarContent = (
     <>
       <style>{`
-        /* Light mode: igual ao dark mode, sem cards nas abas */
+        .fisio-sidebar-shell {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .fisio-sidebar-image-bg {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 108px;
+          bottom: 92px;
+          z-index: 0;
+          pointer-events: none;
+          background-image: image-set(
+            url('/images/sidebar/physio-bg.avif') type('image/avif'),
+            url('/images/sidebar/physio-bg.webp') type('image/webp'),
+            url('/images/sidebar/physio-bg.png') type('image/png'),
+            url('/images/sidebar/physio-bg.jpg') type('image/jpeg'),
+            url('/images/sidebar/physio-bg.jpeg') type('image/jpeg'),
+            url('/images/sidebar/physio-bg.svg') type('image/svg+xml')
+          );
+          background-repeat: no-repeat;
+          background-position: center 14px;
+          background-size: 92% auto;
+          transform: none;
+          filter: saturate(1.05) contrast(1.02);
+        }
+
+        .fisio-sidebar-image-overlay {
+          position: absolute;
+          inset: 108px 0 92px 0;
+          z-index: 1;
+          pointer-events: none;
+          background: linear-gradient(
+            180deg,
+            rgba(255,255,255,0.05) 0%,
+            rgba(255,255,255,0.02) 18%,
+            rgba(255,255,255,0.00) 40%,
+            rgba(255,255,255,0.04) 100%
+          );
+        }
+
         html:not(.dark) .fisio-sidebar-shell,
         body.light .fisio-sidebar-shell,
         html.light .fisio-sidebar-shell,
@@ -252,6 +244,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             radial-gradient(circle at 88% 22%, rgba(59, 130, 246, 0.08), transparent 28%),
             linear-gradient(180deg, #EFE8FF 0%, #F5F0FF 46%, #F0E9FF 100%) !important;
           border-right: none !important;
+        }
+
+        html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-image-bg,
+        body.light .fisio-sidebar-shell .fisio-sidebar-image-bg,
+        html.light .fisio-sidebar-shell .fisio-sidebar-image-bg,
+        :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-image-bg {
+          opacity: 0.32;
         }
 
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-logo-area,
@@ -277,7 +276,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           opacity: 1 !important;
         }
 
-        /* Sem card nas abas */
         html:not(.dark) .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
         body.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
         html.light .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
@@ -342,7 +340,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           stroke: #FFFFFF !important;
         }
 
-        /* Mantém o card do perfil como no dark mode */
         html:not(.dark) .fisio-sidebar-shell .fisio-sidebar-profile-area,
         body.light .fisio-sidebar-shell .fisio-sidebar-profile-area,
         html.light .fisio-sidebar-shell .fisio-sidebar-profile-area,
@@ -355,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         body.light .fisio-sidebar-shell .fisio-sidebar-profile-card,
         html.light .fisio-sidebar-shell .fisio-sidebar-profile-card,
         :root[data-theme="light"] .fisio-sidebar-shell .fisio-sidebar-profile-card {
-          background: rgba(255, 255, 255, 0.5) !important;
+          background: rgba(255, 255, 255, 0.50) !important;
           border: 1px solid rgba(255, 255, 255, 0.35) !important;
           box-shadow: 0 14px 30px -26px rgba(88, 28, 135, 0.4) !important;
           backdrop-filter: blur(10px) !important;
@@ -377,7 +374,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           opacity: 1 !important;
         }
 
-        /* Esconde scrollbar para ficar igual ao dark */
         .fisio-sidebar-shell nav::-webkit-scrollbar {
           width: 0px;
           height: 0px;
@@ -387,62 +383,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           scrollbar-width: none;
         }
 
-        /* Imagem de fundo do Sidebar - apenas abaixo do header/logo */
-        .fisio-sidebar-shell {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .fisio-sidebar-image-bg {
-          position: absolute;
-          left: 0;
-          right: 0;
-          top: 116px;
-          bottom: 96px;
-          z-index: 0;
-          pointer-events: none;
-          background-image: var(--sidebar-bg-image, url('/images/sidebar/physio-bg.png'));
-          background-size: contain;
-          background-position: center center;
-          background-repeat: no-repeat;
-          opacity: 0.22;
-          mix-blend-mode: multiply;
-          filter: saturate(0.96) contrast(1.04);
-        }
-
-        .fisio-sidebar-image-bg::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background:
-            linear-gradient(180deg, rgba(245, 240, 255, 0.24), rgba(245, 240, 255, 0.08) 42%, rgba(245, 240, 255, 0.32)),
-            linear-gradient(90deg, rgba(245, 240, 255, 0.18), transparent 42%);
-        }
-
-        .fisio-sidebar-shell nav,
-        .fisio-sidebar-profile-area,
-        .fisio-sidebar-logo-area {
-          position: relative;
-          z-index: 2;
-        }
-
-        html.dark .fisio-sidebar-image-bg,
-        body.dark .fisio-sidebar-image-bg,
-        :root[data-theme="dark"] .fisio-sidebar-image-bg {
-          opacity: 0.11;
-          mix-blend-mode: screen;
-          filter: saturate(0.75) contrast(1.05) brightness(0.9);
-        }
-
-        html.dark .fisio-sidebar-image-bg::after,
-        body.dark .fisio-sidebar-image-bg::after,
-        :root[data-theme="dark"] .fisio-sidebar-image-bg::after {
-          background:
-            linear-gradient(180deg, rgba(9, 13, 26, 0.28), rgba(9, 13, 26, 0.04) 44%, rgba(9, 13, 26, 0.44)),
-            linear-gradient(90deg, rgba(9, 13, 26, 0.18), transparent 42%);
-        }
-
-        /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
         html.dark .fisio-sidebar-shell,
         body.dark .fisio-sidebar-shell,
         :root[data-theme="dark"] .fisio-sidebar-shell {
@@ -451,6 +391,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             radial-gradient(circle at 88% 18%, rgba(59, 130, 246, 0.08), transparent 28%),
             linear-gradient(180deg, #090D1A 0%, #0A1021 48%, #080D1A 100%) !important;
           border-right: 1px solid rgba(148, 163, 184, 0.10) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .fisio-sidebar-image-bg,
+        body.dark .fisio-sidebar-shell .fisio-sidebar-image-bg,
+        :root[data-theme="dark"] .fisio-sidebar-shell .fisio-sidebar-image-bg {
+          opacity: 0.22;
+          filter: brightness(1.02) saturate(1.02) contrast(1.06);
+        }
+
+        html.dark .fisio-sidebar-shell .fisio-sidebar-image-overlay,
+        body.dark .fisio-sidebar-shell .fisio-sidebar-image-overlay,
+        :root[data-theme="dark"] .fisio-sidebar-shell .fisio-sidebar-image-overlay {
+          background: linear-gradient(
+            180deg,
+            rgba(9,13,26,0.05) 0%,
+            rgba(9,13,26,0.01) 20%,
+            rgba(9,13,26,0.00) 46%,
+            rgba(9,13,26,0.10) 100%
+          );
         }
 
         html.dark .fisio-sidebar-shell .fisio-sidebar-logo-area,
@@ -541,18 +500,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
       <div className="fisio-sidebar-shell flex flex-col h-full bg-background border-r border-white/5">
         {/* Logo Section */}
-        <div className="fisio-sidebar-logo-area p-6 border-b border-white/5">
+        <div className="fisio-sidebar-logo-area relative z-10 p-6 border-b border-white/5">
           <Link to="/dashboard" onClick={() => setIsOpen(false)}>
             <Logo size="sm" variant="light" />
           </Link>
         </div>
 
-        {/* Imagem de fundo do Sidebar - coloque o arquivo em public/images/sidebar/physio-bg.png */}
-        <div
-          className="fisio-sidebar-image-bg"
-          aria-hidden="true"
-          style={{ '--sidebar-bg-image': `url(${sidebarBgUrl})` } as React.CSSProperties}
-        />
+        {/* Background image */}
+        <div className="fisio-sidebar-image-bg" aria-hidden="true" />
+        <div className="fisio-sidebar-image-overlay" aria-hidden="true" />
 
         {/* Navigation Sections */}
         <nav className="relative z-10 flex-1 overflow-y-auto py-5 px-4 space-y-5 custom-scrollbar">
