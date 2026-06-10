@@ -3218,37 +3218,49 @@ html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div span {
     color: #334155 !important;
   }
 }
-/* Correção: remove espaço grande no card Jornada de Recuperação - tema claro */
-html:not(.dark) .patient-journey-card,
-html:not(.dark) [data-card="patient-journey"],
-html:not(.dark) section:has(button[aria-label="Abrir jornada"]),
-html:not(.dark) div:has(> button):has(h2):has(svg) {
-  min-height: auto !important;
-  height: auto !important;
-}
+/* =========================================================
+   CORREÇÃO ESPECÍFICA — JORNADA DE RECUPERAÇÃO NO DASHBOARD
+   Remove o espaço gigante no tema claro
+   ========================================================= */
 
-/* Ajuste específico para o bloco visual da Jornada */
-html:not(.dark) .patient-journey-card,
-html:not(.dark) [data-card="patient-journey"] {
+html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
   padding-top: 1.25rem !important;
   padding-bottom: 1.25rem !important;
+  display: block !important;
 }
 
-/* Se o espaço foi causado por pseudo-elemento/blur decorativo */
-html:not(.dark) .patient-journey-card::before,
-html:not(.dark) .patient-journey-card::after,
-html:not(.dark) [data-card="patient-journey"]::before,
-html:not(.dark) [data-card="patient-journey"]::after {
-  max-height: 180px !important;
+/* Remove qualquer empurrão vertical interno que esteja jogando o conteúdo para baixo */
+html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) > div {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  transform: none !important;
 }
 
-/* Mobile: deixa o card compacto novamente */
+/* Garante que o bloco do texto fique no topo normal */
+html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) h2 {
+  margin-top: 0 !important;
+}
+
+/* Reduz elementos decorativos absolutos que podem estar criando altura visual */
+html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) > .absolute {
+  max-height: 160px !important;
+  opacity: 0.45 !important;
+}
+
+/* Mobile */
 @media (max-width: 768px) {
-  html:not(.dark) .patient-journey-card,
-  html:not(.dark) [data-card="patient-journey"],
-  html:not(.dark) section:has(button[aria-label="Abrir jornada"]) {
-    min-height: auto !important;
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+  html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 1rem !important;
+  }
+
+  html:not(.dark) div[class*="rounded-[2rem]"][class*="bg-violet-50"]:has(h2):has(button) > div {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 }
