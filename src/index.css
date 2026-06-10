@@ -3402,3 +3402,229 @@ html:not(.dark) .patient-card-assistant {
     box-shadow: 0 18px 36px rgba(76, 29, 149, 0.22) !important;
   }
 }
+
+/* =========================================================
+   Dashboard do Paciente — contraste premium reforçado
+   Deixa cards, títulos, subtítulos, métricas e números
+   mais fortes e nítidos no tema claro, sem afetar o fisio.
+   ========================================================= */
+html:not(.dark) .patient-dashboard-shell {
+  background:
+    radial-gradient(circle at top left, rgba(191, 219, 254, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(221, 214, 254, 0.18), transparent 22%),
+    linear-gradient(180deg, #f8f8ff 0%, #f4f6ff 48%, #f0f4ff 100%) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell header,
+html:not(.dark) .patient-dashboard-shell .premium-card,
+html:not(.dark) .patient-dashboard-shell [class*="backdrop-blur-xl"][class*="rounded-2xl"],
+html:not(.dark) .patient-dashboard-shell [class*="backdrop-blur-xl"][class*="rounded-3xl"],
+html:not(.dark) .patient-dashboard-shell [class*="backdrop-blur-3xl"][class*="rounded-[2rem]"] {
+  border-color: rgba(148, 163, 184, 0.20) !important;
+  box-shadow:
+    0 18px 42px rgba(148, 163, 184, 0.14),
+    0 8px 18px rgba(99, 102, 241, 0.06) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell h1,
+html:not(.dark) .patient-dashboard-shell h2,
+html:not(.dark) .patient-dashboard-shell h3,
+html:not(.dark) .patient-dashboard-shell h4 {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell p,
+html:not(.dark) .patient-dashboard-shell span,
+html:not(.dark) .patient-dashboard-shell label,
+html:not(.dark) .patient-dashboard-shell small,
+html:not(.dark) .patient-dashboard-shell li {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell p,
+html:not(.dark) .patient-dashboard-shell label,
+html:not(.dark) .patient-dashboard-shell small,
+html:not(.dark) .patient-dashboard-shell li,
+html:not(.dark) .patient-dashboard-shell .text-slate-400,
+html:not(.dark) .patient-dashboard-shell .text-slate-500,
+html:not(.dark) .patient-dashboard-shell .text-gray-400,
+html:not(.dark) .patient-dashboard-shell .text-gray-500 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .text-slate-600,
+html:not(.dark) .patient-dashboard-shell .text-slate-700,
+html:not(.dark) .patient-dashboard-shell .text-gray-600,
+html:not(.dark) .patient-dashboard-shell .text-gray-700 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .font-black,
+html:not(.dark) .patient-dashboard-shell .font-extrabold,
+html:not(.dark) .patient-dashboard-shell .font-bold {
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell div.text-2xl,
+html:not(.dark) .patient-dashboard-shell div.text-xl,
+html:not(.dark) .patient-dashboard-shell div.text-lg,
+html:not(.dark) .patient-dashboard-shell p.text-2xl,
+html:not(.dark) .patient-dashboard-shell p.text-xl,
+html:not(.dark) .patient-dashboard-shell p.text-lg,
+html:not(.dark) .patient-dashboard-shell span.text-2xl,
+html:not(.dark) .patient-dashboard-shell span.text-xl,
+html:not(.dark) .patient-dashboard-shell span.text-lg {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .text-white {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant,
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant *,
+html:not(.dark) .patient-dashboard-shell .patient-journey-card button,
+html:not(.dark) .patient-dashboard-shell .patient-journey-card button *,
+html:not(.dark) .patient-dashboard-shell .patient-store-card button[class*="bg-gradient-to"],
+html:not(.dark) .patient-dashboard-shell .patient-store-card button[class*="bg-gradient-to"] *,
+html:not(.dark) .patient-dashboard-shell .btn-primary-compact,
+html:not(.dark) .patient-dashboard-shell .btn-primary-compact *,
+html:not(.dark) .patient-dashboard-shell button[class*="bg-gradient-to-r"],
+html:not(.dark) .patient-dashboard-shell button[class*="bg-gradient-to-r"] * {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input,
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input::placeholder {
+  color: #94a3b8 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .premium-card,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-sky-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-emerald-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-orange-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-blue-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-violet-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-indigo-50 {
+  background-blend-mode: normal !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .premium-card .divide-y > div,
+html:not(.dark) .patient-dashboard-shell .premium-card [class*="hover:bg-white/5"] {
+  background-color: rgba(255, 255, 255, 0.55) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .premium-card .divide-y > div:hover,
+html:not(.dark) .patient-dashboard-shell .premium-card [class*="hover:bg-white/5"]:hover {
+  background-color: rgba(241, 245, 249, 0.92) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .premium-card .divide-y,
+html:not(.dark) .patient-dashboard-shell .divide-y.divide-white\/5 {
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="bg-sky-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-emerald-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-indigo-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-orange-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-amber-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-rose-500/10"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-purple-500/10"] {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-sky-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-sky-500"] {
+  color: #0284c7 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-emerald-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-emerald-500"] {
+  color: #059669 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-indigo-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-indigo-500"] {
+  color: #4338ca !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-orange-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-orange-500"] {
+  color: #ea580c !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-amber-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-amber-500"] {
+  color: #d97706 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-rose-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-rose-500"] {
+  color: #e11d48 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="text-purple-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-purple-500"],
+html:not(.dark) .patient-dashboard-shell [class*="text-violet-400"],
+html:not(.dark) .patient-dashboard-shell [class*="text-violet-500"] {
+  color: #7c3aed !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="border-sky-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-sky-200"] {
+  border-color: rgba(125, 211, 252, 0.72) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="border-emerald-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-emerald-200"] {
+  border-color: rgba(110, 231, 183, 0.72) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="border-orange-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-orange-200"] {
+  border-color: rgba(253, 186, 116, 0.72) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="border-blue-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-blue-200"] {
+  border-color: rgba(147, 197, 253, 0.72) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell [class*="border-violet-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-violet-200"],
+html:not(.dark) .patient-dashboard-shell [class*="border-indigo-100"],
+html:not(.dark) .patient-dashboard-shell [class*="border-indigo-200"] {
+  border-color: rgba(196, 181, 253, 0.78) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .w-px.h-8 {
+  background: rgba(148, 163, 184, 0.38) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .shadow-sky-100\/60,
+html:not(.dark) .patient-dashboard-shell .shadow-emerald-100\/60,
+html:not(.dark) .patient-dashboard-shell .shadow-orange-100\/60,
+html:not(.dark) .patient-dashboard-shell .shadow-blue-100\/60 {
+  box-shadow: 0 20px 42px rgba(148, 163, 184, 0.12) !important;
+}
+
+@media (max-width: 768px) {
+  html:not(.dark) .patient-dashboard-shell h1,
+  html:not(.dark) .patient-dashboard-shell h2,
+  html:not(.dark) .patient-dashboard-shell h3,
+  html:not(.dark) .patient-dashboard-shell h4 {
+    letter-spacing: -0.02em;
+  }
+
+  html:not(.dark) .patient-dashboard-shell header,
+  html:not(.dark) .patient-dashboard-shell .premium-card,
+  html:not(.dark) .patient-dashboard-shell [class*="backdrop-blur-xl"][class*="rounded-2xl"] {
+    box-shadow:
+      0 14px 32px rgba(148, 163, 184, 0.12),
+      0 6px 14px rgba(99, 102, 241, 0.05) !important;
+  }
+}
