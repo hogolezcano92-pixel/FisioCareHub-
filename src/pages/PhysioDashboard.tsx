@@ -27,6 +27,7 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import ApprovalWelcomeModal from '../components/ApprovalWelcomeModal';
+import PhysioEvaluationModal from '../components/FisioCare/PhysioEvaluationModal';
 import ProGuard from '../components/ProGuard';
 import ProductStoreCarousel from '../components/ProductStoreCarousel';
 import ClinicalUpdatesCarousel from '../components/FisioCare/ClinicalUpdatesCarousel';
@@ -110,6 +111,8 @@ export default function PhysioDashboard() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showPhysioEvaluation, setShowPhysioEvaluation] = useState(false);
+  const [pendingPhysioEvaluation, setPendingPhysioEvaluation] = useState<any>(null);
   const [filter, setFilter] = useState({
     location: '',
     specialty: '',
@@ -159,6 +162,68 @@ export default function PhysioDashboard() {
     };
   })();
 
+  const checkPendingPhysioEvaluations = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data: completedAppointments, error: appointmentError } = await supabase
+        .from('agendamentos')
+        .select(`
+          id,
+          paciente_id,
+          fisio_id,
+          status,
+          status_pagamento,
+          payment_status,
+          pagamento_status,
+          status_payment,
+          data,
+          hora,
+          data_servico,
+          paciente:perfis!paciente_id(nome_completo, avatar_url)
+        `)
+        .eq('fisio_id', user.id)
+        .in('status', REAL_APPOINTMENT_STATUSES)
+        .order('data_servico', { ascending: false });
+
+      if (appointmentError) throw appointmentError;
+
+      const appointmentsToCheck = (completedAppointments || []).filter(hasRealConfirmedAppointment);
+      if (appointmentsToCheck.length === 0) return;
+
+      const appointmentIds = appointmentsToCheck.map((appointment: any) => appointment.id).filter(Boolean);
+
+      const { data: evaluations, error: evaluationError } = await supabase
+        .from('avaliacoes')
+        .select('agendamento_id, nota_paciente, nota_plataforma_profissional, avaliado_por_fisio_em')
+        .eq('profissional_id', user.id)
+        .in('agendamento_id', appointmentIds);
+
+      if (evaluationError) throw evaluationError;
+
+      const evaluatedByPhysioIds = new Set(
+        (evaluations || [])
+          .filter((evaluation: any) => Boolean(evaluation.avaliado_por_fisio_em || evaluation.nota_paciente || evaluation.nota_plataforma_profissional))
+          .map((evaluation: any) => evaluation.agendamento_id),
+      );
+
+      const appointmentToEvaluate = appointmentsToCheck.find((appointment: any) => !evaluatedByPhysioIds.has(appointment.id));
+
+      if (appointmentToEvaluate) {
+        setPendingPhysioEvaluation({
+          id: appointmentToEvaluate.id,
+          paciente_id: appointmentToEvaluate.paciente_id,
+          paciente_nome: Array.isArray(appointmentToEvaluate.paciente)
+            ? appointmentToEvaluate.paciente[0]?.nome_completo
+            : appointmentToEvaluate.paciente?.nome_completo,
+        });
+        setShowPhysioEvaluation(true);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar avaliações pendentes do fisioterapeuta:', err);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -204,6 +269,8 @@ export default function PhysioDashboard() {
       } else {
         setReviews((reviewsData || []) as Review[]);
       }
+
+      await checkPendingPhysioEvaluations();
     } catch (err) {
       console.error('Erro ao buscar dados do dashboard:', err);
     } finally {
@@ -427,6 +494,15 @@ export default function PhysioDashboard() {
       </div>
       <FloatingHelpMenu />
       {showWelcome && <ApprovalWelcomeModal onClose={() => setShowWelcome(false)} />}
+      {user && pendingPhysioEvaluation && (
+        <PhysioEvaluationModal
+          isOpen={showPhysioEvaluation}
+          onClose={() => setShowPhysioEvaluation(false)}
+          appointment={pendingPhysioEvaluation}
+          physioId={profile?.id || user.id}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 }

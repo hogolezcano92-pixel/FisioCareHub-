@@ -691,33 +691,42 @@ export default function Dashboard() {
         .from("agendamentos")
         .select(
           `
-          id, 
+          id,
           fisio_id,
           status,
           status_pagamento,
           payment_status,
+          pagamento_status,
+          status_payment,
+          data,
+          hora,
+          data_servico,
           fisioterapeuta:perfis!fisio_id(nome_completo)
         `,
         )
         .eq("paciente_id", userId)
-        .eq("status", "concluido")
-        .in("status_pagamento", PAID_APPOINTMENT_PAYMENT_STATUSES)
+        .in("status", REAL_APPOINTMENT_STATUSES)
         .order("data_servico", { ascending: false });
 
       if (apptError) throw apptError;
-      if (!appointments || appointments.length === 0) return;
+
+      const appointmentsToCheck = (appointments || []).filter(hasRealConfirmedAppointment);
+      if (appointmentsToCheck.length === 0) return;
+
+      const appointmentIds = appointmentsToCheck.map((appointment: any) => appointment.id).filter(Boolean);
 
       const { data: evaluations, error: evalError } = await supabase
         .from("avaliacoes")
         .select("agendamento_id")
-        .eq("paciente_id", userId);
+        .eq("paciente_id", userId)
+        .in("agendamento_id", appointmentIds);
 
       if (evalError) throw evalError;
 
       const evaluatedIds = new Set(
         evaluations?.map((e) => e.agendamento_id) || [],
       );
-      const apptToEvaluate = appointments.find((a) => !evaluatedIds.has(a.id));
+      const apptToEvaluate = appointmentsToCheck.find((a) => !evaluatedIds.has(a.id));
 
       if (apptToEvaluate) {
         setPendingEvaluation({
