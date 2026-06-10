@@ -3285,3 +3285,127 @@ html:not(.dark) .patient-store-card + div .grid.grid-cols-3 {
     padding-bottom: 24px !important;
   }
 }
+/* =========================================================
+   FIX DEFINITIVO - Jornada de Recuperação sem espaço vazio
+   Tema claro / mobile
+   Cole no FINAL do index.css
+========================================================= */
+
+@media (max-width: 768px) {
+  html:not(.dark) .patient-store-card + div:has(h2),
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+
+    padding: 24px !important;
+    margin-top: 28px !important;
+    overflow: hidden !important;
+
+    background:
+      radial-gradient(circle at 92% 18%, rgba(139, 92, 246, 0.18), transparent 32%),
+      radial-gradient(circle at 8% 8%, rgba(124, 58, 237, 0.12), transparent 30%),
+      linear-gradient(135deg, #ffffff 0%, #fbf8ff 45%, #f1e8ff 100%) !important;
+
+    border: 1.5px solid rgba(139, 92, 246, 0.42) !important;
+    border-radius: 32px !important;
+    box-shadow:
+      0 22px 44px rgba(109, 40, 217, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  }
+
+  /* Remove qualquer espaçador invisível no topo */
+  html:not(.dark) .patient-store-card + div:has(h2)::before,
+  html:not(.dark) .patient-store-card + div:has(h2)::after,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3)::before,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3)::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Faz o bloco principal subir para o topo */
+  html:not(.dark) .patient-store-card + div:has(h2) > div,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) > div {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Esconde bolhas absolutas que estavam criando área visual grande */
+  html:not(.dark) .patient-store-card + div:has(h2) > div[class*="absolute"],
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) > div[class*="absolute"] {
+    display: none !important;
+  }
+
+  /* Cabeçalho da Jornada */
+  html:not(.dark) .patient-store-card + div:has(h2) .flex.items-start,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .flex.items-start {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  html:not(.dark) .patient-store-card + div:has(h2) h2,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) h2 {
+    margin-top: 4px !important;
+    margin-bottom: 10px !important;
+    color: #111827 !important;
+    opacity: 1 !important;
+    line-height: 1.08 !important;
+  }
+
+  html:not(.dark) .patient-store-card + div:has(h2) h2 + p,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) h2 + p {
+    margin-top: 8px !important;
+    margin-bottom: 18px !important;
+    color: #334155 !important;
+    opacity: 1 !important;
+    font-weight: 800 !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Botão */
+  html:not(.dark) .patient-store-card + div:has(h2) button,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) button {
+    margin-top: 0 !important;
+    margin-bottom: 18px !important;
+    min-height: 58px !important;
+
+    background: linear-gradient(90deg, #a855f7 0%, #7c3aed 48%, #4c1d95 100%) !important;
+    color: #ffffff !important;
+    box-shadow:
+      0 16px 32px rgba(109, 40, 217, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  }
+
+  /* Progresso / Dor / Sessões */
+  html:not(.dark) .patient-store-card + div:has(h2) .grid.grid-cols-3,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .grid.grid-cols-3 {
+    margin-top: 0 !important;
+    padding: 8px !important;
+    gap: 8px !important;
+
+    background: rgba(255, 255, 255, 0.88) !important;
+    border: 1.5px solid rgba(139, 92, 246, 0.26) !important;
+  }
+
+  html:not(.dark) .patient-store-card + div:has(h2) .grid.grid-cols-3 > div,
+  html:not(.dark) div:has(> div h2):has(button):has(.grid.grid-cols-3) .grid.grid-cols-3 > div {
+    padding: 12px 8px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f4edff 100%) !important;
+  }
+}
