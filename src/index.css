@@ -3027,3 +3027,194 @@ html:not(.dark) .fch-dashboard-mobile-logo span.uppercase {
   border: 1px solid rgba(125, 211, 252, 0.22);
   box-shadow: 0 14px 32px rgba(29, 78, 216, 0.18);
 }
+/* =========================================================
+   Jornada de Recuperação - Tema claro roxo premium FORTE
+   Cola no final do src/index.css
+========================================================= */
+
+html:not(.dark) .patient-store-card + div {
+  position: relative !important;
+  z-index: 50 !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+
+  background:
+    radial-gradient(circle at 88% 16%, rgba(168, 85, 247, 0.28), transparent 32%),
+    radial-gradient(circle at 7% 8%, rgba(109, 40, 217, 0.22), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #faf5ff 38%, #f3e8ff 72%, #ede9fe 100%) !important;
+
+  border: 2px solid rgba(124, 58, 237, 0.48) !important;
+  box-shadow:
+    0 28px 60px rgba(109, 40, 217, 0.24),
+    0 12px 28px rgba(124, 58, 237, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Remove camada escura/fosca que deixa o card apagado no tema claro */
+html:not(.dark) .patient-store-card + div::before,
+html:not(.dark) .patient-store-card + div::after {
+  display: none !important;
+  opacity: 0 !important;
+  content: none !important;
+}
+
+/* Suaviza blobs/efeitos absolutos sem escurecer conteúdo */
+html:not(.dark) .patient-store-card + div > div[class*="absolute"] {
+  opacity: 0.35 !important;
+  filter: blur(38px) !important;
+  pointer-events: none !important;
+}
+
+/* Garante que conteúdo fique acima de qualquer efeito */
+html:not(.dark) .patient-store-card + div > * {
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+/* Ícone principal */
+html:not(.dark) .patient-store-card + div .flex.h-14.w-14,
+html:not(.dark) .patient-store-card + div .flex.h-16.w-16 {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f5f3ff 42%, #ddd6fe 100%) !important;
+  border: 1.5px solid rgba(124, 58, 237, 0.45) !important;
+  color: #5b21b6 !important;
+  opacity: 1 !important;
+  box-shadow:
+    0 16px 34px rgba(109, 40, 217, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html:not(.dark) .patient-store-card + div .flex.h-14.w-14 svg,
+html:not(.dark) .patient-store-card + div .flex.h-16.w-16 svg {
+  color: #5b21b6 !important;
+  stroke-width: 2.8 !important;
+  opacity: 1 !important;
+}
+
+/* Texto NOVA EXPERIÊNCIA */
+html:not(.dark) .patient-store-card + div p.text-\[10px\],
+html:not(.dark) .patient-store-card + div p[class*="tracking"] {
+  color: #6d28d9 !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.26em !important;
+  text-shadow: none !important;
+}
+
+/* Título Jornada de Recuperação */
+html:not(.dark) .patient-store-card + div h2,
+html:not(.dark) .patient-store-card + div h3 {
+  color: #111827 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  font-weight: 950 !important;
+}
+
+/* Subtítulo */
+html:not(.dark) .patient-store-card + div h2 + p,
+html:not(.dark) .patient-store-card + div h3 + p,
+html:not(.dark) .patient-store-card + div .max-w-xl {
+  color: #374151 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  font-weight: 850 !important;
+  line-height: 1.45 !important;
+}
+
+/* Estrelinhas/decorativos */
+html:not(.dark) .patient-store-card + div svg {
+  opacity: 1 !important;
+}
+
+/* Botão Abrir jornada */
+html:not(.dark) .patient-store-card + div button {
+  background:
+    linear-gradient(90deg, #a855f7 0%, #7c3aed 48%, #4c1d95 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow:
+    0 20px 38px rgba(109, 40, 217, 0.38),
+    0 8px 16px rgba(124, 58, 237, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32) !important;
+}
+
+html:not(.dark) .patient-store-card + div button span,
+html:not(.dark) .patient-store-card + div button p,
+html:not(.dark) .patient-store-card + div button svg {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  stroke-width: 3 !important;
+}
+
+/* Container dos três cards: Progresso / Dor / Sessões */
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 240, 255, 0.95)) !important;
+  border: 2px solid rgba(139, 92, 246, 0.34) !important;
+  box-shadow:
+    0 18px 34px rgba(124, 58, 237, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Cards internos */
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f8f5ff 48%, #ede9fe 100%) !important;
+  border: 1.5px solid rgba(139, 92, 246, 0.22) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow:
+    0 12px 26px rgba(124, 58, 237, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Ícones dos cards internos */
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div svg {
+  color: #7c3aed !important;
+  opacity: 1 !important;
+  stroke-width: 2.8 !important;
+}
+
+/* Textos PROGRESSO / DOR / SESSÕES */
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div p,
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div span {
+  color: #111827 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Mobile: deixa ainda mais limpo e legível */
+@media (max-width: 640px) {
+  html:not(.dark) .patient-store-card + div {
+    background:
+      radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.24), transparent 30%),
+      radial-gradient(circle at 6% 8%, rgba(109, 40, 217, 0.20), transparent 32%),
+      linear-gradient(135deg, #ffffff 0%, #fbf7ff 42%, #f3e8ff 100%) !important;
+
+    box-shadow:
+      0 22px 44px rgba(109, 40, 217, 0.22),
+      0 8px 18px rgba(124, 58, 237, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  }
+
+  html:not(.dark) .patient-store-card + div h2,
+  html:not(.dark) .patient-store-card + div h3 {
+    color: #0f172a !important;
+  }
+
+  html:not(.dark) .patient-store-card + div h2 + p,
+  html:not(.dark) .patient-store-card + div h3 + p,
+  html:not(.dark) .patient-store-card + div .max-w-xl {
+    color: #334155 !important;
+  }
+}
