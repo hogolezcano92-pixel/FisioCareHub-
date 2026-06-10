@@ -3218,3 +3218,70 @@ html:not(.dark) .patient-store-card + div .grid.grid-cols-3 > div span {
     color: #334155 !important;
   }
 }
+/* =========================================================
+   Correção do espaço vazio da Jornada de Recuperação
+   Tema claro - mobile
+   Cola no final do index.css
+========================================================= */
+
+html:not(.dark) .patient-store-card + div {
+  min-height: auto !important;
+  height: auto !important;
+  max-height: none !important;
+
+  padding-top: 28px !important;
+  padding-bottom: 26px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+
+  display: block !important;
+  overflow: hidden !important;
+}
+
+/* Garante que o conteúdo da Jornada fique no topo do card */
+html:not(.dark) .patient-store-card + div > div {
+  position: relative !important;
+  z-index: 5 !important;
+  transform: none !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove qualquer espaçador invisível acima do conteúdo */
+html:not(.dark) .patient-store-card + div > div:first-child {
+  margin-top: 0 !important;
+}
+
+/* Ajuste fino do bloco de texto */
+html:not(.dark) .patient-store-card + div h2 {
+  margin-top: 4px !important;
+  margin-bottom: 14px !important;
+  line-height: 1.08 !important;
+}
+
+html:not(.dark) .patient-store-card + div h2 + p {
+  margin-bottom: 24px !important;
+  line-height: 1.35 !important;
+}
+
+/* Botão mais próximo do texto */
+html:not(.dark) .patient-store-card + div button {
+  margin-top: 0 !important;
+  margin-bottom: 22px !important;
+}
+
+/* Progresso / Dor / Sessões mais compacto */
+html:not(.dark) .patient-store-card + div .grid.grid-cols-3 {
+  margin-top: 0 !important;
+  padding: 8px !important;
+}
+
+/* Corrige altura exagerada em telas pequenas */
+@media (max-width: 768px) {
+  html:not(.dark) .patient-store-card + div {
+    min-height: auto !important;
+    height: auto !important;
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+  }
+}
