@@ -1,0 +1,421 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { CheckCircle2, Circle, Clock, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
+import { logActivity, logActivities } from '../../services/activityService';
+import { getLinkedClinicalPatients } from '../../services/patientLinkService';
+
+interface Exercise {
+  id: string;
+  title: string;
+  description: string;
+  duration: number; // seconds
+  completed: boolean;
+}
+
+interface PainDiaryProps {
+  onSaved?: () => void;
+}
+
+export const PainDiary = ({ onSaved }: PainDiaryProps) => {
+  const { profile } = useAuth();
+  const [intensity, setIntensity] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const emojis = ['😊', '🙂', '😐', '🙁', '😟', '😣', '😖', '😫', '😭', '💀'];
+
+  const todayDateKeyBR = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    return year && month && day ? `${year}-${month}-${day}` : new Date().toISOString().slice(0, 10);
+  };
+
+  const handleSave = async () => {
+    if (intensity !== null && profile) {
+      setIsSaving(true);
+      console.log('Salvando diário de dor:', { intensity, paciente_id: profile.id });
+      try {
+        const today = todayDateKeyBR();
+        const linkedPatients = await getLinkedClinicalPatients(profile.id, profile.email);
+        const linkedClinicalPatient = linkedPatients[0];
+
+        const payload = {
+          paciente_id: profile.id,
+          fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+          nivel_dor: intensity,
+          data_registro: today,
+          notas: 'Registro rápido de dor pelo Dashboard',
+        };
+
+        const { data: existingEntry, error: findError } = await supabase
+          .from('registros_paciente')
+          .select('id, exercicios_concluidos, total_exercicios, concluidos_count, notas')
+          .eq('paciente_id', profile.id)
+          .eq('data_registro', today)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (findError) throw findError;
+
+        const saveQuery = existingEntry?.id
+          ? supabase
+              .from('registros_paciente')
+              .update({
+                ...payload,
+                notas: existingEntry.notas || payload.notas,
+                exercicios_concluidos: existingEntry.exercicios_concluidos || [],
+                total_exercicios: existingEntry.total_exercicios || 0,
+                concluidos_count: existingEntry.concluidos_count || 0,
+              })
+              .eq('id', existingEntry.id)
+              .select()
+          : supabase
+              .from('registros_paciente')
+              .insert({
+                ...payload,
+                exercicios_concluidos: [],
+                total_exercicios: 0,
+                concluidos_count: 0,
+              })
+              .select();
+
+        const { data, error } = await saveQuery;
+
+        if (error) {
+          console.error('Erro detalhado do Supabase ao salvar diário de dor:', error);
+          throw error;
+        }
+        
+        console.log('Diário de dor salvo com sucesso em registros_paciente:', data);
+        await logActivities([
+          {
+            userId: profile.id,
+            userType: 'paciente',
+            action: 'diario_dor_registrado',
+            description: `Diário de dor registrado • intensidade ${intensity}/10`,
+            referenceId: data?.[0]?.id || today,
+            details: { metadata: { intensidade: intensity, source: 'pain_diary_dashboard' } },
+          },
+          {
+            userId: linkedClinicalPatient?.fisioterapeuta_id,
+            userType: 'fisio',
+            action: 'diario_dor_registrado',
+            description: `Paciente registrou dor no Dashboard • intensidade ${intensity}/10`,
+            referenceId: data?.[0]?.id || today,
+            details: { metadata: { patientId: profile.id, intensidade: intensity, source: 'pain_diary_dashboard' } },
+          },
+        ]);
+        toast.success('Diário de dor atualizado!');
+        setIntensity(null);
+        onSaved?.();
+        window.dispatchEvent(new CustomEvent('fisiocare:patient-progress-updated'));
+      } catch (err: any) {
+        console.error('Erro ao salvar no diário:', err);
+        toast.error('Erro ao salvar no diário: ' + (err.message || 'Erro desconhecido'));
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      console.warn('Não foi possível salvar: intensidade ou perfil ausente', { intensity, profileId: profile?.id });
+    }
+  };
+
+  return (
+    <div className="patient-pain-diary-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-3 w-full">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight">Como está sua dor agora?</h3>
+          <p className="text-slate-400 text-[9px] font-medium">Sua percepção ajuda no tratamento.</p>
+        </div>
+        <Link to="/diario" className="text-[8px] font-black text-blue-400 uppercase tracking-widest hover:underline">
+          Ver Diário Completo
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-5 gap-1">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setIntensity(i + 1)}
+            className={cn(
+              "flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all group",
+              intensity === i + 1 
+                ? "border-[#0047AB] bg-[#0047AB] text-white shadow-lg shadow-blue-900/20" 
+                : "border-white/5 bg-white/5 hover:border-white/10 text-slate-500 hover:text-white"
+            )}
+          >
+            <span className="text-lg group-hover:scale-110 transition-transform">{emojis[i]}</span>
+            <span className="font-black text-[9px]">{i + 1}</span>
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={intensity === null || isSaving}
+        className={cn(
+          "w-full h-10 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2",
+          intensity !== null 
+            ? "bg-[#0047AB] text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95" 
+            : "bg-white/5 text-slate-600 cursor-not-allowed"
+        )}
+      >
+        {isSaving ? (
+          <Loader2 className="animate-spin" size={18} />
+        ) : (
+          <CheckCircle2 size={18} />
+        )}
+        {isSaving ? 'Salvando...' : 'Registrar no Diário'}
+      </button>
+    </div>
+  );
+};
+
+interface ExerciseChecklistProps {
+  onUpdated?: () => void;
+}
+
+export const ExerciseChecklist = ({ onUpdated }: ExerciseChecklistProps) => {
+  const { profile } = useAuth();
+  const [exercises, setExercises] = useState<Exercise[]>([
+    { id: '1', title: 'Alongamento de Isquiotibiais', description: 'Mantenha a perna esticada por 30 segundos.', duration: 30, completed: false },
+    { id: '2', title: 'Fortalecimento de Quadríceps', description: 'Extensão de joelho com caneleira (3x15).', duration: 300, completed: false },
+    { id: '3', title: 'Exercício de Equilíbrio', description: 'Ficar em um pé só por 1 minuto.', duration: 60, completed: false },
+  ]);
+
+  const [activeTimer, setActiveTimer] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const todayDateKeyBR = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    return year && month && day ? `${year}-${month}-${day}` : new Date().toISOString().slice(0, 10);
+  };
+
+  useEffect(() => {
+    const fetchCompletions = async () => {
+      if (!profile) return;
+      try {
+        const today = todayDateKeyBR();
+        const { data, error } = await supabase
+          .from('checklist_exercicios')
+          .select('exercicio_id')
+          .eq('paciente_id', profile.id)
+          .gte('data_conclusao', today + 'T00:00:00Z');
+
+        if (error) throw error;
+        
+        if (data) {
+          const completedIds = data.map(d => d.exercicio_id);
+          setExercises(prev => prev.map(ex => ({
+            ...ex,
+            completed: completedIds.includes(ex.id)
+          })));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchCompletions();
+  }, [profile]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setIsRunning(false);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timeLeft]);
+
+  const startTimer = (exercise: Exercise) => {
+    setActiveTimer(exercise.id);
+    setTimeLeft(exercise.duration);
+    setIsRunning(true);
+  };
+
+  const toggleComplete = async (id: string) => {
+    if (!profile) {
+      console.warn('Não foi possível atualizar exercício: perfil ausente');
+      return;
+    }
+    
+    const exercise = exercises.find(ex => ex.id === id);
+    if (!exercise) return;
+
+    const newCompleted = !exercise.completed;
+    console.log('Atualizando exercício:', { id, newCompleted, paciente_id: profile.id });
+    
+    try {
+      if (newCompleted) {
+        const { error } = await supabase.from('checklist_exercicios').insert({
+          paciente_id: profile.id,
+          exercicio_id: id,
+          concluido: true,
+          data_conclusao: new Date().toISOString()
+        });
+        if (error) throw error;
+      } else {
+        const today = todayDateKeyBR();
+        const { error } = await supabase.from('checklist_exercicios')
+          .delete()
+          .eq('paciente_id', profile.id)
+          .eq('exercicio_id', id)
+          .gte('data_conclusao', today + 'T00:00:00Z');
+        if (error) throw error;
+      }
+      
+      const updatedExercises = exercises.map(ex => ex.id === id ? { ...ex, completed: newCompleted } : ex);
+      const today = todayDateKeyBR();
+      const linkedPatients = await getLinkedClinicalPatients(profile.id, profile.email);
+      const linkedClinicalPatient = linkedPatients[0];
+      const completedCount = updatedExercises.filter(ex => ex.completed).length;
+      const journalExercises = updatedExercises.map(ex => ({
+        id: ex.id,
+        name: ex.title,
+        completed: ex.completed,
+      }));
+
+      const { data: existingEntry, error: findError } = await supabase
+        .from('registros_paciente')
+        .select('id, nivel_dor, notas')
+        .eq('paciente_id', profile.id)
+        .eq('data_registro', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      if (existingEntry?.id) {
+        const registroPayload = {
+          paciente_id: profile.id,
+          fisioterapeuta_id: linkedClinicalPatient?.fisioterapeuta_id || null,
+          nivel_dor: Number(existingEntry.nivel_dor),
+          exercicios_concluidos: journalExercises,
+          total_exercicios: updatedExercises.length,
+          concluidos_count: completedCount,
+          notas: existingEntry?.notas || 'Registro automático dos exercícios pelo Dashboard',
+          data_registro: today,
+        };
+
+        const { error: registroError } = await supabase
+          .from('registros_paciente')
+          .update(registroPayload)
+          .eq('id', existingEntry.id);
+
+        if (registroError) throw registroError;
+      }
+
+      setExercises(updatedExercises);
+      onUpdated?.();
+      window.dispatchEvent(new CustomEvent('fisiocare:patient-progress-updated'));
+      await logActivity(
+        profile.id,
+        'paciente',
+        newCompleted ? 'exercicio_concluido' : 'exercicio_desmarcado',
+        newCompleted ? `Exercício concluído: ${exercise.title}` : `Exercício desmarcado: ${exercise.title}`,
+        id,
+        { metadata: { exerciseTitle: exercise.title, source: 'exercise_checklist' } },
+      );
+      toast.success(newCompleted ? 'Exercício concluído!' : 'Exercício desmarcado');
+    } catch (err: any) {
+      console.error('Erro ao atualizar exercício:', err);
+      toast.error('Erro ao atualizar exercício: ' + (err.message || 'Erro desconhecido'));
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="patient-exercise-checklist-card bg-slate-900/50 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl space-y-2.5 w-full">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-black text-white tracking-tight">Checklist de Treinos</h3>
+          <p className="text-slate-400 text-[9px] font-medium">Complete sua rotina diária.</p>
+        </div>
+        <Link to="/treinos" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:underline">
+          Ver Treinos Completos
+        </Link>
+      </div>
+
+      <div className="space-y-2">
+        {exercises.map((ex) => (
+          <div 
+            key={ex.id}
+            className={cn(
+              "p-3 rounded-xl border transition-all flex items-center justify-between gap-3",
+              ex.completed ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/5"
+            )}
+          >
+            <div className="flex items-center gap-2.5">
+              <button onClick={() => toggleComplete(ex.id)}>
+                {ex.completed ? (
+                  <CheckCircle2 className="text-emerald-500" size={20} />
+                ) : (
+                  <Circle className="text-slate-600" size={20} />
+                )}
+              </button>
+              <div className="space-y-0.5">
+                <p className={cn("font-black text-xs text-white", ex.completed && "line-through opacity-50")}>{ex.title}</p>
+                <p className="text-[9px] text-slate-400 font-medium">{ex.description}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {activeTimer === ex.id ? (
+                <div className="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded-lg shadow-sm border border-white/5">
+                  <span className="font-black text-[10px] text-blue-400 tabular-nums">{formatTime(timeLeft)}</span>
+                  <button onClick={() => setIsRunning(!isRunning)}>
+                    {isRunning ? <Pause size={12} className="text-slate-500" /> : <Play size={12} className="text-blue-400" />}
+                  </button>
+                  <button onClick={() => setTimeLeft(ex.duration)}>
+                    <RotateCcw size={12} className="text-slate-500" />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => startTimer(ex)}
+                  className="p-1.5 bg-slate-800 text-blue-400 rounded-lg shadow-sm border border-white/5 hover:bg-slate-700 transition-all"
+                >
+                  <Clock size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
