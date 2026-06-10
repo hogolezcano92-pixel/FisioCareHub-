@@ -173,25 +173,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     const key = `${item.path || ''} ${item.name || ''}`.toLowerCase();
 
     if (item.variant === 'danger') return '#E11D48';
-    if (key.includes('agenda') || key.includes('calendar') || key.includes('appointments')) return '#2563EB';
-    if (key.includes('paciente') || key.includes('patients') || key.includes('jornada')) return '#7C3AED';
-    if (key.includes('oportunidade') || key.includes('buscar') || key.includes('search')) return '#0891B2';
+    if (key.includes('agenda') || key.includes('calendar') || key.includes('appointments')) return '#34D399';
+    if (key.includes('jornada')) return '#A78BFA';
+    if (key.includes('paciente') || key.includes('patients')) return '#60A5FA';
+    if (key.includes('oportunidade') || key.includes('buscar') || key.includes('search')) return '#22D3EE';
     if (key.includes('avalia') || key.includes('evaluation')) return '#059669';
-    if (key.includes('exerc') || key.includes('treino') || key.includes('workout')) return '#16A34A';
-    if (key.includes('loja') || key.includes('fisiostore')) return '#9333EA';
-    if (key.includes('triage') || key.includes('triagem') || key.includes('exames')) return '#0EA5E9';
-    if (key.includes('prontu') || key.includes('record')) return '#EA580C';
-    if (key.includes('document')) return '#DB2777';
+    if (key.includes('exerc') || key.includes('treino') || key.includes('workout')) return '#A3E635';
+    if (key.includes('loja') || key.includes('fisiostore')) return '#38BDF8';
+    if (key.includes('triage') || key.includes('triagem') || key.includes('exames')) return '#C084FC';
+    if (key.includes('prontu') || key.includes('record')) return '#818CF8';
+    if (key.includes('document')) return '#38BDF8';
     if (key.includes('assinatura') || key.includes('subscription')) return '#CA8A04';
     if (key.includes('financeiro') || key.includes('earnings') || key.includes('saque')) return '#D97706';
-    if (key.includes('chat') || key.includes('suporte') || key.includes('support')) return '#2563EB';
+    if (key.includes('chat') || key.includes('suporte') || key.includes('support')) return '#60A5FA';
     if (key.includes('perfil') || key.includes('profile')) return '#4F46E5';
     if (key.includes('guia') || key.includes('library') || key.includes('biblioteca')) return '#0D9488';
     if (key.includes('sobre') || key.includes('about') || key.includes('ajuda') || key.includes('help')) return '#64748B';
     if (key.includes('finance') || key.includes('payment') || key.includes('pagamento')) return '#D97706';
     if (key.includes('admin') || key.includes('settings')) return '#7C3AED';
 
-    return '#475569';
+    return '#7DD3FC';
   };
 
   const sidebarContent = (
@@ -340,6 +341,102 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
         .fisio-sidebar-shell nav {
           scrollbar-width: none;
+        }
+
+        /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
+        html.dark .fisio-sidebar-shell,
+        body.dark .fisio-sidebar-shell,
+        :root[data-theme="dark"] .fisio-sidebar-shell {
+          background:
+            radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.10), transparent 32%),
+            radial-gradient(circle at 88% 18%, rgba(59, 130, 246, 0.08), transparent 28%),
+            linear-gradient(180deg, #090D1A 0%, #0A1021 48%, #080D1A 100%) !important;
+          border-right: 1px solid rgba(148, 163, 184, 0.10) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .fisio-sidebar-logo-area,
+        body.dark .fisio-sidebar-shell .fisio-sidebar-logo-area,
+        :root[data-theme="dark"] .fisio-sidebar-shell .fisio-sidebar-logo-area {
+          background: rgba(8, 13, 26, 0.35) !important;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.10) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-section-title,
+        body.dark .fisio-sidebar-shell .sidebar-section-title,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-section-title {
+          color: #AAB7D8 !important;
+          opacity: 1 !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
+        body.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item),
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) {
+          background: transparent !important;
+          color: #EAF0FF !important;
+          border: 1px solid transparent !important;
+          box-shadow: none !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) span,
+        body.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) span,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) span {
+          color: #EAF0FF !important;
+          opacity: 0.88 !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
+        body.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item) svg {
+          color: var(--sidebar-icon-color, #7DD3FC) !important;
+          stroke: var(--sidebar-icon-color, #7DD3FC) !important;
+          opacity: 0.96 !important;
+          filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sidebar-icon-color, #7DD3FC) 34%, transparent));
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover,
+        body.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover {
+          background: rgba(255, 255, 255, 0.055) !important;
+          color: #FFFFFF !important;
+          border-color: rgba(148, 163, 184, 0.11) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover span,
+        body.dark .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover span,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-item:not(.sidebar-active-item):hover span {
+          color: #FFFFFF !important;
+          opacity: 1 !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-active-item,
+        body.dark .fisio-sidebar-shell .sidebar-active-item,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-active-item {
+          background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%) !important;
+          color: #FFFFFF !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          box-shadow: 0 18px 42px -22px rgba(59, 130, 246, 0.72) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .sidebar-active-item *,
+        body.dark .fisio-sidebar-shell .sidebar-active-item *,
+        :root[data-theme="dark"] .fisio-sidebar-shell .sidebar-active-item * {
+          color: #FFFFFF !important;
+          stroke: #FFFFFF !important;
+          opacity: 1 !important;
+        }
+
+        html.dark .fisio-sidebar-shell .fisio-sidebar-profile-area,
+        body.dark .fisio-sidebar-shell .fisio-sidebar-profile-area,
+        :root[data-theme="dark"] .fisio-sidebar-shell .fisio-sidebar-profile-area {
+          border-top: 1px solid rgba(148, 163, 184, 0.10) !important;
+        }
+
+        html.dark .fisio-sidebar-shell .fisio-sidebar-profile-card,
+        body.dark .fisio-sidebar-shell .fisio-sidebar-profile-card,
+        :root[data-theme="dark"] .fisio-sidebar-shell .fisio-sidebar-profile-card {
+          background: rgba(255, 255, 255, 0.065) !important;
+          border: 1px solid rgba(148, 163, 184, 0.10) !important;
+          box-shadow: 0 16px 34px -28px rgba(59, 130, 246, 0.45) !important;
         }
       `}</style>
 
