@@ -207,7 +207,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
     <>
       {/* FAB Main Button */}
       {!hideButton && (
-        <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 fab-container">
+        <div className="fixed bottom-28 right-5 z-[100] flex flex-col items-end gap-3 fab-container md:bottom-6 md:right-6">
           <AnimatePresence>
             {isOpen && (
               <motion.div

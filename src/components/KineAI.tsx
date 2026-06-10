@@ -260,7 +260,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
           className={cn(
-            "fixed bottom-6 right-6 z-[40] transition-all",
+            "fixed bottom-28 right-5 z-[40] transition-all md:bottom-6 md:right-6",
             isOpen ? "opacity-0 scale-0 pointer-events-none" : "opacity-100 scale-100"
           )}
         >
