@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { Lock, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -13,19 +13,44 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    // Check if we have a session (Supabase should have set it from the recovery link)
-    const checkSession = async () => {
+    let mounted = true;
+
+    const prepareRecoverySession = async () => {
+      setError('');
+
+      const params = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+      const errorDescription = params.get('error_description') || hashParams.get('error_description');
+
+      if (errorDescription) {
+        setError(decodeURIComponent(errorDescription).replace(/\+/g, ' '));
+        return;
+      }
+
+      const code = params.get('code');
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError && mounted) {
+          setError('Link de redefinição inválido ou expirado. Solicite um novo e-mail.');
+        }
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // If no session, they might have accessed this page directly without a recovery link
-        // Or the link expired.
-        // However, sometimes the hash is still being processed.
+      if (!session && mounted) {
+        setError('Abra esta tela pelo link enviado no e-mail para redefinir sua senha.');
       }
     };
-    checkSession();
-  }, []);
+
+    prepareRecoverySession();
+
+    return () => {
+      mounted = false;
+    };
+  }, [location.search, location.hash]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
