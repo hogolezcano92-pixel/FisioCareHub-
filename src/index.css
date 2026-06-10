@@ -3628,3 +3628,281 @@ html:not(.dark) .patient-dashboard-shell .shadow-blue-100\/60 {
       0 6px 14px rgba(99, 102, 241, 0.05) !important;
   }
 }
+
+/* =========================================================
+   Dashboard do Paciente — Cards mais intensos e premium
+   Escopo seguro: só quando o Dashboard é do paciente.
+   Reforça TODAS as famílias de cards sem mexer em lógica.
+   ========================================================= */
+html:not(.dark) .patient-dashboard-shell {
+  --fch-card-text-strong: #0b1220;
+  --fch-card-text-soft: #243244;
+  --fch-card-purple: #7c3aed;
+  --fch-card-purple-strong: #5b21b6;
+  --fch-card-blue: #0284c7;
+  --fch-card-blue-strong: #0369a1;
+  --fch-card-green: #059669;
+  --fch-card-green-strong: #047857;
+  --fch-card-orange: #ea580c;
+  --fch-card-orange-strong: #c2410c;
+  --fch-card-border: rgba(15, 23, 42, 0.10);
+  --fch-card-shadow: rgba(15, 23, 42, 0.13);
+}
+
+/* Base premium para todos os cards/blocos principais do Dashboard do paciente */
+html:not(.dark) .patient-dashboard-shell :is(
+  header,
+  .premium-card,
+  .patient-store-card,
+  .patient-journey-card,
+  .patient-card-assistant,
+  [class*="rounded-2xl"][class*="border"],
+  [class*="rounded-3xl"][class*="border"],
+  [class*="rounded-[2rem]"][class*="border"]
+) {
+  opacity: 1 !important;
+  filter: saturate(1.22) contrast(1.04) !important;
+  border-width: 1.5px !important;
+  border-color: var(--fch-card-border) !important;
+  box-shadow:
+    0 22px 48px var(--fch-card-shadow),
+    0 8px 18px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(
+  .premium-card,
+  .patient-store-card,
+  .patient-journey-card,
+  [class*="rounded-2xl"][class*="border"],
+  [class*="rounded-3xl"][class*="border"]
+):hover {
+  filter: saturate(1.30) contrast(1.06) !important;
+  box-shadow:
+    0 28px 58px rgba(15, 23, 42, 0.15),
+    0 12px 26px rgba(99, 102, 241, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+}
+
+/* Textos mais nítidos em todos os cards */
+html:not(.dark) .patient-dashboard-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--fch-card-text-strong) !important;
+  font-weight: 950 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(p, span, small, label, li, div) {
+  text-shadow: none !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-slate-400, .text-slate-500, .text-gray-400, .text-gray-500) {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-slate-600, .text-slate-700, .text-gray-600, .text-gray-700) {
+  color: #1e293b !important;
+  opacity: 1 !important;
+}
+
+/* Números e métricas mais fortes */
+html:not(.dark) .patient-dashboard-shell :is(.text-2xl, .text-3xl, .text-4xl, .text-xl) {
+  font-weight: 950 !important;
+  opacity: 1 !important;
+}
+
+/* Corrige títulos com gradiente transparente no tema claro */
+html:not(.dark) .patient-dashboard-shell .text-transparent.bg-clip-text {
+  background-image: none !important;
+  color: var(--fch-card-text-strong) !important;
+  -webkit-text-fill-color: var(--fch-card-text-strong) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .text-white:not(.patient-card-assistant *):not(button):not(button *) {
+  color: var(--fch-card-text-strong) !important;
+}
+
+/* Família azul: evolução, consultas, chat, store, gráficos */
+html:not(.dark) .patient-dashboard-shell :is(
+  .from-sky-50,
+  .from-blue-50,
+  [class*="bg-sky-50"],
+  [class*="bg-blue-50"],
+  [class*="border-sky-100"],
+  [class*="border-blue-100"]
+) {
+  border-color: rgba(2, 132, 199, 0.38) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-sky-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-blue-50,
+html:not(.dark) .patient-dashboard-shell .patient-store-card {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.34), transparent 30%),
+    linear-gradient(135deg, #e0f2fe 0%, #f8fbff 46%, #dbeafe 100%) !important;
+  border-color: rgba(2, 132, 199, 0.42) !important;
+  box-shadow:
+    0 22px 52px rgba(2, 132, 199, 0.20),
+    0 9px 22px rgba(14, 165, 233, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-sky-400, .text-sky-500, .text-sky-600, .text-blue-400, .text-blue-500, .text-blue-600) {
+  color: var(--fch-card-blue-strong) !important;
+}
+
+/* Família verde: exercícios, melhora, conquistas verdes */
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-emerald-50,
+html:not(.dark) .patient-dashboard-shell [class*="bg-emerald-50"] {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(52, 211, 153, 0.34), transparent 30%),
+    linear-gradient(135deg, #d1fae5 0%, #f8fffb 46%, #dcfce7 100%) !important;
+  border-color: rgba(5, 150, 105, 0.42) !important;
+  box-shadow:
+    0 22px 52px rgba(5, 150, 105, 0.19),
+    0 9px 22px rgba(16, 185, 129, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-emerald-400, .text-emerald-500, .text-emerald-600, .text-green-400, .text-green-500, .text-green-600) {
+  color: var(--fch-card-green-strong) !important;
+}
+
+/* Família laranja: atividades, consulta/vídeo, alertas suaves */
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-orange-50,
+html:not(.dark) .patient-dashboard-shell [class*="bg-orange-50"] {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(251, 146, 60, 0.36), transparent 30%),
+    linear-gradient(135deg, #ffedd5 0%, #fffaf5 46%, #fed7aa 100%) !important;
+  border-color: rgba(234, 88, 12, 0.40) !important;
+  box-shadow:
+    0 22px 52px rgba(234, 88, 12, 0.19),
+    0 9px 22px rgba(249, 115, 22, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-orange-400, .text-orange-500, .text-orange-600, .text-amber-400, .text-amber-500, .text-amber-600) {
+  color: var(--fch-card-orange-strong) !important;
+}
+
+/* Família roxo/índigo: jornada, assistente, triagens e cards premium */
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-violet-50,
+html:not(.dark) .patient-dashboard-shell .bg-gradient-to-br.from-indigo-50,
+html:not(.dark) .patient-dashboard-shell [class*="bg-violet-50"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-indigo-50"],
+html:not(.dark) .patient-dashboard-shell [class*="bg-purple-50"] {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(167, 139, 250, 0.36), transparent 30%),
+    linear-gradient(135deg, #ede9fe 0%, #fbf8ff 46%, #ddd6fe 100%) !important;
+  border-color: rgba(124, 58, 237, 0.42) !important;
+  box-shadow:
+    0 22px 52px rgba(124, 58, 237, 0.19),
+    0 9px 22px rgba(139, 92, 246, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.text-indigo-400, .text-indigo-500, .text-indigo-600, .text-purple-400, .text-purple-500, .text-purple-600, .text-violet-400, .text-violet-500, .text-violet-600) {
+  color: var(--fch-card-purple-strong) !important;
+}
+
+/* Botões e badges continuam com texto branco quando tiverem fundo forte */
+html:not(.dark) .patient-dashboard-shell :is(
+  button[class*="bg-gradient-to-r"],
+  button[class*="bg-sky-500"],
+  button[class*="bg-indigo-600"],
+  button[class*="bg-emerald-500"],
+  button[class*="bg-orange-500"],
+  .btn-primary,
+  .btn-primary-compact,
+  [class*="from-violet-500"],
+  [class*="from-sky-500"],
+  [class*="from-orange-500"],
+  [class*="from-emerald-500"]
+),
+html:not(.dark) .patient-dashboard-shell :is(
+  button[class*="bg-gradient-to-r"],
+  button[class*="bg-sky-500"],
+  button[class*="bg-indigo-600"],
+  button[class*="bg-emerald-500"],
+  button[class*="bg-orange-500"],
+  .btn-primary,
+  .btn-primary-compact,
+  [class*="from-violet-500"],
+  [class*="from-sky-500"],
+  [class*="from-orange-500"],
+  [class*="from-emerald-500"]
+) * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Assistente Viva fica intenso no roxo premium */
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(255, 255, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 0% 100%, rgba(216, 180, 254, 0.24), transparent 34%),
+    linear-gradient(135deg, #a855f7 0%, #7c3aed 42%, #4c1d95 100%) !important;
+  border-color: rgba(221, 214, 254, 0.40) !important;
+  box-shadow:
+    0 28px 62px rgba(76, 29, 149, 0.30),
+    0 12px 28px rgba(124, 58, 237, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant :is(h1,h2,h3,h4,p,span,button,svg) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell .patient-card-assistant input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+/* Cards pequenos internos ficam mais vivos */
+html:not(.dark) .patient-dashboard-shell .grid :is(a, button, div)[class*="rounded-2xl"][class*="border"] {
+  border-width: 1.5px !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.ring-sky-100, .ring-blue-100) {
+  --tw-ring-color: rgba(2, 132, 199, 0.30) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.ring-emerald-100, .ring-green-100) {
+  --tw-ring-color: rgba(5, 150, 105, 0.30) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.ring-orange-100, .ring-amber-100) {
+  --tw-ring-color: rgba(234, 88, 12, 0.30) !important;
+}
+
+html:not(.dark) .patient-dashboard-shell :is(.ring-violet-100, .ring-indigo-100, .ring-purple-100) {
+  --tw-ring-color: rgba(124, 58, 237, 0.30) !important;
+}
+
+@media (max-width: 768px) {
+  html:not(.dark) .patient-dashboard-shell :is(
+    header,
+    .premium-card,
+    .patient-store-card,
+    .patient-journey-card,
+    .patient-card-assistant,
+    [class*="rounded-2xl"][class*="border"],
+    [class*="rounded-3xl"][class*="border"]
+  ) {
+    filter: saturate(1.18) contrast(1.04) !important;
+    box-shadow:
+      0 16px 36px rgba(15, 23, 42, 0.12),
+      0 6px 14px rgba(99, 102, 241, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+}
