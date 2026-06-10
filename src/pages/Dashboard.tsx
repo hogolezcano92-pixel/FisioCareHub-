@@ -2582,14 +2582,14 @@ export default function Dashboard() {
                   isAiExpanded ? "lg:col-span-1 h-auto" : "h-fit",
                 )}
               >
-                <div className="absolute inset-0 bg-violet-200/10 animate-pulse pointer-events-none" />
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-fuchsia-300/15 rounded-full -ml-16 -mb-16 blur-3xl pointer-events-none" />
+                <div className="patient-assistant-grid absolute inset-0 pointer-events-none" />
+                <div className="patient-assistant-orb patient-assistant-orb-top absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 pointer-events-none" />
+                <div className="patient-assistant-orb patient-assistant-orb-bottom absolute bottom-0 left-0 w-40 h-40 rounded-full -ml-16 -mb-16 pointer-events-none" />
 
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 bg-white/18 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-inner shadow-violet-950/20">
-                      <BrainCircuit size={20} className="animate-bounce" />
+                    <div className="patient-assistant-icon w-10 h-10 bg-white/18 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-inner shadow-violet-950/20">
+                      <BrainCircuit size={20} />
                     </div>
                     <button
                       type="button"
@@ -2617,7 +2617,7 @@ export default function Dashboard() {
                       <span className="text-violet-100">
                         {isPhysio ? "Clínico" : "Viva"}
                       </span>
-                      <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_0_4px_rgba(74,222,128,0.16)]" />
+                      <span className="patient-assistant-status flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,0.16)]" />
                     </h3>
                     <p className="text-violet-50/95 text-sm leading-relaxed font-medium">
                       {aiMessage}
