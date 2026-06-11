@@ -352,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           position: absolute;
           left: 0;
           right: 0;
-          top: 108px;
+          top: 0;
           bottom: 92px;
           z-index: 0;
           pointer-events: none;
@@ -363,10 +363,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: center 58%;
-          opacity: 0.12;
-          filter: saturate(0.92) contrast(0.96);
-          transform: scale(1.08);
+          object-position: center 54%;
+          opacity: 0.17;
+          filter: saturate(1.02) contrast(1.02);
+          transform: scale(1.12);
           transform-origin: center center;
           user-select: none;
           -webkit-user-drag: none;
@@ -374,35 +374,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
         .fisio-sidebar-image-overlay {
           position: absolute;
-          inset: 108px 0 92px 0;
+          inset: 0 0 92px 0;
           z-index: 1;
           pointer-events: none;
           background:
             linear-gradient(
               180deg,
-              rgba(245, 240, 255, 0.98) 0%,
-              rgba(245, 240, 255, 0.88) 14%,
-              rgba(245, 240, 255, 0.56) 42%,
-              rgba(245, 240, 255, 0.76) 72%,
-              rgba(245, 240, 255, 0.97) 100%
+              rgba(245, 240, 255, 0.96) 0%,
+              rgba(245, 240, 255, 0.82) 16%,
+              rgba(245, 240, 255, 0.42) 44%,
+              rgba(245, 240, 255, 0.68) 74%,
+              rgba(245, 240, 255, 0.96) 100%
             ),
             linear-gradient(
               90deg,
-              rgba(245, 240, 255, 0.96) 0%,
-              rgba(245, 240, 255, 0.48) 12%,
-              rgba(245, 240, 255, 0.12) 24%,
-              rgba(245, 240, 255, 0.12) 76%,
-              rgba(245, 240, 255, 0.48) 88%,
-              rgba(245, 240, 255, 0.96) 100%
+              rgba(245, 240, 255, 0.94) 0%,
+              rgba(245, 240, 255, 0.40) 12%,
+              rgba(245, 240, 255, 0.08) 24%,
+              rgba(245, 240, 255, 0.08) 76%,
+              rgba(245, 240, 255, 0.40) 88%,
+              rgba(245, 240, 255, 0.94) 100%
             ),
-            radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.24), transparent 42%);
+            radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.18), transparent 42%);
         }
 
         html.dark .fisio-sidebar-image-bg img,
         body.dark .fisio-sidebar-image-bg img,
         :root[data-theme="dark"] .fisio-sidebar-image-bg img {
-          opacity: 0.09;
-          filter: brightness(0.82) saturate(0.90) contrast(1.02);
+          opacity: 0.12;
+          filter: brightness(0.88) saturate(1.00) contrast(1.06);
         }
 
         html.dark .fisio-sidebar-image-overlay,
@@ -411,22 +411,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           background:
             linear-gradient(
               180deg,
-              rgba(9, 13, 26, 0.96) 0%,
-              rgba(9, 13, 26, 0.82) 14%,
-              rgba(9, 13, 26, 0.50) 42%,
-              rgba(9, 13, 26, 0.72) 72%,
+              rgba(9, 13, 26, 0.95) 0%,
+              rgba(9, 13, 26, 0.78) 16%,
+              rgba(9, 13, 26, 0.42) 44%,
+              rgba(9, 13, 26, 0.64) 74%,
               rgba(9, 13, 26, 0.94) 100%
             ),
             linear-gradient(
               90deg,
-              rgba(9, 13, 26, 0.96) 0%,
-              rgba(9, 13, 26, 0.50) 12%,
-              rgba(9, 13, 26, 0.14) 24%,
-              rgba(9, 13, 26, 0.14) 76%,
-              rgba(9, 13, 26, 0.50) 88%,
-              rgba(9, 13, 26, 0.96) 100%
+              rgba(9, 13, 26, 0.94) 0%,
+              rgba(9, 13, 26, 0.42) 12%,
+              rgba(9, 13, 26, 0.10) 24%,
+              rgba(9, 13, 26, 0.10) 76%,
+              rgba(9, 13, 26, 0.42) 88%,
+              rgba(9, 13, 26, 0.94) 100%
             ),
-            radial-gradient(circle at 50% 24%, rgba(59, 130, 246, 0.06), transparent 42%);
+            radial-gradient(circle at 50% 25%, rgba(59, 130, 246, 0.05), transparent 42%);
         }
 
         /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
