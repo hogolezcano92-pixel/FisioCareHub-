@@ -1688,113 +1688,182 @@ export default function Dashboard() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-10 relative z-10">
-        <header className="mt-1 md:mt-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[60px] -mr-24 -mt-24 pointer-events-none" />
-
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
-            {!profile ? (
-              <div className="w-16 h-16 bg-slate-800 animate-pulse rounded-full border-4 border-white/5" />
-            ) : isPhysio ? (
-              <StoryAvatar
-                physioId={profile.id}
-                name={profile.nome_completo}
-                avatarUrl={
-                  (profile as any).foto_url ||
-                  profile.avatar_url ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
-                }
-                sizeClassName="w-16 h-16"
-                className="dashboard-story-avatar"
-              />
-            ) : (
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                <img
-                  src={
-                    profile.avatar_url ||
-                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
-                  }
-                  alt={profile.nome_completo}
-                  className="relative w-16 h-16 rounded-full border-4 border-white/10 shadow-2xl object-cover"
-                />
-                <div className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-emerald-500 border-[2px] border-[#0B1120] rounded-full shadow-lg z-10" />
+        {isPhysio ? (
+          <header className="mt-1 md:mt-2 relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 shadow-2xl shadow-blue-900/20 backdrop-blur-3xl">
+            <div
+              className="relative h-32 overflow-hidden rounded-t-[2rem] border-b border-white/10 bg-slate-900 md:h-40"
+              style={{
+                backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.72) 100%), url(${
+                  (profile as any)?.cover_url ||
+                  (profile as any)?.foto_capa_url ||
+                  (profile as any)?.banner_url ||
+                  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80"
+                })`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-sky-950/20 via-transparent to-indigo-950/50" />
+              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/90 shadow-xl backdrop-blur-xl">
+                <Sparkles size={11} className="text-sky-300" />
+                Capa profissional
               </div>
-            )}
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/90 shadow-xl backdrop-blur-xl transition-all hover:bg-slate-950/65"
+                aria-label="Editar foto de capa"
+              >
+                <Plus size={12} className="stroke-[3px]" />
+                Capa
+              </button>
+            </div>
 
-            <div className="space-y-0.5 flex-1">
-              <div className="flex flex-col gap-0">
-                <h1 className="text-lg md:text-xl font-black text-white tracking-tight opacity-90">
-                  {getGreeting()},
-                </h1>
+            <div className="relative px-4 pb-4 pt-0 md:px-5 md:pb-5">
+              <div className="relative -mt-10 flex items-end justify-between gap-3">
+                <div className="flex min-w-0 items-end gap-3">
+                  {!profile ? (
+                    <div className="h-24 w-24 shrink-0 animate-pulse rounded-full border-[5px] border-[#0B1120] bg-slate-800 shadow-2xl" />
+                  ) : (
+                    <div className="relative shrink-0">
+                      <StoryAvatar
+                        physioId={profile.id}
+                        name={profile.nome_completo}
+                        avatarUrl={
+                          (profile as any).foto_url ||
+                          profile.avatar_url ||
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
+                        }
+                        sizeClassName="w-24 h-24"
+                        className="dashboard-story-avatar [&>div:first-child]:!border-[5px] [&>div:first-child]:!border-[#0B1120]"
+                      />
+                    </div>
+                  )}
 
-                {!profile ? (
-                  <span className="text-xl font-black animate-pulse text-slate-600">
-                    Conectando...
-                  </span>
-                ) : (
-                  <div className="flex flex-col leading-[0.9] pt-0.5">
-                    {isPhysio && (
-                      <span className="text-base md:text-lg font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter mb-0">
-                        Dr.
+                  <div className="min-w-0 pb-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full border border-sky-400/25 bg-sky-500/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-sky-300">
+                        {getGreeting()}
                       </span>
-                    )}
+                      {isPro && (
+                        <span className="flex items-center gap-1 rounded-full border border-white/20 bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/20 whitespace-nowrap">
+                          <Crown size={8} fill="currentColor" />
+                          Pro
+                        </span>
+                      )}
+                      <span className="badge-physio !px-2.5 !py-1 !text-[8px] whitespace-nowrap">
+                        Fisioterapeuta
+                      </span>
+                    </div>
 
-                    <div className="flex flex-col">
-                      {profile.nome_completo
-                        .split(" ")
-                        .map((namePart, idx, arr) => (
-                          <div
-                            key={idx}
-                            className="flex flex-wrap items-baseline gap-2"
-                          >
-                            <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
-                              {namePart}
-                            </span>
-                            {idx === arr.length - 1 && (
-                              <div className="flex items-center gap-1.5 pb-0.5 self-end mb-0.5">
-                                {isPro && (
-                                  <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-[8px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20 whitespace-nowrap">
-                                    <Crown size={7} fill="currentColor" />
-                                    Pro
-                                  </span>
-                                )}
-                                {isPhysio ? (
-                                  <span className="badge-physio !px-2 !py-0.5 !text-[9px] whitespace-nowrap">
-                                    Fisioterapeuta
-                                  </span>
-                                ) : (
+                    {!profile ? (
+                      <span className="block text-xl font-black text-slate-600 animate-pulse">
+                        Conectando...
+                      </span>
+                    ) : (
+                      <h1 className="max-w-[230px] truncate text-[24px] font-black uppercase leading-[0.95] tracking-tight text-white sm:max-w-none sm:text-3xl md:text-4xl">
+                        Dr. {profile.nome_completo}
+                      </h1>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-3 max-w-2xl text-[12px] font-bold leading-snug text-slate-300 md:text-sm">
+                Bem-vindo a FisioCareHub, a sua plataforma de performance
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-sky-400">
+                  <Sparkles size={10} className="animate-pulse text-sky-500" />
+                  Gestão Profissional
+                </div>
+                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.18em] text-slate-300">
+                  Perfil profissional premium
+                </div>
+              </div>
+            </div>
+          </header>
+        ) : (
+          <header className="mt-1 md:mt-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[60px] -mr-24 -mt-24 pointer-events-none" />
+
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
+              {!profile ? (
+                <div className="w-16 h-16 bg-slate-800 animate-pulse rounded-full border-4 border-white/5" />
+              ) : (
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                  <img
+                    src={
+                      profile.avatar_url ||
+                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
+                    }
+                    alt={profile.nome_completo}
+                    className="relative w-16 h-16 rounded-full border-4 border-white/10 shadow-2xl object-cover"
+                  />
+                  <div className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-emerald-500 border-[2px] border-[#0B1120] rounded-full shadow-lg z-10" />
+                </div>
+              )}
+
+              <div className="space-y-0.5 flex-1">
+                <div className="flex flex-col gap-0">
+                  <h1 className="text-lg md:text-xl font-black text-white tracking-tight opacity-90">
+                    {getGreeting()},
+                  </h1>
+
+                  {!profile ? (
+                    <span className="text-xl font-black animate-pulse text-slate-600">
+                      Conectando...
+                    </span>
+                  ) : (
+                    <div className="flex flex-col leading-[0.9] pt-0.5">
+                      <div className="flex flex-col">
+                        {profile.nome_completo
+                          .split(" ")
+                          .map((namePart, idx, arr) => (
+                            <div
+                              key={idx}
+                              className="flex flex-wrap items-baseline gap-2"
+                            >
+                              <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
+                                {namePart}
+                              </span>
+                              {idx === arr.length - 1 && (
+                                <div className="flex items-center gap-1.5 pb-0.5 self-end mb-0.5">
+                                  {isPro && (
+                                    <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-[8px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20 whitespace-nowrap">
+                                      <Crown size={7} fill="currentColor" />
+                                      Pro
+                                    </span>
+                                  )}
                                   <span className="badge-patient !px-2 !py-0.5 !text-[9px] whitespace-nowrap">
                                     Paciente
                                   </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <p className="text-slate-400 font-bold text-[10px] tracking-wide max-w-md">
+                  Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-start lg:items-end gap-3 mt-2 lg:mt-0">
+              <div className="flex items-center gap-2 text-sky-400 font-bold text-[8px] uppercase tracking-[0.2em] bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
+                <Sparkles size={10} className="text-sky-500 animate-pulse" />
+                Sua Jornada de Saúde
               </div>
 
-              <p className="text-slate-400 font-bold text-[10px] tracking-wide max-w-md">
-                {isPhysio
-                  ? "Bem-vindo a FisioCareHub, a sua plataforma de performance"
-                  : "Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start lg:items-end gap-3 mt-2 lg:mt-0">
-            <div className="flex items-center gap-2 text-sky-400 font-bold text-[8px] uppercase tracking-[0.2em] bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
-              <Sparkles size={10} className="text-sky-500 animate-pulse" />
-              {isPhysio ? "Gestão Profissional" : "Sua Jornada de Saúde"}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
-                <Bell size={18} className="group-hover:animate-swing" />
-              </button>
-              {!isPhysio && (
+              <div className="flex items-center gap-2">
+                <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
+                  <Bell size={18} className="group-hover:animate-swing" />
+                </button>
                 <button
                   onClick={() => navigate("/triage")}
                   className="btn-primary-compact !px-4 !py-2 !text-xs !bg-sky-500 hover:!bg-sky-600"
@@ -1802,10 +1871,10 @@ export default function Dashboard() {
                   <Plus size={14} className="stroke-[3px]" />
                   Nova Triagem
                 </button>
-              )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         {isAdmin && (
           <motion.div
