@@ -1761,6 +1761,44 @@ export default function Dashboard() {
           color: #D97706 !important;
           stroke: #D97706 !important;
         }
+
+        /* Ajustes finos do card premium do fisioterapeuta:
+           mantém o dark mode intacto e corrige somente nome + capa no tema claro. */
+        .physio-premium-cover {
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+        }
+
+        html:not(.dark) .physio-premium-cover,
+        html.light .physio-premium-cover,
+        body.light .physio-premium-cover,
+        :root[data-theme="light"] .physio-premium-cover {
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+        }
+
+        html:not(.dark) .physio-premium-cover-softener,
+        html.light .physio-premium-cover-softener,
+        body.light .physio-premium-cover-softener,
+        :root[data-theme="light"] .physio-premium-cover-softener {
+          background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(224,242,254,0.10) 45%, rgba(79,70,229,0.18) 100%) !important;
+        }
+
+        .physio-premium-name {
+          color: transparent !important;
+          background-image: linear-gradient(90deg, #38bdf8 0%, #2563eb 38%, #7c3aed 74%, #a855f7 100%) !important;
+          background-clip: text !important;
+          -webkit-background-clip: text !important;
+          -webkit-text-fill-color: transparent !important;
+          filter: drop-shadow(0 10px 24px rgba(37, 99, 235, 0.14));
+        }
+
+        .dark .physio-premium-name {
+          background-image: linear-gradient(90deg, #ffffff 0%, #e0f2fe 42%, #93c5fd 100%) !important;
+          filter: drop-shadow(0 14px 30px rgba(14, 165, 233, 0.18));
+        }
       `}</style>
       <div className="absolute -top-4 md:-top-8 inset-x-0 bottom-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="absolute -top-4 md:-top-8 inset-x-0 bottom-0 bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.1),transparent_50%)] pointer-events-none"></div>
@@ -1771,14 +1809,15 @@ export default function Dashboard() {
         {isPhysio ? (
           <header className="mt-1 md:mt-2 relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 shadow-2xl shadow-blue-900/20 backdrop-blur-3xl">
             <div
-              className="relative h-32 overflow-hidden rounded-t-[2rem] border-b border-white/10 bg-slate-900 md:h-40"
+              className="physio-premium-cover relative h-32 overflow-hidden rounded-t-[2rem] border-b border-white/10 md:h-40"
               style={{
-                backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.72) 100%), url(${currentCoverUrl})`,
+                backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(15, 23, 42, 0.56) 100%), url(${currentCoverUrl})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
+                backgroundColor: "#e0f2fe",
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-950/20 via-transparent to-indigo-950/50" />
+              <div className="physio-premium-cover-softener absolute inset-0 bg-gradient-to-br from-sky-950/20 via-transparent to-indigo-950/50" />
               <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/90 shadow-xl backdrop-blur-xl">
                 <Sparkles size={11} className="text-sky-300" />
                 Capa profissional
@@ -1848,7 +1887,7 @@ export default function Dashboard() {
                         Conectando...
                       </span>
                     ) : (
-                      <h1 className="max-w-full whitespace-normal break-words text-[24px] font-black uppercase leading-[0.95] tracking-tight text-white sm:text-3xl md:text-4xl">
+                      <h1 className="physio-premium-name max-w-full whitespace-normal break-words text-[24px] font-black uppercase leading-[0.95] tracking-tight sm:text-3xl md:text-4xl">
                         Dr. {profile.nome_completo}
                       </h1>
                     )}
