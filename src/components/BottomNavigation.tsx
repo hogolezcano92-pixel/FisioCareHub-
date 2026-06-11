@@ -90,12 +90,12 @@ const BottomNavigation: React.FC = () => {
   return (
     <nav
       aria-label="Navegação principal mobile"
-      className="fixed bottom-0 left-0 right-0 z-[70] md:hidden pointer-events-none pb-[max(0.5rem,env(safe-area-inset-bottom))] px-3"
+      className="fixed bottom-0 left-0 right-0 z-[70] md:hidden pointer-events-none pb-[max(0.35rem,env(safe-area-inset-bottom))] px-3"
     >
       <div className="mx-auto max-w-md pointer-events-auto">
         <div
           className={cn(
-            'relative overflow-hidden rounded-[1.75rem] border backdrop-blur-2xl',
+            'relative overflow-hidden rounded-[1.45rem] border backdrop-blur-2xl',
             isDarkTheme
               ? 'border-white/10 bg-slate-950/90 shadow-[0_24px_70px_rgba(2,6,23,0.70)]'
               : 'border-indigo-100 bg-white shadow-[0_18px_45px_rgba(59,130,246,0.20)]'
@@ -117,7 +117,7 @@ const BottomNavigation: React.FC = () => {
             )}
           />
 
-          <div className="relative grid grid-cols-5 items-center gap-1 px-1.5 py-1.5">
+          <div className="relative grid grid-cols-5 items-center gap-1 px-1 py-1">
             {items.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(location.pathname, location.search, item.path);
@@ -127,7 +127,7 @@ const BottomNavigation: React.FC = () => {
                   key={`${item.name}-${item.path}`}
                   to={item.path}
                   className={cn(
-                    'relative flex min-h-[50px] flex-col items-center justify-center gap-0.5 rounded-[1.25rem] px-1 text-[9.5px] font-black transition-all active:scale-95',
+                    'relative flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-[1.05rem] px-1 text-[9px] font-black transition-all active:scale-95',
                     active
                       ? 'text-white'
                       : isDarkTheme
@@ -138,14 +138,14 @@ const BottomNavigation: React.FC = () => {
                   {active && (
                     <motion.span
                       layoutId="bottom-navigation-active-pill"
-                      className="absolute inset-0 rounded-[1.25rem] bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-[0_8px_24px_rgba(37,99,235,0.38)]"
+                      className="absolute inset-0 rounded-[1.05rem] bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-[0_8px_24px_rgba(37,99,235,0.38)]"
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   )}
 
                   <span
                     className={cn(
-                      'relative flex h-5 w-5 items-center justify-center transition-transform duration-200',
+                      'relative flex h-[18px] w-[18px] items-center justify-center transition-transform duration-200',
                       active
                         ? 'scale-110 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.55)]'
                         : isDarkTheme
@@ -153,7 +153,7 @@ const BottomNavigation: React.FC = () => {
                           : item.iconClass
                     )}
                   >
-                    <Icon size={20} strokeWidth={active ? 3 : 2.5} />
+                    <Icon size={18} strokeWidth={active ? 3 : 2.5} />
                   </span>
 
                   <span
