@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
 import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 
-import PostLoginSplash from '../components/PostLoginSplash';
-import { AnimatePresence } from 'motion/react';
 
 export default function Login() {
   const { user, loading: authLoading, refreshProfile } = useAuth();
@@ -16,7 +14,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -44,7 +41,6 @@ export default function Login() {
   const search = location.state?.from?.search || '';
   const stateRedirect = normalizeRedirect(from + search);
   const fullRedirect = urlRedirect || storedRedirect || stateRedirect || '/dashboard';
-  const shouldRunPostLoginSplash = urlParams.get('postLoginSplash') === '1';
 
   const clearPendingRedirect = () => {
     try {
@@ -54,13 +50,8 @@ export default function Login() {
     }
   };
 
-  const keepPremiumSplashVisible = () =>
-    new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 7600);
-    });
-
   useEffect(() => {
-    if (!authLoading && user && !isAuthenticating) {
+    if (!authLoading && user) {
       // If already logged in, redirect based on role
       const checkRoleAndRedirect = async () => {
         const { data: profileData } = await supabase
@@ -83,17 +74,11 @@ export default function Login() {
 
         clearPendingRedirect();
 
-        if (shouldRunPostLoginSplash) {
-          setIsAuthenticating(true);
-          setLoading(true);
-          await keepPremiumSplashVisible();
-        }
-
         navigate(redirectTarget, { replace: true });
       };
       checkRoleAndRedirect();
     }
-  }, [user, authLoading, navigate, isAuthenticating, fullRedirect, shouldRunPostLoginSplash]);
+  }, [user, authLoading, navigate, fullRedirect]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -140,7 +125,7 @@ export default function Login() {
     setError('');
     try {
       const oauthTarget = fullRedirect || '/dashboard';
-      const redirectUrl = `${window.location.origin}/login?postLoginSplash=1&redirectTo=${encodeURIComponent(oauthTarget)}`;
+      const redirectUrl = `${window.location.origin}/login?redirectTo=${encodeURIComponent(oauthTarget)}`;
 
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -195,7 +180,6 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setIsAuthenticating(true);
     setError('');
 
     const cleanEmail = email.trim().toLowerCase();
@@ -207,7 +191,6 @@ export default function Login() {
       });
 
       if (loginError) {
-        setIsAuthenticating(false);
         if (loginError.message.includes('Email not confirmed')) {
           setError('Por favor, confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
         } else if (loginError.message.includes('Invalid login credentials')) {
@@ -233,7 +216,6 @@ export default function Login() {
 
       if (isBiometricSupported && count === 0) {
         // Show prompt to register biometrics
-        setIsAuthenticating(false);
         setShowBiometricPrompt(true);
         return;
       }
@@ -260,12 +242,10 @@ export default function Login() {
       }
 
       clearPendingRedirect();
-      await keepPremiumSplashVisible();
       navigate(redirectTarget, { replace: true });
     } catch (err: any) {
       console.error("Erro no login:", err);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
-      setIsAuthenticating(false);
     } finally {
       setLoading(false);
     }
@@ -320,9 +300,6 @@ export default function Login() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isAuthenticating && <PostLoginSplash />}
-      </AnimatePresence>
       
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background Decorative Elements */}
