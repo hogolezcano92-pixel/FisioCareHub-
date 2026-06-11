@@ -7,7 +7,7 @@ import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
 import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 
-import SplashScreen from '../components/SplashScreen';
+import PostLoginSplash from '../components/PostLoginSplash';
 import { AnimatePresence } from 'motion/react';
 
 export default function Login() {
@@ -44,6 +44,7 @@ export default function Login() {
   const search = location.state?.from?.search || '';
   const stateRedirect = normalizeRedirect(from + search);
   const fullRedirect = urlRedirect || storedRedirect || stateRedirect || '/dashboard';
+  const shouldRunPostLoginSplash = urlParams.get('postLoginSplash') === '1';
 
   const clearPendingRedirect = () => {
     try {
@@ -72,20 +73,27 @@ export default function Login() {
         const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
         const isApproved = profileData?.status_aprovacao === 'aprovado';
 
+        let redirectTarget = fullRedirect || '/dashboard';
+
         if (isAdmin && fullRedirect === '/dashboard') {
-          clearPendingRedirect();
-          navigate('/admin', { replace: true });
+          redirectTarget = '/admin';
         } else if (isPhysio && !isApproved) {
-          clearPendingRedirect();
-          navigate('/aguardando-aprovacao', { replace: true });
-        } else {
-          clearPendingRedirect();
-          navigate(fullRedirect || '/dashboard', { replace: true });
+          redirectTarget = '/aguardando-aprovacao';
         }
+
+        clearPendingRedirect();
+
+        if (shouldRunPostLoginSplash) {
+          setIsAuthenticating(true);
+          setLoading(true);
+          await keepPremiumSplashVisible();
+        }
+
+        navigate(redirectTarget, { replace: true });
       };
       checkRoleAndRedirect();
     }
-  }, [user, authLoading, navigate, isAuthenticating]);
+  }, [user, authLoading, navigate, isAuthenticating, fullRedirect, shouldRunPostLoginSplash]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -131,7 +139,8 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const redirectUrl = `${window.location.origin}${fullRedirect || '/dashboard'}`;
+      const oauthTarget = fullRedirect || '/dashboard';
+      const redirectUrl = `${window.location.origin}/login?postLoginSplash=1&redirectTo=${encodeURIComponent(oauthTarget)}`;
 
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -312,7 +321,7 @@ export default function Login() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isAuthenticating && <SplashScreen />}
+        {isAuthenticating && <PostLoginSplash />}
       </AnimatePresence>
       
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
