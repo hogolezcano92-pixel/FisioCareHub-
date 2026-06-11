@@ -1597,15 +1597,15 @@ export default function Dashboard() {
       )}
     >
       <style>{`
-        /* Dashboard: melhora o selo Story e força os ícones rápidos coloridos no tema claro sem alterar o dark mode */
+        /* Dashboard: selo Story premium no tema claro sem alterar o dark mode */
         html:not(.dark) .dashboard-story-avatar > button,
         html.light .dashboard-story-avatar > button,
         body.light .dashboard-story-avatar > button,
         :root[data-theme="light"] .dashboard-story-avatar > button {
-          background: linear-gradient(135deg, #ECFDF5 0%, #E0F2FE 100%) !important;
-          border-color: rgba(16, 185, 129, 0.65) !important;
-          color: #047857 !important;
-          box-shadow: 0 12px 30px -22px rgba(5, 150, 105, 0.75) !important;
+          background: rgba(255, 255, 255, 0.82) !important;
+          border-color: rgba(196, 181, 253, 0.86) !important;
+          color: #334155 !important;
+          box-shadow: 0 14px 34px -28px rgba(76, 29, 149, 0.68) !important;
           opacity: 1 !important;
         }
 
@@ -1613,9 +1613,9 @@ export default function Dashboard() {
         html.light .dashboard-story-avatar > button:hover,
         body.light .dashboard-story-avatar > button:hover,
         :root[data-theme="light"] .dashboard-story-avatar > button:hover {
-          background: linear-gradient(135deg, #D1FAE5 0%, #DBEAFE 100%) !important;
-          color: #065F46 !important;
-          border-color: rgba(59, 130, 246, 0.55) !important;
+          background: rgba(255, 255, 255, 0.96) !important;
+          color: #1E293B !important;
+          border-color: rgba(167, 139, 250, 0.9) !important;
         }
 
         html:not(.dark) .dashboard-story-avatar > button::before,
@@ -1631,31 +1631,6 @@ export default function Dashboard() {
           background: #10B981;
           box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
           vertical-align: 1px;
-        }
-
-
-
-        html:not(.dark) .dashboard-profile-compact-card {
-          background: rgba(255, 255, 255, 0.96) !important;
-          border-color: rgba(196, 181, 253, 0.72) !important;
-          box-shadow: 0 22px 55px rgba(99, 102, 241, 0.13) !important;
-        }
-
-        html:not(.dark) .dashboard-profile-compact-card .dashboard-profile-pro-badge,
-        html:not(.dark) .dashboard-profile-compact-card .dashboard-profile-pro-badge * {
-          color: #ffffff !important;
-          stroke: #ffffff !important;
-        }
-
-        html:not(.dark) .dashboard-profile-compact-card .badge-physio,
-        html:not(.dark) .dashboard-profile-compact-card .badge-patient {
-          color: #0f172a !important;
-        }
-
-        html:not(.dark) .dashboard-profile-section-pill,
-        html:not(.dark) .dashboard-profile-section-pill * {
-          color: #334155 !important;
-          stroke: #38bdf8 !important;
         }
 
         html:not(.dark) .dashboard-quick-icon-purple,
@@ -1712,108 +1687,116 @@ export default function Dashboard() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-10 relative z-10">
-        <header className="dashboard-profile-compact-card relative mt-1 md:mt-2 overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-2xl shadow-blue-900/20 backdrop-blur-3xl transition-all duration-300 md:p-5">
-          <div className="pointer-events-none absolute top-0 right-0 h-48 w-48 rounded-full bg-blue-500/5 blur-[60px] -mr-24 -mt-24" />
+        <header className="mt-1 md:mt-2 rounded-[2rem] border border-violet-200/70 bg-white/85 p-5 shadow-[0_22px_70px_rgba(91,33,182,0.10)] backdrop-blur-3xl relative overflow-hidden dark:border-white/10 dark:bg-white/5 dark:shadow-blue-900/20 md:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.10),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.08),transparent_34%)] pointer-events-none" />
 
-          <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-[auto,minmax(0,1fr)] md:items-center">
-              <div className="flex flex-col items-center gap-3 md:min-w-[180px]">
-                {!profile ? (
-                  <div className="h-24 w-24 animate-pulse rounded-full border-4 border-white/5 bg-slate-800" />
-                ) : isPhysio ? (
-                  <StoryAvatar
-                    physioId={profile.id}
-                    name={profile.nome_completo}
-                    avatarUrl={
-                      (profile as any).foto_url ||
-                      profile.avatar_url ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
-                    }
-                    sizeClassName="h-24 w-24 md:h-28 md:w-28"
-                    className="dashboard-story-avatar dashboard-story-avatar-compact"
-                  />
-                ) : (
+          <div className="relative z-10 grid gap-6 md:grid-cols-[minmax(170px,0.72fr)_1px_minmax(0,1.55fr)] md:items-center">
+            <div className="flex flex-col items-center justify-center gap-4">
+              {!profile ? (
+                <div className="h-24 w-24 animate-pulse rounded-full border-[6px] border-slate-100 bg-slate-200 shadow-xl dark:border-slate-950 dark:bg-slate-800 md:h-28 md:w-28" />
+              ) : isPhysio ? (
+                <StoryAvatar
+                  physioId={profile.id}
+                  name={profile.nome_completo}
+                  avatarUrl={
+                    (profile as any).foto_url ||
+                    profile.avatar_url ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
+                  }
+                  sizeClassName="h-24 w-24 md:h-28 md:w-28"
+                  className="dashboard-story-avatar"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-4">
                   <div className="relative group">
-                    <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 opacity-25 blur transition duration-1000 group-hover:opacity-50 group-hover:duration-200"></div>
+                    <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-sky-500 to-violet-600 opacity-20 blur transition duration-700 group-hover:opacity-35" />
                     <img
                       src={
                         profile.avatar_url ||
                         `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
                       }
                       alt={profile.nome_completo}
-                      className="relative h-24 w-24 rounded-full border-4 border-white/10 object-cover shadow-2xl md:h-28 md:w-28"
+                      className="relative h-24 w-24 rounded-full border-[6px] border-slate-950 object-cover shadow-2xl dark:border-slate-950 md:h-28 md:w-28"
                     />
-                    <div className="absolute bottom-1 right-1 z-10 h-4 w-4 rounded-full border-[2px] border-[#0B1120] bg-emerald-500 shadow-lg" />
+                    <span className="absolute bottom-1 right-1 h-5 w-5 rounded-full border-[3px] border-white bg-emerald-500 shadow-lg dark:border-[#0B1120]" />
+                    <span className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full border-[4px] border-white bg-violet-100 text-slate-900 shadow-xl dark:border-[#0B1120] dark:bg-violet-200">
+                      <Plus size={23} className="stroke-[3.2px]" />
+                    </span>
                   </div>
-                )}
-              </div>
 
-              <div className="min-w-0 border-t border-white/10 pt-5 md:border-l md:border-t-0 md:pl-7 md:pt-0">
-                <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.65)]" />
+                    Adicionar story
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden h-full min-h-[150px] w-px bg-violet-200/80 dark:bg-white/10 md:block" />
+
+            <div className="flex min-w-0 flex-col justify-center gap-3 text-center md:text-left">
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
                   {getGreeting()},
                 </h1>
 
                 {!profile ? (
-                  <span className="mt-2 block text-xl font-black text-slate-600 animate-pulse">
-                    Conectando...
-                  </span>
+                  <span className="block text-2xl font-black text-slate-400 animate-pulse">Conectando...</span>
                 ) : (
-                  <div className="mt-2 space-y-2">
+                  <div className="space-y-2">
                     {isPhysio && (
-                      <span className="block text-lg font-black uppercase tracking-tight text-white/95 md:text-xl">
+                      <span className="block text-xl font-black uppercase tracking-tight text-slate-950 dark:bg-gradient-to-r dark:from-sky-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent md:text-2xl">
                         Dr.
                       </span>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                      <span className="max-w-full break-words text-3xl font-black uppercase leading-[0.95] tracking-tight text-white md:text-4xl lg:text-5xl">
-                        {profile.nome_completo}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {isPro && (
-                        <span className="dashboard-profile-pro-badge inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-orange-500/20">
-                          <Crown size={11} fill="currentColor" />
-                          Pro
+                    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 md:justify-start">
+                      {profile.nome_completo.split(' ').map((namePart, idx) => (
+                        <span
+                          key={idx}
+                          className="text-3xl font-black uppercase leading-none tracking-tight text-slate-950 dark:bg-gradient-to-r dark:from-sky-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent md:text-5xl"
+                        >
+                          {namePart}
                         </span>
-                      )}
-                      {isPhysio ? (
-                        <span className="badge-physio !px-3 !py-1 !text-[11px] whitespace-nowrap">
-                          Fisioterapeuta
-                        </span>
-                      ) : (
-                        <span className="badge-patient !px-3 !py-1 !text-[11px] whitespace-nowrap">
-                          Paciente
-                        </span>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
-
-                <p className="mt-4 max-w-xl text-sm font-bold leading-relaxed tracking-wide text-slate-400 md:text-base">
-                  {isPhysio
-                    ? "Bem-vindo a FisioCareHub, a sua plataforma de performance"
-                    : "Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance"}
-                </p>
               </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                {isPro && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-orange-500/20">
+                    <Crown size={12} fill="currentColor" />
+                    Pro
+                  </span>
+                )}
+                {isPhysio ? (
+                  <span className="badge-physio !px-3 !py-1 !text-[11px] whitespace-nowrap">
+                    Fisioterapeuta
+                  </span>
+                ) : (
+                  <span className="badge-patient !px-3 !py-1 !text-[11px] whitespace-nowrap">
+                    Paciente
+                  </span>
+                )}
+              </div>
+
+              <p className="max-w-xl text-sm font-extrabold leading-relaxed text-slate-800 dark:text-slate-300 md:text-lg">
+                {isPhysio
+                  ? "Bem-vindo a FisioCareHub, a sua plataforma de performance"
+                  : "Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance"}
+              </p>
             </div>
+          </div>
 
-            <div className="flex flex-col gap-3 border-t border-white/10 pt-4 lg:min-w-[260px] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-              <div className="dashboard-profile-section-pill inline-flex w-fit items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-sky-400">
-                <Sparkles size={14} className="text-sky-500" />
-                {isPhysio ? "Gestão Profissional" : "Sua Jornada de Saúde"}
-              </div>
-
-              {!isPhysio && (
-                <button
-                  onClick={() => navigate("/triage")}
-                  className="btn-primary-compact w-fit !px-4 !py-2 !text-xs !bg-sky-500 hover:!bg-sky-600"
-                >
-                  <Plus size={14} className="stroke-[3px]" />
-                  Nova Triagem
-                </button>
-              )}
+          <div className="relative z-10 mt-7 border-t border-violet-200/80 pt-5 dark:border-white/10">
+            <div className="inline-flex items-center gap-3 rounded-full border border-violet-200 bg-white/75 px-5 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+              <Sparkles size={16} className="text-sky-500" />
+              {isPhysio ? "Gestão Profissional" : "Sua Jornada de Saúde"}
             </div>
           </div>
         </header>
