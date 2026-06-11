@@ -56,7 +56,7 @@ export default function Login() {
 
   const keepPremiumSplashVisible = () =>
     new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 5000);
+      window.setTimeout(resolve, 7600);
     });
 
   useEffect(() => {
