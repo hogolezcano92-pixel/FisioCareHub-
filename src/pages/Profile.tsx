@@ -1050,22 +1050,22 @@ export default function Profile() {
   };
 
   const patientTabs = [
-    { id: 'profile', label: t('nav.profile'), icon: User, color: '#0EA5E9' },
-    { id: 'clinic', label: t('clinic.patient_data'), icon: Building2, color: '#2563EB' },
-    { id: 'security', label: t('security.title'), icon: Lock, color: '#7C3AED' },
-    { id: 'notifications', label: t('notifications.title'), icon: Bell, color: '#F59E0B' },
-    { id: 'payments', label: t('payments.title'), icon: CreditCard, color: '#10B981' },
-    { id: 'theme', label: t('settings.preferences'), icon: Globe, color: '#06B6D4' },
-    { id: 'privacy', label: t('privacy.title'), icon: Eye, color: '#A855F7' },
+    { id: 'profile', label: t('nav.profile'), icon: User, colorClass: '!text-sky-500 !stroke-sky-500 dark:!text-sky-300 dark:!stroke-sky-300' },
+    { id: 'clinic', label: t('clinic.patient_data'), icon: Building2, colorClass: '!text-blue-500 !stroke-blue-500 dark:!text-blue-300 dark:!stroke-blue-300' },
+    { id: 'security', label: t('security.title'), icon: Lock, colorClass: '!text-violet-500 !stroke-violet-500 dark:!text-violet-300 dark:!stroke-violet-300' },
+    { id: 'notifications', label: t('notifications.title'), icon: Bell, colorClass: '!text-amber-500 !stroke-amber-500 dark:!text-amber-300 dark:!stroke-amber-300' },
+    { id: 'payments', label: t('payments.title'), icon: CreditCard, colorClass: '!text-emerald-500 !stroke-emerald-500 dark:!text-emerald-300 dark:!stroke-emerald-300' },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe, colorClass: '!text-cyan-500 !stroke-cyan-500 dark:!text-cyan-300 dark:!stroke-cyan-300' },
+    { id: 'privacy', label: t('privacy.title'), icon: Eye, colorClass: '!text-purple-500 !stroke-purple-500 dark:!text-purple-300 dark:!stroke-purple-300' },
   ];
 
   const physioTabs = [
-    { id: 'profile_prof', label: t('nav.profile'), icon: User, color: '#0EA5E9' },
-    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2, color: '#2563EB' },
-    { id: 'subscription', label: t('nav.subscription'), icon: Crown, color: '#F59E0B' },
-    { id: 'earnings', label: t('payments.received'), icon: DollarSign, color: '#10B981' },
-    { id: 'theme', label: t('settings.preferences'), icon: Globe, color: '#06B6D4' },
-    { id: 'security', label: t('security.title'), icon: Lock, color: '#7C3AED' },
+    { id: 'profile_prof', label: t('nav.profile'), icon: User, colorClass: '!text-sky-500 !stroke-sky-500 dark:!text-sky-300 dark:!stroke-sky-300' },
+    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2, colorClass: '!text-blue-500 !stroke-blue-500 dark:!text-blue-300 dark:!stroke-blue-300' },
+    { id: 'subscription', label: t('nav.subscription'), icon: Crown, colorClass: '!text-amber-500 !stroke-amber-500 dark:!text-amber-300 dark:!stroke-amber-300' },
+    { id: 'earnings', label: t('payments.received'), icon: DollarSign, colorClass: '!text-emerald-500 !stroke-emerald-500 dark:!text-emerald-300 dark:!stroke-emerald-300' },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe, colorClass: '!text-cyan-500 !stroke-cyan-500 dark:!text-cyan-300 dark:!stroke-cyan-300' },
+    { id: 'security', label: t('security.title'), icon: Lock, colorClass: '!text-violet-500 !stroke-violet-500 dark:!text-violet-300 dark:!stroke-violet-300' },
   ];
 
   const currentTabs = isPhysio ? physioTabs : patientTabs;
@@ -1121,8 +1121,13 @@ export default function Profile() {
                 >
                   <tab.icon
                     size={20}
-                    className="shrink-0 transition-colors"
-                    style={{ color: isActive ? '#FFFFFF' : tab.color }}
+                    strokeWidth={2.35}
+                    className={cn(
+                      "shrink-0 transition-colors",
+                      isActive
+                        ? "!text-white !stroke-white"
+                        : tab.colorClass
+                    )}
                   />
                   <span className="text-inherit">{tab.label}</span>
                 </button>
@@ -1135,14 +1140,14 @@ export default function Profile() {
               onClick={() => signOut()}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-emerald-700 border border-transparent hover:bg-emerald-100/80 hover:text-emerald-900 transition-all dark:text-rose-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
             >
-              <LogOut size={20} style={{ color: "#10B981" }} />
+              <LogOut size={20} strokeWidth={2.35} className="!text-emerald-500 !stroke-emerald-500 dark:!text-rose-500 dark:!stroke-rose-500" />
               Sair da Conta
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-700 border border-transparent hover:text-red-600 hover:bg-red-50 transition-all dark:text-slate-500 dark:hover:text-red-500 dark:hover:bg-red-500/10"
             >
-              <Trash2 size={20} style={{ color: "#EF4444" }} />
+              <Trash2 size={20} strokeWidth={2.35} className="!text-red-500 !stroke-red-500" />
               Excluir Conta
             </button>
           </div>
