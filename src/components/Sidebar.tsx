@@ -362,10 +362,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         .fisio-sidebar-image-bg img {
           width: 100%;
           height: 100%;
-          object-fit: contain;
-          object-position: center 42%;
-          opacity: 0.16;
-          filter: saturate(1.02) contrast(0.98);
+          object-fit: cover;
+          object-position: center 58%;
+          opacity: 0.12;
+          filter: saturate(0.92) contrast(0.96);
+          transform: scale(1.08);
+          transform-origin: center center;
           user-select: none;
           -webkit-user-drag: none;
         }
@@ -378,19 +380,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           background:
             linear-gradient(
               180deg,
-              rgba(245, 240, 255, 0.94) 0%,
-              rgba(245, 240, 255, 0.66) 18%,
-              rgba(245, 240, 255, 0.38) 45%,
-              rgba(245, 240, 255, 0.78) 100%
+              rgba(245, 240, 255, 0.98) 0%,
+              rgba(245, 240, 255, 0.88) 14%,
+              rgba(245, 240, 255, 0.56) 42%,
+              rgba(245, 240, 255, 0.76) 72%,
+              rgba(245, 240, 255, 0.97) 100%
             ),
-            radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.28), transparent 45%);
+            linear-gradient(
+              90deg,
+              rgba(245, 240, 255, 0.96) 0%,
+              rgba(245, 240, 255, 0.48) 12%,
+              rgba(245, 240, 255, 0.12) 24%,
+              rgba(245, 240, 255, 0.12) 76%,
+              rgba(245, 240, 255, 0.48) 88%,
+              rgba(245, 240, 255, 0.96) 100%
+            ),
+            radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.24), transparent 42%);
         }
 
         html.dark .fisio-sidebar-image-bg img,
         body.dark .fisio-sidebar-image-bg img,
         :root[data-theme="dark"] .fisio-sidebar-image-bg img {
-          opacity: 0.10;
-          filter: brightness(0.85) saturate(0.95) contrast(1.05);
+          opacity: 0.09;
+          filter: brightness(0.82) saturate(0.90) contrast(1.02);
         }
 
         html.dark .fisio-sidebar-image-overlay,
@@ -399,12 +411,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           background:
             linear-gradient(
               180deg,
-              rgba(9, 13, 26, 0.90) 0%,
-              rgba(9, 13, 26, 0.62) 22%,
-              rgba(9, 13, 26, 0.42) 48%,
-              rgba(9, 13, 26, 0.84) 100%
+              rgba(9, 13, 26, 0.96) 0%,
+              rgba(9, 13, 26, 0.82) 14%,
+              rgba(9, 13, 26, 0.50) 42%,
+              rgba(9, 13, 26, 0.72) 72%,
+              rgba(9, 13, 26, 0.94) 100%
             ),
-            radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.08), transparent 44%);
+            linear-gradient(
+              90deg,
+              rgba(9, 13, 26, 0.96) 0%,
+              rgba(9, 13, 26, 0.50) 12%,
+              rgba(9, 13, 26, 0.14) 24%,
+              rgba(9, 13, 26, 0.14) 76%,
+              rgba(9, 13, 26, 0.50) 88%,
+              rgba(9, 13, 26, 0.96) 100%
+            ),
+            radial-gradient(circle at 50% 24%, rgba(59, 130, 246, 0.06), transparent 42%);
         }
 
         /* Dark mode: sidebar mais premium, com textos nítidos e ícones coloridos */
