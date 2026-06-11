@@ -1104,35 +1104,47 @@ export default function Profile() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Navigation Sidebar */}
         <aside className="lg:w-72 space-y-2">
-          <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-sm space-y-1">
-            {currentTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => navigate(`/profile?tab=${tab.id}`)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm",
-                  activeTab === tab.id 
-                    ? "bg-primary text-white shadow-lg shadow-premium" 
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <tab.icon size={20} className={activeTab === tab.id ? "text-white" : "text-slate-500"} />
-                {tab.label}
-              </button>
-            ))}
+          <div className="bg-sky-50/90 backdrop-blur-xl p-4 rounded-[2rem] border border-sky-200/70 shadow-sm shadow-sky-100/60 space-y-1 dark:bg-slate-900/50 dark:border-white/10 dark:shadow-none">
+            {currentTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => navigate(`/profile?tab=${tab.id}`)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold transition-all text-sm border",
+                    isActive
+                      ? "bg-gradient-to-r from-sky-100 to-emerald-100 text-slate-900 border-sky-200 shadow-lg shadow-sky-100/80 dark:from-primary dark:to-blue-600 dark:text-white dark:border-white/10 dark:shadow-premium"
+                      : "text-slate-700 border-transparent hover:bg-sky-100/80 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  )}
+                >
+                  <tab.icon
+                    size={20}
+                    className={cn(
+                      "shrink-0",
+                      isActive
+                        ? "text-sky-600 dark:text-white"
+                        : "text-sky-500 dark:text-slate-500"
+                    )}
+                  />
+                  <span className="text-inherit">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="bg-slate-900/50 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 shadow-sm space-y-1">
+          <div className="bg-emerald-50/85 backdrop-blur-xl p-4 rounded-[2rem] border border-emerald-200/70 shadow-sm shadow-emerald-100/60 space-y-1 dark:bg-slate-900/50 dark:border-white/10 dark:shadow-none">
             <button
               onClick={() => signOut()}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-rose-500 hover:bg-rose-500/10 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-emerald-700 border border-transparent hover:bg-emerald-100/80 hover:text-emerald-900 transition-all dark:text-rose-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
             >
               <LogOut size={20} />
               Sair da Conta
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-700 border border-transparent hover:text-red-600 hover:bg-red-50 transition-all dark:text-slate-500 dark:hover:text-red-500 dark:hover:bg-red-500/10"
             >
               <Trash2 size={20} />
               Excluir Conta
