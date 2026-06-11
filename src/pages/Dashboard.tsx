@@ -632,7 +632,87 @@ export default function Dashboard() {
     null,
   );
   const [showWelcome, setShowWelcome] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [searchParams] = useSearchParams();
+
+  const currentCoverUrl =
+    coverPreviewUrl ||
+    (profile as any)?.cover_url ||
+    (profile as any)?.foto_capa_url ||
+    (profile as any)?.banner_url ||
+    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80";
+
+  const handleCoverUpload = async (event: any) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile?.id) return;
+
+    if (!file.type?.startsWith("image/")) {
+      toast.error("Selecione uma imagem para a capa.");
+      if (coverInputRef.current) coverInputRef.current.value = "";
+      return;
+    }
+
+    setCoverUploading(true);
+
+    try {
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const filePath = `covers/${profile.id}/cover-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type || "image/jpeg",
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) throw new Error("Não foi possível gerar a URL pública da capa.");
+
+      const finalUrl = `${publicUrl}?t=${Date.now()}`;
+      const updateAttempts = [
+        { cover_url: finalUrl },
+        { foto_capa_url: finalUrl },
+        { banner_url: finalUrl },
+      ];
+
+      let lastError: any = null;
+      let saved = false;
+
+      for (const payload of updateAttempts) {
+        const { error } = await supabase
+          .from("perfis")
+          .update(payload)
+          .eq("id", profile.id);
+
+        if (!error) {
+          saved = true;
+          break;
+        }
+
+        lastError = error;
+      }
+
+      if (!saved) throw lastError || new Error("Não foi possível salvar a capa no perfil.");
+
+      setCoverPreviewUrl(finalUrl);
+      await refreshProfile();
+      toast.success("Foto de capa atualizada!");
+    } catch (error: any) {
+      console.error("Erro ao atualizar foto de capa:", error);
+      toast.error(error?.message || "Erro ao atualizar a foto de capa.");
+    } finally {
+      setCoverUploading(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -1693,12 +1773,7 @@ export default function Dashboard() {
             <div
               className="relative h-32 overflow-hidden rounded-t-[2rem] border-b border-white/10 bg-slate-900 md:h-40"
               style={{
-                backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.72) 100%), url(${
-                  (profile as any)?.cover_url ||
-                  (profile as any)?.foto_capa_url ||
-                  (profile as any)?.banner_url ||
-                  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80"
-                })`,
+                backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.72) 100%), url(${currentCoverUrl})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
@@ -1708,12 +1783,25 @@ export default function Dashboard() {
                 <Sparkles size={11} className="text-sky-300" />
                 Capa profissional
               </div>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverUpload}
+              />
               <button
                 type="button"
-                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/90 shadow-xl backdrop-blur-xl transition-all hover:bg-slate-950/65"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={coverUploading}
+                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/90 shadow-xl backdrop-blur-xl transition-all hover:bg-slate-950/65 disabled:cursor-not-allowed disabled:opacity-70"
                 aria-label="Editar foto de capa"
               >
-                <Plus size={12} className="stroke-[3px]" />
+                {coverUploading ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Plus size={12} className="stroke-[3px]" />
+                )}
                 Capa
               </button>
             </div>
@@ -1734,7 +1822,7 @@ export default function Dashboard() {
                           `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
                         }
                         sizeClassName="w-24 h-24"
-                        className="dashboard-story-avatar [&>div:first-child]:!border-[5px] [&>div:first-child]:!border-[#0B1120]"
+                        className="dashboard-story-avatar dashboard-story-avatar-clean [&>div>button:first-child]:!bg-transparent [&>div>button:first-child]:!p-0 [&>div>button:first-child]:!shadow-none [&>div>button:first-child>div]:!ring-0 [&>div>button:first-child>div]:!border-0"
                       />
                     </div>
                   )}
@@ -1760,7 +1848,7 @@ export default function Dashboard() {
                         Conectando...
                       </span>
                     ) : (
-                      <h1 className="max-w-[230px] truncate text-[24px] font-black uppercase leading-[0.95] tracking-tight text-white sm:max-w-none sm:text-3xl md:text-4xl">
+                      <h1 className="max-w-full whitespace-normal break-words text-[24px] font-black uppercase leading-[0.95] tracking-tight text-white sm:text-3xl md:text-4xl">
                         Dr. {profile.nome_completo}
                       </h1>
                     )}
