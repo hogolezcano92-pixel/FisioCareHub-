@@ -45,7 +45,6 @@ import { useTranslation } from 'react-i18next';
 // Components
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
-import SplashScreen from './components/SplashScreen';
 import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
 import LGPDModal from './components/LGPDModal';
@@ -211,7 +210,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
   const location = useLocation();
 
   if (loading || (user && !profile)) {
-    return <SplashScreen />;
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -890,9 +889,9 @@ export default function App() {
   return (
     <>
       {showSplash ? (
-        <SplashScreen />
+        <PageLoader />
       ) : showOnboarding ? (
-        <Suspense fallback={<SplashScreen />}>
+        <Suspense fallback={<PageLoader />}>
           <Onboarding onComplete={handleOnboardingComplete} />
         </Suspense>
       ) : (
@@ -900,7 +899,7 @@ export default function App() {
           <BrowserRouter>
             <AuthProvider>
               <AuthGate>
-                <Suspense fallback={<SplashScreen />}>
+                <Suspense fallback={<PageLoader />}>
                   <AppContent />
                 </Suspense>
               </AuthGate>
