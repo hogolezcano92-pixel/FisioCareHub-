@@ -50,30 +50,40 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-[#0B1120] border-t border-white/5 transition-colors duration-300 relative z-20">
+    <footer className="w-full relative z-20 transition-colors duration-300 border-t border-sky-100 bg-gradient-to-br from-white via-sky-50 to-emerald-50 dark:bg-[#0B1120] dark:bg-none dark:border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-1 space-y-6">
             <Logo size="md" variant="light" />
-            <p className="text-slate-400 text-sm font-medium leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-400 text-sm font-medium leading-relaxed">
               {t('footer.description', 'Conectando fisioterapeutas e pacientes com tecnologia e cuidado.')}
             </p>
           </div>
 
           {/* Navigation Links */}
           <div className="space-y-6">
-            <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">{t('footer.navigation', 'Navegação')}</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">
+              {t('footer.navigation', 'Navegação')}
+            </h4>
+
             <ul className="space-y-4">
               <li>
-                <Link to="/dashboard" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <LayoutDashboard size={16} className="text-slate-500 group-hover:text-blue-400" />
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <LayoutDashboard size={16} className="text-sky-500 dark:text-slate-500 group-hover:text-sky-600 dark:group-hover:text-blue-400" />
                   {t('footer.dashboard', 'Dashboard')}
                 </Link>
               </li>
+
               <li>
-                <Link to="/profile" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <User size={16} className="text-slate-500 group-hover:text-blue-400" />
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <User size={16} className="text-emerald-500 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-blue-400" />
                   {t('footer.account', 'Minha Conta')}
                 </Link>
               </li>
@@ -82,17 +92,27 @@ export default function Footer() {
 
           {/* Legal Links */}
           <div className="space-y-6">
-            <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">{t('footer.legal', 'Legal')}</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">
+              {t('footer.legal', 'Legal')}
+            </h4>
+
             <ul className="space-y-4">
               <li>
-                <Link to="/termos" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <FileText size={16} className="text-slate-500 group-hover:text-blue-400" />
+                <Link
+                  to="/termos"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <FileText size={16} className="text-blue-500 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                   {t('footer.terms', 'Termos de Uso')}
                 </Link>
               </li>
+
               <li>
-                <Link to="/privacidade" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <Shield size={16} className="text-slate-500 group-hover:text-blue-400" />
+                <Link
+                  to="/privacidade"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <Shield size={16} className="text-violet-500 dark:text-slate-500 group-hover:text-violet-600 dark:group-hover:text-blue-400" />
                   {t('footer.privacy', 'Política de Privacidade')}
                 </Link>
               </li>
@@ -101,44 +121,57 @@ export default function Footer() {
 
           {/* Contact Column */}
           <div className="space-y-6">
-            <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">{t('footer.contact', 'Contato')}</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">
+              {t('footer.contact', 'Contato')}
+            </h4>
+
             <ul className="space-y-4">
               <li>
-                <Link to="/suporte" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <HelpCircle size={16} className="text-slate-400 group-hover:text-blue-400" />
+                <Link
+                  to="/suporte"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <HelpCircle size={16} className="text-cyan-500 dark:text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-blue-400" />
                   {t('footer.support', 'Suporte')}
                 </Link>
               </li>
+
               <li>
-                <a href="mailto:suporte@fisiocarehub.company" className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group">
-                  <Mail size={16} className="text-slate-400 group-hover:text-blue-400" />
+                <a
+                  href="mailto:suporte@fisiocarehub.company"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors group"
+                >
+                  <Mail size={16} className="text-sky-500 dark:text-slate-400 group-hover:text-sky-600 dark:group-hover:text-blue-400" />
                   suporte@fisiocarehub.company
                 </a>
               </li>
+
               <li className="pt-2">
                 <div className="flex flex-col gap-4">
-                  <a 
-                    href="https://instagram.com/fisiocarehub.app" 
-                    target="_blank" 
+                  <a
+                    href="https://instagram.com/fisiocarehub.app"
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-pink-500 transition-all hover:translate-x-1 group"
+                    className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-pink-600 dark:text-slate-400 dark:hover:text-pink-500 transition-all hover:translate-x-1 group"
                   >
-                    <div className="w-11 h-11 shrink-0 rounded-2xl bg-[radial-gradient(circle_at_30%_107%,#fdf497_0%,#fdf497_5%,#fd5949_45%,#d6249f_60%,#285AEB_90%)] flex items-center justify-center shadow-lg shadow-pink-500/20 ring-1 ring-white/10 group-hover:scale-105 group-hover:shadow-pink-500/30 transition-all duration-300">
+                    <div className="w-11 h-11 shrink-0 rounded-2xl bg-[radial-gradient(circle_at_30%_107%,#fdf497_0%,#fdf497_5%,#fd5949_45%,#d6249f_60%,#285AEB_90%)] flex items-center justify-center shadow-lg shadow-pink-500/20 ring-1 ring-white/70 dark:ring-white/10 group-hover:scale-105 group-hover:shadow-pink-500/30 transition-all duration-300">
                       <InstagramIcon className="w-7 h-7 text-white drop-shadow-sm" />
                     </div>
                     @fisiocarehub.app
                   </a>
-                  <a 
-                    href="https://wa.me/5511984040563" 
-                    target="_blank" 
+
+                  <a
+                    href="https://wa.me/5511984040563"
+                    target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Falar com o FisioCareHub pelo WhatsApp"
-                    className="flex items-center gap-3 text-sm font-bold text-slate-300 hover:text-white transition-all hover:translate-x-1 group"
+                    className="flex items-center gap-3 text-sm font-bold text-slate-700 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-white transition-all hover:translate-x-1 group"
                   >
-                    <div className="w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br from-[#064E3B] via-[#047857] to-[#022C22] flex items-center justify-center shadow-lg shadow-green-500/20 ring-1 ring-white/10 group-hover:scale-105 group-hover:shadow-green-500/30 transition-all duration-300">
+                    <div className="w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br from-[#16A34A] via-[#059669] to-[#047857] flex items-center justify-center shadow-lg shadow-green-500/20 ring-1 ring-white/70 dark:from-[#064E3B] dark:via-[#047857] dark:to-[#022C22] dark:ring-white/10 group-hover:scale-105 group-hover:shadow-green-500/30 transition-all duration-300">
                       <WhatsAppIcon className="w-7 h-7 text-white drop-shadow-sm" />
                     </div>
-                    <span className="text-slate-300 group-hover:text-white transition-colors">
+
+                    <span className="text-slate-700 group-hover:text-emerald-700 dark:text-slate-300 dark:group-hover:text-white transition-colors">
                       +55 11 98404-0563
                     </span>
                   </a>
@@ -149,12 +182,17 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright */}
-        <div className="mt-16 pt-8 border-t border-white/5 text-center">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            © {currentYear} <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-white bg-clip-text text-transparent">FisioCareHub</span>. {t('footer.rights', 'Todos os direitos reservados.')}
+        <div className="mt-16 pt-8 border-t border-sky-100 dark:border-white/5 text-center">
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest">
+            © {currentYear}{' '}
+            <span className="bg-gradient-to-r from-sky-500 via-violet-500 to-emerald-500 dark:from-sky-400 dark:via-violet-400 dark:to-white bg-clip-text text-transparent">
+              FisioCareHub
+            </span>
+            . {t('footer.rights', 'Todos os direitos reservados.')}
           </p>
         </div>
       </div>
     </footer>
   );
 }
+
