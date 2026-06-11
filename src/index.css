@@ -4625,3 +4625,87 @@ html:not(.dark) .dashboard-daily-pain-card .dashboard-daily-pain-submit-disabled
     color: #ffffff !important;
   }
 }
+/* =========================================================
+   FisioCareHub - Post Login Splash
+   Correção de contraste SOMENTE no tema claro
+   ========================================================= */
+
+html:not(.dark) .fch-post-login-splash {
+  color-scheme: dark !important;
+  color: #ffffff !important;
+}
+
+/* Força textos internos a ficarem claros no tema claro */
+html:not(.dark) .fch-post-login-splash h1,
+html:not(.dark) .fch-post-login-splash h2,
+html:not(.dark) .fch-post-login-splash h3,
+html:not(.dark) .fch-post-login-splash p,
+html:not(.dark) .fch-post-login-splash span,
+html:not(.dark) .fch-post-login-splash strong,
+html:not(.dark) .fch-post-login-splash small {
+  color: #ffffff !important;
+}
+
+/* Título principal: Bem-vindo */
+html:not(.dark) .fch-post-login-splash .fch-splash-title {
+  color: #ffffff !important;
+  text-shadow:
+    0 0 18px rgba(56, 189, 248, 0.45),
+    0 0 34px rgba(168, 85, 247, 0.38) !important;
+}
+
+/* Subtítulo */
+html:not(.dark) .fch-post-login-splash .fch-splash-subtitle {
+  color: rgba(241, 245, 249, 0.96) !important;
+}
+
+/* Texto menor dentro do card */
+html:not(.dark) .fch-post-login-splash .fch-splash-muted {
+  color: rgba(226, 232, 240, 0.92) !important;
+}
+
+/* Card inferior */
+html:not(.dark) .fch-post-login-splash .fch-splash-card {
+  background: rgba(15, 23, 42, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Pílula do logo superior */
+html:not(.dark) .fch-post-login-splash .fch-splash-glass {
+  background: rgba(15, 23, 42, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Texto do logo superior */
+html:not(.dark) .fch-post-login-splash .fch-splash-logo,
+html:not(.dark) .fch-post-login-splash .fch-splash-logo * {
+  color: #ffffff !important;
+}
+
+/* Mantém o “Care” azul visível */
+html:not(.dark) .fch-post-login-splash .fch-splash-logo-care {
+  color: #67e8f9 !important;
+  text-shadow: 0 0 18px rgba(103, 232, 249, 0.65) !important;
+}
+
+/* Barra de progresso */
+html:not(.dark) .fch-post-login-splash .fch-splash-progress-track {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+html:not(.dark) .fch-post-login-splash .fch-splash-progress-bar {
+  background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc) !important;
+  box-shadow:
+    0 0 20px rgba(56, 189, 248, 0.58),
+    0 0 34px rgba(192, 132, 252, 0.45) !important;
+}
+
+/* Texto "ENTRANDO NO DASHBOARD..." */
+html:not(.dark) .fch-post-login-splash .fch-splash-entering {
+  color: #ffffff !important;
+  letter-spacing: 0.28em;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.28) !important;
+}
