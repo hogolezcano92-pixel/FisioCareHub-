@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
+import PostLoginSplash from '../components/PostLoginSplash';
 import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
 import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
@@ -19,6 +20,12 @@ export default function Login() {
   const [countdown, setCountdown] = useState(0);
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  const [postLoginSplash, setPostLoginSplash] = useState<{
+    target: string;
+    role?: string | null;
+    name?: string | null;
+  } | null>(null);
+  const [isLoginTransitionActive, setIsLoginTransitionActive] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,6 +49,38 @@ export default function Login() {
   const stateRedirect = normalizeRedirect(from + search);
   const fullRedirect = urlRedirect || storedRedirect || stateRedirect || '/dashboard';
 
+  const POST_LOGIN_SPLASH_KEY = 'fch_post_login_splash_pending';
+
+  const clearPostLoginSplashFlag = () => {
+    try {
+      sessionStorage.removeItem(POST_LOGIN_SPLASH_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  const getPostLoginSplashFlag = () => {
+    try {
+      return sessionStorage.getItem(POST_LOGIN_SPLASH_KEY) === '1';
+    } catch {
+      return false;
+    }
+  };
+
+  const startPostLoginSplash = (target: string, role?: string | null, name?: string | null) => {
+    setIsLoginTransitionActive(true);
+    setPostLoginSplash({ target, role, name });
+  };
+
+  const finishPostLoginSplash = () => {
+    if (!postLoginSplash) return;
+    const target = postLoginSplash.target || '/dashboard';
+    setPostLoginSplash(null);
+    setIsLoginTransitionActive(false);
+    clearPostLoginSplashFlag();
+    navigate(target, { replace: true });
+  };
+
   const clearPendingRedirect = () => {
     try {
       sessionStorage.removeItem('pendingRedirect');
@@ -51,12 +90,12 @@ export default function Login() {
   };
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !isLoginTransitionActive && !postLoginSplash && !showBiometricPrompt) {
       // If already logged in, redirect based on role
       const checkRoleAndRedirect = async () => {
         const { data: profileData } = await supabase
           .from('perfis')
-          .select('tipo_usuario, status_aprovacao')
+          .select('tipo_usuario, status_aprovacao, nome_completo')
           .eq('id', user.id)
           .maybeSingle();
         
@@ -74,11 +113,16 @@ export default function Login() {
 
         clearPendingRedirect();
 
+        if (getPostLoginSplashFlag()) {
+          startPostLoginSplash(redirectTarget, profileData?.tipo_usuario, profileData?.nome_completo || user.user_metadata?.nome_completo || user.user_metadata?.full_name || user.email);
+          return;
+        }
+
         navigate(redirectTarget, { replace: true });
       };
       checkRoleAndRedirect();
     }
-  }, [user, authLoading, navigate, fullRedirect]);
+  }, [user, authLoading, navigate, fullRedirect, isLoginTransitionActive, postLoginSplash, showBiometricPrompt]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -127,6 +171,12 @@ export default function Login() {
       const oauthTarget = fullRedirect || '/dashboard';
       const redirectUrl = `${window.location.origin}/login?redirectTo=${encodeURIComponent(oauthTarget)}`;
 
+      try {
+        sessionStorage.setItem(POST_LOGIN_SPLASH_KEY, '1');
+      } catch {
+        // ignore
+      }
+
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -137,6 +187,7 @@ export default function Login() {
     } catch (err: any) {
       console.error("Erro no login com Google:", err);
       setError('Erro ao entrar com Google: ' + err.message);
+      clearPostLoginSplashFlag();
       setLoading(false);
     }
   };
@@ -180,6 +231,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsLoginTransitionActive(true);
     setError('');
 
     const cleanEmail = email.trim().toLowerCase();
@@ -198,6 +250,7 @@ export default function Login() {
         } else {
           setError('Erro no login: ' + loginError.message);
         }
+        setIsLoginTransitionActive(false);
         setLoading(false);
         return;
       }
@@ -216,6 +269,7 @@ export default function Login() {
 
       if (isBiometricSupported && count === 0) {
         // Show prompt to register biometrics
+        setIsLoginTransitionActive(false);
         setShowBiometricPrompt(true);
         return;
       }
@@ -223,7 +277,7 @@ export default function Login() {
       // Get profile to check role and approval status
       const { data: profileData } = await supabase
         .from('perfis')
-        .select('tipo_usuario, status_aprovacao')
+        .select('tipo_usuario, status_aprovacao, nome_completo')
         .eq('id', data.user?.id)
         .maybeSingle();
 
@@ -242,9 +296,14 @@ export default function Login() {
       }
 
       clearPendingRedirect();
-      navigate(redirectTarget, { replace: true });
+      startPostLoginSplash(
+        redirectTarget,
+        profileData?.tipo_usuario,
+        profileData?.nome_completo || data.user?.user_metadata?.nome_completo || data.user?.user_metadata?.full_name || cleanEmail
+      );
     } catch (err: any) {
       console.error("Erro no login:", err);
+      setIsLoginTransitionActive(false);
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
     } finally {
       setLoading(false);
@@ -254,6 +313,14 @@ export default function Login() {
   return (
     <>
       <AnimatePresence>
+        {postLoginSplash && (
+          <PostLoginSplash
+            userRole={postLoginSplash.role}
+            userName={postLoginSplash.name}
+            duration={6000}
+            onComplete={finishPostLoginSplash}
+          />
+        )}
         {showBiometricPrompt && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div
