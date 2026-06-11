@@ -1050,22 +1050,22 @@ export default function Profile() {
   };
 
   const patientTabs = [
-    { id: 'profile', label: t('nav.profile'), icon: User },
-    { id: 'clinic', label: t('clinic.patient_data'), icon: Building2 },
-    { id: 'security', label: t('security.title'), icon: Lock },
-    { id: 'notifications', label: t('notifications.title'), icon: Bell },
-    { id: 'payments', label: t('payments.title'), icon: CreditCard },
-    { id: 'theme', label: t('settings.preferences'), icon: Globe },
-    { id: 'privacy', label: t('privacy.title'), icon: Eye },
+    { id: 'profile', label: t('nav.profile'), icon: User, color: 'text-sky-500 dark:text-sky-300' },
+    { id: 'clinic', label: t('clinic.patient_data'), icon: Building2, color: 'text-blue-500 dark:text-blue-300' },
+    { id: 'security', label: t('security.title'), icon: Lock, color: 'text-violet-500 dark:text-violet-300' },
+    { id: 'notifications', label: t('notifications.title'), icon: Bell, color: 'text-amber-500 dark:text-amber-300' },
+    { id: 'payments', label: t('payments.title'), icon: CreditCard, color: 'text-emerald-500 dark:text-emerald-300' },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe, color: 'text-cyan-500 dark:text-cyan-300' },
+    { id: 'privacy', label: t('privacy.title'), icon: Eye, color: 'text-purple-500 dark:text-purple-300' },
   ];
 
   const physioTabs = [
-    { id: 'profile_prof', label: t('nav.profile'), icon: User },
-    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2 },
-    { id: 'subscription', label: t('nav.subscription'), icon: Crown },
-    { id: 'earnings', label: t('payments.received'), icon: DollarSign },
-    { id: 'theme', label: t('settings.preferences'), icon: Globe },
-    { id: 'security', label: t('security.title'), icon: Lock },
+    { id: 'profile_prof', label: t('nav.profile'), icon: User, color: 'text-sky-500 dark:text-sky-300' },
+    { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2, color: 'text-blue-500 dark:text-blue-300' },
+    { id: 'subscription', label: t('nav.subscription'), icon: Crown, color: 'text-amber-500 dark:text-amber-300' },
+    { id: 'earnings', label: t('payments.received'), icon: DollarSign, color: 'text-emerald-500 dark:text-emerald-300' },
+    { id: 'theme', label: t('settings.preferences'), icon: Globe, color: 'text-cyan-500 dark:text-cyan-300' },
+    { id: 'security', label: t('security.title'), icon: Lock, color: 'text-violet-500 dark:text-violet-300' },
   ];
 
   const currentTabs = isPhysio ? physioTabs : patientTabs;
@@ -1122,10 +1122,10 @@ export default function Profile() {
                   <tab.icon
                     size={20}
                     className={cn(
-                      "shrink-0",
+                      "shrink-0 transition-colors",
                       isActive
-                        ? "text-sky-600 dark:text-white"
-                        : "text-sky-500 dark:text-slate-500"
+                        ? "text-white"
+                        : tab.color
                     )}
                   />
                   <span className="text-inherit">{tab.label}</span>
@@ -1139,14 +1139,14 @@ export default function Profile() {
               onClick={() => signOut()}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-emerald-700 border border-transparent hover:bg-emerald-100/80 hover:text-emerald-900 transition-all dark:text-rose-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
             >
-              <LogOut size={20} />
+              <LogOut size={20} className="text-emerald-500 dark:text-rose-500" />
               Sair da Conta
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-bold text-sm text-slate-700 border border-transparent hover:text-red-600 hover:bg-red-50 transition-all dark:text-slate-500 dark:hover:text-red-500 dark:hover:bg-red-500/10"
             >
-              <Trash2 size={20} />
+              <Trash2 size={20} className="text-red-500 dark:text-red-500" />
               Excluir Conta
             </button>
           </div>
