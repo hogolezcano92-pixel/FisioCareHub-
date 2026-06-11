@@ -55,11 +55,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   // if we have a user but the profile is still loading OR
   // if translations are not yet ready
   if (loading || (user && !profile) || !i18nReady) {
-    return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/20 backdrop-blur-sm">
-        <div className="h-10 w-10 rounded-full border-4 border-sky-300/40 border-t-sky-500 animate-spin" />
-      </div>
-    );
+    return <div className="fixed inset-0 z-[90] bg-background" />;
   }
 
   return <>{children}</>;
