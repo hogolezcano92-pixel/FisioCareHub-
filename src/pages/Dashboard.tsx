@@ -33,8 +33,14 @@ import {
   Medal,
   Star,
   Zap,
+  Camera,
+  Eye,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { cn, formatDate } from "../lib/utils";
 import { formatHourBR } from "../utils/date";
@@ -634,6 +640,7 @@ export default function Dashboard() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [showCoverMenu, setShowCoverMenu] = useState(false);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [searchParams] = useSearchParams();
 
@@ -643,6 +650,21 @@ export default function Dashboard() {
     (profile as any)?.foto_capa_url ||
     (profile as any)?.banner_url ||
     "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80";
+
+  const openCoverPicker = () => {
+    setShowCoverMenu(false);
+    window.setTimeout(() => coverInputRef.current?.click(), 80);
+  };
+
+  const viewCoverPhoto = () => {
+    setShowCoverMenu(false);
+    if (!currentCoverUrl) {
+      toast.error("Nenhuma foto de capa disponível.");
+      return;
+    }
+
+    window.open(currentCoverUrl, "_blank", "noopener,noreferrer");
+  };
 
   const handleCoverUpload = async (event: any) => {
     const file = event.target.files?.[0];
@@ -1829,21 +1851,115 @@ export default function Dashboard() {
                 className="hidden"
                 onChange={handleCoverUpload}
               />
-              <button
-                type="button"
-                onClick={() => coverInputRef.current?.click()}
-                disabled={coverUploading}
-                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/45 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/90 shadow-xl backdrop-blur-xl transition-all hover:bg-slate-950/65 disabled:cursor-not-allowed disabled:opacity-70"
-                aria-label="Editar foto de capa"
-              >
-                {coverUploading ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <Plus size={12} className="stroke-[3px]" />
+              <div className="absolute right-4 top-4 z-20">
+                <button
+                  type="button"
+                  onClick={() => setShowCoverMenu((prev) => !prev)}
+                  disabled={coverUploading}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-slate-950/50 text-white shadow-2xl backdrop-blur-xl transition-all hover:scale-105 hover:bg-slate-950/70 disabled:cursor-not-allowed disabled:opacity-70 md:h-12 md:w-12"
+                  aria-label="Editar foto de capa"
+                  title="Editar foto de capa"
+                >
+                  {coverUploading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Camera size={19} className="stroke-[2.7px]" />
+                  )}
+                </button>
+
+                {showCoverMenu && (
+                  <div className="hidden md:block absolute right-0 mt-3 w-64 overflow-hidden rounded-3xl border border-white/15 bg-slate-950/90 p-2 text-white shadow-2xl shadow-slate-950/35 backdrop-blur-2xl">
+                    <button
+                      type="button"
+                      onClick={viewCoverPhoto}
+                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-black transition-all hover:bg-white/10"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                        <Eye size={18} />
+                      </span>
+                      Ver foto da capa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openCoverPicker}
+                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-black transition-all hover:bg-white/10"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                        <Upload size={18} />
+                      </span>
+                      Carregar foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openCoverPicker}
+                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-black transition-all hover:bg-white/10"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                        <ImageIcon size={18} />
+                      </span>
+                      Escolher foto da capa
+                    </button>
+                  </div>
                 )}
-                Capa
-              </button>
+              </div>
             </div>
+
+            {showCoverMenu && typeof document !== "undefined" && createPortal((
+              <div className="fixed inset-0 z-[80] md:hidden" role="dialog" aria-modal="true" aria-label="Opções da foto de capa">
+                <button
+                  type="button"
+                  className="absolute inset-0 bg-slate-950/55 backdrop-blur-[1px]"
+                  aria-label="Fechar opções da capa"
+                  onClick={() => setShowCoverMenu(false)}
+                />
+                <div className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#252729] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-white shadow-2xl">
+                  <div className="mx-auto mb-4 h-1.5 w-20 rounded-full bg-white/35" />
+                  <div className="mb-2 flex items-center justify-between px-1">
+                    <p className="text-sm font-black uppercase tracking-[0.16em] text-white/60">Foto de capa</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowCoverMenu(false)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+                      aria-label="Fechar"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={viewCoverPhoto}
+                      className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left text-xl font-black transition-all active:bg-white/10"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/12">
+                        <Eye size={25} />
+                      </span>
+                      Ver foto da capa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openCoverPicker}
+                      className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left text-xl font-black transition-all active:bg-white/10"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/12">
+                        <Upload size={25} />
+                      </span>
+                      Carregar foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openCoverPicker}
+                      className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left text-xl font-black transition-all active:bg-white/10"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/12">
+                        <ImageIcon size={25} />
+                      </span>
+                      Escolher foto da capa
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ), document.body)}
 
             <div className="relative px-4 pb-4 pt-0 md:px-5 md:pb-5">
               <div className="relative -mt-10 flex items-end justify-between gap-3">
