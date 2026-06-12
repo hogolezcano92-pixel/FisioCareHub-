@@ -332,9 +332,24 @@ export default function Login() {
       </AnimatePresence>
 
       
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="fch-login-video-shell min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden isolate">
+        {/* Vídeo de fundo premium do login */}
+        <video
+          className="fch-login-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        >
+          <source src="/assets/post-login-splash.mp4" type="video/mp4" />
+        </video>
+        <div className="fch-login-video-overlay" aria-hidden="true" />
+        <div className="fch-login-video-vignette" aria-hidden="true" />
+
         {/* Background Decorative Elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1]">
           <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]" />
           <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]" />
         </div>
@@ -345,7 +360,7 @@ export default function Login() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-md w-full relative z-10"
         >
-          <div className="bg-card/50 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10">
+          <div className="fch-login-card bg-card/50 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10">
             <div className="text-center mb-10">
               <div className="flex justify-center mb-6">
                 <Logo size="md" variant="light" />
