@@ -386,7 +386,10 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="fch-login-input w-full pr-4 py-2.5 rounded-[1.15rem] text-[16px] sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
+                  className="fch-login-input fch-no-ios-zoom w-full pr-4 py-2.5 rounded-[1.15rem] text-[16px] font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
+                  style={{ fontSize: '16px' }}
+                  autoComplete="email"
+                  inputMode="email"
                   placeholder="seu@email.com"
                 />
               </div>
@@ -406,7 +409,9 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="fch-login-input w-full pr-11 py-2.5 rounded-[1.15rem] text-[16px] sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
+                  className="fch-login-input fch-no-ios-zoom w-full pr-11 py-2.5 rounded-[1.15rem] text-[16px] font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
+                  style={{ fontSize: '16px' }}
+                  autoComplete="current-password"
                   placeholder="••••••••"
                 />
                 <button
