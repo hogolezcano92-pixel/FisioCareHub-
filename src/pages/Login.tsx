@@ -357,7 +357,7 @@ export default function Login() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="fch-login-content relative z-10 w-full max-w-[340px] mx-auto"
         >
-          <div className="fch-login-brand mb-4 sm:mb-5">
+          <div className="fch-login-brand mb-4 sm:mb-5 scale-[1.18] origin-center">
             <Logo size="sm" variant="dark" className="dark:hidden justify-center" />
             <Logo size="sm" variant="light" className="hidden dark:flex justify-center" />
           </div>
