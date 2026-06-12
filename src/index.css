@@ -5654,3 +5654,24 @@ body.light .public-navbar .fch-public-mobile-menu-register {
   color: #FFFFFF !important;
   box-shadow: 0 18px 38px -24px rgba(37, 99, 235, 0.68) !important;
 }
+
+/* Financeiro do fisioterapeuta — contraste exclusivo no tema claro.
+   Mantém o dark mode intacto e corrige valores apagados nos cards financeiros. */
+:root[data-theme="light"] .finance-card-label {
+  color: #334155 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .finance-card-value {
+  color: #0F172A !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #0F172A !important;
+}
+
+:root[data-theme="light"] .finance-card-helper {
+  color: #1E293B !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
