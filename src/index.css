@@ -5092,7 +5092,7 @@ html.dark .fch-login-card-video-overlay {
 }
 
 .fch-login-input {
-  min-height: 58px;
+  min-height: 52px;
   color: #ffffff;
   background: rgba(15, 23, 42, 0.38);
   border: 1px solid rgba(255, 255, 255, 0.24);
@@ -5117,7 +5117,7 @@ html.dark .fch-login-card-video-overlay {
 }
 
 .fch-login-primary {
-  min-height: 58px;
+  min-height: 52px;
   background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 46%, #7c3aed 100%);
   box-shadow:
     0 22px 50px rgba(37, 99, 235, 0.42),
@@ -5132,7 +5132,7 @@ html.dark .fch-login-card-video-overlay {
 }
 
 .fch-login-secondary {
-  min-height: 58px;
+  min-height: 52px;
   color: #ffffff;
   background: rgba(15, 23, 42, 0.36);
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -5282,10 +5282,10 @@ html:not(.dark) .fch-login-register,
   }
 
   .fch-login-title {
-    font-size: 2.1rem;
+    font-size: 1.9rem;
   }
 
   .fch-login-brand {
-    margin-bottom: 1.85rem;
+    margin-bottom: 1.55rem;
   }
 }
