@@ -5537,3 +5537,73 @@ html:not(.dark) .fch-login-content,
 :root[data-theme="light"] .fch-login-content {
   text-shadow: none !important;
 }
+
+/* =========================================================
+   FisioCareHub — Login tema claro nítido v3
+   ---------------------------------------------------------
+   Ajuste específico para o tema claro: remove o aspecto
+   esbranquiçado/embaçado do vídeo sem alterar a lógica do login
+   e sem mexer no visual premium do modo dark.
+   ========================================================= */
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video,
+html:not(.dark) .fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video,
+body:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video {
+  opacity: 1 !important;
+  filter: brightness(1.02) contrast(1.24) saturate(1.16) !important;
+  transform: scale(1.006) translateZ(0) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  image-rendering: auto !important;
+}
+
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+html:not(.dark) .fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-overlay,
+body:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.00) 0%,
+      rgba(255, 255, 255, 0.035) 36%,
+      rgba(255, 255, 255, 0.08) 64%,
+      rgba(248, 250, 252, 0.14) 100%
+    ),
+    linear-gradient(90deg,
+      rgba(15, 23, 42, 0.06) 0%,
+      rgba(255, 255, 255, 0.00) 45%,
+      rgba(79, 70, 229, 0.035) 100%
+    ) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-vignette,
+html:not(.dark) .fch-login-immersive .fch-login-video-vignette,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video-vignette,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-vignette,
+body:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(14, 165, 233, 0.025), transparent 34%),
+    radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.00) 56%, rgba(248, 250, 252, 0.12) 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) .fch-login-content,
+:root[data-theme="light"] .fch-login-content,
+body:not(.dark) .fch-login-content {
+  text-shadow: none !important;
+}
+
+html:not(.dark) .fch-login-input,
+:root[data-theme="light"] .fch-login-input,
+body:not(.dark) .fch-login-input,
+html:not(.dark) .fch-login-secondary,
+:root[data-theme="light"] .fch-login-secondary,
+body:not(.dark) .fch-login-secondary {
+  background: rgba(255, 255, 255, 0.90) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
