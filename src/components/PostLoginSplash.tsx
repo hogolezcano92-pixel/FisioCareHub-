@@ -25,29 +25,42 @@ const getFirstName = (name?: string | null) => {
   return `${parts[0]} ${parts[parts.length - 1]}`;
 };
 
-const floatingDots = Array.from({ length: 18 }, (_, index) => ({
+const floatingDots = Array.from({ length: 22 }, (_, index) => ({
   id: index,
   left: `${8 + ((index * 17) % 84)}%`,
   top: `${10 + ((index * 23) % 78)}%`,
   delay: 0.08 * index,
   size: index % 3 === 0 ? 'h-2.5 w-2.5' : index % 3 === 1 ? 'h-1.5 w-1.5' : 'h-2 w-2',
 }));
+const playfulShapes = Array.from({ length: 10 }, (_, index) => ({
+  id: index,
+  left: `${5 + ((index * 19) % 88)}%`,
+  top: `${8 + ((index * 31) % 76)}%`,
+  delay: 0.22 * index,
+  rotate: index % 2 === 0 ? 12 : -14,
+  shape: index % 3 === 0 ? 'rounded-[42%_58%_55%_45%]' : index % 3 === 1 ? 'rounded-full' : 'rounded-2xl',
+  size: index % 4 === 0 ? 'h-12 w-12' : index % 4 === 1 ? 'h-8 w-8' : index % 4 === 2 ? 'h-10 w-10' : 'h-6 w-6',
+}));
+
+const splitText = (text: string) => text.split('');
+
 
 export default function PostLoginSplash({
   userRole = 'paciente',
   userName,
-  duration = 6000,
+  duration = 10000,
   onComplete,
 }: PostLoginSplashProps) {
   const isPhysio = userRole === 'fisioterapeuta';
   const isAdmin = userRole === 'admin';
   const displayName = getFirstName(userName);
-  const progressDuration = duration / 1000;
+  const splashDuration = Math.max(duration, 10000);
+  const progressDuration = splashDuration / 1000;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => onComplete?.(), duration);
+    const timer = window.setTimeout(() => onComplete?.(), splashDuration);
     return () => window.clearTimeout(timer);
-  }, [duration, onComplete]);
+  }, [splashDuration, onComplete]);
 
   const title = isAdmin
     ? `Bem-vindo, ${displayName}`
@@ -122,6 +135,23 @@ export default function PostLoginSplash({
         animate={{ scale: [1, 1.12, 1], opacity: [0.36, 0.76, 0.36], x: [0, -24, 0] }}
         transition={{ duration: 5.4, repeat: Infinity, ease: 'easeInOut' }}
       />
+
+      {playfulShapes.map((shape) => (
+        <motion.span
+          key={shape.id}
+          className={`absolute z-0 border border-white/18 bg-white/10 shadow-[0_18px_60px_rgba(34,211,238,0.18)] backdrop-blur-md ${shape.size} ${shape.shape}`}
+          style={{ left: shape.left, top: shape.top }}
+          initial={{ opacity: 0, scale: 0.35, rotate: shape.rotate }}
+          animate={{
+            opacity: [0, 0.72, 0.38, 0.68],
+            scale: [0.35, 1.08, 0.86, 1],
+            rotate: [shape.rotate, shape.rotate * -1, shape.rotate, shape.rotate * 0.25],
+            y: [0, -18, 10, -8],
+            x: [0, shape.id % 2 === 0 ? 18 : -18, 0],
+          }}
+          transition={{ delay: shape.delay, duration: 5.8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
 
       {floatingDots.map((dot) => (
         <motion.span
@@ -250,9 +280,14 @@ export default function PostLoginSplash({
           />
           <motion.div
             className="flex h-20 w-20 items-center justify-center rounded-full border border-cyan-100/40 bg-gradient-to-br from-cyan-300/45 via-blue-500/35 to-purple-400/45 shadow-[inset_0_0_28px_rgba(255,255,255,0.12),0_0_60px_rgba(34,211,238,0.45)] backdrop-blur-xl"
-            animate={{ scale: [1, 1.08, 1], rotate: [0, 2, -2, 0] }}
-            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ scale: [1, 1.14, 0.96, 1.08, 1], rotate: [0, -6, 5, -2, 0], y: [0, -7, 1, -4, 0] }}
+            transition={{ duration: 2.15, repeat: Infinity, ease: 'easeInOut' }}
           >
+            <motion.span
+              className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-yellow-200 shadow-[0_0_18px_rgba(254,240,138,0.85)]"
+              animate={{ scale: [0.7, 1.2, 0.9], rotate: [0, 20, -10, 0] }}
+              transition={{ duration: 1.25, repeat: Infinity, ease: 'easeInOut' }}
+            />
             <Icon className="text-cyan-100 drop-shadow-[0_0_16px_rgba(103,232,249,0.9)]" size={34} />
           </motion.div>
         </motion.div>
@@ -260,29 +295,60 @@ export default function PostLoginSplash({
         <motion.p
           className="mb-3 text-sm font-black uppercase tracking-[0.34em] text-cyan-100 drop-shadow-[0_0_14px_rgba(103,232,249,0.65)]"
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22, duration: 0.6 }}
+          animate={{ opacity: 1, y: [0, -4, 0], scale: [1, 1.04, 1] }}
+          transition={{ opacity: { delay: 0.22, duration: 0.6 }, y: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } }}
         >
-          Experiência premium
+          ✨ Experiência premium
         </motion.p>
 
-        <motion.h1
+        <h1
           className="fch-splash-title mx-auto max-w-4xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.22)] sm:text-5xl lg:text-6xl"
-          initial={{ opacity: 0, y: 14, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ delay: 0.34, duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
+          aria-label={title}
         >
-          {title}
-        </motion.h1>
+          {splitText(title).map((letter, index) => (
+            <motion.span
+              key={`${letter}-${index}`}
+              className="inline-block"
+              initial={{ opacity: 0, y: 30, scale: 0.58, rotate: -10, filter: 'blur(8px)' }}
+              animate={{
+                opacity: 1,
+                y: [0, index % 2 === 0 ? -3 : 3, 0],
+                scale: 1,
+                rotate: [0, index % 3 === 0 ? 1.2 : -1.2, 0],
+                filter: 'blur(0px)',
+              }}
+              transition={{
+                opacity: { delay: 0.28 + index * 0.025, duration: 0.35 },
+                y: { delay: 0.28 + index * 0.025, duration: 2.8 + (index % 5) * 0.12, repeat: Infinity, ease: 'easeInOut' },
+                rotate: { delay: 0.28 + index * 0.025, duration: 3.2 + (index % 4) * 0.1, repeat: Infinity, ease: 'easeInOut' },
+                scale: { delay: 0.28 + index * 0.025, type: 'spring', stiffness: 520, damping: 17 },
+                filter: { delay: 0.28 + index * 0.025, duration: 0.35 },
+              }}
+            >
+              {letter === ' ' ? '\u00A0' : letter}
+            </motion.span>
+          ))}
+        </h1>
 
-        <motion.p
-          className="fch-splash-subtitle mx-auto mt-5 max-w-2xl text-base font-semibold text-slate-100 drop-shadow-[0_0_18px_rgba(15,23,42,0.75)] sm:text-xl"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.54, duration: 0.65 }}
+        <p
+          className="fch-splash-subtitle mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-x-1.5 gap-y-2 text-base font-semibold text-slate-100 drop-shadow-[0_0_18px_rgba(15,23,42,0.75)] sm:text-xl"
         >
-          {subtitle}
-        </motion.p>
+          {subtitle.split(' ').map((word, index) => (
+            <motion.span
+              key={`${word}-${index}`}
+              className="inline-block"
+              initial={{ opacity: 0, y: 16, scale: 0.82 }}
+              animate={{ opacity: 1, y: [0, -4, 0], scale: 1 }}
+              transition={{
+                opacity: { delay: 0.76 + index * 0.055, duration: 0.35 },
+                y: { delay: 0.76 + index * 0.055, duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
+                scale: { delay: 0.76 + index * 0.055, type: 'spring', stiffness: 420, damping: 18 },
+              }}
+            >
+              {word}
+            </motion.span>
+          ))}
+        </p>
 
         <motion.div
           className="mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3"
@@ -293,17 +359,20 @@ export default function PostLoginSplash({
             visible: { transition: { staggerChildren: 0.13, delayChildren: 0.72 } },
           }}
         >
-          {steps.map((step) => {
+          {steps.map((step, index) => {
             const StepIcon = step.icon;
             return (
               <motion.div
                 key={step.label}
                 className="rounded-2xl border border-white/18 bg-white/10 px-4 py-3 text-left shadow-[0_16px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl"
-                variants={{
-                  hidden: { opacity: 0, y: 18, scale: 0.94 },
-                  visible: { opacity: 1, y: 0, scale: 1 },
+                initial={{ opacity: 0, y: 18, scale: 0.94, rotate: -3 }}
+                animate={{ opacity: 1, y: [0, -8, 0], rotate: [0, 1.4, -1.4, 0], scale: [1, 1.025, 1] }}
+                transition={{
+                  opacity: { delay: 0.72 + index * 0.13, duration: 0.45 },
+                  y: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                  rotate: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                  scale: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
                 }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/18 text-cyan-100 shadow-[0_0_22px_rgba(103,232,249,0.22)]">
