@@ -4869,3 +4869,159 @@ html:not(.dark) .fch-post-login-splash .fch-splash-entering {
     display: none;
   }
 }
+
+/* =========================================================
+   FisioCareHub — login com card transparente para vídeo aparecer
+   ---------------------------------------------------------
+   Esta correção NÃO depende de dark mode ou tema claro:
+   o card fica transparente e o vídeo fica visível por trás
+   da área inteira do login, inclusive dentro dos inputs.
+   ========================================================= */
+.fch-login-video-shell {
+  background: #020617 !important;
+}
+
+.fch-login-video {
+  opacity: 0.82 !important;
+  filter: saturate(1.22) contrast(1.08) brightness(0.92) !important;
+  transform: scale(1.02) !important;
+}
+
+.fch-login-video-overlay {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.28), rgba(15, 23, 42, 0.14) 44%, rgba(30, 27, 75, 0.18)),
+    radial-gradient(circle at 50% 8%, rgba(59, 130, 246, 0.16), transparent 44%) !important;
+  backdrop-filter: none !important;
+}
+
+.fch-login-video-vignette {
+  background:
+    radial-gradient(circle at center, rgba(2, 6, 23, 0.02) 0%, rgba(2, 6, 23, 0.12) 54%, rgba(2, 6, 23, 0.48) 100%) !important;
+}
+
+.fch-login-card {
+  background: rgba(2, 6, 23, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  box-shadow:
+    0 34px 90px -38px rgba(0, 0, 0, 0.86),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  backdrop-filter: blur(8px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.08) !important;
+}
+
+.fch-login-card::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 36%, rgba(96, 165, 250, 0.10)) !important;
+  z-index: 3 !important;
+}
+
+.fch-login-card-video {
+  opacity: 0.90 !important;
+  filter: saturate(1.24) contrast(1.08) brightness(0.90) !important;
+  transform: scale(1.01) !important;
+}
+
+.fch-login-card-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.14), rgba(2, 6, 23, 0.30)),
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 48%) !important;
+}
+
+.fch-login-card h2,
+.fch-login-card p,
+.fch-login-card label,
+.fch-login-card a,
+.fch-login-card button,
+.fch-login-card input {
+  text-shadow: 0 2px 18px rgba(2, 6, 23, 0.42);
+}
+
+.fch-login-card input {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.fch-login-card input::placeholder {
+  color: rgba(226, 232, 240, 0.52) !important;
+}
+
+.fch-login-card button[type="button"] {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.fch-login-card button[type="button"]:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.fch-login-card .text-slate-400,
+.fch-login-card .text-slate-500,
+.fch-login-card .text-slate-600 {
+  color: rgba(226, 232, 240, 0.78) !important;
+}
+
+.fch-login-card .text-blue-400 {
+  color: #7bb6ff !important;
+}
+
+:root[data-theme="light"] .fch-login-video,
+html:not(.dark) .fch-login-video,
+:root[data-theme="dark"] .fch-login-video,
+html.dark .fch-login-video {
+  opacity: 0.82 !important;
+  filter: saturate(1.22) contrast(1.08) brightness(0.92) !important;
+}
+
+:root[data-theme="light"] .fch-login-video-overlay,
+html:not(.dark) .fch-login-video-overlay,
+:root[data-theme="dark"] .fch-login-video-overlay,
+html.dark .fch-login-video-overlay {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.28), rgba(15, 23, 42, 0.14) 44%, rgba(30, 27, 75, 0.18)),
+    radial-gradient(circle at 50% 8%, rgba(59, 130, 246, 0.16), transparent 44%) !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-theme="light"] .fch-login-card,
+html:not(.dark) .fch-login-card,
+:root[data-theme="dark"] .fch-login-card,
+html.dark .fch-login-card {
+  background: rgba(2, 6, 23, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  backdrop-filter: blur(8px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.08) !important;
+}
+
+:root[data-theme="light"] .fch-login-card-video,
+html:not(.dark) .fch-login-card-video,
+:root[data-theme="dark"] .fch-login-card-video,
+html.dark .fch-login-card-video {
+  opacity: 0.90 !important;
+  filter: saturate(1.24) contrast(1.08) brightness(0.90) !important;
+}
+
+:root[data-theme="light"] .fch-login-card-video-overlay,
+html:not(.dark) .fch-login-card-video-overlay,
+:root[data-theme="dark"] .fch-login-card-video-overlay,
+html.dark .fch-login-card-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.14), rgba(2, 6, 23, 0.30)),
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 48%) !important;
+}
+
+@media (max-width: 640px) {
+  .fch-login-card {
+    background: rgba(2, 6, 23, 0.12) !important;
+    backdrop-filter: blur(6px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(6px) saturate(1.05) !important;
+  }
+
+  .fch-login-card-video,
+  :root[data-theme="light"] .fch-login-card-video,
+  html:not(.dark) .fch-login-card-video,
+  :root[data-theme="dark"] .fch-login-card-video,
+  html.dark .fch-login-card-video {
+    opacity: 0.96 !important;
+  }
+}
