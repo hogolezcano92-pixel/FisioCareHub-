@@ -2130,7 +2130,7 @@ export default function Profile() {
                           <button
                             onClick={handleDownloadFinanceReport}
                             disabled={downloadingFinanceReport}
-                            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-slate-300/60 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:shadow-black/20 dark:hover:bg-blue-100"
+                            className="finance-pdf-button inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-slate-300/60 transition-all hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:shadow-black/20 dark:hover:bg-blue-100"
                           >
                             {downloadingFinanceReport ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                             Baixar PDF
@@ -2248,8 +2248,8 @@ export default function Profile() {
                                   ['A receber geral', earningsStats.pending],
                                 ].map(([label, value]) => (
                                   <div key={String(label)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/40">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</p>
-                                    <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{formatCurrency(Number(value))}</p>
+                                    <p className="finance-summary-label text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</p>
+                                    <p className="finance-summary-value mt-1 text-xl font-black text-slate-950 dark:text-white">{formatCurrency(Number(value))}</p>
                                   </div>
                                 ))}
                               </div>
@@ -2374,7 +2374,7 @@ export default function Profile() {
                               <button
                                 onClick={handleDownloadFinanceReport}
                                 disabled={downloadingFinanceReport}
-                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-blue-900/20 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="finance-pdf-button mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-blue-900/20 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {downloadingFinanceReport ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                                 Baixar relatório em PDF
