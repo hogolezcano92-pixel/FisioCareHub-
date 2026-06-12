@@ -5675,3 +5675,64 @@ body.light .public-navbar .fch-public-mobile-menu-register {
   opacity: 1 !important;
   text-shadow: none !important;
 }
+
+
+/* Financeiro do fisioterapeuta — resumo mensal e botão PDF no tema claro.
+   Mantém o dark mode intacto. */
+:root[data-theme="light"] .finance-summary-label,
+html:not(.dark) .finance-summary-label,
+html.light .finance-summary-label,
+body.light .finance-summary-label {
+  color: #334155 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .finance-summary-value,
+html:not(.dark) .finance-summary-value,
+html.light .finance-summary-value,
+body.light .finance-summary-value {
+  color: #0F172A !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #0F172A !important;
+}
+
+:root[data-theme="light"] .finance-pdf-button,
+html:not(.dark) .finance-pdf-button,
+html.light .finance-pdf-button,
+body.light .finance-pdf-button {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] .finance-pdf-button svg,
+html:not(.dark) .finance-pdf-button svg,
+html.light .finance-pdf-button svg,
+body.light .finance-pdf-button svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .finance-pdf-button:hover,
+html:not(.dark) .finance-pdf-button:hover,
+html.light .finance-pdf-button:hover,
+body.light .finance-pdf-button:hover {
+  background: #1D4ED8 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] .finance-pdf-button:disabled,
+html:not(.dark) .finance-pdf-button:disabled,
+html.light .finance-pdf-button:disabled,
+body.light .finance-pdf-button:disabled {
+  background: #CBD5E1 !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
