@@ -361,6 +361,19 @@ export default function Login() {
           className="max-w-md w-full relative z-10"
         >
           <div className="fch-login-card bg-card/50 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10">
+            <video
+              className="fch-login-card-video"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+            >
+              <source src="/assets/post-login-splash.mp4" type="video/mp4" />
+            </video>
+            <div className="fch-login-card-video-overlay" aria-hidden="true" />
+
             <div className="text-center mb-10">
               <div className="flex justify-center mb-6">
                 <Logo size="md" variant="light" />
