@@ -4713,7 +4713,7 @@ html:not(.dark) .fch-post-login-splash .fch-splash-entering {
 /* =========================================================
    FisioCareHub — vídeo de fundo da tela de login
    ---------------------------------------------------------
-   Usa o vídeo existente em public/assets/post-login-splash.mp4
+   Usa o vídeo exclusivo em public/login-bg.mp4
    e adapta contraste/overlay automaticamente ao tema claro/escuro.
    ========================================================= */
 .fch-login-video-shell {
