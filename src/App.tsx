@@ -436,16 +436,16 @@ function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-950 border-b border-white/5 overflow-hidden"
+            className="fch-public-mobile-menu md:hidden bg-slate-950 border-b border-white/5 overflow-hidden"
           >
-            <div className="px-4 pt-2 pb-6 space-y-2">
+            <div className="fch-public-mobile-menu-panel px-4 pt-2 pb-6 space-y-2">
               {navItems.map((item) => (
                 <Link
                   key={`${item.name}-${item.path}`}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black transition-all",
+                    "fch-public-mobile-menu-link flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black transition-all",
                     location.pathname === item.path 
                       ? "bg-blue-600/10 text-white border border-blue-500/20" 
                       : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -482,7 +482,7 @@ function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                    className="fch-public-mobile-menu-login flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
                   >
                     <LogIn size={20} className="text-blue-400" />
                     Entrar
@@ -490,7 +490,7 @@ function Navbar() {
                   <Link
                     to="/register"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                    className="fch-public-mobile-menu-register flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                   >
                     <UserPlus size={20} />
                     Começar Agora

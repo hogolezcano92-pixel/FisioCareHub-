@@ -5537,3 +5537,120 @@ html:not(.dark) .fch-login-content,
 :root[data-theme="light"] .fch-login-content {
   text-shadow: none !important;
 }
+
+/* =========================================================
+   FisioCareHub — Menu público mobile no tema claro
+   ---------------------------------------------------------
+   Ajusta somente o menu aberto da Home no tema claro para
+   ficar menos branco/lavado, com melhor contraste e aparência
+   mais premium. O dark mode e a lógica permanecem intactos.
+   ========================================================= */
+html:not(.dark) .public-navbar .fch-public-mobile-menu,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu,
+html.light .public-navbar .fch-public-mobile-menu,
+body.light .public-navbar .fch-public-mobile-menu {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.10), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(124, 58, 237, 0.10), transparent 30%),
+    linear-gradient(180deg, rgba(248, 250, 255, 0.98) 0%, rgba(241, 245, 255, 0.96) 100%) !important;
+  border-bottom: 1px solid rgba(196, 181, 253, 0.72) !important;
+  box-shadow: 0 22px 48px -34px rgba(15, 23, 42, 0.40) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
+  backdrop-filter: blur(18px) saturate(135%) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-panel,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-panel,
+html.light .public-navbar .fch-public-mobile-menu-panel,
+body.light .public-navbar .fch-public-mobile-menu-panel {
+  background: transparent !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link,
+html.light .public-navbar .fch-public-mobile-menu-link,
+body.light .public-navbar .fch-public-mobile-menu-link {
+  background: rgba(255, 255, 255, 0.78) !important;
+  color: #1E293B !important;
+  border: 1px solid rgba(226, 232, 240, 0.92) !important;
+  box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.42) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link svg,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link svg,
+html.light .public-navbar .fch-public-mobile-menu-link svg,
+body.light .public-navbar .fch-public-mobile-menu-link svg {
+  color: #334155 !important;
+  stroke: #334155 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link:hover,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link:hover,
+html.light .public-navbar .fch-public-mobile-menu-link:hover,
+body.light .public-navbar .fch-public-mobile-menu-link:hover {
+  background: rgba(239, 246, 255, 0.96) !important;
+  color: #1D4ED8 !important;
+  border-color: rgba(147, 197, 253, 0.72) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link:hover svg,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link:hover svg,
+html.light .public-navbar .fch-public-mobile-menu-link:hover svg,
+body.light .public-navbar .fch-public-mobile-menu-link:hover svg {
+  color: #2563EB !important;
+  stroke: #2563EB !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"],
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"],
+html.light .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"],
+body.light .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"] {
+  background:
+    linear-gradient(135deg, rgba(219, 234, 254, 0.98), rgba(237, 233, 254, 0.96)) !important;
+  color: #1E3A8A !important;
+  border-color: rgba(96, 165, 250, 0.78) !important;
+  box-shadow: 0 16px 34px -26px rgba(37, 99, 235, 0.48) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"] svg,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"] svg,
+html.light .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"] svg,
+body.light .public-navbar .fch-public-mobile-menu-link[class*="bg-blue-600/10"] svg {
+  color: #2563EB !important;
+  stroke: #2563EB !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu .border-t,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu .border-t,
+html.light .public-navbar .fch-public-mobile-menu .border-t,
+body.light .public-navbar .fch-public-mobile-menu .border-t {
+  border-top-color: rgba(196, 181, 253, 0.58) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-login,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-login,
+html.light .public-navbar .fch-public-mobile-menu-login,
+body.light .public-navbar .fch-public-mobile-menu-login {
+  background: rgba(255, 255, 255, 0.84) !important;
+  color: #1E293B !important;
+  border-color: rgba(196, 181, 253, 0.72) !important;
+  box-shadow: 0 14px 34px -28px rgba(15, 23, 42, 0.42) !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-login svg,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-login svg,
+html.light .public-navbar .fch-public-mobile-menu-login svg,
+body.light .public-navbar .fch-public-mobile-menu-login svg {
+  color: #38BDF8 !important;
+  stroke: #38BDF8 !important;
+}
+
+html:not(.dark) .public-navbar .fch-public-mobile-menu-register,
+:root[data-theme="light"] .public-navbar .fch-public-mobile-menu-register,
+html.light .public-navbar .fch-public-mobile-menu-register,
+body.light .public-navbar .fch-public-mobile-menu-register {
+  background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 52%, #7C3AED 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 18px 38px -24px rgba(37, 99, 235, 0.68) !important;
+}
