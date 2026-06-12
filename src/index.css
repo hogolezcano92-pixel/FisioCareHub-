@@ -5446,3 +5446,54 @@ html {
     line-height: 1.2 !important;
   }
 }
+
+/* =========================================================
+   FisioCareHub — Login video clarity/brightness refinement
+   ---------------------------------------------------------
+   Ajuste final: vídeo do login mais nítido e levemente mais
+   brilhante, sem exagerar e sem mexer na lógica da tela.
+   ========================================================= */
+.fch-login-immersive .fch-login-video,
+.fch-login-video-shell.fch-login-immersive .fch-login-video {
+  opacity: 1 !important;
+  filter: brightness(1.13) contrast(1.10) saturate(1.10) !important;
+  transform: scale(1.005) !important;
+  image-rendering: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.fch-login-immersive .fch-login-video-overlay,
+.fch-login-video-shell.fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.18) 0%, rgba(2, 6, 23, 0.26) 44%, rgba(2, 6, 23, 0.56) 100%),
+    linear-gradient(90deg, rgba(2, 6, 23, 0.20), rgba(30, 41, 59, 0.03), rgba(30, 27, 75, 0.14)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.fch-login-immersive .fch-login-video-vignette,
+.fch-login-video-shell.fch-login-immersive .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at 50% 14%, rgba(59, 130, 246, 0.10), transparent 34%),
+    radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.05) 52%, rgba(2, 6, 23, 0.34) 100%) !important;
+}
+
+html:not(.dark) .fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video {
+  filter: brightness(1.10) contrast(1.08) saturate(1.08) !important;
+}
+
+html:not(.dark) .fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.24) 50%, rgba(248, 250, 252, 0.58) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.24), rgba(219, 234, 254, 0.08), rgba(237, 233, 254, 0.22)) !important;
+}
+
+html:not(.dark) .fch-login-immersive .fch-login-video-vignette,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(14, 165, 233, 0.08), transparent 34%),
+    radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.05) 50%, rgba(248, 250, 252, 0.42) 100%) !important;
+}
