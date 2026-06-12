@@ -335,7 +335,7 @@ export default function Login() {
       </AnimatePresence>
 
       
-      <section className="fch-login-video-shell fch-login-immersive min-h-[100svh] w-full relative overflow-hidden isolate flex items-center justify-center px-5 py-6 sm:px-6 lg:px-8">
+      <section className="fch-login-video-shell fch-login-immersive min-h-[100svh] w-full relative overflow-hidden isolate flex items-center justify-center px-4 py-5 sm:px-6 lg:px-8">
         {/* Vídeo de fundo premium do login em tela cheia */}
         <video
           className="fch-login-video"
@@ -355,58 +355,58 @@ export default function Login() {
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="fch-login-content relative z-10 w-full max-w-[390px] mx-auto"
+          className="fch-login-content relative z-10 w-full max-w-[340px] mx-auto"
         >
-          <div className="fch-login-brand mb-7 sm:mb-8">
+          <div className="fch-login-brand mb-4 sm:mb-5">
             <Logo size="sm" variant="dark" className="dark:hidden justify-center" />
             <Logo size="sm" variant="light" className="hidden dark:flex justify-center" />
           </div>
 
-          <div className="text-center mb-6 sm:mb-7">
-            <h2 className="fch-login-title text-[2.08rem] leading-[0.98] sm:text-[2.65rem] font-display font-black tracking-tight">
+          <div className="text-center mb-4 sm:mb-5">
+            <h2 className="fch-login-title text-[1.68rem] leading-[0.98] sm:text-[2.08rem] font-display font-black tracking-tight">
               Bem-vindo de volta
             </h2>
-            <p className="fch-login-subtitle mt-3 text-sm sm:text-base font-semibold">
+            <p className="fch-login-subtitle mt-2 text-xs sm:text-sm font-semibold">
               Acesse sua conta para continuar.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-3">
             <div className="space-y-2">
-              <label className="fch-login-label block text-[10px] font-black uppercase tracking-[0.32em] ml-1">E-mail</label>
+              <label className="fch-login-label block text-[9px] font-black uppercase tracking-[0.28em] ml-1">E-mail</label>
               <div className="relative group">
                 <div 
                   className="absolute flex items-center justify-center pointer-events-none z-20"
-                  style={{ left: '18px', top: '50%', transform: 'translateY(-50%)', width: '22px', height: '22px' }}
+                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                 >
-                  <Mail className="fch-login-field-icon transition-colors" size={19} />
+                  <Mail className="fch-login-field-icon transition-colors" size={17} />
                 </div>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="fch-login-input w-full pr-4 py-3.5 rounded-[1.35rem] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[56px]"
+                  className="fch-login-input w-full pr-4 py-2.5 rounded-[1.15rem] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
                   placeholder="seu@email.com"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="fch-login-label block text-[10px] font-black uppercase tracking-[0.32em] ml-1">Senha</label>
+              <label className="fch-login-label block text-[9px] font-black uppercase tracking-[0.28em] ml-1">Senha</label>
               <div className="relative group">
                 <div 
                   className="absolute flex items-center justify-center pointer-events-none z-20"
-                  style={{ left: '18px', top: '50%', transform: 'translateY(-50%)', width: '22px', height: '22px' }}
+                  style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px' }}
                 >
-                  <Lock className="fch-login-field-icon transition-colors" size={19} />
+                  <Lock className="fch-login-field-icon transition-colors" size={17} />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="fch-login-input w-full pr-12 py-3.5 rounded-[1.35rem] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[56px]"
+                  className="fch-login-input w-full pr-11 py-2.5 rounded-[1.15rem] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[50px]"
                   placeholder="••••••••"
                 />
                 <button
@@ -414,7 +414,7 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="fch-login-eye absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -432,7 +432,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="fch-login-primary w-full py-3.5 text-white rounded-[1.35rem] font-black text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+              className="fch-login-primary w-full py-2.5 text-white rounded-[1.15rem] font-black text-xs shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2.5"
             >
               {loading ? <Loader2 className="animate-spin" /> : 'Entrar na Conta'}
             </button>
@@ -442,19 +442,19 @@ export default function Login() {
                 type="button"
                 onClick={handleBiometricLogin}
                 disabled={loading}
-                className="fch-login-secondary w-full py-3.5 rounded-[1.35rem] font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                className="fch-login-secondary w-full py-2.5 rounded-[1.15rem] font-black text-xs transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
               >
-                <Fingerprint size={20} className="text-blue-500 dark:text-blue-300" />
+                <Fingerprint size={18} className="text-blue-500 dark:text-blue-300" />
                 Entrar com Face ID / Biometria
               </button>
             )}
 
-            <div className="fch-login-divider relative my-5">
+            <div className="fch-login-divider relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t"></span>
               </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.32em] font-black">
-                <span className="px-4">ou</span>
+              <div className="relative flex justify-center text-[9px] uppercase tracking-[0.28em] font-black">
+                <span className="px-3">ou</span>
               </div>
             </div>
 
@@ -462,9 +462,9 @@ export default function Login() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="fch-login-secondary w-full py-3.5 rounded-[1.35rem] font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              className="fch-login-secondary w-full py-2.5 rounded-[1.15rem] font-black text-xs transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -490,7 +490,7 @@ export default function Login() {
                 type="button"
                 onClick={handleForgotPassword}
                 disabled={resetLoading || loading || countdown > 0}
-                className="fch-login-forgot text-xs font-black transition-all disabled:opacity-50"
+                className="fch-login-forgot text-[11px] font-black transition-all disabled:opacity-50"
               >
                 {resetLoading 
                   ? 'Enviando e-mail...' 
@@ -501,7 +501,7 @@ export default function Login() {
             </div>
           </form>
 
-          <p className="fch-login-register text-center mt-6 text-sm font-semibold">
+          <p className="fch-login-register text-center mt-4 text-xs font-semibold">
             Não tem uma conta? <Link to="/register" className="font-black transition-colors">Cadastrar-se</Link>
           </p>
         </motion.div>
