@@ -340,7 +340,7 @@ export default function Login() {
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
           aria-hidden="true"
         >
           <source src="/assets/post-login-splash.mp4" type="video/mp4" />
@@ -367,7 +367,7 @@ export default function Login() {
               muted
               loop
               playsInline
-              preload="metadata"
+              preload="auto"
               aria-hidden="true"
             >
               <source src="/assets/post-login-splash.mp4" type="video/mp4" />
