@@ -1476,6 +1476,34 @@ export default function Dashboard() {
     ? getUpcomingAppointment(recentAppointments)
     : null;
 
+  const patientJourneySummary = useMemo(() => {
+    const latestPain = [...weeklyChartData.painData]
+      .reverse()
+      .find((item) => typeof item.level === "number")?.level;
+
+    const completedExercises = weeklyChartData.exerciseData.reduce(
+      (total, item) => total + (item.completed || 0),
+      0,
+    );
+
+    const recoveryScore = Math.max(
+      0,
+      Math.min(100, Math.round(weeklyChartData.melhora || 0)),
+    );
+
+    return {
+      latestPain,
+      completedExercises,
+      recoveryScore,
+      recoveryLabel:
+        recoveryScore >= 70
+          ? "Você está no caminho certo!"
+          : recoveryScore >= 40
+            ? "Evolução em andamento"
+            : "Continue registrando sua rotina",
+    };
+  }, [weeklyChartData]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/login");
@@ -2095,22 +2123,118 @@ export default function Dashboard() {
 
               <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-white/10" />
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-3">
                 <div className="inline-flex w-fit items-center gap-2 rounded-full border border-sky-400/30 bg-sky-50 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-sky-600 shadow-inner shadow-sky-500/10 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-400">
                   <Sparkles size={10} className="animate-pulse text-sky-500" />
                   Sua Jornada de Saúde
                 </div>
 
-                <div className="flex items-center gap-2 sm:justify-end">
-                  <button className="rounded-xl border border-slate-200 bg-white p-3 text-slate-500 shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-400 dark:shadow-inner dark:hover:bg-white/10 dark:hover:text-sky-400 group">
-                    <Bell size={18} className="group-hover:animate-swing" />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/appointments")}
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3 text-left shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-sky-400/40 dark:hover:bg-white/[0.07]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-300/50 bg-sky-500/10 text-sky-500 shadow-inner shadow-sky-500/10 dark:border-sky-400/30 dark:text-sky-300">
+                      <Calendar size={18} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-black leading-tight text-slate-700 dark:text-white/90">
+                        Próxima sessão
+                      </span>
+                      <span className="mt-0.5 block truncate text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        {nextPatientAppointment
+                          ? `${formatAppointmentDay(nextPatientAppointment)} ${formatAppointmentMonth(nextPatientAppointment)} • ${formatAppointmentTime(nextPatientAppointment)}`
+                          : "Nenhuma agendada"}
+                      </span>
+                    </span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/jornada")}
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3 text-left shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-violet-400/40 dark:hover:bg-white/[0.07]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-300/50 bg-violet-500/10 text-violet-500 shadow-inner shadow-violet-500/10 dark:border-violet-400/30 dark:text-violet-300">
+                      <Activity size={18} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-black leading-tight text-slate-700 dark:text-white/90">
+                        Dor atual
+                      </span>
+                      <span className="mt-0.5 block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        {patientJourneySummary.latestPain !== undefined
+                          ? `${patientJourneySummary.latestPain}/10`
+                          : "Sem registro"}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/exercises")}
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3 text-left shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-emerald-400/40 dark:hover:bg-white/[0.07]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/50 bg-emerald-500/10 text-emerald-500 shadow-inner shadow-emerald-500/10 dark:border-emerald-400/30 dark:text-emerald-300">
+                      <Zap size={18} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-black leading-tight text-slate-700 dark:text-white/90">
+                        Exercícios
+                      </span>
+                      <span className="mt-0.5 block text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        {patientJourneySummary.completedExercises > 0
+                          ? `${patientJourneySummary.completedExercises} concluídos`
+                          : stats.workouts > 0
+                            ? `${stats.workouts} prescritos`
+                            : "Nenhum ativo"}
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/jornada")}
+                  className="group flex w-full flex-col gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-3 text-left shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-sky-400/40 dark:hover:bg-white/[0.07] sm:flex-row sm:items-center"
+                >
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[11px] font-black text-slate-600 dark:text-slate-300">
+                      Sua recuperação
+                    </span>
+                    <span className="bg-gradient-to-r from-sky-500 to-violet-500 bg-clip-text text-xl font-black leading-none text-transparent">
+                      {patientJourneySummary.recoveryScore}%
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="h-2 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-black/20">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-violet-500 shadow-lg shadow-sky-500/30 transition-all duration-700"
+                        style={{ width: `${patientJourneySummary.recoveryScore}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-center text-[10px] font-bold text-sky-600 dark:text-sky-300">
+                      {patientJourneySummary.recoveryLabel} 🚀
+                    </p>
+                  </div>
+                </button>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button
                     onClick={() => navigate("/triage")}
-                    className="btn-primary-compact !bg-sky-500 !px-4 !py-2 !text-xs shadow-lg shadow-sky-500/25 hover:!bg-sky-600 md:!px-5"
+                    className="btn-primary-compact !justify-center !rounded-2xl !bg-sky-500 !px-4 !py-3 !text-sm shadow-lg shadow-sky-500/25 hover:!bg-sky-600"
                   >
-                    <Plus size={14} className="stroke-[3px]" />
+                    <Plus size={18} className="stroke-[3px]" />
                     Nova Triagem
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/jornada")}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-sm font-black text-slate-700 shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-white/20 dark:bg-white/[0.03] dark:text-white dark:shadow-none dark:hover:border-violet-400/50 dark:hover:bg-white/[0.08]"
+                  >
+                    <Activity size={18} />
+                    Registrar dor
                   </button>
                 </div>
               </div>
