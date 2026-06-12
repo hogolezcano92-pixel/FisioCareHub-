@@ -2027,93 +2027,92 @@ export default function Dashboard() {
             </div>
           </header>
         ) : (
-          <header className="mt-1 md:mt-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5 backdrop-blur-3xl p-4 md:p-5 rounded-[2rem] border border-white/10 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[60px] -mr-24 -mt-24 pointer-events-none" />
+          <header className="mt-1 md:mt-2 relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-4 shadow-xl shadow-sky-900/10 backdrop-blur-3xl dark:border-white/10 dark:bg-white/5 dark:shadow-blue-900/20 md:rounded-[2rem] md:p-5">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-sky-400/20 blur-[70px] dark:bg-blue-500/10" />
+            <div className="pointer-events-none absolute -left-20 bottom-0 h-44 w-44 rounded-full bg-violet-500/10 blur-[70px] dark:bg-indigo-500/10" />
 
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
-              {!profile ? (
-                <div className="w-16 h-16 bg-slate-800 animate-pulse rounded-full border-4 border-white/5" />
-              ) : (
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                  <img
-                    src={
-                      profile.avatar_url ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
-                    }
-                    alt={profile.nome_completo}
-                    className="relative w-16 h-16 rounded-full border-4 border-white/10 shadow-2xl object-cover"
-                  />
-                  <div className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-emerald-500 border-[2px] border-[#0B1120] rounded-full shadow-lg z-10" />
-                </div>
-              )}
+            <div className="relative z-10 flex flex-col gap-4">
+              <div className="flex items-center gap-4 md:gap-5">
+                {!profile ? (
+                  <div className="h-16 w-16 shrink-0 animate-pulse rounded-full border-4 border-slate-200 bg-slate-100 dark:border-white/5 dark:bg-slate-800 md:h-20 md:w-20" />
+                ) : (
+                  <div className="group relative shrink-0">
+                    <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-sky-500 via-indigo-500 to-violet-600 opacity-35 blur transition duration-700 group-hover:opacity-55" />
+                    <img
+                      src={
+                        profile.avatar_url ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
+                      }
+                      alt={profile.nome_completo}
+                      className="relative h-16 w-16 rounded-full border-4 border-white object-cover shadow-2xl shadow-sky-500/20 dark:border-white/10 md:h-20 md:w-20"
+                    />
+                    <div className="absolute bottom-0.5 right-0.5 z-10 h-4 w-4 rounded-full border-[3px] border-white bg-emerald-500 shadow-lg shadow-emerald-500/30 dark:border-[#0B1120] md:h-5 md:w-5" />
+                  </div>
+                )}
 
-              <div className="space-y-0.5 flex-1">
-                <div className="flex flex-col gap-0">
-                  <h1 className="text-lg md:text-xl font-black text-white tracking-tight opacity-90">
-                    {getGreeting()},
-                  </h1>
+                <div className="min-w-0 flex-1 border-l border-slate-200/80 pl-4 dark:border-white/10 md:pl-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <h1 className="text-base font-black tracking-tight text-slate-700 dark:text-white/90 md:text-lg">
+                      {getGreeting()},
+                    </h1>
+
+                    {profile && (
+                      <span className="badge-patient !px-2.5 !py-0.5 !text-[9px] shadow-lg shadow-violet-500/10 md:!text-[10px]">
+                        Paciente
+                      </span>
+                    )}
+
+                    {profile && isPro && (
+                      <span className="flex items-center gap-1 rounded-full border border-white/30 bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/20 whitespace-nowrap">
+                        <Crown size={7} fill="currentColor" />
+                        Pro
+                      </span>
+                    )}
+                  </div>
 
                   {!profile ? (
-                    <span className="text-xl font-black animate-pulse text-slate-600">
+                    <span className="mt-1 block animate-pulse text-xl font-black text-slate-400 dark:text-slate-600">
                       Conectando...
                     </span>
                   ) : (
-                    <div className="flex flex-col leading-[0.9] pt-0.5">
-                      <div className="flex flex-col">
-                        {profile.nome_completo
-                          .split(" ")
-                          .map((namePart, idx, arr) => (
-                            <div
-                              key={idx}
-                              className="flex flex-wrap items-baseline gap-2"
-                            >
-                              <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-tighter break-all sm:break-normal">
-                                {namePart}
-                              </span>
-                              {idx === arr.length - 1 && (
-                                <div className="flex items-center gap-1.5 pb-0.5 self-end mb-0.5">
-                                  {isPro && (
-                                    <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-[8px] font-black text-white uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/20 border border-white/20 whitespace-nowrap">
-                                      <Crown size={7} fill="currentColor" />
-                                      Pro
-                                    </span>
-                                  )}
-                                  <span className="badge-patient !px-2 !py-0.5 !text-[9px] whitespace-nowrap">
-                                    Paciente
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                      </div>
+                    <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 leading-none">
+                      {profile.nome_completo.split(" ").map((namePart, idx) => (
+                        <span
+                          key={idx}
+                          className="break-words bg-gradient-to-r from-sky-500 via-blue-500 to-violet-500 bg-clip-text text-2xl font-black uppercase tracking-tighter text-transparent sm:text-3xl md:text-4xl"
+                        >
+                          {namePart}
+                        </span>
+                      ))}
                     </div>
                   )}
+
+                  <p className="mt-2 max-w-xl text-[11px] font-bold leading-relaxed tracking-wide text-slate-600 dark:text-slate-400 md:text-xs">
+                    Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-white/10" />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-sky-400/30 bg-sky-50 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-sky-600 shadow-inner shadow-sky-500/10 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-400">
+                  <Sparkles size={10} className="animate-pulse text-sky-500" />
+                  Sua Jornada de Saúde
                 </div>
 
-                <p className="text-slate-400 font-bold text-[10px] tracking-wide max-w-md">
-                  Bem-vindo a FisioCareHub, sua plataforma de reabilitação domiciliar e performance
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-start lg:items-end gap-3 mt-2 lg:mt-0">
-              <div className="flex items-center gap-2 text-sky-400 font-bold text-[8px] uppercase tracking-[0.2em] bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
-                <Sparkles size={10} className="text-sky-500 animate-pulse" />
-                Sua Jornada de Saúde
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-white/10 transition-all border border-white/5 shadow-inner group">
-                  <Bell size={18} className="group-hover:animate-swing" />
-                </button>
-                <button
-                  onClick={() => navigate("/triage")}
-                  className="btn-primary-compact !px-4 !py-2 !text-xs !bg-sky-500 hover:!bg-sky-600"
-                >
-                  <Plus size={14} className="stroke-[3px]" />
-                  Nova Triagem
-                </button>
+                <div className="flex items-center gap-2 sm:justify-end">
+                  <button className="rounded-xl border border-slate-200 bg-white p-3 text-slate-500 shadow-sm shadow-slate-200/70 transition-all hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-400 dark:shadow-inner dark:hover:bg-white/10 dark:hover:text-sky-400 group">
+                    <Bell size={18} className="group-hover:animate-swing" />
+                  </button>
+                  <button
+                    onClick={() => navigate("/triage")}
+                    className="btn-primary-compact !bg-sky-500 !px-4 !py-2 !text-xs shadow-lg shadow-sky-500/25 hover:!bg-sky-600 md:!px-5"
+                  >
+                    <Plus size={14} className="stroke-[3px]" />
+                    Nova Triagem
+                  </button>
+                </div>
               </div>
             </div>
           </header>
