@@ -4709,3 +4709,99 @@ html:not(.dark) .fch-post-login-splash .fch-splash-entering {
   letter-spacing: 0.28em;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.28) !important;
 }
+
+/* =========================================================
+   FisioCareHub — vídeo de fundo da tela de login
+   ---------------------------------------------------------
+   Usa o vídeo existente em public/assets/post-login-splash.mp4
+   e adapta contraste/overlay automaticamente ao tema claro/escuro.
+   ========================================================= */
+.fch-login-video-shell {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.14), transparent 34%),
+    radial-gradient(circle at 82% 72%, rgba(124, 58, 237, 0.16), transparent 36%),
+    var(--theme-bg);
+}
+
+.fch-login-video {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  opacity: 0.34;
+  filter: saturate(1.18) contrast(1.05) brightness(0.74);
+  transform: scale(1.04);
+}
+
+.fch-login-video-overlay,
+.fch-login-video-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fch-login-video-overlay {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.88), rgba(15, 23, 42, 0.62) 45%, rgba(49, 46, 129, 0.68)),
+    radial-gradient(circle at 50% 8%, rgba(59, 130, 246, 0.18), transparent 42%);
+  backdrop-filter: blur(2px);
+}
+
+.fch-login-video-vignette {
+  background:
+    radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.18) 48%, rgba(2, 6, 23, 0.72) 100%);
+}
+
+.fch-login-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.fch-login-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.13), transparent 42%, rgba(59, 130, 246, 0.08));
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .fch-login-video {
+  opacity: 0.26;
+  filter: saturate(1.08) contrast(0.95) brightness(1.12);
+}
+
+:root[data-theme="light"] .fch-login-video-overlay {
+  background:
+    linear-gradient(135deg, rgba(250, 248, 255, 0.88), rgba(255, 255, 255, 0.70) 46%, rgba(238, 242, 255, 0.84)),
+    radial-gradient(circle at 50% 7%, rgba(59, 130, 246, 0.14), transparent 42%);
+  backdrop-filter: blur(3px);
+}
+
+:root[data-theme="light"] .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0%, rgba(250, 248, 255, 0.24) 52%, rgba(238, 242, 255, 0.76) 100%);
+}
+
+:root[data-theme="light"] .fch-login-card {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(196, 181, 253, 0.82) !important;
+  box-shadow: 0 42px 90px -48px rgba(76, 29, 149, 0.45) !important;
+}
+
+:root[data-theme="dark"] .fch-login-card {
+  background: rgba(15, 23, 42, 0.56) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.72) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fch-login-video {
+    display: none;
+  }
+}
