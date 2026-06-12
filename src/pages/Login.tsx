@@ -335,7 +335,7 @@ export default function Login() {
       </AnimatePresence>
 
       
-      <section className="fch-login-video-shell fch-login-immersive min-h-[100svh] w-full relative overflow-hidden isolate flex items-center justify-center px-5 py-8 sm:px-6 lg:px-8">
+      <section className="fch-login-video-shell fch-login-immersive min-h-[100svh] w-full relative overflow-hidden isolate flex items-center justify-center px-5 py-6 sm:px-6 lg:px-8">
         {/* Vídeo de fundo premium do login em tela cheia */}
         <video
           className="fch-login-video"
@@ -355,23 +355,23 @@ export default function Login() {
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="fch-login-content relative z-10 w-full max-w-[430px] mx-auto"
+          className="fch-login-content relative z-10 w-full max-w-[390px] mx-auto"
         >
-          <div className="fch-login-brand mb-9 sm:mb-10">
-            <Logo size="md" variant="dark" className="dark:hidden justify-center" />
-            <Logo size="md" variant="light" className="hidden dark:flex justify-center" />
+          <div className="fch-login-brand mb-7 sm:mb-8">
+            <Logo size="sm" variant="dark" className="dark:hidden justify-center" />
+            <Logo size="sm" variant="light" className="hidden dark:flex justify-center" />
           </div>
 
-          <div className="text-center mb-8 sm:mb-9">
-            <h2 className="fch-login-title text-[2.45rem] leading-[0.98] sm:text-5xl font-display font-black tracking-tight">
+          <div className="text-center mb-6 sm:mb-7">
+            <h2 className="fch-login-title text-[2.08rem] leading-[0.98] sm:text-[2.65rem] font-display font-black tracking-tight">
               Bem-vindo de volta
             </h2>
-            <p className="fch-login-subtitle mt-4 text-base sm:text-lg font-semibold">
+            <p className="fch-login-subtitle mt-3 text-sm sm:text-base font-semibold">
               Acesse sua conta para continuar.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <label className="fch-login-label block text-[10px] font-black uppercase tracking-[0.32em] ml-1">E-mail</label>
               <div className="relative group">
@@ -386,7 +386,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="fch-login-input w-full pr-4 py-4 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[60px]"
+                  className="fch-login-input w-full pr-4 py-3.5 rounded-[1.35rem] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[56px]"
                   placeholder="seu@email.com"
                 />
               </div>
@@ -406,7 +406,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="fch-login-input w-full pr-12 py-4 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[60px]"
+                  className="fch-login-input w-full pr-12 py-3.5 rounded-[1.35rem] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all !pl-[56px]"
                   placeholder="••••••••"
                 />
                 <button
@@ -432,7 +432,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="fch-login-primary w-full py-4 text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+              className="fch-login-primary w-full py-3.5 text-white rounded-[1.35rem] font-black text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
             >
               {loading ? <Loader2 className="animate-spin" /> : 'Entrar na Conta'}
             </button>
@@ -442,14 +442,14 @@ export default function Login() {
                 type="button"
                 onClick={handleBiometricLogin}
                 disabled={loading}
-                className="fch-login-secondary w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                className="fch-login-secondary w-full py-3.5 rounded-[1.35rem] font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
               >
                 <Fingerprint size={20} className="text-blue-500 dark:text-blue-300" />
                 Entrar com Face ID / Biometria
               </button>
             )}
 
-            <div className="fch-login-divider relative my-7">
+            <div className="fch-login-divider relative my-5">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t"></span>
               </div>
@@ -462,7 +462,7 @@ export default function Login() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="fch-login-secondary w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              className="fch-login-secondary w-full py-3.5 rounded-[1.35rem] font-black text-sm transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -501,7 +501,7 @@ export default function Login() {
             </div>
           </form>
 
-          <p className="fch-login-register text-center mt-8 text-sm font-semibold">
+          <p className="fch-login-register text-center mt-6 text-sm font-semibold">
             Não tem uma conta? <Link to="/register" className="font-black transition-colors">Cadastrar-se</Link>
           </p>
         </motion.div>
