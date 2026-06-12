@@ -5414,3 +5414,35 @@ html:not(.dark) .fch-login-register,
     transform-origin: center;
   }
 }
+
+/* Correção iOS/Safari: evita zoom automático ao focar nos campos do login.
+   O iPhone aplica zoom quando input/select/textarea têm fonte efetiva abaixo de 16px.
+   Mantemos os botões compactos, mas os campos digitáveis ficam sempre em 16px reais. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.fch-login-input,
+.fch-login-input:focus,
+.fch-login-input.fch-no-ios-zoom,
+.fch-login-input.fch-no-ios-zoom:focus {
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+.fch-login-input::placeholder {
+  font-size: 16px !important;
+}
+
+@media (max-width: 640px) {
+  input.fch-login-input,
+  textarea.fch-login-input,
+  select.fch-login-input {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+}
