@@ -4805,3 +4805,67 @@ html:not(.dark) .fch-post-login-splash .fch-splash-entering {
     display: none;
   }
 }
+
+/* =========================================================
+   Login video correction: deixa o vídeo visível também dentro
+   do card, não apenas atrás da página.
+   ========================================================= */
+.fch-login-card-video {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  opacity: 0.34;
+  filter: saturate(1.18) contrast(1.08) brightness(0.9);
+  transform: scale(1.03);
+}
+
+.fch-login-card-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(15, 23, 42, 0.82)),
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.20), transparent 46%);
+}
+
+.fch-login-card > *:not(.fch-login-card-video):not(.fch-login-card-video-overlay) {
+  position: relative;
+  z-index: 2;
+}
+
+.fch-login-card::before {
+  z-index: 3;
+}
+
+:root[data-theme="dark"] .fch-login-video-overlay {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.54), rgba(15, 23, 42, 0.40) 45%, rgba(30, 27, 75, 0.46)),
+    radial-gradient(circle at 50% 8%, rgba(59, 130, 246, 0.18), transparent 42%);
+}
+
+:root[data-theme="dark"] .fch-login-card {
+  background: rgba(15, 23, 42, 0.50) !important;
+}
+
+:root[data-theme="light"] .fch-login-card-video {
+  opacity: 0.28;
+  filter: saturate(1.05) contrast(0.98) brightness(1.1);
+}
+
+:root[data-theme="light"] .fch-login-card-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.76)),
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.14), transparent 48%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fch-login-card-video {
+    display: none;
+  }
+}
