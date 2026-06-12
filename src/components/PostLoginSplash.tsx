@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   Activity,
   CalendarCheck2,
@@ -45,6 +45,143 @@ const playfulShapes = Array.from({ length: 10 }, (_, index) => ({
 const splitText = (text: string) => text.split('');
 
 
+type SplashSoundCleanup = () => void;
+
+const startSplashSound = (durationMs: number): SplashSoundCleanup => {
+  if (typeof window === 'undefined') return () => undefined;
+
+  const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return () => undefined;
+
+  let audioContext: AudioContext | null = null;
+  const timers: number[] = [];
+  const stopCallbacks: SplashSoundCleanup[] = [];
+
+  try {
+    audioContext = new AudioContextClass();
+  } catch {
+    return () => undefined;
+  }
+
+  const masterGain = audioContext.createGain();
+  masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  masterGain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.55);
+  masterGain.connect(audioContext.destination);
+
+  const stopAll: SplashSoundCleanup = () => {
+    timers.forEach((timer) => window.clearTimeout(timer));
+    stopCallbacks.forEach((stop) => stop());
+
+    if (!audioContext || audioContext.state === 'closed') return;
+
+    const now = audioContext.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setTargetAtTime(0.0001, now, 0.08);
+    window.setTimeout(() => {
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(() => undefined);
+      }
+    }, 260);
+  };
+
+  const playTone = ({
+    frequency,
+    startAt,
+    length = 0.34,
+    volume = 0.12,
+    type = 'sine',
+  }: {
+    frequency: number;
+    startAt: number;
+    length?: number;
+    volume?: number;
+    type?: OscillatorType;
+  }) => {
+    if (!audioContext || audioContext.state === 'closed') return;
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime + startAt;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, now);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.012, now + length);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.045);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + length);
+
+    oscillator.connect(gain);
+    gain.connect(masterGain);
+    oscillator.start(now);
+    oscillator.stop(now + length + 0.04);
+
+    stopCallbacks.push(() => {
+      try {
+        oscillator.stop();
+      } catch {
+        // oscillator may already be stopped
+      }
+      oscillator.disconnect();
+      gain.disconnect();
+    });
+  };
+
+  const playChord = (delayMs: number, notes: number[], volume = 0.085) => {
+    const timer = window.setTimeout(() => {
+      notes.forEach((note, index) => {
+        playTone({
+          frequency: note,
+          startAt: index * 0.045,
+          length: 0.48 + index * 0.08,
+          volume: volume - index * 0.01,
+          type: index % 2 === 0 ? 'sine' : 'triangle',
+        });
+      });
+    }, delayMs);
+    timers.push(timer);
+  };
+
+  const playSparkle = (delayMs: number) => {
+    const timer = window.setTimeout(() => {
+      [1046.5, 1318.51, 1567.98].forEach((note, index) => {
+        playTone({
+          frequency: note,
+          startAt: index * 0.075,
+          length: 0.18,
+          volume: 0.055,
+          type: 'sine',
+        });
+      });
+    }, delayMs);
+    timers.push(timer);
+  };
+
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => undefined);
+  }
+
+  playChord(90, [523.25, 659.25, 783.99], 0.095);
+  playSparkle(950);
+  playChord(2400, [587.33, 739.99, 880], 0.075);
+  playSparkle(4100);
+  playChord(5900, [659.25, 830.61, 987.77], 0.07);
+  playSparkle(7600);
+  playChord(Math.max(durationMs - 1600, 8200), [783.99, 987.77, 1174.66], 0.09);
+
+  const fadeTimer = window.setTimeout(() => {
+    if (!audioContext || audioContext.state === 'closed') return;
+    const now = audioContext.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+  }, Math.max(durationMs - 1250, 0));
+  timers.push(fadeTimer);
+
+  return stopAll;
+};
+
+
 export default function PostLoginSplash({
   userRole = 'paciente',
   userName,
@@ -57,10 +194,20 @@ export default function PostLoginSplash({
   const splashDuration = Math.max(duration, 10000);
   const progressDuration = splashDuration / 1000;
 
+  const hasStartedSound = useRef(false);
+
   useEffect(() => {
     const timer = window.setTimeout(() => onComplete?.(), splashDuration);
     return () => window.clearTimeout(timer);
   }, [splashDuration, onComplete]);
+
+  useEffect(() => {
+    if (hasStartedSound.current) return;
+    hasStartedSound.current = true;
+
+    const stopSound = startSplashSound(splashDuration);
+    return () => stopSound();
+  }, [splashDuration]);
 
   const title = isAdmin
     ? `Bem-vindo, ${displayName}`
