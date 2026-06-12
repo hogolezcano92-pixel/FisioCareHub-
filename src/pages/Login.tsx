@@ -7,6 +7,9 @@ import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
 import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 
+// Coloque o vídeo exclusivo em: public/login-bg.mp4
+// No Vite, arquivos dentro de /public são servidos pela raiz do site.
+const LOGIN_BACKGROUND_VIDEO = '/login-bg.mp4';
 
 export default function Login() {
   const { user, loading: authLoading, refreshProfile } = useAuth();
@@ -343,7 +346,7 @@ export default function Login() {
           preload="auto"
           aria-hidden="true"
         >
-          <source src="/assets/post-login-splash.mp4" type="video/mp4" />
+          <source src={LOGIN_BACKGROUND_VIDEO} type="video/mp4" />
         </video>
         <div className="fch-login-video-overlay" aria-hidden="true" />
         <div className="fch-login-video-vignette" aria-hidden="true" />
@@ -370,7 +373,7 @@ export default function Login() {
               preload="auto"
               aria-hidden="true"
             >
-              <source src="/assets/post-login-splash.mp4" type="video/mp4" />
+              <source src={LOGIN_BACKGROUND_VIDEO} type="video/mp4" />
             </video>
             <div className="fch-login-card-video-overlay" aria-hidden="true" />
 
