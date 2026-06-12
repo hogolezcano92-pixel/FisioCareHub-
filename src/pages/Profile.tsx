@@ -49,6 +49,24 @@ import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import { isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 import { generateEmailHTML } from '../services/emailTemplate';
 
+
+const FINANCE_MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1).padStart(2, '0'),
+  label: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date(2026, index, 1)),
+}));
+
+const getCurrentSaoPauloMonthKey = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === 'year')?.value || String(new Date().getFullYear());
+  const month = parts.find((part) => part.type === 'month')?.value || String(new Date().getMonth() + 1).padStart(2, '0');
+
+  return `${year}-${month}`;
+};
+
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
   | 'profile_prof' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
@@ -294,12 +312,21 @@ export default function Profile() {
   };
 
   const getMonthKey = (date?: string | null) => {
-    if (!date) return new Date().toISOString().slice(0, 7);
+    if (!date) return getCurrentSaoPauloMonthKey();
     if (/^\d{4}-\d{2}/.test(date)) return date.slice(0, 7);
 
     const parsed = new Date(date);
-    if (Number.isNaN(parsed.getTime())) return new Date().toISOString().slice(0, 7);
-    return parsed.toISOString().slice(0, 7);
+    if (Number.isNaN(parsed.getTime())) return getCurrentSaoPauloMonthKey();
+
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+    }).formatToParts(parsed);
+    const year = parts.find((part) => part.type === 'year')?.value || String(parsed.getFullYear());
+    const month = parts.find((part) => part.type === 'month')?.value || String(parsed.getMonth() + 1).padStart(2, '0');
+
+    return `${year}-${month}`;
   };
 
   const getMonthLabel = (monthKey: string) => {
@@ -325,7 +352,7 @@ export default function Profile() {
   const [withdrawalList, setWithdrawalList] = useState<any[]>([]);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [financeSubTab, setFinanceSubTab] = useState<'summary' | 'payments' | 'withdrawals' | 'reports'>('summary');
-  const [selectedFinanceMonth, setSelectedFinanceMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedFinanceMonth, setSelectedFinanceMonth] = useState(getCurrentSaoPauloMonthKey());
   const [downloadingFinanceReport, setDownloadingFinanceReport] = useState(false);
 
   useEffect(() => {
@@ -342,13 +369,36 @@ export default function Profile() {
     withdrawalList.filter((item) => item.monthKey === selectedFinanceMonth)
   ), [withdrawalList, selectedFinanceMonth]);
 
-  const availableFinanceMonths = useMemo(() => {
-    const months = new Set<string>([selectedFinanceMonth, new Date().toISOString().slice(0, 7)]);
-    earningsList.forEach((item) => item.monthKey && months.add(item.monthKey));
-    withdrawalList.forEach((item) => item.monthKey && months.add(item.monthKey));
+  const financeYearOptions = useMemo(() => {
+    const currentYear = Number(getCurrentSaoPauloMonthKey().slice(0, 4));
+    const selectedYear = Number(selectedFinanceMonth.slice(0, 4));
+    const years = new Set<number>([currentYear, selectedYear]);
 
-    return Array.from(months).sort((a, b) => b.localeCompare(a));
+    for (let year = currentYear - 4; year <= currentYear + 1; year += 1) {
+      years.add(year);
+    }
+
+    earningsList.forEach((item) => {
+      const year = Number(String(item.monthKey || '').slice(0, 4));
+      if (!Number.isNaN(year)) years.add(year);
+    });
+    withdrawalList.forEach((item) => {
+      const year = Number(String(item.monthKey || '').slice(0, 4));
+      if (!Number.isNaN(year)) years.add(year);
+    });
+
+    return Array.from(years).sort((a, b) => b - a);
   }, [earningsList, withdrawalList, selectedFinanceMonth]);
+
+  const selectedFinanceYear = selectedFinanceMonth.slice(0, 4);
+  const selectedFinanceMonthNumber = selectedFinanceMonth.slice(5, 7);
+
+  const handleFinancePeriodChange = (type: 'month' | 'year', value: string) => {
+    const nextYear = type === 'year' ? value : selectedFinanceYear;
+    const nextMonth = type === 'month' ? value : selectedFinanceMonthNumber;
+
+    setSelectedFinanceMonth(`${nextYear}-${nextMonth}`);
+  };
 
   const monthlySummary = useMemo(() => {
     const gross = monthlyPayments.reduce((acc, item) => acc + item.gross, 0);
@@ -2052,15 +2102,31 @@ export default function Profile() {
                         </div>
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                          <select
-                            value={selectedFinanceMonth}
-                            onChange={(event) => setSelectedFinanceMonth(event.target.value)}
-                            className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
-                          >
-                            {availableFinanceMonths.map((month) => (
-                              <option key={month} value={month}>{getMonthLabel(month)}</option>
-                            ))}
-                          </select>
+                          <div className="grid grid-cols-2 gap-2 rounded-[1.5rem] border border-slate-200 bg-white/90 p-2 shadow-sm dark:border-white/10 dark:bg-slate-950/60">
+                            <label className="sr-only" htmlFor="finance-month-select">Mês do financeiro</label>
+                            <select
+                              id="finance-month-select"
+                              value={selectedFinanceMonthNumber}
+                              onChange={(event) => handleFinancePeriodChange('month', event.target.value)}
+                              className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black capitalize text-slate-800 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                            >
+                              {FINANCE_MONTH_OPTIONS.map((month) => (
+                                <option key={month.value} value={month.value}>{month.label}</option>
+                              ))}
+                            </select>
+
+                            <label className="sr-only" htmlFor="finance-year-select">Ano do financeiro</label>
+                            <select
+                              id="finance-year-select"
+                              value={selectedFinanceYear}
+                              onChange={(event) => handleFinancePeriodChange('year', event.target.value)}
+                              className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+                            >
+                              {financeYearOptions.map((year) => (
+                                <option key={year} value={year}>{year}</option>
+                              ))}
+                            </select>
+                          </div>
                           <button
                             onClick={handleDownloadFinanceReport}
                             disabled={downloadingFinanceReport}
@@ -2119,9 +2185,9 @@ export default function Profile() {
                                   <Icon size={22} />
                                 </div>
                               </div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{card.label}</p>
-                              <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{card.value}</p>
-                              <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">{card.helper}</p>
+                              <p className="finance-card-label text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-slate-500">{card.label}</p>
+                              <p className="finance-card-value mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{card.value}</p>
+                              <p className="finance-card-helper mt-1 text-xs font-bold text-slate-600 dark:text-slate-400">{card.helper}</p>
                             </div>
                           );
                         })}
