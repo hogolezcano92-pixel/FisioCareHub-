@@ -5736,3 +5736,41 @@ body.light .finance-pdf-button:disabled {
   opacity: 1 !important;
   -webkit-text-fill-color: #FFFFFF !important;
 }
+
+/* =========================================================
+   FisioCareHub — Login light mode background video premium
+   ---------------------------------------------------------
+   Ajuste isolado para o TEMA CLARO: deixa somente o vídeo de
+   fundo do login mais vivo, nítido e menos lavado, sem tocar
+   no dark mode e sem alterar campos, botões, textos ou layout.
+   ========================================================= */
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video,
+html:not(.dark) .fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video {
+  opacity: 1 !important;
+  filter: brightness(1.16) contrast(1.22) saturate(1.26) !important;
+  transform: scale(1.001) translateZ(0) !important;
+  will-change: filter, transform;
+  image-rendering: auto;
+}
+
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+html:not(.dark) .fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, rgba(255, 255, 255, 0.055) 42%, rgba(248, 250, 252, 0.18) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), rgba(219, 234, 254, 0.015), rgba(237, 233, 254, 0.055)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-vignette,
+html:not(.dark) .fch-login-immersive .fch-login-video-vignette,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video-vignette,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(14, 165, 233, 0.035), transparent 34%),
+    radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.00) 54%, rgba(248, 250, 252, 0.12) 100%) !important;
+}
