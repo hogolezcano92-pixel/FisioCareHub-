@@ -2280,7 +2280,7 @@ export default function Dashboard() {
               </div>
 
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-6 z-10 flex items-center justify-center text-sky-300">
+                <div className="pointer-events-none absolute inset-y-0 left-4 z-10 flex w-10 items-center justify-center text-sky-300">
                   {searching ? (
                     <Loader2 size={20} className="animate-spin" />
                   ) : (
@@ -2295,15 +2295,8 @@ export default function Dashboard() {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
                   placeholder="Digite paciente, agenda, financeiro, evolução..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-20 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-24 pr-5 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
                 />
-                <button
-                  type="button"
-                  onClick={handleQuickSearchSubmit}
-                  className="absolute right-2 top-1/2 flex h-10 -translate-y-1/2 items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-violet-600 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-violet-900/30 transition-all hover:scale-[1.02]"
-                >
-                  IA
-                </button>
               </div>
 
               {searchResults.length > 0 && (
