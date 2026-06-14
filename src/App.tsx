@@ -66,6 +66,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Discover = lazy(() => import('./pages/Discover'));
 const Triage = lazy(() => import('./pages/Triage'));
 const Records = lazy(() => import('./pages/Records'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -761,6 +762,7 @@ function AppContent() {
                   <Route path="/aguardando-aprovacao" element={<ProtectedRoute><AguardandoAprovacao /></ProtectedRoute>} />
 
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/descubra" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
                   <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
                   <Route path="/jornada" element={<ProtectedRoute allowedRoles={['paciente']}><RecoveryJourney /></ProtectedRoute>} />
                   <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
