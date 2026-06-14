@@ -2280,11 +2280,11 @@ export default function Dashboard() {
               </div>
 
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-4 z-10 flex w-9 items-center justify-center text-sky-300">
+                <div className="pointer-events-none absolute inset-y-0 left-3 z-10 flex w-8 items-center justify-center text-sky-300 sm:left-4 sm:w-9">
                   {searching ? (
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin sm:h-[18px] sm:w-[18px]" />
                   ) : (
-                    <Sparkles size={18} />
+                    <Sparkles size={16} className="sm:h-[18px] sm:w-[18px]" />
                   )}
                 </div>
                 <input
@@ -2294,17 +2294,29 @@ export default function Dashboard() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
-                  placeholder="Digite paciente, agenda, financeiro..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-[4.25rem] pr-20 text-xs font-bold text-white placeholder:text-slate-400 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10 sm:text-sm"
+                  placeholder="Paciente, agenda ou financeiro..."
+                  className="h-[52px] w-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] pl-12 pr-4 text-[11px] font-bold text-white placeholder:text-slate-400/80 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10 sm:h-14 sm:pl-14 sm:pr-24 sm:text-sm"
                 />
                 <button
                   type="button"
                   onClick={handleQuickSearchSubmit}
                   disabled={!quickSearchValue}
-                  className="absolute inset-y-2 right-2 z-10 inline-flex items-center justify-center rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-sky-200 transition-all hover:border-sky-300/40 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="absolute inset-y-2 right-2 z-10 hidden items-center justify-center rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-sky-200 transition-all hover:border-sky-300/40 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
                   aria-label="Realizar busca rápida"
                 >
                   Enter
+                </button>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500 sm:hidden">
+                <span>Digite para ver atalhos.</span>
+                <button
+                  type="button"
+                  onClick={handleQuickSearchSubmit}
+                  disabled={!quickSearchValue}
+                  className="rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Buscar
                 </button>
               </div>
 
