@@ -187,7 +187,7 @@ const physioCards: DiscoverCard[] = [
   {
     title: 'Biblioteca Clínica',
     subtitle: 'Conteúdos, artigos e atualizações',
-    path: '/biblioteca',
+    path: '/artigos-cientificos',
     icon: BookOpen,
     accent: 'from-indigo-600 via-violet-600 to-purple-600',
     imageTone: 'bg-indigo-100 text-indigo-700',
@@ -412,14 +412,14 @@ export default function Discover() {
                 >
                   <Link
                     to={item.path}
-                    className="fch-discover-shortcut group flex min-h-[104px] items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/10 p-4 text-white shadow-[0_18px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/15 active:scale-[0.98]"
+                    className="fch-discover-shortcut group flex min-h-[104px] items-center gap-3 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/15 active:scale-[0.98] sm:gap-4 sm:p-4"
                   >
                     <span className="fch-discover-shortcut-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 group-hover:scale-105">
                       <Icon size={26} strokeWidth={2.7} />
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-lg font-black leading-tight tracking-tight sm:text-xl">{item.title}</span>
-                      <span className="fch-discover-muted mt-1 block text-xs font-bold text-slate-300">{item.subtitle}</span>
+                    <span className="min-w-0 flex-1 overflow-hidden">
+                      <span className="block max-w-full break-words text-[0.98rem] font-black leading-[1.02] tracking-tight sm:text-xl">{item.title}</span>
+                      <span className="fch-discover-muted mt-1 block max-w-full break-words text-[11px] font-bold leading-tight text-slate-300 sm:text-xs">{item.subtitle}</span>
                     </span>
                   </Link>
                 </motion.div>
@@ -506,7 +506,7 @@ export default function Discover() {
                 </div>
               </div>
               <Link
-                to={isPhysio ? '/biblioteca' : '/patient/library'}
+                to={isPhysio ? '/artigos-cientificos' : '/patient/library'}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 active:scale-95"
               >
                 Ver biblioteca <ArrowRight size={16} />
