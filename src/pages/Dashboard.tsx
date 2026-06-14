@@ -1767,7 +1767,7 @@ export default function Dashboard() {
   const quickSearchValue = patientSearch.trim();
   const quickSearchNormalized = normalizeQuickSearch(quickSearchValue);
   const quickToolResults = useMemo(() => {
-    if (!quickSearchNormalized) return [];
+    if (quickSearchNormalized.length < 2) return [];
 
     return physioQuickTools
       .filter((tool) =>
@@ -2280,11 +2280,11 @@ export default function Dashboard() {
               </div>
 
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-4 z-10 flex w-10 items-center justify-center text-sky-300">
+                <div className="pointer-events-none absolute inset-y-0 left-4 z-10 flex w-9 items-center justify-center text-sky-300">
                   {searching ? (
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    <Sparkles size={20} />
+                    <Sparkles size={18} />
                   )}
                 </div>
                 <input
@@ -2294,10 +2294,55 @@ export default function Dashboard() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
-                  placeholder="Digite paciente, agenda, financeiro, evolução..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-24 pr-5 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
+                  placeholder="Digite paciente, agenda, financeiro..."
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-[4.25rem] pr-20 text-xs font-bold text-white placeholder:text-slate-400 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10 sm:text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={handleQuickSearchSubmit}
+                  disabled={!quickSearchValue}
+                  className="absolute inset-y-2 right-2 z-10 inline-flex items-center justify-center rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-sky-200 transition-all hover:border-sky-300/40 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Realizar busca rápida"
+                >
+                  Enter
+                </button>
               </div>
+
+              {quickToolResults.length > 0 && (
+                <div className="mt-3 rounded-2xl border border-violet-400/15 bg-violet-500/5 p-3">
+                  <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-200">
+                    Atalhos inteligentes
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {quickToolResults.map((tool) => {
+                      const ToolIcon = tool.icon;
+                      return (
+                        <button
+                          key={tool.label}
+                          type="button"
+                          onClick={tool.action}
+                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-violet-400/25 hover:bg-violet-500/10"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-300/15 bg-violet-500/10 text-violet-200">
+                              <ToolIcon size={16} />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black text-white">
+                                {tool.label}
+                              </p>
+                              <p className="truncate text-[10px] font-semibold text-slate-400">
+                                {tool.description}
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight size={15} className="shrink-0 text-violet-200" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {searchResults.length > 0 && (
                 <div className="mt-3 rounded-2xl border border-sky-400/15 bg-sky-500/5 p-3">
@@ -2340,7 +2385,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {quickSearchValue.length >= 3 && searchResults.length === 0 && quickToolResults.length === 0 && !searching && (
+              {quickSearchValue.length >= 2 && searchResults.length === 0 && quickToolResults.length === 0 && !searching && (
                 <p className="mt-3 text-center text-[11px] font-bold text-slate-500">
                   Nada encontrado para “{quickSearchValue}”.
                 </p>
