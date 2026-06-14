@@ -1767,7 +1767,7 @@ export default function Dashboard() {
   const quickSearchValue = patientSearch.trim();
   const quickSearchNormalized = normalizeQuickSearch(quickSearchValue);
   const quickToolResults = useMemo(() => {
-    if (!quickSearchNormalized) return physioQuickTools.slice(0, 4);
+    if (!quickSearchNormalized) return [];
 
     return physioQuickTools
       .filter((tool) =>
@@ -2280,7 +2280,7 @@ export default function Dashboard() {
               </div>
 
               <div className="relative">
-                <div className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-sky-300">
+                <div className="absolute left-5 top-1/2 z-10 -translate-y-1/2 text-sky-300">
                   {searching ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
@@ -2294,8 +2294,8 @@ export default function Dashboard() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
-                  placeholder="Digite: paciente, agenda, financeiro, evolução..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-12 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
+                  placeholder="Digite paciente, agenda, financeiro, evolução..."
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-16 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
                 />
                 <button
                   type="button"
@@ -2306,86 +2306,46 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
-                {searchResults.length > 0 && (
-                  <div className="rounded-2xl border border-sky-400/15 bg-sky-500/5 p-3">
-                    <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-sky-300">
-                      Pacientes encontrados
-                    </p>
-                    <div className="space-y-2">
-                      {searchResults.slice(0, 4).map((patient) => (
-                        <button
-                          key={patient.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedPatientId(patient.id);
-                            navigate(`/patients/${patient.id}`);
-                          }}
-                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-sky-400/25 hover:bg-sky-500/10"
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <img
-                              src={
-                                patient.avatar_url ||
-                                `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`
-                              }
-                              alt={patient.nome_completo || "Paciente"}
-                              className="h-9 w-9 shrink-0 rounded-xl border border-white/10 object-cover"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-black text-white">
-                                {patient.nome_completo || "Paciente"}
-                              </p>
-                              <p className="truncate text-[10px] font-semibold text-slate-400">
-                                {patient.email || "Abrir prontuário"}
-                              </p>
-                            </div>
-                          </div>
-                          <ChevronRight size={15} className="shrink-0 text-sky-300" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-violet-400/15 bg-violet-500/5 p-3">
-                  <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-200">
-                    Ferramentas rápidas
+              {searchResults.length > 0 && (
+                <div className="mt-3 rounded-2xl border border-sky-400/15 bg-sky-500/5 p-3">
+                  <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-sky-300">
+                    Pacientes encontrados
                   </p>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                    {quickToolResults.map((tool) => {
-                      const Icon = tool.icon;
-                      return (
-                        <button
-                          key={tool.label}
-                          type="button"
-                          onClick={tool.action}
-                          className="group flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-violet-400/25 hover:bg-violet-500/10"
-                        >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sky-300 transition-colors group-hover:text-violet-200">
-                            <Icon size={17} />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-xs font-black text-white">
-                              {tool.label}
-                            </span>
-                            <span className="block truncate text-[10px] font-semibold text-slate-400">
-                              {tool.description}
-                            </span>
-                          </span>
-                          <ChevronRight size={15} className="shrink-0 text-violet-200/70" />
-                        </button>
-                      );
-                    })}
-
-                    {quickToolResults.length === 0 && (
-                      <p className="rounded-xl border border-white/5 bg-white/[0.04] p-3 text-center text-[11px] font-bold text-slate-400">
-                        Nenhuma ferramenta encontrada. Tente “agenda”, “financeiro”, “evolução” ou “exercício”.
-                      </p>
-                    )}
+                  <div className="space-y-2">
+                    {searchResults.slice(0, 4).map((patient) => (
+                      <button
+                        key={patient.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatientId(patient.id);
+                          navigate(`/patients/${patient.id}`);
+                        }}
+                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-sky-400/25 hover:bg-sky-500/10"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <img
+                            src={
+                              patient.avatar_url ||
+                              `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`
+                            }
+                            alt={patient.nome_completo || "Paciente"}
+                            className="h-9 w-9 shrink-0 rounded-xl border border-white/10 object-cover"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-black text-white">
+                              {patient.nome_completo || "Paciente"}
+                            </p>
+                            <p className="truncate text-[10px] font-semibold text-slate-400">
+                              {patient.email || "Abrir prontuário"}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight size={15} className="shrink-0 text-sky-300" />
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
 
               {quickSearchValue.length >= 3 && searchResults.length === 0 && quickToolResults.length === 0 && !searching && (
                 <p className="mt-3 text-center text-[11px] font-bold text-slate-500">
