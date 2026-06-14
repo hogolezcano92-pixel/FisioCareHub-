@@ -106,6 +106,7 @@ const Telehealth = lazy(() => import('./pages/Telehealth'));
 const LibraryMaterialDetail = lazy(() => import('./pages/LibraryMaterialDetail'));
 const RecoveryJourney = lazy(() => import('./pages/RecoveryJourney'));
 const ClinicalUpdateDetail = lazy(() => import('./pages/ClinicalUpdateDetail'));
+const ClinicalUpdates = lazy(() => import('./pages/ClinicalUpdates'));
 const ExamAnalysis = lazy(() => import('./pages/ExamAnalysis'));
 const ClinicalTestsHub = lazy(() => import('./pages/ClinicalTestsHub'));
 
@@ -772,6 +773,8 @@ function AppContent() {
                   <Route path="/clinical-tests" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><ClinicalTestsHub /></ProGuard></ProtectedRoute>} />
                   <Route path="/exam-ai" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
                   <Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
+                  <Route path="/artigos-cientificos" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} />
+                  <Route path="/clinical-updates" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} />
                   <Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                   <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
