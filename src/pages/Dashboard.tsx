@@ -1664,6 +1664,137 @@ export default function Dashboard() {
     }
   };
 
+  const normalizeQuickSearch = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const physioQuickTools = useMemo(
+    () => [
+      {
+        label: "Agenda de hoje",
+        description: "Ver compromissos e horários do dia",
+        keywords: "agenda hoje consulta horario sessoes compromisso calendário",
+        icon: Calendar,
+        action: () => navigate("/agenda?view=today"),
+      },
+      {
+        label: "Agenda completa",
+        description: "Abrir a agenda profissional",
+        keywords: "agenda completa calendario horarios disponibilidade marcar consulta",
+        icon: Calendar,
+        action: () => navigate("/agenda"),
+      },
+      {
+        label: "Meus pacientes",
+        description: "Listar e gerenciar pacientes",
+        keywords: "paciente pacientes meus pacientes lista cadastro buscar cliente usuario",
+        icon: Users,
+        action: () => navigate("/patients"),
+      },
+      {
+        label: "Nova evolução",
+        description: "Ir para pacientes e registrar evolução",
+        keywords: "evolucao evolução nova evolução registro soap atendimento ficha acompanhamento",
+        icon: TrendingUp,
+        action: () => navigate("/patients?acao=evolucao"),
+      },
+      {
+        label: "Prescrever exercício",
+        description: "Abrir biblioteca de exercícios",
+        keywords: "prescrever exercicio exercício treino plano exercícios biblioteca reabilitacao",
+        icon: Activity,
+        action: () => navigate("/exercises"),
+      },
+      {
+        label: "Prontuários",
+        description: "Abrir documentos e registros clínicos",
+        keywords: "prontuario prontuário documentos registros ficha avaliacao avaliação soap pdf paciente",
+        icon: FileText,
+        action: () => navigate("/records"),
+      },
+      {
+        label: "Avaliações",
+        description: "Criar ou revisar avaliações fisioterapêuticas",
+        keywords: "avaliacao avaliação ficha fisioterapeutica anamnese exame físico testes",
+        icon: FileText,
+        action: () => navigate("/physio/evaluations"),
+      },
+      {
+        label: "Triagens IA",
+        description: "Ver triagens recebidas dos pacientes",
+        keywords: "triagem triagens ia inteligencia artificial queixa dor solicitação",
+        icon: BrainCircuit,
+        action: () => navigate("/physio/triages"),
+      },
+      {
+        label: "Financeiro",
+        description: "Abrir configurações e serviços financeiros",
+        keywords: "financeiro dinheiro pagamento pagamentos valores preço preco servicos serviços saque comissão",
+        icon: DollarSign,
+        action: () => {
+          const element = document.getElementById("financial-section");
+          element?.scrollIntoView({ behavior: "smooth" });
+          window.dispatchEvent(new CustomEvent("open-financial-services"));
+        },
+      },
+      {
+        label: "Reputação",
+        description: "Ver avaliações e reputação profissional",
+        keywords: "reputacao reputação avaliações estrelas nota comentários depoimentos ranking",
+        icon: Star,
+        action: () => navigate("/dashboard/fisio?tab=avaliacoes"),
+      },
+      {
+        label: "Chat",
+        description: "Abrir conversas com pacientes",
+        keywords: "chat mensagem mensagens conversa atendimento suporte paciente",
+        icon: MessageSquare,
+        action: () => navigate("/chat"),
+      },
+      {
+        label: "Oportunidades",
+        description: "Ver solicitações abertas de atendimento",
+        keywords: "oportunidades atendimento solicitações solicitacoes domiciliar pedidos região bairro",
+        icon: Route,
+        action: () => navigate("/opportunities"),
+      },
+    ],
+    [navigate],
+  );
+
+  const quickSearchValue = patientSearch.trim();
+  const quickSearchNormalized = normalizeQuickSearch(quickSearchValue);
+  const quickToolResults = useMemo(() => {
+    if (!quickSearchNormalized) return physioQuickTools.slice(0, 4);
+
+    return physioQuickTools
+      .filter((tool) =>
+        normalizeQuickSearch(`${tool.label} ${tool.description} ${tool.keywords}`).includes(
+          quickSearchNormalized,
+        ),
+      )
+      .slice(0, 6);
+  }, [physioQuickTools, quickSearchNormalized]);
+
+  const handleQuickSearchSubmit = () => {
+    if (searchResults.length > 0) {
+      setSelectedPatientId(searchResults[0].id);
+      navigate(`/patients/${searchResults[0].id}`);
+      return;
+    }
+
+    if (quickToolResults.length > 0) {
+      quickToolResults[0].action();
+      return;
+    }
+
+    if (quickSearchValue.length >= 2) {
+      navigate(`/patients?search=${encodeURIComponent(quickSearchValue)}`);
+    }
+  };
+
   if (authLoading)
     return (
       <div className="min-h-screen pt-20 bg-[#0B1120] px-4 sm:px-6 lg:px-8">
@@ -2118,6 +2249,153 @@ export default function Dashboard() {
           </header>
         )}
 
+        {isPhysio && (
+          <motion.section
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="relative overflow-hidden rounded-[1.75rem] border border-sky-400/20 bg-gradient-to-br from-slate-950/80 via-blue-950/35 to-violet-950/45 p-[1px] shadow-2xl shadow-blue-950/25"
+          >
+            <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-sky-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -right-16 bottom-0 h-40 w-40 rounded-full bg-violet-500/25 blur-3xl" />
+
+            <div className="relative rounded-[1.68rem] bg-slate-950/55 p-4 backdrop-blur-2xl md:p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-sky-400/25 bg-sky-500/10 text-sky-300 shadow-lg shadow-sky-900/20">
+                    <Sparkles size={17} className="animate-pulse" />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-300">
+                      Busca Rápida IA
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-400">
+                      Encontre ferramentas ou pacientes em segundos
+                    </p>
+                  </div>
+                </div>
+                <span className="hidden rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-violet-200 sm:inline-flex">
+                  IA
+                </span>
+              </div>
+
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-sky-300">
+                  {searching ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={18} />
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleQuickSearchSubmit();
+                  }}
+                  placeholder="Digite: paciente, agenda, financeiro, evolução..."
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-12 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
+                />
+                <button
+                  type="button"
+                  onClick={handleQuickSearchSubmit}
+                  className="absolute right-2 top-1/2 flex h-10 -translate-y-1/2 items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-violet-600 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-violet-900/30 transition-all hover:scale-[1.02]"
+                >
+                  IA
+                </button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
+                {searchResults.length > 0 && (
+                  <div className="rounded-2xl border border-sky-400/15 bg-sky-500/5 p-3">
+                    <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-sky-300">
+                      Pacientes encontrados
+                    </p>
+                    <div className="space-y-2">
+                      {searchResults.slice(0, 4).map((patient) => (
+                        <button
+                          key={patient.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPatientId(patient.id);
+                            navigate(`/patients/${patient.id}`);
+                          }}
+                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-sky-400/25 hover:bg-sky-500/10"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <img
+                              src={
+                                patient.avatar_url ||
+                                `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`
+                              }
+                              alt={patient.nome_completo || "Paciente"}
+                              className="h-9 w-9 shrink-0 rounded-xl border border-white/10 object-cover"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black text-white">
+                                {patient.nome_completo || "Paciente"}
+                              </p>
+                              <p className="truncate text-[10px] font-semibold text-slate-400">
+                                {patient.email || "Abrir prontuário"}
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight size={15} className="shrink-0 text-sky-300" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-violet-400/15 bg-violet-500/5 p-3">
+                  <p className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-200">
+                    Ferramentas rápidas
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                    {quickToolResults.map((tool) => {
+                      const Icon = tool.icon;
+                      return (
+                        <button
+                          key={tool.label}
+                          type="button"
+                          onClick={tool.action}
+                          className="group flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.055] p-2.5 text-left transition-all hover:border-violet-400/25 hover:bg-violet-500/10"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sky-300 transition-colors group-hover:text-violet-200">
+                            <Icon size={17} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-black text-white">
+                              {tool.label}
+                            </span>
+                            <span className="block truncate text-[10px] font-semibold text-slate-400">
+                              {tool.description}
+                            </span>
+                          </span>
+                          <ChevronRight size={15} className="shrink-0 text-violet-200/70" />
+                        </button>
+                      );
+                    })}
+
+                    {quickToolResults.length === 0 && (
+                      <p className="rounded-xl border border-white/5 bg-white/[0.04] p-3 text-center text-[11px] font-bold text-slate-400">
+                        Nenhuma ferramenta encontrada. Tente “agenda”, “financeiro”, “evolução” ou “exercício”.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {quickSearchValue.length >= 3 && searchResults.length === 0 && quickToolResults.length === 0 && !searching && (
+                <p className="mt-3 text-center text-[11px] font-bold text-slate-500">
+                  Nada encontrado para “{quickSearchValue}”.
+                </p>
+              )}
+            </div>
+          </motion.section>
+        )}
+
         {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -2552,108 +2830,6 @@ export default function Dashboard() {
               </motion.div>
             ))}
         </div>
-
-        {isPhysio && (
-          <div className="premium-card space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="text-base font-black text-white tracking-tight">
-                Buscar Pacientes
-              </h3>
-              <div className="relative w-full max-w-md">
-                <div
-                  className="absolute flex items-center pointer-events-none z-20"
-                  style={{
-                    left: "16px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: "20px",
-                    height: "20px",
-                    color: "#94a3b8",
-                  }}
-                >
-                  {searching ? (
-                    <Loader2 className="animate-spin text-sky-500" size={18} />
-                  ) : (
-                    <Users size={18} style={{ color: "#94a3b8" }} />
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={patientSearch}
-                  onChange={(e) => setPatientSearch(e.target.value)}
-                  placeholder="Nome ou e-mail..."
-                  className="input-compact pr-4 !pl-[60px]"
-                />
-              </div>
-            </div>
-
-            {searchResults.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                {searchResults.map((patient) => (
-                  <div
-                    key={patient.id}
-                    onClick={() => setSelectedPatientId(patient.id)}
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group",
-                      selectedPatientId === patient.id
-                        ? "bg-sky-600/10 border-sky-500 shadow-lg shadow-sky-900/20"
-                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          patient.avatar_url ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`
-                        }
-                        alt={patient.nome_completo}
-                        className="w-10 h-10 rounded-lg object-cover border border-white/10"
-                      />
-                      <div>
-                        <p
-                          className={cn(
-                            "text-sm font-bold transition-colors",
-                            selectedPatientId === patient.id
-                              ? "text-sky-400"
-                              : "text-white group-hover:text-sky-400",
-                          )}
-                        >
-                          {patient.nome_completo}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {patient.email}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {selectedPatientId === patient.id && (
-                        <div className="px-2 py-0.5 bg-sky-600 text-white text-[8px] font-black rounded-full uppercase tracking-widest">
-                          Selecionado
-                        </div>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/physio/${patient.id}`);
-                        }}
-                        className="p-2 bg-white/10 text-sky-400 rounded-lg shadow-sm hover:bg-sky-600 hover:text-white transition-all border border-white/5"
-                      >
-                        <User size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {patientSearch.length >= 3 &&
-              searchResults.length === 0 &&
-              !searching && (
-                <p className="text-center text-slate-500 py-2 text-xs">
-                  Nenhum paciente encontrado para \"{patientSearch}\"
-                </p>
-              )}
-          </div>
-        )}
 
         <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-4">
