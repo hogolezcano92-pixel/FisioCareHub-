@@ -2280,11 +2280,11 @@ export default function Dashboard() {
               </div>
 
               <div className="relative">
-                <div className="absolute left-5 top-1/2 z-10 -translate-y-1/2 text-sky-300">
+                <div className="pointer-events-none absolute inset-y-0 left-6 z-10 flex items-center justify-center text-sky-300">
                   {searching ? (
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={20} className="animate-spin" />
                   ) : (
-                    <Sparkles size={18} />
+                    <Sparkles size={20} />
                   )}
                 </div>
                 <input
@@ -2295,7 +2295,7 @@ export default function Dashboard() {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
                   placeholder="Digite paciente, agenda, financeiro, evolução..."
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-16 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-20 pr-20 text-sm font-bold text-white placeholder:text-slate-500 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10"
                 />
                 <button
                   type="button"
