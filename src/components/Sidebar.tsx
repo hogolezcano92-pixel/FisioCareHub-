@@ -75,6 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         title: 'Principal',
         items: [
           { name: t('nav.home'), path: isApproved ? '/dashboard' : '/aguardando-aprovacao', icon: Home },
+          ...(isApproved ? [{ name: 'Descubra', path: '/descubra', icon: Search }] : []),
           ...(isPhysio && isApproved ? [
             { name: t('nav.my_patients'), path: '/patients', icon: Users },
             { name: 'Oportunidades', path: '/opportunities', icon: Search, pro: true },
@@ -175,6 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     if (key.includes('agenda') || key.includes('calendar') || key.includes('appointments')) return '#34D399';
     if (key.includes('jornada')) return '#A78BFA';
     if (key.includes('paciente') || key.includes('patients')) return '#60A5FA';
+    if (key.includes('descubra')) return '#8B5CF6';
     if (key.includes('oportunidade') || key.includes('buscar') || key.includes('search')) return '#22D3EE';
     if (key.includes('avalia') || key.includes('evaluation')) return '#059669';
     if (key.includes('exerc') || key.includes('treino') || key.includes('workout')) return '#A3E635';

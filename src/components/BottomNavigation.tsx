@@ -65,7 +65,7 @@ const BottomNavigation: React.FC = () => {
     if (isPatient) {
       return [
         { name: 'Início', path: '/dashboard', icon: Home, iconClass: 'text-blue-600' },
-        { name: 'Buscar', path: '/buscar-fisio', icon: Search, iconClass: 'text-cyan-600' },
+        { name: 'Descubra', path: '/descubra', icon: Search, iconClass: 'text-cyan-600' },
         { name: 'Jornada', path: '/jornada', icon: HeartPulse, iconClass: 'text-violet-600' },
         { name: 'Agenda', path: '/appointments', icon: Calendar, iconClass: 'text-indigo-600' },
         { name: 'Perfil', path: '/profile', icon: User, iconClass: 'text-emerald-600' },
