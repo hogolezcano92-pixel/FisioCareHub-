@@ -2286,8 +2286,11 @@ export default function Dashboard() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="O que você quer fazer agora?"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-extrabold text-white outline-none placeholder:text-slate-400/85 sm:text-base"
+                  className="block h-full min-w-0 flex-1 appearance-none !rounded-none !border-0 !bg-transparent !p-0 text-[13px] font-extrabold text-white !shadow-none !outline-none !ring-0 placeholder:text-slate-400/85 focus:!border-0 focus:!bg-transparent focus:!shadow-none focus:!outline-none focus:!ring-0 sm:text-base"
                 />
 
                 <button
