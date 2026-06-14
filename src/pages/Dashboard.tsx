@@ -2254,39 +2254,31 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="relative overflow-hidden rounded-[1.75rem] border border-sky-400/20 bg-gradient-to-br from-slate-950/80 via-blue-950/35 to-violet-950/45 p-[1px] shadow-2xl shadow-blue-950/25"
+            className="relative overflow-hidden rounded-[1.75rem] border border-violet-500/35 bg-gradient-to-br from-slate-950/90 via-blue-950/45 to-violet-950/55 p-[1px] shadow-2xl shadow-violet-950/30"
           >
-            <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-sky-500/20 blur-3xl" />
-            <div className="pointer-events-none absolute -right-16 bottom-0 h-40 w-40 rounded-full bg-violet-500/25 blur-3xl" />
+            <div className="pointer-events-none absolute -left-20 -top-20 h-44 w-44 rounded-full bg-sky-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -right-16 -top-10 h-44 w-44 rounded-full bg-violet-500/25 blur-3xl" />
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-sky-300/45 to-transparent" />
 
-            <div className="relative rounded-[1.68rem] bg-slate-950/55 p-4 backdrop-blur-2xl md:p-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-sky-400/25 bg-sky-500/10 text-sky-300 shadow-lg shadow-sky-900/20">
-                    <Sparkles size={17} className="animate-pulse" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-300">
-                      Busca Rápida IA
-                    </p>
-                    <p className="text-[11px] font-bold text-slate-400">
-                      Encontre ferramentas ou pacientes em segundos
-                    </p>
-                  </div>
-                </div>
-                <span className="hidden rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-violet-200 sm:inline-flex">
-                  IA
-                </span>
+            <div className="relative rounded-[1.65rem] bg-slate-950/62 p-4 backdrop-blur-2xl md:p-5">
+              <div className="mb-3 flex items-center gap-2.5">
+                <Sparkles size={15} className="shrink-0 animate-pulse text-sky-300" />
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/90 sm:text-[11px]">
+                  Busca Rápida IA
+                </p>
               </div>
 
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-3 z-10 flex w-8 items-center justify-center text-sky-300 sm:left-4 sm:w-9">
+              <div className="flex h-[58px] w-full min-w-0 items-center gap-2 rounded-[1.35rem] border border-white/10 bg-white/[0.055] px-3 shadow-inner shadow-slate-950/45 transition-all focus-within:border-sky-400/45 focus-within:bg-white/[0.085] focus-within:ring-4 focus-within:ring-sky-500/10 sm:h-[62px] sm:gap-3 sm:px-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sky-300 sm:h-11 sm:w-11">
                   {searching ? (
-                    <Loader2 size={16} className="animate-spin sm:h-[18px] sm:w-[18px]" />
+                    <Loader2 size={20} className="animate-spin" />
                   ) : (
-                    <Sparkles size={16} className="sm:h-[18px] sm:w-[18px]" />
+                    <Sparkles size={22} className="drop-shadow-[0_0_10px_rgba(56,189,248,0.45)]" />
                   )}
                 </div>
+
+                <div className="h-8 w-px shrink-0 bg-white/10" />
+
                 <input
                   type="text"
                   value={patientSearch}
@@ -2294,29 +2286,18 @@ export default function Dashboard() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleQuickSearchSubmit();
                   }}
-                  placeholder="Paciente, agenda ou financeiro..."
-                  className="h-[52px] w-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] pl-12 pr-4 text-[11px] font-bold text-white placeholder:text-slate-400/80 outline-none shadow-inner shadow-slate-950/30 transition-all focus:border-sky-400/45 focus:bg-white/[0.09] focus:ring-4 focus:ring-sky-500/10 sm:h-14 sm:pl-14 sm:pr-24 sm:text-sm"
+                  placeholder="O que você quer fazer agora?"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-extrabold text-white outline-none placeholder:text-slate-400/85 sm:text-base"
                 />
-                <button
-                  type="button"
-                  onClick={handleQuickSearchSubmit}
-                  disabled={!quickSearchValue}
-                  className="absolute inset-y-2 right-2 z-10 hidden items-center justify-center rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-sky-200 transition-all hover:border-sky-300/40 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
-                  aria-label="Realizar busca rápida"
-                >
-                  Enter
-                </button>
-              </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500 sm:hidden">
-                <span>Digite para ver atalhos.</span>
                 <button
                   type="button"
                   onClick={handleQuickSearchSubmit}
                   disabled={!quickSearchValue}
-                  className="rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-gradient-to-r from-sky-400 via-blue-500 to-violet-600 px-5 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-violet-700/35 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 sm:h-12 sm:px-8 sm:text-base"
+                  aria-label="Realizar busca rápida com IA"
                 >
-                  Buscar
+                  IA
                 </button>
               </div>
 
