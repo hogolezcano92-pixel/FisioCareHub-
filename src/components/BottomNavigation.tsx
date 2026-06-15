@@ -182,7 +182,7 @@ const BottomNavigation: React.FC = () => {
           ? 'translate-y-[125%] opacity-0 blur-sm'
           : 'translate-y-0 opacity-100 blur-0'
       )}
-      style={{ bottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
+      style={{ bottom: 'max(0.05rem, calc(env(safe-area-inset-bottom) - 0.55rem))' }}
     >
       <div className="mx-auto max-w-md pointer-events-auto">
         <div
