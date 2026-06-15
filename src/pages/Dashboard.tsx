@@ -594,6 +594,131 @@ const buildDashboardActivities = (
     .slice(0, 12);
 };
 
+
+type PatientActivityGroup = {
+  patientId: string;
+  name: string;
+  email?: string;
+  avatarUrl?: string | null;
+  activities: any[];
+  lastActivityAt: string;
+  lastActivityLabel: string;
+  painLevel?: number | null;
+  triageRisk?: string | null;
+};
+
+const formatDashboardActionLabel = (type: string) => {
+  const label = String(type || "Atividade").replace(/_/g, " ").trim();
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const getPatientDisplayName = (patient: any, fallback = "Paciente") =>
+  patient?.nome_completo || patient?.nome || patient?.full_name || fallback;
+
+const getPatientAvatarUrl = (patient: any) =>
+  patient?.avatar_url || patient?.foto_url || patient?.photo_url || null;
+
+const extractPainLevel = (activity: any) => {
+  const text = `${activity?.descricao || ""} ${activity?.nivel_dor || ""}`;
+  const match = text.match(/dor\s*(\d{1,2})\s*\/\s*10/i);
+  if (match) return Number(match[1]);
+  if (activity?.nivel_dor !== undefined && activity?.nivel_dor !== null) {
+    const value = Number(activity.nivel_dor);
+    return Number.isFinite(value) ? value : null;
+  }
+  return null;
+};
+
+const extractTriageRisk = (activity: any) => {
+  const text = `${activity?.descricao || ""}`.toLowerCase();
+  if (text.includes("vermelho")) return "Vermelho";
+  if (text.includes("amarelo")) return "Amarelo";
+  if (text.includes("verde")) return "Verde";
+  return null;
+};
+
+const buildPatientActivityGroups = (
+  activities: any[] = [],
+  patientMap: Map<string, any> = new Map(),
+): PatientActivityGroup[] => {
+  const groups = new Map<string, PatientActivityGroup>();
+
+  (activities || [])
+    .filter((activity: any) => activity?.paciente_id)
+    .forEach((activity: any) => {
+      const patientId = String(activity.paciente_id);
+      const patient = patientMap.get(patientId) || {};
+      const existing = groups.get(patientId);
+      const painLevel = extractPainLevel(activity);
+      const triageRisk = extractTriageRisk(activity);
+
+      if (!existing) {
+        groups.set(patientId, {
+          patientId,
+          name: getPatientDisplayName(patient),
+          email: patient?.email,
+          avatarUrl: getPatientAvatarUrl(patient),
+          activities: [activity],
+          lastActivityAt: activity.created_at,
+          lastActivityLabel: activity.descricao || formatDashboardActionLabel(activity.tipo_acao || "Atividade"),
+          painLevel,
+          triageRisk,
+        });
+        return;
+      }
+
+      existing.activities.push(activity);
+      if (painLevel !== null && painLevel !== undefined) existing.painLevel = painLevel;
+      if (triageRisk) existing.triageRisk = triageRisk;
+
+      const currentTime = new Date(activity.created_at || 0).getTime();
+      const lastTime = new Date(existing.lastActivityAt || 0).getTime();
+      if (currentTime > lastTime) {
+        existing.lastActivityAt = activity.created_at;
+        existing.lastActivityLabel = activity.descricao || formatDashboardActionLabel(activity.tipo_acao || "Atividade");
+      }
+    });
+
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      activities: group.activities
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime(),
+        )
+        .slice(0, 12),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.lastActivityAt || 0).getTime() -
+        new Date(a.lastActivityAt || 0).getTime(),
+    );
+};
+
+const formatActivityDateChip = (value?: string | null) => {
+  if (!value) return "Sem data";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Sem data";
+  return date.toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "short",
+  });
+};
+
+const formatActivityTimeChip = (value?: string | null) => {
+  if (!value) return "--:--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--:--";
+  return date.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 export default function Dashboard() {
   const {
     user,
@@ -613,6 +738,8 @@ export default function Dashboard() {
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [recentTriages, setRecentTriages] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [patientActivityGroups, setPatientActivityGroups] = useState<PatientActivityGroup[]>([]);
+  const [selectedHistoryPatientId, setSelectedHistoryPatientId] = useState<string | null>(null);
   const [weeklyChartData, setWeeklyChartData] = useState<WeeklyChartData>(() =>
     buildWeeklyChartData([], [], 0),
   );
@@ -872,6 +999,7 @@ export default function Dashboard() {
 
         let agendamentoIds: string[] = [];
         let linkedPatientProfileIds: string[] = [];
+        let linkedInternalPatients: any[] = [];
 
         if (isPhysio) {
           const linkedIds = new Set<string>();
@@ -896,8 +1024,10 @@ export default function Dashboard() {
 
           const { data: internalPatients } = await supabase
             .from("pacientes")
-            .select("id, perfil_id, email")
+            .select("id, perfil_id, nome_completo, nome, email, avatar_url, foto_url")
             .eq("fisioterapeuta_id", data.id);
+
+          linkedInternalPatients = internalPatients || [];
 
           (internalPatients || []).forEach((patient: any) => {
             // O app pode salvar paciente_id como pacientes.id ou como perfis.id.
@@ -1422,18 +1552,80 @@ export default function Dashboard() {
         }
 
         setRecentTriages(recentTriagesData);
-        setActivities(
-          buildDashboardActivities(
-            recentActivitiesData,
-            recentTriagesData,
-            recentAppointmentsForActivity,
-            recentProntuariosData,
-            recentEvolucoesData,
-            recentRegistrosPacienteData,
-            recentExerciciosPacienteData,
-            recentDocumentosData,
-          ),
+        const dashboardActivities = buildDashboardActivities(
+          recentActivitiesData,
+          recentTriagesData,
+          recentAppointmentsForActivity,
+          recentProntuariosData,
+          recentEvolucoesData,
+          recentRegistrosPacienteData,
+          recentExerciciosPacienteData,
+          recentDocumentosData,
         );
+        setActivities(dashboardActivities);
+
+        if (isPhysio) {
+          const patientIdsFromActivities = Array.from(
+            new Set(
+              dashboardActivities
+                .map((activity: any) => activity?.paciente_id)
+                .filter(Boolean)
+                .map(String),
+            ),
+          );
+          const patientIdsForMetadata = Array.from(
+            new Set([...linkedPatientProfileIds, ...patientIdsFromActivities]),
+          );
+          const patientMap = new Map<string, any>();
+
+          linkedInternalPatients.forEach((patient: any) => {
+            if (patient?.id) patientMap.set(String(patient.id), patient);
+            if (patient?.perfil_id) patientMap.set(String(patient.perfil_id), patient);
+          });
+
+          if (patientIdsForMetadata.length > 0) {
+            const [profilePatientsResult, internalPatientsResult] = await Promise.allSettled([
+              supabase
+                .from("perfis")
+                .select("id, nome_completo, email, avatar_url, foto_url")
+                .in("id", patientIdsForMetadata),
+              supabase
+                .from("pacientes")
+                .select("id, perfil_id, nome_completo, nome, email, avatar_url, foto_url")
+                .in("id", patientIdsForMetadata),
+            ]);
+
+            if (
+              profilePatientsResult.status === "fulfilled" &&
+              !profilePatientsResult.value.error
+            ) {
+              (profilePatientsResult.value.data || []).forEach((patient: any) => {
+                if (patient?.id) patientMap.set(String(patient.id), patient);
+              });
+            }
+
+            if (
+              internalPatientsResult.status === "fulfilled" &&
+              !internalPatientsResult.value.error
+            ) {
+              (internalPatientsResult.value.data || []).forEach((patient: any) => {
+                if (patient?.id) patientMap.set(String(patient.id), patient);
+                if (patient?.perfil_id) patientMap.set(String(patient.perfil_id), patient);
+              });
+            }
+          }
+
+          const groupedActivities = buildPatientActivityGroups(dashboardActivities, patientMap);
+          setPatientActivityGroups(groupedActivities);
+          setSelectedHistoryPatientId((current) =>
+            current && groupedActivities.some((group) => group.patientId === current)
+              ? current
+              : groupedActivities[0]?.patientId || null,
+          );
+        } else {
+          setPatientActivityGroups([]);
+          setSelectedHistoryPatientId(null);
+        }
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
       } finally {
@@ -1650,19 +1842,24 @@ export default function Dashboard() {
         : responseText || getPatientAssistantFallback(question);
       setAiMessage(safeResponse);
       setAssistantHistory((prev) =>
-        [...prev, { role: "assistant", content: safeResponse }].slice(-10),
+        [...prev, { role: "assistant" as const, content: safeResponse }].slice(-10),
       );
     } catch (error) {
       console.error("Erro no Assistente Viva:", error);
       const fallback = getPatientAssistantFallback(question);
       setAiMessage(fallback);
       setAssistantHistory((prev) =>
-        [...prev, { role: "assistant", content: fallback }].slice(-10),
+        [...prev, { role: "assistant" as const, content: fallback }].slice(-10),
       );
     } finally {
       setAssistantLoading(false);
     }
   };
+
+  const selectedHistoryGroup =
+    patientActivityGroups.find((group) => group.patientId === selectedHistoryPatientId) ||
+    patientActivityGroups[0] ||
+    null;
 
   if (authLoading)
     return (
@@ -2424,20 +2621,168 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
-              Histórico de{" "}
-              <span className="text-blue-400 italic">Atividades</span>
-            </h2>
+        {isPhysio ? (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-violet-200/80 bg-white/80 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-violet-700 shadow-sm dark:border-violet-300/15 dark:bg-white/[0.06] dark:text-violet-200">
+                  <Users size={11} /> Histórico clínico organizado
+                </div>
+                <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-950 to-violet-700 tracking-tight dark:from-white dark:to-slate-400">
+                  Histórico por <span className="text-blue-500 italic dark:text-blue-400">Paciente</span>
+                </h2>
+              </div>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {patientActivityGroups.length > 0
+                  ? `${patientActivityGroups.length} paciente${patientActivityGroups.length > 1 ? "s" : ""} com atividade recente`
+                  : "Sem atividades clínicas recentes por paciente"}
+              </p>
+            </div>
+
+            <div className="premium-card overflow-hidden bg-gradient-to-br from-violet-50 via-white to-sky-50 border-violet-100/80 shadow-violet-100/60 dark:from-violet-500/10 dark:via-white/[0.045] dark:to-sky-500/10 dark:border-violet-400/15">
+              {statsLoading ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="h-32 animate-pulse rounded-[1.75rem] border border-slate-200/70 bg-white/70 dark:border-white/10 dark:bg-white/[0.06]" />
+                  ))}
+                </div>
+              ) : patientActivityGroups.length === 0 ? (
+                <div className="rounded-[2rem] border border-dashed border-violet-200 bg-white/70 px-6 py-10 text-center dark:border-white/10 dark:bg-white/[0.04]">
+                  <Activity size={42} className="mx-auto mb-3 text-violet-400 dark:text-violet-300" />
+                  <p className="text-sm font-black text-slate-700 dark:text-slate-300">
+                    Nenhum histórico por paciente encontrado ainda.
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Quando houver diário de dor, triagem, prontuário, evolução ou documento vinculado a um paciente, ele aparecerá separado aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {patientActivityGroups.map((group) => {
+                      const selected = selectedHistoryGroup?.patientId === group.patientId;
+                      const initials = group.name
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join("")
+                        .toUpperCase() || "P";
+
+                      return (
+                        <button
+                          key={group.patientId}
+                          type="button"
+                          onClick={() => setSelectedHistoryPatientId(group.patientId)}
+                          className={cn(
+                            "group relative overflow-hidden rounded-[1.75rem] border p-4 text-left transition-all duration-300 hover:-translate-y-0.5",
+                            selected
+                              ? "border-violet-300 bg-white shadow-[0_22px_55px_rgba(124,58,237,0.18)] ring-4 ring-violet-500/10 dark:border-violet-300/25 dark:bg-white/[0.09]"
+                              : "border-slate-200/80 bg-white/75 shadow-sm hover:border-violet-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-violet-300/20",
+                          )}
+                        >
+                          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-200/50 blur-2xl dark:bg-violet-500/20" />
+                          <div className="relative flex items-start gap-3">
+                            {group.avatarUrl ? (
+                              <img
+                                src={group.avatarUrl}
+                                alt={group.name}
+                                className="h-12 w-12 rounded-2xl border border-white/80 object-cover shadow-lg dark:border-white/10"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-sky-400 text-sm font-black text-white shadow-lg">
+                                {initials}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-black text-slate-950 dark:text-white">
+                                    {group.name}
+                                  </p>
+                                  {group.email && (
+                                    <p className="truncate text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                                      {group.email}
+                                    </p>
+                                  )}
+                                </div>
+                                <ChevronRight
+                                  size={16}
+                                  className={cn(
+                                    "mt-1 shrink-0 transition-transform group-hover:translate-x-0.5",
+                                    selected ? "text-violet-600 dark:text-violet-200" : "text-slate-400",
+                                  )}
+                                />
+                              </div>
+
+                              <p className="mt-3 line-clamp-2 text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+                                {group.lastActivityLabel}
+                              </p>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                                  <Clock size={10} /> {formatActivityTimeChip(group.lastActivityAt)} • {formatActivityDateChip(group.lastActivityAt)}
+                                </span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+                                  <Activity size={10} /> {group.activities.length} evento{group.activities.length > 1 ? "s" : ""}
+                                </span>
+                                {group.painLevel !== null && group.painLevel !== undefined && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-orange-700 dark:bg-orange-500/15 dark:text-orange-200">
+                                    <Thermometer size={10} /> Dor {group.painLevel}/10
+                                  </span>
+                                )}
+                                {group.triageRisk && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
+                                    <Sparkles size={10} /> {group.triageRisk}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedHistoryGroup && (
+                    <div className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-4 shadow-inner shadow-violet-100/70 dark:border-white/10 dark:bg-black/10 dark:shadow-black/10 sm:p-5">
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">
+                            Timeline individual
+                          </p>
+                          <h3 className="text-base font-black text-slate-950 dark:text-white">
+                            {selectedHistoryGroup.name}
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/patients/${encodeURIComponent(selectedHistoryGroup.patientId)}`)}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-2 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
+                        >
+                          Abrir prontuário <FileText size={14} />
+                        </button>
+                      </div>
+                      <ActivityTimeline activities={selectedHistoryGroup.activities} mode="physio" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="premium-card bg-gradient-to-br from-orange-50 via-white to-sky-50 border-orange-100/80 shadow-orange-100/60 dark:from-orange-500/10 dark:via-white/[0.045] dark:to-sky-500/10 dark:border-orange-400/15">
-            <ActivityTimeline
-              activities={activities}
-              mode={isPhysio ? "physio" : "patient"}
-            />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
+                Histórico de{" "}
+                <span className="text-blue-400 italic">Atividades</span>
+              </h2>
+            </div>
+            <div className="premium-card bg-gradient-to-br from-orange-50 via-white to-sky-50 border-orange-100/80 shadow-orange-100/60 dark:from-orange-500/10 dark:via-white/[0.045] dark:to-sky-500/10 dark:border-orange-400/15">
+              <ActivityTimeline activities={activities} mode="patient" />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {[
