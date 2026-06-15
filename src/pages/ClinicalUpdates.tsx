@@ -126,7 +126,7 @@ export default function ClinicalUpdates() {
   }, [updates, searchTerm, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-32 text-white dark:bg-slate-950 md:pb-16">
+    <div className="min-h-screen bg-slate-950 pb-32 text-white dark:bg-slate-950 md:pb-16 mobile-bottom-content-safe">
       <div className="pointer-events-none fixed inset-0 -z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(124,58,237,0.32),transparent_30%),radial-gradient(circle_at_86%_18%,rgba(14,165,233,0.24),transparent_28%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)]" />
         <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.18)_1px,transparent_1px)] [background-size:42px_42px]" />

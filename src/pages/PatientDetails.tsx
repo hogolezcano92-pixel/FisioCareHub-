@@ -1690,7 +1690,7 @@ export default function PatientDetails() {
   if (!patient) return <div className="text-center py-20 font-black text-2xl">Paciente não encontrado</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mobile-bottom-content-safe">
       <button 
         onClick={() => navigate('/patients')}
         className="flex items-center gap-2 text-slate-500 font-black hover:text-sky-600 transition-all"

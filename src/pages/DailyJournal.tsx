@@ -329,7 +329,7 @@ export default function DailyJournal() {
   }
 
   return (
-    <div className="daily-journal-page max-w-6xl mx-auto space-y-8 pb-20">
+    <div className="daily-journal-page max-w-6xl mx-auto space-y-8 pb-20 mobile-bottom-content-safe">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3">

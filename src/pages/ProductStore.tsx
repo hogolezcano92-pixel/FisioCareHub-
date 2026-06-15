@@ -671,7 +671,7 @@ export default function ProductStore() {
           </div>
         </section>
 
-        <section className="px-4 pb-8 sm:px-6 lg:px-10 lg:pb-12">
+        <section className="px-4 pb-8 sm:px-6 lg:px-10 lg:pb-12 mobile-bottom-content-safe">
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (

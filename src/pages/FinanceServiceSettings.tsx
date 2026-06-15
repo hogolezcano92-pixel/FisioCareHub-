@@ -390,7 +390,7 @@ export default function FinanceServiceSettings() {
 
   return (
     <ProGuard requiredPlan="basic">
-      <div className="space-y-8 pb-20 max-w-4xl mx-auto">
+      <div className="space-y-8 pb-20 max-w-4xl mx-auto mobile-bottom-content-safe">
         <header className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}

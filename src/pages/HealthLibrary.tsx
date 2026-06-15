@@ -297,7 +297,7 @@ export default function HealthLibrary() {
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div className="space-y-8 pb-12 relative">
+    <div className="space-y-8 pb-12 relative mobile-bottom-content-safe">
       {/* Cart Toggle Button - Moved to Top Right to avoid overlap with Support/AI buttons */}
       <button
         onClick={() => setShowCart(true)}

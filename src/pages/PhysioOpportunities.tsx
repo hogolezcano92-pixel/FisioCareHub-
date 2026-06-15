@@ -154,7 +154,7 @@ export default function PhysioOpportunities() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-8 mobile-bottom-content-safe">
       <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-slate-900 p-8 sm:p-10 shadow-2xl shadow-blue-950/20">
         <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-blue-600/20 blur-3xl" />
         <div className="absolute left-1/3 bottom-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />

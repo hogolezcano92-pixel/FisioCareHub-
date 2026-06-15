@@ -408,7 +408,7 @@ export default function Triage() {
   const ActiveStepIcon = activeStep.icon;
 
   return (
-    <div className="triage-light-page w-full max-w-[760px] mx-auto space-y-6 pb-20 px-4">
+    <div className="triage-light-page w-full max-w-[760px] mx-auto space-y-6 pb-20 px-4 mobile-bottom-content-safe">
       <header className="triage-hero relative overflow-hidden rounded-[2.75rem] border border-white/10 p-5 pt-6 text-center shadow-2xl sm:p-7">
         <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-16 bottom-0 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
