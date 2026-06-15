@@ -91,7 +91,7 @@ const BottomNavigation: React.FC = () => {
     <nav
       aria-label="Navegação principal mobile"
       className="fixed left-0 right-0 z-[70] md:hidden pointer-events-none px-5"
-      style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      style={{ bottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
     >
       <div className="mx-auto max-w-md pointer-events-auto">
         <div
