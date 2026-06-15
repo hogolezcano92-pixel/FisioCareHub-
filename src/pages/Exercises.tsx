@@ -112,6 +112,24 @@ export default function Exercises() {
   const selectedPatientCanUseAccount = isInternalPatient(selectedPatient);
 
   useEffect(() => {
+    const hidden = isPrescriptionMode || showAddModal || Boolean(selectedExerciseDetail) || showPrescriptionReview;
+    window.dispatchEvent(
+      new CustomEvent('fch:bottom-navigation-visibility', {
+        detail: { source: 'exercises-prescription-flow', hidden },
+      })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent('fch:bottom-navigation-visibility', {
+          detail: { source: 'exercises-prescription-flow', hidden: false },
+        })
+      );
+    };
+  }, [isPrescriptionMode, showAddModal, selectedExerciseDetail, showPrescriptionReview]);
+
+
+  useEffect(() => {
     if (authLoading) return;
     if (profile && profile.tipo_usuario !== 'fisioterapeuta') {
       navigate('/dashboard');

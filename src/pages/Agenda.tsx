@@ -821,6 +821,24 @@ export default function Agenda() {
     createDefaultAvailabilityRules(user?.id || '').find((rule) => rule.weekday === selectedAvailabilityWeekday)!;
 
   const agendaFieldClass = 'input-compact h-12 min-w-0 max-w-full box-border appearance-none !rounded-2xl !bg-white/[0.06] border-white/10';
+
+  useEffect(() => {
+    const hidden = showModal || showDetailsModal;
+    window.dispatchEvent(
+      new CustomEvent('fch:bottom-navigation-visibility', {
+        detail: { source: 'agenda-modals', hidden },
+      })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent('fch:bottom-navigation-visibility', {
+          detail: { source: 'agenda-modals', hidden: false },
+        })
+      );
+    };
+  }, [showModal, showDetailsModal]);
+
   const modalFieldClass = 'input-compact h-12 min-w-0 w-full max-w-full box-border appearance-none !rounded-2xl !bg-white/[0.06] border-white/10 text-base leading-none';
 
   const getPatientName = (app: any) => app.nome_paciente || app.paciente?.nome_completo || app.paciente?.nome || 'Paciente';
