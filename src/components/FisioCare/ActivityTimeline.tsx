@@ -339,15 +339,33 @@ export default function ActivityTimeline({
         const style = getActionStyles(activity.tipo_acao);
         const Icon = style.icon;
         const isSelected = selectedActivity?.id === activity.id;
+        const shouldOpenInlineDetails = showDetailsButton && !(isPhysioMode && detailsHref);
+        const handleOpenInlineDetails = () => {
+          if (!shouldOpenInlineDetails) return;
+          openAction(activity);
+        };
 
         return (
           <motion.div
-            key={activity.id}
+            key={`${activity.id}-${activity.source_table || activity.tipo_acao}-${activity.referencia_id || index}`}
             initial={{ opacity: 0, x: -18 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: Math.min(index * 0.04, 0.2) }}
             viewport={{ once: true }}
-            className="activity-timeline-row relative flex gap-4 sm:gap-6 group"
+            className={cn(
+              "activity-timeline-row relative flex gap-4 sm:gap-6 group",
+              shouldOpenInlineDetails && "cursor-pointer",
+            )}
+            role={shouldOpenInlineDetails ? "button" : undefined}
+            tabIndex={shouldOpenInlineDetails ? 0 : undefined}
+            onClick={handleOpenInlineDetails}
+            onKeyDown={(event) => {
+              if (!shouldOpenInlineDetails) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openAction(activity);
+              }
+            }}
           >
             <div className="activity-timeline-node-wrap relative z-10 flex w-14 shrink-0 justify-center">
               <div
@@ -406,7 +424,10 @@ export default function ActivityTimeline({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => openAction(activity)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openAction(activity);
+                    }}
                     className={cn(
                       "activity-timeline-details relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
                       style.actionColor,
