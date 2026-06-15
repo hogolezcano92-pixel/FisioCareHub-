@@ -5903,3 +5903,221 @@ html:not(.dark) .fch-login-immersive .fch-login-video-vignette,
 :root[data-theme="light"] .patient-activity-history-page .activity-timeline-event-card .bg-black\/20 {
   background: rgba(255, 255, 255, 0.86) !important;
 }
+
+/* =========================================================
+   Activity Details Modal - Light mode premium clarity
+   Mantém o dark mode intacto e corrige o modal do histórico no tema claro
+   ========================================================= */
+html:not(.dark) .activity-detail-modal-overlay {
+  background: rgba(15, 23, 42, 0.28) !important;
+  backdrop-filter: blur(14px) saturate(1.15) !important;
+}
+
+html:not(.dark) .activity-detail-modal-card {
+  color-scheme: light !important;
+  background:
+    radial-gradient(circle at 92% 6%, rgba(56, 189, 248, 0.16), transparent 34%),
+    radial-gradient(circle at 8% 18%, rgba(132, 204, 22, 0.13), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 48%, #f4f7ff 100%) !important;
+  border-color: rgba(147, 197, 253, 0.85) !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(255,255,255,0.85) inset !important;
+}
+
+html:not(.dark) .activity-detail-modal-title {
+  color: #07142b !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .activity-detail-modal-card p,
+html:not(.dark) .activity-detail-modal-card span,
+html:not(.dark) .activity-detail-modal-card div {
+  text-shadow: none !important;
+}
+
+html:not(.dark) .activity-detail-modal-card .text-slate-600,
+html:not(.dark) .activity-detail-modal-card .text-slate-700,
+html:not(.dark) .activity-detail-modal-card .text-slate-800,
+html:not(.dark) .activity-detail-modal-card .text-slate-900,
+html:not(.dark) .activity-detail-modal-card .text-slate-950 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .activity-detail-description,
+html:not(.dark) .activity-detail-field-value {
+  color: #1e293b !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .activity-detail-modal-card [class*="tracking-"] {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) .activity-detail-highlight-card {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 55%, #ecfeff 100%) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.10) !important;
+}
+
+html:not(.dark) .activity-detail-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 48%, #ecfeff 100%) !important;
+  border-color: rgba(96, 165, 250, 0.42) !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10) !important;
+}
+
+html:not(.dark) .activity-detail-scroll .activity-detail-panel:nth-of-type(even) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 46%, #ecfeff 100%) !important;
+  border-color: rgba(34, 197, 94, 0.34) !important;
+}
+
+html:not(.dark) .activity-detail-scroll .activity-detail-panel:nth-of-type(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #eef6ff 48%, #f5f3ff 100%) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+html:not(.dark) .activity-detail-date-chip {
+  background: #ffffff !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .activity-detail-modal-close {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.75) !important;
+  color: #334155 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+html:not(.dark) .activity-detail-modal-close svg,
+html:not(.dark) .activity-detail-date-chip svg {
+  color: currentColor !important;
+}
+
+html:not(.dark) .activity-detail-close-button {
+  color: #ffffff !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.22) !important;
+}
+
+html:not(.dark) .activity-detail-scroll {
+  scrollbar-color: rgba(14, 165, 233, 0.35) transparent !important;
+}
+
+html:not(.dark) .activity-detail-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+html:not(.dark) .activity-detail-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.45), rgba(34, 197, 94, 0.35));
+  border-radius: 999px;
+}
+
+
+/* Mesmas correções quando o app usa data-theme em vez de classe dark */
+/* =========================================================
+   Activity Details Modal - Light mode premium clarity
+   Mantém o dark mode intacto e corrige o modal do histórico no tema claro
+   ========================================================= */
+:root[data-theme="light"] .activity-detail-modal-overlay {
+  background: rgba(15, 23, 42, 0.28) !important;
+  backdrop-filter: blur(14px) saturate(1.15) !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-card {
+  color-scheme: light !important;
+  background:
+    radial-gradient(circle at 92% 6%, rgba(56, 189, 248, 0.16), transparent 34%),
+    radial-gradient(circle at 8% 18%, rgba(132, 204, 22, 0.13), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 48%, #f4f7ff 100%) !important;
+  border-color: rgba(147, 197, 253, 0.85) !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(255,255,255,0.85) inset !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-title {
+  color: #07142b !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-card p,
+:root[data-theme="light"] .activity-detail-modal-card span,
+:root[data-theme="light"] .activity-detail-modal-card div {
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-card .text-slate-600,
+:root[data-theme="light"] .activity-detail-modal-card .text-slate-700,
+:root[data-theme="light"] .activity-detail-modal-card .text-slate-800,
+:root[data-theme="light"] .activity-detail-modal-card .text-slate-900,
+:root[data-theme="light"] .activity-detail-modal-card .text-slate-950 {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .activity-detail-description,
+:root[data-theme="light"] .activity-detail-field-value {
+  color: #1e293b !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-card [class*="tracking-"] {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .activity-detail-highlight-card {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 55%, #ecfeff 100%) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.10) !important;
+}
+
+:root[data-theme="light"] .activity-detail-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 48%, #ecfeff 100%) !important;
+  border-color: rgba(96, 165, 250, 0.42) !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10) !important;
+}
+
+:root[data-theme="light"] .activity-detail-scroll .activity-detail-panel:nth-of-type(even) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 46%, #ecfeff 100%) !important;
+  border-color: rgba(34, 197, 94, 0.34) !important;
+}
+
+:root[data-theme="light"] .activity-detail-scroll .activity-detail-panel:nth-of-type(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #eef6ff 48%, #f5f3ff 100%) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+:root[data-theme="light"] .activity-detail-date-chip {
+  background: #ffffff !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-close {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.75) !important;
+  color: #334155 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+:root[data-theme="light"] .activity-detail-modal-close svg,
+:root[data-theme="light"] .activity-detail-date-chip svg {
+  color: currentColor !important;
+}
+
+:root[data-theme="light"] .activity-detail-close-button {
+  color: #ffffff !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.22) !important;
+}
+
+:root[data-theme="light"] .activity-detail-scroll {
+  scrollbar-color: rgba(14, 165, 233, 0.35) transparent !important;
+}
+
+:root[data-theme="light"] .activity-detail-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+:root[data-theme="light"] .activity-detail-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.45), rgba(34, 197, 94, 0.35));
+  border-radius: 999px;
+}
