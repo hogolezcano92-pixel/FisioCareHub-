@@ -278,10 +278,10 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[45]"
+              className="fixed inset-0 bg-slate-900/15 dark:bg-slate-950/40 backdrop-blur-md z-[45]"
             >
               {/* Subtle background energy glow */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-300/20 via-blue-200/10 to-transparent dark:from-blue-500/10 dark:via-transparent dark:to-transparent pointer-events-none" />
               <div 
                 className="absolute inset-0 opacity-[0.03] pointer-events-none" 
                 style={{ backgroundImage: `url("${NOISE_SVG}")` }}
@@ -296,28 +296,28 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className={cn(
                   "pointer-events-auto flex flex-col overflow-hidden",
-                  "bg-[#0A0D14]/85 backdrop-blur-[40px] border border-white/10 rounded-[2.5rem]",
-                  "shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.1)]",
+                  "bg-white/95 dark:bg-[#0A0D14]/85 backdrop-blur-[40px] border border-violet-200/70 dark:border-white/10 rounded-[2.5rem]",
+                  "shadow-[0_30px_80px_-24px_rgba(99,102,241,0.45),0_0_24px_rgba(34,211,238,0.10)] dark:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.1)]",
                   "w-full max-w-[420px] transition-all duration-500",
                   isExpanded ? "md:max-w-[700px] h-[85vh]" : "h-[70vh] max-h-[650px]"
                 )}
               >
                 {/* Modern Glass Header */}
-              <div className="relative p-7 border-b border-white/5">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-cyan-500/5 to-transparent pointer-events-none" />
+              <div className="relative p-7 border-b border-violet-100/90 dark:border-white/5">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-200/35 via-blue-100/25 to-transparent dark:from-blue-600/10 dark:via-cyan-500/5 dark:to-transparent pointer-events-none" />
                 
                 <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-5">
                     <div className="relative">
                       <KineIcon size="md" active={loading} />
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0A0D14] rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0A0D14] rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-xl text-white tracking-tight leading-tight">KineAI</h3>
+                      <h3 className="font-bold text-xl text-slate-950 dark:text-white tracking-tight leading-tight">KineAI</h3>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.25em]">SaaS Inteligente</span>
-                        <div className="w-1 h-1 bg-white/20 rounded-full" />
-                        <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">v2.4.0</span>
+                        <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-[0.25em]">SaaS Inteligente</span>
+                        <div className="w-1 h-1 bg-slate-300 dark:bg-white/20 rounded-full" />
+                        <span className="text-[9px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest">v2.4.0</span>
                       </div>
                     </div>
                   </div>
@@ -325,13 +325,13 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => setIsExpanded(!isExpanded)}
-                      className="p-2.5 hover:bg-white/5 rounded-2xl text-white/50 hover:text-white transition-all hidden md:block"
+                      className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl text-slate-500 dark:text-white/50 hover:text-slate-950 dark:hover:text-white transition-all hidden md:block"
                     >
                       {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                     </button>
                     <button 
                       onClick={handleClose}
-                      className="p-2.5 hover:bg-white/5 rounded-2xl text-white/50 hover:text-white transition-all"
+                      className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl text-slate-500 dark:text-white/50 hover:text-slate-950 dark:hover:text-white transition-all"
                     >
                       <X size={20} />
                     </button>
@@ -368,16 +368,16 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                         "max-w-[88%] p-5 rounded-[2rem] text-[15px] leading-relaxed transition-all duration-300",
                         msg.role === 'user' 
                           ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none shadow-xl shadow-blue-900/20" 
-                          : "bg-white/[0.03] backdrop-blur-xl text-slate-100 border border-white/10 rounded-bl-none shadow-sm hover:bg-white/[0.05]"
+                          : "bg-white/90 dark:bg-white/[0.03] backdrop-blur-xl text-slate-800 dark:text-slate-100 border border-violet-200/80 dark:border-white/10 rounded-bl-none shadow-sm hover:bg-white dark:hover:bg-white/[0.05]"
                       )}>
                         <div className={cn(
                           "prose prose-sm max-w-none prose-p:leading-relaxed prose-p:m-0 text-inherit",
-                          msg.role === 'model' ? "prose-strong:text-cyan-400" : "prose-strong:text-white"
+                          msg.role === 'model' ? "prose-strong:text-cyan-700 dark:prose-strong:text-cyan-400" : "prose-strong:text-white"
                         )}>
                           <ReactMarkdown>{msg.text}</ReactMarkdown>
                         </div>
                       </div>
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-1 transition-opacity opacity-0 group-hover:opacity-100">
+                      <span className="text-[10px] font-bold text-slate-400/70 dark:text-white/20 uppercase tracking-widest px-1 transition-opacity opacity-0 group-hover:opacity-100">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -391,7 +391,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     className="flex items-start gap-3"
                   >
                     <KineIcon size="sm" active={true} />
-                    <div className="flex gap-2 p-4 px-6 bg-white/[0.03] backdrop-blur-md rounded-[1.5rem] rounded-tl-none border border-white/10 shadow-inner">
+                    <div className="flex gap-2 p-4 px-6 bg-white/90 dark:bg-white/[0.03] backdrop-blur-md rounded-[1.5rem] rounded-tl-none border border-violet-200/80 dark:border-white/10 shadow-inner">
                       <motion.div animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                       <motion.div animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                       <motion.div animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
@@ -407,7 +407,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     <button
                       key={pill.label}
                       onClick={() => handleSendMessage(pill.cmd)}
-                      className="flex-shrink-0 px-5 py-2.5 bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-white/60 hover:text-cyan-300 rounded-2xl text-[11px] font-bold tracking-tight transition-all backdrop-blur-2xl ring-1 ring-white/5"
+                      className="flex-shrink-0 px-5 py-2.5 bg-white/90 dark:bg-white/5 border border-violet-200/90 dark:border-white/10 hover:border-cyan-500/50 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 text-slate-700 dark:text-white/60 hover:text-cyan-700 dark:hover:text-cyan-300 rounded-2xl text-[11px] font-bold tracking-tight transition-all backdrop-blur-2xl ring-1 ring-violet-100 dark:ring-white/5 shadow-sm"
                     >
                       {pill.label}
                     </button>
@@ -416,13 +416,13 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
               </div>
 
               {/* Premium Input Area */}
-              <div className="p-8 pt-4 bg-white/[0.02] border-t border-white/5">
+              <div className="p-8 pt-4 bg-slate-50/80 dark:bg-white/[0.02] border-t border-violet-100/90 dark:border-white/5">
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
                     handleSendMessage();
                   }}
-                  className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-1.5 h-[62px] shadow-2xl focus-within:border-cyan-500/40 focus-within:bg-white/[0.05] transition-all group box-border w-full"
+                  className="flex items-center gap-2 bg-white border border-violet-200/90 dark:bg-white/[0.03] dark:border-white/10 rounded-[2.5rem] p-1.5 h-[62px] shadow-2xl focus-within:border-cyan-500/50 focus-within:bg-white dark:focus-within:bg-white/[0.05] transition-all group box-border w-full"
                 >
                   <button
                     type="button"
@@ -431,7 +431,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                       "w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
                       isRecording 
                         ? "bg-rose-500/90 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]" 
-                        : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                     )}
                   >
                     {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
@@ -442,7 +442,7 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="Pergunte sobre sua saúde..."
-                    className="flex-1 min-w-0 bg-transparent text-[14px] font-medium text-white placeholder:text-white/20 outline-none px-1"
+                    className="flex-1 min-w-0 bg-transparent text-[14px] font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 outline-none px-1"
                   />
                   
                   <button
@@ -454,10 +454,10 @@ export default function KineAI({ externalForceOpen, onClose }: KineAIProps) {
                   </button>
                 </form>
                 
-                <div className="mt-6 flex items-center justify-center gap-2 opacity-10 select-none grayscale contrast-200">
-                  <div className="h-[1px] w-8 bg-white" />
-                  <span className="text-[9px] font-black text-white uppercase tracking-[0.5em]">FisioCare Intelligence</span>
-                  <div className="h-[1px] w-8 bg-white" />
+                <div className="mt-6 flex items-center justify-center gap-2 opacity-30 dark:opacity-10 select-none grayscale contrast-200">
+                  <div className="h-[1px] w-8 bg-slate-400 dark:bg-white" />
+                  <span className="text-[9px] font-black text-slate-500 dark:text-white uppercase tracking-[0.5em]">FisioCare Intelligence</span>
+                  <div className="h-[1px] w-8 bg-slate-400 dark:bg-white" />
                 </div>
               </div>
             </motion.div>
