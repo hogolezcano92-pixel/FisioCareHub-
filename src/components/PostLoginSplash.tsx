@@ -9,6 +9,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { startPostLoginSplashSound } from '../lib/postLoginSplashSound';
 
 type PostLoginSplashProps = {
   userRole?: 'paciente' | 'fisioterapeuta' | 'admin' | string | null;
@@ -47,102 +48,6 @@ const splitText = (text: string) => text.split('');
 
 type SplashSoundCleanup = () => void;
 
-const SPLASH_MP3_SOURCES = [
-  '/sounds/post-login-splash.mp3',
-  '/assets/post-login-splash.mp3',
-  '/audio/post-login-splash.mp3',
-];
-
-const startSplashMp3Sound = (durationMs: number): SplashSoundCleanup => {
-  if (typeof window === 'undefined') return () => undefined;
-
-  let sourceIndex = 0;
-  let audio: HTMLAudioElement | null = null;
-  let fadeFrame = 0;
-  const timers: number[] = [];
-
-  const stopFade = () => {
-    if (fadeFrame) {
-      window.cancelAnimationFrame(fadeFrame);
-      fadeFrame = 0;
-    }
-  };
-
-  const fadeVolume = (from: number, to: number, duration: number, onDone?: () => void) => {
-    stopFade();
-    const startedAt = window.performance.now();
-
-    const tick = (now: number) => {
-      if (!audio) return;
-      const progress = Math.min((now - startedAt) / duration, 1);
-      audio.volume = Math.max(0, Math.min(1, from + (to - from) * progress));
-
-      if (progress < 1) {
-        fadeFrame = window.requestAnimationFrame(tick);
-        return;
-      }
-
-      fadeFrame = 0;
-      onDone?.();
-    };
-
-    fadeFrame = window.requestAnimationFrame(tick);
-  };
-
-  const cleanup = () => {
-    timers.forEach((timer) => window.clearTimeout(timer));
-    stopFade();
-
-    if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
-    audio.src = '';
-    audio.load();
-    audio = null;
-  };
-
-  const playCurrentSource = () => {
-    const source = SPLASH_MP3_SOURCES[sourceIndex];
-    audio = new Audio(source);
-    audio.preload = 'auto';
-    audio.volume = 0;
-    audio.loop = true;
-
-    audio.addEventListener('error', () => {
-      if (sourceIndex >= SPLASH_MP3_SOURCES.length - 1) return;
-      sourceIndex += 1;
-      cleanup();
-      playCurrentSource();
-    }, { once: true });
-
-    const playPromise = audio.play();
-
-    if (playPromise) {
-      playPromise
-        .then(() => fadeVolume(0, 0.32, 850))
-        .catch(() => {
-          // Alguns navegadores bloqueiam autoplay. O splash continua normal sem quebrar.
-        });
-    }
-  };
-
-  playCurrentSource();
-
-  const fadeOutTimer = window.setTimeout(() => {
-    if (!audio) return;
-    fadeVolume(audio.volume, 0, 1200, () => {
-      if (!audio) return;
-      audio.pause();
-      audio.currentTime = 0;
-    });
-  }, Math.max(durationMs - 1350, 0));
-
-  const hardStopTimer = window.setTimeout(cleanup, durationMs + 450);
-  timers.push(fadeOutTimer, hardStopTimer);
-
-  return cleanup;
-};
-
 
 export default function PostLoginSplash({
   userRole = 'paciente',
@@ -167,7 +72,7 @@ export default function PostLoginSplash({
     if (hasStartedSound.current) return;
     hasStartedSound.current = true;
 
-    const stopSound = startSplashMp3Sound(splashDuration);
+    const stopSound: SplashSoundCleanup = startPostLoginSplashSound(splashDuration);
     return () => stopSound();
   }, [splashDuration]);
 
