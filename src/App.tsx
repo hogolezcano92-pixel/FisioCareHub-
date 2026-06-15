@@ -77,6 +77,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const AdminStories = lazy(() => import('./pages/AdminStories'));
 const Patients = lazy(() => import('./pages/Patients'));
 const PatientDetails = lazy(() => import('./pages/PatientDetails'));
+const PatientActivityHistory = lazy(() => import('./pages/PatientActivityHistory'));
 const Agenda = lazy(() => import('./pages/Agenda'));
 const Exercises = lazy(() => import('./pages/Exercises'));
 const PatientExercises = lazy(() => import('./pages/PatientExercises'));
@@ -781,6 +782,7 @@ function AppContent() {
                   <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
                   <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
                   <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
+                  <Route path="/patients/:id/activity-history" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientActivityHistory /></ProtectedRoute>} />
                   <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Agenda /></ProGuard></ProtectedRoute>} />
                   <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Exercises /></ProGuard></ProtectedRoute>} />
                   <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
