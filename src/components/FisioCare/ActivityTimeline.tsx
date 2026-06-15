@@ -332,8 +332,8 @@ export default function ActivityTimeline({
   };
 
   const renderTimelineItems = (items: ActivityItem[], showDetailsButton = true) => (
-    <div className="relative space-y-7 px-1 sm:px-0">
-      <div className="absolute bottom-10 left-7 top-8 w-[2px] rounded-full bg-gradient-to-b from-violet-300 via-sky-200 to-emerald-200 dark:from-violet-400/50 dark:via-sky-400/25 dark:to-emerald-400/20" />
+    <div className="activity-timeline-list relative space-y-7 px-1 sm:px-0">
+      <div className="activity-timeline-line absolute bottom-10 left-7 top-8 w-[2px] rounded-full bg-gradient-to-b from-violet-300 via-sky-200 to-emerald-200 dark:from-violet-400/50 dark:via-sky-400/25 dark:to-emerald-400/20" />
 
       {items.map((activity, index) => {
         const style = getActionStyles(activity.tipo_acao);
@@ -347,12 +347,12 @@ export default function ActivityTimeline({
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: Math.min(index * 0.04, 0.2) }}
             viewport={{ once: true }}
-            className="relative flex gap-4 sm:gap-6 group"
+            className="activity-timeline-row relative flex gap-4 sm:gap-6 group"
           >
-            <div className="relative z-10 flex w-14 shrink-0 justify-center">
+            <div className="activity-timeline-node-wrap relative z-10 flex w-14 shrink-0 justify-center">
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 shadow-xl ring-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 dark:border-white/10",
+                  "activity-timeline-node flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 shadow-xl ring-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 dark:border-white/10",
                   style.iconBg,
                   style.iconColor,
                   style.nodeRing,
@@ -364,7 +364,7 @@ export default function ActivityTimeline({
 
             <div
               className={cn(
-                "relative min-w-0 flex-1 overflow-hidden rounded-[2rem] border p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-2xl transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_22px_55px_rgba(59,130,246,0.16)] sm:p-5 dark:shadow-black/10",
+                "activity-timeline-event-card relative min-w-0 flex-1 overflow-hidden rounded-[2rem] border p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-2xl transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_22px_55px_rgba(59,130,246,0.16)] sm:p-5 dark:shadow-black/10",
                 style.cardBg,
                 isSelected ? "border-violet-400/90 shadow-violet-500/20" : style.border,
               )}
@@ -376,16 +376,16 @@ export default function ActivityTimeline({
                 <div className="min-w-0">
                   <div className="mb-2 flex items-center gap-2">
                     <Sparkles size={13} className={cn("shrink-0", style.actionColor)} />
-                    <h4 className="text-base font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-lg">
+                    <h4 className="activity-timeline-title text-base font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-lg">
                       {formatActionLabel(activity.tipo_acao)}
                     </h4>
                   </div>
-                  <p className="text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+                  <p className="activity-timeline-description text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
                     {activity.descricao}
                   </p>
                 </div>
 
-                <div className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/80 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-700 shadow-sm dark:border-white/10 dark:bg-black/20 dark:text-slate-200">
+                <div className="activity-timeline-date inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/80 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-700 shadow-sm dark:border-white/10 dark:bg-black/20 dark:text-slate-200">
                   <Clock size={11} className="shrink-0 opacity-70" />
                   {format(new Date(activity.created_at), "HH:mm, d 'de' MMM", { locale: ptBR })}
                 </div>
@@ -396,7 +396,7 @@ export default function ActivityTimeline({
                   <Link
                     to={detailsHref}
                     className={cn(
-                      "relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
+                      "activity-timeline-details relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
                       style.actionColor,
                     )}
                   >
@@ -408,7 +408,7 @@ export default function ActivityTimeline({
                     type="button"
                     onClick={() => openAction(activity)}
                     className={cn(
-                      "relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
+                      "activity-timeline-details relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
                       style.actionColor,
                     )}
                   >
