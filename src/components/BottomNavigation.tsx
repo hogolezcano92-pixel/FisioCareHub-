@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -28,6 +28,41 @@ const isActivePath = (currentPathname: string, currentSearch: string, itemPath: 
   return Array.from(itemParams.entries()).every(([key, value]) => currentParams.get(key) === value);
 };
 
+
+const getElementClassName = (element: Element) => {
+  const rawClassName = (element as HTMLElement).className;
+  if (typeof rawClassName === 'string') return rawClassName;
+  if (rawClassName && typeof rawClassName === 'object' && 'baseVal' in rawClassName) {
+    return String((rawClassName as SVGAnimatedString).baseVal || '');
+  }
+  return '';
+};
+
+const hasVisibleModalOrOverlay = () => {
+  if (typeof document === 'undefined') return false;
+
+  const candidates = Array.from(
+    document.body.querySelectorAll<HTMLElement>('[aria-modal="true"], [role="dialog"], dialog[open], .fixed')
+  );
+
+  return candidates.some((element) => {
+    if (element.closest('[data-bottom-navigation="true"]')) return false;
+
+    const styles = window.getComputedStyle(element);
+    if (styles.display === 'none' || styles.visibility === 'hidden' || Number(styles.opacity) === 0) return false;
+
+    if (element.getAttribute('aria-modal') === 'true' || element.getAttribute('role') === 'dialog') return true;
+    if (element.tagName.toLowerCase() === 'dialog' && (element as HTMLDialogElement).open) return true;
+
+    const className = getElementClassName(element);
+    const isFullScreenOverlay = className.includes('fixed') && className.includes('inset-0');
+    if (!isFullScreenOverlay) return false;
+
+    const zIndex = Number.parseInt(styles.zIndex || '0', 10);
+    return Number.isFinite(zIndex) && zIndex >= 50;
+  });
+};
+
 const getIsDarkTheme = () => {
   if (typeof document === 'undefined') return false;
 
@@ -39,6 +74,9 @@ const BottomNavigation: React.FC = () => {
   const location = useLocation();
   const { user, profile } = useAuth();
   const [isDarkTheme, setIsDarkTheme] = useState(getIsDarkTheme);
+  const [autoHidden, setAutoHidden] = useState(false);
+  const [manualHidden, setManualHidden] = useState(false);
+  const hideRequestsRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     const updateTheme = () => {
@@ -55,6 +93,51 @@ const BottomNavigation: React.FC = () => {
     });
 
     return () => observer.disconnect();
+  }, []);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    let frame = 0;
+    const updateAutoHidden = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setAutoHidden(hasVisibleModalOrOverlay());
+      });
+    };
+
+    const handleVisibilityRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<{ source?: string; hidden?: boolean }>;
+      const source = customEvent.detail?.source || 'global';
+      const hidden = Boolean(customEvent.detail?.hidden);
+
+      if (hidden) {
+        hideRequestsRef.current[source] = true;
+      } else {
+        delete hideRequestsRef.current[source];
+      }
+
+      setManualHidden(Object.values(hideRequestsRef.current).some(Boolean));
+    };
+
+    updateAutoHidden();
+
+    const observer = new MutationObserver(updateAutoHidden);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'aria-modal', 'role'],
+    });
+
+    window.addEventListener('fch:bottom-navigation-visibility', handleVisibilityRequest as EventListener);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('fch:bottom-navigation-visibility', handleVisibilityRequest as EventListener);
+    };
   }, []);
 
   const role = profile?.tipo_usuario;
@@ -87,10 +170,18 @@ const BottomNavigation: React.FC = () => {
 
   if (!user || items.length === 0) return null;
 
+  const shouldHideBottomNavigation = autoHidden || manualHidden;
+
   return (
     <nav
       aria-label="Navegação principal mobile"
-      className="fixed left-0 right-0 z-[70] md:hidden pointer-events-none px-5"
+      data-bottom-navigation="true"
+      className={cn(
+        'fixed left-0 right-0 z-[70] md:hidden pointer-events-none px-5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+        shouldHideBottomNavigation
+          ? 'translate-y-[125%] opacity-0 blur-sm'
+          : 'translate-y-0 opacity-100 blur-0'
+      )}
       style={{ bottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
     >
       <div className="mx-auto max-w-md pointer-events-auto">
