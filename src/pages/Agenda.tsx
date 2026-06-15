@@ -893,8 +893,6 @@ export default function Agenda() {
         </div>
       </header>
 
-      {view === 'daily' && (
-        <>
       <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -926,40 +924,40 @@ export default function Agenda() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-blue-300 bg-[#DBEAFE] p-4 shadow-lg shadow-blue-200/40 dark:border-blue-400/35 dark:bg-blue-500/20 dark:shadow-blue-950/20">
+          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-blue-700 dark:text-blue-100 font-black uppercase tracking-widest">Consultas</span>
-              <CalendarIcon size={18} className="text-blue-500 dark:text-blue-200" />
+              <span className="text-[10px] text-blue-200 font-black uppercase tracking-widest">Consultas</span>
+              <CalendarIcon size={18} className="text-blue-300" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{summaryAppointments.length}</p>
-            <p className="text-[11px] text-slate-700 dark:text-blue-100/80 font-black mt-1">no dia</p>
+            <p className="text-3xl font-black text-white">{summaryAppointments.length}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">{view === 'daily' ? 'no dia' : 'na lista'}</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-300 bg-[#FEF3C7] p-4 shadow-lg shadow-amber-200/40 dark:border-amber-400/35 dark:bg-amber-500/20 dark:shadow-amber-950/20">
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-amber-700 dark:text-amber-100 font-black uppercase tracking-widest">Pendentes</span>
-              <Clock size={18} className="text-amber-500 dark:text-amber-200" />
+              <span className="text-[10px] text-amber-200 font-black uppercase tracking-widest">Pendentes</span>
+              <Clock size={18} className="text-amber-300" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{pendingCount}</p>
-            <p className="text-[11px] text-slate-700 dark:text-amber-100/80 font-black mt-1">aguardando</p>
+            <p className="text-3xl font-black text-white">{pendingCount}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">aguardando</p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-300 bg-[#D1FAE5] p-4 shadow-lg shadow-emerald-200/40 dark:border-emerald-400/35 dark:bg-emerald-500/20 dark:shadow-emerald-950/20">
+          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-100 font-black uppercase tracking-widest">Confirmadas</span>
-              <Check size={18} className="text-emerald-500 dark:text-emerald-200" />
+              <span className="text-[10px] text-emerald-200 font-black uppercase tracking-widest">Confirmadas</span>
+              <Check size={18} className="text-emerald-300" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{confirmedCount}</p>
-            <p className="text-[11px] text-slate-700 dark:text-emerald-100/80 font-black mt-1">ativas/concluídas</p>
+            <p className="text-3xl font-black text-white">{confirmedCount}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">ativas/concluídas</p>
           </div>
 
-          <div className="rounded-2xl border border-purple-300 bg-[#F3E8FF] p-4 shadow-lg shadow-purple-200/40 dark:border-purple-400/35 dark:bg-purple-500/20 dark:shadow-purple-950/20">
+          <div className="rounded-2xl border border-purple-400/20 bg-purple-500/10 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-purple-700 dark:text-purple-100 font-black uppercase tracking-widest">Próxima</span>
-              <Clock size={18} className="text-purple-500 dark:text-purple-200" />
+              <span className="text-[10px] text-purple-200 font-black uppercase tracking-widest">Próxima</span>
+              <Clock size={18} className="text-purple-300" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
-            <p className="text-[11px] text-slate-700 dark:text-purple-100/80 font-black mt-1 truncate">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
+            <p className="text-3xl font-black text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
+            <p className="text-[11px] text-slate-400 font-bold mt-1">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
           </div>
         </div>
       </section>
@@ -1199,8 +1197,6 @@ export default function Agenda() {
           ))}
         </div>
       </section>
-        </>
-      )}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-[2rem] flex items-center gap-4 text-red-400 w-full">
@@ -1225,8 +1221,8 @@ export default function Agenda() {
               <Stethoscope size={20} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white tracking-tight">{view === 'daily' ? 'Consultas de hoje' : 'Histórico de solicitações'}</h2>
-              <p className="text-xs text-slate-400 font-bold">{view === 'daily' ? 'Atendimentos organizados por horário.' : 'Somente solicitações e atendimentos recentes.'}</p>
+              <h2 className="text-xl font-black text-white tracking-tight">{view === 'daily' ? 'Consultas de hoje' : 'Solicitações e histórico'}</h2>
+              <p className="text-xs text-slate-400 font-bold">{view === 'daily' ? 'Atendimentos organizados por horário.' : 'Todos os agendamentos recentes.'}</p>
             </div>
           </div>
           <button
@@ -1248,9 +1244,9 @@ export default function Agenda() {
             <div className="w-14 h-14 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CalendarIcon size={28} />
             </div>
-            <h3 className="text-lg font-black text-white">{view === 'daily' ? 'Nenhum atendimento' : 'Nenhuma solicitação'}</h3>
+            <h3 className="text-lg font-black text-white">Nenhum atendimento</h3>
             <p className="text-slate-500 mt-1 text-xs font-medium">
-              {view === 'daily' ? 'Você não tem compromissos para este dia.' : 'Você não possui solicitações registradas no histórico.'}
+              {view === 'daily' ? 'Você não tem compromissos para este dia.' : 'Você não possui solicitações registradas.'}
             </p>
           </div>
         ) : (
