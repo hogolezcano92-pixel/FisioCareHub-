@@ -98,7 +98,10 @@ const REPORT_FIELDS: DocumentField[] = [
 ];
 
 const GENERIC_FIELDS: DocumentField[] = [
-  { key: 'objetivoDocumento', label: 'Objetivo do documento', type: 'textarea', cols: 'full', placeholder: 'Descreva o que precisa constar no documento.' },
+  { key: 'tipoDocumentoLivre', label: 'Tipo de documento IA', type: 'select', required: true, options: ['Declaração personalizada', 'Orientação ao paciente', 'Resumo clínico', 'Carta de encaminhamento', 'Comunicado para empresa/escola', 'Termo simples', 'Outro documento personalizado'] },
+  { key: 'tomDocumento', label: 'Tom do texto', type: 'select', options: ['Profissional e claro', 'Técnico', 'Simples para paciente', 'Formal', 'Jurídico leve'] },
+  { key: 'objetivoDocumento', label: 'Objetivo do documento', type: 'textarea', cols: 'full', required: true, placeholder: 'Ex: declaração para o trabalho informando acompanhamento fisioterapêutico e restrições funcionais temporárias.' },
+  { key: 'informacoesObrigatorias', label: 'Informações que não podem faltar', type: 'textarea', cols: 'full', placeholder: 'Ex: período, frequência, cuidados, orientações, limitações funcionais, local de atendimento.' },
 ];
 
 const getFieldsForTemplate = (templateId?: string): DocumentField[] => {
@@ -391,7 +394,10 @@ export default function Documents() {
   const handleCreateNew = (template?: any) => {
     if (isFreePhysio) {
       if (!isFreeDocumentTemplate(template?.id)) {
-        showUpgradeToast('Este modelo é liberado nos planos Basic ou PRO. No gratuito, use os modelos básicos para teste.');
+        showUpgradeToast(template?.id
+          ? 'Este modelo é liberado nos planos Basic ou PRO. No gratuito, use os modelos básicos para teste.'
+          : 'Documento IA personalizado é liberado nos planos Basic ou PRO.'
+        );
         return;
       }
 
@@ -438,9 +444,9 @@ export default function Documents() {
     }
 
     const missingRequired = getMissingRequiredDocumentFields(selectedTemplateId, documentFields);
-    if (selectedTemplateId === 'contrato' && missingRequired.length > 0) {
+    if ((selectedTemplateId === 'contrato' || !selectedTemplateId) && missingRequired.length > 0) {
       import('sonner').then(({ toast }) =>
-        toast.error(`Complete os dados obrigatórios do contrato: ${missingRequired.slice(0, 3).join(', ')}${missingRequired.length > 3 ? '...' : ''}`)
+        toast.error(`${selectedTemplateId === 'contrato' ? 'Complete os dados obrigatórios do contrato' : 'Complete os dados principais do Documento IA'}: ${missingRequired.slice(0, 3).join(', ')}${missingRequired.length > 3 ? '...' : ''}`)
       );
       return;
     }
@@ -449,7 +455,7 @@ export default function Documents() {
     try {
       const structuredInfo = formatDocumentFieldsForAI(selectedTemplateId, documentFields, additionalInfo);
       const content = await generateDocument(
-        selectedTemplate?.name || 'Documento Geral',
+        selectedTemplate?.name || 'Documento IA personalizado',
         patientName,
         structuredInfo
       );
@@ -492,8 +498,8 @@ export default function Documents() {
         paciente_id: documentPatientId || null,
         visible_to_patient: true,
         acceptance_required: ['contrato', 'autorizacao'].includes(String(selectedTemplateId || '')),
-        document_category: selectedTemplateId || 'geral',
-        type: selectedTemplate?.name || 'Documento Geral',
+        document_category: selectedTemplateId || 'documento_ia',
+        type: selectedTemplate?.name || 'Documento IA personalizado',
         content: generatedContent,
       };
 
@@ -1112,7 +1118,7 @@ export default function Documents() {
               disabled={hasReachedFreeDocumentLimit}
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Plus size={20} /> CRIAR NOVO DOCUMENTO
+              <Wand2 size={20} /> DOCUMENTO IA
             </button>
           </div>
         )}
@@ -1585,13 +1591,13 @@ export default function Documents() {
               <div className="px-4 py-3 sm:p-5 border-b border-white/5 flex items-center justify-between gap-3 bg-white/5 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg">
-                    {selectedTemplate ? <selectedTemplate.icon size={20} /> : <FileText size={20} />}
+                    {selectedTemplate ? <selectedTemplate.icon size={20} /> : <Wand2 size={20} />}
                   </div>
                   <div>
                     <h2 className="text-xl font-black text-white tracking-tight">
-                      {selectedTemplate ? `Novo ${selectedTemplate.name}` : 'Novo Documento'}
+                      {selectedTemplate ? `Novo ${selectedTemplate.name}` : 'Documento IA'}
                     </h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Preencha os dados e use a IA para gerar o conteúdo</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{selectedTemplate ? 'Preencha os dados e use a IA para gerar o conteúdo' : 'Crie um documento personalizado com inteligência artificial'}</p>
                   </div>
                 </div>
                 <button 
@@ -1605,9 +1611,13 @@ export default function Documents() {
               <div className="flex-1 overflow-y-auto p-4 sm:p-8 grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div className="rounded-3xl border border-blue-500/20 bg-blue-500/10 p-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-1">Documento inteligente</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-1">
+                      {selectedTemplate ? 'Documento inteligente' : 'Documento IA personalizado'}
+                    </p>
                     <p className="text-sm text-slate-300 font-semibold leading-relaxed">
-                      Preencha os campos principais. A IA usa esses dados para gerar um documento mais completo, evitando rascunhos com “A definir”.
+                      {selectedTemplate
+                        ? 'Preencha os campos principais. A IA usa esses dados para gerar um documento mais completo, evitando rascunhos com “A definir”.'
+                        : 'Use esta opção quando nenhum modelo pronto atender exatamente ao caso. Descreva o objetivo, escolha o tom e a IA monta um documento profissional para revisão.'}
                     </p>
                   </div>
 
@@ -1695,7 +1705,7 @@ export default function Documents() {
                     ) : (
                       <>
                         <Wand2 size={20} />
-                        GERAR COM INTELIGÊNCIA ARTIFICIAL
+                        {selectedTemplate ? 'GERAR COM INTELIGÊNCIA ARTIFICIAL' : 'GERAR DOCUMENTO IA'}
                       </>
                     )}
                   </button>
