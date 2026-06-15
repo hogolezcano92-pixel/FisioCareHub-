@@ -697,7 +697,7 @@ export default function ActivityTimeline({
   const patientDetailModal =
     selectedActivity && !historyOpen && selectedActivityDetails
       ? createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-900/35 px-3 pb-3 backdrop-blur-md dark:bg-slate-950/60 sm:items-center sm:p-6">
+          <div className="activity-detail-modal-overlay fixed inset-0 z-[9999] flex items-end justify-center bg-slate-900/35 px-3 pb-3 backdrop-blur-md dark:bg-slate-950/60 sm:items-center sm:p-6">
             <button
               type="button"
               aria-label="Fechar detalhes da atividade"
@@ -710,7 +710,7 @@ export default function ActivityTimeline({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.98 }}
               className={cn(
-                "relative w-full max-w-lg overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-slate-950/15 sm:p-6 dark:shadow-black/45",
+                "activity-detail-modal-card relative w-full max-w-lg overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-slate-950/15 sm:p-6 dark:shadow-black/45",
                 selectedActivityDetails.palette.root,
                 selectedActivityDetails.palette.border,
               )}
@@ -734,7 +734,7 @@ export default function ActivityTimeline({
                     <p className={cn("text-[9px] font-black uppercase tracking-[0.22em]", selectedActivityDetails.palette.label)}>
                       Atividade do paciente
                     </p>
-                    <h3 className="mt-1 text-lg font-black leading-tight text-slate-950 drop-shadow-sm dark:text-white">
+                    <h3 className="activity-detail-modal-title mt-1 text-lg font-black leading-tight text-slate-950 drop-shadow-sm dark:text-white">
                       {selectedActivityDetails.title}
                     </h3>
                   </div>
@@ -743,7 +743,7 @@ export default function ActivityTimeline({
                 <button
                   type="button"
                   onClick={closeOverlay}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:text-slate-900 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:hover:text-white"
+                  className="activity-detail-modal-close flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:text-slate-900 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:hover:text-white"
                 >
                   <X size={18} />
                 </button>
@@ -755,7 +755,7 @@ export default function ActivityTimeline({
                     <div
                       key={`${item.label}-${item.value}`}
                       className={cn(
-                      "rounded-2xl border px-3 py-2 shadow-sm shadow-slate-950/5 dark:shadow-black/20",
+                      "activity-detail-highlight-card rounded-2xl border px-3 py-2 shadow-sm shadow-slate-950/5 dark:shadow-black/20",
                       selectedActivityDetails.palette.highlight,
                     )}
                     >
@@ -770,8 +770,8 @@ export default function ActivityTimeline({
                 </div>
               )}
 
-              <div className="relative mt-5 max-h-[58vh] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.45)_transparent]">
-                <div className={cn("rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
+              <div className="activity-detail-scroll relative mt-5 max-h-[58vh] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.45)_transparent]">
+                <div className={cn("activity-detail-panel rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
                   <div>
                     <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                       Tipo
@@ -785,12 +785,12 @@ export default function ActivityTimeline({
                     <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                       Descrição registrada
                     </p>
-                    <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p className="activity-detail-description mt-1 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
                       {selectedActivity.descricao || "Sem descrição adicional registrada."}
                     </p>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/90 px-3 py-2 text-xs font-black text-slate-800 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+                  <div className="activity-detail-date-chip mt-3 flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/90 px-3 py-2 text-xs font-black text-slate-800 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                     <Clock size={14} className="opacity-70" />
                     {selectedActivityDetails.formattedDate}
                   </div>
@@ -799,7 +799,7 @@ export default function ActivityTimeline({
                 {selectedActivityDetails.detailSections.map((section) => (
                   <div
                     key={section.title}
-                    className={cn("rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}
+                    className={cn("activity-detail-panel rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}
                   >
                     <p className={cn("mb-3 text-[10px] font-black uppercase tracking-[0.18em]", selectedActivityDetails.palette.sectionTitle)}>
                       {section.title}
@@ -810,7 +810,7 @@ export default function ActivityTimeline({
                           <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                             {field.label}
                           </p>
-                          <div className="mt-1 text-sm font-bold leading-relaxed text-slate-800 dark:text-slate-100">
+                          <div className="activity-detail-field-value mt-1 text-sm font-bold leading-relaxed text-slate-800 dark:text-slate-100">
                             {toDisplayValue(field.value)}
                           </div>
                         </div>
@@ -820,7 +820,7 @@ export default function ActivityTimeline({
                 ))}
 
                 {(selectedActivity.referencia_id || selectedActivity.source_table) && (
-                  <div className={cn("flex flex-wrap gap-2 rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
+                  <div className={cn("activity-detail-panel flex flex-wrap gap-2 rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
                     {selectedActivity.source_table && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
                         <ExternalLink size={11} /> {selectedActivity.source_table}
@@ -838,7 +838,7 @@ export default function ActivityTimeline({
               <button
                 type="button"
                 onClick={closeOverlay}
-                className="relative mt-5 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-3 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
+                className="activity-detail-close-button relative mt-5 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-3 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
               >
                 Fechar detalhes
               </button>
