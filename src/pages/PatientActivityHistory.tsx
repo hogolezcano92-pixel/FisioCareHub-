@@ -18,6 +18,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import ActivityTimeline from '../components/FisioCare/ActivityTimeline';
 
+type ActivityDetailField = {
+  label: string;
+  value?: any;
+};
+
+type ActivityDetailSection = {
+  title: string;
+  fields: ActivityDetailField[];
+};
+
 type ActivityItem = {
   id: string;
   tipo_acao: string;
@@ -27,6 +37,8 @@ type ActivityItem = {
   paciente_id?: string;
   atendimento_id?: string;
   source_table?: string;
+  raw_details?: Record<string, any> | null;
+  detail_sections?: ActivityDetailSection[];
 };
 
 type PatientInfo = {
@@ -77,6 +89,104 @@ const getAppointmentCreatedAt = (appointment: any) =>
   appointment?.data_horario ||
   new Date().toISOString();
 
+const defaultChecklistExercises: Record<string, any> = {
+  '1': {
+    nome: 'Alongamento de Isquiotibiais',
+    descricao: 'Mantenha a perna esticada por 30 segundos.',
+    duracao: '30 segundos',
+  },
+  '2': {
+    nome: 'Fortalecimento de Quadríceps',
+    descricao: 'Extensão de joelho com caneleira.',
+    series: '3',
+    repeticoes: '15',
+  },
+  '3': {
+    nome: 'Exercício de Equilíbrio',
+    descricao: 'Ficar em um pé só por 1 minuto.',
+    duracao: '1 minuto',
+  },
+};
+
+const getFirstValue = (source: any, keys: string[]) => {
+  if (!source) return undefined;
+  for (const key of keys) {
+    const value = source[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return undefined;
+};
+
+const isUuidLike = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const makeSection = (title: string, fields: ActivityDetailField[]): ActivityDetailSection | null => {
+  const cleanFields = fields.filter((field) => field.value !== undefined && field.value !== null && field.value !== '');
+  return cleanFields.length > 0 ? { title, fields: cleanFields } : null;
+};
+
+const mergeExerciseDetails = (item: any, exercise?: any) => ({
+  ...exercise,
+  ...item,
+  exercicio_nome:
+    item?.exercicio_nome ||
+    item?.nome ||
+    item?.exercicio?.nome ||
+    exercise?.nome ||
+    exercise?.titulo ||
+    exercise?.title,
+  descricao_exercicio:
+    item?.descricao_exercicio ||
+    item?.descricao ||
+    item?.description ||
+    exercise?.descricao ||
+    exercise?.description,
+  instrucoes:
+    item?.instrucoes ||
+    item?.orientacoes ||
+    item?.observacoes ||
+    item?.observacoes_especificas ||
+    exercise?.instrucoes ||
+    exercise?.orientacoes,
+});
+
+const buildTriageSections = (triage: any): ActivityDetailSection[] => {
+  const sections = [
+    makeSection('Relatório da triagem', [
+      { label: 'Região avaliada', value: getFirstValue(triage, ['area_corpo', 'regiao', 'local_dor', 'regiao_dor', 'parte_corpo', 'queixa_principal']) },
+      { label: 'Classificação/risco', value: getFirstValue(triage, ['gravidade', 'risco', 'nivel_risco', 'classificacao', 'urgencia', 'cor_risco']) },
+      { label: 'Queixa principal', value: getFirstValue(triage, ['queixa_principal', 'queixa', 'motivo', 'sintomas']) },
+      { label: 'Dor informada', value: getFirstValue(triage, ['nivel_dor', 'dor', 'intensidade_dor', 'escala_dor']) },
+      { label: 'Tempo de sintomas', value: getFirstValue(triage, ['tempo_sintomas', 'duracao', 'inicio_sintomas']) },
+      { label: 'Sinais de alerta', value: getFirstValue(triage, ['sinais_alerta', 'red_flags', 'alertas']) },
+      { label: 'Recomendação da IA', value: getFirstValue(triage, ['recomendacao_ia', 'recomendacao', 'orientacao_ia', 'orientacoes']) },
+      { label: 'Resumo/relatório', value: getFirstValue(triage, ['relatorio', 'resultado', 'resumo', 'analise', 'observacoes', 'observacao']) },
+    ]),
+    makeSection('Respostas registradas', [
+      { label: 'Perguntas e respostas', value: getFirstValue(triage, ['respostas', 'answers', 'questionario', 'metadata']) },
+    ]),
+  ];
+  return sections.filter(Boolean) as ActivityDetailSection[];
+};
+
+const buildExerciseSections = (item: any, completed = false): ActivityDetailSection[] => {
+  const sections = [
+    makeSection(completed ? 'Exercício realizado pelo paciente' : 'Exercício prescrito', [
+      { label: 'Exercício', value: getFirstValue(item, ['exercicio_nome', 'nome_exercicio', 'nome', 'titulo', 'title']) },
+      { label: 'Status', value: completed ? 'Realizado pelo paciente' : getFirstValue(item, ['status']) },
+      { label: 'Séries', value: getFirstValue(item, ['series', 'serie']) },
+      { label: 'Repetições', value: getFirstValue(item, ['repeticoes', 'repetições', 'reps']) },
+      { label: 'Duração/tempo', value: getFirstValue(item, ['duracao', 'duration', 'tempo']) },
+      { label: 'Frequência', value: getFirstValue(item, ['frequencia', 'frequência']) },
+      { label: 'Carga', value: getFirstValue(item, ['carga', 'peso']) },
+      { label: 'Descrição do exercício', value: getFirstValue(item, ['descricao_exercicio', 'descricao', 'description']) },
+      { label: 'Instruções/observações', value: getFirstValue(item, ['instrucoes', 'instruções', 'orientacoes', 'observacoes', 'observacoes_especificas']) },
+      { label: 'Data de conclusão', value: getFirstValue(item, ['data_conclusao', 'concluido_em']) },
+    ]),
+  ];
+  return sections.filter(Boolean) as ActivityDetailSection[];
+};
+
 const buildPatientActivities = (
   historico: any[] = [],
   triagens: any[] = [],
@@ -86,6 +196,7 @@ const buildPatientActivities = (
   registrosPaciente: any[] = [],
   checklistExercicios: any[] = [],
   exerciciosPaciente: any[] = [],
+  exerciseDetailsById: Record<string, any> = {},
   documentos: any[] = [],
 ): ActivityItem[] => {
   const syntheticTriages = (triagens || []).map((triage: any) => ({
@@ -96,6 +207,8 @@ const buildPatientActivities = (
     referencia_id: triage.id,
     paciente_id: triage.paciente_id,
     source_table: 'triagens',
+    raw_details: triage,
+    detail_sections: buildTriageSections(triage),
   }));
 
   const syntheticAppointments = (agendamentos || []).map((appointment: any) => ({
@@ -109,6 +222,7 @@ const buildPatientActivities = (
     referencia_id: appointment.id,
     paciente_id: appointment.paciente_id,
     source_table: 'agendamentos',
+    raw_details: appointment,
   }));
 
   const syntheticProntuarios = (prontuarios || []).map((item: any) => ({
@@ -121,6 +235,7 @@ const buildPatientActivities = (
     referencia_id: item.id,
     paciente_id: item.paciente_id,
     source_table: 'prontuarios',
+    raw_details: item,
   }));
 
   const syntheticEvolucoes = (evolucoes || []).map((item: any) => ({
@@ -132,6 +247,7 @@ const buildPatientActivities = (
     paciente_id: item.paciente_id,
     atendimento_id: item.atendimento_id,
     source_table: 'evolucoes',
+    raw_details: item,
   }));
 
   const syntheticRegistros = (registrosPaciente || []).map((item: any) => ({
@@ -147,34 +263,47 @@ const buildPatientActivities = (
     referencia_id: item.id || item.data_registro,
     paciente_id: item.paciente_id,
     source_table: 'registros_paciente',
+    raw_details: item,
   }));
 
   const syntheticCompletedExercises = (checklistExercicios || [])
     .filter((item: any) => item?.concluido || item?.data_conclusao)
-    .map((item: any) => ({
-      id: `exercicio-realizado-${item.id}`,
-      tipo_acao: 'exercicio_realizado',
-      descricao: item?.exercicio_nome
-        ? `Exercício realizado: ${item.exercicio_nome}`
-        : 'Exercício realizado pelo paciente',
-      created_at: item?.data_conclusao || item?.updated_at || item?.created_at || new Date().toISOString(),
-      referencia_id: item.id || item.exercicio_id,
-      paciente_id: item.paciente_id,
-      source_table: 'checklist_exercicios',
-    }));
+    .map((item: any) => {
+      const exercise = exerciseDetailsById[String(item.exercicio_id)] || defaultChecklistExercises[String(item.exercicio_id)] || {};
+      const details = mergeExerciseDetails(item, exercise);
+      return {
+        id: `exercicio-realizado-${item.id}`,
+        tipo_acao: 'exercicio_realizado',
+        descricao: details?.exercicio_nome
+          ? `Exercício realizado: ${details.exercicio_nome}`
+          : 'Exercício realizado pelo paciente',
+        created_at: item?.data_conclusao || item?.updated_at || item?.created_at || new Date().toISOString(),
+        referencia_id: item.id || item.exercicio_id,
+        paciente_id: item.paciente_id,
+        source_table: 'checklist_exercicios',
+        raw_details: details,
+        detail_sections: buildExerciseSections(details, true),
+      };
+    });
 
-  const syntheticExercises = (exerciciosPaciente || []).map((item: any) => ({
-    id: `exercicio-${item.id}`,
-    tipo_acao: 'exercicio_prescrito',
-    descricao:
-      item?.exercicio_nome || item?.nome || item?.exercicio?.nome
-        ? `Exercício prescrito: ${item.exercicio_nome || item.nome || item.exercicio?.nome}`
-        : 'Exercício prescrito para o paciente',
-    created_at: item?.created_at || item?.updated_at || new Date().toISOString(),
-    referencia_id: item.id,
-    paciente_id: item.paciente_id,
-    source_table: 'exercicios_paciente',
-  }));
+  const syntheticExercises = (exerciciosPaciente || []).map((item: any) => {
+    const exercise = exerciseDetailsById[String(item.exercicio_id)] || item?.exercicio || {};
+    const details = mergeExerciseDetails(item, exercise);
+    return {
+      id: `exercicio-${item.id}`,
+      tipo_acao: 'exercicio_prescrito',
+      descricao:
+        details?.exercicio_nome
+          ? `Exercício prescrito: ${details.exercicio_nome}`
+          : 'Exercício prescrito para o paciente',
+      created_at: item?.created_at || item?.updated_at || new Date().toISOString(),
+      referencia_id: item.id,
+      paciente_id: item.paciente_id,
+      source_table: 'exercicios_paciente',
+      raw_details: details,
+      detail_sections: buildExerciseSections(details, false),
+    };
+  });
 
   const syntheticDocuments = (documentos || []).map((item: any) => ({
     id: `documento-${item.id}`,
@@ -187,6 +316,7 @@ const buildPatientActivities = (
     referencia_id: item.id,
     paciente_id: item.paciente_id,
     source_table: 'documentos_gerados',
+    raw_details: item,
   }));
 
   const unique = new Map<string, ActivityItem>();
@@ -316,38 +446,38 @@ export default function PatientActivityHistory() {
             .limit(80),
           supabase
             .from('prontuarios')
-            .select('id, created_at, updated_at, data_registro, tipo_atendimento, paciente_id, fisio_id')
+            .select('*')
             .in('paciente_id', ids)
             .eq('fisio_id', profile.id)
             .order('data_registro', { ascending: false })
             .limit(80),
           supabase
             .from('evolucoes')
-            .select('id, created_at, updated_at, data_evolucao, paciente_id, atendimento_id')
+            .select('*')
             .in('paciente_id', ids)
             .order('created_at', { ascending: false })
             .limit(80),
           supabase
             .from('registros_paciente')
-            .select('id, created_at, updated_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios')
+            .select('*')
             .in('paciente_id', ids)
             .order('data_registro', { ascending: false })
             .limit(120),
           supabase
             .from('checklist_exercicios')
-            .select('id, created_at, updated_at, paciente_id, exercicio_id, concluido, data_conclusao')
+            .select('*')
             .in('paciente_id', ids)
             .order('data_conclusao', { ascending: false })
             .limit(160),
           supabase
             .from('exercicios_paciente')
-            .select('id, created_at, updated_at, paciente_id, exercicio_nome, nome, status')
+            .select('*')
             .in('paciente_id', ids)
             .order('created_at', { ascending: false })
             .limit(100),
           supabase
             .from('documentos_gerados')
-            .select('id, created_at, updated_at, data_geracao, paciente_id, fisio_id, tipo_documento, tipo, titulo')
+            .select('*')
             .in('paciente_id', ids)
             .eq('fisio_id', profile.id)
             .order('created_at', { ascending: false })
@@ -357,15 +487,42 @@ export default function PatientActivityHistory() {
         const read = (result: PromiseSettledResult<any>) =>
           result.status === 'fulfilled' && !result.value.error ? result.value.data || [] : [];
 
+        const checklistRows = read(checklistResult);
+        const prescriptionRows = read(exerciciosResult);
+        const exerciseIds = Array.from(
+          new Set(
+            [...checklistRows, ...prescriptionRows]
+              .map((item: any) => String(item?.exercicio_id || '').trim())
+              .filter(Boolean),
+          ),
+        );
+
+        let exerciseDetailsById: Record<string, any> = {};
+        const exerciseTableIds = exerciseIds.filter(isUuidLike);
+        if (exerciseTableIds.length > 0) {
+          const { data: exerciseRows, error: exerciseError } = await supabase
+            .from('exercicios')
+            .select('*')
+            .in('id', exerciseTableIds);
+
+          if (!exerciseError && exerciseRows) {
+            exerciseDetailsById = exerciseRows.reduce((acc: Record<string, any>, exercise: any) => {
+              acc[String(exercise.id)] = exercise;
+              return acc;
+            }, {});
+          }
+        }
+
         const built = buildPatientActivities(
-          read(historicoResult),
+          read(historicoResult).map((item: any) => ({ ...item, raw_details: item })),
           read(triagesResult),
           read(appointmentsResult),
           read(prontuariosResult),
           read(evolucoesResult),
           read(registrosResult),
-          read(checklistResult),
-          read(exerciciosResult),
+          checklistRows,
+          prescriptionRows,
+          exerciseDetailsById,
           read(documentosResult),
         );
 
