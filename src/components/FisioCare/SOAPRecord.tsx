@@ -188,7 +188,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
   const handleSelectPatientAndSave = async (patient: any) => {
     setSelectedPatient(patient);
     setShowPatientSelector(false);
-    await handleSave(patient.id);
+    await handleSave(patient.id, patient);
   };
 
   const handleSummarize = async () => {
@@ -244,7 +244,117 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
     }
   };
 
-  const handleSave = async (forcedPatientId?: string) => {
+  const resolvePatientForDocument = async (id: string, forcedPatient?: any) => {
+    const fallbackPatient = forcedPatient || selectedPatient;
+    if (fallbackPatient?.id === id || fallbackPatient?.nome_completo || fallbackPatient?.email) {
+      return fallbackPatient;
+    }
+
+    try {
+      const { data: patient } = await supabase
+        .from('pacientes')
+        .select('id, nome_completo, foto_url, email')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (patient) return patient;
+    } catch (error) {
+      console.warn('[SOAPRecord] Não foi possível buscar paciente em pacientes:', error);
+    }
+
+    try {
+      const { data: profileData } = await supabase
+        .from('perfis')
+        .select('id, nome_completo, avatar_url, foto_url, email')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (profileData) return profileData;
+    } catch (error) {
+      console.warn('[SOAPRecord] Não foi possível buscar paciente em perfis:', error);
+    }
+
+    return fallbackPatient || { id };
+  };
+
+  const buildSoapDocumentContent = (patientInfo: any, savedAt: string) => {
+    const patientName = patientInfo?.nome_completo || patientInfo?.name || 'Paciente';
+    const physioName = profile?.nome_completo || 'Fisioterapeuta';
+    const formattedDate = new Date(savedAt).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    return `# Prontuário SOAP\n\n**Paciente:** ${patientName}\n\n**Fisioterapeuta:** ${physioName}\n\n**Data do registro:** ${formattedDate}\n\n---\n\n## S - Subjetivo\n${soapPayloadValue(soapData?.subjective)}\n\n## O - Objetivo\n${soapPayloadValue(soapData?.objective)}\n\n## A - Avaliação\n${soapPayloadValue(soapData?.assessment)}\n\n## P - Plano\n${soapPayloadValue(soapData?.plan)}\n\n---\n\n**Relato original:**\n${rawText?.trim() || 'Não informado.'}`;
+  };
+
+  const soapPayloadValue = (value: any) => {
+    if (typeof value === 'string') return value.trim() || 'Não informado.';
+    if (value === null || value === undefined) return 'Não informado.';
+    return JSON.stringify(value);
+  };
+
+  const publishSoapToPatientDocuments = async ({
+    finalPacienteId,
+    patientInfo,
+    integrityHash,
+    now,
+  }: {
+    finalPacienteId: string;
+    patientInfo: any;
+    integrityHash: string;
+    now: string;
+  }) => {
+    const patientName = patientInfo?.nome_completo || patientInfo?.name || selectedPatient?.nome_completo || 'Paciente';
+    const patientEmail = patientInfo?.email || selectedPatient?.email || null;
+    const content = buildSoapDocumentContent(patientInfo, now);
+
+    const documentPayload = {
+      physio_id: profile.id,
+      physio_name: profile.nome_completo || 'Fisioterapeuta',
+      paciente_id: finalPacienteId,
+      patient_name: patientName,
+      patient_email: patientEmail ? String(patientEmail).trim().toLowerCase() : null,
+      type: 'Prontuário SOAP',
+      document_name: 'Prontuário SOAP',
+      document_category: 'prontuario_soap',
+      content,
+      visible_to_patient: true,
+      acceptance_required: false,
+      criado_em: now,
+      integrity_hash: integrityHash,
+      metadata: {
+        source: 'soap_record',
+        raw_text: rawText,
+        soap: soapData,
+      },
+    };
+
+    const { error } = await supabase.from('documentos_gerados').insert(documentPayload);
+
+    if (!error) return null;
+
+    console.warn('[SOAPRecord] Publicação completa em documentos_gerados falhou, tentando compatibilidade:', error);
+
+    const {
+      paciente_id,
+      visible_to_patient,
+      acceptance_required,
+      document_category,
+      document_name,
+      integrity_hash,
+      metadata,
+      ...legacyPayload
+    } = documentPayload;
+
+    const { error: legacyError } = await supabase.from('documentos_gerados').insert(legacyPayload);
+    return legacyError || null;
+  };
+
+  const handleSave = async (forcedPatientId?: string, forcedPatient?: any) => {
     const finalPacienteId = forcedPatientId || pacienteId || selectedPatient?.id;
 
     if (!soapData || !profile) return;
@@ -257,6 +367,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
     setIsSaving(true);
     try {
       const now = new Date().toISOString();
+      const patientInfo = await resolvePatientForDocument(finalPacienteId, forcedPatient);
       const contentStr = JSON.stringify(soapData);
 
       const integrityHash = await generateIntegrityHash(
@@ -269,10 +380,10 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       const soapPayload = {
         patient_id: finalPacienteId,
         therapist_id: profile.id,
-        subjective: typeof soapData.subjective === 'string' ? soapData.subjective : JSON.stringify(soapData.subjective),
-        objective: typeof soapData.objective === 'string' ? soapData.objective : JSON.stringify(soapData.objective),
-        assessment: typeof soapData.assessment === 'string' ? soapData.assessment : JSON.stringify(soapData.assessment),
-        plan: typeof soapData.plan === 'string' ? soapData.plan : JSON.stringify(soapData.plan),
+        subjective: soapPayloadValue(soapData.subjective),
+        objective: soapPayloadValue(soapData.objective),
+        assessment: soapPayloadValue(soapData.assessment),
+        plan: soapPayloadValue(soapData.plan),
         raw_text: rawText,
         created_at: now,
         integrity_hash: integrityHash,
@@ -301,12 +412,24 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       const { error: prontuarioError } = await supabase.from('prontuarios').insert(prontuarioPayload);
       if (prontuarioError) console.warn('[SOAPRecord] Erro ao salvar em prontuarios:', prontuarioError);
 
-      if (soapError && prontuarioError) {
-        const message = prontuarioError.message || soapError.message || 'Erro ao salvar prontuário.';
+      const documentError = await publishSoapToPatientDocuments({
+        finalPacienteId,
+        patientInfo,
+        integrityHash,
+        now,
+      });
+      if (documentError) console.warn('[SOAPRecord] Erro ao publicar em documentos_gerados:', documentError);
+
+      if (soapError && prontuarioError && documentError) {
+        const message = prontuarioError.message || soapError.message || documentError.message || 'Erro ao salvar prontuário.';
         throw new Error(message);
       }
 
-      toast.success('Prontuário salvo com segurança jurídica!');
+      if (documentError) {
+        toast.success('Prontuário salvo. Não foi possível publicar na biblioteca do paciente nesta tabela.');
+      } else {
+        toast.success('Prontuário salvo e publicado nos documentos do paciente!');
+      }
       setSavedHash(integrityHash);
       setIsReadOnly(true);
 
@@ -317,7 +440,7 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           userId: profile.id,
           userType: 'fisio',
           action: 'prontuario_criado',
-          description: `Prontuário SOAP salvo para ${selectedPatient?.nome_completo || 'o paciente'}`,
+          description: `Prontuário SOAP salvo para ${patientInfo?.nome_completo || 'o paciente'}`,
           referenceId: finalPacienteId,
           details: { metadata: { targetType: 'paciente', integrityHash, source: 'soap_record' } },
         },
@@ -325,9 +448,9 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
           userId: finalPacienteId,
           userType: 'paciente',
           action: 'prontuario_criado',
-          description: `Seu fisioterapeuta registrou uma evolução SOAP no prontuário`,
+          description: `Seu fisioterapeuta registrou uma evolução SOAP e publicou em seus documentos`,
           referenceId: finalPacienteId,
-          details: { metadata: { targetType: 'prontuario', integrityHash, source: 'soap_record' } },
+          details: { metadata: { targetType: 'documentos_gerados', integrityHash, source: 'soap_record' } },
         },
       ]);
     } catch (error: any) {
