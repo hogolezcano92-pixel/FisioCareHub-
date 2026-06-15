@@ -38,7 +38,7 @@ import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/pat
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
-import { formatDateKeyBR, formatDateTimeBR, todayDateKeyBR } from '../lib/utils';
+import { formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -131,6 +131,47 @@ const getMissingRequiredDocumentFields = (templateId: string | undefined, fields
     .filter((field) => field.required && !fields[field.key]?.trim())
     .map((field) => field.label);
 
+const getDocumentTitle = (doc: any) =>
+  doc?.document_name ||
+  doc?.nome_arquivo ||
+  doc?.titulo ||
+  doc?.type ||
+  'Documento';
+
+const getDocumentDateValue = (doc: any) =>
+  doc?.criado_em ||
+  doc?.created_at ||
+  doc?.createdAt ||
+  doc?.data_criacao ||
+  doc?.dataCriacao ||
+  doc?.updated_at ||
+  doc?.date ||
+  doc?.data ||
+  null;
+
+const getDocumentTime = (doc: any) => {
+  const value = getDocumentDateValue(doc);
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const formatDocumentDateTime = (docOrValue: any, fallback = 'Data não disponível') => {
+  const value = docOrValue && typeof docOrValue === 'object' ? getDocumentDateValue(docOrValue) : docOrValue;
+  if (!value) return fallback;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export default function Documents() {
   const { user, profile, subscription, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -168,7 +209,7 @@ export default function Documents() {
 
     return documents.filter((doc) => {
       if (doc?.isClinicalFile) return false;
-      const createdAt = new Date(doc?.criado_em || doc?.created_at || 0).getTime();
+      const createdAt = getDocumentTime(doc);
       return createdAt >= monthStart && createdAt < nextMonthStart;
     }).length;
   }, [documents, isFreePhysio]);
@@ -379,7 +420,7 @@ export default function Documents() {
             }
           }
 
-          setDocuments([...generatedDocs, ...clinicalFiles].sort((a, b) => new Date(b.criado_em || b.created_at || 0).getTime() - new Date(a.criado_em || a.created_at || 0).getTime()));
+          setDocuments([...generatedDocs, ...clinicalFiles].sort((a, b) => getDocumentTime(b) - getDocumentTime(a)));
         }
       } catch (err) {
         console.error("Erro ao buscar documentos:", err);
@@ -501,6 +542,7 @@ export default function Documents() {
         document_category: selectedTemplateId || 'documento_ia',
         type: selectedTemplate?.name || 'Documento IA personalizado',
         content: generatedContent,
+        criado_em: new Date().toISOString(),
       };
 
       let { data: newDoc, error } = await supabase
@@ -526,7 +568,7 @@ export default function Documents() {
         throw error;
       }
 
-      setDocuments([newDoc, ...documents]);
+      setDocuments([{ ...insertPayload, ...newDoc, criado_em: getDocumentDateValue(newDoc) || insertPayload.criado_em }, ...documents]);
       setIsModalOpen(false);
       import('sonner').then(({ toast }) => toast.success("Documento salvo com sucesso!"));
     } catch (err: any) {
@@ -558,7 +600,7 @@ export default function Documents() {
         new Paragraph({
           children: [
             new TextRun({ text: "Data: ", bold: true }),
-            new TextRun(formatDateTimeBR(doc.criado_em || todayDateKeyBR())),
+            new TextRun(formatDocumentDateTime(doc)),
           ],
           spacing: { after: 400 },
         }),
@@ -740,20 +782,13 @@ export default function Documents() {
     }
   };
 
-  const getDocumentTitle = (doc: any) =>
-    doc?.document_name ||
-    doc?.nome_arquivo ||
-    doc?.titulo ||
-    doc?.type ||
-    'Documento';
-
   const buildPremiumPdfPayload = (doc: any) => ({
     ...doc,
     document_name: getDocumentTitle(doc),
     type: doc?.type || getDocumentTitle(doc),
     patient_name: doc?.patient_name || doc?.paciente_nome || 'Paciente',
     physio_name: doc?.physio_name || profile?.nome_completo || 'Fisioterapeuta',
-    criado_em: doc?.criado_em || doc?.created_at || new Date().toISOString(),
+    criado_em: getDocumentDateValue(doc) || new Date().toISOString(),
     content: doc?.content || doc?.conteudo || doc?.description || 'Conteúdo não informado.',
   });
 
@@ -1089,11 +1124,11 @@ export default function Documents() {
 
   return (
     <ProGuard requiredPlan="free">
-      <div className="space-y-8 pb-20">
+      <div className="space-y-8 pb-20 text-slate-950 dark:text-white">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 tracking-tight">Documentos e Relatórios</h1>
-          <p className="text-slate-400 font-medium">
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-950 via-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 tracking-tight">Documentos e Relatórios</h1>
+          <p className="text-slate-700 dark:text-slate-400 font-medium">
             {isPhysio 
               ? 'Gerencie sua papelada de forma rápida e automática.' 
               : 'Visualize e baixe seus documentos e relatórios médicos.'}
@@ -1109,7 +1144,7 @@ export default function Documents() {
                 }
                 setIsEvolutionModalOpen(true);
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-white/5 text-blue-400 border border-blue-500/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 border border-blue-200 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 transition-all shadow-sm dark:bg-white/5 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <FileSearch size={20} /> RELATÓRIO DE EVOLUÇÃO
             </button>
@@ -1184,7 +1219,7 @@ export default function Documents() {
         <section>
           <div className="flex items-center gap-2 mb-6">
             <Star className="text-amber-500 fill-amber-500" size={20} />
-            <h2 className="text-xl font-black text-white tracking-tight">FAVORITOS</h2>
+            <h2 className="text-xl font-black text-slate-950 dark:text-white tracking-tight">FAVORITOS</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {FAVORITE_TEMPLATES.map((template) => {
@@ -1194,14 +1229,14 @@ export default function Documents() {
               <motion.div
                 key={template.id}
                 whileHover={{ scale: 1.02 }}
-                className={`bg-slate-900/50 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden ${isTemplateLockedForFree ? 'opacity-75' : ''}`}
+                className={`bg-white/90 dark:bg-slate-900/50 backdrop-blur-xl p-6 rounded-3xl border border-purple-200/70 dark:border-white/10 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group relative overflow-hidden ${isTemplateLockedForFree ? 'opacity-75' : ''}`}
               >
                 <div className={`w-12 h-12 ${template.bg.replace('bg-', 'bg-').replace('-50', '-500/10')} ${template.color.replace('text-', 'text-').replace('-600', '-400')} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-white/5`}>
                   <template.icon size={24} />
                 </div>
                 <div className="flex-1 cursor-pointer" onClick={() => isTemplateLockedForFree ? navigate('/subscription') : handleCreateNew(template)}>
-                  <h3 className="font-black text-white leading-tight">{template.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">{isTemplateLockedForFree ? 'Basic/PRO' : 'Clique para iniciar'}</p>
+                  <h3 className="font-black text-slate-950 dark:text-white leading-tight">{template.name}</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-500 mt-1 font-bold uppercase tracking-widest">{isTemplateLockedForFree ? 'Basic/PRO' : 'Clique para iniciar'}</p>
                 </div>
                 <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button className="p-1.5 text-slate-500 hover:text-rose-500 transition-colors" title="Remover dos favoritos">
@@ -1219,13 +1254,13 @@ export default function Documents() {
       )}
 
       {/* Recent Documents */}
-      <section className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+      <section className="bg-white/90 dark:bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-purple-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-purple-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="text-lg sm:text-xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-2">
             <Library size={20} className="text-blue-400 shrink-0" />
             BIBLIOTECA DE DOCUMENTOS
           </h2>
-          <button className="text-blue-400 text-xs sm:text-sm font-black uppercase tracking-widest hover:text-blue-300 flex items-center gap-1 transition-colors">
+          <button className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-black uppercase tracking-widest hover:text-blue-500 dark:hover:text-blue-300 flex items-center gap-1 transition-colors">
             VER BIBLIOTECA COMPLETA <ChevronRight size={16} />
           </button>
         </div>
@@ -1241,23 +1276,23 @@ export default function Documents() {
               Nenhum documento encontrado.
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-purple-100 dark:divide-white/5">
               {documents.map((doc) => (
-                <div key={doc.id} className="p-5 space-y-4">
+                <div key={doc.id} className="p-5 space-y-4 bg-white/40 dark:bg-transparent">
                   <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20 shrink-0">
+                    <div className="w-11 h-11 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center border border-blue-200 dark:border-blue-500/20 shrink-0">
                       <FileText size={20} />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-white font-black leading-tight truncate">
+                      <p className="text-slate-950 dark:text-white font-black leading-tight truncate">
                         {getDocumentTitle(doc)}
                       </p>
-                      <p className="text-slate-400 text-sm font-bold mt-1 truncate">
+                      <p className="text-slate-600 dark:text-slate-400 text-sm font-bold mt-1 truncate">
                         {isPhysio ? (doc.patient_name || 'Paciente') : (doc.physio_name || 'Fisioterapeuta')}
                       </p>
-                      <p className="text-slate-500 text-xs font-black mt-2">
-                        {new Date(doc.criado_em || doc.created_at).toLocaleString('pt-BR')}
+                      <p className="text-slate-500 dark:text-slate-500 text-xs font-black mt-2">
+                        {formatDocumentDateTime(doc)}
                       </p>
                       {!isPhysio && !doc.isClinicalFile && (
                         <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black mt-2 uppercase tracking-widest' : 'text-amber-400 text-[10px] font-black mt-2 uppercase tracking-widest'}>
@@ -1270,7 +1305,7 @@ export default function Documents() {
                   <div className="grid grid-cols-3 gap-2">
                     <button 
                       onClick={() => handleViewDocument(doc)}
-                      className="h-12 text-white bg-white/5 hover:bg-blue-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                      className="h-12 text-blue-700 dark:text-white bg-white hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-blue-500/10 cursor-pointer rounded-2xl transition-colors border border-purple-200 dark:border-white/10 flex items-center justify-center shadow-sm"
                       title="Visualizar"
                       aria-label="Visualizar documento"
                     >
@@ -1278,7 +1313,7 @@ export default function Documents() {
                     </button>
                     <button 
                       onClick={() => handleDownloadDocument(doc)}
-                      className="h-12 text-white bg-white/5 hover:bg-emerald-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                      className="h-12 text-emerald-700 dark:text-white bg-white hover:bg-emerald-50 dark:bg-white/5 dark:hover:bg-emerald-500/10 cursor-pointer rounded-2xl transition-colors border border-purple-200 dark:border-white/10 flex items-center justify-center shadow-sm"
                       title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                       aria-label={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                     >
@@ -1287,7 +1322,7 @@ export default function Documents() {
                     {!doc.isClinicalFile ? (
                       <button 
                         onClick={() => exportToWord(doc)}
-                        className="h-12 text-white bg-white/5 hover:bg-indigo-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                        className="h-12 text-indigo-700 dark:text-white bg-white hover:bg-indigo-50 dark:bg-white/5 dark:hover:bg-indigo-500/10 cursor-pointer rounded-2xl transition-colors border border-purple-200 dark:border-white/10 flex items-center justify-center shadow-sm"
                         title="Baixar Word"
                         aria-label="Baixar Word"
                       >
@@ -1296,7 +1331,7 @@ export default function Documents() {
                     ) : isPhysio ? (
                       <button 
                         onClick={() => setDocToDelete(doc.id)}
-                        className="h-12 text-white bg-white/5 hover:bg-rose-500/10 cursor-pointer rounded-2xl transition-colors border border-white/10 flex items-center justify-center"
+                        className="h-12 text-rose-700 dark:text-white bg-white hover:bg-rose-50 dark:bg-white/5 dark:hover:bg-rose-500/10 cursor-pointer rounded-2xl transition-colors border border-purple-200 dark:border-white/10 flex items-center justify-center shadow-sm"
                         title="Excluir"
                         aria-label="Excluir documento"
                       >
@@ -1319,7 +1354,7 @@ export default function Documents() {
                   {isPhysio && !doc.isClinicalFile && (
                     <button 
                       onClick={() => setDocToDelete(doc.id)}
-                      className="w-full h-11 text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 cursor-pointer rounded-2xl transition-colors border border-rose-500/20 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest"
+                      className="w-full h-11 text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/15 cursor-pointer rounded-2xl transition-colors border border-rose-200 dark:border-rose-500/20 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest"
                       title="Excluir"
                     >
                       <Trash2 size={16} /> Excluir
@@ -1334,7 +1369,7 @@ export default function Documents() {
         {/* Desktop/tablet: tabela completa */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[760px] text-left">
-            <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+            <thead className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
               <tr>
                 <th className="px-6 py-4">Documento</th>
                 <th className="px-6 py-4">{isPhysio ? 'Paciente' : 'Fisioterapeuta'}</th>
@@ -1342,7 +1377,7 @@ export default function Documents() {
                 <th className="px-6 py-4 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-purple-100 dark:divide-white/5">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center">
@@ -1360,11 +1395,11 @@ export default function Documents() {
                   <tr key={doc.id} className="hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center border border-blue-500/20">
+                        <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center border border-blue-200 dark:border-blue-500/20">
                           <FileText size={16} />
                         </div>
                         <div>
-                          <span className="font-bold text-white">{getDocumentTitle(doc)}</span>
+                          <span className="font-bold text-slate-950 dark:text-white">{getDocumentTitle(doc)}</span>
                           {!isPhysio && !doc.isClinicalFile && (
                             <p className={doc.accepted_at ? 'text-emerald-400 text-[10px] font-black uppercase tracking-widest mt-1' : 'text-amber-400 text-[10px] font-black uppercase tracking-widest mt-1'}>
                               {doc.accepted_at ? `Aceito em ${formatDateKeyBR(doc.accepted_at)}` : (doc.acceptance_required ? 'Aceite pendente' : 'Disponível')}
@@ -1373,17 +1408,17 @@ export default function Documents() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-400 font-medium">
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                       {isPhysio ? (doc.patient_name || 'Paciente') : (doc.physio_name || 'Fisioterapeuta')}
                     </td>
-                    <td className="px-6 py-4 text-slate-500 text-xs font-bold">
-                      {new Date(doc.criado_em || doc.created_at).toLocaleString('pt-BR')}
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-500 text-xs font-bold">
+                      {formatDocumentDateTime(doc)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button 
                           onClick={() => handleViewDocument(doc)}
-                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
+                          className="p-2 text-slate-700 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-purple-200 dark:border-white/10"
                           title="Visualizar"
                         >
                           <Eye size={18} />
@@ -1396,7 +1431,7 @@ export default function Documents() {
                             }
                             handleExportFromTable(doc);
                           }}
-                          className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
+                          className="p-2 text-slate-700 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-purple-200 dark:border-white/10"
                           title={doc.isClinicalFile ? 'Abrir arquivo' : 'Baixar PDF'}
                         >
                           <Download size={18} />
@@ -1404,7 +1439,7 @@ export default function Documents() {
                         {!doc.isClinicalFile && (
                           <button 
                             onClick={() => exportToWord(doc)}
-                            className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
+                            className="p-2 text-slate-700 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-purple-200 dark:border-white/10"
                             title="Baixar Word"
                           >
                             <FileText size={18} />
@@ -1413,7 +1448,7 @@ export default function Documents() {
                         {isPhysio && (
                           <button 
                             onClick={() => setDocToDelete(doc.id)}
-                            className="p-2 text-white hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-transparent border-white/10"
+                            className="p-2 text-slate-700 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer rounded-lg transition-colors border border-purple-200 dark:border-white/10"
                             title="Excluir"
                           >
                             <Trash2 size={18} />
@@ -1866,7 +1901,7 @@ export default function Documents() {
                         {viewingDoc.physio_name ? `Fisioterapeuta: ${viewingDoc.physio_name}` : 'Fisioterapeuta'}
                       </p>
                       <p className="text-slate-500 text-[11px] sm:text-xs font-bold mt-1">
-                        {new Date(viewingDoc.criado_em || viewingDoc.created_at).toLocaleString('pt-BR')}
+                        {formatDocumentDateTime(viewingDoc)}
                       </p>
                     </div>
 
@@ -1927,7 +1962,7 @@ export default function Documents() {
                     <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{getDocumentTitle(viewingDoc)}</h1>
                     <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
                     <p className="mb-0 font-bold" style={{ color: '#000000' }}>Fisioterapeuta: {viewingDoc.physio_name || 'Fisioterapeuta'}</p>
-                    <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {new Date(viewingDoc.criado_em).toLocaleString('pt-BR')}</p>
+                    <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {formatDocumentDateTime(viewingDoc)}</p>
                     <div style={{ color: '#000000' }}>
                       <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
                     </div>
