@@ -1861,6 +1861,15 @@ export default function Dashboard() {
     patientActivityGroups[0] ||
     null;
 
+  const selectedHistoryInitials =
+    selectedHistoryGroup?.name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "P";
+
   if (authLoading)
     return (
       <div className="min-h-screen pt-20 bg-[#0B1120] px-4 sm:px-6 lg:px-8">
@@ -2657,114 +2666,109 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-5">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {patientActivityGroups.map((group) => {
-                      const selected = selectedHistoryGroup?.patientId === group.patientId;
-                      const initials = group.name
-                        .split(" ")
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((part) => part[0])
-                        .join("")
-                        .toUpperCase() || "P";
-
-                      return (
-                        <button
-                          key={group.patientId}
-                          type="button"
-                          onClick={() => setSelectedHistoryPatientId(group.patientId)}
-                          className={cn(
-                            "group relative overflow-hidden rounded-[1.75rem] border p-4 text-left transition-all duration-300 hover:-translate-y-0.5",
-                            selected
-                              ? "border-violet-300 bg-white shadow-[0_22px_55px_rgba(124,58,237,0.18)] ring-4 ring-violet-500/10 dark:border-violet-300/25 dark:bg-white/[0.09]"
-                              : "border-slate-200/80 bg-white/75 shadow-sm hover:border-violet-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-violet-300/20",
-                          )}
-                        >
-                          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-200/50 blur-2xl dark:bg-violet-500/20" />
-                          <div className="relative flex items-start gap-3">
-                            {group.avatarUrl ? (
-                              <img
-                                src={group.avatarUrl}
-                                alt={group.name}
-                                className="h-12 w-12 rounded-2xl border border-white/80 object-cover shadow-lg dark:border-white/10"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-sky-400 text-sm font-black text-white shadow-lg">
-                                {initials}
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-black text-slate-950 dark:text-white">
-                                    {group.name}
-                                  </p>
-                                  {group.email && (
-                                    <p className="truncate text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                                      {group.email}
-                                    </p>
-                                  )}
-                                </div>
-                                <ChevronRight
-                                  size={16}
-                                  className={cn(
-                                    "mt-1 shrink-0 transition-transform group-hover:translate-x-0.5",
-                                    selected ? "text-violet-600 dark:text-violet-200" : "text-slate-400",
-                                  )}
-                                />
-                              </div>
-
-                              <p className="mt-3 line-clamp-2 text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
-                                {group.lastActivityLabel}
-                              </p>
-
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                                  <Clock size={10} /> {formatActivityTimeChip(group.lastActivityAt)} • {formatActivityDateChip(group.lastActivityAt)}
-                                </span>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
-                                  <Activity size={10} /> {group.activities.length} evento{group.activities.length > 1 ? "s" : ""}
-                                </span>
-                                {group.painLevel !== null && group.painLevel !== undefined && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-orange-700 dark:bg-orange-500/15 dark:text-orange-200">
-                                    <Thermometer size={10} /> Dor {group.painLevel}/10
-                                  </span>
-                                )}
-                                {group.triageRisk && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                    <Sparkles size={10} /> {group.triageRisk}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
+                <div className="rounded-[2rem] border border-violet-100/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(124,58,237,0.12)] dark:border-white/10 dark:bg-black/10 sm:p-5">
                   {selectedHistoryGroup && (
-                    <div className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-4 shadow-inner shadow-violet-100/70 dark:border-white/10 dark:bg-black/10 dark:shadow-black/10 sm:p-5">
-                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">
-                            Timeline individual
-                          </p>
-                          <h3 className="text-base font-black text-slate-950 dark:text-white">
-                            {selectedHistoryGroup.name}
-                          </h3>
+                    <>
+                      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-center gap-3">
+                          {selectedHistoryGroup.avatarUrl ? (
+                            <img
+                              src={selectedHistoryGroup.avatarUrl}
+                              alt={selectedHistoryGroup.name}
+                              className="h-14 w-14 rounded-2xl border border-white object-cover shadow-xl dark:border-white/10"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-sky-400 text-sm font-black text-white shadow-xl shadow-violet-500/20">
+                              {selectedHistoryInitials}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-violet-600 dark:text-violet-300">
+                              Timeline individual
+                            </p>
+                            <h3 className="truncate text-lg font-black text-slate-950 dark:text-white">
+                              {selectedHistoryGroup.name}
+                            </h3>
+                            <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                              {selectedHistoryGroup.email || selectedHistoryGroup.lastActivityLabel}
+                            </p>
+                          </div>
                         </div>
+
                         <button
                           type="button"
                           onClick={() => navigate(`/patients/${encodeURIComponent(selectedHistoryGroup.patientId)}`)}
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-2 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
                         >
                           Abrir prontuário <FileText size={14} />
                         </button>
                       </div>
+
+                      {patientActivityGroups.length > 1 && (
+                        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                          {patientActivityGroups.map((group) => {
+                            const selected = selectedHistoryGroup.patientId === group.patientId;
+
+                            return (
+                              <button
+                                key={group.patientId}
+                                type="button"
+                                onClick={() => setSelectedHistoryPatientId(group.patientId)}
+                                className={cn(
+                                  "shrink-0 rounded-2xl border px-3 py-2 text-left transition-all",
+                                  selected
+                                    ? "border-violet-300 bg-violet-600 text-white shadow-lg shadow-violet-500/20 dark:border-violet-300/30"
+                                    : "border-slate-200 bg-white/80 text-slate-600 hover:border-violet-200 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300 dark:hover:text-white",
+                                )}
+                              >
+                                <span className="block max-w-[150px] truncate text-[11px] font-black">
+                                  {group.name}
+                                </span>
+                                <span className={cn(
+                                  "mt-0.5 block text-[9px] font-black uppercase tracking-[0.14em]",
+                                  selected ? "text-white/75" : "text-slate-400 dark:text-slate-500",
+                                )}>
+                                  {group.activities.length} evento{group.activities.length > 1 ? "s" : ""}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div className="rounded-2xl bg-slate-100/80 px-3 py-2 dark:bg-white/10">
+                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Última</p>
+                          <p className="mt-1 text-[11px] font-black text-slate-800 dark:text-white">
+                            {formatActivityTimeChip(selectedHistoryGroup.lastActivityAt)} • {formatActivityDateChip(selectedHistoryGroup.lastActivityAt)}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-sky-100/80 px-3 py-2 dark:bg-sky-500/15">
+                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-sky-500 dark:text-sky-300">Eventos</p>
+                          <p className="mt-1 text-[11px] font-black text-sky-800 dark:text-white">
+                            {selectedHistoryGroup.activities.length} registro{selectedHistoryGroup.activities.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        {selectedHistoryGroup.painLevel !== null && selectedHistoryGroup.painLevel !== undefined && (
+                          <div className="rounded-2xl bg-orange-100/80 px-3 py-2 dark:bg-orange-500/15">
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-orange-500 dark:text-orange-300">Dor</p>
+                            <p className="mt-1 text-[11px] font-black text-orange-800 dark:text-white">
+                              {selectedHistoryGroup.painLevel}/10
+                            </p>
+                          </div>
+                        )}
+                        {selectedHistoryGroup.triageRisk && (
+                          <div className="rounded-2xl bg-emerald-100/80 px-3 py-2 dark:bg-emerald-500/15">
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-500 dark:text-emerald-300">Triagem</p>
+                            <p className="mt-1 text-[11px] font-black text-emerald-800 dark:text-white">
+                              {selectedHistoryGroup.triageRisk}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       <ActivityTimeline activities={selectedHistoryGroup.activities} mode="physio" />
-                    </div>
+                    </>
                   )}
                 </div>
               )}
