@@ -6368,34 +6368,3 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
 :root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple svg {
   color: #7e22ce !important;
 }
-
-/* Espaço seguro para a barra de navegação inferior mobile.
-   A barra é fixa/flutuante; estas classes reservam área rolável no fim das telas
-   sem alterar o visual da BottomNavigation e sem afetar desktop. */
-:root {
-  --mobile-bottom-nav-reserved-space: calc(10.75rem + env(safe-area-inset-bottom));
-}
-
-@media (max-width: 767px) {
-  .bottom-nav-active .mobile-bottom-nav-safe {
-    padding-bottom: var(--mobile-bottom-nav-reserved-space) !important;
-  }
-
-  .bottom-nav-active .mobile-bottom-content-safe {
-    padding-bottom: var(--mobile-bottom-nav-reserved-space) !important;
-  }
-
-  .bottom-nav-active .mobile-bottom-content-safe::after {
-    content: "";
-    display: block;
-    height: calc(0.25rem + env(safe-area-inset-bottom));
-    flex: 0 0 auto;
-  }
-}
-
-@media (min-width: 768px) {
-  .mobile-bottom-nav-safe,
-  .mobile-bottom-content-safe {
-    padding-bottom: inherit;
-  }
-}
