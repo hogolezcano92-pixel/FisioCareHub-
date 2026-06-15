@@ -288,7 +288,40 @@ export const SOAPIntelligentRecord = ({ pacienteId, onSave }: SOAPIntelligentRec
       minute: '2-digit',
     });
 
-    return `# Prontuário SOAP\n\n**Paciente:** ${patientName}\n\n**Fisioterapeuta:** ${physioName}\n\n**Data do registro:** ${formattedDate}\n\n---\n\n## S - Subjetivo\n${soapPayloadValue(soapData?.subjective)}\n\n## O - Objetivo\n${soapPayloadValue(soapData?.objective)}\n\n## A - Avaliação\n${soapPayloadValue(soapData?.assessment)}\n\n## P - Plano\n${soapPayloadValue(soapData?.plan)}\n\n---\n\n**Relato original:**\n${rawText?.trim() || 'Não informado.'}`;
+    return `# Prontuário SOAP
+
+Paciente: ${patientName}
+Fisioterapeuta: ${physioName}
+Data do registro: ${formattedDate}
+
+## Identificação clínica
+Documento de evolução fisioterapêutica estruturado no método SOAP para acompanhamento do plano terapêutico, registro da evolução funcional e continuidade do cuidado.
+
+## S - Subjetivo
+Relato do paciente, sintomas percebidos, evolução da dor, funcionalidade, adesão às orientações e resposta subjetiva ao tratamento.
+
+${soapPayloadValue(soapData?.subjective)}
+
+## O - Objetivo
+Achados observáveis e mensuráveis do atendimento, incluindo mobilidade, amplitude de movimento, força, equilíbrio, padrão funcional, tolerância ao esforço e sinais clínicos relevantes.
+
+${soapPayloadValue(soapData?.objective)}
+
+## A - Avaliação
+Interpretação fisioterapêutica da evolução, relação entre achados subjetivos e objetivos, resposta ao tratamento e principais necessidades clínicas identificadas.
+
+${soapPayloadValue(soapData?.assessment)}
+
+## P - Plano
+Conduta proposta, orientações ao paciente, progressão terapêutica, ajustes do plano de tratamento e próximos passos do acompanhamento fisioterapêutico.
+
+${soapPayloadValue(soapData?.plan)}
+
+## Relato original registrado
+${rawText?.trim() || 'Não informado.'}
+
+## Observação profissional
+Registro gerado para apoio ao prontuário fisioterapêutico. Deve ser interpretado pelo fisioterapeuta responsável dentro do contexto clínico, histórico do paciente e evolução funcional.`;
   };
 
   const soapPayloadValue = (value: any) => {
