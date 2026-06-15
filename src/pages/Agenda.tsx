@@ -926,40 +926,40 @@ export default function Agenda() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-blue-300 bg-[#DBEAFE] p-4 shadow-lg shadow-blue-200/40 dark:border-blue-400/35 dark:bg-blue-500/20 dark:shadow-blue-950/20">
+          <div className="rounded-2xl border !border-blue-400 bg-gradient-to-br from-blue-200 via-blue-100 to-sky-100 p-4 shadow-xl shadow-blue-400/25 ring-1 ring-blue-300/70 dark:!border-blue-400/35 dark:bg-none dark:bg-blue-500/20 dark:shadow-blue-950/20 dark:ring-0">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-blue-700 dark:text-blue-100 font-black uppercase tracking-widest">Consultas</span>
-              <CalendarIcon size={18} className="text-blue-500 dark:text-blue-200" />
+              <span className="text-[10px] !text-blue-900 dark:!text-blue-100 font-black uppercase tracking-widest drop-shadow-sm">Consultas</span>
+              <CalendarIcon size={18} className="!text-blue-700 dark:!text-blue-200" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{summaryAppointments.length}</p>
-            <p className="text-[11px] text-slate-700 dark:text-blue-100/80 font-black mt-1">no dia</p>
+            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{summaryAppointments.length}</p>
+            <p className="text-[11px] !text-slate-800 dark:!text-blue-100/80 font-black mt-1">no dia</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-300 bg-[#FEF3C7] p-4 shadow-lg shadow-amber-200/40 dark:border-amber-400/35 dark:bg-amber-500/20 dark:shadow-amber-950/20">
+          <div className="rounded-2xl border !border-amber-400 bg-gradient-to-br from-amber-200 via-orange-100 to-yellow-100 p-4 shadow-xl shadow-amber-400/25 ring-1 ring-amber-300/70 dark:!border-amber-400/35 dark:bg-none dark:bg-amber-500/20 dark:shadow-amber-950/20 dark:ring-0">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-amber-700 dark:text-amber-100 font-black uppercase tracking-widest">Pendentes</span>
-              <Clock size={18} className="text-amber-500 dark:text-amber-200" />
+              <span className="text-[10px] !text-amber-900 dark:!text-amber-100 font-black uppercase tracking-widest drop-shadow-sm">Pendentes</span>
+              <Clock size={18} className="!text-amber-700 dark:!text-amber-200" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{pendingCount}</p>
-            <p className="text-[11px] text-slate-700 dark:text-amber-100/80 font-black mt-1">aguardando</p>
+            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{pendingCount}</p>
+            <p className="text-[11px] !text-slate-800 dark:!text-amber-100/80 font-black mt-1">aguardando</p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-300 bg-[#D1FAE5] p-4 shadow-lg shadow-emerald-200/40 dark:border-emerald-400/35 dark:bg-emerald-500/20 dark:shadow-emerald-950/20">
+          <div className="rounded-2xl border !border-emerald-400 bg-gradient-to-br from-emerald-200 via-teal-100 to-green-100 p-4 shadow-xl shadow-emerald-400/25 ring-1 ring-emerald-300/70 dark:!border-emerald-400/35 dark:bg-none dark:bg-emerald-500/20 dark:shadow-emerald-950/20 dark:ring-0">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-100 font-black uppercase tracking-widest">Confirmadas</span>
-              <Check size={18} className="text-emerald-500 dark:text-emerald-200" />
+              <span className="text-[10px] !text-emerald-900 dark:!text-emerald-100 font-black uppercase tracking-widest drop-shadow-sm">Confirmadas</span>
+              <Check size={18} className="!text-emerald-700 dark:!text-emerald-200" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{confirmedCount}</p>
-            <p className="text-[11px] text-slate-700 dark:text-emerald-100/80 font-black mt-1">ativas/concluídas</p>
+            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{confirmedCount}</p>
+            <p className="text-[11px] !text-slate-800 dark:!text-emerald-100/80 font-black mt-1">ativas/concluídas</p>
           </div>
 
-          <div className="rounded-2xl border border-purple-300 bg-[#F3E8FF] p-4 shadow-lg shadow-purple-200/40 dark:border-purple-400/35 dark:bg-purple-500/20 dark:shadow-purple-950/20">
+          <div className="rounded-2xl border !border-purple-400 bg-gradient-to-br from-purple-200 via-fuchsia-100 to-violet-100 p-4 shadow-xl shadow-purple-400/25 ring-1 ring-purple-300/70 dark:!border-purple-400/35 dark:bg-none dark:bg-purple-500/20 dark:shadow-purple-950/20 dark:ring-0">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] text-purple-700 dark:text-purple-100 font-black uppercase tracking-widest">Próxima</span>
-              <Clock size={18} className="text-purple-500 dark:text-purple-200" />
+              <span className="text-[10px] !text-purple-900 dark:!text-purple-100 font-black uppercase tracking-widest drop-shadow-sm">Próxima</span>
+              <Clock size={18} className="!text-purple-700 dark:!text-purple-200" />
             </div>
-            <p className="text-3xl font-black text-slate-950 dark:text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
-            <p className="text-[11px] text-slate-700 dark:text-purple-100/80 font-black mt-1 truncate">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
+            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
+            <p className="text-[11px] !text-slate-800 dark:!text-purple-100/80 font-black mt-1 truncate">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
           </div>
         </div>
       </section>
