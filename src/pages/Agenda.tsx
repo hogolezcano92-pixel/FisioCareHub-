@@ -449,9 +449,11 @@ export default function Agenda() {
         `)
         .eq('fisio_id', user?.id);
 
-      if (view === 'daily') {
-        query = query.eq('data', selectedDate);
-      }
+      // Não filtramos por data diretamente no Supabase aqui porque o projeto
+      // possui agendamentos antigos/novos usando campos diferentes para a data
+      // do atendimento (data, data_servico ou data_horario). A filtragem do dia
+      // é feita abaixo, com normalização, para que confirmado/concluído conte
+      // no dia correto da consulta.
 
       const { data, error: supabaseError } = await query
         .in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES)
@@ -467,9 +469,8 @@ export default function Agenda() {
           .eq('fisio_id', user?.id)
           .in('status_pagamento', PAID_APPOINTMENT_PAYMENT_STATUSES);
         
-        if (view === 'daily') {
-          fallbackQuery = fallbackQuery.eq('data', selectedDate);
-        }
+        // Mesma regra da busca principal: trazemos os pagos e filtramos
+        // localmente por data/data_servico/data_horario.
 
         const { data: fallbackData, error: fallbackError } = await fallbackQuery.order('data', { ascending: false }).order('hora');
         
@@ -796,11 +797,21 @@ export default function Agenda() {
   const selectedDateSafe = normalizeDateKey(selectedDate) || todayDateKey();
   const selectedWeekdayLabel = getWeekdayLabel(selectedDateSafe);
   const selectedDateLabel = formatDateKeyBR(selectedDateSafe);
-  const appointmentsForSelectedDate = appointments.filter((app) => normalizeDateKey(app.data || app.data_servico) === selectedDateSafe);
-  const visibleAppointments = appointments;
-  const summaryAppointments = view === 'daily' ? appointments : appointmentsForSelectedDate;
-  const pendingCount = visibleAppointments.filter((app) => ['pendente', 'agendado', 'pago'].includes(String(app.status || '').toLowerCase())).length;
-  const confirmedCount = visibleAppointments.filter((app) => ['confirmado', 'concluido', 'realizado'].includes(String(app.status || '').toLowerCase())).length;
+  const getAppointmentDateKeys = (app: any) => {
+    const keys = [app?.data, app?.data_servico, app?.data_horario, app?.data_agendamento]
+      .map((value) => normalizeDateKey(value))
+      .filter(Boolean);
+    return Array.from(new Set(keys));
+  };
+  const isAppointmentOnSelectedDate = (app: any) => getAppointmentDateKeys(app).includes(selectedDateSafe);
+  const appointmentsForSelectedDate = appointments.filter(isAppointmentOnSelectedDate);
+  const visibleAppointments = view === 'daily' ? appointmentsForSelectedDate : appointments;
+  const summaryAppointments = appointmentsForSelectedDate;
+  const dailyPendingStatuses = ['pendente', 'agendado', 'pago', 'pendente_pagamento'];
+  const dailyConfirmedStatuses = ['confirmado', 'concluido', 'concluído', 'realizado', 'aguardando_confirmacao_paciente'];
+  const pendingCount = summaryAppointments.filter((app) => dailyPendingStatuses.includes(String(app.status || '').toLowerCase())).length;
+  const confirmedCount = summaryAppointments.filter((app) => dailyConfirmedStatuses.includes(String(app.status || '').toLowerCase())).length;
+  const pendingRequestsCount = appointments.filter((app) => dailyPendingStatuses.includes(String(app.status || '').toLowerCase())).length;
   const blocksToday = scheduleBlocks.filter((block) => normalizeDateKey(block.block_date) === selectedDateSafe).length;
   const nextAppointment = [...summaryAppointments]
     .filter((app) => !['cancelado', 'concluido', 'realizado'].includes(String(app.status || '').toLowerCase()))
@@ -838,7 +849,7 @@ export default function Agenda() {
   };
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word">
+    <div className="agenda-fisio-page space-y-5 w-full box-border overflow-wrap-break-word">
       <header className="space-y-4 w-full">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -888,14 +899,14 @@ export default function Agenda() {
             )}
           >
             <AlertTriangle size={16} /> Solicitações
-            {pendingCount > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">{pendingCount}</span>}
+            {pendingRequestsCount > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">{pendingRequestsCount}</span>}
           </button>
         </div>
       </header>
 
       {view === 'daily' && (
         <>
-      <section className="rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
+      <section className="agenda-summary-section rounded-[2rem] border border-white/10 bg-slate-950/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl shadow-black/20 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-blue-600/15 border border-blue-500/20 text-blue-300 flex items-center justify-center">
@@ -926,40 +937,40 @@ export default function Agenda() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-2xl border !border-blue-400 bg-gradient-to-br from-blue-200 via-blue-100 to-sky-100 p-4 shadow-xl shadow-blue-400/25 ring-1 ring-blue-300/70 dark:!border-blue-400/35 dark:bg-none dark:bg-blue-500/20 dark:shadow-blue-950/20 dark:ring-0">
+          <div className="agenda-stat-card agenda-stat-card-blue rounded-2xl border border-blue-300 bg-[#DBEAFE] p-4 shadow-lg shadow-blue-200/40 dark:border-blue-400/35 dark:bg-blue-500/20 dark:shadow-blue-950/20">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] !text-blue-900 dark:!text-blue-100 font-black uppercase tracking-widest drop-shadow-sm">Consultas</span>
-              <CalendarIcon size={18} className="!text-blue-700 dark:!text-blue-200" />
+              <span className="text-[10px] text-blue-700 dark:text-blue-100 font-black uppercase tracking-widest">Consultas</span>
+              <CalendarIcon size={18} className="text-blue-500 dark:text-blue-200" />
             </div>
-            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{summaryAppointments.length}</p>
-            <p className="text-[11px] !text-slate-800 dark:!text-blue-100/80 font-black mt-1">no dia</p>
+            <p className="text-3xl font-black text-slate-950 dark:text-white">{summaryAppointments.length}</p>
+            <p className="text-[11px] text-slate-700 dark:text-blue-100/80 font-black mt-1">no dia</p>
           </div>
 
-          <div className="rounded-2xl border !border-amber-400 bg-gradient-to-br from-amber-200 via-orange-100 to-yellow-100 p-4 shadow-xl shadow-amber-400/25 ring-1 ring-amber-300/70 dark:!border-amber-400/35 dark:bg-none dark:bg-amber-500/20 dark:shadow-amber-950/20 dark:ring-0">
+          <div className="agenda-stat-card agenda-stat-card-amber rounded-2xl border border-amber-300 bg-[#FEF3C7] p-4 shadow-lg shadow-amber-200/40 dark:border-amber-400/35 dark:bg-amber-500/20 dark:shadow-amber-950/20">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] !text-amber-900 dark:!text-amber-100 font-black uppercase tracking-widest drop-shadow-sm">Pendentes</span>
-              <Clock size={18} className="!text-amber-700 dark:!text-amber-200" />
+              <span className="text-[10px] text-amber-700 dark:text-amber-100 font-black uppercase tracking-widest">Pendentes</span>
+              <Clock size={18} className="text-amber-500 dark:text-amber-200" />
             </div>
-            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{pendingCount}</p>
-            <p className="text-[11px] !text-slate-800 dark:!text-amber-100/80 font-black mt-1">aguardando</p>
+            <p className="text-3xl font-black text-slate-950 dark:text-white">{pendingCount}</p>
+            <p className="text-[11px] text-slate-700 dark:text-amber-100/80 font-black mt-1">aguardando</p>
           </div>
 
-          <div className="rounded-2xl border !border-emerald-400 bg-gradient-to-br from-emerald-200 via-teal-100 to-green-100 p-4 shadow-xl shadow-emerald-400/25 ring-1 ring-emerald-300/70 dark:!border-emerald-400/35 dark:bg-none dark:bg-emerald-500/20 dark:shadow-emerald-950/20 dark:ring-0">
+          <div className="agenda-stat-card agenda-stat-card-emerald rounded-2xl border border-emerald-300 bg-[#D1FAE5] p-4 shadow-lg shadow-emerald-200/40 dark:border-emerald-400/35 dark:bg-emerald-500/20 dark:shadow-emerald-950/20">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] !text-emerald-900 dark:!text-emerald-100 font-black uppercase tracking-widest drop-shadow-sm">Confirmadas</span>
-              <Check size={18} className="!text-emerald-700 dark:!text-emerald-200" />
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-100 font-black uppercase tracking-widest">Confirmadas</span>
+              <Check size={18} className="text-emerald-500 dark:text-emerald-200" />
             </div>
-            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{confirmedCount}</p>
-            <p className="text-[11px] !text-slate-800 dark:!text-emerald-100/80 font-black mt-1">ativas/concluídas</p>
+            <p className="text-3xl font-black text-slate-950 dark:text-white">{confirmedCount}</p>
+            <p className="text-[11px] text-slate-700 dark:text-emerald-100/80 font-black mt-1">ativas/concluídas</p>
           </div>
 
-          <div className="rounded-2xl border !border-purple-400 bg-gradient-to-br from-purple-200 via-fuchsia-100 to-violet-100 p-4 shadow-xl shadow-purple-400/25 ring-1 ring-purple-300/70 dark:!border-purple-400/35 dark:bg-none dark:bg-purple-500/20 dark:shadow-purple-950/20 dark:ring-0">
+          <div className="agenda-stat-card agenda-stat-card-purple rounded-2xl border border-purple-300 bg-[#F3E8FF] p-4 shadow-lg shadow-purple-200/40 dark:border-purple-400/35 dark:bg-purple-500/20 dark:shadow-purple-950/20">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-[10px] !text-purple-900 dark:!text-purple-100 font-black uppercase tracking-widest drop-shadow-sm">Próxima</span>
-              <Clock size={18} className="!text-purple-700 dark:!text-purple-200" />
+              <span className="text-[10px] text-purple-700 dark:text-purple-100 font-black uppercase tracking-widest">Próxima</span>
+              <Clock size={18} className="text-purple-500 dark:text-purple-200" />
             </div>
-            <p className="text-3xl font-black !text-slate-950 dark:!text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
-            <p className="text-[11px] !text-slate-800 dark:!text-purple-100/80 font-black mt-1 truncate">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
+            <p className="text-3xl font-black text-slate-950 dark:text-white">{nextAppointment?.hora?.slice(0, 5) || '--:--'}</p>
+            <p className="text-[11px] text-slate-700 dark:text-purple-100/80 font-black mt-1 truncate">{nextAppointment ? getPatientName(nextAppointment) : 'sem consulta'}</p>
           </div>
         </div>
       </section>
@@ -1243,7 +1254,7 @@ export default function Agenda() {
             <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
             <p className="text-slate-500 font-bold animate-pulse text-sm">Carregando agenda...</p>
           </div>
-        ) : appointments.length === 0 ? (
+        ) : visibleAppointments.length === 0 ? (
           <div className="bg-white/[0.035] p-10 rounded-[2rem] border border-white/5 text-center w-full">
             <div className="w-14 h-14 bg-white/5 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CalendarIcon size={28} />
@@ -1255,7 +1266,7 @@ export default function Agenda() {
           </div>
         ) : (
           <div className="space-y-2.5 w-full">
-            {appointments.map((app) => {
+            {visibleAppointments.map((app) => {
               const patientName = getPatientName(app);
               const status = String(app.status || 'pendente').toLowerCase();
               return (
@@ -1272,7 +1283,7 @@ export default function Agenda() {
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0 text-left">
                       <p className="text-lg font-black text-blue-300 leading-none">{app.hora?.slice(0, 5) || '--:--'}</p>
-                      <p className="text-[10px] text-slate-500 font-bold mt-1">{view === 'all' ? `${getShortMonth(app.data)} ${getDayNumber(app.data)}` : '60 min'}</p>
+                      <p className="text-[10px] text-slate-500 font-bold mt-1">{view === 'all' ? `${getShortMonth(app.data || app.data_servico || app.data_horario)} ${getDayNumber(app.data || app.data_servico || app.data_horario)}` : '60 min'}</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0">
                       {getPatientInitials(patientName)}
