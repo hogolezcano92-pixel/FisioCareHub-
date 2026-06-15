@@ -442,6 +442,7 @@ const buildDashboardActivities = (
   prontuarios: any[] = [],
   evolucoes: any[] = [],
   registrosPaciente: any[] = [],
+  checklistExercicios: any[] = [],
   exerciciosPaciente: any[] = [],
   documentos: any[] = [],
 ) => {
@@ -530,6 +531,23 @@ const buildDashboardActivities = (
       source_table: "registros_paciente",
     }));
 
+  const syntheticCompletedExercises = (checklistExercicios || [])
+    .filter((item: any) => item?.concluido || item?.data_conclusao)
+    .slice(0, 12)
+    .map((item: any) => ({
+      id: `exercicio-realizado-${item.id}`,
+      tipo_acao: "exercicio_realizado",
+      descricao: "Exercício realizado pelo paciente",
+      created_at:
+        item?.data_conclusao ||
+        item?.updated_at ||
+        item?.created_at ||
+        new Date().toISOString(),
+      referencia_id: item.id || item.exercicio_id,
+      paciente_id: item.paciente_id,
+      source_table: "checklist_exercicios",
+    }));
+
   const syntheticExercises = (exerciciosPaciente || [])
     .slice(0, 6)
     .map((item: any) => ({
@@ -573,6 +591,7 @@ const buildDashboardActivities = (
     ...syntheticProntuarios,
     ...syntheticEvolucoes,
     ...syntheticRegistros,
+    ...syntheticCompletedExercises,
     ...syntheticExercises,
     ...syntheticDocuments,
   ]
@@ -591,7 +610,7 @@ const buildDashboardActivities = (
         new Date(b.created_at || 0).getTime() -
         new Date(a.created_at || 0).getTime(),
     )
-    .slice(0, 12);
+    .slice(0, 30);
 };
 
 
@@ -688,7 +707,7 @@ const buildPatientActivityGroups = (
             new Date(b.created_at || 0).getTime() -
             new Date(a.created_at || 0).getTime(),
         )
-        .slice(0, 12),
+        .slice(0, 24),
     }))
     .sort(
       (a, b) =>
@@ -1559,6 +1578,7 @@ export default function Dashboard() {
           recentProntuariosData,
           recentEvolucoesData,
           recentRegistrosPacienteData,
+          recentChecklistExerciciosData,
           recentExerciciosPacienteData,
           recentDocumentosData,
         );
