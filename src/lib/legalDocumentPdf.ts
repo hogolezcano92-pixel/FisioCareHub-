@@ -82,6 +82,7 @@ const getAccent = (title: string): Rgb => {
   if (lower.includes('atestado')) return COLORS.emerald;
   if (lower.includes('autoriz')) return COLORS.amber;
   if (lower.includes('laudo') || lower.includes('relatório') || lower.includes('relatorio')) return COLORS.purple;
+  if (lower.includes('soap') || lower.includes('prontuário') || lower.includes('prontuario')) return COLORS.sky;
   return COLORS.sky;
 };
 
@@ -497,6 +498,77 @@ function parseSections(content: string) {
   return sections.filter((section) => section.body.trim().length > 0).slice(0, 14);
 }
 
+
+const SOAP_MARKERS = [
+  /^S\s*[-–]\s*Subjetivo/i,
+  /^O\s*[-–]\s*Objetivo/i,
+  /^A\s*[-–]\s*Avalia[cç][aã]o/i,
+  /^P\s*[-–]\s*Plano/i,
+  /^Relato original/i,
+  /^Observa[cç][aã]o profissional/i,
+];
+
+function extractSoapBlock(content: string, marker: RegExp) {
+  const lines = content.split('\n').map((line) => line.trim());
+  const start = lines.findIndex((line) => marker.test(line));
+  if (start < 0) return '';
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (SOAP_MARKERS.some((candidate) => candidate.test(lines[i]))) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end).filter(Boolean).join('\n').trim();
+}
+
+function drawSoapBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, accent: Rgb, documentId: string, cleanContent: string) {
+  const recordDate = formatDateTime(payload.criado_em || payload.created_at || payload.data_registro || new Date());
+  const subjective = extractSoapBlock(cleanContent, /^S\s*[-–]\s*Subjetivo/i);
+  const objective = extractSoapBlock(cleanContent, /^O\s*[-–]\s*Objetivo/i);
+  const assessment = extractSoapBlock(cleanContent, /^A\s*[-–]\s*Avalia[cç][aã]o/i);
+  const plan = extractSoapBlock(cleanContent, /^P\s*[-–]\s*Plano/i);
+  const original = extractSoapBlock(cleanContent, /^Relato original/i);
+
+  y = drawMiniTable(
+    doc,
+    'Identificação do Registro Clínico',
+    [
+      ['Paciente', safe(payload.patient_name)],
+      ['Fisioterapeuta responsável', getPhysioName(payload, profile)],
+      ['Data do registro', recordDate],
+      ['Método de organização', 'SOAP — Subjetivo, Objetivo, Avaliação e Plano'],
+    ],
+    y,
+    payload,
+    profile,
+    accent,
+    documentId,
+  );
+
+  y = addNoticeBox(
+    doc,
+    y,
+    payload,
+    profile,
+    accent,
+    'Prontuário fisioterapêutico estruturado',
+    'Este registro organiza a evolução do paciente para acompanhamento clínico, continuidade do cuidado e consulta profissional. O conteúdo deve ser interpretado pelo fisioterapeuta responsável dentro do contexto da avaliação e do plano terapêutico.',
+    documentId,
+  );
+
+  y = drawSection(doc, 'S - Subjetivo', subjective || 'Não informado.', y, payload, profile, COLORS.amber, documentId);
+  y = drawSection(doc, 'O - Objetivo', objective || 'Não informado.', y, payload, profile, COLORS.blue, documentId);
+  y = drawSection(doc, 'A - Avaliação', assessment || 'Não informado.', y, payload, profile, COLORS.emerald, documentId);
+  y = drawSection(doc, 'P - Plano', plan || 'Não informado.', y, payload, profile, COLORS.purple, documentId);
+
+  if (original && original.toLowerCase() !== 'não informado.') {
+    y = drawSection(doc, 'Relato original registrado', original, y, payload, profile, COLORS.slate, documentId);
+  }
+
+  return y;
+}
+
 function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, accent: Rgb, documentId: string, cleanContent: string) {
   const physio = getPhysioName(payload, profile);
   const crefito = getCrefito(profile);
@@ -716,6 +788,7 @@ export function generateLegalDocumentPDF(payload: PdfDocumentPayload, options: P
   const documentId = getShortId(payload);
   const cleanContent = normalizeContent(payload.content || '', payload, options.profile);
   const isContract = /contrato/i.test(title);
+  const isSoap = /soap|prontuário|prontuario/i.test(title);
   const isDraft = isContract && hasContractRequiredMissing(cleanContent);
 
   setColor(doc, COLORS.paper, 'fill');
@@ -738,6 +811,8 @@ export function generateLegalDocumentPDF(payload: PdfDocumentPayload, options: P
       );
     }
     y = drawContractBody(doc, y, payload, options.profile, accent, documentId, cleanContent);
+  } else if (isSoap) {
+    y = drawSoapBody(doc, y, payload, options.profile, accent, documentId, cleanContent);
   } else {
     y = addNoticeBox(
       doc,
