@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import Logo from '../components/Logo';
 import { loginWithBiometrics, isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
+import { primePostLoginSplashSound, stopPostLoginSplashSound } from '../lib/postLoginSplashSound';
 
 // Coloque o vídeo exclusivo em: public/login-bg.mp4
 // No Vite, arquivos dentro de /public são servidos pela raiz do site.
@@ -22,6 +23,7 @@ export default function Login() {
   const [countdown, setCountdown] = useState(0);
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  const loginVideoRef = useRef<HTMLVideoElement | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -78,6 +80,43 @@ export default function Login() {
       // ignore
     }
   };
+
+
+  const forceLoginBackgroundVideoPlayback = () => {
+    const video = loginVideoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.controls = false;
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.removeAttribute('controls');
+
+    const playPromise = video.play();
+    if (playPromise) {
+      playPromise.catch(() => {
+        // Em alguns navegadores o autoplay pode aguardar o primeiro toque.
+        // O vídeo continua sem controles nativos e tenta novamente em interação.
+      });
+    }
+  };
+
+  useEffect(() => {
+    forceLoginBackgroundVideoPlayback();
+
+    const retryPlayback = () => forceLoginBackgroundVideoPlayback();
+    window.addEventListener('pointerdown', retryPlayback, { once: true, passive: true });
+    window.addEventListener('touchstart', retryPlayback, { once: true, passive: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', retryPlayback);
+      window.removeEventListener('touchstart', retryPlayback);
+    };
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user && !hasPostLoginSplashPayload()) {
@@ -153,6 +192,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
+      primePostLoginSplashSound();
       const oauthTarget = fullRedirect || '/dashboard';
       const redirectUrl = `${window.location.origin}/login?redirectTo=${encodeURIComponent(oauthTarget)}`;
 
@@ -168,6 +208,7 @@ export default function Login() {
     } catch (err: any) {
       console.error("Erro no login com Google:", err);
       clearPostLoginSplashPayload();
+      stopPostLoginSplashSound();
       setError('Erro ao entrar com Google: ' + err.message);
       setLoading(false);
     }
@@ -186,11 +227,13 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
+      primePostLoginSplashSound();
       setPostLoginSplashPayload({ target: fullRedirect || '/dashboard' });
       await loginWithBiometrics(email.trim().toLowerCase());
       // On success, the helper will redirect or use the magic link
     } catch (err: any) {
       clearPostLoginSplashPayload();
+      stopPostLoginSplashSound();
       console.error("Erro no login biométrico:", err);
       setError(err.message || 'Erro ao entrar com biometria.');
     } finally {
@@ -219,6 +262,7 @@ export default function Login() {
     const cleanEmail = email.trim().toLowerCase();
 
     try {
+      primePostLoginSplashSound();
       setPostLoginSplashPayload({ target: fullRedirect || '/dashboard' });
 
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
@@ -229,10 +273,13 @@ export default function Login() {
       if (loginError) {
         clearPostLoginSplashPayload();
         if (loginError.message.includes('Email not confirmed')) {
+          stopPostLoginSplashSound();
           setError('Por favor, confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
         } else if (loginError.message.includes('Invalid login credentials')) {
+          stopPostLoginSplashSound();
           setError('E-mail ou senha incorretos.');
         } else {
+          stopPostLoginSplashSound();
           setError('Erro no login: ' + loginError.message);
         }
         setLoading(false);
@@ -279,6 +326,7 @@ export default function Login() {
     } catch (err: any) {
       console.error("Erro no login:", err);
       clearPostLoginSplashPayload();
+      stopPostLoginSplashSound();
       setError('Ocorreu um erro inesperado. Verifique sua conexão.');
     } finally {
       setLoading(false);
@@ -338,15 +386,22 @@ export default function Login() {
       <section className="fch-login-video-shell fch-login-immersive min-h-[100svh] w-full relative overflow-hidden isolate flex items-center justify-center px-4 py-5 sm:px-6 lg:px-8">
         {/* Vídeo de fundo premium do login em tela cheia */}
         <video
+          ref={loginVideoRef}
           className="fch-login-video"
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
+          controls={false}
+          disablePictureInPicture
+          controlsList="nodownload nofullscreen noremoteplayback"
           aria-hidden="true"
+          tabIndex={-1}
+          onLoadedMetadata={forceLoginBackgroundVideoPlayback}
+          onCanPlay={forceLoginBackgroundVideoPlayback}
         >
-          <source src={LOGIN_BACKGROUND_VIDEO} type="video/mp4" />
+          <source src={`${LOGIN_BACKGROUND_VIDEO}?v=2`} type="video/mp4" />
         </video>
         <div className="fch-login-video-overlay" aria-hidden="true" />
         <div className="fch-login-video-vignette" aria-hidden="true" />
