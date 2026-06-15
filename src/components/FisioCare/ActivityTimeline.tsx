@@ -227,6 +227,83 @@ const getActionStyles = (type: string) => {
   };
 };
 
+
+const getDetailModalPalette = (activity: ActivityItem) => {
+  const action = normalizeAction(
+    `${activity.tipo_acao || ""} ${activity.descricao || ""} ${activity.source_table || ""}`,
+  );
+
+  if (action.includes("triagem")) {
+    return {
+      root: "bg-gradient-to-br from-white via-violet-50 to-sky-50 dark:from-slate-950 dark:via-violet-950/70 dark:to-sky-950/70",
+      border: "border-violet-200/90 dark:border-violet-300/20",
+      glow: "bg-violet-300/35 dark:bg-violet-500/20",
+      highlight: "bg-gradient-to-br from-violet-50 via-white to-sky-50 border-violet-200/80 dark:from-violet-500/15 dark:via-white/[0.06] dark:to-sky-500/10 dark:border-violet-300/15",
+      panel: "bg-gradient-to-br from-white via-violet-50/80 to-sky-50/80 border-violet-200/80 dark:from-white/[0.09] dark:via-violet-500/10 dark:to-sky-500/10 dark:border-violet-300/15",
+      sectionTitle: "text-violet-700 dark:text-violet-200",
+      label: "text-violet-500 dark:text-violet-300/80",
+    };
+  }
+
+  if (action.includes("exercicio") || action.includes("treino")) {
+    return {
+      root: "bg-gradient-to-br from-white via-cyan-50 to-blue-50 dark:from-slate-950 dark:via-cyan-950/70 dark:to-blue-950/70",
+      border: "border-cyan-200/90 dark:border-cyan-300/20",
+      glow: "bg-cyan-300/35 dark:bg-cyan-500/20",
+      highlight: "bg-gradient-to-br from-cyan-50 via-white to-blue-50 border-cyan-200/80 dark:from-cyan-500/15 dark:via-white/[0.06] dark:to-blue-500/10 dark:border-cyan-300/15",
+      panel: "bg-gradient-to-br from-white via-cyan-50/80 to-blue-50/80 border-cyan-200/80 dark:from-white/[0.09] dark:via-cyan-500/10 dark:to-blue-500/10 dark:border-cyan-300/15",
+      sectionTitle: "text-cyan-700 dark:text-cyan-200",
+      label: "text-cyan-600 dark:text-cyan-300/80",
+    };
+  }
+
+  if (action.includes("melhora") || action.includes("melhoria") || action.includes("evolucao")) {
+    return {
+      root: "bg-gradient-to-br from-white via-emerald-50 to-lime-50 dark:from-slate-950 dark:via-emerald-950/70 dark:to-lime-950/60",
+      border: "border-emerald-200/90 dark:border-emerald-300/20",
+      glow: "bg-emerald-300/35 dark:bg-emerald-500/20",
+      highlight: "bg-gradient-to-br from-emerald-50 via-white to-lime-50 border-emerald-200/80 dark:from-emerald-500/15 dark:via-white/[0.06] dark:to-lime-500/10 dark:border-emerald-300/15",
+      panel: "bg-gradient-to-br from-white via-emerald-50/80 to-lime-50/80 border-emerald-200/80 dark:from-white/[0.09] dark:via-emerald-500/10 dark:to-lime-500/10 dark:border-emerald-300/15",
+      sectionTitle: "text-emerald-700 dark:text-emerald-200",
+      label: "text-emerald-600 dark:text-emerald-300/80",
+    };
+  }
+
+  if (action.includes("agendamento") || action.includes("consulta")) {
+    return {
+      root: "bg-gradient-to-br from-white via-blue-50 to-violet-50 dark:from-slate-950 dark:via-blue-950/70 dark:to-violet-950/65",
+      border: "border-blue-200/90 dark:border-blue-300/20",
+      glow: "bg-blue-300/35 dark:bg-blue-500/20",
+      highlight: "bg-gradient-to-br from-blue-50 via-white to-violet-50 border-blue-200/80 dark:from-blue-500/15 dark:via-white/[0.06] dark:to-violet-500/10 dark:border-blue-300/15",
+      panel: "bg-gradient-to-br from-white via-blue-50/80 to-violet-50/80 border-blue-200/80 dark:from-white/[0.09] dark:via-blue-500/10 dark:to-violet-500/10 dark:border-blue-300/15",
+      sectionTitle: "text-blue-700 dark:text-blue-200",
+      label: "text-blue-600 dark:text-blue-300/80",
+    };
+  }
+
+  if (action.includes("dor") || action.includes("diario") || action.includes("checkin")) {
+    return {
+      root: "bg-gradient-to-br from-white via-orange-50 to-rose-50 dark:from-slate-950 dark:via-slate-900 dark:to-rose-950/55",
+      border: "border-orange-200/90 dark:border-orange-300/20",
+      glow: "bg-orange-300/35 dark:bg-orange-500/20",
+      highlight: "bg-gradient-to-br from-orange-50 via-white to-rose-50 border-orange-200/80 dark:from-orange-500/15 dark:via-white/[0.06] dark:to-rose-500/10 dark:border-orange-300/15",
+      panel: "bg-gradient-to-br from-white via-orange-50/80 to-rose-50/80 border-orange-200/80 dark:from-white/[0.09] dark:via-orange-500/10 dark:to-rose-500/10 dark:border-orange-300/15",
+      sectionTitle: "text-orange-700 dark:text-orange-200",
+      label: "text-orange-600 dark:text-orange-300/80",
+    };
+  }
+
+  return {
+    root: "bg-gradient-to-br from-white via-slate-50 to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-sky-950/70",
+    border: "border-slate-200/90 dark:border-white/10",
+    glow: "bg-sky-300/30 dark:bg-sky-500/20",
+    highlight: "bg-gradient-to-br from-white via-slate-50 to-sky-50 border-slate-200/80 dark:from-white/[0.09] dark:via-white/[0.06] dark:to-sky-500/10 dark:border-white/10",
+    panel: "bg-gradient-to-br from-white via-slate-50/90 to-sky-50/80 border-slate-200/80 dark:from-white/[0.09] dark:via-white/[0.06] dark:to-sky-500/10 dark:border-white/10",
+    sectionTitle: "text-slate-700 dark:text-slate-200",
+    label: "text-slate-500 dark:text-slate-400",
+  };
+};
+
 const formatActionLabel = (type: string) => {
   const label = String(type || "Atividade registrada").replace(/_/g, " ").trim();
   return label.charAt(0).toUpperCase() + label.slice(1);
@@ -461,6 +538,7 @@ export default function ActivityTimeline({
 
     return {
       style: getActionStyles(selectedActivity.tipo_acao),
+      palette: getDetailModalPalette(selectedActivity),
       title: getActivityDetailTitle(selectedActivity),
       highlights: extractActivityHighlights(selectedActivity),
       formattedDate: formatActivityDate(selectedActivity.created_at),
@@ -619,7 +697,7 @@ export default function ActivityTimeline({
   const patientDetailModal =
     selectedActivity && !historyOpen && selectedActivityDetails
       ? createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-950/45 px-3 pb-3 backdrop-blur-sm sm:items-center sm:p-6">
+          <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-900/35 px-3 pb-3 backdrop-blur-md dark:bg-slate-950/60 sm:items-center sm:p-6">
             <button
               type="button"
               aria-label="Fechar detalhes da atividade"
@@ -632,13 +710,13 @@ export default function ActivityTimeline({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.98 }}
               className={cn(
-                "relative w-full max-w-lg overflow-hidden rounded-[2rem] border p-5 shadow-2xl sm:p-6",
-                selectedActivityDetails.style.cardBg,
-                selectedActivityDetails.style.border,
+                "relative w-full max-w-lg overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-slate-950/15 sm:p-6 dark:shadow-black/45",
+                selectedActivityDetails.palette.root,
+                selectedActivityDetails.palette.border,
               )}
             >
               <div className={cn("absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r", selectedActivityDetails.style.accent)} />
-              <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/60 blur-3xl dark:bg-white/10" />
+              <div className={cn("pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl", selectedActivityDetails.palette.glow)} />
 
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-start gap-3">
@@ -653,10 +731,10 @@ export default function ActivityTimeline({
                     {React.createElement(selectedActivityDetails.style.icon, { size: 22 })}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+                    <p className={cn("text-[9px] font-black uppercase tracking-[0.22em]", selectedActivityDetails.palette.label)}>
                       Atividade do paciente
                     </p>
-                    <h3 className="mt-1 text-lg font-black leading-tight text-slate-950 dark:text-white">
+                    <h3 className="mt-1 text-lg font-black leading-tight text-slate-950 drop-shadow-sm dark:text-white">
                       {selectedActivityDetails.title}
                     </h3>
                   </div>
@@ -676,9 +754,12 @@ export default function ActivityTimeline({
                   {selectedActivityDetails.highlights.map((item) => (
                     <div
                       key={`${item.label}-${item.value}`}
-                      className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm dark:border-white/10 dark:bg-black/20"
+                      className={cn(
+                      "rounded-2xl border px-3 py-2 shadow-sm shadow-slate-950/5 dark:shadow-black/20",
+                      selectedActivityDetails.palette.highlight,
+                    )}
                     >
-                      <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                      <p className={cn("text-[9px] font-black uppercase tracking-[0.15em]", selectedActivityDetails.palette.label)}>
                         {item.label}
                       </p>
                       <p className="mt-1 truncate text-sm font-black text-slate-900 dark:text-white">
@@ -689,10 +770,10 @@ export default function ActivityTimeline({
                 </div>
               )}
 
-              <div className="relative mt-5 max-h-[58vh] space-y-3 overflow-y-auto pr-1">
-                <div className="rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+              <div className="relative mt-5 max-h-[58vh] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(139,92,246,0.45)_transparent]">
+                <div className={cn("rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                    <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                       Tipo
                     </p>
                     <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
@@ -701,7 +782,7 @@ export default function ActivityTimeline({
                   </div>
 
                   <div className="mt-3">
-                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                    <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                       Descrição registrada
                     </p>
                     <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
@@ -709,7 +790,7 @@ export default function ActivityTimeline({
                     </p>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2 rounded-2xl bg-slate-100/80 px-3 py-2 text-xs font-black text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                  <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/90 px-3 py-2 text-xs font-black text-slate-800 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                     <Clock size={14} className="opacity-70" />
                     {selectedActivityDetails.formattedDate}
                   </div>
@@ -718,18 +799,18 @@ export default function ActivityTimeline({
                 {selectedActivityDetails.detailSections.map((section) => (
                   <div
                     key={section.title}
-                    className="rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20"
+                    className={cn("rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}
                   >
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-violet-700 dark:text-violet-200">
+                    <p className={cn("mb-3 text-[10px] font-black uppercase tracking-[0.18em]", selectedActivityDetails.palette.sectionTitle)}>
                       {section.title}
                     </p>
                     <div className="space-y-3">
                       {section.fields.map((field) => (
                         <div key={`${section.title}-${field.label}`}>
-                          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                          <p className={cn("text-[9px] font-black uppercase tracking-[0.16em]", selectedActivityDetails.palette.label)}>
                             {field.label}
                           </p>
-                          <div className="mt-1 text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-200">
+                          <div className="mt-1 text-sm font-bold leading-relaxed text-slate-800 dark:text-slate-100">
                             {toDisplayValue(field.value)}
                           </div>
                         </div>
@@ -739,7 +820,7 @@ export default function ActivityTimeline({
                 ))}
 
                 {(selectedActivity.referencia_id || selectedActivity.source_table) && (
-                  <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                  <div className={cn("flex flex-wrap gap-2 rounded-[1.5rem] border p-4 shadow-sm shadow-slate-950/5 dark:shadow-black/20", selectedActivityDetails.palette.panel)}>
                     {selectedActivity.source_table && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
                         <ExternalLink size={11} /> {selectedActivity.source_table}
