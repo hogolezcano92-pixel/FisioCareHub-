@@ -410,7 +410,7 @@ export default function PatientActivityHistory() {
   }, [activities]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/40 to-sky-50 px-4 pb-28 pt-5 text-slate-950 dark:from-slate-950 dark:via-slate-950 dark:to-cyan-950 dark:text-white sm:px-6 lg:px-8">
+    <div className="patient-activity-history-page min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/40 to-sky-50 px-4 pb-36 pt-5 text-slate-950 dark:from-slate-950 dark:via-slate-950 dark:to-cyan-950 dark:text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex items-center justify-between gap-3">
           <button
@@ -431,7 +431,7 @@ export default function PatientActivityHistory() {
           </button>
         </div>
 
-        <section className="relative overflow-hidden rounded-[2rem] border border-violet-100/80 bg-white/85 p-5 shadow-[0_24px_80px_rgba(124,58,237,0.14)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] sm:p-6">
+        <section className="patient-activity-hero relative overflow-hidden rounded-[2rem] border border-violet-100/80 bg-white/85 p-5 shadow-[0_24px_80px_rgba(124,58,237,0.14)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] sm:p-6">
           <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-600 via-blue-500 to-cyan-400" />
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-200/50 blur-3xl dark:bg-cyan-500/20" />
           <div className="pointer-events-none absolute -left-24 bottom-0 h-56 w-56 rounded-full bg-violet-200/60 blur-3xl dark:bg-violet-500/20" />
@@ -478,7 +478,7 @@ export default function PatientActivityHistory() {
           </div>
         </section>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="patient-activity-summary-grid grid grid-cols-3 gap-3">
           <div className="rounded-[1.5rem] border border-orange-100 bg-orange-50/90 p-4 shadow-sm dark:border-orange-300/10 dark:bg-orange-500/10">
             <HeartPulse className="mb-2 text-orange-500 dark:text-orange-300" size={20} />
             <p className="text-lg font-black">{summary.painEvents}</p>
@@ -496,7 +496,7 @@ export default function PatientActivityHistory() {
           </div>
         </div>
 
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05] sm:p-5">
+        <section className="patient-activity-filter-panel rounded-[2rem] border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05] sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-black text-slate-950 dark:text-white">Linha do tempo completa</h2>
@@ -538,7 +538,7 @@ export default function PatientActivityHistory() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-violet-100/80 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-4 shadow-[0_20px_70px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-white/[0.06] dark:via-white/[0.035] dark:to-cyan-500/10 sm:p-6">
+        <section className="patient-activity-timeline-shell rounded-[2rem] border border-violet-100/80 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-4 shadow-[0_20px_70px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-white/[0.06] dark:via-white/[0.035] dark:to-cyan-500/10 sm:p-6">
           {loading ? (
             <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
               <Loader2 className="mb-3 animate-spin text-violet-500" size={34} />
