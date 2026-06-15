@@ -609,7 +609,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-5 w-full box-border overflow-wrap-break-word pt-10 md:pt-0 mobile-bottom-content-safe">
+    <div className="space-y-5 w-full box-border overflow-wrap-break-word pt-10 md:pt-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight">Meus Pacientes</h1>

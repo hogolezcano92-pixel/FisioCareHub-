@@ -388,7 +388,7 @@ export default function PhysioEvaluationForm() {
 
   return (
     <ProGuard>
-      <div className="max-w-5xl mx-auto space-y-8 pb-20 mobile-bottom-content-safe">
+      <div className="max-w-5xl mx-auto space-y-8 pb-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <button 

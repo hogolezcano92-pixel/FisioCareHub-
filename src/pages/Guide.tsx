@@ -115,7 +115,7 @@ export default function Guide() {
   const ctaPath = isPatient ? "/treinos" : "/patients?create=true";
 
   return (
-    <div className="space-y-12 pb-12 mobile-bottom-content-safe">
+    <div className="space-y-12 pb-12">
       {/* Header with CTA */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
         <div className="space-y-2">

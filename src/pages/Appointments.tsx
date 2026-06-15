@@ -715,7 +715,7 @@ export default function Appointments() {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
-    <div className="space-y-6 mobile-bottom-content-safe">
+    <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">

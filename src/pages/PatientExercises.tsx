@@ -472,7 +472,7 @@ export default function PatientExercises() {
   }
 
   return (
-    <div className="space-y-8 w-full max-w-6xl mx-auto pb-20 mobile-bottom-content-safe">
+    <div className="space-y-8 w-full max-w-6xl mx-auto pb-20">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">

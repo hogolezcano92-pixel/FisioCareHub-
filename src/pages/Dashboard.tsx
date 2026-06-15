@@ -1921,7 +1921,7 @@ export default function Dashboard() {
   return (
     <div
       className={cn(
-        "dashboard-light-page min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500 mobile-bottom-content-safe",
+        "dashboard-light-page min-h-screen -mt-4 md:-mt-8 pt-0 md:pt-0 pb-12 bg-background relative overflow-hidden transition-colors duration-500",
         !isPhysio && "patient-dashboard-shell",
       )}
     >

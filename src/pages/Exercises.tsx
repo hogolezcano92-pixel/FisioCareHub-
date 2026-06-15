@@ -389,7 +389,7 @@ export default function Exercises() {
 
   return (
     <ProGuard>
-      <div className="space-y-6 max-w-[1600px] mx-auto pb-20 mobile-bottom-content-safe">
+      <div className="space-y-6 max-w-[1600px] mx-auto pb-20">
         
         {/* Header Section */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">

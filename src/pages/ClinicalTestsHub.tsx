@@ -322,7 +322,7 @@ export default function ClinicalTestsHub() {
 
   return (
     <main
-      className="clinical-tests-hub min-h-screen w-full min-w-0 overflow-x-hidden bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8 mobile-bottom-content-safe"
+      className="clinical-tests-hub min-h-screen w-full min-w-0 overflow-x-hidden bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8"
       style={{ maxWidth: '100vw', boxSizing: 'border-box' }}
     >
       <div className="mx-auto w-full min-w-0 space-y-6 overflow-x-hidden lg:max-w-7xl" style={{ maxWidth: '100%' }}>

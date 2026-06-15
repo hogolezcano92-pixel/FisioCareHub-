@@ -434,7 +434,7 @@ export default function ExamAnalysis() {
   };
 
   return (
-    <div className="exam-analysis-light-page min-h-screen bg-gradient-to-br from-white via-violet-50/70 to-sky-50 text-slate-950 dark:bg-[#070B14] dark:bg-none dark:text-white mobile-bottom-content-safe">
+    <div className="exam-analysis-light-page min-h-screen bg-gradient-to-br from-white via-violet-50/70 to-sky-50 text-slate-950 dark:bg-[#070B14] dark:bg-none dark:text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_82%_0%,rgba(124,58,237,0.14),transparent_32%)] dark:bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,0.18),transparent_30%)]" />
       <div className="relative mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         <motion.div

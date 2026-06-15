@@ -455,7 +455,7 @@ export default function Records() {
 
   if (isPhysio) {
     return (
-      <div className="space-y-8 mobile-bottom-content-safe">
+      <div className="space-y-8">
         <header className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
@@ -625,7 +625,7 @@ export default function Records() {
   const primaryPatient = clinicalPatients[0] || null;
 
   return (
-    <div className="space-y-8 mobile-bottom-content-safe">
+    <div className="space-y-8">
       <header className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>

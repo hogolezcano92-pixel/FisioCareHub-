@@ -849,7 +849,7 @@ export default function Agenda() {
   };
 
   return (
-    <div className="agenda-fisio-page space-y-5 w-full box-border overflow-wrap-break-word mobile-bottom-content-safe">
+    <div className="agenda-fisio-page space-y-5 w-full box-border overflow-wrap-break-word">
       <header className="space-y-4 w-full">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
