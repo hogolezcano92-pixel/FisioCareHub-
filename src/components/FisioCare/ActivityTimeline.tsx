@@ -34,7 +34,19 @@ interface ActivityItem {
   paciente_id?: string;
   atendimento_id?: string;
   source_table?: string;
+  raw_details?: Record<string, any> | null;
+  detail_sections?: ActivityDetailSection[];
 }
+
+type ActivityDetailField = {
+  label: string;
+  value?: React.ReactNode;
+};
+
+type ActivityDetailSection = {
+  title: string;
+  fields: ActivityDetailField[];
+};
 
 interface ActivityTimelineProps {
   activities: ActivityItem[];
@@ -271,6 +283,161 @@ const formatActivityDate = (value: string) => {
   return format(date, "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
 };
 
+const isMeaningfulDetailValue = (value: any) => {
+  if (value === null || value === undefined || value === '') return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+};
+
+const toDisplayValue = (value: any): React.ReactNode => {
+  if (!isMeaningfulDetailValue(value)) return null;
+  if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+  if (Array.isArray(value)) {
+    return (
+      <div className="space-y-1">
+        {value.map((item, index) => (
+          <div key={index} className="rounded-xl bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-200">
+            {typeof item === 'object' ? JSON.stringify(item, null, 2) : String(item)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (typeof value === 'object') {
+    return (
+      <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-100/80 p-3 text-xs font-semibold text-slate-700 dark:bg-black/20 dark:text-slate-200">
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    );
+  }
+  return String(value);
+};
+
+const getFirstAvailable = (source: Record<string, any> | null | undefined, keys: string[]) => {
+  if (!source) return undefined;
+  for (const key of keys) {
+    if (isMeaningfulDetailValue(source[key])) return source[key];
+  }
+  return undefined;
+};
+
+const compactFields = (fields: ActivityDetailField[]) =>
+  fields.filter((field) => isMeaningfulDetailValue(field.value));
+
+const buildFallbackFieldsFromRaw = (raw?: Record<string, any> | null): ActivityDetailField[] => {
+  if (!raw) return [];
+
+  const hidden = new Set([
+    'id',
+    'paciente_id',
+    'fisio_id',
+    'fisioterapeuta_id',
+    'usuario_id',
+    'perfil_id',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ]);
+
+  return Object.entries(raw)
+    .filter(([key, value]) => !hidden.has(key) && isMeaningfulDetailValue(value))
+    .slice(0, 12)
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, ' '),
+      value,
+    }));
+};
+
+const buildActivityDetailSections = (activity: ActivityItem): ActivityDetailSection[] => {
+  if (activity.detail_sections?.length) {
+    return activity.detail_sections
+      .map((section) => ({ ...section, fields: compactFields(section.fields || []) }))
+      .filter((section) => section.fields.length > 0);
+  }
+
+  const raw = activity.raw_details || {};
+  const source = activity.source_table || '';
+  const action = normalizeAction(`${activity.tipo_acao || ''} ${activity.descricao || ''} ${source}`);
+  const sections: ActivityDetailSection[] = [];
+
+  if (action.includes('triagem')) {
+    sections.push({
+      title: 'Relatório da triagem',
+      fields: compactFields([
+        { label: 'Região avaliada', value: getFirstAvailable(raw, ['area_corpo', 'regiao', 'local_dor', 'regiao_dor', 'parte_corpo', 'queixa_principal']) },
+        { label: 'Classificação/risco', value: getFirstAvailable(raw, ['gravidade', 'risco', 'nivel_risco', 'classificacao', 'urgencia', 'cor_risco']) },
+        { label: 'Queixa principal', value: getFirstAvailable(raw, ['queixa_principal', 'queixa', 'motivo', 'sintomas']) },
+        { label: 'Dor informada', value: getFirstAvailable(raw, ['nivel_dor', 'dor', 'intensidade_dor', 'escala_dor']) },
+        { label: 'Tempo de sintomas', value: getFirstAvailable(raw, ['tempo_sintomas', 'duracao', 'inicio_sintomas']) },
+        { label: 'Sinais de alerta', value: getFirstAvailable(raw, ['sinais_alerta', 'red_flags', 'alertas']) },
+        { label: 'Recomendação da IA', value: getFirstAvailable(raw, ['recomendacao_ia', 'recomendacao', 'orientacao_ia', 'orientacoes', 'resultado', 'relatorio']) },
+        { label: 'Resumo clínico', value: getFirstAvailable(raw, ['resumo', 'analise', 'descricao', 'observacoes', 'observacao']) },
+      ]),
+    });
+  } else if (action.includes('exercicio') || action.includes('treino')) {
+    sections.push({
+      title: action.includes('realizado') ? 'Exercício realizado pelo paciente' : 'Exercício prescrito',
+      fields: compactFields([
+        { label: 'Exercício', value: getFirstAvailable(raw, ['exercicio_nome', 'nome_exercicio', 'nome', 'titulo', 'title', 'exercise_title']) },
+        { label: 'Status', value: getFirstAvailable(raw, ['status', 'concluido_texto', 'concluido']) },
+        { label: 'Séries', value: getFirstAvailable(raw, ['series', 'serie']) },
+        { label: 'Repetições', value: getFirstAvailable(raw, ['repeticoes', 'repetições', 'reps']) },
+        { label: 'Tempo/duração', value: getFirstAvailable(raw, ['duracao', 'duration', 'tempo', 'tempo_execucao']) },
+        { label: 'Frequência', value: getFirstAvailable(raw, ['frequencia', 'frequência']) },
+        { label: 'Carga', value: getFirstAvailable(raw, ['carga', 'peso']) },
+        { label: 'Descrição do exercício', value: getFirstAvailable(raw, ['descricao_exercicio', 'descricao', 'description']) },
+        { label: 'Instruções', value: getFirstAvailable(raw, ['instrucoes', 'instruções', 'orientacoes', 'observacoes', 'observacoes_especificas']) },
+        { label: 'Data de conclusão', value: getFirstAvailable(raw, ['data_conclusao', 'concluido_em']) },
+      ]),
+    });
+  } else if (action.includes('melhora') || action.includes('melhoria') || action.includes('evolucao')) {
+    sections.push({
+      title: 'Registro de melhoria/evolução',
+      fields: compactFields([
+        { label: 'Registro completo', value: getFirstAvailable(raw, ['notas', 'descricao', 'evolucao', 'observacoes', 'relato', 'texto']) },
+        { label: 'Dor', value: getFirstAvailable(raw, ['nivel_dor', 'dor', 'intensidade_dor']) },
+        { label: 'Exercícios concluídos', value: getFirstAvailable(raw, ['concluidos_count', 'exercicios_concluidos']) },
+        { label: 'Total de exercícios', value: getFirstAvailable(raw, ['total_exercicios']) },
+        { label: 'Data da evolução', value: getFirstAvailable(raw, ['data_evolucao', 'data_registro']) },
+      ]),
+    });
+  } else if (action.includes('dor') || action.includes('diario')) {
+    sections.push({
+      title: 'Registro de dor',
+      fields: compactFields([
+        { label: 'Dor', value: getFirstAvailable(raw, ['nivel_dor', 'intensidade', 'dor', 'intensidade_dor', 'escala_dor']) },
+        { label: 'Local da dor', value: getFirstAvailable(raw, ['local_dor', 'regiao', 'area_corpo']) },
+        { label: 'Observações', value: getFirstAvailable(raw, ['notas', 'observacoes', 'observacao', 'descricao']) },
+        { label: 'Exercícios concluídos', value: getFirstAvailable(raw, ['concluidos_count', 'exercicios_concluidos']) },
+        { label: 'Total de exercícios', value: getFirstAvailable(raw, ['total_exercicios']) },
+      ]),
+    });
+  } else if (action.includes('agendamento') || action.includes('consulta')) {
+    sections.push({
+      title: 'Detalhes da consulta',
+      fields: compactFields([
+        { label: 'Status', value: getFirstAvailable(raw, ['status']) },
+        { label: 'Data do atendimento', value: getFirstAvailable(raw, ['data_servico', 'data', 'data_horario', 'horario']) },
+        { label: 'Pagamento', value: getFirstAvailable(raw, ['pagamento_status', 'status_pagamento', 'payment_status']) },
+        { label: 'Serviço', value: getFirstAvailable(raw, ['tipo_servico', 'servico', 'modalidade']) },
+        { label: 'Observações', value: getFirstAvailable(raw, ['observacoes', 'observacao', 'descricao']) },
+      ]),
+    });
+  }
+
+  const fallback = buildFallbackFieldsFromRaw(raw);
+  if (fallback.length > 0) {
+    const alreadyShown = new Set(
+      sections.flatMap((section) => section.fields.map((field) => field.label.toLowerCase())),
+    );
+    const extra = fallback.filter((field) => !alreadyShown.has(field.label.toLowerCase())).slice(0, 8);
+    if (extra.length > 0) sections.push({ title: 'Outras informações registradas', fields: extra });
+  }
+
+  return sections.filter((section) => section.fields.length > 0);
+};
+
 export default function ActivityTimeline({
   activities,
   loading,
@@ -297,6 +464,7 @@ export default function ActivityTimeline({
       title: getActivityDetailTitle(selectedActivity),
       highlights: extractActivityHighlights(selectedActivity),
       formattedDate: formatActivityDate(selectedActivity.created_at),
+      detailSections: buildActivityDetailSections(selectedActivity),
     };
   }, [selectedActivity]);
 
@@ -339,33 +507,15 @@ export default function ActivityTimeline({
         const style = getActionStyles(activity.tipo_acao);
         const Icon = style.icon;
         const isSelected = selectedActivity?.id === activity.id;
-        const shouldOpenInlineDetails = showDetailsButton && !(isPhysioMode && detailsHref);
-        const handleOpenInlineDetails = () => {
-          if (!shouldOpenInlineDetails) return;
-          openAction(activity);
-        };
 
         return (
           <motion.div
-            key={`${activity.id}-${activity.source_table || activity.tipo_acao}-${activity.referencia_id || index}`}
+            key={activity.id}
             initial={{ opacity: 0, x: -18 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: Math.min(index * 0.04, 0.2) }}
             viewport={{ once: true }}
-            className={cn(
-              "activity-timeline-row relative flex gap-4 sm:gap-6 group",
-              shouldOpenInlineDetails && "cursor-pointer",
-            )}
-            role={shouldOpenInlineDetails ? "button" : undefined}
-            tabIndex={shouldOpenInlineDetails ? 0 : undefined}
-            onClick={handleOpenInlineDetails}
-            onKeyDown={(event) => {
-              if (!shouldOpenInlineDetails) return;
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openAction(activity);
-              }
-            }}
+            className="activity-timeline-row relative flex gap-4 sm:gap-6 group"
           >
             <div className="activity-timeline-node-wrap relative z-10 flex w-14 shrink-0 justify-center">
               <div
@@ -424,10 +574,7 @@ export default function ActivityTimeline({
                 ) : (
                   <button
                     type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openAction(activity);
-                    }}
+                    onClick={() => openAction(activity)}
                     className={cn(
                       "activity-timeline-details relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
                       style.actionColor,
@@ -542,32 +689,57 @@ export default function ActivityTimeline({
                 </div>
               )}
 
-              <div className="relative mt-5 space-y-3 rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                    Tipo
-                  </p>
-                  <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
-                    {formatActionLabel(selectedActivity.tipo_acao)}
-                  </p>
+              <div className="relative mt-5 max-h-[58vh] space-y-3 overflow-y-auto pr-1">
+                <div className="rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                      Tipo
+                    </p>
+                    <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
+                      {formatActionLabel(selectedActivity.tipo_acao)}
+                    </p>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                      Descrição registrada
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+                      {selectedActivity.descricao || "Sem descrição adicional registrada."}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 rounded-2xl bg-slate-100/80 px-3 py-2 text-xs font-black text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                    <Clock size={14} className="opacity-70" />
+                    {selectedActivityDetails.formattedDate}
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                    Descrição registrada
-                  </p>
-                  <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
-                    {selectedActivity.descricao || "Sem descrição adicional registrada."}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 rounded-2xl bg-slate-100/80 px-3 py-2 text-xs font-black text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                  <Clock size={14} className="opacity-70" />
-                  {selectedActivityDetails.formattedDate}
-                </div>
+                {selectedActivityDetails.detailSections.map((section) => (
+                  <div
+                    key={section.title}
+                    className="rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20"
+                  >
+                    <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-violet-700 dark:text-violet-200">
+                      {section.title}
+                    </p>
+                    <div className="space-y-3">
+                      {section.fields.map((field) => (
+                        <div key={`${section.title}-${field.label}`}>
+                          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                            {field.label}
+                          </p>
+                          <div className="mt-1 text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-200">
+                            {toDisplayValue(field.value)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
 
                 {(selectedActivity.referencia_id || selectedActivity.source_table) && (
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
                     {selectedActivity.source_table && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
                         <ExternalLink size={11} /> {selectedActivity.source_table}
