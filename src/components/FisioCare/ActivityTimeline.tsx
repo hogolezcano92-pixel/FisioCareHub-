@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import {
   Calendar,
@@ -267,6 +268,27 @@ export default function ActivityTimeline({
       ),
     };
   }, [selectedActivity]);
+
+  useEffect(() => {
+    if (!selectedActivity) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedActivity(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedActivity]);
+
   if (loading) {
     return (
       <div className="space-y-5 animate-pulse">
@@ -386,25 +408,33 @@ export default function ActivityTimeline({
         })}
       </div>
 
-      {selectedActivity && selectedActivityDetails && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/45 px-3 pb-3 backdrop-blur-sm sm:items-center sm:p-6">
-          <button
-            type="button"
-            aria-label="Fechar detalhes da atividade"
-            className="absolute inset-0 h-full w-full cursor-default"
-            onClick={() => setSelectedActivity(null)}
-          />
-
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.98 }}
-            className={cn(
-              "relative w-full max-w-lg overflow-hidden rounded-[2rem] border p-5 shadow-2xl sm:p-6",
-              selectedActivityDetails.style.cardBg,
-              selectedActivityDetails.style.border,
-            )}
+      {selectedActivity &&
+        selectedActivityDetails &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-950/65 px-3 py-3 backdrop-blur-md sm:items-center sm:p-6"
+            role="dialog"
+            aria-modal="true"
           >
+            <button
+              type="button"
+              aria-label="Fechar detalhes da atividade"
+              className="absolute inset-0 h-full w-full cursor-default"
+              onClick={() => setSelectedActivity(null)}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              className={cn(
+                "relative z-10 mb-[env(safe-area-inset-bottom)] max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[2rem] border p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-6",
+                selectedActivityDetails.style.cardBg,
+                selectedActivityDetails.style.border,
+              )}
+              onClick={(event) => event.stopPropagation()}
+            >
             <div
               className={cn(
                 "absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r",
@@ -514,9 +544,10 @@ export default function ActivityTimeline({
             >
               Fechar detalhes
             </button>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
