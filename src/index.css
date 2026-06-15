@@ -6368,3 +6368,34 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
 :root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple svg {
   color: #7e22ce !important;
 }
+
+/* =========================================================
+   Espaço seguro global para a barra de navegação inferior
+   Corrige cards/botões/listas ficando escondidos atrás da bottom nav.
+   Escopo: somente quando o App.tsx aplica .mobile-bottom-nav-safe.
+   ========================================================= */
+.mobile-bottom-nav-safe {
+  padding-bottom: calc(9.5rem + env(safe-area-inset-bottom)) !important;
+}
+
+@supports (padding-bottom: max(0px)) {
+  .mobile-bottom-nav-safe {
+    padding-bottom: max(9.5rem, calc(8.5rem + env(safe-area-inset-bottom))) !important;
+  }
+}
+
+/* Alguns módulos têm containers internos com scroll próprio. Esta classe
+   garante respiro no último bloco sem alterar o visual da barra inferior. */
+.mobile-bottom-nav-safe > :last-child {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+  .mobile-bottom-nav-safe {
+    padding-bottom: 0 !important;
+  }
+
+  .mobile-bottom-nav-safe > :last-child {
+    margin-bottom: 0;
+  }
+}

@@ -752,7 +752,7 @@ function AppContent() {
               "flex-1 w-full",
               !isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
               showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10",
-              showMobileBottomNavigation && "pb-28 md:pb-0"
+              showMobileBottomNavigation && "mobile-bottom-nav-safe"
             )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
