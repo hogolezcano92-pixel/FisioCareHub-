@@ -36,7 +36,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Bord
 import { saveAs } from 'file-saver';
 import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
 import { getPrivateDocumentUrl } from '../services/supabaseStorage';
-import { generateLegalDocumentPDF } from '../lib/legalDocumentPdf';
+import { generateLegalDocumentPDF, getLegalDocumentPdfBlob } from '../lib/legalDocumentPdf';
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
 import { formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 
@@ -190,6 +190,12 @@ export default function Documents() {
   const [viewingDoc, setViewingDoc] = useState<any>(null);
   const [viewingFileUrl, setViewingFileUrl] = useState<string | null>(null);
   const [loadingPreviewFile, setLoadingPreviewFile] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (viewingFileUrl?.startsWith('blob:')) URL.revokeObjectURL(viewingFileUrl);
+    };
+  }, [viewingFileUrl]);
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
   const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -808,17 +814,22 @@ export default function Documents() {
   };
 
   const handleViewDocument = async (doc: any) => {
+    if (viewingFileUrl?.startsWith('blob:')) URL.revokeObjectURL(viewingFileUrl);
     setViewingDoc(doc);
     setViewingFileUrl(null);
-
-    if (!doc?.isClinicalFile) return;
-
     setLoadingPreviewFile(true);
+
     try {
-      const url = await getClinicalFileUrl(doc);
-      setViewingFileUrl(url);
+      if (doc?.isClinicalFile) {
+        const url = await getClinicalFileUrl(doc);
+        setViewingFileUrl(url);
+      } else {
+        const pdfBlob = getLegalDocumentPdfBlob(buildPremiumPdfPayload(doc), { profile });
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        setViewingFileUrl(blobUrl);
+      }
     } catch (err: any) {
-      console.error('Erro ao preparar visualização do arquivo clínico:', err);
+      console.error('Erro ao preparar visualização do documento:', err);
       import('sonner').then(({ toast }) => toast.error(err?.message || 'Erro ao preparar visualização do documento.'));
     } finally {
       setLoadingPreviewFile(false);
@@ -1946,29 +1957,37 @@ export default function Documents() {
                     )}
                   </div>
                 ) : (
-                  <div 
-                    id="view-content" 
-                    className="bg-white p-5 sm:p-12 border border-slate-200 shadow-2xl rounded-2xl prose prose-slate w-full max-w-[794px] mx-auto min-h-[80vh] sm:min-h-[1123px] overflow-hidden"
-                    style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
-                  >
-                    <style>{`
-                      #view-content { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-                      #view-content h1, #view-content h2, #view-content h3 { color: #0f172a !important; font-weight: 900; }
-                      #view-content p, #view-content li, #view-content td, #view-content th { color: #334155 !important; }
-                      #view-content strong { color: #0f172a !important; font-weight: 800; }
-                      #view-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                      #view-content th, #view-content td { border: 1px solid #e2e8f0; padding: 10px; }
-                    `}</style>
-                    <h1 className="text-center mb-8 font-black" style={{ color: '#000000' }}>{getDocumentTitle(viewingDoc)}</h1>
-                    <p className="mb-0 font-bold" style={{ color: '#000000' }}>Paciente: {viewingDoc.patient_name}</p>
-                    <p className="mb-0 font-bold" style={{ color: '#000000' }}>Fisioterapeuta: {viewingDoc.physio_name || 'Fisioterapeuta'}</p>
-                    <p className="mb-8 text-[10px] text-slate-500 font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Data: {formatDocumentDateTime(viewingDoc)}</p>
-                    <div style={{ color: '#000000' }}>
-                      <ReactMarkdown>{viewingDoc.content}</ReactMarkdown>
-                    </div>
-                    <div className="mt-16 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>
-                      Documento gerado oficialmente via FisioCareHub
-                    </div>
+                  <div className="max-w-5xl mx-auto w-full">
+                    {loadingPreviewFile ? (
+                      <div className="h-[calc(100dvh-190px)] sm:h-[72vh] flex items-center justify-center rounded-2xl border border-white/10 bg-slate-900">
+                        <Loader2 className="animate-spin text-blue-400" size={36} />
+                      </div>
+                    ) : viewingFileUrl ? (
+                      <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden h-[calc(100dvh-190px)] sm:h-[72vh]">
+                        <object
+                          data={`${viewingFileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                          type="application/pdf"
+                          className="w-full h-full bg-white"
+                        >
+                          <iframe
+                            src={`${viewingFileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                            title={getDocumentTitle(viewingDoc)}
+                            className="w-full h-full bg-white"
+                          />
+                        </object>
+                      </div>
+                    ) : (
+                      <div className="h-[calc(100dvh-190px)] sm:h-[72vh] flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900 text-center p-8">
+                        <FileText className="text-blue-400 mb-4" size={42} />
+                        <p className="text-white font-black">Não foi possível carregar a prévia premium.</p>
+                        <button
+                          onClick={() => handleDownloadDocument(viewingDoc)}
+                          className="mt-5 px-6 py-3 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest"
+                        >
+                          Baixar documento
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
