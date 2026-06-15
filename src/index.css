@@ -6368,3 +6368,25 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
 :root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple svg {
   color: #7e22ce !important;
 }
+
+/* =========================================================
+   Correção: vídeo de fundo do login sem player/overlay nativo
+   ========================================================= */
+.fch-login-video,
+.fch-login-immersive .fch-login-video {
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-user-drag: none !important;
+}
+
+.fch-login-video::-webkit-media-controls,
+.fch-login-video::-webkit-media-controls-panel,
+.fch-login-video::-webkit-media-controls-play-button,
+.fch-login-video::-webkit-media-controls-start-playback-button,
+.fch-login-video::-webkit-media-controls-overlay-play-button,
+.fch-login-video::-webkit-media-controls-enclosure {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
