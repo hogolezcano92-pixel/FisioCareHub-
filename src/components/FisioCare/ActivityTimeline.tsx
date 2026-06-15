@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   Calendar,
@@ -39,6 +40,12 @@ interface ActivityTimelineProps {
   activities: ActivityItem[];
   loading?: boolean;
   mode?: "patient" | "physio";
+  /**
+   * Quando usado no Dashboard do fisioterapeuta, este link faz o botão
+   * "Ver detalhes" abrir a tela completa do histórico do paciente, em vez
+   * de abrir um modal pequeno dentro do card.
+   */
+  detailsHref?: string;
 }
 
 const normalizeAction = (value: string) =>
@@ -268,6 +275,7 @@ export default function ActivityTimeline({
   activities,
   loading,
   mode = "patient",
+  detailsHref,
 }: ActivityTimelineProps) {
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -384,17 +392,30 @@ export default function ActivityTimeline({
               </div>
 
               {showDetailsButton && (
-                <button
-                  type="button"
-                  onClick={() => openAction(activity)}
-                  className={cn(
-                    "relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
-                    style.actionColor,
-                  )}
-                >
-                  Ver detalhes
-                  <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
-                </button>
+                isPhysioMode && detailsHref ? (
+                  <Link
+                    to={detailsHref}
+                    className={cn(
+                      "relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
+                      style.actionColor,
+                    )}
+                  >
+                    Ver detalhes
+                    <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openAction(activity)}
+                    className={cn(
+                      "relative mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors group/link",
+                      style.actionColor,
+                    )}
+                  >
+                    Ver detalhes
+                    <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />
+                  </button>
+                )
               )}
             </div>
           </motion.div>
