@@ -6260,3 +6260,111 @@ html:not(.dark):not([data-theme="dark"]) body:not(.dark) .activity-detail-close-
 html:not(.dark):not([data-theme="dark"]) body:not(.dark) .activity-detail-close-button * {
   color: #ffffff !important;
 }
+
+
+/* =========================================================
+   Agenda do Fisioterapeuta — correção premium do TEMA CLARO
+   Escopo fechado: só afeta a página com .agenda-fisio-page.
+   Mantém o dark mode intacto.
+   ========================================================= */
+html:not(.dark) .agenda-fisio-page,
+:root[data-theme="light"] .agenda-fisio-page {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .agenda-fisio-page :is(h1, h2, h3),
+:root[data-theme="light"] .agenda-fisio-page :is(h1, h2, h3) {
+  color: #0b1220 !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-summary-section,
+:root[data-theme="light"] .agenda-fisio-page .agenda-summary-section {
+  background: rgba(255, 255, 255, 0.985) !important;
+  border-color: rgba(196, 181, 253, 0.95) !important;
+  box-shadow: 0 22px 55px -34px rgba(88, 28, 135, 0.45) !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 1 !important;
+  filter: saturate(1.18) contrast(1.05) !important;
+  box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.38) !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card::before,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.74), transparent 36%);
+  pointer-events: none;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card > *,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card :is(p, span, strong, div),
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card :is(p, span, strong, div) {
+  opacity: 1 !important;
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card svg,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card svg {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-blue,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-blue {
+  background: linear-gradient(135deg, #bfdbfe 0%, #dbeafe 48%, #eff6ff 100%) !important;
+  border-color: #60a5fa !important;
+}
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-blue span:first-child,
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-blue svg,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-blue span:first-child,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-blue svg {
+  color: #1d4ed8 !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-amber,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-amber {
+  background: linear-gradient(135deg, #fde68a 0%, #fef3c7 52%, #fff7ed 100%) !important;
+  border-color: #f59e0b !important;
+}
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-amber span:first-child,
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-amber svg,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-amber span:first-child,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-amber svg {
+  color: #b45309 !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-emerald,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-emerald {
+  background: linear-gradient(135deg, #a7f3d0 0%, #d1fae5 50%, #ecfdf5 100%) !important;
+  border-color: #34d399 !important;
+}
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-emerald span:first-child,
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-emerald svg,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-emerald span:first-child,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-emerald svg {
+  color: #047857 !important;
+}
+
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple {
+  background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 52%, #faf5ff 100%) !important;
+  border-color: #c084fc !important;
+}
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple span:first-child,
+html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple span:first-child,
+:root[data-theme="light"] .agenda-fisio-page .agenda-stat-card-purple svg {
+  color: #7e22ce !important;
+}
