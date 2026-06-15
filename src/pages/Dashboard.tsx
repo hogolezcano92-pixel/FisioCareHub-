@@ -2787,7 +2787,11 @@ export default function Dashboard() {
                         )}
                       </div>
 
-                      <ActivityTimeline activities={selectedHistoryGroup.activities} mode="physio" />
+                      <ActivityTimeline
+                        activities={selectedHistoryGroup.activities}
+                        mode="physio"
+                        detailsHref={`/patients/${encodeURIComponent(selectedHistoryGroup.patientId)}/activity-history`}
+                      />
                     </>
                   )}
                 </div>
