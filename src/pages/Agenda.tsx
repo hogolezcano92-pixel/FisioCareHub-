@@ -1484,7 +1484,7 @@ export default function Agenda() {
       {/* Modal de Agendamento */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[9999] bottom-nav-modal-overlay">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1496,7 +1496,7 @@ export default function Agenda() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl p-5 overflow-hidden flex flex-col bottom-nav-modal-panel"
+              className="relative w-full max-w-md bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-2xl p-5 overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-black text-white tracking-tight">Novo Agendamento</h2>
@@ -1505,7 +1505,7 @@ export default function Agenda() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateAppointment} className="space-y-3 overflow-y-auto pr-1 pb-4">
+              <form onSubmit={handleCreateAppointment} className="space-y-3 overflow-y-auto pr-1">
                 <div className="space-y-1">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Paciente</label>
                   <select
