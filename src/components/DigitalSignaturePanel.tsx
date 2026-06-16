@@ -149,7 +149,7 @@ export default function DigitalSignaturePanel({
 
   return (
     <section className={cn(
-      'rounded-3xl border border-indigo-200/80 bg-indigo-50/90 p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:text-white',
+      'rounded-3xl border border-indigo-200 bg-white p-4 text-slate-950 shadow-xl shadow-indigo-100/70 dark:border-slate-700 dark:bg-slate-800/70 dark:text-white dark:shadow-none',
       compact ? 'space-y-3' : 'space-y-4'
     )}>
       <div className="flex items-start justify-between gap-3">
@@ -159,7 +159,7 @@ export default function DigitalSignaturePanel({
           </div>
           <div className="min-w-0">
             <h3 className="font-black text-slate-950 dark:text-white leading-tight">Assinatura digital</h3>
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
               Registro com hash SHA-256, data/hora, usuário logado, dispositivo e código público de validação.
             </p>
           </div>
@@ -170,16 +170,16 @@ export default function DigitalSignaturePanel({
       {signatures.length > 0 ? (
         <div className="grid gap-2">
           {signatures.map((signature) => (
-            <div key={signature.id} className="rounded-2xl border border-indigo-100 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/60">
+            <div key={signature.id} className="rounded-2xl border border-indigo-200 bg-white p-3 shadow-md shadow-indigo-100/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-black text-slate-950 dark:text-white truncate">
                     {roleLabel(signature.signer_role)} • {signature.signer_name || 'Nome não informado'}
                   </p>
-                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] font-bold text-slate-700 dark:text-slate-400">
                     {statusLabel(signature)} em {formatDate(signature.signed_at || signature.created_at)}
                   </p>
-                  <p className="mt-1 max-w-full rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-950/40 dark:text-slate-400">
+                  <p className="mt-1 max-w-full rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-black text-slate-900 dark:bg-slate-950/40 dark:text-slate-400">
                     Hash: <span className="break-all">{shortHash(signature.document_hash)}</span>
                   </p>
                 </div>
@@ -203,7 +203,7 @@ export default function DigitalSignaturePanel({
           ))}
         </div>
       ) : !loading ? (
-        <p className="rounded-2xl border border-dashed border-indigo-200 bg-white/70 p-3 text-xs font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+        <p className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50 p-3 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
           Nenhuma assinatura registrada para este documento ainda.
         </p>
       ) : null}
@@ -227,7 +227,7 @@ export default function DigitalSignaturePanel({
           type="button"
           onClick={handleExternalSignature}
           disabled={!user?.id || preparingExternal}
-          className="h-11 rounded-2xl border border-indigo-200 bg-white text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+          className="h-11 rounded-2xl border border-indigo-200 bg-white text-slate-900 font-black text-xs uppercase tracking-widest shadow-sm shadow-indigo-100/70 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 dark:shadow-none transition-all flex items-center justify-center gap-2"
         >
           {preparingExternal ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
           Fase 3 externa
