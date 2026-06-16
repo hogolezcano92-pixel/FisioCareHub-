@@ -46,6 +46,12 @@ const formatDate = (date?: string | null) => {
   });
 };
 
+const shortHash = (hash?: string | null) => {
+  if (!hash) return 'Hash indisponível';
+  if (hash.length <= 18) return hash;
+  return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+};
+
 export default function DigitalSignaturePanel({
   resourceType,
   resourceId,
@@ -143,7 +149,7 @@ export default function DigitalSignaturePanel({
 
   return (
     <section className={cn(
-      'rounded-3xl border border-indigo-200/80 bg-indigo-50/80 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/70',
+      'rounded-3xl border border-indigo-200/80 bg-indigo-50/90 p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800/70 dark:text-white',
       compact ? 'space-y-3' : 'space-y-4'
     )}>
       <div className="flex items-start justify-between gap-3">
@@ -164,7 +170,7 @@ export default function DigitalSignaturePanel({
       {signatures.length > 0 ? (
         <div className="grid gap-2">
           {signatures.map((signature) => (
-            <div key={signature.id} className="rounded-2xl border border-white/70 bg-white/90 p-3 dark:border-white/10 dark:bg-slate-900/60">
+            <div key={signature.id} className="rounded-2xl border border-indigo-100 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/60">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-black text-slate-950 dark:text-white truncate">
@@ -173,8 +179,8 @@ export default function DigitalSignaturePanel({
                   <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                     {statusLabel(signature)} em {formatDate(signature.signed_at || signature.created_at)}
                   </p>
-                  <p className="mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-500 truncate">
-                    Hash: {signature.document_hash}
+                  <p className="mt-1 max-w-full rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-950/40 dark:text-slate-400">
+                    Hash: <span className="break-all">{shortHash(signature.document_hash)}</span>
                   </p>
                 </div>
                 {signature.signature_status === 'signed' ? (
@@ -207,7 +213,12 @@ export default function DigitalSignaturePanel({
           type="button"
           onClick={handleSign}
           disabled={!canSign || signing}
-          className="h-11 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className={cn(
+            "h-11 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2",
+            currentUserSignature
+              ? "bg-indigo-600 text-white opacity-100 cursor-not-allowed"
+              : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:disabled:bg-slate-700 dark:disabled:text-slate-300"
+          )}
         >
           {signing ? <Loader2 className="animate-spin" size={16} /> : <PenLine size={16} />}
           {currentUserSignature ? 'Já assinado' : 'Assinar agora'}
