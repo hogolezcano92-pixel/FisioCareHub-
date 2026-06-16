@@ -250,29 +250,71 @@ export default function PostLoginSplash({
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
         <motion.div
-          className="fch-splash-glass mx-auto mb-7 flex w-fit items-center justify-center rounded-[2rem] border border-white/25 bg-slate-950/45 px-7 py-5 shadow-[0_24px_90px_rgba(0,0,0,0.45),0_0_80px_rgba(56,189,248,0.22)] backdrop-blur-2xl"
-          initial={{ opacity: 0, y: -14, scale: 0.92 }}
+          className="fch-splash-glass relative mx-auto mb-7 flex w-fit items-center justify-center overflow-hidden rounded-[2rem] border border-white/25 bg-slate-950/45 px-7 py-5 shadow-[0_24px_90px_rgba(0,0,0,0.45),0_0_80px_rgba(56,189,248,0.22)] backdrop-blur-2xl"
+          initial={{ opacity: 0, y: -22, scale: 0.88, rotateX: -10 }}
           animate={{
             opacity: 1,
-            y: 0,
-            scale: 1,
+            y: [0, -3, 0],
+            scale: [1, 1.018, 1],
+            rotateX: 0,
             boxShadow: [
-              '0 24px 90px rgba(14,165,233,0.16)',
-              '0 28px 110px rgba(168,85,247,0.34)',
-              '0 24px 90px rgba(14,165,233,0.16)',
+              '0 24px 90px rgba(14,165,233,0.18), 0 0 0 rgba(103,232,249,0)',
+              '0 28px 115px rgba(168,85,247,0.38), 0 0 46px rgba(103,232,249,0.22)',
+              '0 24px 90px rgba(14,165,233,0.18), 0 0 0 rgba(103,232,249,0)',
             ],
           }}
-          transition={{ opacity: { duration: 0.55 }, y: { duration: 0.55 }, scale: { duration: 0.55 }, boxShadow: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' } }}
+          transition={{
+            opacity: { duration: 0.55 },
+            y: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
+            scale: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
+            rotateX: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+            boxShadow: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
+          }}
         >
+          <motion.span
+            className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent blur-sm"
+            initial={{ x: '-40%', opacity: 0 }}
+            animate={{ x: ['-40%', '330%'], opacity: [0, 0.92, 0] }}
+            transition={{ delay: 0.75, duration: 1.75, repeat: Infinity, repeatDelay: 2.35, ease: 'easeInOut' }}
+          />
+          <motion.span
+            className="pointer-events-none absolute -right-1 -top-1 h-8 w-8 rounded-full bg-cyan-200/20 blur-md"
+            animate={{ scale: [0.72, 1.25, 0.72], opacity: [0.35, 0.85, 0.35] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          />
           <motion.div
-            className="fch-splash-logo select-none text-3xl font-black tracking-tight sm:text-4xl"
+            className="fch-splash-logo relative z-10 select-none text-3xl font-black tracking-tight sm:text-4xl"
             aria-label="FisioCareHub"
-            animate={{ y: [0, -2, 0] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+            initial={{ opacity: 0, scale: 0.92, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: [0, -2, 0] }}
+            transition={{
+              opacity: { delay: 0.1, duration: 0.55 },
+              scale: { delay: 0.1, type: 'spring', stiffness: 420, damping: 18 },
+              filter: { delay: 0.1, duration: 0.55 },
+              y: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' },
+            }}
           >
-            <span className="text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]">Fisio</span>
-            <span className="fch-splash-logo-care bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-300 bg-clip-text text-transparent drop-shadow-[0_0_22px_rgba(56,189,248,0.65)]">Care</span>
-            <span className="text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]">Hub</span>
+            <motion.span
+              className="inline-block text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+              animate={{ textShadow: ['0 0 12px rgba(255,255,255,0.22)', '0 0 24px rgba(103,232,249,0.28)', '0 0 12px rgba(255,255,255,0.22)'] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Fisio
+            </motion.span>
+            <motion.span
+              className="fch-splash-logo-care inline-block bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-300 bg-clip-text text-transparent drop-shadow-[0_0_22px_rgba(56,189,248,0.65)]"
+              animate={{ scale: [1, 1.045, 1], textShadow: ['0 0 18px rgba(103,232,249,0.5)', '0 0 30px rgba(125,211,252,0.88)', '0 0 18px rgba(103,232,249,0.5)'] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Care
+            </motion.span>
+            <motion.span
+              className="inline-block text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+              animate={{ textShadow: ['0 0 12px rgba(255,255,255,0.22)', '0 0 24px rgba(168,85,247,0.28)', '0 0 12px rgba(255,255,255,0.22)'] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Hub
+            </motion.span>
           </motion.div>
         </motion.div>
 
