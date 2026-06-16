@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Sparkles, 
   X, 
   Send, 
   MessageCircle, 
   Loader2, 
-  BrainCircuit, 
   Calendar, 
   User, 
   HelpCircle,
   Maximize2,
   Minimize2,
-  Bot,
   Mic,
-  MicOff,
-  Waves
+  MicOff
 } from 'lucide-react';
 import { kineAIService } from '../services/kineAI';
 import { cn } from '../lib/utils';
@@ -36,59 +32,130 @@ interface KineAIProps {
   onClose?: () => void;
 }
 
-// Componente Visual do Novo Ícone da KineAI (Quantum Orb Core)
+// Componente Visual do Novo Ícone da KineAI (Gemini-like original, premium e responsivo)
 export const KineIcon = ({ size = "md", active = false, className }: { size?: "xs" | "sm" | "md" | "lg", active?: boolean, className?: string }) => {
   const dimensions = {
-    xs: "w-7 h-7",
-    sm: "w-10 h-10",
-    md: "w-14 h-14",
-    lg: "w-20 h-20"
+    xs: "w-7 h-7 rounded-[0.65rem]",
+    sm: "w-10 h-10 rounded-2xl",
+    md: "w-14 h-14 rounded-[1.25rem]",
+    lg: "w-20 h-20 rounded-[1.75rem]"
   }[size];
+
+  const sparkleSize = {
+    xs: "w-[72%] h-[72%]",
+    sm: "w-[74%] h-[74%]",
+    md: "w-[76%] h-[76%]",
+    lg: "w-[78%] h-[78%]"
+  }[size];
+
+  const rawId = React.useId().replace(/:/g, '');
+  const starGradientId = `kine-star-gradient-${rawId}`;
+  const starGlowId = `kine-star-glow-${rawId}`;
+  const bgGradientId = `kine-bg-gradient-${rawId}`;
+  const glassGradientId = `kine-glass-gradient-${rawId}`;
 
   return (
     <div className={cn("relative flex items-center justify-center shrink-0", dimensions, className)}>
-      {/* Camada de Brilho Sutil (Glow) */}
+      {/* Halo premium externo */}
       <motion.div
+        aria-hidden="true"
         animate={{
-          scale: active ? [1, 1.2, 1] : [1, 1.05, 1],
-          opacity: active ? [0.4, 0.6, 0.4] : [0.1, 0.2, 0.1],
+          scale: active ? [1, 1.22, 1] : [1, 1.08, 1],
+          opacity: active ? [0.35, 0.68, 0.35] : [0.18, 0.32, 0.18],
         }}
-        transition={{ repeat: Infinity, duration: active ? 2 : 5, ease: "easeInOut" }}
-        className="absolute inset-0 bg-cyan-400/30 rounded-full blur-xl"
+        transition={{ repeat: Infinity, duration: active ? 1.8 : 4.5, ease: "easeInOut" }}
+        className="absolute -inset-2 rounded-[inherit] bg-[radial-gradient(circle,rgba(34,211,238,0.38),rgba(124,58,237,0.24),transparent_68%)] blur-xl"
       />
-      
-      {/* Orb Central Premium */}
-      <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center border border-white/20 bg-slate-900 shadow-inner">
-        {/* Gradiente Rotativo Suave */}
-        <motion.div 
-          animate={{
-            rotate: [0, 360],
-          }}
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          className="absolute inset-0 bg-gradient-to-tr from-blue-600 via-cyan-500 to-purple-600 opacity-60 blend-screen" 
-        />
-        
-        {/* Núcleo de Inteligência (Core) */}
-        <motion.div
-          animate={{
-            scale: active ? [0.8, 1.1, 0.8] : [0.9, 1, 0.9],
-            opacity: [0.8, 1, 0.8]
-          }}
-          transition={{ repeat: Infinity, duration: active ? 1 : 3, ease: "easeInOut" }}
-          className="relative z-10 w-2/5 h-2/5 bg-white rounded-full blur-[2px] shadow-[0_0_15px_#fff]"
-        />
 
-        {/* Efeito de Reflexo de Vidro */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
+      {/* Tile escuro igual ao mockup: premium no tema claro e no dark */}
+      <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden rounded-[inherit] border border-white/20 bg-[#07142d] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_14px_34px_-16px_rgba(37,99,235,0.75),0_8px_18px_-14px_rgba(15,23,42,0.95)] dark:border-white/10 dark:bg-[#050b1d]">
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+          <defs>
+            <radialGradient id={bgGradientId} cx="50%" cy="40%" r="72%">
+              <stop offset="0%" stopColor="#1e3a8a" stopOpacity="0.96" />
+              <stop offset="42%" stopColor="#0f1d48" stopOpacity="0.98" />
+              <stop offset="100%" stopColor="#030712" stopOpacity="1" />
+            </radialGradient>
+            <linearGradient id={glassGradientId} x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
+              <stop offset="42%" stopColor="#ffffff" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" fill={`url(#${bgGradientId})`} />
+          <circle cx="24" cy="18" r="22" fill="#8b5cf6" opacity="0.16" />
+          <circle cx="76" cy="76" r="24" fill="#22d3ee" opacity="0.12" />
+          <path d="M10 0H100V58C78 38 46 30 10 34V0Z" fill={`url(#${glassGradientId})`} />
+        </svg>
+
+        {/* Partículas discretas no fundo */}
+        <span className="absolute left-[24%] top-[28%] h-0.5 w-0.5 rounded-full bg-cyan-200/70 shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
+        <span className="absolute right-[27%] top-[31%] h-0.5 w-0.5 rounded-full bg-violet-200/70 shadow-[0_0_8px_rgba(167,139,250,0.7)]" />
+        <span className="absolute bottom-[27%] right-[31%] h-0.5 w-0.5 rounded-full bg-sky-200/60 shadow-[0_0_8px_rgba(56,189,248,0.7)]" />
+
+        {/* Estrela IA original inspirada no estilo premium da imagem */}
+        <motion.svg
+          className={cn("relative z-10 drop-shadow-[0_0_14px_rgba(34,211,238,0.85)]", sparkleSize)}
+          viewBox="0 0 100 100"
+          fill="none"
+          animate={{
+            scale: active ? [0.96, 1.07, 0.96] : [0.98, 1.02, 0.98],
+            rotate: active ? [0, 1.5, -1.5, 0] : [0, 0.65, -0.65, 0],
+          }}
+          transition={{ repeat: Infinity, duration: active ? 1.6 : 4.2, ease: "easeInOut" }}
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id={starGradientId} x1="22" y1="12" x2="76" y2="86" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#f5d0fe" />
+              <stop offset="20%" stopColor="#a855f7" />
+              <stop offset="53%" stopColor="#3b82f6" />
+              <stop offset="100%" stopColor="#22d3ee" />
+            </linearGradient>
+            <linearGradient id={`kine-star-shine-${rawId}`} x1="20" y1="16" x2="78" y2="82" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+              <stop offset="42%" stopColor="#ffffff" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+            <filter id={starGlowId} x="-30" y="-30" width="160" height="160" colorInterpolationFilters="sRGB">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.25 0 0 0 0 0.66 0 0 0 0 1 0 0 0 0.92 0" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <path
+            d="M50 5C55.7 34.2 65.8 44.3 95 50C65.8 55.7 55.7 65.8 50 95C44.3 65.8 34.2 55.7 5 50C34.2 44.3 44.3 34.2 50 5Z"
+            fill={`url(#${starGradientId})`}
+            filter={`url(#${starGlowId})`}
+          />
+          <path
+            d="M50 12C55.1 36.2 63.8 44.9 88 50C63.8 55.1 55.1 63.8 50 88C44.9 63.8 36.2 55.1 12 50C36.2 44.9 44.9 36.2 50 12Z"
+            fill={`url(#kine-star-shine-${rawId})`}
+            opacity="0.22"
+          />
+          <path
+            d="M50 5C55.7 34.2 65.8 44.3 95 50C65.8 55.7 55.7 65.8 50 95C44.3 65.8 34.2 55.7 5 50C34.2 44.3 44.3 34.2 50 5Z"
+            stroke="rgba(255,255,255,0.72)"
+            strokeWidth="1.2"
+          />
+          <path d="M50 14C52.5 30.5 60.5 42.5 78 49.5" stroke="rgba(255,255,255,0.72)" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+        </motion.svg>
+
+        {/* Brilho horizontal sutil nas pontas, igual ao mockup */}
+        <div className="absolute left-[14%] right-[14%] top-1/2 z-[9] h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent blur-[1px]" />
       </div>
 
-      {/* Onda de Pulso (Apenas se Ativo) */}
       {active && (
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1.8, opacity: [0, 0.3, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="absolute inset-0 border border-cyan-400/40 rounded-full"
+          aria-hidden="true"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1.45, opacity: [0, 0.28, 0] }}
+          transition={{ repeat: Infinity, duration: 1.55 }}
+          className="absolute inset-0 rounded-[inherit] border border-cyan-300/50"
         />
       )}
     </div>
