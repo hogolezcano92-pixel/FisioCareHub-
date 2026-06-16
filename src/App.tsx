@@ -110,6 +110,7 @@ const ClinicalUpdateDetail = lazy(() => import('./pages/ClinicalUpdateDetail'));
 const ClinicalUpdates = lazy(() => import('./pages/ClinicalUpdates'));
 const ExamAnalysis = lazy(() => import('./pages/ExamAnalysis'));
 const ClinicalTestsHub = lazy(() => import('./pages/ClinicalTestsHub'));
+const VerifySignature = lazy(() => import('./pages/VerifySignature'));
 
 const PageLoader = () => {
   const { t } = useTranslation();
@@ -810,6 +811,7 @@ function AppContent() {
                   <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
+                  <Route path="/verificar-assinatura/:code" element={<VerifySignature />} />
                   <Route path="/biblioteca" element={<HealthLibrary />} />
                   <Route path="/biblioteca/:slug" element={<LibraryMaterialDetail />} />
                   <Route path="/buscar-fisio" element={<FindPhysio />} />
