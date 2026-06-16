@@ -12,6 +12,7 @@ type PdfDocumentPayload = {
   content?: string;
   criado_em?: string;
   created_at?: string;
+  signatures?: PdfSignatureRecord[];
   [key: string]: any;
 };
 
@@ -19,6 +20,20 @@ type PdfOptions = {
   profile?: AnyRecord | null;
   fileName?: string;
   download?: boolean;
+};
+
+type PdfSignatureRecord = {
+  signer_role?: string | null;
+  signer_name?: string | null;
+  signer_email?: string | null;
+  signature_level?: string | null;
+  signature_status?: string | null;
+  certificate_type?: string | null;
+  document_hash?: string | null;
+  verification_code?: string | null;
+  verification_url?: string | null;
+  signed_at?: string | null;
+  created_at?: string | null;
 };
 
 type Rgb = [number, number, number];
@@ -750,6 +765,84 @@ function drawContractBody(doc: jsPDF, y: number, payload: PdfDocumentPayload, pr
   return y;
 }
 
+
+const shortHash = (hash?: string | null) => {
+  const clean = safe(hash, '').replace(/\s+/g, '');
+  if (!clean) return 'Hash não informado';
+  return clean.length > 18 ? `${clean.slice(0, 10)}...${clean.slice(-8)}` : clean;
+};
+
+const roleLabel = (role?: string | null) => {
+  const value = safe(role, '').toLowerCase();
+  if (value.includes('fisio')) return 'Fisioterapeuta';
+  if (value.includes('paciente')) return 'Paciente';
+  if (value.includes('admin')) return 'Admin';
+  return safe(role, 'Assinante');
+};
+
+const signatureStatusLabel = (status?: string | null) => {
+  if (status === 'pending_external') return 'Pendente em provedor externo';
+  if (status === 'signed') return 'Assinado eletronicamente';
+  if (status === 'revoked') return 'Revogado';
+  return safe(status, 'Registrado');
+};
+
+function addDigitalSignatureSection(doc: jsPDF, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, documentId: string) {
+  const signatures = (payload.signatures || []).filter(Boolean);
+  if (!signatures.length) return y;
+
+  y = ensureSpace(doc, y, 48, payload, profile, documentId);
+  setColor(doc, COLORS.navy);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.text('Assinaturas eletrônicas FisioCareHub', MARGIN, y);
+
+  setColor(doc, COLORS.muted);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.4);
+  doc.text('Documento assinado eletronicamente com registro de identidade, data/hora, hash SHA-256 e código público de verificação.', MARGIN, y + 5.5, { maxWidth: CONTENT_W });
+  y += 12;
+
+  signatures.forEach((signature) => {
+    y = ensureSpace(doc, y, 35, payload, profile, documentId);
+    const isPhysio = safe(signature.signer_role, '').toLowerCase().includes('fisio');
+    const accent = isPhysio ? COLORS.sky : COLORS.purple;
+    const boxH = 31;
+
+    setColor(doc, COLORS.white, 'fill');
+    doc.roundedRect(MARGIN, y, CONTENT_W, boxH, 4, 4, 'F');
+    setColor(doc, COLORS.border, 'draw');
+    doc.roundedRect(MARGIN, y, CONTENT_W, boxH, 4, 4, 'S');
+    setColor(doc, accent, 'fill');
+    doc.roundedRect(MARGIN + 4, y + 5, 3, boxH - 10, 1.5, 1.5, 'F');
+
+    setColor(doc, COLORS.navy);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.4);
+    doc.text(`${roleLabel(signature.signer_role)} • ${safe(signature.signer_name, 'Nome não informado')}`, MARGIN + 10, y + 8);
+
+    setColor(doc, COLORS.slate);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    const signedAt = signature.signed_at || signature.created_at;
+    doc.text(`Status: ${signatureStatusLabel(signature.signature_status)}${signedAt ? ` em ${formatDateTime(signedAt)}` : ''}`, MARGIN + 10, y + 14);
+    doc.text(`E-mail: ${safe(signature.signer_email, 'Não informado')}`, MARGIN + 10, y + 19);
+
+    const hashLine = `Hash: ${shortHash(signature.document_hash)} • Código: ${safe(signature.verification_code, 'Não informado')}`;
+    doc.text(hashLine, MARGIN + 10, y + 24, { maxWidth: CONTENT_W - 20 });
+    const url = safe(signature.verification_url, '');
+    if (url) {
+      setColor(doc, COLORS.blue);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Verificar: ${url}`, MARGIN + 10, y + 29, { maxWidth: CONTENT_W - 20 });
+    }
+
+    y += boxH + 7;
+  });
+
+  return y + 2;
+}
+
 function addSignatureArea(doc: jsPDF, y: number, payload: PdfDocumentPayload, profile: AnyRecord | null | undefined, documentId: string) {
   y = ensureSpace(doc, y, 52, payload, profile, documentId);
 
@@ -833,6 +926,8 @@ export function generateLegalDocumentPDF(payload: PdfDocumentPayload, options: P
       });
     }
   }
+
+  y = addDigitalSignatureSection(doc, y, payload, options.profile, documentId);
 
   if (/contrato|autorização|autorizacao|atestado|laudo|relatório|relatorio/i.test(title)) {
     y = addSignatureArea(doc, y, payload, options.profile, documentId);

@@ -9,6 +9,21 @@ export interface TriagePdfInput {
   patientName?: string;
   professionalName?: string;
   generatedAt?: string;
+  signatures?: TriagePdfSignature[];
+}
+
+export interface TriagePdfSignature {
+  signer_role?: string | null;
+  signer_name?: string | null;
+  signer_email?: string | null;
+  signature_level?: string | null;
+  signature_status?: string | null;
+  certificate_type?: string | null;
+  document_hash?: string | null;
+  verification_code?: string | null;
+  verification_url?: string | null;
+  signed_at?: string | null;
+  created_at?: string | null;
 }
 
 const PAGE = {
@@ -72,6 +87,19 @@ const formatDateBR = (dateValue?: string | Date) => {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+  }).format(validDate);
+};
+
+const formatDateTimeBR = (dateValue?: string | Date) => {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(validDate);
 };
 
@@ -326,6 +354,81 @@ const splitReportIntoSections = (report: string) => {
   return [{ title: 'Relatório Clínico', body: report }];
 };
 
+
+const shortHash = (hash?: string | null) => {
+  const clean = normalize(hash, '').replace(/\s+/g, '');
+  if (!clean) return 'Hash não informado';
+  return clean.length > 18 ? `${clean.slice(0, 10)}...${clean.slice(-8)}` : clean;
+};
+
+const roleLabel = (role?: string | null) => {
+  const value = normalize(role, '').toLowerCase();
+  if (value.includes('fisio')) return 'Fisioterapeuta';
+  if (value.includes('paciente')) return 'Paciente';
+  if (value.includes('admin')) return 'Admin';
+  return normalize(role, 'Assinante');
+};
+
+const statusLabel = (status?: string | null) => {
+  if (status === 'pending_external') return 'Pendente em provedor externo';
+  if (status === 'signed') return 'Assinado eletronicamente';
+  if (status === 'revoked') return 'Revogado';
+  return normalize(status, 'Registrado');
+};
+
+const addDigitalSignatureSection = (doc: jsPDF, y: number, signatures?: TriagePdfSignature[]) => {
+  const rows = (signatures || []).filter(Boolean);
+  if (!rows.length) return y;
+
+  y = ensurePage(doc, y, 50);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(COLORS.navy);
+  doc.text('Assinaturas eletrônicas FisioCareHub', PAGE.margin, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(COLORS.muted);
+  doc.text('Registro com identidade do assinante, data/hora, hash SHA-256 e código público de verificação.', PAGE.margin, y + 5.5, { maxWidth: PAGE.width - PAGE.margin * 2 });
+  y += 12;
+
+  rows.forEach((signature) => {
+    y = ensurePage(doc, y, 36);
+    const boxH = 31;
+    const isPhysio = normalize(signature.signer_role, '').toLowerCase().includes('fisio');
+    const accent = isPhysio ? COLORS.cyan : COLORS.purple;
+
+    doc.setFillColor('#ffffff');
+    doc.roundedRect(PAGE.margin, y, PAGE.width - PAGE.margin * 2, boxH, 5, 5, 'F');
+    doc.setDrawColor('#e2e8f0');
+    doc.roundedRect(PAGE.margin, y, PAGE.width - PAGE.margin * 2, boxH, 5, 5, 'S');
+    doc.setFillColor(accent);
+    doc.roundedRect(PAGE.margin + 5, y + 5, 3.2, boxH - 10, 1.6, 1.6, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(COLORS.navy);
+    doc.text(`${roleLabel(signature.signer_role)} • ${normalize(signature.signer_name, 'Nome não informado')}`, PAGE.margin + 12, y + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(COLORS.slate);
+    const signedAt = signature.signed_at || signature.created_at;
+    doc.text(`Status: ${statusLabel(signature.signature_status)}${signedAt ? ` em ${formatDateTimeBR(signedAt)}` : ''}`, PAGE.margin + 12, y + 14);
+    doc.text(`E-mail: ${normalize(signature.signer_email, 'Não informado')}`, PAGE.margin + 12, y + 19);
+    doc.text(`Hash: ${shortHash(signature.document_hash)} • Código: ${normalize(signature.verification_code, 'Não informado')}`, PAGE.margin + 12, y + 24, { maxWidth: PAGE.width - PAGE.margin * 2 - 24 });
+
+    if (signature.verification_url) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(COLORS.blue);
+      doc.text(`Verificar: ${signature.verification_url}`, PAGE.margin + 12, y + 29, { maxWidth: PAGE.width - PAGE.margin * 2 - 24 });
+    }
+    y += boxH + 8;
+  });
+
+  return y + 2;
+};
+
 const addFooter = (doc: jsPDF, generatedAt?: string) => {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i += 1) {
@@ -384,6 +487,8 @@ export const generateTriagePdf = (input: TriagePdfInput) => {
           : COLORS.blue;
     y = addSection(doc, section.title, section.body, y, { accent });
   });
+
+  y = addDigitalSignatureSection(doc, y, input.signatures);
 
   y = ensurePage(doc, y, 38);
   addSection(
