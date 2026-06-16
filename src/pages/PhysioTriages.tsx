@@ -25,6 +25,7 @@ import ProGuard from '../components/ProGuard';
 import { generateTriagePdf } from '../lib/triagePdf';
 import { getPhysioVisiblePatientIds } from '../services/patientLinkService';
 import DigitalSignaturePanel from '../components/DigitalSignaturePanel';
+import { getResourceSignatures } from '../services/digitalSignatureService';
 
 export default function PhysioTriages() {
   const { user, profile } = useAuth();
@@ -137,13 +138,15 @@ export default function PhysioTriages() {
     t.regiao_dor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const downloadReport = (triage: any) => {
+  const downloadReport = async (triage: any) => {
     try {
+      const signatures = triage?.id ? await getResourceSignatures('triage', String(triage.id)) : [];
       generateTriagePdf({
         triage,
         patientName: triage.paciente?.nome_completo || 'Paciente',
         professionalName: profile?.nome_completo || user?.email || 'Fisioterapeuta',
         generatedAt: new Date().toISOString(),
+        signatures,
       });
       toast.success("PDF premium baixado!");
     } catch (err) {
@@ -344,7 +347,7 @@ export default function PhysioTriages() {
 
               <div className="p-5 sm:p-8 border-t border-indigo-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3 sm:gap-4">
                 <button
-                  onClick={() => downloadReport(selectedTriage)}
+                  onClick={() => { void downloadReport(selectedTriage); }}
                   className="flex-1 py-4 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-600 !text-slate-900 dark:!text-white rounded-2xl font-black shadow-sm hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Download size={20} className="!text-slate-800 dark:!text-white" /> Baixar PDF

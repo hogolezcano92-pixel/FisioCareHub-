@@ -40,6 +40,7 @@ import { generateLegalDocumentPDF, getLegalDocumentPdfBlob } from '../lib/legalD
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
 import { formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
 import DigitalSignaturePanel from '../components/DigitalSignaturePanel';
+import { getResourceSignatures } from '../services/digitalSignatureService';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -799,8 +800,12 @@ export default function Documents() {
     content: doc?.content || doc?.conteudo || doc?.description || 'Conteúdo não informado.',
   });
 
-  const downloadPremiumDocumentPDF = (doc: any, customFileName?: string) => {
-    generateLegalDocumentPDF(buildPremiumPdfPayload(doc), {
+  const downloadPremiumDocumentPDF = async (doc: any, customFileName?: string) => {
+    const signatures = doc?.id ? await getResourceSignatures('documento_gerado', String(doc.id)) : [];
+    generateLegalDocumentPDF({
+      ...buildPremiumPdfPayload(doc),
+      signatures,
+    }, {
       profile,
       fileName: customFileName || `${getDocumentTitle(doc)}-${doc?.patient_name || 'paciente'}`,
     });
@@ -825,7 +830,11 @@ export default function Documents() {
         const url = await getClinicalFileUrl(doc);
         setViewingFileUrl(url);
       } else {
-        const pdfBlob = getLegalDocumentPdfBlob(buildPremiumPdfPayload(doc), { profile });
+        const signatures = doc?.id ? await getResourceSignatures('documento_gerado', String(doc.id)) : [];
+        const pdfBlob = getLegalDocumentPdfBlob({
+          ...buildPremiumPdfPayload(doc),
+          signatures,
+        }, { profile });
         const blobUrl = URL.createObjectURL(pdfBlob);
         setViewingFileUrl(blobUrl);
       }
@@ -840,7 +849,7 @@ export default function Documents() {
   const handleDownloadDocument = async (doc: any) => {
     if (!doc?.isClinicalFile) {
       try {
-        downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc.patient_name || 'paciente'}`);
+        await downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc.patient_name || 'paciente'}`);
         import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
       } catch (err) {
         console.error('Erro ao gerar PDF premium:', err);
@@ -896,7 +905,7 @@ export default function Documents() {
 
   const handleExportFromTable = async (doc: any) => {
     try {
-      downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc?.patient_name || 'paciente'}`);
+      await downloadPremiumDocumentPDF(doc, `${getDocumentTitle(doc)}-${doc?.patient_name || 'paciente'}`);
       import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
     } catch (err) {
       console.error('Erro ao gerar PDF premium:', err);
@@ -1850,9 +1859,9 @@ export default function Documents() {
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
 {!viewingDoc.isClinicalFile && (
                   <button 
-                    onClick={() => {
+                    onClick={async () => {
                       try {
-                        downloadPremiumDocumentPDF(viewingDoc, `${getDocumentTitle(viewingDoc)}-${viewingDoc.patient_name || 'paciente'}`);
+                        await downloadPremiumDocumentPDF(viewingDoc, `${getDocumentTitle(viewingDoc)}-${viewingDoc.patient_name || 'paciente'}`);
                         import('sonner').then(({ toast }) => toast.success('PDF premium gerado com sucesso!'));
                       } catch (err) {
                         console.error('Erro ao gerar PDF premium:', err);
