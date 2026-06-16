@@ -626,15 +626,24 @@ function HeaderObserver() {
         const rect = h.getBoundingClientRect();
         const style = window.getComputedStyle(h);
         const isFixed = style.position === 'fixed';
+        const isFloatingMobileHeader = h.classList.contains('app-floating-mobile-header');
 
-        if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
+        if (
+          isFixed &&
+          rect.height > 0 &&
+          rect.top <= (isFloatingMobileHeader ? 96 : 5) &&
+          style.display !== 'none' &&
+          style.visibility !== 'hidden'
+        ) {
           activeHeader = h;
           break;
         }
       }
 
       if (activeHeader) {
-        const height = activeHeader.offsetHeight;
+        const rect = activeHeader.getBoundingClientRect();
+        const isFloatingMobileHeader = activeHeader.classList.contains('app-floating-mobile-header');
+        const height = isFloatingMobileHeader ? Math.ceil(rect.bottom + 12) : activeHeader.offsetHeight;
         document.documentElement.style.setProperty('--header-height', `${height}px`);
       } else {
         document.documentElement.style.setProperty('--header-height', '0px');
@@ -729,14 +738,15 @@ function AppContent() {
 
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg">
+            <header className="app-floating-mobile-header lg:hidden fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-4 right-4 z-[45] h-16 min-h-[4rem] px-4 flex items-center justify-between rounded-[28px] border border-slate-200/80 bg-white/88 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/12 dark:bg-slate-950/72 dark:shadow-[0_18px_45px_rgba(0,0,0,0.35),0_0_0_1px_rgba(96,165,250,0.08),0_0_28px_rgba(59,130,246,0.08)] supports-[backdrop-filter]:bg-white/76 supports-[backdrop-filter]:dark:bg-slate-950/62">
               <Logo variant="dark" size="sm" />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <ThemeQuickToggle />
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-2xl hover:bg-slate-100/80 dark:hover:bg-white/8"
+                  aria-label="Abrir menu"
                 >
                   <Menu size={24} />
                 </button>
