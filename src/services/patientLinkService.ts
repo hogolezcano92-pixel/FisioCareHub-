@@ -94,10 +94,14 @@ export async function getPhysioVisiblePatientIds(physioId: string): Promise<stri
   );
 
   if (patientEmails.length > 0) {
+    const profileEmailFilter = patientEmails
+      .map((email) => `email.ilike.${email}`)
+      .join(',');
+
     const { data: profiles, error: profilesError } = await supabase
       .from('perfis')
       .select('id, email')
-      .in('email', patientEmails);
+      .or(profileEmailFilter);
 
     if (!profilesError) {
       (profiles || []).forEach((profile) => {
