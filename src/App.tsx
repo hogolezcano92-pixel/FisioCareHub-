@@ -643,7 +643,7 @@ function HeaderObserver() {
       if (activeHeader) {
         const rect = activeHeader.getBoundingClientRect();
         const isFloatingMobileHeader = activeHeader.classList.contains('app-floating-mobile-header');
-        const height = isFloatingMobileHeader ? Math.ceil(rect.bottom + 12) : activeHeader.offsetHeight;
+        const height = isFloatingMobileHeader ? Math.ceil(rect.bottom + 6) : activeHeader.offsetHeight;
         document.documentElement.style.setProperty('--header-height', `${height}px`);
       } else {
         document.documentElement.style.setProperty('--header-height', '0px');
@@ -738,7 +738,7 @@ function AppContent() {
 
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="app-floating-mobile-header lg:hidden fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-4 right-4 z-[45] h-16 min-h-[4rem] px-4 flex items-center justify-between rounded-[28px] border border-slate-200/80 bg-white/88 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/12 dark:bg-slate-950/72 dark:shadow-[0_18px_45px_rgba(0,0,0,0.35),0_0_0_1px_rgba(96,165,250,0.08),0_0_28px_rgba(59,130,246,0.08)] supports-[backdrop-filter]:bg-white/76 supports-[backdrop-filter]:dark:bg-slate-950/62">
+            <header className="app-floating-mobile-header lg:hidden fixed top-0 left-0 right-0 z-[45] h-[calc(env(safe-area-inset-top)+4.5rem)] min-h-[4.5rem] pt-[env(safe-area-inset-top)] px-4 flex items-center justify-between rounded-t-none rounded-b-[26px] border-x-0 border-t-0 border-b border-slate-200/80 bg-white/94 shadow-[0_10px_28px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/94 dark:shadow-[0_10px_32px_rgba(0,0,0,0.35),0_0_0_1px_rgba(96,165,250,0.05)] supports-[backdrop-filter]:bg-white/88 supports-[backdrop-filter]:dark:bg-slate-950/88">
               <Logo variant="dark" size="sm" />
               <div className="flex items-center gap-2.5">
                 <ThemeQuickToggle />
