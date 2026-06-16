@@ -715,7 +715,7 @@ export default function Appointments() {
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -876,7 +876,7 @@ export default function Appointments() {
       {/* Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] flex items-start md:items-center justify-center p-3 sm:p-4 pt-[calc(env(safe-area-inset-top)+5.75rem)] md:pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -888,16 +888,16 @@ export default function Appointments() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-lg bg-slate-900 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-7rem)] md:max-h-[90vh]"
             >
-              <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900 z-20">
+              <div className="px-5 py-4 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900 z-20 shrink-0">
                 <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">Agendar Sessão</h2>
                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-all text-slate-400">
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar px-5 py-4 md:p-8">
                 <form id="schedule-form" onSubmit={handleSchedule} className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
@@ -995,7 +995,7 @@ export default function Appointments() {
                   </div>
                 )}
 
-                  <div className="grid grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                     <div className="flex-1 min-w-0">
                       <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Data</label>
                       <input
@@ -1042,16 +1042,6 @@ export default function Appointments() {
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-20 text-sm text-white"
-                    placeholder="Notas..."
-                  />
-                </div>
-
-                <div className="pt-4">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Observações</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
                     className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 resize-none h-24 text-sm text-white"
                     placeholder="Alguma observação importante?"
                   />
@@ -1059,7 +1049,7 @@ export default function Appointments() {
               </form>
             </div>
 
-            <div className="p-6 md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20">
+            <div className="px-5 py-4 md:p-8 bg-slate-900 border-t border-white/5 sticky bottom-0 z-20 shrink-0">
               {profile?.tipo_usuario === 'paciente' && currentPrice > 0 && (
                 <div className="p-4 mb-6 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-between group">
                   <div className="flex items-center gap-2 text-blue-400">
@@ -1086,7 +1076,7 @@ export default function Appointments() {
                 type="submit"
                 form="schedule-form"
                 disabled={submitting}
-                className="w-full py-5 bg-sky-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-4 md:py-5 bg-sky-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="animate-spin" /> : 'Confirmar Solicitação'}
               </button>
