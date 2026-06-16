@@ -217,23 +217,23 @@ const BottomNavigation: React.FC = () => {
       aria-label="Navegação principal mobile"
       data-bottom-navigation="true"
       className={cn(
-        'fixed left-0 right-0 z-[70] md:hidden pointer-events-none px-5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+        'fixed left-0 right-0 z-[70] md:hidden pointer-events-none px-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
         shouldHideBottomNavigation
           ? 'translate-y-[125%] opacity-0 blur-sm'
           : 'translate-y-0 opacity-100 blur-0'
       )}
-      style={{ bottom: 'max(0.15rem, calc(env(safe-area-inset-bottom) - 0.35rem))' }}
+      style={{ bottom: 'max(0.35rem, calc(env(safe-area-inset-bottom) - 0.15rem))' }}
     >
       <div
         className={cn(
           'mx-auto pointer-events-auto transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
-          isCompact ? 'max-w-[330px] scale-[0.97]' : 'max-w-[410px] scale-100'
+          isCompact ? 'max-w-[300px] scale-[0.96]' : 'max-w-[370px] scale-100'
         )}
       >
         <div
           className={cn(
             'relative overflow-hidden rounded-full border backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-            isCompact ? 'shadow-[0_14px_38px_rgba(15,23,42,0.22)]' : 'shadow-[0_24px_70px_rgba(15,23,42,0.26)]',
+            isCompact ? 'shadow-[0_10px_28px_rgba(15,23,42,0.20)]' : 'shadow-[0_18px_52px_rgba(15,23,42,0.24)]',
             isDarkTheme
               ? 'border-white/10 bg-slate-950/90 shadow-black/50'
               : 'border-white/80 bg-white/95 shadow-blue-500/20'
@@ -257,8 +257,8 @@ const BottomNavigation: React.FC = () => {
 
           <div
             className={cn(
-              'relative grid grid-cols-5 items-center gap-1 px-1.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-              isCompact ? 'py-1' : 'py-1.5'
+              'relative grid grid-cols-5 items-center gap-0.5 px-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+              isCompact ? 'py-0.5' : 'py-1'
             )}
           >
             {items.map((item) => {
@@ -271,7 +271,7 @@ const BottomNavigation: React.FC = () => {
                   to={item.path}
                   className={cn(
                     'relative flex flex-col items-center justify-center rounded-full px-1 font-black transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95',
-                    isCompact ? 'min-h-[46px] gap-0 text-[0px]' : 'min-h-[58px] gap-1 text-[10px]',
+                    isCompact ? 'min-h-[40px] gap-0 text-[0px]' : 'min-h-[50px] gap-0.5 text-[9px]',
                     active
                       ? 'text-white'
                       : isDarkTheme
@@ -284,7 +284,7 @@ const BottomNavigation: React.FC = () => {
                       layoutId="bottom-navigation-active-pill"
                       className={cn(
                         'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-[0_10px_26px_rgba(37,99,235,0.38)] transition-all duration-300',
-                        isCompact ? 'h-10 w-10' : 'h-[48px] w-[48px]'
+                        isCompact ? 'h-8 w-8' : 'h-[40px] w-[40px]'
                       )}
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
@@ -293,7 +293,7 @@ const BottomNavigation: React.FC = () => {
                   <span
                     className={cn(
                       'relative flex items-center justify-center transition-all duration-300',
-                      isCompact ? 'h-5 w-5' : 'h-[22px] w-[22px]',
+                      isCompact ? 'h-[18px] w-[18px]' : 'h-5 w-5',
                       active
                         ? 'scale-110 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.55)]'
                         : isDarkTheme
@@ -301,7 +301,7 @@ const BottomNavigation: React.FC = () => {
                           : item.iconClass
                     )}
                   >
-                    <Icon size={isCompact ? 20 : 22} strokeWidth={active ? 3 : 2.5} />
+                    <Icon size={isCompact ? 18 : 20} strokeWidth={active ? 3 : 2.5} />
                   </span>
 
                   <span
