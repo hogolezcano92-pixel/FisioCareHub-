@@ -263,14 +263,14 @@ export default function PhysioTriages() {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[2rem] sm:rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-full border border-indigo-100 dark:border-slate-800"
             >
-              <div className="p-5 sm:p-8 border-b border-indigo-100 dark:border-slate-800 flex items-start justify-between gap-3 bg-white/95 dark:bg-slate-900/80">
+              <div className="p-5 sm:p-8 border-b border-indigo-100 dark:border-slate-800 flex items-start justify-between gap-3 bg-white dark:bg-slate-900">
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
                     <BrainCircuit size={28} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">Relatório de Triagem</h2>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium">{selectedTriage.paciente?.nome_completo} • {formatDate(selectedTriage.created_at)}</p>
+                    <h2 className="text-2xl font-black !text-slate-950 dark:!text-white tracking-tight leading-tight">Relatório de Triagem</h2>
+                    <p className="font-semibold !text-slate-700 dark:!text-slate-100">{selectedTriage.paciente?.nome_completo} • {formatDate(selectedTriage.created_at)}</p>
                   </div>
                 </div>
                 <button 
@@ -283,28 +283,28 @@ export default function PhysioTriages() {
 
               <div className="p-5 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 overscroll-contain">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Região</span>
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl space-y-1 border border-indigo-100 dark:border-slate-700 shadow-sm">
+                    <span className="text-[10px] font-black !text-slate-600 dark:!text-slate-300 uppercase tracking-widest">Região</span>
                     <p className="font-bold text-slate-950 dark:text-white">{selectedTriage.regiao_dor}</p>
                   </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Dor</span>
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl space-y-1 border border-indigo-100 dark:border-slate-700 shadow-sm">
+                    <span className="text-[10px] font-black !text-slate-600 dark:!text-slate-300 uppercase tracking-widest">Dor</span>
                     <p className="font-bold text-slate-950 dark:text-white">{selectedTriage.escala_dor}/10</p>
                   </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gravidade</span>
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl space-y-1 border border-indigo-100 dark:border-slate-700 shadow-sm">
+                    <span className="text-[10px] font-black !text-slate-600 dark:!text-slate-300 uppercase tracking-widest">Gravidade</span>
                     <p className={cn(
                       "font-bold",
                       selectedTriage.gravidade === 'Vermelho' || selectedTriage.gravidade === 'grave' ? "text-rose-400" : selectedTriage.gravidade === 'Amarelo' || selectedTriage.gravidade === 'moderado' ? "text-amber-400" : "text-emerald-400"
                     )}>{selectedTriage.gravidade}</p>
                   </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Classificação</span>
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl space-y-1 border border-indigo-100 dark:border-slate-700 shadow-sm">
+                    <span className="text-[10px] font-black !text-slate-600 dark:!text-slate-300 uppercase tracking-widest">Classificação</span>
                     <p className="font-bold text-slate-950 dark:text-white line-clamp-1">{selectedTriage.classificacao}</p>
                   </div>
                 </div>
 
-                <div className="prose prose-slate dark:prose-invert max-w-none bg-white dark:bg-slate-800/50 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-indigo-100 dark:border-slate-800 break-words text-slate-700 dark:text-slate-300 shadow-sm shadow-indigo-100/50 dark:shadow-none">
+                <div className="prose prose-slate dark:prose-invert max-w-none bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-indigo-100 dark:border-slate-700 break-words !text-slate-700 dark:!text-slate-100 shadow-sm shadow-indigo-100/50 dark:shadow-none prose-headings:!text-slate-950 dark:prose-headings:!text-white prose-p:!text-slate-700 dark:prose-p:!text-slate-100 prose-strong:!text-slate-950 dark:prose-strong:!text-white">
                   <ReactMarkdown>{selectedTriage.relatorio}</ReactMarkdown>
                 </div>
 
@@ -319,12 +319,12 @@ export default function PhysioTriages() {
                 )}
               </div>
 
-              <div className="p-5 sm:p-8 border-t border-indigo-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 flex gap-3 sm:gap-4">
+              <div className="p-5 sm:p-8 border-t border-indigo-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3 sm:gap-4">
                 <button
                   onClick={() => downloadReport(selectedTriage)}
-                  className="flex-1 py-4 bg-slate-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 text-slate-800 dark:text-slate-300 rounded-2xl font-black hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-4 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-600 !text-slate-900 dark:!text-white rounded-2xl font-black shadow-sm hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                 >
-                  <Download size={20} /> Baixar PDF
+                  <Download size={20} className="!text-slate-800 dark:!text-white" /> Baixar PDF
                 </button>
                 <button
                   onClick={() => setSelectedTriage(null)}
