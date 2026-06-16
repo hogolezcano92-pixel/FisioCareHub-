@@ -50,7 +50,7 @@ export default function VerifySignature() {
   }, [code]);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 px-5 py-10 flex items-center justify-center">
+    <main className="min-h-screen bg-slate-50 px-5 pt-10 pb-28 text-slate-950 dark:bg-slate-950 dark:text-white flex items-center justify-center">
       <section className="w-full max-w-2xl rounded-[2rem] border border-indigo-100 bg-white p-6 shadow-2xl shadow-indigo-100/70 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
         <div className="mb-8 flex items-center justify-between gap-4">
           <Logo />
@@ -72,7 +72,7 @@ export default function VerifySignature() {
           </div>
         ) : signature ? (
           <div className="space-y-6">
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-slate-950 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-white">
               <div className="flex items-start gap-4">
                 <CheckCircle2 className="mt-1 text-emerald-500" size={36} />
                 <div>
@@ -85,31 +85,31 @@ export default function VerifySignature() {
             </div>
 
             <div className="grid gap-3 text-sm">
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Documento</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Documento</p>
                 <p className="font-black text-slate-950 dark:text-white">{signature.resource_title || signature.resource_type}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Assinante</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Assinante</p>
                 <p className="font-black text-slate-950 dark:text-white">{signature.signer_name || 'Nome não informado'}</p>
                 <p className="text-slate-600 dark:text-slate-300">{signature.signer_email || 'E-mail não informado'}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Tipo de assinatura</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Tipo de assinatura</p>
                 <p className="font-black text-slate-950 dark:text-white">{signature.certificate_type || signature.signature_level}</p>
                 <p className="text-slate-600 dark:text-slate-300">Status: {signature.signature_status}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Data</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Data</p>
                 <p className="font-black text-slate-950 dark:text-white">{formatDate(signature.signed_at || signature.created_at)}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Hash SHA-256 do documento</p>
-                <p className="break-all font-mono text-xs text-slate-700 dark:text-slate-300">{signature.document_hash}</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Hash SHA-256 do documento</p>
+                <p className="break-all rounded-xl bg-slate-100 p-3 font-mono text-xs font-bold text-slate-700 dark:bg-slate-900/50 dark:text-slate-300">{signature.document_hash}</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <div className="mb-2 flex items-center gap-2 font-black text-slate-950 dark:text-white">
                 <ShieldCheck size={18} /> Validação de integridade
               </div>
