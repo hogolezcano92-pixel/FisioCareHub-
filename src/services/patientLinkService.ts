@@ -59,3 +59,63 @@ export async function getPatientVisibleIds(userId: string, email?: string | null
     ),
   );
 }
+
+
+export async function getPhysioLinkedClinicalPatients(physioId: string): Promise<LinkedClinicalPatient[]> {
+  const { data: patients, error } = await supabase
+    .from('pacientes')
+    .select('id, nome_completo, fisioterapeuta_id, perfil_id, email, convite_email')
+    .eq('fisioterapeuta_id', physioId);
+
+  if (error) {
+    console.error('Erro ao buscar pacientes vinculados ao fisioterapeuta:', error);
+    return [];
+  }
+
+  return patients || [];
+}
+
+export async function getPhysioVisiblePatientIds(physioId: string): Promise<string[]> {
+  const linkedPatients = await getPhysioLinkedClinicalPatients(physioId);
+  const ids = new Set<string>();
+
+  linkedPatients.forEach((patient) => {
+    if (patient.id) ids.add(String(patient.id));
+    if (patient.perfil_id) ids.add(String(patient.perfil_id));
+  });
+
+  const patientEmails = Array.from(
+    new Set(
+      linkedPatients
+        .flatMap((patient) => [patient.email, patient.convite_email])
+        .map((email) => String(email || '').trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+
+  if (patientEmails.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from('perfis')
+      .select('id, email')
+      .in('email', patientEmails);
+
+    if (!profilesError) {
+      (profiles || []).forEach((profile) => {
+        if (profile.id) ids.add(String(profile.id));
+      });
+    }
+  }
+
+  const { data: appointments, error: appointmentsError } = await supabase
+    .from('agendamentos')
+    .select('paciente_id')
+    .eq('fisio_id', physioId);
+
+  if (!appointmentsError) {
+    (appointments || []).forEach((appointment) => {
+      if (appointment.paciente_id) ids.add(String(appointment.paciente_id));
+    });
+  }
+
+  return Array.from(ids);
+}
