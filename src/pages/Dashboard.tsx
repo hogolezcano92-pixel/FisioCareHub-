@@ -2631,7 +2631,7 @@ export default function Dashboard() {
         {!isPhysio && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-white tracking-tight">
+              <h2 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight drop-shadow-sm">
                 Evolução da <span className="text-sky-400 italic">Dor</span>
               </h2>
               {weeklyChartData.melhora > 0 && (
@@ -2886,7 +2886,7 @@ export default function Dashboard() {
                       stat.color === "sky" &&
                         "bg-sky-500/10 text-sky-400 shadow-sky-900/20",
                       stat.color === "emerald" &&
-                        "bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20",
+                        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 shadow-emerald-900/20",
                       stat.color === "indigo" &&
                         "bg-orange-500/10 text-orange-500 dark:text-orange-300 shadow-orange-900/20",
                       stat.color === "rose" &&
@@ -2900,8 +2900,8 @@ export default function Dashboard() {
                       className={cn(
                         "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black tracking-tighter",
                         stat.trend.startsWith("+")
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-rose-500/10 text-rose-400",
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                          : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
                       )}
                     >
                       {stat.trend.startsWith("+") ? (
@@ -2915,10 +2915,10 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <p className="text-xl font-black text-white tracking-tight">
+                  <p className="text-2xl font-black text-slate-950 dark:text-white tracking-tight drop-shadow-sm">
                     {stat.value}
                   </p>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                  <p className="text-[8px] font-black text-slate-900/90 dark:text-slate-300 uppercase tracking-widest">
                     {stat.label}
                   </p>
                 </div>
@@ -2929,7 +2929,7 @@ export default function Dashboard() {
         {isPhysio && (
           <div className="premium-card space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="text-base font-black text-white tracking-tight">
+              <h3 className="text-base font-black text-slate-950 dark:text-white tracking-tight">
                 Buscar Pacientes
               </h3>
               <div className="relative w-full max-w-md">
@@ -3212,8 +3212,8 @@ export default function Dashboard() {
                               className={cn(
                                 "px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border",
                                 triage.gravidade === "grave"
-                                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300 border-rose-500/20"
+                                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border-emerald-500/20",
                               )}
                             >
                               {triage.gravidade}
