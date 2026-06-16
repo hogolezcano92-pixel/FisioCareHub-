@@ -300,7 +300,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHelpCenter(false)}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[110]"
+              className="fixed left-0 right-0 top-[calc(env(safe-area-inset-top)+5rem)] bottom-0 bg-slate-950/80 backdrop-blur-sm z-[110] md:inset-0"
             />
             
             <motion.div
@@ -308,10 +308,10 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full md:w-[450px] bg-slate-900 border-l border-white/10 shadow-2xl z-[120] flex flex-col pt-[env(safe-area-inset-top)]"
+              className="fixed right-0 top-[calc(env(safe-area-inset-top)+5rem)] bottom-0 w-full md:top-0 md:w-[450px] bg-slate-900 border-l border-white/10 shadow-2xl z-[120] flex flex-col md:pt-[env(safe-area-inset-top)]"
             >
               {/* Header */}
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-black text-white tracking-tight">Ajuda / Suporte</h2>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Como podemos ajudar?</p>
@@ -325,7 +325,7 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 no-scrollbar pb-[calc(env(safe-area-inset-bottom)+7rem)] md:pb-8">
                 {/* Profile Selector - Only show for public/unauthenticated users */}
                 {!user && (
                   <div className="bg-slate-800/50 p-2 rounded-[1.5rem] flex gap-2">
