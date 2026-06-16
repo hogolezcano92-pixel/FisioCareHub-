@@ -52,13 +52,13 @@ type SplashSoundCleanup = () => void;
 export default function PostLoginSplash({
   userRole = 'paciente',
   userName,
-  duration = 10000,
+  duration = 15000,
   onComplete,
 }: PostLoginSplashProps) {
   const isPhysio = userRole === 'fisioterapeuta';
   const isAdmin = userRole === 'admin';
   const displayName = getFirstName(userName);
-  const splashDuration = Math.max(duration, 10000);
+  const splashDuration = Math.max(duration, 15000);
   const progressDuration = splashDuration / 1000;
 
   const hasStartedSound = useRef(false);
@@ -322,7 +322,7 @@ export default function PostLoginSplash({
           className="relative mx-auto mb-8 flex h-28 w-28 items-center justify-center"
           initial={{ opacity: 0, scale: 0.72 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.16, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 1.1, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div
             className="absolute inset-0 rounded-full border border-cyan-200/45 shadow-[0_0_80px_rgba(34,211,238,0.46)]"
@@ -352,7 +352,7 @@ export default function PostLoginSplash({
           className="mb-3 text-sm font-black uppercase tracking-[0.34em] text-cyan-100 drop-shadow-[0_0_14px_rgba(103,232,249,0.65)]"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: [0, -4, 0], scale: [1, 1.04, 1] }}
-          transition={{ opacity: { delay: 0.22, duration: 0.6 }, y: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } }}
+          transition={{ opacity: { delay: 1.75, duration: 0.65 }, y: { delay: 1.75, duration: 2.2, repeat: Infinity, ease: 'easeInOut' }, scale: { delay: 1.75, duration: 2.2, repeat: Infinity, ease: 'easeInOut' } }}
         >
           ✨ Experiência premium
         </motion.p>
@@ -374,11 +374,11 @@ export default function PostLoginSplash({
                 filter: 'blur(0px)',
               }}
               transition={{
-                opacity: { delay: 0.28 + index * 0.025, duration: 0.35 },
-                y: { delay: 0.28 + index * 0.025, duration: 2.8 + (index % 5) * 0.12, repeat: Infinity, ease: 'easeInOut' },
-                rotate: { delay: 0.28 + index * 0.025, duration: 3.2 + (index % 4) * 0.1, repeat: Infinity, ease: 'easeInOut' },
-                scale: { delay: 0.28 + index * 0.025, type: 'spring', stiffness: 520, damping: 17 },
-                filter: { delay: 0.28 + index * 0.025, duration: 0.35 },
+                opacity: { delay: 2.35 + index * 0.025, duration: 0.35 },
+                y: { delay: 2.35 + index * 0.025, duration: 2.8 + (index % 5) * 0.12, repeat: Infinity, ease: 'easeInOut' },
+                rotate: { delay: 2.35 + index * 0.025, duration: 3.2 + (index % 4) * 0.1, repeat: Infinity, ease: 'easeInOut' },
+                scale: { delay: 2.35 + index * 0.025, type: 'spring', stiffness: 520, damping: 17 },
+                filter: { delay: 2.35 + index * 0.025, duration: 0.35 },
               }}
             >
               {letter === ' ' ? '\u00A0' : letter}
@@ -396,9 +396,9 @@ export default function PostLoginSplash({
               initial={{ opacity: 0, y: 16, scale: 0.82 }}
               animate={{ opacity: 1, y: [0, -4, 0], scale: 1 }}
               transition={{
-                opacity: { delay: 0.76 + index * 0.055, duration: 0.35 },
-                y: { delay: 0.76 + index * 0.055, duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
-                scale: { delay: 0.76 + index * 0.055, type: 'spring', stiffness: 420, damping: 18 },
+                opacity: { delay: 3.35 + index * 0.055, duration: 0.35 },
+                y: { delay: 3.35 + index * 0.055, duration: 3.4, repeat: Infinity, ease: 'easeInOut' },
+                scale: { delay: 3.35 + index * 0.055, type: 'spring', stiffness: 420, damping: 18 },
               }}
             >
               {word}
@@ -412,7 +412,7 @@ export default function PostLoginSplash({
           animate="visible"
           variants={{
             hidden: {},
-            visible: { transition: { staggerChildren: 0.13, delayChildren: 0.72 } },
+            visible: { transition: { staggerChildren: 0.28, delayChildren: 4.25 } },
           }}
         >
           {steps.map((step, index) => {
@@ -424,10 +424,10 @@ export default function PostLoginSplash({
                 initial={{ opacity: 0, y: 18, scale: 0.94, rotate: -3 }}
                 animate={{ opacity: 1, y: [0, -8, 0], rotate: [0, 1.4, -1.4, 0], scale: [1, 1.025, 1] }}
                 transition={{
-                  opacity: { delay: 0.72 + index * 0.13, duration: 0.45 },
-                  y: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
-                  rotate: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
-                  scale: { delay: 0.72 + index * 0.13, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                  opacity: { delay: 4.25 + index * 0.28, duration: 0.45 },
+                  y: { delay: 4.25 + index * 0.28, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                  rotate: { delay: 4.25 + index * 0.28, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                  scale: { delay: 4.25 + index * 0.28, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -445,7 +445,7 @@ export default function PostLoginSplash({
           className="fch-splash-card mx-auto mt-7 max-w-xl rounded-[2rem] border border-white/25 bg-slate-950/45 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38),0_0_70px_rgba(99,102,241,0.2)] backdrop-blur-2xl"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.94, duration: 0.7 }}
+          transition={{ delay: 5.45, duration: 0.75 }}
         >
           <div className="fch-splash-muted mb-4 flex items-center justify-center gap-3 text-sm font-bold text-slate-100 sm:text-base">
             <motion.span
