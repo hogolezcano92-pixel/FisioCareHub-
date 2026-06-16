@@ -607,12 +607,24 @@ export default function Register() {
       >
         <div className="bg-white/88 dark:bg-card/50 backdrop-blur-2xl p-8 sm:p-12 rounded-[3.5rem] shadow-[0_30px_80px_-20px_rgba(15,23,42,0.16)] dark:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-slate-200/80 dark:border-white/10">
           <div className="text-center mb-10">
-            <div className="flex justify-center mb-6">
-              <Logo size="md" variant="dark" className="dark:hidden drop-shadow-[0_12px_26px_rgba(59,130,246,0.18)]" />
-              <Logo size="md" variant="light" className="hidden dark:flex" />
+            <div className="flex justify-center mb-7">
+              <div className="rounded-full bg-white/80 dark:bg-white/5 p-2.5 shadow-[0_20px_45px_rgba(15,23,42,0.12)] dark:shadow-[0_20px_45px_rgba(0,0,0,0.28)] ring-1 ring-slate-200/80 dark:ring-white/10 backdrop-blur-sm">
+                <Logo
+                  size="lg"
+                  iconOnly
+                  variant="dark"
+                  className="dark:hidden drop-shadow-[0_14px_30px_rgba(59,130,246,0.18)]"
+                />
+                <Logo
+                  size="lg"
+                  iconOnly
+                  variant="light"
+                  className="hidden dark:flex"
+                />
+              </div>
             </div>
-            <h2 className="text-3xl font-display font-black text-slate-950 dark:text-white tracking-tight">Criar Conta</h2>
-            <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">Escolha seu perfil e comece sua jornada.</p>
+            <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-950 dark:text-white tracking-tight">Criar Conta</h2>
+            <p className="mt-3 text-base sm:text-lg font-medium text-slate-700 dark:text-slate-400">Escolha seu perfil e comece sua jornada.</p>
           </div>
 
           <div className="mb-8">
