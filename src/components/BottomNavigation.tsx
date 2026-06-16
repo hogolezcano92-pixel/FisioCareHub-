@@ -76,7 +76,9 @@ const BottomNavigation: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState(getIsDarkTheme);
   const [autoHidden, setAutoHidden] = useState(false);
   const [manualHidden, setManualHidden] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const hideRequestsRef = useRef<Record<string, boolean>>({});
+  const lastScrollYRef = useRef(0);
 
   useEffect(() => {
     const updateTheme = () => {
@@ -140,6 +142,44 @@ const BottomNavigation: React.FC = () => {
     };
   }, []);
 
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let frame = 0;
+
+    const updateCompactState = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const currentScrollY = Math.max(window.scrollY, 0);
+        const isScrollingDown = currentScrollY > lastScrollYRef.current + 4;
+        const isScrollingUp = currentScrollY < lastScrollYRef.current - 4;
+
+        if (currentScrollY <= 28) {
+          setIsCompact(false);
+        } else if (isScrollingDown && currentScrollY > 80) {
+          setIsCompact(true);
+        } else if (isScrollingUp) {
+          setIsCompact(false);
+        }
+
+        lastScrollYRef.current = currentScrollY;
+      });
+    };
+
+    lastScrollYRef.current = Math.max(window.scrollY, 0);
+    updateCompactState();
+
+    window.addEventListener('scroll', updateCompactState, { passive: true });
+    window.addEventListener('resize', updateCompactState);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', updateCompactState);
+      window.removeEventListener('resize', updateCompactState);
+    };
+  }, [location.pathname]);
+
   const role = profile?.tipo_usuario;
   const isPatient = role === 'paciente';
   const isPhysio = role === 'fisioterapeuta';
@@ -182,15 +222,21 @@ const BottomNavigation: React.FC = () => {
           ? 'translate-y-[125%] opacity-0 blur-sm'
           : 'translate-y-0 opacity-100 blur-0'
       )}
-      style={{ bottom: 'max(0.05rem, calc(env(safe-area-inset-bottom) - 0.55rem))' }}
+      style={{ bottom: 'max(0.15rem, calc(env(safe-area-inset-bottom) - 0.35rem))' }}
     >
-      <div className="mx-auto max-w-md pointer-events-auto">
+      <div
+        className={cn(
+          'mx-auto pointer-events-auto transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+          isCompact ? 'max-w-[330px] scale-[0.97]' : 'max-w-[410px] scale-100'
+        )}
+      >
         <div
           className={cn(
-            'relative overflow-hidden rounded-[1.75rem] border backdrop-blur-2xl',
+            'relative overflow-hidden rounded-full border backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+            isCompact ? 'shadow-[0_14px_38px_rgba(15,23,42,0.22)]' : 'shadow-[0_24px_70px_rgba(15,23,42,0.26)]',
             isDarkTheme
-              ? 'border-white/10 bg-slate-950/90 shadow-[0_24px_70px_rgba(2,6,23,0.70)]'
-              : 'border-indigo-100 bg-white shadow-[0_18px_45px_rgba(59,130,246,0.20)]'
+              ? 'border-white/10 bg-slate-950/90 shadow-black/50'
+              : 'border-white/80 bg-white/95 shadow-blue-500/20'
           )}
         >
           <div
@@ -198,7 +244,7 @@ const BottomNavigation: React.FC = () => {
               'absolute inset-0 pointer-events-none',
               isDarkTheme
                 ? 'bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-cyan-400/10'
-                : 'bg-white'
+                : 'bg-gradient-to-r from-white via-blue-50/70 to-white'
             )}
           />
 
@@ -209,7 +255,12 @@ const BottomNavigation: React.FC = () => {
             )}
           />
 
-          <div className="relative grid grid-cols-5 items-center gap-1 px-1 py-1">
+          <div
+            className={cn(
+              'relative grid grid-cols-5 items-center gap-1 px-1.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+              isCompact ? 'py-1' : 'py-1.5'
+            )}
+          >
             {items.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(location.pathname, location.search, item.path);
@@ -219,7 +270,8 @@ const BottomNavigation: React.FC = () => {
                   key={`${item.name}-${item.path}`}
                   to={item.path}
                   className={cn(
-                    'relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] px-1 text-[10px] font-black transition-all active:scale-95',
+                    'relative flex flex-col items-center justify-center rounded-full px-1 font-black transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95',
+                    isCompact ? 'min-h-[46px] gap-0 text-[0px]' : 'min-h-[58px] gap-1 text-[10px]',
                     active
                       ? 'text-white'
                       : isDarkTheme
@@ -230,14 +282,18 @@ const BottomNavigation: React.FC = () => {
                   {active && (
                     <motion.span
                       layoutId="bottom-navigation-active-pill"
-                      className="absolute inset-0 rounded-[1.35rem] bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-[0_10px_26px_rgba(37,99,235,0.38)]"
+                      className={cn(
+                        'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-[0_10px_26px_rgba(37,99,235,0.38)] transition-all duration-300',
+                        isCompact ? 'h-10 w-10' : 'h-[48px] w-[48px]'
+                      )}
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   )}
 
                   <span
                     className={cn(
-                      'relative flex h-[22px] w-[22px] items-center justify-center transition-transform duration-200',
+                      'relative flex items-center justify-center transition-all duration-300',
+                      isCompact ? 'h-5 w-5' : 'h-[22px] w-[22px]',
                       active
                         ? 'scale-110 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.55)]'
                         : isDarkTheme
@@ -245,17 +301,19 @@ const BottomNavigation: React.FC = () => {
                           : item.iconClass
                     )}
                   >
-                    <Icon size={22} strokeWidth={active ? 3 : 2.5} />
+                    <Icon size={isCompact ? 20 : 22} strokeWidth={active ? 3 : 2.5} />
                   </span>
 
                   <span
                     className={cn(
-                      'relative leading-none tracking-tight',
+                      'relative overflow-hidden leading-none tracking-tight transition-all duration-300',
                       active
                         ? 'text-white opacity-100'
                         : isDarkTheme
                           ? 'text-slate-300 opacity-90'
-                          : 'text-slate-800 opacity-95'
+                          : 'text-slate-800 opacity-95',
+                      isCompact && 'max-h-0 translate-y-1 opacity-0',
+                      !isCompact && 'max-h-4 translate-y-0'
                     )}
                   >
                     {item.name}
