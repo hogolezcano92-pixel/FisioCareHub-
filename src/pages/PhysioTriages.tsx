@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import ProGuard from '../components/ProGuard';
 import { generateTriagePdf } from '../lib/triagePdf';
 import { getPhysioVisiblePatientIds } from '../services/patientLinkService';
+import DigitalSignaturePanel from '../components/DigitalSignaturePanel';
 
 export default function PhysioTriages() {
   const { user, profile } = useAuth();
@@ -279,6 +280,28 @@ export default function PhysioTriages() {
                 >
                   <X size={24} />
                 </button>
+              </div>
+
+              <div className="px-5 sm:px-8 pt-4 bg-white dark:bg-slate-900">
+                <DigitalSignaturePanel
+                  compact
+                  resourceType="triagem"
+                  resourceId={String(selectedTriage.id)}
+                  resourceTitle={`Relatório de Triagem - ${selectedTriage.paciente?.nome_completo || 'Paciente'}`}
+                  resourceContent={{
+                    id: selectedTriage.id,
+                    paciente_id: selectedTriage.paciente_id,
+                    paciente: selectedTriage.paciente?.nome_completo,
+                    regiao_dor: selectedTriage.regiao_dor,
+                    escala_dor: selectedTriage.escala_dor,
+                    gravidade: selectedTriage.gravidade,
+                    classificacao: selectedTriage.classificacao,
+                    relatorio: selectedTriage.relatorio,
+                    created_at: selectedTriage.created_at,
+                  }}
+                  patientId={selectedTriage.paciente_id || null}
+                  physioId={user?.id || null}
+                />
               </div>
 
               <div className="p-5 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 overscroll-contain">

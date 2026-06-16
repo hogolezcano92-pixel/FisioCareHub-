@@ -39,6 +39,7 @@ import { getPrivateDocumentUrl } from '../services/supabaseStorage';
 import { generateLegalDocumentPDF, getLegalDocumentPdfBlob } from '../lib/legalDocumentPdf';
 import { FREE_DOCUMENT_MONTHLY_LIMIT, getEffectivePlan, isFreeDocumentTemplate } from '../lib/planAccess';
 import { formatDateKeyBR, todayDateKeyBR } from '../lib/utils';
+import DigitalSignaturePanel from '../components/DigitalSignaturePanel';
 
 const FAVORITE_TEMPLATES = [
   { id: 'contrato', name: 'Contrato de Prestação', icon: FileSignature, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -1310,6 +1311,11 @@ export default function Documents() {
                           {doc.accepted_at ? `Aceito em ${formatDateKeyBR(doc.accepted_at)}` : (doc.acceptance_required ? 'Aceite pendente' : 'Leitura disponível')}
                         </p>
                       )}
+                      {!doc.isClinicalFile && (doc.signature_status || doc.patient_signed_at || doc.physio_signed_at) && (
+                        <p className="text-indigo-500 dark:text-indigo-300 text-[10px] font-black mt-2 uppercase tracking-widest">
+                          Assinatura digital disponível
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1902,6 +1908,20 @@ export default function Documents() {
                   </button>
                 </div>
               </div>
+
+              {viewingDoc && !viewingDoc.isClinicalFile && (
+                <div className="px-3 sm:px-6 pt-3 bg-slate-950">
+                  <DigitalSignaturePanel
+                    compact
+                    resourceType="documento_gerado"
+                    resourceId={String(viewingDoc.id)}
+                    resourceTitle={getDocumentTitle(viewingDoc)}
+                    resourceContent={buildPremiumPdfPayload(viewingDoc)}
+                    patientId={viewingDoc.paciente_id || null}
+                    physioId={viewingDoc.physio_id || null}
+                  />
+                </div>
+              )}
 
               <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-slate-950">
                 {viewingDoc.isClinicalFile ? (
