@@ -153,11 +153,11 @@ export default function PhysioTriages() {
 
   return (
     <ProGuard>
-      <div className="max-w-6xl mx-auto space-y-8 pb-20 w-full box-border overflow-wrap-break-word">
+      <div className="max-w-6xl mx-auto space-y-8 pb-28 w-full box-border overflow-wrap-break-word">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 tracking-tight">Triagens Realizadas</h1>
-          <p className="text-slate-400 font-medium">Acompanhe as avaliações de IA dos seus pacientes.</p>
+          <h1 className="text-3xl font-black text-slate-950 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-indigo-400 dark:to-cyan-400 tracking-tight">Triagens Realizadas</h1>
+          <p className="text-slate-600 dark:text-slate-400 font-medium">Acompanhe as avaliações de IA dos seus pacientes.</p>
         </div>
         
         <div className="relative w-full md:w-80">
@@ -170,7 +170,7 @@ export default function PhysioTriages() {
             placeholder="Buscar por paciente ou região..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-4 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl w-full text-white placeholder:text-slate-600 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all !pl-[60px]"
+            className="pr-4 py-3 bg-white/90 dark:bg-slate-900/50 border border-indigo-200/80 dark:border-slate-800 rounded-2xl w-full text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all !pl-[60px]"
           />
         </div>
       </header>
@@ -181,12 +181,12 @@ export default function PhysioTriages() {
           <p className="text-slate-500 font-bold animate-pulse">Carregando triagens...</p>
         </div>
       ) : filteredTriages.length === 0 ? (
-        <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] text-center space-y-4 border border-slate-800 w-full">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-700">
+        <div className="bg-white/90 dark:bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] text-center space-y-4 border border-indigo-100 dark:border-slate-800 w-full">
+          <div className="w-20 h-20 bg-indigo-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-indigo-300 dark:text-slate-700">
             <BrainCircuit size={40} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-white">Nenhuma triagem encontrada</h3>
+            <h3 className="text-xl font-black text-slate-950 dark:text-white">Nenhuma triagem encontrada</h3>
             <p className="text-slate-400">As triagens realizadas pelos pacientes aparecerão aqui.</p>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function PhysioTriages() {
               key={triage.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group cursor-pointer"
+              className="bg-white/95 dark:bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-indigo-100 dark:border-slate-800 shadow-sm shadow-indigo-100/60 dark:shadow-none hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group cursor-pointer"
               onClick={() => setSelectedTriage(triage)}
             >
               <div className="flex justify-between items-start mb-6">
@@ -206,7 +206,7 @@ export default function PhysioTriages() {
                     <User size={24} />
                   </div>
                   <div>
-                    <h4 className="font-black text-white line-clamp-1">{triage.paciente?.nome_completo || 'Paciente'}</h4>
+                    <h4 className="font-black text-slate-950 dark:text-white line-clamp-1">{triage.paciente?.nome_completo || 'Paciente'}</h4>
                     <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                       <Calendar size={12} />
                       {formatDate(triage.created_at)}
@@ -224,20 +224,20 @@ export default function PhysioTriages() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm">
                   <Activity size={16} className="text-slate-500" />
-                  <span className="text-slate-300 font-bold">{triage.regiao_dor}</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">{triage.regiao_dor}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Clock size={16} className="text-slate-500" />
-                  <span className="text-slate-400 font-medium">{triage.tempo_sintomas}</span>
+                  <span className="text-slate-600 dark:text-slate-400 font-medium">{triage.tempo_sintomas}</span>
                 </div>
                 
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                <div className="pt-4 border-t border-indigo-100 dark:border-slate-800 flex items-center justify-between">
                   <span className="text-xs font-black text-indigo-400 uppercase tracking-widest group-hover:translate-x-1 transition-transform flex items-center gap-1">
                     Ver Relatório <ChevronRight size={14} />
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] font-black text-slate-500 uppercase">Dor:</span>
-                    <span className="text-sm font-black text-white">{triage.escala_dor}/10</span>
+                    <span className="text-sm font-black text-slate-950 dark:text-white">{triage.escala_dor}/10</span>
                   </div>
                 </div>
               </div>
@@ -249,80 +249,80 @@ export default function PhysioTriages() {
       {/* Triage Detail Modal */}
       <AnimatePresence>
         {selectedTriage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-[calc(env(safe-area-inset-top)+6.75rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:p-6 sm:pt-24">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedTriage(null)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/35 dark:bg-slate-950/80 backdrop-blur-sm"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-slate-900 w-full max-w-3xl rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh] border border-slate-800"
+              className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[2rem] sm:rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-full border border-indigo-100 dark:border-slate-800"
             >
-              <div className="p-8 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div className="p-5 sm:p-8 border-b border-indigo-100 dark:border-slate-800 flex items-start justify-between gap-3 bg-white/95 dark:bg-slate-900/80">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
                     <BrainCircuit size={28} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight">Relatório de Triagem</h2>
-                    <p className="text-slate-400 font-medium">{selectedTriage.paciente?.nome_completo} • {formatDate(selectedTriage.created_at)}</p>
+                    <h2 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">Relatório de Triagem</h2>
+                    <p className="text-slate-600 dark:text-slate-400 font-medium">{selectedTriage.paciente?.nome_completo} • {formatDate(selectedTriage.created_at)}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedTriage(null)}
-                  className="w-12 h-12 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  className="w-11 h-11 sm:w-12 sm:h-12 bg-slate-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 rounded-2xl flex items-center justify-center text-slate-700 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors flex-shrink-0"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="p-8 overflow-y-auto flex-1 space-y-8">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="p-4 bg-slate-800/50 rounded-2xl space-y-1">
+              <div className="p-5 sm:p-8 overflow-y-auto flex-1 space-y-6 sm:space-y-8 overscroll-contain">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Região</span>
-                    <p className="font-bold text-white">{selectedTriage.regiao_dor}</p>
+                    <p className="font-bold text-slate-950 dark:text-white">{selectedTriage.regiao_dor}</p>
                   </div>
-                  <div className="p-4 bg-slate-800/50 rounded-2xl space-y-1">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Dor</span>
-                    <p className="font-bold text-white">{selectedTriage.escala_dor}/10</p>
+                    <p className="font-bold text-slate-950 dark:text-white">{selectedTriage.escala_dor}/10</p>
                   </div>
-                  <div className="p-4 bg-slate-800/50 rounded-2xl space-y-1">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gravidade</span>
                     <p className={cn(
                       "font-bold",
                       selectedTriage.gravidade === 'Vermelho' || selectedTriage.gravidade === 'grave' ? "text-rose-400" : selectedTriage.gravidade === 'Amarelo' || selectedTriage.gravidade === 'moderado' ? "text-amber-400" : "text-emerald-400"
                     )}>{selectedTriage.gravidade}</p>
                   </div>
-                  <div className="p-4 bg-slate-800/50 rounded-2xl space-y-1">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-1 border border-indigo-50 dark:border-transparent">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Classificação</span>
-                    <p className="font-bold text-white line-clamp-1">{selectedTriage.classificacao}</p>
+                    <p className="font-bold text-slate-950 dark:text-white line-clamp-1">{selectedTriage.classificacao}</p>
                   </div>
                 </div>
 
-                <div className="prose prose-invert max-w-none bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-800 break-words text-slate-300">
+                <div className="prose prose-slate dark:prose-invert max-w-none bg-white dark:bg-slate-800/50 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-indigo-100 dark:border-slate-800 break-words text-slate-700 dark:text-slate-300 shadow-sm shadow-indigo-100/50 dark:shadow-none">
                   <ReactMarkdown>{selectedTriage.relatorio}</ReactMarkdown>
                 </div>
 
                 {selectedTriage.red_flag && (
-                  <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] flex items-start gap-4 text-rose-200">
-                    <AlertCircle className="flex-shrink-0 mt-1 text-rose-400" size={24} />
+                  <div className="p-5 sm:p-6 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-[2rem] flex items-start gap-4 text-rose-700 dark:text-rose-200">
+                    <AlertCircle className="flex-shrink-0 mt-1 text-rose-500 dark:text-rose-400" size={24} />
                     <div className="space-y-1">
-                      <p className="font-black uppercase tracking-widest text-xs text-rose-400">Atenção: Red Flags Detectadas</p>
+                      <p className="font-black uppercase tracking-widest text-xs text-rose-600 dark:text-rose-400">Atenção: Red Flags Detectadas</p>
                       <p className="text-sm font-medium leading-relaxed">Esta triagem identificou sinais de alerta que podem exigir atenção médica imediata ou prioridade máxima na avaliação.</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="p-8 border-t border-slate-800 bg-slate-900/50 flex gap-4">
+              <div className="p-5 sm:p-8 border-t border-indigo-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 flex gap-3 sm:gap-4">
                 <button
                   onClick={() => downloadReport(selectedTriage)}
-                  className="flex-1 py-4 bg-slate-800 border border-slate-700 text-slate-300 rounded-2xl font-black hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-4 bg-slate-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 text-slate-800 dark:text-slate-300 rounded-2xl font-black hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Download size={20} /> Baixar PDF
                 </button>
@@ -339,24 +339,5 @@ export default function PhysioTriages() {
       </AnimatePresence>
     </div>
     </ProGuard>
-  );
-}
-
-function Loader2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
   );
 }
