@@ -135,6 +135,31 @@ const getPatientPhoto = (patient?: ClinicalPatient | null) => {
   return raw ? resolveStorageUrl(raw) : '';
 };
 
+const getPatientReadableIds = (patient?: ClinicalPatient | null) => {
+  return Array.from(
+    new Set(
+      [patient?.id, patient?.perfil_id]
+        .filter(Boolean)
+        .map(String),
+    ),
+  );
+};
+
+const recordBelongsToPatient = (record: any, patient?: ClinicalPatient | null) => {
+  if (!patient) return false;
+  const ids = getPatientReadableIds(patient);
+  return ids.includes(String(record?.paciente_id || ''));
+};
+
+const mergeRowsById = (...groups: any[][]) => {
+  const map = new Map<string, any>();
+  groups.flat().forEach((row) => {
+    if (!row?.id) return;
+    map.set(String(row.id), { ...(map.get(String(row.id)) || {}), ...row });
+  });
+  return Array.from(map.values());
+};
+
 const formatDateOnly = (value?: string | null) => {
   if (!value) return 'Data não informada';
   const date = new Date(value);
@@ -259,21 +284,54 @@ export default function Records() {
           const linkedProfileIds = patients
             .map((patient) => patient.perfil_id)
             .filter(Boolean) as string[];
+          const patientEmails = Array.from(
+            new Set(
+              patients
+                .map((patient) => String(patient.email || '').trim().toLowerCase())
+                .filter(Boolean),
+            ),
+          );
 
-          if (linkedProfileIds.length > 0) {
-            const { data: linkedProfiles, error: profilesError } = await supabase
-              .from('perfis')
-              .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
-              .in('id', linkedProfileIds);
+          if (linkedProfileIds.length > 0 || patientEmails.length > 0) {
+            const profileQueries = [] as any[];
+            if (linkedProfileIds.length > 0) {
+              profileQueries.push(
+                supabase
+                  .from('perfis')
+                  .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
+                  .in('id', linkedProfileIds),
+              );
+            }
+            if (patientEmails.length > 0) {
+              profileQueries.push(
+                supabase
+                  .from('perfis')
+                  .select('id, nome_completo, email, telefone, data_nascimento, avatar_url, foto_url')
+                  .in('email', patientEmails),
+              );
+            }
 
-            if (!profilesError && linkedProfiles) {
-              const profilesById = new Map(linkedProfiles.map((item: any) => [item.id, item]));
+            const profileResults = await Promise.allSettled(profileQueries);
+            const linkedProfiles = profileResults.flatMap((result: any) =>
+              result.status === 'fulfilled' && !result.value.error ? result.value.data || [] : [],
+            );
+
+            if (linkedProfiles.length > 0) {
+              const profilesById = new Map(linkedProfiles.map((item: any) => [String(item.id), item]));
+              const profilesByEmail = new Map(
+                linkedProfiles
+                  .filter((item: any) => item.email)
+                  .map((item: any) => [String(item.email).trim().toLowerCase(), item]),
+              );
 
               patients = patients.map((patient) => {
-                const linkedProfile = patient.perfil_id ? profilesById.get(patient.perfil_id) : null;
+                const linkedProfile = patient.perfil_id
+                  ? profilesById.get(String(patient.perfil_id))
+                  : profilesByEmail.get(String(patient.email || '').trim().toLowerCase());
 
                 return {
                   ...patient,
+                  perfil_id: patient.perfil_id || linkedProfile?.id || null,
                   nome_completo: patient.nome_completo || patient.nome || linkedProfile?.nome_completo || null,
                   email: patient.email || linkedProfile?.email || null,
                   telefone: patient.telefone || linkedProfile?.telefone || null,
@@ -287,7 +345,7 @@ export default function Records() {
 
           setClinicalPatients(patients);
 
-          const clinicalIds = patients.map((p) => p.id).filter(Boolean);
+          const clinicalIds = Array.from(new Set(patients.flatMap((p) => getPatientReadableIds(p))));
 
           if (clinicalIds.length > 0) {
             const { data: evalData, error: evalError } = await supabase
@@ -314,12 +372,21 @@ export default function Records() {
             if (fileError) warnings.push(`Documentos: ${fileError.message}`);
             setFiles(fileData || []);
 
-            const { data: painData, error: painError } = await supabase
-              .from('registros_paciente')
-              .select('*')
-              .in('paciente_id', clinicalIds)
-              .order('data_registro', { ascending: false });
-            if (!painError) setPainRecords(painData || []);
+            const [{ data: painData, error: painError }, { data: painByPhysioData, error: painByPhysioError }] = await Promise.all([
+              supabase
+                .from('registros_paciente')
+                .select('*')
+                .in('paciente_id', clinicalIds)
+                .order('data_registro', { ascending: false }),
+              supabase
+                .from('registros_paciente')
+                .select('*')
+                .eq('fisioterapeuta_id', user.id)
+                .order('data_registro', { ascending: false }),
+            ]);
+            if (painError) warnings.push(`Diário de dor: ${painError.message}`);
+            if (painByPhysioError) warnings.push(`Diário de dor vinculado: ${painByPhysioError.message}`);
+            setPainRecords(mergeRowsById(painData || [], painByPhysioData || []));
 
             const { data: oldRecords, error: oldError } = await supabase
               .from('prontuarios')
@@ -399,17 +466,14 @@ export default function Records() {
   }, [authLoading, user, profile?.email, profile?.tipo_usuario, navigate]);
 
   const patientStats = useMemo(() => {
-    return clinicalPatients.map((patient) => {
-      const id = patient.id;
-      return {
-        patient,
-        evaluations: evaluations.filter((item) => item.paciente_id === id).length,
-        evolutions: evolutions.filter((item) => item.paciente_id === id).length,
-        files: files.filter((item) => item.paciente_id === id).length,
-        pain: painRecords.filter((item) => item.paciente_id === id).length,
-        legacy: legacyRecords.filter((item) => item.paciente_id === id).length,
-      };
-    });
+    return clinicalPatients.map((patient) => ({
+      patient,
+      evaluations: evaluations.filter((item) => recordBelongsToPatient(item, patient)).length,
+      evolutions: evolutions.filter((item) => recordBelongsToPatient(item, patient)).length,
+      files: files.filter((item) => recordBelongsToPatient(item, patient)).length,
+      pain: painRecords.filter((item) => recordBelongsToPatient(item, patient)).length,
+      legacy: legacyRecords.filter((item) => recordBelongsToPatient(item, patient)).length,
+    }));
   }, [clinicalPatients, evaluations, evolutions, files, painRecords, legacyRecords]);
 
   const filteredPatientStats = useMemo(() => {
@@ -427,11 +491,11 @@ export default function Records() {
   }, [clinicalPatients, selectedPatientId]);
 
   const scopedPatientId = isPhysio ? selectedPatient?.id : null;
-  const visibleEvaluations = scopedPatientId ? evaluations.filter((item) => item.paciente_id === scopedPatientId) : evaluations;
-  const visibleEvolutions = scopedPatientId ? evolutions.filter((item) => item.paciente_id === scopedPatientId) : evolutions;
-  const visibleFiles = scopedPatientId ? files.filter((item) => item.paciente_id === scopedPatientId) : files;
-  const visiblePainRecords = scopedPatientId ? painRecords.filter((item) => item.paciente_id === scopedPatientId) : painRecords;
-  const visibleLegacyRecords = scopedPatientId ? legacyRecords.filter((item) => item.paciente_id === scopedPatientId) : legacyRecords;
+  const visibleEvaluations = scopedPatientId ? evaluations.filter((item) => recordBelongsToPatient(item, selectedPatient)) : evaluations;
+  const visibleEvolutions = scopedPatientId ? evolutions.filter((item) => recordBelongsToPatient(item, selectedPatient)) : evolutions;
+  const visibleFiles = scopedPatientId ? files.filter((item) => recordBelongsToPatient(item, selectedPatient)) : files;
+  const visiblePainRecords = scopedPatientId ? painRecords.filter((item) => recordBelongsToPatient(item, selectedPatient)) : painRecords;
+  const visibleLegacyRecords = scopedPatientId ? legacyRecords.filter((item) => recordBelongsToPatient(item, selectedPatient)) : legacyRecords;
   const visibleClinicalPatients = scopedPatientId && selectedPatient ? [selectedPatient] : clinicalPatients;
 
   const totalRecords = visibleEvaluations.length + visibleEvolutions.length + visibleFiles.length + visiblePainRecords.length + visibleLegacyRecords.length + visibleClinicalPatients.length;

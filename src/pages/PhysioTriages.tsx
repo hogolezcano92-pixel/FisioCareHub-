@@ -15,13 +15,15 @@ import {
   Activity,
   FileText,
   X,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { formatDate, cn } from '../lib/utils';
 import { toast } from 'sonner';
 import ProGuard from '../components/ProGuard';
 import { generateTriagePdf } from '../lib/triagePdf';
+import { getPhysioVisiblePatientIds } from '../services/patientLinkService';
 
 export default function PhysioTriages() {
   const { user, profile } = useAuth();
@@ -44,58 +46,82 @@ export default function PhysioTriages() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: supabaseError } = await supabase
-        .from('triagens')
-        .select(`
-          *,
-          paciente:perfis!paciente_id (
-            id,
-            nome_completo,
-            avatar_url
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (supabaseError) {
-        console.warn('Primary fetch failed for triages, trying secondary fallback...', supabaseError.message);
-        
-        // Fallback: Busca básica sem join e depois busca os perfis relacionados
-        const { data: baseData, error: baseError } = await supabase
-          .from('triagens')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (baseError) throw baseError;
-        if (!baseData || baseData.length === 0) {
-          setTriages([]);
-          return;
-        }
-
-        const pacienteIds = [...new Set(baseData.map(t => t.paciente_id))].filter(Boolean);
-
-        if (pacienteIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('perfis')
-            .select('id, nome_completo, avatar_url')
-            .in('id', pacienteIds);
-
-          const profileMap = (profiles || []).reduce((acc: any, p) => {
-            acc[p.id] = p;
-            return acc;
-          }, {});
-
-          const enriched = baseData.map(t => ({
-            ...t,
-            paciente: profileMap[t.paciente_id] || { nome_completo: 'Paciente Externo', avatar_url: null }
-          }));
-          
-          setTriages(enriched);
-        } else {
-          setTriages(baseData.map(t => ({ ...t, paciente: { nome_completo: 'Paciente Externo', avatar_url: null } })));
-        }
+      if (!user?.id) {
+        setTriages([]);
         return;
       }
-      setTriages(data || []);
+
+      const visiblePatientIds = await getPhysioVisiblePatientIds(user.id);
+
+      if (visiblePatientIds.length === 0) {
+        setTriages([]);
+        return;
+      }
+
+      const { data: baseData, error: baseError } = await supabase
+        .from('triagens')
+        .select('*')
+        .in('paciente_id', visiblePatientIds)
+        .order('created_at', { ascending: false });
+
+      if (baseError) throw baseError;
+
+      const triageRows = baseData || [];
+      if (triageRows.length === 0) {
+        setTriages([]);
+        return;
+      }
+
+      const pacienteIds = [...new Set(triageRows.map((t) => t.paciente_id).filter(Boolean).map(String))];
+      const patientMap: Record<string, any> = {};
+
+      if (pacienteIds.length > 0) {
+        const [profilesResult, clinicalPatientsByIdResult, clinicalPatientsByProfileResult] = await Promise.allSettled([
+          supabase
+            .from('perfis')
+            .select('id, nome_completo, avatar_url, foto_url, email')
+            .in('id', pacienteIds),
+          supabase
+            .from('pacientes')
+            .select('id, perfil_id, nome_completo, nome, avatar_url, foto_url, email')
+            .in('id', pacienteIds),
+          supabase
+            .from('pacientes')
+            .select('id, perfil_id, nome_completo, nome, avatar_url, foto_url, email')
+            .in('perfil_id', pacienteIds),
+        ]);
+
+        if (profilesResult.status === 'fulfilled' && !profilesResult.value.error) {
+          (profilesResult.value.data || []).forEach((profile: any) => {
+            patientMap[String(profile.id)] = profile;
+          });
+        }
+
+        const addClinicalPatient = (patient: any) => {
+          if (!patient) return;
+          const normalized = {
+            ...patient,
+            nome_completo: patient.nome_completo || patient.nome || 'Paciente',
+          };
+          if (patient.id) patientMap[String(patient.id)] = { ...(patientMap[String(patient.id)] || {}), ...normalized };
+          if (patient.perfil_id) patientMap[String(patient.perfil_id)] = { ...(patientMap[String(patient.perfil_id)] || {}), ...normalized };
+        };
+
+        if (clinicalPatientsByIdResult.status === 'fulfilled' && !clinicalPatientsByIdResult.value.error) {
+          (clinicalPatientsByIdResult.value.data || []).forEach(addClinicalPatient);
+        }
+
+        if (clinicalPatientsByProfileResult.status === 'fulfilled' && !clinicalPatientsByProfileResult.value.error) {
+          (clinicalPatientsByProfileResult.value.data || []).forEach(addClinicalPatient);
+        }
+      }
+
+      const enriched = triageRows.map((triage) => ({
+        ...triage,
+        paciente: patientMap[String(triage.paciente_id)] || { nome_completo: 'Paciente vinculado', avatar_url: null },
+      }));
+
+      setTriages(enriched);
     } catch (err: any) {
       console.error('Erro ao buscar triagens:', err);
       setTriages([]);

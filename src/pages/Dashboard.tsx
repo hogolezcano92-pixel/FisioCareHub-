@@ -1544,6 +1544,44 @@ export default function Dashboard() {
             }
           }
         }
+
+
+        // Segurança extra para o Dashboard do fisioterapeuta:
+        // além dos IDs do paciente (pacientes.id/perfis.id), alguns registros rápidos
+        // de dor já são salvos com fisioterapeuta_id. Mesclamos por id para evitar
+        // duplicidade e garantir que a ação do paciente apareça para o fisio.
+        if (isPhysio) {
+          const { data: physioPainRecords, error: physioPainRecordsError } =
+            await supabase
+              .from("registros_paciente")
+              .select(
+                "id, created_at, data_registro, paciente_id, nivel_dor, notas, concluidos_count, total_exercicios",
+              )
+              .eq("fisioterapeuta_id", data.id)
+              .order("data_registro", { ascending: false })
+              .limit(40);
+
+          if (physioPainRecordsError) {
+            console.error(
+              "Erro ao buscar registros de dor vinculados ao fisio no dashboard:",
+              physioPainRecordsError,
+            );
+          } else if (physioPainRecords?.length) {
+            const mergedRegistros = new Map<string, any>();
+            [...recentRegistrosPacienteData, ...physioPainRecords].forEach(
+              (record: any) => {
+                if (record?.id) mergedRegistros.set(String(record.id), record);
+              },
+            );
+            recentRegistrosPacienteData = Array.from(mergedRegistros.values())
+              .sort((a: any, b: any) => {
+                const dateA = new Date(a.data_registro || a.created_at || 0).getTime();
+                const dateB = new Date(b.data_registro || b.created_at || 0).getTime();
+                return dateB - dateA;
+              })
+              .slice(0, 40);
+          }
+        }
         const recentChecklistExerciciosData =
           checklistExerciciosResult &&
           checklistExerciciosResult.status === "fulfilled" &&
