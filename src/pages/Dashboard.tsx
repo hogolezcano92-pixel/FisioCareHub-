@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import {
   getLinkedClinicalPatients,
   getPatientVisibleIds,
+  getPhysioVisiblePatientIds,
 } from "../services/patientLinkService";
 
 // New FisioCare Components
@@ -1043,7 +1044,7 @@ export default function Dashboard() {
 
           const { data: internalPatients } = await supabase
             .from("pacientes")
-            .select("id, perfil_id, nome_completo, nome, email, avatar_url, foto_url")
+            .select("id, perfil_id, nome_completo, nome, email, convite_email, avatar_url, foto_url")
             .eq("fisioterapeuta_id", data.id);
 
           linkedInternalPatients = internalPatients || [];
@@ -1058,8 +1059,9 @@ export default function Dashboard() {
           const internalPatientEmails = Array.from(
             new Set(
               (internalPatients || [])
-                .map((patient: any) =>
-                  String(patient.email || "")
+                .flatMap((patient: any) => [patient.email, patient.convite_email])
+                .map((email: any) =>
+                  String(email || "")
                     .trim()
                     .toLowerCase(),
                 )
@@ -1074,8 +1076,24 @@ export default function Dashboard() {
               .in("email", internalPatientEmails);
 
             (linkedProfiles || []).forEach((patientProfile: any) => {
-              if (patientProfile.id) linkedIds.add(patientProfile.id);
+              if (patientProfile.id) linkedIds.add(String(patientProfile.id));
             });
+          }
+
+          // Usa o mesmo serviço da tela de triagens para o Dashboard não ficar
+          // com uma lista de IDs diferente. Assim, triagens salvas pelo paciente
+          // com perfis.id, pacientes.id ou vínculo por agendamento também aparecem
+          // em "Triagens Inteligentes" no Dashboard do fisioterapeuta.
+          try {
+            const serviceVisibleIds = await getPhysioVisiblePatientIds(data.id);
+            serviceVisibleIds.forEach((id) => {
+              if (id) linkedIds.add(String(id));
+            });
+          } catch (visibleIdsError) {
+            console.error(
+              "Erro ao montar IDs visíveis do fisioterapeuta no dashboard:",
+              visibleIdsError,
+            );
           }
 
           linkedPatientProfileIds = Array.from(linkedIds);
@@ -1649,7 +1667,7 @@ export default function Dashboard() {
                 .in("id", patientIdsForMetadata),
               supabase
                 .from("pacientes")
-                .select("id, perfil_id, nome_completo, nome, email, avatar_url, foto_url")
+                .select("id, perfil_id, nome_completo, nome, email, convite_email, avatar_url, foto_url")
                 .in("id", patientIdsForMetadata),
             ]);
 
@@ -2724,114 +2742,89 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-[2rem] border border-violet-100/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(124,58,237,0.12)] dark:border-white/10 dark:bg-black/10 sm:p-5">
-                  {selectedHistoryGroup && (
-                    <>
-                      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-center gap-3">
-                          {selectedHistoryGroup.avatarUrl ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {patientActivityGroups.map((group) => {
+                    const initials = group.name
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")
+                      .toUpperCase() || "P";
+
+                    return (
+                      <motion.article
+                        key={group.patientId}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-[2rem] border border-violet-100/80 bg-white/85 p-4 shadow-[0_20px_55px_rgba(124,58,237,0.10)] transition-all hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(124,58,237,0.16)] dark:border-white/10 dark:bg-black/10 sm:p-5"
+                      >
+                        <div className="mb-4 flex items-center gap-3">
+                          {group.avatarUrl ? (
                             <img
-                              src={selectedHistoryGroup.avatarUrl}
-                              alt={selectedHistoryGroup.name}
-                              className="h-14 w-14 rounded-2xl border border-white object-cover shadow-xl dark:border-white/10"
+                              src={group.avatarUrl}
+                              alt={group.name}
+                              className="h-12 w-12 rounded-2xl border border-white object-cover shadow-xl dark:border-white/10"
                             />
                           ) : (
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-sky-400 text-sm font-black text-white shadow-xl shadow-violet-500/20">
-                              {selectedHistoryInitials}
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-sky-400 text-xs font-black text-white shadow-xl shadow-violet-500/20">
+                              {initials}
                             </div>
                           )}
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-[9px] font-black uppercase tracking-[0.22em] text-violet-600 dark:text-violet-300">
-                              Timeline individual
+                              Histórico individual
                             </p>
-                            <h3 className="truncate text-lg font-black text-slate-950 dark:text-white">
-                              {selectedHistoryGroup.name}
+                            <h3 className="truncate text-base font-black text-slate-950 dark:text-white">
+                              {group.name}
                             </h3>
                             <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                              {selectedHistoryGroup.email || selectedHistoryGroup.lastActivityLabel}
+                              {group.email || group.lastActivityLabel}
                             </p>
                           </div>
+                        </div>
+
+                        <div className="mb-4 grid grid-cols-2 gap-2">
+                          <div className="rounded-2xl bg-slate-100/80 px-3 py-2 dark:bg-white/10">
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Última</p>
+                            <p className="mt-1 text-[11px] font-black text-slate-800 dark:text-white">
+                              {formatActivityTimeChip(group.lastActivityAt)} • {formatActivityDateChip(group.lastActivityAt)}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-sky-100/80 px-3 py-2 dark:bg-sky-500/15">
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-sky-500 dark:text-sky-300">Eventos</p>
+                            <p className="mt-1 text-[11px] font-black text-sky-800 dark:text-white">
+                              {group.activities.length} registro{group.activities.length > 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          {group.painLevel !== null && group.painLevel !== undefined && (
+                            <div className="rounded-2xl bg-orange-100/80 px-3 py-2 dark:bg-orange-500/15">
+                              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-orange-500 dark:text-orange-300">Dor</p>
+                              <p className="mt-1 text-[11px] font-black text-orange-800 dark:text-white">
+                                {group.painLevel}/10
+                              </p>
+                            </div>
+                          )}
+                          {group.triageRisk && (
+                            <div className="rounded-2xl bg-emerald-100/80 px-3 py-2 dark:bg-emerald-500/15">
+                              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-500 dark:text-emerald-300">Triagem</p>
+                              <p className="mt-1 text-[11px] font-black text-emerald-800 dark:text-white">
+                                {group.triageRisk}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <button
                           type="button"
-                          onClick={() => navigate(`/patients/${encodeURIComponent(selectedHistoryGroup.patientId)}`)}
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
+                          onClick={() => navigate(`/patients/${encodeURIComponent(group.patientId)}/activity-history`)}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-sky-500 px-4 py-2.5 text-xs font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-violet-500/20 transition-all hover:-translate-y-0.5"
                         >
-                          Abrir prontuário <FileText size={14} />
+                          Ver detalhes <ChevronRight size={14} />
                         </button>
-                      </div>
-
-                      {patientActivityGroups.length > 1 && (
-                        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {patientActivityGroups.map((group) => {
-                            const selected = selectedHistoryGroup.patientId === group.patientId;
-
-                            return (
-                              <button
-                                key={group.patientId}
-                                type="button"
-                                onClick={() => setSelectedHistoryPatientId(group.patientId)}
-                                className={cn(
-                                  "shrink-0 rounded-2xl border px-3 py-2 text-left transition-all",
-                                  selected
-                                    ? "border-violet-300 bg-violet-600 text-white shadow-lg shadow-violet-500/20 dark:border-violet-300/30"
-                                    : "border-slate-200 bg-white/80 text-slate-600 hover:border-violet-200 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300 dark:hover:text-white",
-                                )}
-                              >
-                                <span className="block max-w-[150px] truncate text-[11px] font-black">
-                                  {group.name}
-                                </span>
-                                <span className={cn(
-                                  "mt-0.5 block text-[9px] font-black uppercase tracking-[0.14em]",
-                                  selected ? "text-white/75" : "text-slate-400 dark:text-slate-500",
-                                )}>
-                                  {group.activities.length} evento{group.activities.length > 1 ? "s" : ""}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <div className="rounded-2xl bg-slate-100/80 px-3 py-2 dark:bg-white/10">
-                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Última</p>
-                          <p className="mt-1 text-[11px] font-black text-slate-800 dark:text-white">
-                            {formatActivityTimeChip(selectedHistoryGroup.lastActivityAt)} • {formatActivityDateChip(selectedHistoryGroup.lastActivityAt)}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-sky-100/80 px-3 py-2 dark:bg-sky-500/15">
-                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-sky-500 dark:text-sky-300">Eventos</p>
-                          <p className="mt-1 text-[11px] font-black text-sky-800 dark:text-white">
-                            {selectedHistoryGroup.activities.length} registro{selectedHistoryGroup.activities.length > 1 ? "s" : ""}
-                          </p>
-                        </div>
-                        {selectedHistoryGroup.painLevel !== null && selectedHistoryGroup.painLevel !== undefined && (
-                          <div className="rounded-2xl bg-orange-100/80 px-3 py-2 dark:bg-orange-500/15">
-                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-orange-500 dark:text-orange-300">Dor</p>
-                            <p className="mt-1 text-[11px] font-black text-orange-800 dark:text-white">
-                              {selectedHistoryGroup.painLevel}/10
-                            </p>
-                          </div>
-                        )}
-                        {selectedHistoryGroup.triageRisk && (
-                          <div className="rounded-2xl bg-emerald-100/80 px-3 py-2 dark:bg-emerald-500/15">
-                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-500 dark:text-emerald-300">Triagem</p>
-                            <p className="mt-1 text-[11px] font-black text-emerald-800 dark:text-white">
-                              {selectedHistoryGroup.triageRisk}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <ActivityTimeline
-                        activities={selectedHistoryGroup.activities}
-                        mode="physio"
-                        detailsHref={`/patients/${encodeURIComponent(selectedHistoryGroup.patientId)}/activity-history`}
-                      />
-                    </>
-                  )}
+                      </motion.article>
+                    );
+                  })}
                 </div>
               )}
             </div>
