@@ -6390,3 +6390,23 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+
+/* =========================================================
+   Chat premium compacto - mantém dark e melhora nitidez no light
+   ========================================================= */
+.fch-chat-messages {
+  background-image:
+    linear-gradient(rgba(248, 250, 252, 0.86), rgba(248, 250, 252, 0.90)),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.11), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.09), transparent 36%),
+    url('https://www.transparenttextures.com/patterns/cubes.png');
+}
+
+.dark .fch-chat-messages {
+  background-image:
+    linear-gradient(rgba(2, 6, 23, 0.66), rgba(2, 6, 23, 0.70)),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.055), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.055), transparent 36%),
+    url('https://www.transparenttextures.com/patterns/cubes.png');
+}

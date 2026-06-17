@@ -626,24 +626,15 @@ function HeaderObserver() {
         const rect = h.getBoundingClientRect();
         const style = window.getComputedStyle(h);
         const isFixed = style.position === 'fixed';
-        const isFloatingMobileHeader = h.classList.contains('app-floating-mobile-header');
 
-        if (
-          isFixed &&
-          rect.height > 0 &&
-          rect.top <= (isFloatingMobileHeader ? 96 : 5) &&
-          style.display !== 'none' &&
-          style.visibility !== 'hidden'
-        ) {
+        if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
           activeHeader = h;
           break;
         }
       }
 
       if (activeHeader) {
-        const rect = activeHeader.getBoundingClientRect();
-        const isFloatingMobileHeader = activeHeader.classList.contains('app-floating-mobile-header');
-        const height = isFloatingMobileHeader ? Math.ceil(rect.bottom + 6) : activeHeader.offsetHeight;
+        const height = activeHeader.offsetHeight;
         document.documentElement.style.setProperty('--header-height', `${height}px`);
       } else {
         document.documentElement.style.setProperty('--header-height', '0px');
@@ -701,8 +692,8 @@ function AppContent() {
   );
 
   const showMobileBottomNavigation = useMemo(() =>
-    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage),
-    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage]
+    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage && location.pathname !== '/chat'),
+    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage, location.pathname]
   );
 
   useEffect(() => {
@@ -738,15 +729,14 @@ function AppContent() {
 
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="app-floating-mobile-header lg:hidden fixed top-0 left-0 right-0 z-[45] h-[calc(env(safe-area-inset-top)+4.5rem)] min-h-[4.5rem] pt-[env(safe-area-inset-top)] px-4 flex items-center justify-between rounded-t-none rounded-b-[26px] border-x-0 border-t-0 border-b border-slate-200/80 bg-white/94 shadow-[0_10px_28px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/94 dark:shadow-[0_10px_32px_rgba(0,0,0,0.35),0_0_0_1px_rgba(96,165,250,0.05)] supports-[backdrop-filter]:bg-white/88 supports-[backdrop-filter]:dark:bg-slate-950/88">
+            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[45] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg">
               <Logo variant="dark" size="sm" />
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <ThemeQuickToggle />
                 <NotificationBell />
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-2xl hover:bg-slate-100/80 dark:hover:bg-white/8"
-                  aria-label="Abrir menu"
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
                 >
                   <Menu size={24} />
                 </button>
