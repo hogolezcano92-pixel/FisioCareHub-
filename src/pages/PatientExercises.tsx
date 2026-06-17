@@ -787,16 +787,18 @@ export default function PatientExercises() {
                             allowFullScreen
                           />
                         ) : isPexelsVideoUrl(video.src) ? (
-                          <video
-                            src={video.src}
-                            controls
-                            playsInline
-                            preload="metadata"
-                            poster={coverUrl || undefined}
-                            className="aspect-video w-full max-h-[42vh] bg-black object-contain md:max-h-none"
-                          >
-                            Seu navegador não conseguiu carregar este vídeo.
-                          </video>
+                          <div className="aspect-video w-full max-h-[42vh] overflow-hidden bg-black md:max-h-none">
+                            <video
+                              src={video.src}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              poster={coverUrl || undefined}
+                              className="h-full w-full bg-black object-cover object-center"
+                            >
+                              Seu navegador não conseguiu carregar este vídeo.
+                            </video>
+                          </div>
                         ) : (
                           <div className="flex w-full items-center justify-center bg-transparent p-0">
                             <video
