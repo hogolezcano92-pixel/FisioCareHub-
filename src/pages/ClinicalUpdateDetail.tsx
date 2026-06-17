@@ -193,10 +193,10 @@ export default function ClinicalUpdateDetail() {
         <ArrowLeft size={16} /> Voltar
       </button>
 
-      <article className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white text-slate-900 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-black/30">
-        <section className="relative min-h-[360px] overflow-hidden bg-slate-100 dark:bg-slate-900">
+      <article className="clinical-article-shell overflow-hidden rounded-[2rem] border border-violet-100 bg-white text-slate-900 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-black/30">
+        <section className="clinical-hero relative min-h-[360px] overflow-hidden bg-slate-100 dark:bg-slate-900">
           <img src={image} alt="Imagem clínica da atualização" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/35 to-transparent dark:from-slate-950 dark:via-slate-950/70 dark:to-slate-950/15" />
+          <div className="clinical-hero-overlay absolute inset-0 bg-gradient-to-t from-white/95 via-white/35 to-transparent dark:from-slate-950 dark:via-slate-950/70 dark:to-slate-950/15" />
 
           <div className="relative z-10 flex min-h-[360px] flex-col justify-end p-5 sm:p-8">
             <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-slate-950/70 dark:text-sky-100">
@@ -209,7 +209,7 @@ export default function ClinicalUpdateDetail() {
               <span className="rounded-full border border-violet-100 bg-white/95 px-2.5 py-1 text-slate-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-sky-200">{formatDate(update.published_at)}</span>
             </div>
 
-            <h1 className="max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-950 drop-shadow-[0_2px_14px_rgba(255,255,255,0.45)] sm:text-5xl dark:text-white dark:drop-shadow-none">
+            <h1 className="clinical-hero-title max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-950 drop-shadow-[0_2px_14px_rgba(255,255,255,0.45)] sm:text-5xl dark:text-white dark:drop-shadow-none">
               {update.title}
             </h1>
           </div>
@@ -218,7 +218,7 @@ export default function ClinicalUpdateDetail() {
         <section className="grid gap-5 p-5 sm:p-8 lg:grid-cols-[1.35fr_0.85fr]">
           <div className="space-y-5">
             <ContentCard icon={<Sparkles size={18} className="text-sky-300" />} title="Resumo em português">
-              <p className="clinical-light-muted text-base font-semibold leading-8 text-slate-700 dark:text-slate-300">
+              <p className="clinical-summary-text clinical-light-muted text-base font-semibold leading-8 text-slate-700 dark:text-slate-300">
                 {update.summary || 'Resumo indisponível no momento. Use o botão de fonte original para conferir mais detalhes.'}
               </p>
             </ContentCard>
@@ -226,29 +226,29 @@ export default function ClinicalUpdateDetail() {
             <ContentCard icon={<Lightbulb size={18} className="text-amber-300" />} title="Pontos principais">
               <div className="space-y-3">
                 {bullets.map((bullet, index) => (
-                  <div key={index} className="clinical-light-card flex gap-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/50 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none">
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-black text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
+                  <div key={index} className="clinical-bullet-card clinical-light-card flex gap-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/50 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none">
+                    <div className="clinical-bullet-number mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-black text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
                       {index + 1}
                     </div>
-                    <p className="clinical-light-muted text-sm font-semibold leading-7 text-slate-700 dark:text-slate-300">{bullet}</p>
+                    <p className="clinical-bullet-text clinical-light-muted text-sm font-semibold leading-7 text-slate-700 dark:text-slate-300">{bullet}</p>
                   </div>
                 ))}
               </div>
             </ContentCard>
 
-            <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm shadow-emerald-100/60 dark:border-emerald-300/15 dark:bg-emerald-400/[0.06] dark:shadow-none">
-              <div className="mb-3 flex items-center gap-2 text-sm font-black text-emerald-800 dark:text-emerald-100">
+            <section className="clinical-practical-card rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm shadow-emerald-100/60 dark:border-emerald-300/15 dark:bg-emerald-400/[0.06] dark:shadow-none">
+              <div className="clinical-practical-title mb-3 flex items-center gap-2 text-sm font-black text-emerald-800 dark:text-emerald-100">
                 <Stethoscope size={17} /> Aplicação prática
               </div>
-              <p className="text-sm font-semibold leading-7 text-emerald-900 dark:text-emerald-50/80">
+              <p className="clinical-practical-text text-sm font-semibold leading-7 text-emerald-900 dark:text-emerald-50/80">
                 {buildPracticalApplication(update)}
               </p>
             </section>
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
-              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 dark:text-slate-500">Detalhes</p>
+            <div className="clinical-content-card rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
+              <p className="clinical-details-title mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 dark:text-slate-500">Detalhes</p>
               <div className="space-y-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 <InfoRow icon={<Newspaper size={15} />} label="Fonte" value={update.source || 'Fonte não informada'} />
                 <InfoRow icon={<CalendarDays size={15} />} label="Data" value={formatDate(update.published_at)} />
@@ -256,11 +256,11 @@ export default function ClinicalUpdateDetail() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5 shadow-sm shadow-amber-100/60 dark:border-amber-300/15 dark:bg-amber-400/[0.06] dark:shadow-none">
-              <div className="mb-2 flex items-center gap-2 text-sm font-black text-amber-800 dark:text-amber-100">
+            <div className="clinical-observation-card rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5 shadow-sm shadow-amber-100/60 dark:border-amber-300/15 dark:bg-amber-400/[0.06] dark:shadow-none">
+              <div className="clinical-observation-title mb-2 flex items-center gap-2 text-sm font-black text-amber-800 dark:text-amber-100">
                 <ShieldCheck size={17} /> Observação clínica
               </div>
-              <p className="text-xs font-semibold leading-6 text-slate-700 dark:text-amber-50/80">
+              <p className="clinical-observation-text text-xs font-semibold leading-6 text-slate-700 dark:text-amber-50/80">
                 Este conteúdo é um resumo informativo gerado a partir da fonte original. Ele não substitui avaliação, julgamento clínico nem leitura completa do estudo/notícia.
               </p>
             </div>
@@ -269,7 +269,7 @@ export default function ClinicalUpdateDetail() {
               type="button"
               onClick={() => update.source_url && window.open(update.source_url, '_blank', 'noopener,noreferrer')}
               disabled={!update.source_url}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-blue-950/30 transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+              className="clinical-source-button flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-blue-950/30 transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Abrir fonte original <ExternalLink size={16} />
             </button>
@@ -282,8 +282,8 @@ export default function ClinicalUpdateDetail() {
 
 function ContentCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
-      <div className="mb-3 flex items-center gap-2 text-sm font-black text-slate-950 dark:text-white">
+    <section className="clinical-content-card rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
+      <div className="clinical-card-title mb-3 flex items-center gap-2 text-sm font-black text-slate-950 dark:text-white">
         {icon} {title}
       </div>
       {children}
@@ -293,11 +293,11 @@ function ContentCard({ icon, title, children }: { icon: React.ReactNode; title: 
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/55 dark:shadow-none">
-      <div className="mt-0.5 text-sky-600 dark:text-sky-300">{icon}</div>
+    <div className="clinical-info-row flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/55 dark:shadow-none">
+      <div className="clinical-info-icon mt-0.5 text-sky-600 dark:text-sky-300">{icon}</div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">{label}</p>
-        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{value}</p>
+        <p className="clinical-info-label text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">{label}</p>
+        <p className="clinical-info-value text-sm font-bold text-slate-800 dark:text-slate-200">{value}</p>
       </div>
     </div>
   );
