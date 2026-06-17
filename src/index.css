@@ -6413,3 +6413,17 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
   background-size: auto, auto, auto, 160px 160px;
   background-position: center;
 }
+
+
+/* Chat mobile input — evita zoom e reduz o salto da tela no iPhone */
+.fch-chat-input,
+.fch-chat-input:focus {
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.fch-chat-input::placeholder {
+  font-size: 16px !important;
+}
