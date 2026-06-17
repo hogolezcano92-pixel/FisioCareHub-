@@ -6456,18 +6456,240 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
 }
 
 
-/* Clinical update detail — nitidez premium apenas no tema claro */
-html:not(.dark) .clinical-update-light-fix {
-  color: #0f172a;
+/* ClinicalUpdateDetail light mode readability fallback */
+html:not(.dark) .clinical-update-detail-light,
+html:not(.dark) .clinical-update-detail-light article {
+  color: #0f172a !important;
 }
 
-html:not(.dark) .clinical-update-light-fix article {
-  background: rgba(255, 255, 255, 0.96);
+html:not(.dark) .clinical-update-detail-light .clinical-light-card {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: rgba(221, 214, 254, 0.95) !important;
 }
 
-html:not(.dark) .clinical-update-light-fix p,
-html:not(.dark) .clinical-update-light-fix h1,
-html:not(.dark) .clinical-update-light-fix h2,
-html:not(.dark) .clinical-update-light-fix h3 {
-  opacity: 1;
+html:not(.dark) .clinical-update-detail-light .clinical-light-muted {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+
+/* =========================================================
+   ClinicalUpdateDetail — LIGHT MODE FINAL FIX
+   Escopo fechado: só afeta a página de artigos científicos
+   no tema claro. Não altera o dark mode.
+   ========================================================= */
+:root[data-theme="light"] .clinical-update-detail-light,
+html.light .clinical-update-detail-light,
+body.light .clinical-update-detail-light,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-article-shell,
+html.light .clinical-update-detail-light .clinical-article-shell,
+body.light .clinical-update-detail-light .clinical-article-shell,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-article-shell {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(221, 214, 254, 0.95) !important;
+  box-shadow: 0 24px 70px -42px rgba(88, 28, 135, 0.32) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-hero,
+html.light .clinical-update-detail-light .clinical-hero,
+body.light .clinical-update-detail-light .clinical-hero,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-hero {
+  background: #f8fafc !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-hero-overlay,
+html.light .clinical-update-detail-light .clinical-hero-overlay,
+body.light .clinical-update-detail-light .clinical-hero-overlay,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-hero-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(255,255,255,0.98) 0%,
+    rgba(255,255,255,0.86) 24%,
+    rgba(255,255,255,0.46) 58%,
+    rgba(255,255,255,0.10) 100%
+  ) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-hero-title,
+html.light .clinical-update-detail-light .clinical-hero-title,
+body.light .clinical-update-detail-light .clinical-hero-title,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-hero-title {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  text-shadow: 0 2px 18px rgba(255,255,255,0.8) !important;
+  filter: none !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-content-card,
+html.light .clinical-update-detail-light .clinical-content-card,
+body.light .clinical-update-detail-light .clinical-content-card,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-content-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%) !important;
+  border-color: rgba(196, 181, 253, 0.75) !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 45px -32px rgba(88, 28, 135, 0.34) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-card-title,
+html.light .clinical-update-detail-light .clinical-card-title,
+body.light .clinical-update-detail-light .clinical-card-title,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-card-title {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-summary-text,
+:root[data-theme="light"] .clinical-update-detail-light .clinical-light-muted,
+html.light .clinical-update-detail-light .clinical-summary-text,
+html.light .clinical-update-detail-light .clinical-light-muted,
+body.light .clinical-update-detail-light .clinical-summary-text,
+body.light .clinical-update-detail-light .clinical-light-muted,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-summary-text,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-light-muted {
+  color: #334155 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-bullet-card,
+html.light .clinical-update-detail-light .clinical-bullet-card,
+body.light .clinical-update-detail-light .clinical-bullet-card,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-bullet-card {
+  background: #ffffff !important;
+  border-color: rgba(196, 181, 253, 0.78) !important;
+  color: #334155 !important;
+  box-shadow: 0 14px 34px -28px rgba(30, 41, 59, 0.30) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-bullet-number,
+html.light .clinical-update-detail-light .clinical-bullet-number,
+body.light .clinical-update-detail-light .clinical-bullet-number,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-bullet-number {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-bullet-text,
+html.light .clinical-update-detail-light .clinical-bullet-text,
+body.light .clinical-update-detail-light .clinical-bullet-text,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-bullet-text {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-practical-card,
+html.light .clinical-update-detail-light .clinical-practical-card,
+body.light .clinical-update-detail-light .clinical-practical-card,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-practical-card {
+  background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%) !important;
+  border-color: rgba(110, 231, 183, 0.85) !important;
+  color: #064e3b !important;
+  box-shadow: 0 16px 40px -32px rgba(16, 185, 129, 0.35) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-practical-title,
+:root[data-theme="light"] .clinical-update-detail-light .clinical-practical-text,
+html.light .clinical-update-detail-light .clinical-practical-title,
+html.light .clinical-update-detail-light .clinical-practical-text,
+body.light .clinical-update-detail-light .clinical-practical-title,
+body.light .clinical-update-detail-light .clinical-practical-text,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-practical-title,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-practical-text {
+  color: #065f46 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-details-card,
+html.light .clinical-update-detail-light .clinical-details-card,
+body.light .clinical-update-detail-light .clinical-details-card,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-details-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%) !important;
+  border-color: rgba(196, 181, 253, 0.82) !important;
+  color: #0f172a !important;
+  box-shadow: 0 16px 40px -32px rgba(88, 28, 135, 0.30) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-details-title,
+html.light .clinical-update-detail-light .clinical-details-title,
+body.light .clinical-update-detail-light .clinical-details-title,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-details-title {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-info-row,
+html.light .clinical-update-detail-light .clinical-info-row,
+body.light .clinical-update-detail-light .clinical-info-row,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-info-row {
+  background: #ffffff !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 28px -24px rgba(30, 41, 59, 0.28) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-info-icon,
+html.light .clinical-update-detail-light .clinical-info-icon,
+body.light .clinical-update-detail-light .clinical-info-icon,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-info-icon {
+  color: #0284c7 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-info-label,
+html.light .clinical-update-detail-light .clinical-info-label,
+body.light .clinical-update-detail-light .clinical-info-label,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-info-label {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-info-value,
+html.light .clinical-update-detail-light .clinical-info-value,
+body.light .clinical-update-detail-light .clinical-info-value,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-info-value {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-observation-card,
+html.light .clinical-update-detail-light .clinical-observation-card,
+body.light .clinical-update-detail-light .clinical-observation-card,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-observation-card {
+  background: linear-gradient(180deg, #fffbeb 0%, #fff7ed 100%) !important;
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  color: #334155 !important;
+  box-shadow: 0 16px 40px -32px rgba(245, 158, 11, 0.28) !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-observation-title,
+html.light .clinical-update-detail-light .clinical-observation-title,
+body.light .clinical-update-detail-light .clinical-observation-title,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-observation-title {
+  color: #92400e !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-observation-text,
+html.light .clinical-update-detail-light .clinical-observation-text,
+body.light .clinical-update-detail-light .clinical-observation-text,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-observation-text {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-update-detail-light .clinical-source-button,
+:root[data-theme="light"] .clinical-update-detail-light .clinical-source-button *,
+html.light .clinical-update-detail-light .clinical-source-button,
+html.light .clinical-update-detail-light .clinical-source-button *,
+body.light .clinical-update-detail-light .clinical-source-button,
+body.light .clinical-update-detail-light .clinical-source-button *,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-source-button,
+html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical-source-button * {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
