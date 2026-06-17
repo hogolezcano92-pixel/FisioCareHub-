@@ -6693,3 +6693,103 @@ html:not(.dark):not([data-theme="dark"]) .clinical-update-detail-light .clinical
   color: #ffffff !important;
   opacity: 1 !important;
 }
+/* =========================================================
+   FisioCareHub — Login background video vivid premium
+   ---------------------------------------------------------
+   Ajuste isolado da tela de login.
+   Deixa o vídeo mais nítido, vivo e menos escuro
+   no tema claro e no dark, sem mexer em outras áreas.
+   ========================================================= */
+
+.fch-login-immersive .fch-login-video,
+.fch-login-video-shell.fch-login-immersive .fch-login-video {
+  opacity: 1 !important;
+  filter: brightness(1.22) contrast(1.16) saturate(1.22) !important;
+  transform: scale(1.004) translateZ(0) !important;
+  image-rendering: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: filter, transform;
+}
+
+/* Overlay geral: mantém leitura, mas sem apagar o vídeo */
+.fch-login-immersive .fch-login-video-overlay,
+.fch-login-video-shell.fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 23, 0.12) 0%,
+      rgba(2, 6, 23, 0.22) 46%,
+      rgba(2, 6, 23, 0.44) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(2, 6, 23, 0.12),
+      rgba(30, 41, 59, 0.02),
+      rgba(30, 27, 75, 0.12)
+    ) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Vinheta mais suave para não escurecer demais as laterais */
+.fch-login-immersive .fch-login-video-vignette,
+.fch-login-video-shell.fch-login-immersive .fch-login-video-vignette {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(59, 130, 246, 0.10), transparent 34%),
+    radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.04) 56%, rgba(2, 6, 23, 0.26) 100%) !important;
+}
+
+/* Tema claro: mais vivo, claro e com aparência parecida à referência */
+html:not(.dark) .fch-login-immersive .fch-login-video,
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video {
+  filter: brightness(1.26) contrast(1.18) saturate(1.28) !important;
+}
+
+html:not(.dark) .fch-login-immersive .fch-login-video-overlay,
+html:not(.dark) .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="light"] .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.00) 0%,
+      rgba(255, 255, 255, 0.04) 38%,
+      rgba(15, 23, 42, 0.24) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(219, 234, 254, 0.02),
+      rgba(237, 233, 254, 0.06)
+    ) !important;
+}
+
+/* Dark: continua elegante, mas com mais vida e menos apagado */
+html.dark .fch-login-immersive .fch-login-video,
+html.dark .fch-login-video-shell.fch-login-immersive .fch-login-video,
+:root[data-theme="dark"] .fch-login-immersive .fch-login-video,
+:root[data-theme="dark"] .fch-login-video-shell.fch-login-immersive .fch-login-video {
+  filter: brightness(1.18) contrast(1.14) saturate(1.20) !important;
+}
+
+html.dark .fch-login-immersive .fch-login-video-overlay,
+html.dark .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="dark"] .fch-login-immersive .fch-login-video-overlay,
+:root[data-theme="dark"] .fch-login-video-shell.fch-login-immersive .fch-login-video-overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 23, 0.16) 0%,
+      rgba(2, 6, 23, 0.30) 48%,
+      rgba(2, 6, 23, 0.54) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(2, 6, 23, 0.16),
+      rgba(30, 41, 59, 0.04),
+      rgba(30, 27, 75, 0.16)
+    ) !important;
+}
