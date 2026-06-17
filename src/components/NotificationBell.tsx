@@ -38,6 +38,7 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>('all');
   const [showAll, setShowAll] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -50,12 +51,13 @@ export default function NotificationBell() {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(100);
 
       if (error) {
         console.error('Erro ao buscar notificações:', error);
       } else {
         setNotifications(data || []);
+        setLastRefreshAt(new Date());
       }
     };
 
@@ -96,9 +98,62 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+
+  useEffect(() => {
+    if (!user || !isOpen) return;
+
+    const refreshNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Erro ao atualizar notificações ao abrir o sino:', error);
+        return;
+      }
+
+      setNotifications(data || []);
+      setLastRefreshAt(new Date());
+    };
+
+    refreshNotifications();
+  }, [isOpen, user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleVisibilityRefresh = async () => {
+      if (document.visibilityState !== 'visible') return;
+
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (!error) {
+        setNotifications(data || []);
+        setLastRefreshAt(new Date());
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityRefresh);
+    window.addEventListener('focus', handleVisibilityRefresh);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+      window.removeEventListener('focus', handleVisibilityRefresh);
+    };
+  }, [user]);
+
   const unreadCount = notifications.filter((n) => !n.lida).length;
   const filteredNotifications = filter === 'all' ? notifications : notifications.filter((n) => !n.lida);
-  const visibleNotifications = showAll ? filteredNotifications : filteredNotifications.slice(0, 5);
+  const initialVisibleCount = filter === 'all' ? 8 : 10;
+  const visibleNotifications = showAll ? filteredNotifications : filteredNotifications.slice(0, initialVisibleCount);
   const hasMoreNotifications = filteredNotifications.length > visibleNotifications.length;
 
   const markAsRead = async (id: string) => {
@@ -141,11 +196,14 @@ export default function NotificationBell() {
   };
 
   const openNotification = async (notification: any) => {
+    const link = typeof notification.link === 'string' ? notification.link.trim() : '';
+
+    // Não marca como lida automaticamente quando a notificação não tem link.
+    // Assim mensagens/avisos internos não desaparecem da aba "Não lidas" por toque acidental.
+    if (!link) return;
+
     await markAsRead(notification.id);
     setIsOpen(false);
-
-    const link = typeof notification.link === 'string' ? notification.link.trim() : '';
-    if (!link) return;
 
     if (link.startsWith('http://') || link.startsWith('https://')) {
       window.location.href = link;
@@ -527,7 +585,7 @@ export default function NotificationBell() {
                     <div>
                       <h4 className="fch-light-title text-base font-black tracking-tight text-white">Notificações</h4>
                       <p className="fch-light-muted text-[11px] font-semibold text-slate-400">
-                        {unreadCount > 0 ? `${unreadCount} nova${unreadCount > 1 ? 's' : ''} para revisar` : 'Tudo em dia por aqui'}
+                        {unreadCount > 0 ? `${unreadCount} nova${unreadCount > 1 ? 's' : ''} para revisar` : notifications.length > 0 ? `${notifications.length} no histórico` : 'Tudo em dia por aqui'}
                       </p>
                     </div>
                   </div>
@@ -583,8 +641,19 @@ export default function NotificationBell() {
                     {filter === 'unread' ? 'Sem notificações não lidas' : 'Nenhuma notificação por enquanto'}
                   </p>
                   <p className="mt-1 text-xs font-medium text-slate-500">
-                    Novas consultas, mensagens e atualizações aparecem aqui.
+                    {filter === 'unread' && notifications.length > 0
+                      ? `${notifications.length} notificação${notifications.length > 1 ? 'ões' : ''} continua${notifications.length > 1 ? 'm' : ''} salva${notifications.length > 1 ? 's' : ''} em Todas.`
+                      : 'Novas consultas, mensagens e atualizações aparecem aqui.'}
                   </p>
+                  {filter === 'unread' && notifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setFilter('all'); setShowAll(true); }}
+                      className="mt-4 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-950/20"
+                    >
+                      Ver histórico
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="divide-y divide-white/[0.06]">
@@ -696,7 +765,7 @@ export default function NotificationBell() {
                 onClick={() => { setFilter('all'); setShowAll(true); }}
                 className="fch-footer-action text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 hover:text-slate-200"
               >
-                {hasMoreNotifications || !showAll ? 'Mostrar todas' : 'Histórico completo'}
+                {hasMoreNotifications || !showAll ? `Mostrar todas (${filteredNotifications.length})` : 'Histórico completo'}
               </button>
               {unreadCount > 0 ? (
                 <button
@@ -707,7 +776,7 @@ export default function NotificationBell() {
                   <CheckCheck size={13} /> Marcar lidas
                 </button>
               ) : (
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400/80">Tudo revisado</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400/80">{notifications.length > 0 ? `${notifications.length} salvas` : 'Tudo revisado'}</span>
               )}
             </div>
           </motion.div>
