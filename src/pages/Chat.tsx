@@ -498,6 +498,49 @@ export default function Chat() {
     };
   }, [targetUser]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const setStableHeight = () => {
+      document.documentElement.style.setProperty('--fch-chat-stable-height', `${window.innerHeight}px`);
+    };
+
+    setStableHeight();
+
+    if (!targetUser || !window.matchMedia('(max-width: 767px)').matches) return;
+
+    const lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    const previousBodyStyles = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow
+    };
+
+    document.documentElement.classList.add('fch-chat-mobile-active');
+    document.body.classList.add('fch-chat-mobile-active');
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.classList.remove('fch-chat-mobile-active');
+      document.body.classList.remove('fch-chat-mobile-active');
+      document.body.style.position = previousBodyStyles.position;
+      document.body.style.top = previousBodyStyles.top;
+      document.body.style.left = previousBodyStyles.left;
+      document.body.style.right = previousBodyStyles.right;
+      document.body.style.width = previousBodyStyles.width;
+      document.body.style.overflow = previousBodyStyles.overflow;
+      window.scrollTo(0, lockedScrollY);
+    };
+  }, [targetUser]);
+
   return (
     <div className={cn("min-h-[calc(100dvh-5rem)] lg:min-h-screen flex items-start justify-center bg-[#f7f5ff] dark:bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative px-3 sm:px-5 pt-4 lg:pt-6", targetUser ? "pb-5" : "pb-32")}>
       {/* Background Decoration */}
@@ -624,7 +667,7 @@ export default function Chat() {
 
       {/* Chat Area */}
       <main className={cn(
-        "w-full flex flex-col bg-white dark:bg-slate-950 z-10 relative overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-[0_22px_70px_rgba(15,23,42,0.13)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)] rounded-[2.1rem] max-w-[650px] md:max-w-[900px] h-[min(650px,calc(100dvh-9.8rem))] md:h-[min(700px,calc(100dvh-7.5rem))]",
+        "fch-chat-main-card w-full flex flex-col bg-white dark:bg-slate-950 z-10 relative overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-[0_22px_70px_rgba(15,23,42,0.13)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)] rounded-[2.1rem] max-w-[650px] md:max-w-[900px] h-[min(650px,calc(var(--fch-chat-stable-height,100svh)-9.8rem))] md:h-[min(700px,calc(100dvh-7.5rem))]",
         !targetUser && "hidden md:flex items-center justify-center bg-slate-900/20"
       )}>
         {!targetUser ? (
@@ -667,7 +710,7 @@ export default function Chat() {
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm md:text-base font-black text-slate-950 dark:text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
+                  <h3 className="text-sm md:text-base font-black !text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.18)] dark:text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                     <span className="text-[7px] md:text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.18em] truncate">
@@ -982,6 +1025,18 @@ export default function Chat() {
                       autoComplete="off"
                       autoCorrect="on"
                       inputMode="text"
+                      onTouchStart={(e) => {
+                        if (!shouldAutoFocusInput() && document.activeElement !== inputRef.current) {
+                          e.preventDefault();
+                          inputRef.current?.focus({ preventScroll: true });
+                        }
+                      }}
+                      onFocus={() => {
+                        if (!shouldAutoFocusInput()) {
+                          setTimeout(() => window.scrollTo(0, 0), 0);
+                          setTimeout(() => window.scrollTo(0, 0), 250);
+                        }
+                      }}
                       placeholder="Mensagem..."
                       className="fch-chat-input w-full pl-4 pr-16 py-2.5 md:py-3 bg-white border border-slate-200 rounded-[22px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400/60 transition-all font-bold text-base md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_20px_rgba(15,23,42,0.08)] text-slate-900 placeholder:text-slate-500 dark:bg-white/[0.07] dark:border-white/15 dark:focus:ring-blue-500/15 dark:focus:border-blue-400/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.14)] dark:text-white dark:placeholder:text-slate-500"
                     />
