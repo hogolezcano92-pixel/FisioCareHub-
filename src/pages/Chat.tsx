@@ -459,8 +459,16 @@ export default function Chat() {
                                 targetUser?.email === 'hogolezcano92@gmail.com' ||
                                 new URLSearchParams(location.search).get('support') === 'true';
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('fch-chat-active-change', { detail: { active: Boolean(targetUser) } }));
+
+    return () => {
+      window.dispatchEvent(new CustomEvent('fch-chat-active-change', { detail: { active: false } }));
+    };
+  }, [targetUser]);
+
   return (
-    <div className="min-h-[calc(100dvh-5rem)] lg:min-h-screen flex items-start justify-center bg-slate-50 dark:bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative px-3 sm:px-5 pt-4 pb-5 lg:pt-6">
+    <div className={cn("min-h-[calc(100dvh-5rem)] lg:min-h-screen flex items-start justify-center bg-[#f7f5ff] dark:bg-slate-950 rounded-none border-none shadow-none overflow-hidden relative px-3 sm:px-5 pt-4 lg:pt-6", targetUser ? "pb-5" : "pb-32")}>
       {/* Background Decoration */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.025] z-0">
         <img 
@@ -473,12 +481,14 @@ export default function Chat() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col bg-slate-900/50 backdrop-blur-xl z-10 transition-all",
-        targetUser && "hidden md:flex"
+        "w-full flex flex-col backdrop-blur-2xl z-10 transition-all overflow-hidden",
+        targetUser
+          ? "hidden md:flex md:w-80 lg:w-96 border-r border-white/5 bg-white/90 dark:bg-slate-900/50"
+          : "max-w-[760px] rounded-[2rem] border border-violet-100/90 dark:border-white/10 bg-white/92 dark:bg-slate-950/82 shadow-[0_22px_65px_rgba(109,40,217,0.12)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)]"
       )}>
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-2 tracking-tight">
               <MessageSquare className="text-blue-400" />
               Chats
             </h2>
@@ -487,7 +497,7 @@ export default function Chat() {
                 onClick={() => {
                   setShowKineAI(true);
                 }}
-                className="px-3 py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-3 border border-white/5 shadow-sm group"
+                className="px-3 py-2 bg-white text-slate-700 dark:bg-slate-900/80 dark:text-blue-300 rounded-2xl text-[10px] font-black uppercase tracking-[0.16em] hover:bg-blue-50 dark:hover:bg-slate-800 transition-all flex items-center gap-3 border border-violet-100 dark:border-white/10 shadow-[0_10px_24px_rgba(109,40,217,0.08)] group"
               >
                 <KineIcon size="xs" />
                 Suporte IA
@@ -498,28 +508,28 @@ export default function Chat() {
           <form onSubmit={handleSearch} className="relative group">
             <Search 
               className="absolute pointer-events-none z-20 transition-colors group-focus-within:text-blue-400" 
-              style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }}
+              style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#64748b' }}
             />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nome ou e-mail..."
-              className="w-full pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 transition-all shadow-sm text-white font-bold !pl-[60px]"
+              className="w-full pr-4 py-3.5 sm:py-4 bg-white/96 dark:bg-white/[0.06] border border-violet-100 dark:border-white/10 rounded-[1.45rem] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400/60 transition-all shadow-[0_10px_24px_rgba(109,40,217,0.06)] text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-500 font-extrabold !pl-[54px]"
             />
             {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-blue-400" size={18} />}
           </form>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 sm:pb-7 space-y-2">
           {searchResults.length > 0 && (
             <div className="mb-6">
-              <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Resultados da Busca</h3>
+              <h3 className="px-2 sm:px-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.24em] mb-3">Resultados da Busca</h3>
               {searchResults.map(u => (
                 <button
                   key={u.id}
                   onClick={() => { setTargetUser(u); setSearchResults([]); setSearchQuery(''); }}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white hover:shadow-md transition-all group"
+                  className="w-full flex items-center gap-4 p-3.5 sm:p-4 rounded-[1.35rem] hover:bg-white dark:hover:bg-white/[0.06] hover:shadow-md transition-all group"
                 >
                   <div className="relative">
                     <img 
@@ -539,10 +549,10 @@ export default function Chat() {
             </div>
           )}
 
-          <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Conversas Recentes</h3>
+          <h3 className="px-2 sm:px-4 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.24em] mb-3">Conversas Recentes</h3>
           {recentChats.length === 0 ? (
             <div className="p-8 text-center space-y-3">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto text-slate-300 shadow-sm">
+              <div className="w-12 h-12 bg-white dark:bg-white/[0.05] rounded-2xl flex items-center justify-center mx-auto text-slate-400 shadow-sm border border-violet-100 dark:border-white/10">
                 <Search size={24} />
               </div>
               <p className="text-xs text-slate-400 font-medium leading-relaxed">
@@ -555,8 +565,8 @@ export default function Chat() {
                 key={u.id}
                 onClick={() => setTargetUser(u)}
                 className={cn(
-                  "w-full flex items-center gap-4 p-4 rounded-2xl transition-all group",
-                  targetUser?.id === u.id ? "bg-white shadow-lg ring-1 ring-slate-100" : "hover:bg-white/50"
+                  "w-full flex items-center gap-4 p-3.5 sm:p-4 rounded-[1.45rem] transition-all group border",
+                  targetUser?.id === u.id ? "bg-white dark:bg-white/[0.07] shadow-lg ring-1 ring-violet-100 dark:ring-white/10 border-violet-100 dark:border-white/10" : "bg-white/78 dark:bg-white/[0.035] hover:bg-white dark:hover:bg-white/[0.06] border-white/80 dark:border-white/5 shadow-[0_12px_30px_rgba(15,23,42,0.035)]"
                 )}
               >
                 <div className="relative">
@@ -583,7 +593,7 @@ export default function Chat() {
 
       {/* Chat Area */}
       <main className={cn(
-        "w-full flex flex-col bg-white dark:bg-slate-950 z-10 relative overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-[0_22px_70px_rgba(15,23,42,0.13)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)] rounded-[2.1rem] max-w-[660px] md:max-w-[920px] h-[min(690px,calc(100dvh-8.25rem))] md:h-[min(720px,calc(100dvh-7.5rem))]",
+        "w-full flex flex-col bg-white dark:bg-slate-950 z-10 relative overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-[0_22px_70px_rgba(15,23,42,0.13)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)] rounded-[2.1rem] max-w-[650px] md:max-w-[900px] h-[min(650px,calc(100dvh-9.8rem))] md:h-[min(700px,calc(100dvh-7.5rem))]",
         !targetUser && "hidden md:flex items-center justify-center bg-slate-900/20"
       )}>
         {!targetUser ? (
