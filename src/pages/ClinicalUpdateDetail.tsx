@@ -147,9 +147,9 @@ export default function ClinicalUpdateDetail() {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="rounded-[2rem] border border-violet-100 bg-white/95 p-8 text-center shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-slate-950/70 dark:shadow-black/20">
+        <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 text-center shadow-2xl">
           <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-sky-300" />
-          <p className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">Carregando atualização...</p>
+          <p className="text-sm font-black uppercase tracking-widest text-slate-300">Carregando atualização...</p>
         </div>
       </div>
     );
@@ -161,13 +161,13 @@ export default function ClinicalUpdateDetail() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-6 inline-flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:bg-violet-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+          className="mb-6 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-300 hover:bg-white/10"
         >
           <ArrowLeft size={16} /> Voltar
         </button>
-        <div className="rounded-[2rem] border border-violet-100 bg-white/95 p-8 text-center shadow-2xl shadow-violet-100/60 dark:border-white/10 dark:bg-slate-950/70 dark:shadow-black/20">
-          <h1 className="mb-3 text-2xl font-black text-slate-950 dark:text-white">Atualização não encontrada</h1>
-          <p className="text-sm font-semibold leading-6 text-slate-600 dark:text-slate-400">{errorMessage || 'Este conteúdo não está disponível.'}</p>
+        <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 text-center shadow-2xl">
+          <h1 className="mb-3 text-2xl font-black text-white">Atualização não encontrada</h1>
+          <p className="text-sm font-semibold leading-6 text-slate-400">{errorMessage || 'Este conteúdo não está disponível.'}</p>
           <Link
             to="/dashboard"
             className="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3 text-xs font-black uppercase tracking-widest text-white"
@@ -184,32 +184,32 @@ export default function ClinicalUpdateDetail() {
   const area = resolveClinicalImageLabel(imageInput);
 
   return (
-    <main className="clinical-update-light-fix mx-auto max-w-5xl space-y-6 pb-10">
+    <main className="clinical-update-detail-light mx-auto max-w-5xl space-y-6 pb-10 text-slate-900 dark:text-white">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-2 rounded-2xl border border-violet-100 bg-white/95 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-lg shadow-violet-100/60 transition-all hover:bg-violet-50 hover:text-slate-950 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:shadow-slate-950/20 dark:hover:bg-white/10 dark:hover:text-white"
+        className="inline-flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-700 shadow-lg shadow-violet-100/70 transition-all hover:bg-violet-50 hover:text-slate-950 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:shadow-slate-950/20 dark:hover:bg-white/10 dark:hover:text-white"
       >
         <ArrowLeft size={16} /> Voltar
       </button>
 
-      <article className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white text-slate-950 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-black/30">
+      <article className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white text-slate-900 shadow-2xl shadow-violet-100/70 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-black/30">
         <section className="relative min-h-[360px] overflow-hidden bg-slate-100 dark:bg-slate-900">
           <img src={image} alt="Imagem clínica da atualização" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/88 via-white/38 to-white/10 dark:from-slate-950 dark:via-slate-950/70 dark:to-slate-950/15" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/35 to-transparent dark:from-slate-950 dark:via-slate-950/70 dark:to-slate-950/15" />
 
           <div className="relative z-10 flex min-h-[360px] flex-col justify-end p-5 sm:p-8">
-            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/70 bg-white/75 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-800 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-slate-950/70 dark:text-sky-100">
+            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-slate-950/70 dark:text-sky-100">
               <BookOpenCheck size={13} /> Ler no FisioCareHub
             </div>
 
-            <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-sky-800 dark:text-sky-200">
-              <span className="rounded-full border border-sky-200 bg-sky-50/90 px-2.5 py-1 text-sky-800 shadow-sm dark:border-sky-300/20 dark:bg-sky-400/10 dark:text-sky-200">{normalizeType(update.source_type)}</span>
-              <span className="rounded-full border border-violet-100 bg-white/90 px-2.5 py-1 text-slate-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-sky-200">{area}</span>
-              <span className="rounded-full border border-violet-100 bg-white/90 px-2.5 py-1 text-slate-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-sky-200">{formatDate(update.published_at)}</span>
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-sky-200">
+              <span className="rounded-full border border-sky-200 bg-sky-50/95 px-2.5 py-1 text-sky-800 shadow-sm dark:border-sky-300/20 dark:bg-sky-400/10 dark:text-sky-200">{normalizeType(update.source_type)}</span>
+              <span className="rounded-full border border-violet-100 bg-white/95 px-2.5 py-1 text-slate-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-sky-200">{area}</span>
+              <span className="rounded-full border border-violet-100 bg-white/95 px-2.5 py-1 text-slate-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-sky-200">{formatDate(update.published_at)}</span>
             </div>
 
-            <h1 className="max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-950 drop-shadow-[0_2px_14px_rgba(255,255,255,0.35)] sm:text-5xl dark:text-white dark:drop-shadow-none">
+            <h1 className="max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-950 drop-shadow-[0_2px_14px_rgba(255,255,255,0.45)] sm:text-5xl dark:text-white dark:drop-shadow-none">
               {update.title}
             </h1>
           </div>
@@ -218,7 +218,7 @@ export default function ClinicalUpdateDetail() {
         <section className="grid gap-5 p-5 sm:p-8 lg:grid-cols-[1.35fr_0.85fr]">
           <div className="space-y-5">
             <ContentCard icon={<Sparkles size={18} className="text-sky-300" />} title="Resumo em português">
-              <p className="text-base font-semibold leading-8 text-slate-700 dark:text-slate-300">
+              <p className="clinical-light-muted text-base font-semibold leading-8 text-slate-700 dark:text-slate-300">
                 {update.summary || 'Resumo indisponível no momento. Use o botão de fonte original para conferir mais detalhes.'}
               </p>
             </ContentCard>
@@ -226,17 +226,17 @@ export default function ClinicalUpdateDetail() {
             <ContentCard icon={<Lightbulb size={18} className="text-amber-300" />} title="Pontos principais">
               <div className="space-y-3">
                 {bullets.map((bullet, index) => (
-                  <div key={index} className="flex gap-3 rounded-2xl border border-violet-100 bg-white/95 p-4 shadow-sm shadow-violet-100/50 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none">
+                  <div key={index} className="clinical-light-card flex gap-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm shadow-violet-100/50 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none">
                     <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-black text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
                       {index + 1}
                     </div>
-                    <p className="text-sm font-semibold leading-7 text-slate-700 dark:text-slate-300">{bullet}</p>
+                    <p className="clinical-light-muted text-sm font-semibold leading-7 text-slate-700 dark:text-slate-300">{bullet}</p>
                   </div>
                 ))}
               </div>
             </ContentCard>
 
-            <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/90 p-5 shadow-sm shadow-emerald-100/60 dark:border-emerald-300/15 dark:bg-emerald-400/[0.06] dark:shadow-none">
+            <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm shadow-emerald-100/60 dark:border-emerald-300/15 dark:bg-emerald-400/[0.06] dark:shadow-none">
               <div className="mb-3 flex items-center gap-2 text-sm font-black text-emerald-800 dark:text-emerald-100">
                 <Stethoscope size={17} /> Aplicação prática
               </div>
@@ -247,7 +247,7 @@ export default function ClinicalUpdateDetail() {
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-[1.5rem] border border-violet-100 bg-white/90 p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
+            <div className="rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
               <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 dark:text-slate-500">Detalhes</p>
               <div className="space-y-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 <InfoRow icon={<Newspaper size={15} />} label="Fonte" value={update.source || 'Fonte não informada'} />
@@ -256,7 +256,7 @@ export default function ClinicalUpdateDetail() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/90 p-5 shadow-sm shadow-amber-100/70 dark:border-amber-300/15 dark:bg-amber-400/[0.06] dark:shadow-none">
+            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5 shadow-sm shadow-amber-100/60 dark:border-amber-300/15 dark:bg-amber-400/[0.06] dark:shadow-none">
               <div className="mb-2 flex items-center gap-2 text-sm font-black text-amber-800 dark:text-amber-100">
                 <ShieldCheck size={17} /> Observação clínica
               </div>
@@ -282,7 +282,7 @@ export default function ClinicalUpdateDetail() {
 
 function ContentCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.5rem] border border-violet-100 bg-white/90 p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
+    <section className="rounded-[1.5rem] border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
       <div className="mb-3 flex items-center gap-2 text-sm font-black text-slate-950 dark:text-white">
         {icon} {title}
       </div>
