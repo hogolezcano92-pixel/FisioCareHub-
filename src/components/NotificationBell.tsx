@@ -1,16 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, MessageSquare, Calendar, Info, X, Check, CreditCard } from 'lucide-react';
+import type React from 'react';
+import {
+  Bell,
+  MessageSquare,
+  Calendar,
+  Info,
+  X,
+  Check,
+  CheckCheck,
+  CreditCard,
+  Wallet,
+  FileText,
+  Activity,
+  UserCheck,
+  AlertCircle,
+  Sparkles,
+  Clock,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
+type NotificationFilter = 'all' | 'unread';
+
+type NotificationTone = {
+  icon: React.ReactNode;
+  iconWrap: string;
+  label: string;
+  accent: string;
+};
+
 export default function NotificationBell() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<NotificationFilter>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -26,7 +52,7 @@ export default function NotificationBell() {
         .limit(20);
 
       if (error) {
-        console.error("Erro ao buscar notificações:", error);
+        console.error('Erro ao buscar notificações:', error);
       } else {
         setNotifications(data || []);
       }
@@ -36,15 +62,19 @@ export default function NotificationBell() {
 
     const channel = supabase
       .channel(`notificacoes_bell_${user.id}_${Math.random().toString(36).substring(7)}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'notificacoes',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('[Realtime] Notification received:', payload);
-        fetchNotifications();
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[Realtime] Notification received:', payload);
+          fetchNotifications();
+        },
+      )
       .subscribe((status) => {
         console.log('[Realtime] Notification subscription status:', status);
       });
@@ -60,12 +90,13 @@ export default function NotificationBell() {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.lida).length;
-  const filteredNotifications = filter === 'all' ? notifications : notifications.filter(n => !n.lida);
+  const unreadCount = notifications.filter((n) => !n.lida).length;
+  const filteredNotifications = filter === 'all' ? notifications : notifications.filter((n) => !n.lida);
 
   const markAsRead = async (id: string) => {
     if (!user?.id) return false;
@@ -76,18 +107,18 @@ export default function NotificationBell() {
         .update({ lida: true })
         .eq('id', id)
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, lida: true } : n)));
       return true;
     } catch (err) {
-      console.error("Error marking notification as read:", err);
+      console.error('Error marking notification as read:', err);
       return false;
     }
   };
 
   const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.lida);
+    const unread = notifications.filter((n) => !n.lida);
     if (unread.length === 0 || !user?.id) return false;
 
     try {
@@ -96,12 +127,12 @@ export default function NotificationBell() {
         .update({ lida: true })
         .eq('user_id', user.id)
         .eq('lida', false);
-      
+
       if (error) throw error;
-      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, lida: true })));
       return true;
     } catch (err) {
-      console.error("Error marking all as read:", err);
+      console.error('Error marking all as read:', err);
       return false;
     }
   };
@@ -121,15 +152,105 @@ export default function NotificationBell() {
     navigate(link.startsWith('/') ? link : `/${link}`);
   };
 
-  const getIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'message': return <MessageSquare size={16} className="text-blue-500" />;
-      case 'appointment': 
-      case 'appointment_request': return <Calendar size={16} className="text-emerald-500" />;
-      case 'support_request': return <MessageSquare size={16} className="text-amber-500" />;
-      case 'withdrawal_request': return <CreditCard size={16} className="text-blue-500" />;
-      default: return <Info size={16} className="text-slate-400" />;
+  const getNotificationTone = (tipo?: string): NotificationTone => {
+    const normalizedTipo = String(tipo || '').toLowerCase();
+
+    if (normalizedTipo.includes('appointment') || normalizedTipo.includes('agendamento') || normalizedTipo.includes('consulta')) {
+      return {
+        icon: <Calendar size={18} />,
+        iconWrap: 'bg-emerald-500/12 text-emerald-400 ring-1 ring-emerald-400/25',
+        label: 'Agenda',
+        accent: 'from-emerald-500/18 via-cyan-500/8 to-transparent',
+      };
     }
+
+    if (normalizedTipo.includes('payment') || normalizedTipo.includes('pagamento') || normalizedTipo.includes('paid')) {
+      return {
+        icon: <CreditCard size={18} />,
+        iconWrap: 'bg-sky-500/12 text-sky-400 ring-1 ring-sky-400/25',
+        label: 'Pagamento',
+        accent: 'from-sky-500/18 via-blue-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('withdrawal') || normalizedTipo.includes('saque') || normalizedTipo.includes('financeiro')) {
+      return {
+        icon: <Wallet size={18} />,
+        iconWrap: 'bg-blue-500/12 text-blue-400 ring-1 ring-blue-400/25',
+        label: 'Financeiro',
+        accent: 'from-blue-500/18 via-indigo-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('document') || normalizedTipo.includes('prontuario') || normalizedTipo.includes('prontuário')) {
+      return {
+        icon: <FileText size={18} />,
+        iconWrap: 'bg-violet-500/12 text-violet-300 ring-1 ring-violet-300/25',
+        label: 'Documento',
+        accent: 'from-violet-500/18 via-purple-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('exercise') || normalizedTipo.includes('exercicio') || normalizedTipo.includes('exercício')) {
+      return {
+        icon: <Activity size={18} />,
+        iconWrap: 'bg-cyan-500/12 text-cyan-300 ring-1 ring-cyan-300/25',
+        label: 'Exercícios',
+        accent: 'from-cyan-500/18 via-blue-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('support') || normalizedTipo.includes('suporte')) {
+      return {
+        icon: <MessageSquare size={18} />,
+        iconWrap: 'bg-amber-500/12 text-amber-300 ring-1 ring-amber-300/25',
+        label: 'Suporte',
+        accent: 'from-amber-500/18 via-orange-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('profile') || normalizedTipo.includes('patient') || normalizedTipo.includes('paciente')) {
+      return {
+        icon: <UserCheck size={18} />,
+        iconWrap: 'bg-indigo-500/12 text-indigo-300 ring-1 ring-indigo-300/25',
+        label: 'Paciente',
+        accent: 'from-indigo-500/18 via-blue-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('alert') || normalizedTipo.includes('error') || normalizedTipo.includes('warning')) {
+      return {
+        icon: <AlertCircle size={18} />,
+        iconWrap: 'bg-rose-500/12 text-rose-300 ring-1 ring-rose-300/25',
+        label: 'Alerta',
+        accent: 'from-rose-500/18 via-red-500/8 to-transparent',
+      };
+    }
+
+    return {
+      icon: <Info size={18} />,
+      iconWrap: 'bg-slate-500/12 text-slate-300 ring-1 ring-white/15',
+      label: 'Sistema',
+      accent: 'from-slate-500/14 via-white/5 to-transparent',
+    };
+  };
+
+  const formatNotificationTime = (dateValue: string) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return time;
+    if (isYesterday) return `Ontem · ${time}`;
+
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
   };
 
   const handleAction = async (notification: any, approved: boolean) => {
@@ -137,7 +258,6 @@ export default function NotificationBell() {
     if (!agendamento_id) return;
 
     try {
-      // 1. Update Appointment Status
       const finalStatus = approved ? 'confirmado' : 'recusado';
       const { data: updatedApp, error: appError } = await supabase
         .from('agendamentos')
@@ -152,12 +272,12 @@ export default function NotificationBell() {
 
       if (appError) throw appError;
 
-      // 2. Notify Patient if approved
       if (approved && updatedApp) {
-        const isHome = String(updatedApp.tipo).toLowerCase().includes('domiciliar') || 
-                      String(updatedApp.servico).toLowerCase().includes('domiciliar');
-        
-        let local = (updatedApp.fisio?.localizacao || updatedApp.fisio?.endereco) || 'Clínica';
+        const isHome =
+          String(updatedApp.tipo).toLowerCase().includes('domiciliar') ||
+          String(updatedApp.servico).toLowerCase().includes('domiciliar');
+
+        let local = updatedApp.fisio?.localizacao || updatedApp.fisio?.endereco || 'Clínica';
         if (isHome) local = updatedApp.paciente?.endereco || 'Seu endereço cadastrado';
 
         await supabase.from('notificacoes').insert({
@@ -165,28 +285,25 @@ export default function NotificationBell() {
           titulo: 'Agendamento Confirmado!',
           mensagem: `Dr(a). ${updatedApp.fisio?.nome_completo}\n${updatedApp.fisio?.especialidade}\n\nServiço: ${updatedApp.servico}\nData: ${new Date(updatedApp.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${updatedApp.hora.substring(0, 5)}\nLocal: ${local}\nStatus: Confirmado`,
           tipo: 'appointment',
-          link: '/appointments'
+          link: '/appointments',
         });
       } else if (!approved && updatedApp) {
-        // Create refund ticket
         await supabase.from('suporte_tickets').insert({
           usuario_id: user?.id,
           categoria: 'financeiro',
           assunto: 'Estorno de Agendamento Recusado',
           descricao: `Agendamento #${agendamento_id} foi recusado pelo profissional. Necessário processar estorno para o paciente ${updatedApp.paciente_id}.`,
-          status: 'aberto'
+          status: 'aberto',
         });
       }
 
-      // 3. Mark notification as read and update state
       await markAsRead(notification.id);
-      
+
       const successMsg = approved ? 'Agendamento confirmado!' : 'Agendamento recusado. Solicitando estorno...';
       import('sonner').then(({ toast }) => toast.success(successMsg));
-
     } catch (err) {
-      console.error("Erro ao processar ação de agendamento:", err);
-      import('sonner').then(({ toast }) => toast.error("Falha ao processar solicitação."));
+      console.error('Erro ao processar ação de agendamento:', err);
+      import('sonner').then(({ toast }) => toast.error('Falha ao processar solicitação.'));
     }
   };
 
@@ -194,17 +311,19 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button 
+      <button
+        type="button"
+        aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : 'Notificações'}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "relative p-2 text-slate-400 hover:text-blue-400 hover:bg-white/5 rounded-xl transition-all",
-          isOpen && "bg-white/5 text-blue-400"
+          'relative grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300 shadow-[0_16px_38px_-28px_rgba(15,23,42,0.85)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-blue-400/35 hover:bg-blue-500/10 hover:text-blue-300',
+          isOpen && 'border-blue-400/40 bg-blue-500/12 text-blue-300 shadow-blue-950/30',
         )}
       >
-        <Bell size={20} className={cn(unreadCount > 0 && "animate-swing")} />
+        <Bell size={20} className={cn(unreadCount > 0 && 'animate-swing')} />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-sm">
-            {unreadCount}
+          <span className="absolute -right-1 -top-1 min-w-5 h-5 px-1 bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-slate-950 shadow-lg shadow-rose-950/30">
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
@@ -212,149 +331,205 @@ export default function NotificationBell() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-3xl shadow-2xl border border-white/10 overflow-hidden z-[50]"
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="fixed left-4 right-4 top-[5.6rem] z-[9999] overflow-hidden rounded-[1.8rem] border border-white/10 bg-slate-950/95 shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)] backdrop-blur-2xl sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-[24rem]"
           >
-            <div className="p-4 border-b border-white/5 bg-white/5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-black text-white text-sm tracking-tight">Notificações</h4>
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={markAllAsRead}
-                    className="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-widest"
+            <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-4">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(59,130,246,0.20),transparent_35%),radial-gradient(circle_at_88%_0%,rgba(124,58,237,0.18),transparent_32%)]" />
+
+              <div className="relative space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-500/12 text-blue-300 ring-1 ring-blue-300/20">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black tracking-tight text-white">Notificações</h4>
+                      <p className="text-[11px] font-semibold text-slate-400">
+                        {unreadCount > 0 ? `${unreadCount} nova${unreadCount > 1 ? 's' : ''} para revisar` : 'Tudo em dia por aqui'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={markAllAsRead}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-300 hover:bg-blue-500/18"
+                    >
+                      <CheckCheck size={13} />
+                      Lidas
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white/[0.04] p-1 ring-1 ring-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setFilter('all')}
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all',
+                      filter === 'all'
+                        ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
+                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
+                    )}
                   >
-                    Marcar todas como lidas
+                    Todas
                   </button>
-                )}
-              </div>
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilter('all')}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                    filter === 'all' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "bg-white/5 text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Todas
-                </button>
-                <button
-                  onClick={() => setFilter('unread')}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                    filter === 'unread' ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "bg-white/5 text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Não lidas ({unreadCount})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilter('unread')}
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all',
+                      filter === 'unread'
+                        ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
+                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
+                    )}
+                  >
+                    Não lidas ({unreadCount})
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[min(62vh,440px)] overflow-y-auto bg-slate-950/92">
               {filteredNotifications.length === 0 ? (
-                <div className="p-12 text-center space-y-3">
-                  <div className="w-16 h-16 bg-white/5 text-slate-700 rounded-full flex items-center justify-center mx-auto">
-                    <Bell size={32} />
+                <div className="p-10 text-center">
+                  <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-white/[0.04] text-slate-500 ring-1 ring-white/10">
+                    <Bell size={30} />
                   </div>
-                  <p className="text-xs font-bold text-slate-500">
-                    {filter === 'unread' ? "Você não tem notificações não lidas." : "Nenhuma notificação por enquanto."}
+                  <p className="text-sm font-black text-slate-300">
+                    {filter === 'unread' ? 'Sem notificações não lidas' : 'Nenhuma notificação por enquanto'}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    Novas consultas, mensagens e atualizações aparecem aqui.
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/5">
-                  {filteredNotifications.map((n) => (
-                    <div 
-                      key={n.id}
-                      onClick={() => openNotification(n)}
-                      className={cn(
-                        "p-4 flex gap-3 transition-colors relative group cursor-pointer",
-                        !n.lida ? "bg-blue-500/5" : "hover:bg-white/5"
-                      )}
-                    >
-                      <div className="mt-1">{getIcon(n.tipo)}</div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={cn("text-xs font-bold truncate", !n.lida ? "text-white" : "text-slate-400")}>
-                            {n.titulo}
-                          </p>
-                          <span className="text-[9px] text-slate-500 font-medium whitespace-nowrap">
-                            {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-3 whitespace-pre-wrap">
-                          {n.mensagem}
-                        </p>
+                <div className="divide-y divide-white/[0.06]">
+                  {filteredNotifications.map((n) => {
+                    const tone = getNotificationTone(n.tipo);
+                    const isUnread = !n.lida;
 
-                        {n.tipo === 'appointment_request' && !n.lida && (
-                          <div className="flex gap-2 pt-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAction(n, true);
-                              }}
-                              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black uppercase tracking-tighter rounded-lg transition-all flex items-center justify-center gap-1"
-                            >
-                              <Check size={12} /> Confirmar
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAction(n, false);
-                              }}
-                              className="flex-1 py-2 bg-white/5 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all flex items-center justify-center gap-1"
-                            >
-                              <X size={12} /> Recusar
-                            </button>
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => openNotification(n)}
+                        className={cn(
+                          'group relative cursor-pointer overflow-hidden p-4 transition-all hover:bg-white/[0.04]',
+                          isUnread && 'bg-blue-500/[0.055]',
+                        )}
+                      >
+                        <div className={cn('pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b opacity-0 transition-opacity', tone.accent, isUnread && 'opacity-100')} />
+                        <div className="flex gap-3">
+                          <div className={cn('mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl', tone.iconWrap)}>
+                            {tone.icon}
                           </div>
-                        )}
 
-                        {n.link && (
-                          <span 
-                            className="inline-block text-[10px] font-black text-blue-400 hover:underline uppercase tracking-widest pt-1"
-                          >
-                            Ver detalhes
-                          </span>
-                        )}
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="mb-1 flex items-center gap-2">
+                                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 ring-1 ring-white/10">
+                                    {tone.label}
+                                  </span>
+                                  {isUnread && <span className="h-2 w-2 rounded-full bg-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.9)]" />}
+                                </div>
+                                <p className={cn('truncate text-sm font-black tracking-tight', isUnread ? 'text-white' : 'text-slate-300')}>
+                                  {n.titulo || 'Nova notificação'}
+                                </p>
+                              </div>
+
+                              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-bold text-slate-500">
+                                <Clock size={11} />
+                                {formatNotificationTime(n.created_at)}
+                              </span>
+                            </div>
+
+                            <p className="line-clamp-3 whitespace-pre-wrap text-[12px] font-medium leading-relaxed text-slate-400">
+                              {n.mensagem || 'Abra para ver mais detalhes.'}
+                            </p>
+
+                            {n.tipo === 'appointment_request' && isUnread && (
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAction(n, true);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-blue-950/25 transition-all hover:brightness-110"
+                                >
+                                  <Check size={13} /> Confirmar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAction(n, false);
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-300 transition-all hover:border-rose-400/30 hover:bg-rose-500/10 hover:text-rose-300"
+                                >
+                                  <X size={13} /> Recusar
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              {n.link ? (
+                                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-300 group-hover:text-blue-200">
+                                  Ver detalhes
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                                  Aviso interno
+                                </span>
+                              )}
+
+                              {isUnread && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(n.id);
+                                  }}
+                                  className="rounded-full border border-blue-400/15 bg-blue-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-blue-300 opacity-100 transition-all hover:bg-blue-500/18 sm:opacity-0 sm:group-hover:opacity-100"
+                                  title="Marcar como lida"
+                                >
+                                  Marcar lida
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      {!n.lida && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markAsRead(n.id);
-                          }}
-                          className="absolute right-2 bottom-2 p-1 text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Marcar como lida"
-                        >
-                          <Check size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="p-3 bg-white/5 border-t border-white/5 text-center flex items-center justify-center gap-3">
+            <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-white/[0.04] px-4 py-3">
               <button
                 type="button"
                 onClick={() => setFilter('all')}
-                className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-300 tracking-widest"
+                className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 hover:text-slate-200"
               >
                 Mostrar todas
               </button>
-              {unreadCount > 0 && (
-                <>
-                  <span className="text-slate-700 text-xs">•</span>
-                  <button
-                    type="button"
-                    onClick={markAllAsRead}
-                    className="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-widest"
-                  >
-                    Marcar lidas
-                  </button>
-                </>
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-300 hover:text-blue-200"
+                >
+                  <CheckCheck size={13} /> Marcar lidas
+                </button>
+              ) : (
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400/80">Tudo revisado</span>
               )}
             </div>
           </motion.div>
