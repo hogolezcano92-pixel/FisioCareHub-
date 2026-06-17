@@ -6454,3 +6454,20 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
     transform: translateZ(0);
   }
 }
+
+
+/* Clinical update detail — nitidez premium apenas no tema claro */
+html:not(.dark) .clinical-update-light-fix {
+  color: #0f172a;
+}
+
+html:not(.dark) .clinical-update-light-fix article {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+html:not(.dark) .clinical-update-light-fix p,
+html:not(.dark) .clinical-update-light-fix h1,
+html:not(.dark) .clinical-update-light-fix h2,
+html:not(.dark) .clinical-update-light-fix h3 {
+  opacity: 1;
+}
