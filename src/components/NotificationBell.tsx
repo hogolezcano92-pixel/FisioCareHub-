@@ -37,6 +37,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>('all');
+  const [showAll, setShowAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -97,6 +98,8 @@ export default function NotificationBell() {
 
   const unreadCount = notifications.filter((n) => !n.lida).length;
   const filteredNotifications = filter === 'all' ? notifications : notifications.filter((n) => !n.lida);
+  const visibleNotifications = showAll ? filteredNotifications : filteredNotifications.slice(0, 5);
+  const hasMoreNotifications = filteredNotifications.length > visibleNotifications.length;
 
   const markAsRead = async (id: string) => {
     if (!user?.id) return false;
@@ -209,6 +212,43 @@ export default function NotificationBell() {
       };
     }
 
+
+    if (normalizedTipo.includes('video') || normalizedTipo.includes('telehealth') || normalizedTipo.includes('chamada')) {
+      return {
+        icon: <Activity size={18} />,
+        iconWrap: 'bg-fuchsia-500/12 text-fuchsia-300 ring-1 ring-fuchsia-300/25',
+        label: 'Teleconsulta',
+        accent: 'from-fuchsia-500/18 via-violet-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('library') || normalizedTipo.includes('material') || normalizedTipo.includes('biblioteca')) {
+      return {
+        icon: <FileText size={18} />,
+        iconWrap: 'bg-teal-500/12 text-teal-300 ring-1 ring-teal-300/25',
+        label: 'Biblioteca',
+        accent: 'from-teal-500/18 via-emerald-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('subscription') || normalizedTipo.includes('assinatura') || normalizedTipo.includes('plano')) {
+      return {
+        icon: <CreditCard size={18} />,
+        iconWrap: 'bg-purple-500/12 text-purple-300 ring-1 ring-purple-300/25',
+        label: 'Assinatura',
+        accent: 'from-purple-500/18 via-violet-500/8 to-transparent',
+      };
+    }
+
+    if (normalizedTipo.includes('approval') || normalizedTipo.includes('aprovacao') || normalizedTipo.includes('aprovação')) {
+      return {
+        icon: <UserCheck size={18} />,
+        iconWrap: 'bg-lime-500/12 text-lime-300 ring-1 ring-lime-300/25',
+        label: 'Aprovação',
+        accent: 'from-lime-500/18 via-emerald-500/8 to-transparent',
+      };
+    }
+
     if (normalizedTipo.includes('profile') || normalizedTipo.includes('patient') || normalizedTipo.includes('paciente')) {
       return {
         icon: <UserCheck size={18} />,
@@ -311,10 +351,148 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
+
+      <style>{`
+        .fch-notification-popover {
+          background: rgba(2, 6, 23, 0.96) !important;
+          color: #f8fafc !important;
+          border-color: rgba(255, 255, 255, 0.10) !important;
+        }
+
+        .fch-notification-popover * {
+          opacity: 1;
+        }
+
+        html:not(.dark) .fch-notification-popover,
+        :root[data-theme="light"] .fch-notification-popover,
+        html.light .fch-notification-popover,
+        body.light .fch-notification-popover {
+          background: rgba(255, 255, 255, 0.98) !important;
+          color: #0f172a !important;
+          border-color: rgba(196, 181, 253, 0.86) !important;
+          box-shadow: 0 32px 90px -38px rgba(76, 29, 149, 0.50), 0 10px 30px -20px rgba(15, 23, 42, 0.32) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-head,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-head,
+        html.light .fch-notification-popover .fch-notification-head,
+        body.light .fch-notification-popover .fch-notification-head {
+          background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 45%, #eaf4ff 100%) !important;
+          border-color: rgba(196, 181, 253, 0.74) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-list,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-list,
+        html.light .fch-notification-popover .fch-notification-list,
+        body.light .fch-notification-popover .fch-notification-list {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-footer,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-footer,
+        html.light .fch-notification-popover .fch-notification-footer,
+        body.light .fch-notification-popover .fch-notification-footer {
+          background: linear-gradient(180deg, #ffffff, #f8f7ff) !important;
+          border-color: rgba(196, 181, 253, 0.74) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-light-title,
+        :root[data-theme="light"] .fch-notification-popover .fch-light-title,
+        html.light .fch-notification-popover .fch-light-title,
+        body.light .fch-notification-popover .fch-light-title {
+          color: #0f172a !important;
+          text-shadow: none !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-light-muted,
+        :root[data-theme="light"] .fch-notification-popover .fch-light-muted,
+        html.light .fch-notification-popover .fch-light-muted,
+        body.light .fch-notification-popover .fch-light-muted {
+          color: #475569 !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-filter-shell,
+        :root[data-theme="light"] .fch-notification-popover .fch-filter-shell,
+        html.light .fch-notification-popover .fch-filter-shell,
+        body.light .fch-notification-popover .fch-filter-shell {
+          background: rgba(255, 255, 255, 0.88) !important;
+          border: 1px solid rgba(196, 181, 253, 0.86) !important;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72), 0 16px 34px -28px rgba(88, 28, 135, 0.45) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-filter-idle,
+        :root[data-theme="light"] .fch-notification-popover .fch-filter-idle,
+        html.light .fch-notification-popover .fch-filter-idle,
+        body.light .fch-notification-popover .fch-filter-idle {
+          color: #475569 !important;
+          background: rgba(255, 255, 255, 0.72) !important;
+          border: 1px solid rgba(221, 214, 254, 0.7) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-filter-active,
+        :root[data-theme="light"] .fch-notification-popover .fch-filter-active,
+        html.light .fch-notification-popover .fch-filter-active,
+        body.light .fch-notification-popover .fch-filter-active {
+          color: #ffffff !important;
+          background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%) !important;
+          border-color: transparent !important;
+          box-shadow: 0 16px 30px -22px rgba(37, 99, 235, 0.75) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-item,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-item,
+        html.light .fch-notification-popover .fch-notification-item,
+        body.light .fch-notification-popover .fch-notification-item {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-item:hover,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-item:hover,
+        html.light .fch-notification-popover .fch-notification-item:hover,
+        body.light .fch-notification-popover .fch-notification-item:hover {
+          background: #f8f7ff !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-unread,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-unread,
+        html.light .fch-notification-popover .fch-notification-unread,
+        body.light .fch-notification-popover .fch-notification-unread {
+          background: linear-gradient(90deg, rgba(37,99,235,0.075), rgba(124,58,237,0.045), #ffffff) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-empty,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-empty,
+        html.light .fch-notification-popover .fch-notification-empty,
+        body.light .fch-notification-popover .fch-notification-empty {
+          background: linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%) !important;
+          color: #0f172a !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-notification-badge,
+        :root[data-theme="light"] .fch-notification-popover .fch-notification-badge,
+        html.light .fch-notification-popover .fch-notification-badge,
+        body.light .fch-notification-popover .fch-notification-badge {
+          background: #eef2ff !important;
+          color: #3730a3 !important;
+          border: 1px solid rgba(196, 181, 253, 0.85) !important;
+        }
+
+        html:not(.dark) .fch-notification-popover .fch-footer-action,
+        :root[data-theme="light"] .fch-notification-popover .fch-footer-action,
+        html.light .fch-notification-popover .fch-footer-action,
+        body.light .fch-notification-popover .fch-footer-action {
+          color: #2563eb !important;
+        }
+      `}</style>
       <button
         type="button"
         aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : 'Notificações'}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (isOpen) setShowAll(false);
+        }}
         className={cn(
           'relative grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300 shadow-[0_16px_38px_-28px_rgba(15,23,42,0.85)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-blue-400/35 hover:bg-blue-500/10 hover:text-blue-300',
           isOpen && 'border-blue-400/40 bg-blue-500/12 text-blue-300 shadow-blue-950/30',
@@ -335,9 +513,9 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="fixed left-4 right-4 top-[5.6rem] z-[9999] overflow-hidden rounded-[1.8rem] border border-white/10 bg-slate-950/95 shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)] backdrop-blur-2xl sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-[24rem]"
+            className="fch-notification-popover fixed left-4 right-4 top-[5.6rem] z-[9999] overflow-hidden rounded-[1.8rem] border border-white/10 shadow-[0_30px_90px_-28px_rgba(0,0,0,0.85)] backdrop-blur-2xl sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-[24rem]"
           >
-            <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-4">
+            <div className="fch-notification-head relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-4">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(59,130,246,0.20),transparent_35%),radial-gradient(circle_at_88%_0%,rgba(124,58,237,0.18),transparent_32%)]" />
 
               <div className="relative space-y-4">
@@ -347,8 +525,8 @@ export default function NotificationBell() {
                       <Sparkles size={18} />
                     </div>
                     <div>
-                      <h4 className="text-base font-black tracking-tight text-white">Notificações</h4>
-                      <p className="text-[11px] font-semibold text-slate-400">
+                      <h4 className="fch-light-title text-base font-black tracking-tight text-white">Notificações</h4>
+                      <p className="fch-light-muted text-[11px] font-semibold text-slate-400">
                         {unreadCount > 0 ? `${unreadCount} nova${unreadCount > 1 ? 's' : ''} para revisar` : 'Tudo em dia por aqui'}
                       </p>
                     </div>
@@ -366,27 +544,27 @@ export default function NotificationBell() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white/[0.04] p-1 ring-1 ring-white/10">
+                <div className="fch-filter-shell grid grid-cols-2 gap-2 rounded-2xl bg-white/[0.04] p-1 ring-1 ring-white/10">
                   <button
                     type="button"
-                    onClick={() => setFilter('all')}
+                    onClick={() => { setFilter('all'); setShowAll(false); }}
                     className={cn(
                       'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all',
                       filter === 'all'
-                        ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
-                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
+                        ? 'fch-filter-active bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
+                        : 'fch-filter-idle text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
                     )}
                   >
                     Todas
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFilter('unread')}
+                    onClick={() => { setFilter('unread'); setShowAll(false); }}
                     className={cn(
                       'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all',
                       filter === 'unread'
-                        ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
-                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
+                        ? 'fch-filter-active bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30'
+                        : 'fch-filter-idle text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
                     )}
                   >
                     Não lidas ({unreadCount})
@@ -395,9 +573,9 @@ export default function NotificationBell() {
               </div>
             </div>
 
-            <div className="max-h-[min(62vh,440px)] overflow-y-auto bg-slate-950/92">
+            <div className="fch-notification-list max-h-[min(62vh,440px)] overflow-y-auto bg-slate-950/92">
               {filteredNotifications.length === 0 ? (
-                <div className="p-10 text-center">
+                <div className="fch-notification-empty p-10 text-center">
                   <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-white/[0.04] text-slate-500 ring-1 ring-white/10">
                     <Bell size={30} />
                   </div>
@@ -410,7 +588,7 @@ export default function NotificationBell() {
                 </div>
               ) : (
                 <div className="divide-y divide-white/[0.06]">
-                  {filteredNotifications.map((n) => {
+                  {visibleNotifications.map((n) => {
                     const tone = getNotificationTone(n.tipo);
                     const isUnread = !n.lida;
 
@@ -419,8 +597,8 @@ export default function NotificationBell() {
                         key={n.id}
                         onClick={() => openNotification(n)}
                         className={cn(
-                          'group relative cursor-pointer overflow-hidden p-4 transition-all hover:bg-white/[0.04]',
-                          isUnread && 'bg-blue-500/[0.055]',
+                          'fch-notification-item group relative cursor-pointer overflow-hidden p-4 transition-all hover:bg-white/[0.04]',
+                          isUnread && 'fch-notification-unread bg-blue-500/[0.055]',
                         )}
                       >
                         <div className={cn('pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b opacity-0 transition-opacity', tone.accent, isUnread && 'opacity-100')} />
@@ -433,12 +611,12 @@ export default function NotificationBell() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="mb-1 flex items-center gap-2">
-                                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 ring-1 ring-white/10">
+                                  <span className="fch-notification-badge rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 ring-1 ring-white/10">
                                     {tone.label}
                                   </span>
                                   {isUnread && <span className="h-2 w-2 rounded-full bg-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.9)]" />}
                                 </div>
-                                <p className={cn('truncate text-sm font-black tracking-tight', isUnread ? 'text-white' : 'text-slate-300')}>
+                                <p className={cn('fch-light-title truncate text-sm font-black tracking-tight', isUnread ? 'text-white' : 'text-slate-300')}>
                                   {n.titulo || 'Nova notificação'}
                                 </p>
                               </div>
@@ -449,7 +627,7 @@ export default function NotificationBell() {
                               </span>
                             </div>
 
-                            <p className="line-clamp-3 whitespace-pre-wrap text-[12px] font-medium leading-relaxed text-slate-400">
+                            <p className="fch-light-muted line-clamp-3 whitespace-pre-wrap text-[12px] font-medium leading-relaxed text-slate-400">
                               {n.mensagem || 'Abra para ver mais detalhes.'}
                             </p>
 
@@ -512,13 +690,13 @@ export default function NotificationBell() {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-white/[0.04] px-4 py-3">
+            <div className="fch-notification-footer flex items-center justify-between gap-3 border-t border-white/10 bg-white/[0.04] px-4 py-3">
               <button
                 type="button"
-                onClick={() => setFilter('all')}
-                className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 hover:text-slate-200"
+                onClick={() => { setFilter('all'); setShowAll(true); }}
+                className="fch-footer-action text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 hover:text-slate-200"
               >
-                Mostrar todas
+                {hasMoreNotifications || !showAll ? 'Mostrar todas' : 'Histórico completo'}
               </button>
               {unreadCount > 0 ? (
                 <button
