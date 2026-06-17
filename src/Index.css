@@ -6391,20 +6391,29 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
   pointer-events: none !important;
 }
 
-/* FisioCareHub Chat: fundo liso premium no light e dark */
+/* FisioCareHub Chat: clear light mode + preserved dark mode */
 .fisio-chat-thread {
-  background-color: #f8fbff !important;
-  background-image: none !important;
-  background-size: auto !important;
-  background-position: center !important;
+  background-color: #f8fbff;
+  background-image:
+    linear-gradient(rgba(248, 251, 255, 0.92), rgba(248, 251, 255, 0.97)),
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.08), transparent 36%),
+    url('https://www.transparenttextures.com/patterns/cubes.png');
+  background-size: auto, auto, auto, 150px 150px;
+  background-position: center;
 }
 
 .dark .fisio-chat-thread {
-  background-color: #020617 !important;
-  background-image: none !important;
-  background-size: auto !important;
-  background-position: center !important;
+  background-color: #020617;
+  background-image:
+    linear-gradient(rgba(2, 6, 23, 0.66), rgba(2, 6, 23, 0.70)),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.055), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.055), transparent 36%),
+    url('https://www.transparenttextures.com/patterns/cubes.png');
+  background-size: auto, auto, auto, 160px 160px;
+  background-position: center;
 }
+
 
 /* Chat mobile input — evita zoom e reduz o salto da tela no iPhone */
 .fch-chat-input,
@@ -6446,12 +6455,20 @@ html:not(.dark) .agenda-fisio-page .agenda-stat-card-purple svg,
   }
 }
 
-/* Chat profile details — garante botão visível no tema claro */
-.fch-chat-profile-button,
-.fch-chat-profile-button * {
-  color: #ffffff !important;
+
+/* ClinicalUpdateDetail light mode readability fallback */
+html:not(.dark) .clinical-update-detail-light,
+html:not(.dark) .clinical-update-detail-light article {
+  color: #0f172a !important;
 }
 
-.fch-chat-profile-button {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+html:not(.dark) .clinical-update-detail-light .clinical-light-card {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: rgba(221, 214, 254, 0.95) !important;
+}
+
+html:not(.dark) .clinical-update-detail-light .clinical-light-muted {
+  color: #334155 !important;
+  opacity: 1 !important;
 }
