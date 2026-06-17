@@ -671,6 +671,7 @@ const isPasswordRecoveryUrl = (location: ReturnType<typeof useLocation>) => {
 function AppContent() {
   const { user, profile } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatConversationActive, setIsChatConversationActive] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const isPasswordRecovery = isPasswordRecoveryUrl(location);
@@ -691,9 +692,25 @@ function AppContent() {
     [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]
   );
 
+  useEffect(() => {
+    const handleChatActiveChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ active?: boolean }>;
+      setIsChatConversationActive(Boolean(customEvent.detail?.active));
+    };
+
+    window.addEventListener('fch-chat-active-change', handleChatActiveChange);
+    return () => window.removeEventListener('fch-chat-active-change', handleChatActiveChange);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname !== '/chat') {
+      setIsChatConversationActive(false);
+    }
+  }, [location.pathname]);
+
   const showMobileBottomNavigation = useMemo(() =>
-    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage && location.pathname !== '/chat'),
-    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage, location.pathname]
+    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage && (location.pathname !== '/chat' || !isChatConversationActive)),
+    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage, location.pathname, isChatConversationActive]
   );
 
   useEffect(() => {
