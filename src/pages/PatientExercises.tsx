@@ -585,32 +585,33 @@ export default function PatientExercises() {
       {/* Item Detail Modal */}
       <AnimatePresence>
         {selectedItemDetail && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="fixed left-0 right-0 bottom-0 top-[calc(env(safe-area-inset-top)+5.75rem)] z-[10000] flex items-start justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 md:inset-0 md:items-center md:p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedItemDetail(null)} className="absolute inset-0 bg-slate-950/95 backdrop-blur-md" />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              initial={{ opacity: 0, scale: 0.96, y: 18 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-3xl bg-slate-900 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.96, y: 18 }}
+              className="relative flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl md:h-auto md:max-h-[90vh] md:rounded-[3rem]"
             >
-              <div className="w-full p-8 md:p-12 overflow-y-auto space-y-8 bg-slate-900 custom-scrollbar">
-                <button onClick={() => setSelectedItemDetail(null)} className="absolute top-8 right-8 p-2 hover:bg-white/5 rounded-full text-slate-400 transition-all border border-white/10"><X size={24} /></button>
-
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full uppercase tracking-widest border border-sky-500/20">
-                    {selectedItemDetail.exercicio?.categoria_principal}
-                  </span>
-                  <h2 className="text-4xl font-black text-white tracking-tight leading-tight">{selectedItemDetail.exercicio?.nome}</h2>
+              <div className="w-full flex-1 overflow-y-auto overscroll-contain bg-slate-900 p-5 pb-7 custom-scrollbar sm:p-6 md:p-12 md:space-y-8 space-y-6">
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <span className="inline-flex max-w-full text-[10px] font-black bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full uppercase tracking-widest border border-sky-500/20 truncate">
+                      {selectedItemDetail.exercicio?.categoria_principal}
+                    </span>
+                    <h2 className="text-[clamp(1.75rem,8vw,2.7rem)] md:text-4xl font-black text-white tracking-tight leading-[0.98] break-words pr-1">{selectedItemDetail.exercicio?.nome}</h2>
+                  </div>
+                  <button onClick={() => setSelectedItemDetail(null)} className="shrink-0 p-2 hover:bg-white/5 rounded-full text-slate-400 transition-all border border-white/10"><X size={22} /></button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5 min-w-0">
                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Prescrição</p>
-                     <p className="text-xl font-black text-white">{selectedItemDetail.series || '3'} x {selectedItemDetail.repeticoes || '10 a 12'}</p>
+                     <p className="text-lg sm:text-xl font-black text-white leading-tight break-words">{selectedItemDetail.series || '3'} x {selectedItemDetail.repeticoes || '10 a 12'}</p>
                    </div>
-                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Freqüência</p>
-                     <p className="text-sm font-black text-white">{selectedItemDetail.frequencia || '1x ao dia'}</p>
+                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5 min-w-0">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Frequência</p>
+                     <p className="text-sm sm:text-base font-black text-white leading-tight break-words">{selectedItemDetail.frequencia || '1x ao dia'}</p>
                    </div>
                 </div>
 
@@ -635,7 +636,7 @@ export default function PatientExercises() {
                           <iframe
                             src={video.src}
                             title={selectedItemDetail.exercicio?.nome || 'Vídeo do exercício'}
-                            className="aspect-video w-full"
+                            className="aspect-video w-full max-h-[42vh] md:max-h-none"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                           />
@@ -646,7 +647,7 @@ export default function PatientExercises() {
                             playsInline
                             preload="metadata"
                             poster={selectedItemDetail.exercicio?.imagem_url || undefined}
-                            className="aspect-video w-full bg-black object-contain"
+                            className="aspect-video w-full max-h-[42vh] bg-black object-contain md:max-h-none"
                           >
                             Seu navegador não conseguiu carregar este vídeo.
                           </video>
@@ -670,7 +671,7 @@ export default function PatientExercises() {
                               style={{
                                 aspectRatio: videoAspectRatios[video.src],
                               }}
-                              className="w-full max-h-[70vh] rounded-2xl bg-transparent object-contain"
+                              className="w-full max-h-[42vh] rounded-2xl bg-transparent object-contain md:max-h-[70vh]"
                             >
                               Seu navegador não conseguiu carregar este vídeo.
                             </video>
