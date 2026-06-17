@@ -752,7 +752,7 @@ export default function Chat() {
             <div className="flex-1 flex overflow-hidden">
               {/* Messages */}
               <div
-                className="fisio-chat-thread flex-1 overflow-y-auto px-5 pt-5 pb-6 md:px-7 md:pt-6 md:pb-8 space-y-4 bg-fixed scroll-smooth relative"
+                className="fisio-chat-thread flex-1 overflow-y-auto px-5 pt-5 pb-6 md:px-7 md:pt-6 md:pb-8 space-y-4 scroll-smooth relative bg-[#f8fbff] dark:bg-[#020617]"
               >
                 <div className="flex justify-center mb-6">
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/86 dark:bg-white/[0.035] backdrop-blur-xl border border-blue-100 dark:border-white/10 rounded-full text-[9px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-[0.18em] shadow-[0_8px_20px_rgba(0,0,0,0.16)]">
@@ -978,10 +978,10 @@ export default function Chat() {
 
                       <button 
                         onClick={() => navigate(`/profile/${targetUser.id}`)}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
+                        className="fch-chat-profile-button w-full py-4 !bg-blue-600 !text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:!bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 border border-blue-500/20"
                       >
-                        <User size={18} />
-                        {t('profile.view_full')}
+                        <User size={18} className="text-white" />
+                        <span className="text-white">{t('profile.view_full')}</span>
                       </button>
                     </div>
                   </motion.aside>
