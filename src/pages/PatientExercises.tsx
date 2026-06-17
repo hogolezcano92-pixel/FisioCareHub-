@@ -32,6 +32,19 @@ interface ProtocolItem {
     video_url: string;
     pdf_url?: string | null;
     arquivo_url?: string | null;
+    gif_url?: string | null;
+    gifUrl?: string | null;
+    media_url?: string | null;
+    mediaUrl?: string | null;
+    demonstration_url?: string | null;
+    demonstrationUrl?: string | null;
+    animacao_url?: string | null;
+    animation_url?: string | null;
+    origem?: string | null;
+    source?: string | null;
+    externo_id?: string | null;
+    external_id?: string | null;
+    exerciseId?: string | null;
     indicacao_clinica: string;
     precaucoes: string;
     objetivo_principal: string;
@@ -284,6 +297,98 @@ const openVideoInNewTab = (event: MouseEvent<HTMLAnchorElement>, url: string, ti
 
 const getExercisePdfUrl = (exercise?: ProtocolItem['exercicio'] | null) =>
   String(exercise?.pdf_url || exercise?.arquivo_url || '').trim();
+
+const cleanMediaUrl = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  if (!text || text === 'null' || text === 'undefined') return '';
+  return text;
+};
+
+const getNestedMediaUrl = (value: unknown) => {
+  if (!value || typeof value !== 'object') return '';
+  const record = value as Record<string, unknown>;
+  return cleanMediaUrl(
+    record['1080p'] ||
+    record['720p'] ||
+    record['480p'] ||
+    record['360p'] ||
+    record['180p'] ||
+    record.url ||
+    record.src
+  );
+};
+
+const getExerciseDbExternalId = (exercise?: ProtocolItem['exercicio'] | null) => {
+  if (!exercise) return '';
+
+  const directId = cleanMediaUrl(
+    exercise.exerciseId ||
+    exercise.external_id ||
+    exercise.externo_id
+  );
+
+  if (directId) return directId;
+
+  const text = [exercise.descricao, exercise.indicacao_clinica, exercise.precaucoes]
+    .map((part) => String(part || ''))
+    .join(' ');
+
+  if (!/exercisedb/i.test(text)) return '';
+
+  const match = text.match(/(?:exerciseId|exercício\s+externo\s+ID|exercicio\s+externo\s+ID|ID)\s*[:#-]?\s*([A-Za-z0-9_-]{5,})/i);
+  return match?.[1] || '';
+};
+
+const getExerciseDemonstrationUrl = (exercise?: ProtocolItem['exercicio'] | null) => {
+  if (!exercise) return '';
+
+  const directMedia = cleanMediaUrl(
+    exercise.video_url ||
+    exercise.gif_url ||
+    exercise.gifUrl ||
+    exercise.demonstration_url ||
+    exercise.demonstrationUrl ||
+    exercise.media_url ||
+    exercise.mediaUrl ||
+    exercise.animacao_url ||
+    exercise.animation_url ||
+    getNestedMediaUrl((exercise as any).gifUrls) ||
+    getNestedMediaUrl((exercise as any).imageUrls)
+  );
+
+  if (directMedia) return directMedia;
+
+  const coverUrl = cleanMediaUrl(exercise.imagem_url);
+  if (coverUrl && isImageLikeUrl(coverUrl) && isAnimatedImageUrl(coverUrl)) {
+    return coverUrl;
+  }
+
+  const exerciseDbId = getExerciseDbExternalId(exercise);
+  if (exerciseDbId) {
+    return `https://static.exercisedb.dev/media/${encodeURIComponent(exerciseDbId)}.gif`;
+  }
+
+  return '';
+};
+
+const getExerciseCoverUrl = (exercise?: ProtocolItem['exercicio'] | null) => cleanMediaUrl(exercise?.imagem_url);
+
+const isAnimatedImageUrl = (url: string) => /\.gif(?:$|[?#])/i.test(url) || /static\.exercisedb\.dev\/media\/[^/?#]+\.gif/i.test(url);
+
+const isImageLikeUrl = (url: string) => {
+  const normalized = String(url || '').toLowerCase();
+  return (
+    /\.(gif|png|jpe?g|webp|avif)(?:$|[?#])/i.test(normalized) ||
+    normalized.includes('static.exercisedb.dev/media/') ||
+    normalized.includes('/image?exerciseid=')
+  );
+};
+
+const getDemonstrationLabel = (url: string) => {
+  if (isAnimatedImageUrl(url)) return 'GIF do exercício';
+  if (isImageLikeUrl(url)) return 'Imagem de referência';
+  return 'Vídeo do exercício';
+};
 
 const normalizeProtocolItem = (item: any): ProtocolItem => {
   const exercise = item?.exercicio || {};
@@ -615,9 +720,50 @@ export default function PatientExercises() {
                    </div>
                 </div>
 
-                {selectedItemDetail.exercicio?.video_url && (() => {
-                  const video = getVideoEmbedInfo(selectedItemDetail.exercicio.video_url);
-                  const externalVideoUrl = getVideoExternalUrl(selectedItemDetail.exercicio.video_url);
+                {(() => {
+                  const demonstrationUrl = getExerciseDemonstrationUrl(selectedItemDetail.exercicio);
+                  const coverUrl = getExerciseCoverUrl(selectedItemDetail.exercicio);
+                  const mediaUrl = demonstrationUrl || coverUrl;
+
+                  if (!mediaUrl) return null;
+
+                  const label = demonstrationUrl ? getDemonstrationLabel(demonstrationUrl) : 'Imagem de capa';
+
+                  if (isImageLikeUrl(mediaUrl)) {
+                    return (
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 text-sky-300">
+                          <Play size={18} fill="currentColor" />
+                          <h4 className="text-xs font-black uppercase tracking-widest">{label}</h4>
+                        </div>
+
+                        <div className="overflow-hidden rounded-2xl border border-sky-400/20 bg-black shadow-xl shadow-sky-950/20">
+                          <img
+                            src={mediaUrl}
+                            alt={selectedItemDetail.exercicio?.nome || label}
+                            className="w-full max-h-[42vh] bg-black object-contain md:max-h-[70vh]"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+
+                        {demonstrationUrl && (
+                          <a
+                            href={mediaUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-sky-300 hover:text-sky-200"
+                          >
+                            Abrir demonstração em nova aba
+                            <ChevronRight size={14} />
+                          </a>
+                        )}
+                      </section>
+                    );
+                  }
+
+                  const video = getVideoEmbedInfo(mediaUrl);
+                  const externalVideoUrl = getVideoExternalUrl(mediaUrl);
 
                   return (
                     <section className="space-y-3">
@@ -646,7 +792,7 @@ export default function PatientExercises() {
                             controls
                             playsInline
                             preload="metadata"
-                            poster={selectedItemDetail.exercicio?.imagem_url || undefined}
+                            poster={coverUrl || undefined}
                             className="aspect-video w-full max-h-[42vh] bg-black object-contain md:max-h-none"
                           >
                             Seu navegador não conseguiu carregar este vídeo.
@@ -658,7 +804,7 @@ export default function PatientExercises() {
                               controls
                               playsInline
                               preload="metadata"
-                              poster={selectedItemDetail.exercicio?.imagem_url || undefined}
+                              poster={coverUrl || undefined}
                               onLoadedMetadata={(event) => {
                                 const target = event.currentTarget;
                                 if (target.videoWidth && target.videoHeight) {
