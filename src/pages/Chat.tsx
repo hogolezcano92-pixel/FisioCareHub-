@@ -47,6 +47,33 @@ export default function Chat() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastMessageId = useRef<string | null>(null);
 
+  const shouldAutoFocusInput = () =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+
+  const extractAttachment = (message: string) => {
+    if (!message) return null;
+
+    const urlMatch = message.match(/https?:\/\/[^\s]+/i);
+    if (!urlMatch) return null;
+
+    const url = urlMatch[0].trim();
+    const fileNameMatch = message.match(/^Arquivo enviado:\s*(.+?)(?:\n|$)/i);
+    const rawFileName = fileNameMatch?.[1]?.trim() || url.split('/').pop()?.split('?')[0] || 'arquivo';
+    const fileName = rawFileName.replace(/^[\s-]+|[\s-]+$/g, '');
+    const isImage = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif|avif)(?:\?|$)/i.test(url);
+    const cleanText = message
+      .replace(url, '')
+      .replace(/^Arquivo enviado:\s*.+?(?:\n|$)/i, '')
+      .trim();
+
+    return {
+      url,
+      fileName,
+      isImage,
+      cleanText
+    };
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('support') === 'true' && !targetUser) {
@@ -212,7 +239,10 @@ export default function Chat() {
   useEffect(() => {
     if (user && targetUser) {
       setLoading(true);
-      setTimeout(() => inputRef.current?.focus(), 500);
+
+      if (shouldAutoFocusInput()) {
+        setTimeout(() => inputRef.current?.focus(), 500);
+      }
 
       let subscriptionSupabase: any;
 
@@ -343,7 +373,8 @@ export default function Chat() {
           lida: false
         });
 
-      toast.success('Arquivo compartilhado!');
+      e.target.value = '';
+      toast.success(file.type.startsWith('image/') ? 'Imagem compartilhada!' : 'Arquivo compartilhado!');
     } catch (error) {
       console.error('Error uploading file:', error);
       const { toast } = await import('sonner');
@@ -484,7 +515,7 @@ export default function Chat() {
         "w-full flex flex-col backdrop-blur-2xl z-10 transition-all overflow-hidden",
         targetUser
           ? "hidden md:flex md:w-80 lg:w-96 border-r border-white/5 bg-white/90 dark:bg-slate-900/50"
-          : "max-w-[760px] rounded-[2rem] border border-violet-100/90 dark:border-white/10 bg-white/92 dark:bg-slate-950/82 shadow-[0_22px_65px_rgba(109,40,217,0.12)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)]"
+          : "max-w-[760px] rounded-[2rem] border border-violet-100/90 dark:border-white/10 bg-white dark:bg-slate-950/82 shadow-[0_22px_65px_rgba(109,40,217,0.12)] dark:shadow-[0_22px_70px_rgba(0,0,0,0.35)]"
       )}>
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           <div className="flex items-center justify-between">
@@ -636,10 +667,10 @@ export default function Chat() {
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm md:text-base font-black text-slate-900 dark:text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
+                  <h3 className="text-sm md:text-base font-black text-slate-950 dark:text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[7px] md:text-[10px] text-emerald-400 font-black uppercase tracking-[0.18em] truncate">
+                    <span className="text-[7px] md:text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.18em] truncate">
                       {targetUser.tipo_usuario === 'admin' ? 'Especialista Humano • Online' : 'Online'}
                     </span>
                   </div>
@@ -705,6 +736,7 @@ export default function Chat() {
                     const msgDate = new Date(msg.criado_em);
                     const prevMsg = idx > 0 ? messages[idx - 1] : null;
                     const prevMsgDate = prevMsg ? new Date(prevMsg.criado_em) : null;
+                    const attachment = extractAttachment(msg.mensagem);
 
                     const showDateSeparator = !prevMsgDate || 
                       msgDate.toDateString() !== prevMsgDate.toDateString();
@@ -724,15 +756,70 @@ export default function Chat() {
                           className={cn("flex flex-col group", isMe ? "items-end pr-2" : "items-start pl-2")}
                         >
                           <div className={cn(
-                            "max-w-[72%] md:max-w-[60%] px-3.5 py-2.5 md:px-4.5 md:py-3 rounded-[22px] text-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)] relative transition-all min-w-[70px] border backdrop-blur-md",
+                            "max-w-[78%] md:max-w-[60%] rounded-[22px] text-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)] relative transition-all min-w-[70px] border backdrop-blur-md",
+                            attachment?.isImage ? "px-2.5 py-2 md:px-3 md:py-2.5" : "px-3.5 py-2.5 md:px-4.5 md:py-3",
                             isMe 
                               ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[8px] border-blue-300/20 shadow-blue-950/18" 
                               : "bg-white/96 dark:bg-slate-900/74 text-slate-800 dark:text-slate-100 rounded-bl-[8px] border-slate-200 dark:border-white/10 shadow-slate-200/50 dark:shadow-slate-950/20"
                           )}>
-                            <p className="leading-[1.55] font-semibold mb-1 break-words text-[13.5px] md:text-[15px]">{msg.mensagem}</p>
+                            {attachment?.isImage ? (
+                              <div className="space-y-2">
+                                <a
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block overflow-hidden rounded-[18px] bg-white/10 ring-1 ring-black/5 dark:ring-white/10"
+                                >
+                                  <img
+                                    src={attachment.url}
+                                    alt={attachment.fileName}
+                                    className="w-full h-auto max-h-[300px] md:max-h-[360px] object-cover"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </a>
+                                <div className="px-1 pb-0.5">
+                                  <p className={cn(
+                                    "text-[11px] font-black uppercase tracking-[0.12em] mb-1.5",
+                                    isMe ? "text-blue-100/90" : "text-slate-500 dark:text-slate-400"
+                                  )}>
+                                    {attachment.fileName}
+                                  </p>
+                                  {attachment.cleanText && (
+                                    <p className="leading-[1.55] font-semibold break-words whitespace-pre-line text-[13.5px] md:text-[15px]">
+                                      {attachment.cleanText}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ) : attachment ? (
+                              <div className="space-y-2">
+                                {attachment.cleanText && (
+                                  <p className="leading-[1.55] font-semibold break-words whitespace-pre-line text-[13.5px] md:text-[15px]">
+                                    {attachment.cleanText}
+                                  </p>
+                                )}
+                                <a
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={cn(
+                                    "inline-flex max-w-full items-center gap-2 rounded-2xl px-3 py-2 text-[12px] font-bold transition-all",
+                                    isMe
+                                      ? "bg-white/12 text-white hover:bg-white/16"
+                                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/14"
+                                  )}
+                                >
+                                  <Share className="w-4 h-4 flex-shrink-0" />
+                                  <span className="truncate">{attachment.fileName}</span>
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="leading-[1.55] font-semibold break-words whitespace-pre-line text-[13.5px] md:text-[15px]">{msg.mensagem}</p>
+                            )}
 
                             <div className={cn(
-                              "text-[8.5px] font-black uppercase tracking-widest opacity-60 text-right",
+                              "mt-1 text-[8.5px] font-black uppercase tracking-widest opacity-60 text-right",
                               isMe ? "text-blue-100" : "text-slate-500 dark:text-slate-400"
                             )}>
                               {formatHourBR(msg.criado_em)}
@@ -892,8 +979,11 @@ export default function Chat() {
                           handleSendMessage(e as any);
                         }
                       }}
+                      autoComplete="off"
+                      autoCorrect="on"
+                      inputMode="text"
                       placeholder="Mensagem..."
-                      className="w-full pl-4 pr-16 py-2.5 md:py-3 bg-white border border-slate-200 rounded-[22px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400/60 transition-all font-bold text-sm md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_20px_rgba(15,23,42,0.08)] text-slate-900 placeholder:text-slate-500 dark:bg-white/[0.07] dark:border-white/15 dark:focus:ring-blue-500/15 dark:focus:border-blue-400/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.14)] dark:text-white dark:placeholder:text-slate-500"
+                      className="fch-chat-input w-full pl-4 pr-16 py-2.5 md:py-3 bg-white border border-slate-200 rounded-[22px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400/60 transition-all font-bold text-base md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_20px_rgba(15,23,42,0.08)] text-slate-900 placeholder:text-slate-500 dark:bg-white/[0.07] dark:border-white/15 dark:focus:ring-blue-500/15 dark:focus:border-blue-400/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.14)] dark:text-white dark:placeholder:text-slate-500"
                     />
                     <div className="absolute right-2.5 md:right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 md:gap-1.5">
                       <button type="button" className="p-1.5 md:p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-white/10 rounded-full transition-colors">
