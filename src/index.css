@@ -4673,21 +4673,22 @@ html:not(.dark) .fch-post-login-splash .fch-splash-card {
     inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
 }
 
-/* Pílula do logo superior */
+/* Logo superior livre, sem card/pílula */
 html:not(.dark) .fch-post-login-splash .fch-splash-glass {
-  background: rgba(15, 23, 42, 0.62) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
-/* Texto do logo superior */
-html:not(.dark) .fch-post-login-splash .fch-splash-logo,
-html:not(.dark) .fch-post-login-splash .fch-splash-logo * {
-  color: #ffffff !important;
+/* Mantém o logo com gradiente roxo/azul/branco no tema claro */
+html:not(.dark) .fch-post-login-splash .fch-splash-logo span {
+  color: transparent !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
 }
 
-/* Mantém o “Care” azul visível */
 html:not(.dark) .fch-post-login-splash .fch-splash-logo-care {
-  color: #67e8f9 !important;
   text-shadow: 0 0 18px rgba(103, 232, 249, 0.65) !important;
 }
 
