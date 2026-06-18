@@ -7,7 +7,8 @@ import {
   FileText,
   FileSignature,
   Stethoscope,
-  BrainCircuit,
+  ClipboardCheck,
+  ScanSearch,
   MessageSquare,
   User,
   LogOut,
@@ -96,8 +97,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.evaluations'), path: '/physio/evaluations', icon: Stethoscope, pro: true },
             { name: 'Clinical Tests Hub', path: '/clinical-tests', icon: Stethoscope, pro: true },
             { name: t('nav.exercises'), path: '/exercises', icon: Activity, pro: true },
-            { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit, pro: true },
-            { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+            { name: t('nav.triages'), path: '/physio/triages', icon: ClipboardCheck, pro: true },
+            { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
           ] : []),
@@ -106,8 +107,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             { name: t('nav.workouts'), path: '/treinos', icon: Activity },
             { name: t('nav.records'), path: '/records', icon: FileText },
             { name: t('nav.documents'), path: '/documents', icon: FileSignature },
-            { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
-            { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+            { name: t('nav.triage'), path: '/triage', icon: ClipboardCheck },
+            { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
             { name: t('nav.library'), path: '/patient/library', icon: BookOpen },
           ] : [])
         ]
@@ -181,7 +182,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     if (key.includes('avalia') || key.includes('evaluation')) return '#059669';
     if (key.includes('exerc') || key.includes('treino') || key.includes('workout')) return '#A3E635';
     if (key.includes('loja') || key.includes('fisiostore')) return '#38BDF8';
-    if (key.includes('triage') || key.includes('triagem') || key.includes('exames')) return '#C084FC';
+    if (key.includes('exames') || key.includes('exame') || key.includes('ia')) return '#06B6D4';
+    if (key.includes('triage') || key.includes('triagem')) return '#C084FC';
     if (key.includes('prontu') || key.includes('record')) return '#818CF8';
     if (key.includes('document')) return '#38BDF8';
     if (key.includes('assinatura') || key.includes('subscription')) return '#CA8A04';
