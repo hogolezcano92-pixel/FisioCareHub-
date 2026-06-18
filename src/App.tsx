@@ -14,7 +14,8 @@ import {
   Crown,
   User, 
   FileText, 
-  BrainCircuit, 
+  ClipboardCheck,
+  ScanSearch,
   LogOut, 
   LogIn,
   UserPlus,
@@ -294,7 +295,7 @@ function Navbar() {
       ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
         ? [
             { name: t('nav.admin'), path: '/admin', icon: ShieldCheck },
-            { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+            { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
           ] 
         : []),
 
@@ -302,8 +303,8 @@ function Navbar() {
         { name: t('nav.patients'), path: '/patients', icon: User },
         { name: 'Minha Agenda', path: '/agenda', icon: CalendarIcon },
         { name: t('nav.exercises'), path: '/exercises', icon: Activity },
-        { name: t('nav.triages'), path: '/physio/triages', icon: BrainCircuit },
-        { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+        { name: t('nav.triages'), path: '/physio/triages', icon: ClipboardCheck },
+        { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
         { name: t('nav.subscription'), path: '/subscription', icon: Crown },
@@ -313,10 +314,10 @@ function Navbar() {
         { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
         { name: t('nav.workouts'), path: '/treinos', icon: Activity },
         { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
-        { name: 'Exames IA', path: '/exames-ia', icon: BrainCircuit },
+        { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
         { name: t('nav.records'), path: '/records', icon: FileText },
         { name: t('nav.documents'), path: '/documents', icon: FileSignature },
-        { name: t('nav.triage'), path: '/triage', icon: BrainCircuit },
+        { name: t('nav.triage'), path: '/triage', icon: ClipboardCheck },
       ] : []),
 
       ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
