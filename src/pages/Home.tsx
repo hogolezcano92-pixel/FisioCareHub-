@@ -1316,12 +1316,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-stories-section relative z-20 px-6 lg:px-20 mt-6 mb-10 sm:mt-10 sm:mb-16">
-        <div className="max-w-7xl mx-auto">
-          <StoryRail compact className="max-w-full !shadow-none" />
-        </div>
-      </section>
-
       <section className="pt-10 pb-14 sm:py-20 lg:py-24 px-6 lg:px-20 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           <motion.div
@@ -1554,6 +1548,16 @@ export default function Home() {
                 Ver Todos
               </button>
             </div>
+          </div>
+          
+          <div className="mb-10 sm:mb-14">
+            <StoryRail
+              title="Stories dos Especialistas"
+              subtitle="Veja dicas, bastidores e novidades dos fisioterapeutas verificados."
+              compact
+              ctaLabel="Assistir"
+              className="max-w-full"
+            />
           </div>
           
           <div className="relative group">
