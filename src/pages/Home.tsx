@@ -174,7 +174,6 @@ export default function Home() {
     try {
       setLoading(true);
       setFetchError(null);
-      setProSlideIndex(0);
 
       const safeNameQuery = nameQuery.trim();
       const safeLocationQuery = locationQuery.trim();
@@ -188,14 +187,14 @@ export default function Home() {
 
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, email, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, role, status_aprovacao, aprovado')
-        .or('tipo_usuario.eq.fisioterapeuta,role.eq.fisioterapeuta')
-        .or('status_aprovacao.eq.aprovado,aprovado.eq.true')
+        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, status_aprovacao')
+        .eq('tipo_usuario', 'fisioterapeuta')
+        .eq('status_aprovacao', 'aprovado')
         .order('nome_completo', { ascending: true })
         .limit(24);
 
       if (safeNameQuery) {
-        query = query.or(`nome_completo.ilike.%${safeNameQuery}%,email.ilike.%${safeNameQuery}%`);
+        query = query.or(`nome_completo.ilike.%${safeNameQuery}%,especialidade.ilike.%${safeNameQuery}%`);
       }
 
       if (safeLocationQuery) {
