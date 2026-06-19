@@ -24,7 +24,7 @@ const GENERAL_VIDEO: WelcomeVideoStep = {
 const CAPIVARA_VIDEO: WelcomeVideoStep = {
   id: 'capivara',
   src: `/onboarding/capivara-welcome.mp4?${VIDEO_VERSION}`,
-  mode: 'modal',
+  mode: 'fullscreen',
 };
 
 const ROLE_VIDEOS: Record<string, WelcomeVideoStep> = {
@@ -68,7 +68,7 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
       steps.push(roleVideo);
     }
 
-    // Após os vídeos principais do pós-login, mostra a capivara em um modal menor.
+    // Após os vídeos principais do pós-login, mostra a capivara em tela cheia como mais um vídeo da sequência.
     steps.push(CAPIVARA_VIDEO);
 
     return steps;
@@ -307,7 +307,7 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
           ref={videoRef}
           className={isCapivaraModal
             ? 'block aspect-[9/16] max-h-[72dvh] w-full bg-black object-contain'
-            : 'absolute inset-0 h-full w-full bg-black object-cover'
+            : `absolute inset-0 h-full w-full bg-black ${currentStep.id === 'capivara' ? 'object-contain' : 'object-cover'}`
           }
           playsInline
           autoPlay
