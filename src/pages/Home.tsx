@@ -174,25 +174,36 @@ export default function Home() {
     try {
       setLoading(true);
       setFetchError(null);
-      
-      console.log('Buscando profissionais com filtros:', { nameQuery, locationQuery, specialtyFilter });
-      
+      setProSlideIndex(0);
+
+      const safeNameQuery = nameQuery.trim();
+      const safeLocationQuery = locationQuery.trim();
+      const safeSpecialtyFilter = specialtyFilter.trim();
+
+      console.log('Buscando profissionais com filtros:', {
+        nameQuery: safeNameQuery,
+        locationQuery: safeLocationQuery,
+        specialtyFilter: safeSpecialtyFilter,
+      });
+
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados')
-        .eq('tipo_usuario', 'fisioterapeuta')
-        .eq('status_aprovacao', 'aprovado');
+        .select('id, nome_completo, email, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, role, status_aprovacao, aprovado')
+        .or('tipo_usuario.eq.fisioterapeuta,role.eq.fisioterapeuta')
+        .or('status_aprovacao.eq.aprovado,aprovado.eq.true')
+        .order('nome_completo', { ascending: true })
+        .limit(24);
 
-      if (nameQuery) {
-        query = query.or(`nome_completo.ilike.%${nameQuery}%,email.ilike.%${nameQuery}%`);
+      if (safeNameQuery) {
+        query = query.or(`nome_completo.ilike.%${safeNameQuery}%,email.ilike.%${safeNameQuery}%`);
       }
 
-      if (locationQuery) {
-        query = query.or(`localizacao.ilike.%${locationQuery}%,cidade.ilike.%${locationQuery}%`);
+      if (safeLocationQuery) {
+        query = query.or(`localizacao.ilike.%${safeLocationQuery}%,cidade.ilike.%${safeLocationQuery}%`);
       }
 
-      if (specialtyFilter && specialtyFilter !== 'Todos') {
-        query = query.eq('especialidade', specialtyFilter);
+      if (safeSpecialtyFilter && safeSpecialtyFilter !== 'Todos') {
+        query = query.ilike('especialidade', `%${safeSpecialtyFilter}%`);
       }
 
       const { data, error } = await query;
@@ -203,26 +214,23 @@ export default function Home() {
         throw error;
       }
 
-      if (data) {
-        const mappedData: Professional[] = data.map((profile: any) => ({
-          id: profile.id,
-          name: profile.nome_completo || 'Fisioterapeuta',
-          spec: profile.especialidade || 'Geral',
-          fullSpec: profile.especialidade || 'Fisioterapia Geral',
-          img: resolveStorageUrl(profile.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
-          rating: 5.0,
-          reviews: Math.floor(Math.random() * 50) + 10,
-          bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
-          location: profile.localizacao || profile.cidade || 'São Paulo',
-          crefito: profile.crefito,
-          services: Array.isArray(profile.servicos_ofertados)
-            ? profile.servicos_ofertados.filter(Boolean).slice(0, 4)
-            : []
-        }));
-        setProfessionals(mappedData);
-      } else {
-        setProfessionals([]);
-      }
+      const mappedData: Professional[] = (data || []).map((profile: any) => ({
+        id: profile.id,
+        name: profile.nome_completo || 'Fisioterapeuta',
+        spec: profile.especialidade || 'Geral',
+        fullSpec: profile.especialidade || 'Fisioterapia Geral',
+        img: resolveStorageUrl(profile.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
+        rating: 5.0,
+        reviews: Math.floor(Math.random() * 50) + 10,
+        bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
+        location: profile.localizacao || profile.cidade || 'São Paulo',
+        crefito: profile.crefito,
+        services: Array.isArray(profile.servicos_ofertados)
+          ? profile.servicos_ofertados.filter(Boolean).slice(0, 4)
+          : []
+      }));
+
+      setProfessionals(mappedData);
     } catch (error: any) {
       console.error('Erro inesperado ao buscar profissionais (Home):', error);
       setFetchError(error);
