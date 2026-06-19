@@ -2018,33 +2018,6 @@ export default function Dashboard() {
           vertical-align: 1px;
         }
 
-        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child,
-        html.light .dashboard-story-avatar-clean > div > button:first-child,
-        body.light .dashboard-story-avatar-clean > div > button:first-child,
-        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child {
-          background: transparent !important;
-          padding: 0 !important;
-          box-shadow: none !important;
-          border: 0 !important;
-          outline: 0 !important;
-          backdrop-filter: none !important;
-        }
-
-        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child > div,
-        html.light .dashboard-story-avatar-clean > div > button:first-child > div,
-        body.light .dashboard-story-avatar-clean > div > button:first-child > div,
-        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child > div {
-          background: transparent !important;
-          box-shadow: none !important;
-          border: 0 !important;
-          outline: 0 !important;
-          --tw-ring-offset-width: 0px !important;
-          --tw-ring-offset-color: transparent !important;
-          --tw-ring-color: transparent !important;
-          --tw-ring-shadow: 0 0 #0000 !important;
-          --tw-ring-offset-shadow: 0 0 #0000 !important;
-        }
-
         html:not(.dark) .dashboard-quick-icon-purple,
         html.light .dashboard-quick-icon-purple,
         body.light .dashboard-quick-icon-purple,
@@ -2115,6 +2088,51 @@ export default function Dashboard() {
         body.light .physio-premium-cover-softener,
         :root[data-theme="light"] .physio-premium-cover-softener {
           background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(224,242,254,0.10) 45%, rgba(79,70,229,0.18) 100%) !important;
+        }
+
+        html:not(.dark) .dashboard-physio-avatar-zone,
+        html.light .dashboard-physio-avatar-zone,
+        body.light .dashboard-physio-avatar-zone,
+        :root[data-theme="light"] .dashboard-physio-avatar-zone,
+        html:not(.dark) .dashboard-physio-avatar-zone > div,
+        html.light .dashboard-physio-avatar-zone > div,
+        body.light .dashboard-physio-avatar-zone > div,
+        :root[data-theme="light"] .dashboard-physio-avatar-zone > div {
+          background: transparent !important;
+          background-image: none !important;
+          box-shadow: none !important;
+          filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          border-color: transparent !important;
+        }
+
+        html:not(.dark) .dashboard-physio-avatar-zone .dashboard-story-avatar-clean,
+        html.light .dashboard-physio-avatar-zone .dashboard-story-avatar-clean,
+        body.light .dashboard-physio-avatar-zone .dashboard-story-avatar-clean,
+        :root[data-theme="light"] .dashboard-physio-avatar-zone .dashboard-story-avatar-clean {
+          background: transparent !important;
+          background-image: none !important;
+          box-shadow: none !important;
+          filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          border: 0 !important;
+          outline: 0 !important;
+        }
+
+        html:not(.dark) .dashboard-physio-avatar-zone .dashboard-story-avatar-clean > div:first-child,
+        html.light .dashboard-physio-avatar-zone .dashboard-story-avatar-clean > div:first-child,
+        body.light .dashboard-physio-avatar-zone .dashboard-story-avatar-clean > div:first-child,
+        :root[data-theme="light"] .dashboard-physio-avatar-zone .dashboard-story-avatar-clean > div:first-child {
+          background: transparent !important;
+          background-image: none !important;
+          box-shadow: none !important;
+          filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          border: 0 !important;
+          outline: 0 !important;
         }
 
         .physio-premium-name {
@@ -2276,7 +2294,7 @@ export default function Dashboard() {
                   {!profile ? (
                     <div className="h-24 w-24 shrink-0 animate-pulse rounded-full border-[5px] border-[#0B1120] bg-slate-800 shadow-2xl" />
                   ) : (
-                    <div className="relative shrink-0">
+                    <div className="dashboard-physio-avatar-zone relative shrink-0 bg-transparent">
                       <StoryAvatar
                         physioId={profile.id}
                         name={profile.nome_completo}
@@ -2286,7 +2304,7 @@ export default function Dashboard() {
                           `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
                         }
                         sizeClassName="w-24 h-24"
-                        className="dashboard-story-avatar dashboard-story-avatar-clean [&>div>button:first-child]:!bg-transparent [&>div>button:first-child]:!p-0 [&>div>button:first-child]:!shadow-none [&>div>button:first-child>div]:!ring-0 [&>div>button:first-child>div]:!border-0"
+                        className="dashboard-story-avatar dashboard-story-avatar-clean"
                       />
                     </div>
                   )}
