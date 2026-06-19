@@ -44,18 +44,29 @@ export default function LibraryPaymentModal({
         const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
         const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
+        const cleanMaterialIds = Array.from(
+          new Set(materialIds.map((id) => String(id || '').trim()).filter(Boolean))
+        );
+
+        if (cleanMaterialIds.length === 0) {
+          throw new Error('Nenhum material válido encontrado no carrinho.');
+        }
+
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token || config.supabaseAnonKey;
+
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': config.supabaseAnonKey,
-            'Authorization': `Bearer ${config.supabaseAnonKey}`
+            'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
             user_id: userId,
             email: email,
             type: 'library',
-            material_ids: materialIds
+            material_ids: cleanMaterialIds
           })
         });
 
