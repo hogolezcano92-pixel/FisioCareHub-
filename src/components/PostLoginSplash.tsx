@@ -99,24 +99,24 @@ export default function PostLoginSplash({
   const steps = useMemo(() => {
     if (isAdmin) {
       return [
-        { icon: ShieldCheck, label: 'Segurança ativa' },
-        { icon: Activity, label: 'Dados sincronizados' },
-        { icon: CheckCircle2, label: 'Gestão pronta' },
+        { icon: ShieldCheck, label: 'Segurança ativa', accent: 'admin-security' },
+        { icon: Activity, label: 'Dados sincronizados', accent: 'admin-data' },
+        { icon: CheckCircle2, label: 'Gestão pronta', accent: 'admin-ready' },
       ];
     }
 
     if (isPhysio) {
       return [
-        { icon: CalendarCheck2, label: 'Agenda pronta' },
-        { icon: Activity, label: 'Pacientes conectados' },
-        { icon: CheckCircle2, label: 'Atendimento liberado' },
+        { icon: CalendarCheck2, label: 'Agenda pronta', accent: 'physio-calendar' },
+        { icon: Activity, label: 'Pacientes conectados', accent: 'physio-patients' },
+        { icon: CheckCircle2, label: 'Atendimento liberado', accent: 'physio-check' },
       ];
     }
 
     return [
-      { icon: HeartPulse, label: 'Cuidado ativo' },
-      { icon: Activity, label: 'Evolução acompanhada' },
-      { icon: CheckCircle2, label: 'Dashboard pronto' },
+      { icon: HeartPulse, label: 'Cuidado ativo', accent: 'patient-care' },
+      { icon: Activity, label: 'Evolução acompanhada', accent: 'patient-progress' },
+      { icon: CheckCircle2, label: 'Dashboard pronto', accent: 'patient-ready' },
     ];
   }, [isAdmin, isPhysio]);
 
@@ -434,7 +434,7 @@ export default function PostLoginSplash({
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/18 text-cyan-100 shadow-[0_0_22px_rgba(103,232,249,0.22)]">
+                  <span className={`fch-splash-step-icon fch-splash-step-icon-${step.accent} flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/18 text-cyan-100 shadow-[0_0_22px_rgba(103,232,249,0.22)]`}>
                     <StepIcon size={18} />
                   </span>
                   <span className="text-sm font-black text-slate-100">{step.label}</span>
