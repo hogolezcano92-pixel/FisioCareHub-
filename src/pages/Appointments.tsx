@@ -14,7 +14,8 @@ import {
   Loader2,
   CalendarCheck,
   Crown,
-  HelpCircle
+  HelpCircle,
+  Receipt
 } from 'lucide-react';
 import { formatDate, cn, formatDateKeyBR, formatTimeBR, normalizeDateKey } from '../lib/utils';
 import ProGuard from '../components/ProGuard';
@@ -23,13 +24,14 @@ import { triggerWhatsAppNotification } from '../services/notificationService';
 import PaymentModal from '../components/PaymentModal';
 import { Wallet } from 'lucide-react';
 import { confirmAppointmentAsPatient, disputeAppointmentAsPatient, markAppointmentAsPerformed } from '../services/sessionCompletionService';
+import PaymentReceiptModal, { type PaymentReceiptData } from '../components/PaymentReceiptModal';
 
 const getAppointmentDate = (app: any) => formatDateKeyBR(app?.data || app?.data_servico, 'Data não informada');
 const getAppointmentTime = (app: any) => formatTimeBR(app?.hora || app?.data_servico, 'Horário não informado');
 const formatAppointmentDateTime = (app: any) => `${getAppointmentDate(app)} às ${getAppointmentTime(app)}`;
 
 const normalizeId = (value: any) => value == null ? '' : String(value);
-const PAID_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado'];
+const PAID_PAYMENT_STATUSES = ['pago_app', 'pago_manual', 'paid', 'pago', 'confirmado', 'confirmed', 'received'];
 
 const isPaidAppointment = (app: any, sessions: any[] = []) => {
   const paymentStatus = String(app?.status_pagamento || '').toLowerCase();
@@ -43,6 +45,34 @@ const isPaidAppointment = (app: any, sessions: any[] = []) => {
       && String(s?.data || '') === String(app?.data || '');
     return (sameAppointment || samePairAndDate) && PAID_PAYMENT_STATUSES.includes(sessionStatus);
   });
+};
+
+const getSessionForAppointment = (app: any, sessions: any[] = []) => sessions.find(s => {
+  const sameAppointment = normalizeId(s?.agendamento_id) === normalizeId(app?.id);
+  const samePairAndDate = normalizeId(s?.paciente_id) === normalizeId(app?.paciente_id)
+    && normalizeId(s?.fisioterapeuta_id) === normalizeId(app?.fisio_id)
+    && String(s?.data || '') === String(app?.data || app?.data_servico || '').slice(0, 10);
+
+  return sameAppointment || samePairAndDate;
+});
+
+const getPaymentForAppointment = (app: any, sessions: any[] = [], payments: any[] = []) => {
+  const session = getSessionForAppointment(app, sessions);
+  return payments.find((payment) => {
+    const externalReference = normalizeId(payment?.external_reference);
+    const externalId = normalizeId(payment?.external_id);
+    return externalReference === normalizeId(app?.id)
+      || externalReference === normalizeId(session?.agendamento_id)
+      || externalId === normalizeId(session?.stripe_payment_intent);
+  });
+};
+
+const formatPaymentMethod = (method?: string | null) => {
+  const normalized = String(method || '').toUpperCase();
+  if (normalized.includes('PIX')) return 'Pix';
+  if (normalized.includes('CREDIT') || normalized.includes('CARD')) return 'Cartão de crédito';
+  if (normalized.includes('BOLETO')) return 'Boleto';
+  return method || 'Plataforma';
 };
 
 const getAppointmentUiStatus = (app: any, sessions: any[] = []) => {
@@ -86,6 +116,8 @@ export default function Appointments() {
   // Payment State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
+  const [selectedPaymentReceipt, setSelectedPaymentReceipt] = useState<PaymentReceiptData | null>(null);
   
   // Form
   const [targetEmail, setTargetEmail] = useState('');
@@ -225,6 +257,7 @@ export default function Appointments() {
     if (profile) {
       fetchAppointments(profile);
       fetchSessions(profile);
+      fetchPaymentRecords(profile);
       cleanupRealtime = setupRealtime(profile);
       fetchAvailableUsers(profile);
     } else {
@@ -292,6 +325,27 @@ export default function Appointments() {
       setSessions(data || []);
     } catch (err) {
       console.error("Erro ao buscar sessões:", err);
+    }
+  };
+
+  const fetchPaymentRecords = async (currentProfile: any) => {
+    try {
+      if (currentProfile.tipo_usuario !== 'paciente') {
+        setPaymentRecords([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select('*')
+        .eq('user_id', currentProfile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPaymentRecords(data || []);
+    } catch (err) {
+      console.warn('Não foi possível carregar comprovantes de pagamento:', err);
+      setPaymentRecords([]);
     }
   };
 
@@ -710,6 +764,30 @@ export default function Appointments() {
     }
   };
 
+  const buildPaymentReceipt = (app: any): PaymentReceiptData => {
+    const session = getSessionForAppointment(app, sessions);
+    const payment = getPaymentForAppointment(app, sessions, paymentRecords);
+    const amount = Number(payment?.amount ?? app?.valor ?? app?.valor_cobrado ?? session?.valor_sessao ?? currentPrice ?? 0) || 0;
+    const confirmedAt = payment?.confirmed_at || app?.pagamento_confirmado_em || app?.updated_at || session?.updated_at || session?.created_at || new Date().toISOString();
+
+    return {
+      id: String(payment?.id || payment?.external_id || session?.id || app?.id || 'pagamento'),
+      appointmentId: app?.id,
+      patientName: app?.paciente?.nome_completo || profile?.nome_completo || 'Paciente',
+      physioName: app?.fisioterapeuta?.nome_completo || 'Fisioterapeuta',
+      service: app?.servico || app?.tipo_servico || app?.tipo_atendimento || service || 'Consulta fisioterapêutica',
+      appointmentDate: formatAppointmentDateTime(app),
+      amount,
+      method: formatPaymentMethod(payment?.method || app?.metodo_pagamento || session?.metodo_pagamento),
+      gateway: payment?.gateway || 'FisioCareHub',
+      status: payment?.status || app?.status_pagamento || session?.status_pagamento || 'pago',
+      externalId: payment?.external_id || session?.stripe_payment_intent || null,
+      confirmedAt,
+      issuedAt: new Date().toISOString(),
+      invoiceUrl: payment?.invoice_url || null,
+    };
+  };
+
   if (loading) return <div className="flex justify-center pt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   const isPhysio = profile?.tipo_usuario === 'fisioterapeuta';
@@ -813,6 +891,17 @@ export default function Appointments() {
                     <Check size={12} />
                     Pago
                   </span>
+                )}
+
+                {paid && !isPhysio && (
+                  <button
+                    onClick={() => setSelectedPaymentReceipt(buildPaymentReceipt(app))}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/10 text-blue-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/15 transition-all border border-white/10"
+                    title="Ver comprovante de pagamento"
+                  >
+                    <Receipt size={14} />
+                    Comprovante
+                  </button>
                 )}
 
                 {isPhysio && uiStatus === 'confirmado' && (
@@ -1134,11 +1223,20 @@ export default function Appointments() {
         )}
       </AnimatePresence>
 
+      <PaymentReceiptModal
+        isOpen={!!selectedPaymentReceipt}
+        onClose={() => setSelectedPaymentReceipt(null)}
+        receipt={selectedPaymentReceipt}
+      />
+
       <PaymentModal 
         isOpen={showPaymentModal}
         onClose={() => {
           setShowPaymentModal(false);
-          if (profile) fetchSessions(profile);
+          if (profile) {
+            fetchSessions(profile);
+            fetchPaymentRecords(profile);
+          }
         } }
         sessionId={selectedSession?.id}
         amount={selectedSession?.valor}
