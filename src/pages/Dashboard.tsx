@@ -2018,6 +2018,35 @@ export default function Dashboard() {
           vertical-align: 1px;
         }
 
+        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child,
+        html.light .dashboard-story-avatar-clean > div > button:first-child,
+        body.light .dashboard-story-avatar-clean > div > button:first-child,
+        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child {
+          background: transparent !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          border: 0 !important;
+          backdrop-filter: none !important;
+        }
+
+        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child > div,
+        html.light .dashboard-story-avatar-clean > div > button:first-child > div,
+        body.light .dashboard-story-avatar-clean > div > button:first-child > div,
+        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child > div {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: 0 !important;
+          outline: 0 !important;
+          ring-width: 0 !important;
+        }
+
+        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child > div img,
+        html.light .dashboard-story-avatar-clean > div > button:first-child > div img,
+        body.light .dashboard-story-avatar-clean > div > button:first-child > div img,
+        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child > div img {
+          display: block !important;
+        }
+
         html:not(.dark) .dashboard-quick-icon-purple,
         html.light .dashboard-quick-icon-purple,
         body.light .dashboard-quick-icon-purple,
