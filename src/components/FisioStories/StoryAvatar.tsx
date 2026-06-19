@@ -57,6 +57,7 @@ export default function StoryAvatar({
 
   const isOwner = user?.id === physioId;
   const hasStories = stories.length > 0;
+  const isDashboardCleanAvatar = className.includes('dashboard-story-avatar-clean');
 
   const storyGroups = useMemo<StoryGroup[]>(() => {
     if (!hasStories) return [];
@@ -350,14 +351,22 @@ export default function StoryAvatar({
           <button
             type="button"
             onClick={openProfileAction}
-            className={`dashboard-story-avatar-trigger relative rounded-full transition-transform hover:scale-105 ${
-              hasStories
-                ? 'bg-gradient-to-tr from-purple-700 via-rose-600 to-red-500 p-[6px] shadow-[0_0_0_3px_rgba(126,34,206,0.22),0_0_26px_rgba(244,63,94,0.55)]'
-                : 'p-0'
+            className={`relative rounded-full transition-transform hover:scale-105 ${
+              isDashboardCleanAvatar
+                ? 'bg-transparent p-0 shadow-none'
+                : hasStories
+                  ? 'bg-gradient-to-tr from-purple-700 via-rose-600 to-red-500 p-[6px] shadow-[0_0_0_3px_rgba(126,34,206,0.22),0_0_26px_rgba(244,63,94,0.55)]'
+                  : 'p-0'
             }`}
             aria-label={isOwner ? 'Abrir opções do story' : 'Ver story'}
           >
-            <div className={`${sizeClassName} dashboard-story-avatar-photo overflow-hidden rounded-full bg-slate-900 ring-[5px] ring-[#0B1120]`}>
+            <div
+              className={`${sizeClassName} overflow-hidden rounded-full ${
+                isDashboardCleanAvatar
+                  ? 'bg-transparent ring-0 shadow-none'
+                  : 'bg-slate-900 ring-[5px] ring-[#0B1120]'
+              }`}
+            >
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
