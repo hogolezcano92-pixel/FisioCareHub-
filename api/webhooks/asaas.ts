@@ -416,6 +416,7 @@ const upsertSessionForAppointment = async (appointment: any, payment: any) => {
       status: 'paid',
       gateway: 'asaas',
       method: payment.billingType,
+      invoice_url: payment.invoiceUrl || payment.bankSlipUrl || null,
       confirmed_at: new Date().toISOString(),
     }, { onConflict: 'external_id' });
 
@@ -494,6 +495,7 @@ const processLibraryPayment = async (payment: any) => {
       status: 'paid',
       gateway: 'asaas',
       method: payment.billingType,
+      invoice_url: payment.invoiceUrl || payment.bankSlipUrl || null,
       confirmed_at: new Date().toISOString(),
     }, { onConflict: 'external_id' });
 
