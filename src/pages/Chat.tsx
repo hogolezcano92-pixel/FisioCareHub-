@@ -19,7 +19,9 @@ import {
   Sparkles,
   CheckCheck,
   Lock,
-  LogIn
+  LogIn,
+  Bot,
+  Headphones
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -42,6 +44,9 @@ export default function Chat() {
   const [recentChats, setRecentChats] = useState<any[]>([]);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showKineAI, setShowKineAI] = useState(false);
+  const [supportAssistantActive, setSupportAssistantActive] = useState(false);
+  const [supportHumanRequested, setSupportHumanRequested] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -73,6 +78,65 @@ export default function Chat() {
       cleanText
     };
   };
+
+  const isCurrentUserAdmin = userData?.tipo_usuario === 'admin' || userData?.email === 'hogolezcano92@gmail.com';
+
+  const makeAssistantMessage = (mensagem: string, delayMs = 0) => ({
+    id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    remetente: 'support-assistant',
+    destinatario: user?.id || 'current-user',
+    mensagem,
+    criado_em: new Date(Date.now() + delayMs).toISOString(),
+    lida: true,
+    virtual: true
+  });
+
+  const assistantWelcomeText = () =>
+    `Olá! Sou o Assistente Virtual do FisioCareHub. Vou tentar resolver primeiro por aqui, com segurança e rapidez.\n\nPosso ajudar com agendamento, pagamento, documentos, exercícios, conta ou suporte técnico. Se preferir, toque em “Falar com admin” e eu encaminho para um humano.`;
+
+  const getAssistantReply = (text: string) => {
+    const normalized = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (/admin|humano|atendente|pessoa|suporte|falar com/.test(normalized)) {
+      return `Sem problema. Posso chamar um admin humano para continuar seu atendimento. Toque em “Falar com admin” abaixo.`;
+    }
+
+    if (/agenda|agendar|consulta|horario|remarcar|cancelar/.test(normalized)) {
+      return `Para agendamento: abra a área de Agenda, escolha o fisioterapeuta, selecione dia/horário disponível e confirme.\n\nSe o problema for consulta não aparecendo, horário indisponível, cancelamento ou remarcação, me diga qual etapa travou ou chame o admin.`;
+    }
+
+    if (/pagamento|pagar|pix|cartao|stripe|asaas|cobranca|reembolso|valor/.test(normalized)) {
+      return `Sobre pagamentos: confirme se o pagamento aparece como aprovado/confirmado. Consultas pendentes podem não liberar agenda/documentos imediatamente.\n\nSe houve cobrança duplicada, erro no Pix/cartão ou pedido de reembolso, chame o admin para análise segura.`;
+    }
+
+    if (/documento|pdf|prontuario|soap|assinatura|biblioteca|arquivo/.test(normalized)) {
+      return `Para documentos: veja a Biblioteca de Documentos ou a área de Documentos do paciente. PDFs, prontuários, SOAP e arquivos assinados devem aparecer ali quando forem gerados e vinculados corretamente.\n\nSe o documento abriu genérico, não carregou ou sumiu, posso encaminhar para o admin.`;
+    }
+
+    if (/exercicio|exercicios|treino|prescricao|video|gif/.test(normalized)) {
+      return `Para exercícios: o fisioterapeuta pode prescrever na área de Exercícios e vincular ao paciente. O paciente deve ver a prescrição na conta dele, e pacientes externos podem receber por WhatsApp/link.\n\nSe não apareceu na conta do paciente, chame o admin para verificar o vínculo.`;
+    }
+
+    if (/conta|login|cadastro|senha|email|perfil|dados|entrar/.test(normalized)) {
+      return `Para conta/login: verifique e-mail, senha e se o perfil correto foi escolhido no cadastro. Fisioterapeuta precisa completar os dados/documentos obrigatórios para liberação.\n\nSe a conta estiver bloqueada, com tipo errado ou sem acesso, é melhor chamar o admin.`;
+    }
+
+    if (/erro|bug|travou|nao funciona|nao abre|falha|problema|invisivel|apagado/.test(normalized)) {
+      return `Entendi. Para eu ajudar melhor, me diga:\n1. Em qual tela acontece?\n2. O que você clicou antes do erro?\n3. Aparece alguma mensagem?\n\nSe for urgente, toque em “Falar com admin” para encaminhar.`;
+    }
+
+    return `Entendi. Posso tentar resolver por aqui. Escolha uma opção rápida abaixo ou descreva melhor o problema. Se não resolver, eu encaminho para um admin humano.`;
+  };
+
+  const supportQuickActions = [
+    'Agendamento',
+    'Pagamento',
+    'Documentos',
+    'Exercícios',
+    'Minha conta',
+    'Falar com admin'
+  ];
+
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -389,6 +453,24 @@ export default function Chat() {
     const text = inputText;
     setInputText('');
 
+    if (supportAssistantActive && shouldUseSupportAssistant) {
+      setAssistantMessages(prev => [
+        ...prev,
+        {
+          id: `assistant-user-${Date.now()}`,
+          remetente: user.id,
+          destinatario: 'support-assistant',
+          mensagem: text,
+          criado_em: new Date().toISOString(),
+          lida: true,
+          virtual: true
+        },
+        makeAssistantMessage(getAssistantReply(text), 80)
+      ]);
+      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 120);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('mensagens')
@@ -420,8 +502,8 @@ export default function Chat() {
   };
 
   const handleShareConversation = async () => {
-    if (!messages.length || !targetUser || !user) return;
-    const transcript = messages.map(m => {
+    if (!visibleMessages.length || !targetUser || !user) return;
+    const transcript = visibleMessages.map(m => {
       const sender = m.remetente === user.id ? 'Eu' : (targetUser.nome_completo);
       return `[${formatDateBR(m.criado_em)}] ${sender}: ${m.mensagem}`;
     }).join('\n');
@@ -489,6 +571,92 @@ export default function Chat() {
   const isChattingWithSupport = targetUser?.tipo_usuario === 'admin' || 
                                 targetUser?.email === 'hogolezcano92@gmail.com' ||
                                 new URLSearchParams(location.search).get('support') === 'true';
+
+  const shouldUseSupportAssistant = Boolean(isChattingWithSupport && user && !isCurrentUserAdmin && !supportHumanRequested);
+  const visibleMessages = shouldUseSupportAssistant ? [...assistantMessages, ...messages] : messages;
+
+
+  useEffect(() => {
+    if (!targetUser || !user) {
+      setSupportAssistantActive(false);
+      setSupportHumanRequested(false);
+      setAssistantMessages([]);
+      return;
+    }
+
+    const isSupportTarget = targetUser.tipo_usuario === 'admin' || targetUser.email === 'hogolezcano92@gmail.com' || new URLSearchParams(location.search).get('support') === 'true';
+    const storageKey = `fch-support-human-${user.id}-${targetUser.id}`;
+    const alreadyRequestedHuman = typeof window !== 'undefined' && localStorage.getItem(storageKey) === 'true';
+
+    if (isSupportTarget && !isCurrentUserAdmin && !alreadyRequestedHuman) {
+      setSupportHumanRequested(false);
+      setSupportAssistantActive(true);
+      setAssistantMessages([makeAssistantMessage(assistantWelcomeText())]);
+    } else {
+      setSupportHumanRequested(alreadyRequestedHuman);
+      setSupportAssistantActive(false);
+      setAssistantMessages([]);
+    }
+  }, [targetUser?.id, user?.id, userData?.tipo_usuario, userData?.email, location.search]);
+
+  const handleSupportQuickAction = async (action: string) => {
+    if (action === 'Falar com admin') {
+      await handleRequestHumanSupport();
+      return;
+    }
+
+    setAssistantMessages(prev => [
+      ...prev,
+      makeAssistantMessage(action),
+      makeAssistantMessage(getAssistantReply(action), 80)
+    ]);
+    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 120);
+  };
+
+  const handleRequestHumanSupport = async () => {
+    if (!targetUser || !user) return;
+
+    const storageKey = `fch-support-human-${user.id}-${targetUser.id}`;
+    if (typeof window !== 'undefined') localStorage.setItem(storageKey, 'true');
+
+    setSupportHumanRequested(true);
+    setSupportAssistantActive(false);
+    setAssistantMessages(prev => [
+      ...prev,
+      makeAssistantMessage('Perfeito. Vou encaminhar para um admin humano. Você já pode escrever sua mensagem abaixo.', 80)
+    ]);
+
+    try {
+      const handoffMessage = '🔔 Atendimento humano solicitado pelo usuário. O assistente virtual tentou ajudar primeiro e encaminhou esta conversa para o admin.';
+      const { error } = await supabase
+        .from('mensagens')
+        .insert({
+          remetente: user.id,
+          destinatario: targetUser.id,
+          mensagem: handoffMessage,
+          criado_em: new Date().toISOString(),
+          lida: false
+        });
+
+      if (error) throw error;
+
+      await supabase
+        .from('notificacoes')
+        .insert({
+          user_id: targetUser.id,
+          titulo: 'Atendimento humano solicitado',
+          mensagem: `${userData?.nome_completo || 'Usuário'} pediu para falar com um admin humano.`,
+          tipo: 'support',
+          lida: false,
+          link: '/chat'
+        });
+
+      toast.success('Admin humano chamado com sucesso.');
+    } catch (err) {
+      console.error('Erro ao chamar admin humano:', err);
+      toast.error('Não foi possível chamar o admin agora. Tente enviar uma mensagem manualmente.');
+    }
+  };
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('fch-chat-active-change', { detail: { active: Boolean(targetUser) } }));
@@ -710,11 +878,11 @@ export default function Chat() {
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm md:text-base font-black !text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.18)] dark:text-white truncate pr-2 leading-tight tracking-tight">{targetUser.nome_completo}</h3>
+                  <h3 className="text-sm md:text-base font-black !text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.18)] dark:text-white truncate pr-2 leading-tight tracking-tight">{shouldUseSupportAssistant ? 'Assistente FisioCareHub' : targetUser.nome_completo}</h3>
                   <div className="flex items-center gap-1">
                     <span className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                     <span className="text-[7px] md:text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.18em] truncate">
-                      {targetUser.tipo_usuario === 'admin' ? 'Especialista Humano • Online' : 'Online'}
+                      {shouldUseSupportAssistant ? 'Assistente Virtual • Online' : targetUser.tipo_usuario === 'admin' ? 'Admin Humano • Online' : 'Online'}
                     </span>
                   </div>
                 </div>
@@ -761,12 +929,48 @@ export default function Chat() {
                   </div>
                 </div>
 
+                {shouldUseSupportAssistant && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mx-auto mb-5 max-w-[92%] rounded-[24px] border border-blue-100 bg-white/92 p-3.5 shadow-[0_14px_35px_rgba(37,99,235,0.10)] backdrop-blur-xl dark:border-blue-400/15 dark:bg-slate-900/76 dark:shadow-[0_14px_35px_rgba(0,0,0,0.22)]"
+                  >
+                    <div className="mb-3 flex items-start gap-3">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-900/20">
+                        <Bot size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Triagem inteligente</p>
+                        <p className="mt-0.5 text-xs font-bold leading-relaxed text-slate-600 dark:text-slate-300">O assistente tenta resolver primeiro. O admin humano entra quando o usuário solicitar.</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {supportQuickActions.map((action) => (
+                        <button
+                          key={action}
+                          type="button"
+                          onClick={() => handleSupportQuickAction(action)}
+                          className={cn(
+                            "rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all border",
+                            action === 'Falar com admin'
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-400/20 dark:bg-emerald-500/12 dark:text-emerald-300"
+                              : "border-blue-100 bg-blue-50/80 text-blue-700 hover:bg-blue-100 dark:border-blue-400/15 dark:bg-blue-500/10 dark:text-blue-300"
+                          )}
+                        >
+                          {action === 'Falar com admin' ? <Headphones className="mr-1.5 inline h-3.5 w-3.5" /> : null}
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <Loader2 className="animate-spin text-blue-400" size={32} />
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Carregando mensagens...</p>
                   </div>
-                ) : messages.length === 0 ? (
+                ) : visibleMessages.length === 0 ? (
                   <div className="text-center py-20 space-y-4">
                     <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/20">
                       <Sparkles size={32} />
@@ -774,10 +978,11 @@ export default function Chat() {
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Diga um "Olá" para começar!</p>
                   </div>
                 ) : (
-                  messages.map((msg, idx) => {
+                  visibleMessages.map((msg, idx) => {
                     const isMe = msg.remetente === user?.id;
+                    const isAssistant = msg.remetente === 'support-assistant';
                     const msgDate = new Date(msg.criado_em);
-                    const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                    const prevMsg = idx > 0 ? visibleMessages[idx - 1] : null;
                     const prevMsgDate = prevMsg ? new Date(prevMsg.criado_em) : null;
                     const attachment = extractAttachment(msg.mensagem);
 
@@ -803,7 +1008,9 @@ export default function Chat() {
                             attachment?.isImage ? "px-2.5 py-2 md:px-3 md:py-2.5" : "px-3.5 py-2.5 md:px-4.5 md:py-3",
                             isMe 
                               ? "bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 text-white rounded-br-[8px] border-blue-300/20 shadow-blue-950/18" 
-                              : "bg-white/96 dark:bg-slate-900/74 text-slate-800 dark:text-slate-100 rounded-bl-[8px] border-slate-200 dark:border-white/10 shadow-slate-200/50 dark:shadow-slate-950/20"
+                              : isAssistant
+                                ? "bg-gradient-to-br from-white to-blue-50/95 dark:from-slate-900 dark:to-blue-950/40 text-slate-800 dark:text-slate-100 rounded-bl-[8px] border-blue-100 dark:border-blue-400/20 shadow-blue-100/70 dark:shadow-slate-950/20"
+                                : "bg-white/96 dark:bg-slate-900/74 text-slate-800 dark:text-slate-100 rounded-bl-[8px] border-slate-200 dark:border-white/10 shadow-slate-200/50 dark:shadow-slate-950/20"
                           )}>
                             {attachment?.isImage ? (
                               <div className="space-y-2">
@@ -1041,7 +1248,7 @@ export default function Chat() {
                       className="fch-chat-input w-full pl-4 pr-16 py-2.5 md:py-3 bg-white border border-slate-200 rounded-[22px] outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400/60 transition-all font-bold text-base md:text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_20px_rgba(15,23,42,0.08)] text-slate-900 placeholder:text-slate-500 dark:bg-white/[0.07] dark:border-white/15 dark:focus:ring-blue-500/15 dark:focus:border-blue-400/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.14)] dark:text-white dark:placeholder:text-slate-500"
                     />
                     <div className="absolute right-2.5 md:right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 md:gap-1.5">
-                      <button type="button" className="p-1.5 md:p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-white/10 rounded-full transition-colors">
+                      <button type="button" onClick={() => shouldUseSupportAssistant ? handleSupportQuickAction('Suporte técnico') : setShowKineAI(true)} className="p-1.5 md:p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-white/10 rounded-full transition-colors">
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                       <input
