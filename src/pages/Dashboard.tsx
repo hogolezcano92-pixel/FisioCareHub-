@@ -2026,6 +2026,7 @@ export default function Dashboard() {
           padding: 0 !important;
           box-shadow: none !important;
           border: 0 !important;
+          outline: 0 !important;
           backdrop-filter: none !important;
         }
 
@@ -2037,14 +2038,11 @@ export default function Dashboard() {
           box-shadow: none !important;
           border: 0 !important;
           outline: 0 !important;
-          ring-width: 0 !important;
-        }
-
-        html:not(.dark) .dashboard-story-avatar-clean > div > button:first-child > div img,
-        html.light .dashboard-story-avatar-clean > div > button:first-child > div img,
-        body.light .dashboard-story-avatar-clean > div > button:first-child > div img,
-        :root[data-theme="light"] .dashboard-story-avatar-clean > div > button:first-child > div img {
-          display: block !important;
+          --tw-ring-offset-width: 0px !important;
+          --tw-ring-offset-color: transparent !important;
+          --tw-ring-color: transparent !important;
+          --tw-ring-shadow: 0 0 #0000 !important;
+          --tw-ring-offset-shadow: 0 0 #0000 !important;
         }
 
         html:not(.dark) .dashboard-quick-icon-purple,
