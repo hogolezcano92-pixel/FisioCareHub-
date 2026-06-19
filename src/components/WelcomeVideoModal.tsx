@@ -9,15 +9,22 @@ interface WelcomeVideoModalProps {
 }
 
 type WelcomeVideoStep = {
-  id: 'welcome' | 'paciente' | 'fisioterapeuta';
+  id: 'welcome' | 'paciente' | 'fisioterapeuta' | 'capivara';
   src: string;
+  mode?: 'fullscreen' | 'modal';
 };
 
-const VIDEO_VERSION = 'v=5';
+const VIDEO_VERSION = 'v=6';
 
 const GENERAL_VIDEO: WelcomeVideoStep = {
   id: 'welcome',
   src: `/onboarding/fisiocarehub-welcome.mp4?${VIDEO_VERSION}`,
+};
+
+const CAPIVARA_VIDEO: WelcomeVideoStep = {
+  id: 'capivara',
+  src: `/onboarding/capivara-welcome.mp4?${VIDEO_VERSION}`,
+  mode: 'modal',
 };
 
 const ROLE_VIDEOS: Record<string, WelcomeVideoStep> = {
@@ -61,11 +68,15 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
       steps.push(roleVideo);
     }
 
+    // Após os vídeos principais do pós-login, mostra a capivara em um modal menor.
+    steps.push(CAPIVARA_VIDEO);
+
     return steps;
   }, [normalizedRole]);
 
   const currentStep = videoSteps[currentStepIndex] || GENERAL_VIDEO;
   const isLastStep = currentStepIndex >= videoSteps.length - 1;
+  const isCapivaraModal = currentStep.mode === 'modal';
 
   useEffect(() => {
     if (!userId || !shouldShowForRole) return;
@@ -236,11 +247,11 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
     });
 
     /**
-     * Se o vídeo por tipo de conta ainda não existir no projeto,
-     * não deixa o usuário preso em tela preta: fecha normalmente após o vídeo geral.
+     * Se algum vídeo secundário falhar, avança para o próximo passo.
+     * Assim o modal da capivara ainda aparece após os vídeos principais.
      */
     if (currentStep.id !== 'welcome') {
-      markAsSeenAndClose();
+      goToNextVideoOrClose();
       return;
     }
 
@@ -253,7 +264,10 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
   return createPortal(
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[100000] h-[100dvh] w-screen overflow-hidden bg-black"
+        className={isCapivaraModal
+          ? 'fixed inset-0 z-[100000] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-slate-950/68 px-4 py-6 backdrop-blur-md'
+          : 'fixed inset-0 z-[100000] h-[100dvh] w-screen overflow-hidden bg-black'
+        }
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -261,10 +275,40 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
         aria-modal="true"
         aria-label="Vídeo de boas-vindas FisioCareHub"
       >
+        {isCapivaraModal && (
+          <motion.div
+            className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(34,211,238,0.28),transparent_34%),radial-gradient(circle_at_82%_78%,rgba(168,85,247,0.24),transparent_34%)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            aria-hidden="true"
+          />
+        )}
+
+        <motion.div
+          className={isCapivaraModal
+            ? 'relative z-10 w-full max-w-[390px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-950 shadow-[0_26px_90px_rgba(15,23,42,0.55)] ring-1 ring-cyan-200/15 sm:max-w-[430px]'
+            : 'absolute inset-0 h-full w-full'
+          }
+          initial={isCapivaraModal ? { opacity: 0, y: 18, scale: 0.96 } : false}
+          animate={isCapivaraModal ? { opacity: 1, y: 0, scale: 1 } : false}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+        {isCapivaraModal && (
+          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.06] px-4 py-3 text-white backdrop-blur-xl">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/90">FisioCareHub</p>
+              <h2 className="text-sm font-black text-white">Boas-vindas especiais</h2>
+            </div>
+          </div>
+        )}
+
         <video
           key={currentStep.src}
           ref={videoRef}
-          className="absolute inset-0 h-full w-full bg-black object-cover"
+          className={isCapivaraModal
+            ? 'block aspect-[9/16] max-h-[72dvh] w-full bg-black object-contain'
+            : 'absolute inset-0 h-full w-full bg-black object-cover'
+          }
           playsInline
           autoPlay
           controls={false}
@@ -281,15 +325,19 @@ export default function WelcomeVideoModal({ userId, userRole }: WelcomeVideoModa
         >
           <source src={currentStep.src} type="video/mp4" />
         </video>
+        </motion.div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-28 bg-gradient-to-b from-black/45 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-black/35 to-transparent" />
+        {!isCapivaraModal && <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-28 bg-gradient-to-b from-black/45 to-transparent" />}
+        {!isCapivaraModal && <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-black/35 to-transparent" />}
 
         <button
           type="button"
           onClick={markAsSeenAndClose}
-          className="absolute right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-2xl backdrop-blur-md transition-all hover:bg-black/60"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
+          className={isCapivaraModal
+            ? 'absolute right-5 top-8 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white shadow-2xl backdrop-blur-md transition-all hover:bg-black/65'
+            : 'absolute right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-2xl backdrop-blur-md transition-all hover:bg-black/60'
+          }
+          style={isCapivaraModal ? undefined : { top: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
           aria-label="Fechar vídeo de boas-vindas"
         >
           <X size={24} />
