@@ -54,7 +54,6 @@ export default function LibraryPaymentModal({
           body: JSON.stringify({
             user_id: userId,
             email: email,
-            plan: 'library',
             type: 'library',
             material_ids: materialIds
           })
