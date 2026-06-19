@@ -6,6 +6,7 @@ const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const APP_URL = Deno.env.get("APP_URL") || "http://localhost:3000"
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
 const STRIPE_PRICE_BASIC_MONTHLY = Deno.env.get("STRIPE_PRICE_BASIC_MONTHLY")
 const STRIPE_PRICE_PRO_MONTHLY = Deno.env.get("STRIPE_PRICE_PRO_MONTHLY")
@@ -126,6 +127,26 @@ const normalizeBrazilianAmount = (rawValue: unknown): number => {
   return Number(cleaned)
 }
 
+const normalizeMaterialIds = (materialIds: unknown, productId?: unknown): string[] => {
+  const rawIds = Array.isArray(materialIds)
+    ? materialIds
+    : typeof materialIds === "string"
+      ? materialIds.split(",")
+      : materialIds
+        ? [materialIds]
+        : productId
+          ? [productId]
+          : []
+
+  return Array.from(
+    new Set(
+      rawIds
+        .map((id) => String(id || "").trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 const getMaterialAmountCents = (item: any): number => {
   const centsCandidates = [
     item.amount_cents,
@@ -211,9 +232,24 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization")
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
-      global: { headers: { Authorization: authHeader || "" } },
-    })
+    if (!SUPABASE_URL) {
+      throw new Error("SUPABASE_URL is not set")
+    }
+
+    if (!SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_ANON_KEY) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY is required")
+    }
+
+    // A consulta de materiais no checkout precisa ser server-side e confiável.
+    // Usar service role aqui evita falso "Materiais não encontrados" quando RLS/políticas
+    // impedem a Edge Function de ler library_materials com a chave anônima.
+    const supabaseCheckout = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY!,
+      SUPABASE_SERVICE_ROLE_KEY
+        ? { auth: { persistSession: false, autoRefreshToken: false } }
+        : { global: { headers: { Authorization: authHeader || "" } } },
+    )
 
     if (!STRIPE_SECRET_KEY) {
       throw new Error("STRIPE_SECRET_KEY is not set")
@@ -290,15 +326,41 @@ serve(async (req) => {
       isMaterialRequest &&
       (product_id || material_ids)
     ) {
-      const ids = material_ids || [product_id]
+      const ids = normalizeMaterialIds(material_ids, product_id)
 
-      const { data: materials, error: matError } = await supabase
+      if (ids.length === 0) {
+        throw new Error("Nenhum material válido foi enviado para o checkout")
+      }
+
+      const { data: materials, error: matError } = await supabaseCheckout
         .from("library_materials")
         .select("*")
         .in("id", ids)
 
-      if (matError || !materials || materials.length === 0) {
-        throw new Error("Materiais não encontrados")
+      if (matError) {
+        console.error("[Stripe Library Checkout] Erro ao buscar materiais:", {
+          message: matError.message,
+          code: matError.code,
+          details: matError.details,
+          ids,
+        })
+        throw new Error("Não foi possível validar os materiais para pagamento")
+      }
+
+      if (!materials || materials.length === 0) {
+        console.warn("[Stripe Library Checkout] Nenhum material encontrado para os IDs enviados", { ids })
+        throw new Error("Material não encontrado. Atualize a biblioteca e tente novamente")
+      }
+
+      const foundIds = new Set(materials.map((item: any) => String(item.id)))
+      const missingIds = ids.filter((id) => !foundIds.has(id))
+
+      if (missingIds.length > 0) {
+        console.warn("[Stripe Library Checkout] Alguns materiais não foram encontrados", {
+          ids,
+          missingIds,
+        })
+        throw new Error("Um ou mais materiais do carrinho não foram encontrados. Atualize a biblioteca e tente novamente")
       }
 
       line_items = materials.map((item) => {
