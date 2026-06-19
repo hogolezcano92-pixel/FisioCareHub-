@@ -190,15 +190,19 @@ serve(async (req) => {
       service_name,
     } = body
 
-    const isSubscriptionRequest = Boolean(plan || plan_key || billing_cycle)
+    const requestedType = String(type || "").trim().toLowerCase()
+    const isMaterialRequest =
+      ["material", "library"].includes(requestedType) || Boolean(material_ids || product_id)
+    const isSubscriptionRequest =
+      !isMaterialRequest && Boolean(plan || plan_key || billing_cycle)
 
-    const finalType = type || (
-      isSubscriptionRequest
-        ? "subscription"
-        : appointment_id
-          ? "appointment"
-          : (material_ids || product_id)
-            ? "material"
+    const finalType = requestedType || (
+      appointment_id
+        ? "appointment"
+        : isMaterialRequest
+          ? "material"
+          : isSubscriptionRequest
+            ? "subscription"
             : "subscription"
     )
 
@@ -224,7 +228,7 @@ serve(async (req) => {
     let mode: "subscription" | "payment" = "payment"
     let metadata: Record<string, string> = { user_id: String(finalUserId || "") }
 
-    if (finalType === "subscription" || isSubscriptionRequest) {
+    if (finalType === "subscription" && !isMaterialRequest) {
       const resolvedPlanKey = resolveSubscriptionPlanKey(plan_key || plan, billing_cycle)
       const resolvedPriceId = getSubscriptionPriceId(resolvedPlanKey)
       const resolvedPlan = getPlanNameFromPlanKey(resolvedPlanKey)
@@ -283,7 +287,7 @@ serve(async (req) => {
         agendamentoId: String(appointment_id),
       }
     } else if (
-      (["material", "library"].includes(finalType) || ["material", "library"].includes(type)) &&
+      isMaterialRequest &&
       (product_id || material_ids)
     ) {
       const ids = material_ids || [product_id]
