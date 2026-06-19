@@ -248,6 +248,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           status: 'pending',
           gateway: 'asaas',
           method: billingType,
+          invoice_url: payment.invoiceUrl || payment.bankSlipUrl || null,
         }, { onConflict: 'external_id' });
 
       if (paymentUpsertError) {
