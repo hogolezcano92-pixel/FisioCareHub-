@@ -13,6 +13,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
+import TransferReceiptModal, { type TransferReceiptData } from './TransferReceiptModal';
 
 interface PhysioWithdrawalProps {
   userId: string;
@@ -27,6 +28,14 @@ interface WithdrawalRequest {
   created_at: string;
   updated_at?: string | null;
   pago_em?: string | null;
+  processado_em?: string | null;
+}
+
+interface WithdrawalProfessionalProfile {
+  nome_completo?: string | null;
+  email?: string | null;
+  crefito?: string | null;
+  cpf_cnpj?: string | null;
 }
 
 const formatDateTimeBR = (date?: string | null) => {
@@ -50,7 +59,7 @@ const formatDateTimeBR = (date?: string | null) => {
 
 const getWithdrawalDisplayDate = (request: WithdrawalRequest) => {
   if (request.status === 'pago') {
-    return request.pago_em || request.updated_at || request.created_at;
+    return request.pago_em || request.processado_em || request.updated_at || request.created_at;
   }
 
   return request.created_at;
@@ -62,6 +71,8 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
   const [history, setHistory] = useState<WithdrawalRequest[]>([]);
   const [pendingRequest, setPendingRequest] = useState<WithdrawalRequest | null>(null);
   const [hasCpf, setHasCpf] = useState<boolean>(true);
+  const [professionalProfile, setProfessionalProfile] = useState<WithdrawalProfessionalProfile | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<TransferReceiptData | null>(null);
 
   useEffect(() => {
     checkCpfAndFetchHistory();
@@ -74,11 +85,12 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
       // Check for CPF
       const { data: profile } = await supabase
         .from('perfis')
-        .select('cpf_cnpj')
+        .select('nome_completo, email, crefito, cpf_cnpj')
         .eq('id', userId)
         .single();
 
       setHasCpf(!!profile?.cpf_cnpj);
+      setProfessionalProfile(profile || null);
 
       await fetchWithdrawalHistory();
     } catch (err) {
@@ -189,6 +201,22 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
       setSubmitting(false);
     }
   };
+
+  const buildTransferReceipt = (request: WithdrawalRequest): TransferReceiptData => ({
+    id: request.id,
+    professionalName: professionalProfile?.nome_completo || 'Fisioterapeuta',
+    professionalEmail: professionalProfile?.email || null,
+    crefito: professionalProfile?.crefito || null,
+    amount: Number(request.valor) || 0,
+    status: request.status === 'pago' ? 'Repasse realizado' : request.status,
+    method: 'PIX / repasse administrativo',
+    requestedAt: request.created_at,
+    processedAt: request.pago_em || request.processado_em || request.updated_at || request.created_at,
+    period: 'Saldo disponível solicitado',
+    appointmentsCount: null,
+    adminName: 'Admin FisioCareHub',
+    notes: 'Comprovante gerado a partir do histórico de saques do fisioterapeuta.',
+  });
 
   if (loading && history.length === 0) {
     return (
@@ -304,18 +332,37 @@ export default function PhysioWithdrawal({ userId, availableBalance, onSuccess }
                   </div>
                 </div>
 
-                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                  request.status === 'pago' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' :
-                  request.status === 'recusado' ? 'border-rose-500/30 text-rose-400 bg-rose-500/5' :
-                  'border-blue-500/30 text-blue-400 bg-blue-500/5'
-                }`}>
-                  {request.status}
+                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    request.status === 'pago' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' :
+                    request.status === 'recusado' ? 'border-rose-500/30 text-rose-400 bg-rose-500/5' :
+                    'border-blue-500/30 text-blue-400 bg-blue-500/5'
+                  }`}>
+                    {request.status}
+                  </div>
+
+                  {request.status === 'pago' && (
+                    <button
+                      onClick={() => setSelectedReceipt(buildTransferReceipt(request))}
+                      className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white dark:text-emerald-300"
+                      title="Ver comprovante de repasse"
+                    >
+                      <CheckCircle2 size={14} />
+                      Comprovante
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      <TransferReceiptModal
+        isOpen={!!selectedReceipt}
+        onClose={() => setSelectedReceipt(null)}
+        receipt={selectedReceipt}
+      />
     </div>
   );
 }
