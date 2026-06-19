@@ -70,6 +70,7 @@ import ApprovalWelcomeModal from "../components/ApprovalWelcomeModal";
 import ProductStoreCarousel from "../components/ProductStoreCarousel";
 import ClinicalUpdatesCarousel from "../components/FisioCare/ClinicalUpdatesCarousel";
 import StoryAvatar from "../components/FisioStories/StoryAvatar";
+import StoryRail from "../components/FisioStories/StoryRail";
 
 const WEEK_DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
@@ -2474,6 +2475,22 @@ export default function Dashboard() {
               </div>
             </div>
           </header>
+        )}
+
+        {isPhysio ? (
+          <StoryRail
+            title="Stories da comunidade"
+            subtitle="Acompanhe novidades e bastidores de outros fisioterapeutas verificados."
+            compact
+            className="dashboard-stories-rail"
+          />
+        ) : (
+          <StoryRail
+            title="Novidades dos fisioterapeutas"
+            subtitle="Veja dicas, bastidores e atualizações dos profissionais verificados."
+            compact
+            className="dashboard-stories-rail"
+          />
         )}
 
         {isAdmin && (

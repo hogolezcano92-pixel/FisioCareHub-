@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { cn, resolveStorageUrl } from '../lib/utils';
+import StoryRail from '../components/FisioStories/StoryRail';
 
 export default function FindPhysio() {
   const navigate = useNavigate();
@@ -140,6 +141,13 @@ export default function FindPhysio() {
             </div>
           </div>
         </div>
+
+        <StoryRail
+          title="Profissionais ativos hoje"
+          subtitle="Veja stories dos fisioterapeutas verificados antes de escolher seu atendimento."
+          compact
+          className="border-white/10 bg-white/[0.04] shadow-2xl shadow-blue-950/20 dark:border-white/10 dark:bg-white/[0.04]"
+        />
 
         {/* Advanced Filters */}
         <AnimatePresence>
