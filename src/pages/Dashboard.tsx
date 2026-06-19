@@ -2135,6 +2135,37 @@ export default function Dashboard() {
           outline: 0 !important;
         }
 
+        /* Remove a borda/anel escuro da foto do profissional no Dashboard em light e dark */
+        .dashboard-story-avatar-clean > div:first-child > button:first-child {
+          background: transparent !important;
+          background-image: none !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          border: 0 !important;
+          outline: 0 !important;
+          filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+
+        .dashboard-story-avatar-clean > div:first-child > button:first-child > div {
+          background: transparent !important;
+          background-image: none !important;
+          border: 0 !important;
+          outline: 0 !important;
+          box-shadow: none !important;
+          filter: none !important;
+          --tw-ring-shadow: 0 0 #0000 !important;
+          --tw-shadow: 0 0 #0000 !important;
+        }
+
+        .dashboard-story-avatar-clean > div:first-child > button:first-child > div img {
+          display: block !important;
+          border: 0 !important;
+          outline: 0 !important;
+          box-shadow: none !important;
+        }
+
         .physio-premium-name {
           color: transparent !important;
           background-image: linear-gradient(90deg, #38bdf8 0%, #2563eb 38%, #7c3aed 74%, #a855f7 100%) !important;
