@@ -391,16 +391,16 @@ export default function FinanceServiceSettings() {
   return (
     <ProGuard requiredPlan="basic">
       <div className="space-y-8 pb-20 max-w-4xl mx-auto">
-        <header className="flex items-center gap-4">
+        <header className="flex items-start gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400"
+            className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400 shrink-0 mt-1"
           >
             <ChevronLeft size={24} />
           </button>
-          <div>
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 tracking-tight">Configuração de Valores</h1>
-            <p className="text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Defina os valores padrão para cada tipo de atendimento.</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 tracking-tight leading-tight">Configuração de Valores</h1>
+            <p className="text-slate-400 font-medium text-sm sm:text-base leading-snug whitespace-normal break-words">Defina os valores padrão para cada tipo de atendimento.</p>
           </div>
         </header>
 
