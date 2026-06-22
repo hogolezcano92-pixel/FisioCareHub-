@@ -1231,15 +1231,8 @@ export default function Home() {
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0"
+            className="absolute inset-0 bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-950"
           >
-            <img 
-              src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200" 
-              className="w-full h-full object-cover animate-ken-burns"
-              alt="Medical background"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
             
