@@ -858,25 +858,28 @@ export default function ClinicalTestsHub() {
     </main>
 
     {recordModalOpen && (
-      <div className="fixed inset-0 z-[99999] flex items-end justify-center px-3 py-4 sm:items-center">
+      <div
+        className="fixed inset-0 flex items-start justify-center overflow-hidden px-3 pb-4 pt-[calc(env(safe-area-inset-top)_+_7.25rem)] sm:items-center sm:p-6"
+        style={{ zIndex: 2147483647 }}
+      >
         <div
-          className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm dark:bg-slate-950/70"
           onClick={handleCloseRecordModal}
         />
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-violet-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/40"
+          className="relative max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_8.25rem)] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-violet-200 bg-white text-slate-950 shadow-2xl shadow-slate-950/20 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-black/40 dark:ring-0 sm:max-h-[92vh]"
         >
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.14),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_30%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.08),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_30%)]" />
           <div className="relative p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300" style={safeWrapStyle}>Adicionar aos documentos</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300" style={safeWrapStyle}>Adicionar aos documentos</p>
                 <h3 className="mt-1 text-2xl font-black leading-tight text-slate-950 dark:text-white" style={safeWrapStyle}>
                   Escolha o paciente
                 </h3>
-                <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300" style={safeWrapStyle}>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-slate-700 dark:text-slate-300" style={safeWrapStyle}>
                   {pendingRecordTest?.name || 'Teste clínico'} será salvo como documento clínico do paciente selecionado.
                 </p>
               </div>
@@ -943,7 +946,7 @@ export default function ClinicalTestsHub() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-black text-slate-950 dark:text-white" style={safeWrapStyle}>{getPatientName(patient)}</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400" style={safeWrapStyle}>{getPatientSubtitle(patient)}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-400" style={safeWrapStyle}>{getPatientSubtitle(patient)}</p>
                       </div>
                       {isSelected && <CheckCircle2 className="shrink-0 text-emerald-600 dark:text-emerald-300" size={22} />}
                     </button>
@@ -952,12 +955,12 @@ export default function ClinicalTestsHub() {
               )}
             </div>
 
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-white/85 p-4 dark:border-white/10 dark:bg-white/5">
+            <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 text-slate-950 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-white/5 dark:text-white dark:shadow-none">
               <div className="mb-3 flex min-w-0 items-start gap-3">
                 <ClipboardCheck className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-300" size={20} />
                 <div className="min-w-0">
                   <p className="text-sm font-black text-slate-950 dark:text-white" style={safeWrapStyle}>Resultado do teste</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400" style={safeWrapStyle}>
+                  <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-400" style={safeWrapStyle}>
                     Marque o resultado para constar no documento clínico do paciente.
                   </p>
                 </div>
@@ -974,29 +977,29 @@ export default function ClinicalTestsHub() {
                       className={cn(
                         'rounded-2xl border px-3 py-3 text-left transition-all',
                         isSelected
-                          ? 'border-emerald-400 bg-emerald-50 text-emerald-900 shadow-lg shadow-emerald-100/70 dark:border-emerald-300/40 dark:bg-emerald-500/15 dark:text-white dark:shadow-none'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-300 dark:hover:bg-white/10',
+                          ? 'border-emerald-500 bg-emerald-100 text-slate-950 shadow-lg shadow-emerald-100/80 dark:border-emerald-300/40 dark:bg-emerald-500/15 dark:text-white dark:shadow-none'
+                          : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-300 dark:hover:bg-white/10',
                       )}
                     >
-                      <span className="flex items-center justify-between gap-2 text-sm font-black">
+                      <span className={cn('flex items-center justify-between gap-2 text-sm font-black', isSelected ? 'text-slate-950 dark:text-white' : 'text-slate-950 dark:text-slate-200')}>
                         {option.label}
                         {isSelected && <CheckCircle2 className="shrink-0 text-emerald-600 dark:text-emerald-300" size={18} />}
                       </span>
-                      <span className="mt-1 block text-[11px] font-semibold leading-relaxed opacity-75" style={safeWrapStyle}>{option.description}</span>
+                      <span className={cn('mt-1 block text-[11px] font-semibold leading-relaxed', isSelected ? 'text-slate-700 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300')} style={safeWrapStyle}>{option.description}</span>
                     </button>
                   );
                 })}
               </div>
 
               <label className="mt-4 block">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Observação clínica opcional</span>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-400">Observação clínica opcional</span>
                 <textarea
                   value={clinicalObservation}
                   onChange={(event) => setClinicalObservation(event.target.value)}
                   rows={3}
                   maxLength={500}
                   placeholder="Ex.: dor no ombro direito durante a elevação passiva, intensidade 6/10."
-                  className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:border-white/10 dark:bg-slate-950/50 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-emerald-500/20"
+                  className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:border-white/10 dark:bg-slate-950/50 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-emerald-500/20"
                 />
               </label>
             </div>
