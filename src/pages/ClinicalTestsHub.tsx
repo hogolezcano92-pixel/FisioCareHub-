@@ -858,7 +858,7 @@ export default function ClinicalTestsHub() {
     </main>
 
     {recordModalOpen && (
-      <div className="fixed inset-0 z-[140] flex items-end justify-center px-3 py-4 sm:items-center">
+      <div className="fixed inset-0 z-[99999] flex items-end justify-center px-3 py-4 sm:items-center">
         <div
           className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
           onClick={handleCloseRecordModal}
