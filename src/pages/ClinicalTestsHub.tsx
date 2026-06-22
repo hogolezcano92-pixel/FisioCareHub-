@@ -453,33 +453,15 @@ export default function ClinicalTestsHub() {
 
     setSavingRecord(true);
     try {
-      const { error } = await supabase.from('prontuarios').insert({
+      const recordPayload = {
         paciente_id: selectedPatientId,
         fisio_id: profile?.id || user.id,
         data_registro: now,
         tipo_atendimento: 'Teste clínico',
         evolucao: note,
-        conteudo: {
-          text: note,
-          type: 'clinical_test_suggestion',
-          source: 'clinical_tests_hub',
-          test_id: pendingRecordTest.id,
-          test_name: pendingRecordTest.name,
-          region: pendingRecordTest.region,
-          category: pendingRecordTest.category,
-          level: pendingRecordTest.level,
-          objective: pendingRecordTest.objective,
-          execution: pendingRecordTest.execution,
-          positive: pendingRecordTest.positive,
-          negative: pendingRecordTest.negative,
-          interpretation: pendingRecordTest.interpretation,
-          precautions: pendingRecordTest.precautions,
-          suggestion: pendingRecordTest.recordSuggestion,
-          note,
-          patient_name: getPatientName(selectedPatient),
-          created_from: 'Adicionar ao prontuário',
-        },
-      });
+      };
+
+      const { error } = await supabase.from('prontuarios').insert(recordPayload);
 
       if (error) throw error;
 
