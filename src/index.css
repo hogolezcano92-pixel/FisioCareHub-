@@ -6870,3 +6870,215 @@ html:not(.dark) .fch-post-login-splash .fch-splash-step-icon-physio-check {
     0 10px 24px rgba(79, 70, 229, 0.16),
     0 0 26px rgba(129, 140, 248, 0.4) !important;
 }
+
+/* Clinical Tests — modal adicionar aos documentos
+   Ajuste pontual: posição logo abaixo do header e contraste do tema claro.
+   O dark mode continua usando as classes originais do componente. */
+@media (max-width: 640px) {
+  .clinical-record-modal-layer {
+    align-items: flex-start !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 5.15rem) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem) !important;
+  }
+
+  .clinical-record-modal-card {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 6.15rem) !important;
+  }
+
+  .clinical-record-patients-list {
+    max-height: 34vh !important;
+  }
+}
+
+:root[data-theme="light"] .clinical-record-modal-backdrop,
+html.light .clinical-record-modal-backdrop,
+body.light .clinical-record-modal-backdrop,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-modal-backdrop {
+  background: rgba(15, 23, 42, 0.22) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(125%) !important;
+  backdrop-filter: blur(14px) saturate(125%) !important;
+}
+
+:root[data-theme="light"] .clinical-record-modal-card,
+html.light .clinical-record-modal-card,
+body.light .clinical-record-modal-card,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-modal-card {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+  border-color: rgba(196, 181, 253, 0.95) !important;
+  box-shadow: 0 32px 90px -38px rgba(30, 41, 59, 0.55) !important;
+}
+
+:root[data-theme="light"] .clinical-record-modal-decor,
+html.light .clinical-record-modal-decor,
+body.light .clinical-record-modal-decor,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-modal-decor {
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.10), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.10), transparent 32%) !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-eyebrow,
+html.light .clinical-record-eyebrow,
+body.light .clinical-record-eyebrow,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-eyebrow {
+  color: #047857 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-title,
+html.light .clinical-record-title,
+body.light .clinical-record-title,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-title {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .clinical-record-description,
+html.light .clinical-record-description,
+body.light .clinical-record-description,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-description {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-close,
+html.light .clinical-record-close,
+body.light .clinical-record-close,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-close {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #ddd6fe !important;
+}
+
+:root[data-theme="light"] .clinical-record-patient-card,
+html.light .clinical-record-patient-card,
+body.light .clinical-record-patient-card,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-patient-card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  border-color: #ddd6fe !important;
+}
+
+:root[data-theme="light"] .clinical-record-patient-card-selected,
+html.light .clinical-record-patient-card-selected,
+body.light .clinical-record-patient-card-selected,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-patient-card-selected {
+  background: #ecfdf5 !important;
+  color: #0f172a !important;
+  border-color: #34d399 !important;
+}
+
+:root[data-theme="light"] .clinical-record-patient-card p:first-of-type,
+html.light .clinical-record-patient-card p:first-of-type,
+body.light .clinical-record-patient-card p:first-of-type,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-patient-card p:first-of-type {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-patient-card p:last-of-type,
+html.light .clinical-record-patient-card p:last-of-type,
+body.light .clinical-record-patient-card p:last-of-type,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-patient-card p:last-of-type {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-section,
+html.light .clinical-record-result-section,
+body.light .clinical-record-result-section,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-section {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #ddd6fe !important;
+  box-shadow: 0 20px 55px -36px rgba(109, 40, 217, 0.42) !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-title,
+html.light .clinical-record-result-title,
+body.light .clinical-record-result-title,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-title,
+:root[data-theme="light"] .clinical-record-observation-label,
+html.light .clinical-record-observation-label,
+body.light .clinical-record-observation-label,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-observation-label {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-description,
+html.light .clinical-record-result-description,
+body.light .clinical-record-result-description,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-description {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option,
+html.light .clinical-record-result-option,
+body.light .clinical-record-result-option,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #ddd6fe !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option-selected,
+html.light .clinical-record-result-option-selected,
+body.light .clinical-record-result-option-selected,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option-selected {
+  background: #d1fae5 !important;
+  color: #064e3b !important;
+  border-color: #6ee7b7 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option > span:first-child,
+html.light .clinical-record-result-option > span:first-child,
+body.light .clinical-record-result-option > span:first-child,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option > span:first-child {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option-selected > span:first-child,
+html.light .clinical-record-result-option-selected > span:first-child,
+body.light .clinical-record-result-option-selected > span:first-child,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option-selected > span:first-child {
+  color: #064e3b !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option > span:last-child,
+html.light .clinical-record-result-option > span:last-child,
+body.light .clinical-record-result-option > span:last-child,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option > span:last-child {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .clinical-record-result-option-selected > span:last-child,
+html.light .clinical-record-result-option-selected > span:last-child,
+body.light .clinical-record-result-option-selected > span:last-child,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-result-option-selected > span:last-child {
+  color: #065f46 !important;
+}
+
+:root[data-theme="light"] .clinical-record-observation-input,
+html.light .clinical-record-observation-input,
+body.light .clinical-record-observation-input,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-observation-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #c4b5fd !important;
+}
+
+:root[data-theme="light"] .clinical-record-observation-input::placeholder,
+html.light .clinical-record-observation-input::placeholder,
+body.light .clinical-record-observation-input::placeholder,
+html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-observation-input::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
