@@ -15,16 +15,20 @@ import {
   HeartPulse,
   Info,
   Layers,
+  Loader2,
   Search,
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  UserRound,
   Target,
+  X,
   Zap,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ClinicalTest {
   id: string;
@@ -44,6 +48,20 @@ interface ClinicalTest {
   level: 'Essencial' | 'Intermediário' | 'Avançado';
   gradient: string;
   icon: typeof Activity;
+}
+
+interface ClinicalPatient {
+  id: string;
+  nome?: string | null;
+  nome_completo?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  diagnostico?: string | null;
+  perfil_id?: string | null;
+  tipo_paciente?: string | null;
+  origem?: string | null;
+  avatar_url?: string | null;
+  foto_url?: string | null;
 }
 
 const categories = [
@@ -226,11 +244,33 @@ const safeWrapStyle = {
   whiteSpace: 'normal',
 } as const;
 
+const getPatientName = (patient?: ClinicalPatient | null) => {
+  return String(patient?.nome_completo || patient?.nome || 'Paciente sem nome').trim() || 'Paciente sem nome';
+};
+
+const getPatientSubtitle = (patient?: ClinicalPatient | null) => {
+  const parts = [patient?.email, patient?.telefone, patient?.diagnostico].filter(Boolean);
+  return parts.length > 0 ? parts.join(' • ') : 'Paciente cadastrado';
+};
+
+const buildClinicalRecordNote = (test: ClinicalTest) => {
+  return `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
+};
+
 export default function ClinicalTestsHub() {
+  const { user, profile } = useAuth();
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [query, setQuery] = useState('');
   const [tests, setTests] = useState<ClinicalTest[]>(clinicalTests);
   const [selectedTest, setSelectedTest] = useState<ClinicalTest | null>(clinicalTests[0]);
+  const [patients, setPatients] = useState<ClinicalPatient[]>([]);
+  const [patientsLoaded, setPatientsLoaded] = useState(false);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [pendingRecordTest, setPendingRecordTest] = useState<ClinicalTest | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [patientSearch, setPatientSearch] = useState('');
+  const [savingRecord, setSavingRecord] = useState(false);
   const selectedTestDetailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -299,6 +339,23 @@ export default function ClinicalTestsHub() {
     });
   }, [activeCategory, query, tests]);
 
+  const filteredPatients = useMemo(() => {
+    const term = patientSearch.trim().toLowerCase();
+    if (!term) return patients;
+
+    return patients.filter((patient) => {
+      return [
+        patient.nome_completo,
+        patient.nome,
+        patient.email,
+        patient.telefone,
+        patient.diagnostico,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term));
+    });
+  }, [patientSearch, patients]);
+
   const handleSelectTest = (test: ClinicalTest) => {
     setSelectedTest(test);
 
@@ -310,17 +367,136 @@ export default function ClinicalTestsHub() {
     });
   };
 
-  const handleAddToRecord = (test: ClinicalTest) => {
-    const note = `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
-
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(note).catch(() => undefined);
+  const loadPatientsForRecord = async () => {
+    if (!user?.id) {
+      toast.error('Faça login novamente para escolher um paciente.');
+      return;
     }
 
-    toast.success('Sugestão copiada para adicionar ao prontuário.');
+    setPatientsLoading(true);
+    try {
+      const physioId = profile?.id || user.id;
+      const { data, error } = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('fisioterapeuta_id', physioId);
+
+      if (error) throw error;
+
+      const orderedPatients = ((data || []) as ClinicalPatient[])
+        .filter((patient) => Boolean(patient?.id))
+        .sort((a, b) => getPatientName(a).localeCompare(getPatientName(b), 'pt-BR'));
+
+      setPatients(orderedPatients);
+      setPatientsLoaded(true);
+      setSelectedPatientId((current) => {
+        if (orderedPatients.some((patient) => patient.id === current)) return current;
+        return orderedPatients[0]?.id || '';
+      });
+    } catch (error: any) {
+      console.error('Erro ao carregar pacientes para prontuário:', error);
+      toast.error(error?.message || 'Erro ao carregar pacientes.');
+    } finally {
+      setPatientsLoading(false);
+    }
+  };
+
+  const handleAddToRecord = (test: ClinicalTest) => {
+    if (!user) {
+      const note = buildClinicalRecordNote(test);
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(note).catch(() => undefined);
+      }
+      toast.info('Faça login como fisioterapeuta para atribuir ao prontuário. A sugestão foi copiada.');
+      return;
+    }
+
+    if (profile?.tipo_usuario !== 'fisioterapeuta') {
+      const note = buildClinicalRecordNote(test);
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(note).catch(() => undefined);
+      }
+      toast.info('A atribuição ao prontuário está disponível para fisioterapeutas. A sugestão foi copiada.');
+      return;
+    }
+
+    setPendingRecordTest(test);
+    setRecordModalOpen(true);
+    setPatientSearch('');
+
+    if (!patientsLoaded) {
+      loadPatientsForRecord();
+    }
+  };
+
+  const handleCloseRecordModal = () => {
+    if (savingRecord) return;
+    setRecordModalOpen(false);
+    setPendingRecordTest(null);
+    setPatientSearch('');
+  };
+
+  const handleSaveClinicalTestToRecord = async () => {
+    if (!pendingRecordTest) return;
+    if (!user?.id) {
+      toast.error('Faça login novamente para salvar no prontuário.');
+      return;
+    }
+    if (!selectedPatientId) {
+      toast.error('Escolha um paciente para atribuir esta sugestão.');
+      return;
+    }
+
+    const selectedPatient = patients.find((patient) => patient.id === selectedPatientId);
+    const note = buildClinicalRecordNote(pendingRecordTest);
+    const now = new Date().toISOString();
+
+    setSavingRecord(true);
+    try {
+      const { error } = await supabase.from('prontuarios').insert({
+        paciente_id: selectedPatientId,
+        fisio_id: profile?.id || user.id,
+        data_registro: now,
+        tipo_atendimento: 'Teste clínico',
+        evolucao: note,
+        conteudo: {
+          text: note,
+          type: 'clinical_test_suggestion',
+          source: 'clinical_tests_hub',
+          test_id: pendingRecordTest.id,
+          test_name: pendingRecordTest.name,
+          region: pendingRecordTest.region,
+          category: pendingRecordTest.category,
+          level: pendingRecordTest.level,
+          objective: pendingRecordTest.objective,
+          execution: pendingRecordTest.execution,
+          positive: pendingRecordTest.positive,
+          negative: pendingRecordTest.negative,
+          interpretation: pendingRecordTest.interpretation,
+          precautions: pendingRecordTest.precautions,
+          suggestion: pendingRecordTest.recordSuggestion,
+          note,
+          patient_name: getPatientName(selectedPatient),
+          created_from: 'Adicionar ao prontuário',
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Sugestão adicionada ao prontuário de ${getPatientName(selectedPatient)}.`);
+      setRecordModalOpen(false);
+      setPendingRecordTest(null);
+      setPatientSearch('');
+    } catch (error: any) {
+      console.error('Erro ao adicionar sugestão ao prontuário:', error);
+      toast.error(error?.message || 'Erro ao salvar no prontuário.');
+    } finally {
+      setSavingRecord(false);
+    }
   };
 
   return (
+    <>
     <main
       className="clinical-tests-hub min-h-screen w-full min-w-0 overflow-x-hidden bg-[#f8fbff] px-3 pb-24 pt-6 text-slate-950 transition-colors duration-300 dark:bg-[#050b1f] dark:text-white sm:px-6 lg:px-8"
       style={{ maxWidth: '100vw', boxSizing: 'border-box' }}
@@ -563,6 +739,125 @@ export default function ClinicalTestsHub() {
         </section>
       </div>
     </main>
+
+    {recordModalOpen && (
+      <div className="fixed inset-0 z-[140] flex items-end justify-center px-3 py-4 sm:items-center">
+        <div
+          className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+          onClick={handleCloseRecordModal}
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-violet-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/40"
+        >
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.14),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_30%)]" />
+          <div className="relative p-5 sm:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300" style={safeWrapStyle}>Adicionar ao prontuário</p>
+                <h3 className="mt-1 text-2xl font-black leading-tight text-slate-950 dark:text-white" style={safeWrapStyle}>
+                  Escolha o paciente
+                </h3>
+                <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300" style={safeWrapStyle}>
+                  {pendingRecordTest?.name || 'Teste clínico'} será salvo automaticamente no prontuário do paciente selecionado.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseRecordModal}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {patients.length > 5 && (
+              <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                <Search className="shrink-0 text-slate-400" size={18} />
+                <input
+                  value={patientSearch}
+                  onChange={(event) => setPatientSearch(event.target.value)}
+                  placeholder="Buscar paciente..."
+                  className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
+                />
+              </div>
+            )}
+
+            <div className="max-h-[48vh] space-y-3 overflow-y-auto pr-1">
+              {patientsLoading ? (
+                <div className="flex items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white/80 p-8 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                  <Loader2 className="animate-spin text-blue-600 dark:text-blue-300" size={22} />
+                  <span className="text-sm font-black">Carregando pacientes...</span>
+                </div>
+              ) : patients.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-8 text-center dark:border-white/10 dark:bg-white/5">
+                  <UserRound className="mx-auto mb-3 text-slate-400" size={38} />
+                  <p className="text-base font-black text-slate-950 dark:text-white">Nenhum paciente encontrado</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400" style={safeWrapStyle}>Cadastre ou vincule um paciente antes de atribuir a sugestão ao prontuário.</p>
+                </div>
+              ) : filteredPatients.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 text-center text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+                  Nenhum paciente corresponde à busca.
+                </div>
+              ) : (
+                filteredPatients.map((patient) => {
+                  const isSelected = selectedPatientId === patient.id;
+                  return (
+                    <button
+                      key={patient.id}
+                      type="button"
+                      onClick={() => setSelectedPatientId(patient.id)}
+                      className={cn(
+                        'flex w-full min-w-0 items-center gap-3 rounded-3xl border p-4 text-left transition-all',
+                        isSelected
+                          ? 'border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-100/70 dark:border-emerald-300/40 dark:bg-emerald-500/15 dark:shadow-none'
+                          : 'border-slate-200 bg-white/80 hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10',
+                      )}
+                    >
+                      <div className={cn(
+                        'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border font-black',
+                        isSelected
+                          ? 'border-emerald-300 bg-emerald-600 text-white'
+                          : 'border-slate-200 bg-slate-50 text-blue-600 dark:border-white/10 dark:bg-white/10 dark:text-blue-200',
+                      )}>
+                        {getPatientName(patient).slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-black text-slate-950 dark:text-white" style={safeWrapStyle}>{getPatientName(patient)}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400" style={safeWrapStyle}>{getPatientSubtitle(patient)}</p>
+                      </div>
+                      {isSelected && <CheckCircle2 className="shrink-0 text-emerald-600 dark:text-emerald-300" size={22} />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleCloseRecordModal}
+                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveClinicalTestToRecord}
+                disabled={savingRecord || patientsLoading || !selectedPatientId || patients.length === 0}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/60 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 dark:shadow-emerald-950/30"
+              >
+                {savingRecord ? <Loader2 className="animate-spin" size={18} /> : <ClipboardCheck size={18} />}
+                Salvar no prontuário
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    )}
+    </>
   );
 }
 
