@@ -364,8 +364,8 @@ export default function ClinicalTestsHub() {
                 <div className="rounded-[1.5rem] bg-white/95 p-4 dark:bg-slate-950/90 sm:p-5">
                   <div className="mb-5 flex min-w-0 items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300" style={safeWrapStyle}>Mapa clínico</p>
-                      <h2 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl" style={safeWrapStyle}>Regiões prioritárias</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-100 drop-shadow-sm dark:text-violet-300" style={safeWrapStyle}>Mapa clínico</p>
+                      <h2 className="text-xl font-black text-white drop-shadow-sm dark:text-white sm:text-2xl" style={safeWrapStyle}>Regiões prioritárias</h2>
                     </div>
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
                       <Stethoscope size={24} />
