@@ -253,8 +253,42 @@ const getPatientSubtitle = (patient?: ClinicalPatient | null) => {
   return parts.length > 0 ? parts.join(' • ') : 'Paciente cadastrado';
 };
 
-const buildClinicalRecordNote = (test: ClinicalTest) => {
-  return `${test.name}: ${test.recordSuggestion} Resultado positivo: ${test.positive} Resultado negativo: ${test.negative}`;
+const buildClinicalTestDocumentContent = (test: ClinicalTest, patient?: ClinicalPatient | null) => {
+  const patientName = getPatientName(patient);
+  return `# ${test.name}
+
+**Tipo de documento:** Teste clínico / Exame funcional
+**Paciente:** ${patientName}
+**Região:** ${test.region}
+**Categoria:** ${test.category}
+**Nível:** ${test.level}
+
+## Objetivo
+${test.objective}
+
+## Como é feito
+${test.execution}
+
+## Resposta positiva
+${test.positive}
+
+## Resposta negativa
+${test.negative}
+
+## Interpretação clínica
+${test.interpretation}
+
+## Precauções
+${test.precautions}
+
+## Sugestão para registro clínico
+${test.recordSuggestion}
+
+## Demonstração
+${test.demo}
+
+---
+Documento clínico gerado pelo FisioCareHub para apoio ao prontuário e acompanhamento funcional do paciente.`;
 };
 
 export default function ClinicalTestsHub() {
@@ -403,20 +437,20 @@ export default function ClinicalTestsHub() {
 
   const handleAddToRecord = (test: ClinicalTest) => {
     if (!user) {
-      const note = buildClinicalRecordNote(test);
+      const note = buildClinicalTestDocumentContent(test);
       if (navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(note).catch(() => undefined);
       }
-      toast.info('Faça login como fisioterapeuta para atribuir ao prontuário. A sugestão foi copiada.');
+      toast.info('Faça login como fisioterapeuta para salvar o documento clínico. A sugestão foi copiada.');
       return;
     }
 
     if (profile?.tipo_usuario !== 'fisioterapeuta') {
-      const note = buildClinicalRecordNote(test);
+      const note = buildClinicalTestDocumentContent(test);
       if (navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(note).catch(() => undefined);
       }
-      toast.info('A atribuição ao prontuário está disponível para fisioterapeutas. A sugestão foi copiada.');
+      toast.info('Salvar como documento clínico está disponível para fisioterapeutas. A sugestão foi copiada.');
       return;
     }
 
@@ -439,7 +473,7 @@ export default function ClinicalTestsHub() {
   const handleSaveClinicalTestToRecord = async () => {
     if (!pendingRecordTest) return;
     if (!user?.id) {
-      toast.error('Faça login novamente para salvar no prontuário.');
+      toast.error('Faça login novamente para salvar o documento clínico.');
       return;
     }
     if (!selectedPatientId) {
@@ -448,30 +482,63 @@ export default function ClinicalTestsHub() {
     }
 
     const selectedPatient = patients.find((patient) => patient.id === selectedPatientId);
-    const note = buildClinicalRecordNote(pendingRecordTest);
+    const content = buildClinicalTestDocumentContent(pendingRecordTest, selectedPatient);
     const now = new Date().toISOString();
+    const patientName = getPatientName(selectedPatient);
+    const patientEmail = selectedPatient?.email ? String(selectedPatient.email).trim().toLowerCase() : null;
 
     setSavingRecord(true);
     try {
-      const recordPayload = {
+      const documentPayload = {
+        physio_id: user.id,
+        physio_name: profile?.nome_completo || 'Fisioterapeuta',
         paciente_id: selectedPatientId,
-        fisio_id: profile?.id || user.id,
-        data_registro: now,
-        tipo_atendimento: 'Teste clínico',
-        evolucao: note,
+        patient_name: patientName,
+        patient_email: patientEmail,
+        type: 'Teste clínico',
+        document_name: pendingRecordTest.name,
+        document_category: 'teste_clinico',
+        content,
+        visible_to_patient: true,
+        acceptance_required: false,
+        criado_em: now,
+        metadata: {
+          source: 'clinical_tests_hub',
+          test_id: pendingRecordTest.id,
+          test_name: pendingRecordTest.name,
+          region: pendingRecordTest.region,
+          category: pendingRecordTest.category,
+          level: pendingRecordTest.level,
+        },
       };
 
-      const { error } = await supabase.from('prontuarios').insert(recordPayload);
+      let { error } = await supabase.from('documentos_gerados').insert(documentPayload);
+
+      if (error) {
+        console.warn('[ClinicalTestsHub] Salvamento completo em documentos_gerados falhou, tentando compatibilidade:', error);
+        const {
+          paciente_id,
+          visible_to_patient,
+          acceptance_required,
+          document_category,
+          document_name,
+          metadata,
+          ...legacyPayload
+        } = documentPayload;
+
+        const fallback = await supabase.from('documentos_gerados').insert(legacyPayload);
+        error = fallback.error;
+      }
 
       if (error) throw error;
 
-      toast.success(`Sugestão adicionada ao prontuário de ${getPatientName(selectedPatient)}.`);
+      toast.success(`${pendingRecordTest.name} salvo como documento clínico de ${patientName}.`);
       setRecordModalOpen(false);
       setPendingRecordTest(null);
       setPatientSearch('');
     } catch (error: any) {
-      console.error('Erro ao adicionar sugestão ao prontuário:', error);
-      toast.error(error?.message || 'Erro ao salvar no prontuário.');
+      console.error('Erro ao salvar teste clínico como documento:', error);
+      toast.error(error?.message || 'Erro ao salvar documento clínico.');
     } finally {
       setSavingRecord(false);
     }
@@ -737,12 +804,12 @@ export default function ClinicalTestsHub() {
           <div className="relative p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300" style={safeWrapStyle}>Adicionar ao prontuário</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300" style={safeWrapStyle}>Adicionar aos documentos</p>
                 <h3 className="mt-1 text-2xl font-black leading-tight text-slate-950 dark:text-white" style={safeWrapStyle}>
                   Escolha o paciente
                 </h3>
                 <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300" style={safeWrapStyle}>
-                  {pendingRecordTest?.name || 'Teste clínico'} será salvo automaticamente no prontuário do paciente selecionado.
+                  {pendingRecordTest?.name || 'Teste clínico'} será salvo como documento clínico do paciente selecionado.
                 </p>
               </div>
               <button
@@ -832,7 +899,7 @@ export default function ClinicalTestsHub() {
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/60 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 dark:shadow-emerald-950/30"
               >
                 {savingRecord ? <Loader2 className="animate-spin" size={18} /> : <ClipboardCheck size={18} />}
-                Salvar no prontuário
+                Salvar documento clínico
               </button>
             </div>
           </div>

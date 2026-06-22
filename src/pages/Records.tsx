@@ -24,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn, formatDate, resolveStorageUrl } from '../lib/utils';
 import { getLinkedClinicalPatients, getPatientVisibleIds } from '../services/patientLinkService';
 import { downloadAvaliacaoPremiumPdf, downloadEvolucaoPremiumPdf, downloadFichaClinicaPremiumPdf } from '../services/premiumPdfService';
+import { generateLegalDocumentPDF, getLegalDocumentPdfBlob } from '../lib/legalDocumentPdf';
 
 type SectionKey = 'resumo' | 'avaliacoes' | 'evolucoes' | 'documentos' | 'dor';
 
@@ -241,6 +242,57 @@ const downloadClinicalFile = async (file: any) => {
   }
 };
 
+const getGeneratedDocumentTitle = (document: any) =>
+  safeText(document?.document_name || document?.type || document?.titulo, 'Documento clínico');
+
+const buildGeneratedDocumentPdfPayload = (document: any, patient?: ClinicalPatient | null, profile?: any) => ({
+  ...document,
+  document_name: getGeneratedDocumentTitle(document),
+  type: document?.type || getGeneratedDocumentTitle(document),
+  patient_name: document?.patient_name || getPatientName(patient),
+  physio_name: document?.physio_name || profile?.nome_completo || 'Fisioterapeuta',
+  criado_em: document?.criado_em || document?.created_at || new Date().toISOString(),
+  content: document?.content || document?.conteudo || document?.description || 'Conteúdo não informado.',
+});
+
+const openGeneratedDocument = (document: any, patient?: ClinicalPatient | null, profile?: any) => {
+  try {
+    const blob = getLegalDocumentPdfBlob(buildGeneratedDocumentPdfPayload(document, patient, profile), { profile });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    console.error('Erro ao visualizar documento gerado:', error);
+    toast.error('Erro ao visualizar documento.');
+  }
+};
+
+const downloadGeneratedDocument = (document: any, patient?: ClinicalPatient | null, profile?: any) => {
+  try {
+    const payload = buildGeneratedDocumentPdfPayload(document, patient, profile);
+    generateLegalDocumentPDF(payload, {
+      profile,
+      fileName: `${getGeneratedDocumentTitle(document)}-${payload.patient_name || 'paciente'}`,
+    });
+    toast.success('PDF gerado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao baixar documento gerado:', error);
+    toast.error('Erro ao baixar PDF.');
+  }
+};
+
+const isClinicalTestLegacyRecord = (record: any) => {
+  const type = String(record?.tipo_atendimento || record?.tipo || '').toLowerCase();
+  const content = typeof record?.conteudo === 'string'
+    ? record.conteudo
+    : record?.conteudo?.text || JSON.stringify(record?.conteudo || '');
+  const text = `${record?.evolucao || ''} ${content}`.toLowerCase();
+
+  return type.includes('teste clínico')
+    || type.includes('teste clinico')
+    || (text.includes('resultado positivo:') && text.includes('resultado negativo:'));
+};
+
 export default function Records() {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
@@ -250,6 +302,7 @@ export default function Records() {
   const [evaluations, setEvaluations] = useState<any[]>([]);
   const [evolutions, setEvolutions] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>([]);
+  const [generatedDocuments, setGeneratedDocuments] = useState<any[]>([]);
   const [painRecords, setPainRecords] = useState<any[]>([]);
   const [legacyRecords, setLegacyRecords] = useState<any[]>([]);
   const [loadWarnings, setLoadWarnings] = useState<string[]>([]);
@@ -372,6 +425,14 @@ export default function Records() {
             if (fileError) warnings.push(`Documentos: ${fileError.message}`);
             setFiles(fileData || []);
 
+            const { data: generatedDocsData, error: generatedDocsError } = await supabase
+              .from('documentos_gerados')
+              .select('*')
+              .in('paciente_id', clinicalIds)
+              .order('criado_em', { ascending: false });
+            if (generatedDocsError) warnings.push(`Documentos gerados: ${generatedDocsError.message}`);
+            setGeneratedDocuments(generatedDocsData || []);
+
             const [{ data: painData, error: painError }, { data: painByPhysioData, error: painByPhysioError }] = await Promise.all([
               supabase
                 .from('registros_paciente')
@@ -398,6 +459,7 @@ export default function Records() {
             setEvaluations([]);
             setEvolutions([]);
             setFiles([]);
+            setGeneratedDocuments([]);
             setPainRecords([]);
             setLegacyRecords([]);
           }
@@ -439,6 +501,15 @@ export default function Records() {
           if (fileError) warnings.push(`Documentos: ${fileError.message}`);
           setFiles(fileData || []);
 
+          const { data: generatedDocsData, error: generatedDocsError } = await supabase
+            .from('documentos_gerados')
+            .select('*')
+            .in('paciente_id', allReadablePatientIds)
+            .neq('visible_to_patient', false)
+            .order('criado_em', { ascending: false });
+          if (generatedDocsError) warnings.push(`Documentos gerados: ${generatedDocsError.message}`);
+          setGeneratedDocuments(generatedDocsData || []);
+
           const { data: painData, error: painError } = await supabase
             .from('registros_paciente')
             .select('*')
@@ -471,10 +542,11 @@ export default function Records() {
       evaluations: evaluations.filter((item) => recordBelongsToPatient(item, patient)).length,
       evolutions: evolutions.filter((item) => recordBelongsToPatient(item, patient)).length,
       files: files.filter((item) => recordBelongsToPatient(item, patient)).length,
+      documents: generatedDocuments.filter((item) => recordBelongsToPatient(item, patient)).length,
       pain: painRecords.filter((item) => recordBelongsToPatient(item, patient)).length,
-      legacy: legacyRecords.filter((item) => recordBelongsToPatient(item, patient)).length,
+      legacy: legacyRecords.filter((item) => recordBelongsToPatient(item, patient) && !isClinicalTestLegacyRecord(item)).length,
     }));
-  }, [clinicalPatients, evaluations, evolutions, files, painRecords, legacyRecords]);
+  }, [clinicalPatients, evaluations, evolutions, files, generatedDocuments, painRecords, legacyRecords]);
 
   const filteredPatientStats = useMemo(() => {
     const term = patientSearch.trim().toLowerCase();
@@ -494,12 +566,13 @@ export default function Records() {
   const visibleEvaluations = scopedPatientId ? evaluations.filter((item) => recordBelongsToPatient(item, selectedPatient)) : evaluations;
   const visibleEvolutions = scopedPatientId ? evolutions.filter((item) => recordBelongsToPatient(item, selectedPatient)) : evolutions;
   const visibleFiles = scopedPatientId ? files.filter((item) => recordBelongsToPatient(item, selectedPatient)) : files;
+  const visibleGeneratedDocuments = scopedPatientId ? generatedDocuments.filter((item) => recordBelongsToPatient(item, selectedPatient)) : generatedDocuments;
   const visiblePainRecords = scopedPatientId ? painRecords.filter((item) => recordBelongsToPatient(item, selectedPatient)) : painRecords;
-  const visibleLegacyRecords = scopedPatientId ? legacyRecords.filter((item) => recordBelongsToPatient(item, selectedPatient)) : legacyRecords;
+  const visibleLegacyRecords = (scopedPatientId ? legacyRecords.filter((item) => recordBelongsToPatient(item, selectedPatient)) : legacyRecords).filter((item) => !isClinicalTestLegacyRecord(item));
   const visibleClinicalPatients = scopedPatientId && selectedPatient ? [selectedPatient] : clinicalPatients;
 
-  const totalRecords = visibleEvaluations.length + visibleEvolutions.length + visibleFiles.length + visiblePainRecords.length + visibleLegacyRecords.length + visibleClinicalPatients.length;
-  const totalPhysioRecords = evaluations.length + evolutions.length + files.length + painRecords.length + legacyRecords.length;
+  const totalRecords = visibleEvaluations.length + visibleEvolutions.length + visibleFiles.length + visibleGeneratedDocuments.length + visiblePainRecords.length + visibleLegacyRecords.length + visibleClinicalPatients.length;
+  const totalPhysioRecords = evaluations.length + evolutions.length + files.length + generatedDocuments.length + painRecords.length + legacyRecords.filter((item) => !isClinicalTestLegacyRecord(item)).length;
 
   if (loading) {
     return (
@@ -513,7 +586,7 @@ export default function Records() {
     { id: 'resumo', label: 'Ficha clínica', icon: User, count: visibleClinicalPatients.length },
     { id: 'avaliacoes', label: 'Avaliações', icon: ClipboardList, count: visibleEvaluations.length },
     { id: 'evolucoes', label: 'Evoluções', icon: Activity, count: visibleEvolutions.length },
-    { id: 'documentos', label: 'Exames e documentos', icon: Paperclip, count: visibleFiles.length + visibleLegacyRecords.length },
+    { id: 'documentos', label: 'Exames e documentos', icon: Paperclip, count: visibleFiles.length + visibleGeneratedDocuments.length + visibleLegacyRecords.length },
     { id: 'dor', label: 'Diário de dor', icon: HeartPulse, count: visiblePainRecords.length },
   ] as Array<{ id: SectionKey; label: string; icon: any; count: number }>;
 
@@ -578,9 +651,9 @@ export default function Records() {
                   <User size={34} className="mx-auto text-slate-700 mb-3" />
                   <p className="text-sm font-bold text-slate-400">Nenhum paciente encontrado.</p>
                 </div>
-              ) : filteredPatientStats.map(({ patient, evaluations: evalCount, evolutions: evoCount, files: fileCount, legacy }) => {
+              ) : filteredPatientStats.map(({ patient, evaluations: evalCount, evolutions: evoCount, files: fileCount, documents: docCount, legacy }) => {
                 const selected = selectedPatient?.id === patient.id;
-                const total = evalCount + evoCount + fileCount + legacy;
+                const total = evalCount + evoCount + fileCount + docCount + legacy;
 
                 return (
                   <button
@@ -614,7 +687,7 @@ export default function Records() {
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       <MiniStat label="Aval." value={evalCount} />
                       <MiniStat label="Evol." value={evoCount} />
-                      <MiniStat label="Docs" value={fileCount + legacy} />
+                      <MiniStat label="Docs" value={fileCount + docCount + legacy} />
                     </div>
                     <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-500">{total > 0 ? `${total} registros clínicos` : 'Sem registros ainda'}</p>
                   </button>
@@ -651,7 +724,7 @@ export default function Records() {
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <MiniMetric label="Avaliações" value={visibleEvaluations.length} />
                       <MiniMetric label="Evoluções" value={visibleEvolutions.length} />
-                      <MiniMetric label="Arquivos" value={visibleFiles.length + visibleLegacyRecords.length} />
+                      <MiniMetric label="Docs" value={visibleFiles.length + visibleGeneratedDocuments.length + visibleLegacyRecords.length} />
                     </div>
                   </div>
                 </div>
@@ -672,8 +745,10 @@ export default function Records() {
                   evaluations={visibleEvaluations}
                   evolutions={visibleEvolutions}
                   files={visibleFiles}
+                  generatedDocuments={visibleGeneratedDocuments}
                   painRecords={visiblePainRecords}
                   legacyRecords={visibleLegacyRecords}
+                  profile={profile}
                   primaryPatient={selectedPatient}
                   userEmail={user.email}
                   profileName={profile?.nome_completo}
@@ -713,8 +788,8 @@ export default function Records() {
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Evoluções</p>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-              <p className="text-2xl font-black text-white">{files.length}</p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Arquivos</p>
+              <p className="text-2xl font-black text-white">{visibleFiles.length + visibleGeneratedDocuments.length}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Documentos</p>
             </div>
           </div>
         </div>
@@ -737,9 +812,11 @@ export default function Records() {
         clinicalPatients={clinicalPatients}
         evaluations={evaluations}
         evolutions={evolutions}
-        files={files}
-        painRecords={painRecords}
-        legacyRecords={legacyRecords}
+        files={visibleFiles}
+        generatedDocuments={visibleGeneratedDocuments}
+        painRecords={visiblePainRecords}
+        legacyRecords={visibleLegacyRecords}
+        profile={profile}
         primaryPatient={primaryPatient}
         userEmail={user.email}
         profileName={profile?.nome_completo}
@@ -754,9 +831,11 @@ function RecordsSection({
   evaluations,
   evolutions,
   files,
+  generatedDocuments,
   painRecords,
   legacyRecords,
   primaryPatient,
+  profile,
   userEmail,
   profileName,
 }: {
@@ -765,9 +844,11 @@ function RecordsSection({
   evaluations: any[];
   evolutions: any[];
   files: any[];
+  generatedDocuments: any[];
   painRecords: any[];
   legacyRecords: any[];
   primaryPatient: ClinicalPatient | null;
+  profile?: any;
   userEmail?: string | null;
   profileName?: string | null;
 }) {
@@ -860,7 +941,7 @@ function RecordsSection({
   if (activeSection === 'documentos') {
     return (
       <div className="space-y-5">
-        {files.length === 0 && legacyRecords.length === 0 ? <EmptyCard icon={Paperclip} text="Nenhum exame, foto ou documento anexado." /> : (
+        {files.length === 0 && generatedDocuments.length === 0 && legacyRecords.length === 0 ? <EmptyCard icon={Paperclip} text="Nenhum exame, foto ou documento anexado." /> : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
             {files.map((file) => (
               <motion.div key={file.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl">
@@ -875,6 +956,25 @@ function RecordsSection({
                     <ExternalLink size={14} /> Visualizar
                   </button>
                   <button onClick={() => downloadClinicalFile(file)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 text-slate-300 font-black text-[10px] uppercase tracking-widest hover:bg-white/10 border border-white/10 transition-all">
+                    <Download size={14} /> Baixar
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+
+            {generatedDocuments.map((document) => (
+              <motion.div key={`documento-${document.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 mb-4">
+                  <FileText size={28} />
+                </div>
+                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{safeText(document.document_category || document.type, 'Documento clínico')}</p>
+                <h3 className="text-lg font-black text-white line-clamp-2 mb-2">{getGeneratedDocumentTitle(document)}</h3>
+                <p className="text-xs text-slate-500 font-bold mb-5">{formatDate(document.criado_em || document.created_at)}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => openGeneratedDocument(document, primaryPatient, profile)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all">
+                    <ExternalLink size={14} /> Visualizar
+                  </button>
+                  <button onClick={() => downloadGeneratedDocument(document, primaryPatient, profile)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 text-slate-300 font-black text-[10px] uppercase tracking-widest hover:bg-white/10 border border-white/10 transition-all">
                     <Download size={14} /> Baixar
                   </button>
                 </div>

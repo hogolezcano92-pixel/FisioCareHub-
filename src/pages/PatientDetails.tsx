@@ -38,6 +38,7 @@ import { uploadPatientDocument, getPrivateDocumentUrl } from '../services/supaba
 import ProGuard from '../components/ProGuard';
 import FisioJourney from '../components/FisioJourney';
 import { logActivities } from '../services/activityService';
+import { generateLegalDocumentPDF, getLegalDocumentPdfBlob } from '../lib/legalDocumentPdf';
 
 const getSupabaseErrorMessage = (err: unknown, fallback: string) => {
   if (!err) return fallback;
@@ -1668,6 +1669,46 @@ export default function PatientDetails() {
     }
   };
 
+  const getGeneratedDocumentTitle = (documento: any) =>
+    documento?.document_name || documento?.type || documento?.titulo || 'Documento clínico';
+
+  const buildGeneratedDocumentPdfPayload = (documento: any) => ({
+    ...documento,
+    document_name: getGeneratedDocumentTitle(documento),
+    type: documento?.type || getGeneratedDocumentTitle(documento),
+    patient_name: documento?.patient_name || patient?.nome_completo || patient?.nome || 'Paciente',
+    physio_name: documento?.physio_name || profile?.nome_completo || 'Fisioterapeuta',
+    criado_em: documento?.criado_em || documento?.created_at || new Date().toISOString(),
+    content: documento?.content || documento?.conteudo || documento?.description || 'Conteúdo não informado.',
+  });
+
+  const handleViewDocumentoGerado = (documento: any) => {
+    try {
+      const blob = getLegalDocumentPdfBlob(buildGeneratedDocumentPdfPayload(documento), { profile });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      console.error('Erro ao visualizar documento gerado:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao visualizar documento.'));
+    }
+  };
+
+  const handleDownloadDocumentoGerado = (documento: any) => {
+    try {
+      const title = getGeneratedDocumentTitle(documento);
+      const patientName = documento?.patient_name || patient?.nome_completo || patient?.nome || 'paciente';
+      generateLegalDocumentPDF(buildGeneratedDocumentPdfPayload(documento), {
+        profile,
+        fileName: `${title}-${patientName}`,
+      });
+      toast.success('PDF gerado com sucesso!');
+    } catch (err) {
+      console.error('Erro ao baixar documento gerado:', err);
+      toast.error(getSupabaseErrorMessage(err, 'Erro ao baixar PDF.'));
+    }
+  };
+
   const handleToggleDocumentoVisibility = async (documento: any) => {
     const nextValue = documento.visible_to_patient === false;
     try {
@@ -2242,6 +2283,22 @@ export default function PatientDetails() {
                         </div>
                         <button type="button" onClick={() => handleToggleDocumentoVisibility(docGerado)} className="p-3 bg-white/5 text-slate-400 rounded-2xl hover:bg-white/10 hover:text-white border border-white/5" title="Alternar visibilidade">
                           {docGerado.visible_to_patient === false ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <div className="mt-5 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleViewDocumentoGerado(docGerado)}
+                          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700"
+                        >
+                          <Eye size={14} /> Visualizar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadDocumentoGerado(docGerado)}
+                          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+                        >
+                          <Download size={14} /> Baixar PDF
                         </button>
                       </div>
                     </div>
