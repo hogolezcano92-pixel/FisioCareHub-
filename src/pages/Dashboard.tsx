@@ -568,22 +568,31 @@ const buildDashboardActivities = (
 
   const syntheticDocuments = (documentos || [])
     .slice(0, 6)
-    .map((item: any) => ({
-      id: `documento-${item.id}`,
-      tipo_acao: "documento_gerado",
-      descricao:
-        item?.tipo_documento || item?.tipo || item?.titulo
-          ? `Documento gerado: ${item.tipo_documento || item.tipo || item.titulo}`
+    .map((item: any) => {
+      const documentTitle =
+        item?.document_name ||
+        item?.type ||
+        item?.tipo_documento ||
+        item?.tipo ||
+        item?.titulo;
+
+      return {
+        id: `documento-${item.id}`,
+        tipo_acao: "documento_gerado",
+        descricao: documentTitle
+          ? `Documento gerado: ${documentTitle}`
           : "Documento clínico gerado",
-      created_at:
-        item?.created_at ||
-        item?.data_geracao ||
-        item?.updated_at ||
-        new Date().toISOString(),
-      referencia_id: item.id,
-      paciente_id: item.paciente_id,
-      source_table: "documentos_gerados",
-    }));
+        created_at:
+          item?.criado_em ||
+          item?.created_at ||
+          item?.data_geracao ||
+          item?.updated_at ||
+          new Date().toISOString(),
+        referencia_id: item.id,
+        paciente_id: item.paciente_id,
+        source_table: "documentos_gerados",
+      };
+    });
 
   const unique = new Map<string, any>();
   [
@@ -738,6 +747,157 @@ const formatActivityTimeChip = (value?: string | null) => {
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+
+const getUniqueStrings = (items: Array<string | null | undefined>) =>
+  Array.from(
+    new Set(
+      items
+        .filter(Boolean)
+        .map((item) => String(item).trim())
+        .filter(Boolean),
+    ),
+  );
+
+const fetchRecordRefsSafely = async (
+  source: string,
+  query: any,
+  fallbackQuery?: any,
+): Promise<string[]> => {
+  const runQuery = async (currentQuery: any) => {
+    const { data, error } = await currentQuery;
+    if (error) throw error;
+    return (data || [])
+      .map((row: any) => (row?.id ? `${source}:${String(row.id)}` : null))
+      .filter(Boolean) as string[];
+  };
+
+  try {
+    return await runQuery(query);
+  } catch (error) {
+    if (fallbackQuery) {
+      try {
+        return await runQuery(fallbackQuery);
+      } catch (fallbackError) {
+        console.error(`Erro ao contar ${source} no Dashboard:`, fallbackError);
+        return [];
+      }
+    }
+
+    console.error(`Erro ao contar ${source} no Dashboard:`, error);
+    return [];
+  }
+};
+
+const fetchDashboardClinicalRecordCount = async ({
+  isPhysio,
+  physioId,
+  patientIds,
+}: {
+  isPhysio: boolean;
+  physioId?: string | null;
+  patientIds: string[];
+}): Promise<{ count: number }> => {
+  const clinicalPatientIds = getUniqueStrings(patientIds);
+  const queries: Promise<string[]>[] = [];
+
+  if (clinicalPatientIds.length > 0) {
+    queries.push(
+      fetchRecordRefsSafely(
+        "fichas_avaliacao",
+        supabase
+          .from("fichas_avaliacao")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+      fetchRecordRefsSafely(
+        "evolucoes",
+        supabase
+          .from("evolucoes")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+      fetchRecordRefsSafely(
+        "arquivos_paciente",
+        supabase
+          .from("arquivos_paciente")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+      fetchRecordRefsSafely(
+        "documentos_gerados",
+        isPhysio
+          ? supabase
+              .from("documentos_gerados")
+              .select("id")
+              .in("paciente_id", clinicalPatientIds)
+          : supabase
+              .from("documentos_gerados")
+              .select("id")
+              .in("paciente_id", clinicalPatientIds)
+              .neq("visible_to_patient", false),
+        supabase
+          .from("documentos_gerados")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+      fetchRecordRefsSafely(
+        "registros_paciente",
+        supabase
+          .from("registros_paciente")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+      fetchRecordRefsSafely(
+        "prontuarios",
+        supabase
+          .from("prontuarios")
+          .select("id")
+          .in("paciente_id", clinicalPatientIds),
+      ),
+    );
+  }
+
+  if (isPhysio && physioId) {
+    queries.push(
+      fetchRecordRefsSafely(
+        "fichas_avaliacao",
+        supabase
+          .from("fichas_avaliacao")
+          .select("id")
+          .eq("fisioterapeuta_id", physioId),
+      ),
+      fetchRecordRefsSafely(
+        "documentos_gerados",
+        supabase
+          .from("documentos_gerados")
+          .select("id")
+          .eq("physio_id", physioId),
+        supabase
+          .from("documentos_gerados")
+          .select("id")
+          .eq("fisio_id", physioId),
+      ),
+      fetchRecordRefsSafely(
+        "registros_paciente",
+        supabase
+          .from("registros_paciente")
+          .select("id")
+          .eq("fisioterapeuta_id", physioId),
+      ),
+      fetchRecordRefsSafely(
+        "prontuarios",
+        supabase
+          .from("prontuarios")
+          .select("id")
+          .eq("fisio_id", physioId),
+      ),
+    );
+  }
+
+  const refs = (await Promise.all(queries)).flat();
+  return { count: new Set(refs).size };
 };
 
 export default function Dashboard() {
@@ -1018,7 +1178,6 @@ export default function Dashboard() {
         const roleField =
           data.tipo_usuario === "paciente" ? "paciente_id" : "fisio_id";
 
-        let agendamentoIds: string[] = [];
         let linkedPatientProfileIds: string[] = [];
         let linkedInternalPatients: any[] = [];
 
@@ -1036,9 +1195,6 @@ export default function Dashboard() {
           const realLinkedAppointments = (appts || []).filter(
             hasRealConfirmedAppointment,
           );
-          agendamentoIds = realLinkedAppointments
-            .map((appt: any) => appt.id)
-            .filter(Boolean);
           realLinkedAppointments.forEach((appt: any) => {
             if (appt.paciente_id) linkedIds.add(appt.paciente_id);
           });
@@ -1132,8 +1288,6 @@ export default function Dashboard() {
           : [];
 
         let realAppointmentsData: any[] = [];
-        let patientRealAppointmentIds: string[] = [];
-
         if (isPhysio) {
           const {
             data: fetchedRealAppointments,
@@ -1154,9 +1308,6 @@ export default function Dashboard() {
           realAppointmentsData = (fetchedRealAppointments || []).filter(
             hasRealConfirmedAppointment,
           );
-          agendamentoIds = realAppointmentsData
-            .map((appointment: any) => appointment.id)
-            .filter(Boolean);
         }
 
         if (!isPhysio) {
@@ -1186,9 +1337,6 @@ export default function Dashboard() {
           realAppointmentsData = (realPatientAppointments || []).filter(
             hasRealConfirmedAppointment,
           );
-          patientRealAppointmentIds = realAppointmentsData
-            .map((appointment: any) => appointment.id)
-            .filter(Boolean);
         }
 
         const patientTriagesCountQuery =
@@ -1243,22 +1391,20 @@ export default function Dashboard() {
                   .from("pacientes")
                   .select("*", { count: "exact", head: true })
                   .eq("fisioterapeuta_id", data.id),
-                agendamentoIds.length > 0
-                  ? supabase
-                      .from("evolucoes")
-                      .select("*", { count: "exact", head: true })
-                      .in("atendimento_id", agendamentoIds)
-                  : Promise.resolve({ count: 0 }),
+                fetchDashboardClinicalRecordCount({
+                  isPhysio: true,
+                  physioId: data.id,
+                  patientIds: linkedPatientProfileIds,
+                }),
                 physioTriagesCountQuery,
               ])
             : Promise.all([
                 Promise.resolve({ count: realAppointmentsData.length }),
-                patientRealAppointmentIds.length > 0
-                  ? supabase
-                      .from("evolucoes")
-                      .select("*", { count: "exact", head: true })
-                      .in("atendimento_id", patientRealAppointmentIds)
-                  : Promise.resolve({ count: 0 }),
+                fetchDashboardClinicalRecordCount({
+                  isPhysio: false,
+                  physioId: null,
+                  patientIds: patientTriageIds,
+                }),
                 patientTriagesCountQuery,
               ]),
           Promise.resolve({
@@ -1299,27 +1445,14 @@ export default function Dashboard() {
                   .order("data_registro", { ascending: false })
                   .limit(8)
               : Promise.resolve({ data: [] }),
-          isPhysio
-            ? agendamentoIds.length > 0
-              ? supabase
-                  .from("evolucoes")
-                  .select(
-                    "id, created_at, updated_at, data_evolucao, paciente_id, atendimento_id",
-                  )
-                  .in("atendimento_id", agendamentoIds)
-                  .order("created_at", { ascending: false })
-                  .limit(8)
-              : Promise.resolve({ data: [] })
-            : patientRealAppointmentIds.length > 0
-              ? supabase
-                  .from("evolucoes")
-                  .select(
-                    "id, created_at, updated_at, data_evolucao, paciente_id, atendimento_id",
-                  )
-                  .in("atendimento_id", patientRealAppointmentIds)
-                  .order("created_at", { ascending: false })
-                  .limit(8)
-              : Promise.resolve({ data: [] }),
+          activityPatientIds.length > 0
+            ? supabase
+                .from("evolucoes")
+                .select("*")
+                .in("paciente_id", activityPatientIds)
+                .order("created_at", { ascending: false })
+                .limit(8)
+            : Promise.resolve({ data: [] }),
           activityPatientIds.length > 0
             ? supabase
                 .from("registros_paciente")
@@ -1353,20 +1486,17 @@ export default function Dashboard() {
           isPhysio
             ? supabase
                 .from("documentos_gerados")
-                .select(
-                  "id, created_at, updated_at, data_geracao, paciente_id, fisio_id, tipo_documento, tipo, titulo",
-                )
-                .eq("fisio_id", data.id)
-                .order("created_at", { ascending: false })
+                .select("*")
+                .eq("physio_id", data.id)
+                .order("criado_em", { ascending: false })
                 .limit(8)
             : activityPatientIds.length > 0
               ? supabase
                   .from("documentos_gerados")
-                  .select(
-                    "id, created_at, updated_at, data_geracao, paciente_id, fisio_id, tipo_documento, tipo, titulo",
-                  )
+                  .select("*")
                   .in("paciente_id", activityPatientIds)
-                  .order("created_at", { ascending: false })
+                  .neq("visible_to_patient", false)
+                  .order("criado_em", { ascending: false })
                   .limit(8)
               : Promise.resolve({ data: [] }),
         ];
@@ -2945,6 +3075,7 @@ export default function Dashboard() {
               color: "sky",
               trend: "+12%",
               show: isPhysio || stats.appointments > 0,
+              path: isPhysio ? "/agenda" : "/appointments",
             },
             {
               label: isPhysio ? "Pacientes" : "Fisioterapeutas",
@@ -2953,6 +3084,7 @@ export default function Dashboard() {
               color: "emerald",
               trend: "+5%",
               show: isPhysio || stats.patients > 0,
+              path: isPhysio ? "/patients" : "/buscar-fisio",
             },
             {
               label: "Prontuários",
@@ -2961,6 +3093,7 @@ export default function Dashboard() {
               color: "indigo",
               trend: "+8%",
               show: isPhysio || stats.records > 0,
+              path: "/records",
             },
             {
               label: "Triagens",
@@ -2969,17 +3102,21 @@ export default function Dashboard() {
               color: "rose",
               trend: "0%",
               show: isPhysio || stats.pendingTriages > 0,
+              path: isPhysio ? "/physio/triages" : "/triage",
             },
           ]
             .filter((s) => s.show)
             .map((stat, i) => (
-              <motion.div
+              <motion.button
                 key={i}
+                type="button"
+                onClick={() => navigate(stat.path)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
+                aria-label={`Abrir ${stat.label}`}
                 className={cn(
-                  "group relative overflow-hidden !p-4 md:!p-6 rounded-2xl sm:rounded-3xl border backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-0.5",
+                  "group relative overflow-hidden !p-4 md:!p-6 rounded-2xl sm:rounded-3xl border backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-sky-400/50",
                   stat.color === "sky" &&
                     "bg-gradient-to-br from-sky-50 via-white to-blue-50 border-sky-100 shadow-sky-100/60 dark:from-sky-500/15 dark:via-white/[0.055] dark:to-blue-500/10 dark:border-sky-400/15 dark:shadow-sky-950/20",
                   stat.color === "emerald" &&
@@ -3046,7 +3183,7 @@ export default function Dashboard() {
                     {stat.label}
                   </p>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
         </div>
 
