@@ -7082,3 +7082,46 @@ html:not(.dark):not([data-theme="dark"]) body:not(.dark) .clinical-record-observ
   color: #64748b !important;
   opacity: 1 !important;
 }
+
+/* =========================================================
+   CLINICAL TESTS HUB - Testes importados pelo Admin
+   Ajustes de nitidez no tema claro sem alterar o dark mode
+   ========================================================= */
+html:not(.dark) .clinical-tests-hub .clinical-test-gradient-icon,
+html:not(.dark) .clinical-tests-hub .clinical-test-gradient-icon *,
+html:not(.dark) .clinical-tests-hub .clinical-test-source-link,
+html:not(.dark) .clinical-tests-hub .clinical-test-source-link * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-imported-pill {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border-color: #ddd6fe !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-source-card {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 48%, #eff6ff 100%) !important;
+  border-color: #ddd6fe !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-source-card h3,
+html:not(.dark) .clinical-tests-hub .clinical-test-source-card p,
+html:not(.dark) .clinical-tests-hub .clinical-test-source-card span,
+html:not(.dark) .clinical-tests-hub .clinical-tests-loading-note,
+html:not(.dark) .clinical-tests-hub .clinical-tests-empty-state,
+html:not(.dark) .clinical-tests-hub .clinical-tests-empty-state p {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-tests-loading-note {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-tests-empty-state {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: #cbd5e1 !important;
+}
