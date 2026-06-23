@@ -18,7 +18,6 @@ import {
   Info,
   Layers,
   Loader2,
-  Maximize2,
   Search,
   ShieldCheck,
   Sparkles,
@@ -614,7 +613,13 @@ export default function ClinicalTestsHub() {
   const [clinicalObservation, setClinicalObservation] = useState('');
   const [savingRecord, setSavingRecord] = useState(false);
   const [testsLoading, setTestsLoading] = useState(false);
-  const [imagePreviewTest, setImagePreviewTest] = useState<ClinicalTest | null>(null);
+  const [imagePreview, setImagePreview] = useState<{
+    src: string;
+    alt: string;
+    title: string;
+    sourceUrl?: string | null;
+    attribution?: string | null;
+  } | null>(null);
   const selectedTestDetailRef = useRef<HTMLDivElement | null>(null);
 
   const availableCategories = useMemo(() => {
@@ -675,6 +680,25 @@ export default function ClinicalTestsHub() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!imagePreview || typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setImagePreview(null);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imagePreview]);
+
   const filteredTests = useMemo(() => {
     const normalizedQuery = normalizeForClinicalCompare(query);
     const normalizedCategory = normalizeForClinicalCompare(activeCategory);
@@ -718,6 +742,22 @@ export default function ClinicalTestsHub() {
     });
   }, [patientSearch, patients]);
 
+  const openImagePreview = (test: ClinicalTest) => {
+    if (!test.image_url) return;
+
+    setImagePreview({
+      src: test.image_url,
+      alt: `Imagem demonstrativa - ${test.name}`,
+      title: test.name,
+      sourceUrl: test.image_source_url || test.source_url || null,
+      attribution: test.image_attribution || test.source_attribution || null,
+    });
+  };
+
+  const closeImagePreview = () => {
+    setImagePreview(null);
+  };
+
   const handleSelectTest = (test: ClinicalTest) => {
     setSelectedTest(test);
 
@@ -728,35 +768,6 @@ export default function ClinicalTestsHub() {
       });
     });
   };
-
-  const handleOpenImagePreview = (test: ClinicalTest) => {
-    if (!test.image_url) return;
-    setImagePreviewTest(test);
-  };
-
-  const handleCloseImagePreview = () => {
-    setImagePreviewTest(null);
-  };
-
-  useEffect(() => {
-    if (!imagePreviewTest) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setImagePreviewTest(null);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [imagePreviewTest]);
 
   const loadPatientsForRecord = async () => {
     if (!user?.id) {
@@ -1056,8 +1067,18 @@ export default function ClinicalTestsHub() {
                   >
                     <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
                       {test.image_url ? (
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/80 bg-slate-100 shadow-lg dark:border-white/10 dark:bg-white/10">
+                        <div
+                          className="clinical-test-thumb-preview relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-2xl border border-white/80 bg-slate-100 shadow-lg ring-1 ring-slate-200/70 transition hover:scale-[1.03] hover:ring-blue-300 dark:border-white/10 dark:bg-white/10 dark:ring-white/10"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openImagePreview(test);
+                          }}
+                          title={`Ampliar imagem - ${test.name}`}
+                        >
                           <img src={test.image_url} alt={`Prévia - ${test.name}`} className="h-full w-full object-cover" loading="lazy" />
+                          <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-950/75 text-white shadow-lg backdrop-blur">
+                            <Eye size={10} />
+                          </span>
                         </div>
                       ) : (
                         <div className={cn('clinical-test-gradient-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg sm:h-14 sm:w-14', test.gradient)}>
@@ -1130,28 +1151,23 @@ export default function ClinicalTestsHub() {
                           <h3 className="text-sm font-black uppercase tracking-widest text-cyan-800 dark:text-cyan-200" style={safeWrapStyle}>Vídeo ou imagem demonstrativa</h3>
                           <p className="mt-2 text-sm font-medium leading-relaxed text-cyan-900 dark:text-cyan-50/90" style={safeWrapStyle}>{selectedTest.demo}</p>
                           {selectedTest.image_url ? (
-                            <div className="mt-4 space-y-2">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenImagePreview(selectedTest)}
-                                className="clinical-test-image-trigger group relative block w-full overflow-hidden rounded-2xl border border-cyan-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-xl hover:shadow-cyan-100/70 focus:outline-none focus:ring-4 focus:ring-cyan-200/70 dark:border-white/10 dark:bg-slate-950/40 dark:hover:border-cyan-300/40 dark:hover:shadow-cyan-950/30 dark:focus:ring-cyan-400/20"
-                                aria-label={`Ampliar imagem demonstrativa do teste ${selectedTest.name}`}
-                              >
-                                <img
-                                  src={selectedTest.image_url}
-                                  alt={`Imagem demonstrativa - ${selectedTest.name}`}
-                                  className="h-auto max-h-[420px] w-full object-contain transition duration-300 group-hover:scale-[1.015]"
-                                  loading="lazy"
-                                />
-                                <span className="clinical-test-image-zoom-badge absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-white/60 bg-slate-950/78 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-lg backdrop-blur-md dark:border-white/15 dark:bg-white/12">
-                                  <Maximize2 size={13} />
-                                  Ampliar
-                                </span>
-                              </button>
-                              <p className="clinical-test-image-helper text-[11px] font-bold text-cyan-800 dark:text-cyan-100" style={safeWrapStyle}>
-                                Clique na imagem para visualizar em tamanho maior.
-                              </p>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openImagePreview(selectedTest)}
+                              className="clinical-test-image-preview-button group relative mt-4 w-full overflow-hidden rounded-2xl border border-cyan-200 bg-white text-left shadow-sm outline-none transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-100/70 focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-white/10 dark:bg-slate-950/40 dark:hover:border-cyan-300/30 dark:hover:shadow-blue-950/30"
+                              aria-label={`Ampliar imagem demonstrativa - ${selectedTest.name}`}
+                            >
+                              <img
+                                src={selectedTest.image_url}
+                                alt={`Imagem demonstrativa - ${selectedTest.name}`}
+                                className="h-auto max-h-[420px] w-full object-cover transition duration-300 group-hover:scale-[1.01]"
+                                loading="lazy"
+                              />
+                              <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-slate-950/78 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg backdrop-blur">
+                                <Eye size={13} />
+                                Ampliar
+                              </span>
+                            </button>
                           ) : (
                             <div className="clinical-test-media-placeholder mt-3 rounded-2xl border border-cyan-200 bg-white/75 p-3 text-xs font-bold text-cyan-800 dark:border-white/10 dark:bg-white/5 dark:text-cyan-100" style={safeWrapStyle}>
                               Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
@@ -1241,71 +1257,62 @@ export default function ClinicalTestsHub() {
       </div>
     </main>
 
-    {imagePreviewTest?.image_url && (
+    {imagePreview && (
       <div
-        className="clinical-test-image-modal-layer fixed inset-0 flex items-center justify-center px-3 py-4 sm:px-6"
+        className="clinical-test-image-modal-layer fixed inset-0 flex items-center justify-center px-3 py-5 sm:px-6"
         style={{ zIndex: 2147483647 }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Imagem ampliada do teste ${imagePreviewTest.name}`}
       >
-        <button
-          type="button"
-          className="clinical-test-image-modal-backdrop absolute inset-0 bg-slate-950/78 backdrop-blur-md dark:bg-slate-950/84"
-          onClick={handleCloseImagePreview}
-          aria-label="Fechar imagem ampliada"
+        <div
+          className="clinical-test-image-modal-backdrop absolute inset-0"
+          onClick={closeImagePreview}
         />
         <motion.div
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="clinical-test-image-modal-card relative flex max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.8rem] border border-white/70 bg-white shadow-2xl shadow-slate-950/35 ring-1 ring-slate-200/80 dark:border-white/10 dark:bg-slate-950 dark:ring-white/10 sm:rounded-[2.25rem]"
+          className="clinical-test-image-modal-card relative flex max-h-[calc(100dvh_-_2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white text-slate-950 shadow-2xl shadow-slate-950/30 dark:border-white/10 dark:bg-slate-950 dark:text-white sm:rounded-[2.4rem]"
+          onClick={(event) => event.stopPropagation()}
         >
-          <div className="clinical-test-image-modal-header flex min-w-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 text-slate-950 backdrop-blur dark:border-white/10 dark:bg-slate-950/95 dark:text-white sm:px-5 sm:py-4">
+          <div className="flex min-w-0 items-start justify-between gap-4 border-b border-slate-200 bg-white/95 p-4 backdrop-blur dark:border-white/10 dark:bg-slate-950/95 sm:p-5">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-200" style={safeWrapStyle}>Imagem demonstrativa</p>
-              <h3 className="mt-1 text-lg font-black leading-tight text-slate-950 dark:text-white sm:text-2xl" style={safeWrapStyle}>{imagePreviewTest.name}</h3>
-              <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400" style={safeWrapStyle}>
-                {imagePreviewTest.region} • {imagePreviewTest.category}
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:text-blue-300" style={safeWrapStyle}>Imagem demonstrativa</p>
+              <h3 className="mt-1 text-xl font-black leading-tight text-slate-950 dark:text-white sm:text-2xl" style={safeWrapStyle}>{imagePreview.title}</h3>
+              <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400" style={safeWrapStyle}>Clique fora da imagem ou pressione ESC para fechar.</p>
             </div>
             <button
               type="button"
-              onClick={handleCloseImagePreview}
-              className="clinical-test-image-modal-close flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              onClick={closeImagePreview}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
               aria-label="Fechar imagem ampliada"
             >
               <X size={20} />
             </button>
           </div>
 
-          <div className="clinical-test-image-modal-body min-h-0 flex-1 overflow-auto bg-slate-100 p-3 dark:bg-slate-950 sm:p-5">
-            <div className="flex min-h-full items-center justify-center">
-              <img
-                src={imagePreviewTest.image_url}
-                alt={`Imagem demonstrativa ampliada - ${imagePreviewTest.name}`}
-                className="clinical-test-image-modal-img max-h-[calc(92dvh_-_9.5rem)] w-auto max-w-full rounded-[1.35rem] bg-white object-contain shadow-2xl shadow-slate-950/20 dark:bg-slate-900"
-              />
-            </div>
+          <div className="min-h-0 flex-1 overflow-auto bg-slate-100/80 p-3 dark:bg-slate-950/80 sm:p-5">
+            <img
+              src={imagePreview.src}
+              alt={imagePreview.alt}
+              className="clinical-test-image-modal-img mx-auto max-h-[calc(100dvh_-_12rem)] w-auto max-w-full rounded-2xl object-contain shadow-2xl shadow-slate-950/20"
+            />
           </div>
 
-          {(imagePreviewTest.image_license || imagePreviewTest.image_attribution || imagePreviewTest.image_source_url) && (
-            <div className="clinical-test-image-modal-footer border-t border-slate-200 bg-white/95 px-4 py-3 text-xs font-semibold text-slate-600 backdrop-blur dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-300 sm:px-5">
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span style={safeWrapStyle}>
-                  {imagePreviewTest.image_license ? `Licença da imagem: ${imagePreviewTest.image_license}` : imagePreviewTest.image_attribution || 'Imagem vinculada ao teste clínico.'}
-                </span>
-                {imagePreviewTest.image_source_url && (
-                  <a
-                    href={imagePreviewTest.image_source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 font-black text-cyan-700 hover:text-cyan-600 dark:text-cyan-200"
-                  >
-                    Fonte da imagem
-                    <ExternalLink size={13} />
-                  </a>
-                )}
-              </div>
+          {(imagePreview.sourceUrl || imagePreview.attribution) && (
+            <div className="border-t border-slate-200 bg-white/95 p-4 dark:border-white/10 dark:bg-slate-950/95 sm:p-5">
+              {imagePreview.attribution && (
+                <p className="text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400" style={safeWrapStyle}>{imagePreview.attribution}</p>
+              )}
+              {imagePreview.sourceUrl && (
+                <a
+                  href={imagePreview.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex max-w-full items-center gap-2 rounded-2xl bg-blue-700 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-blue-200/60 transition hover:bg-blue-600 dark:shadow-none"
+                  style={safeWrapStyle}
+                >
+                  Ver fonte da imagem
+                  <ExternalLink size={14} />
+                </a>
+              )}
             </div>
           )}
         </motion.div>
