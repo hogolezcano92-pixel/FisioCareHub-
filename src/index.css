@@ -7125,3 +7125,83 @@ html:not(.dark) .clinical-tests-hub .clinical-tests-empty-state {
   background: rgba(255, 255, 255, 0.92) !important;
   border-color: #cbd5e1 !important;
 }
+
+/* =========================================================
+   CLINICAL TESTS HUB - Visualização ampliada da imagem
+   ========================================================= */
+.clinical-test-image-trigger {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clinical-test-image-trigger img {
+  background:
+    linear-gradient(45deg, rgba(14, 165, 233, 0.06), rgba(139, 92, 246, 0.06)),
+    #ffffff;
+}
+
+.clinical-test-image-modal-layer {
+  overscroll-behavior: contain;
+}
+
+.clinical-test-image-modal-backdrop {
+  cursor: zoom-out;
+}
+
+.clinical-test-image-modal-card {
+  animation: clinicalImageModalGlow 0.28s ease-out;
+}
+
+.clinical-test-image-modal-img {
+  image-rendering: auto;
+}
+
+@keyframes clinicalImageModalGlow {
+  from {
+    filter: saturate(0.92) brightness(0.98);
+  }
+  to {
+    filter: saturate(1) brightness(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .clinical-test-image-modal-card {
+    max-height: 88dvh !important;
+    border-radius: 1.35rem !important;
+  }
+
+  .clinical-test-image-modal-img {
+    max-height: calc(88dvh - 8.75rem) !important;
+    border-radius: 1rem !important;
+  }
+
+  .clinical-test-image-zoom-badge {
+    bottom: 0.75rem !important;
+    right: 0.75rem !important;
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.58rem !important;
+  }
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-image-helper {
+  color: #155e75 !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-card,
+html:not(.dark) .clinical-test-image-modal-header,
+html:not(.dark) .clinical-test-image-modal-footer {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-header h3,
+html:not(.dark) .clinical-test-image-modal-header p,
+html:not(.dark) .clinical-test-image-modal-footer,
+html:not(.dark) .clinical-test-image-modal-footer span {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-close {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
