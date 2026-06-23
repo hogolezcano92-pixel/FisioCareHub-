@@ -7126,137 +7126,82 @@ html:not(.dark) .clinical-tests-hub .clinical-tests-empty-state {
   border-color: #cbd5e1 !important;
 }
 
-
 /* =========================================================
-   Testes Clínicos — imagem ampliada clicável
-   Escopo restrito ao ClinicalTestsHub. Não altera outras áreas.
+   CLINICAL TESTS HUB - Visualização ampliada da imagem
    ========================================================= */
-.clinical-test-thumb-preview,
-.clinical-test-image-preview-button {
-  cursor: zoom-in;
+.clinical-test-image-trigger {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.clinical-test-thumb-preview img,
-.clinical-test-image-preview-button img {
-  -webkit-user-select: none;
-  user-select: none;
+.clinical-test-image-trigger img {
+  background:
+    linear-gradient(45deg, rgba(14, 165, 233, 0.06), rgba(139, 92, 246, 0.06)),
+    #ffffff;
 }
 
 .clinical-test-image-modal-layer {
-  isolation: isolate;
+  overscroll-behavior: contain;
 }
 
 .clinical-test-image-modal-backdrop {
-  background: rgba(15, 23, 42, 0.68);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  backdrop-filter: blur(16px) saturate(130%);
+  cursor: zoom-out;
+}
+
+.clinical-test-image-modal-card {
+  animation: clinicalImageModalGlow 0.28s ease-out;
 }
 
 .clinical-test-image-modal-img {
-  background: #ffffff;
+  image-rendering: auto;
 }
 
-:root[data-theme="light"] .clinical-test-image-modal-backdrop,
-html:not(.dark) .clinical-test-image-modal-backdrop {
-  background: rgba(15, 23, 42, 0.58) !important;
-}
-
-:root[data-theme="light"] .clinical-test-image-modal-card,
-html:not(.dark) .clinical-test-image-modal-card {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: rgba(196, 181, 253, 0.85) !important;
-  box-shadow: 0 30px 90px -36px rgba(15, 23, 42, 0.48) !important;
-}
-
-:root[data-theme="dark"] .clinical-test-image-modal-backdrop,
-.dark .clinical-test-image-modal-backdrop {
-  background: rgba(2, 6, 23, 0.82);
-}
-
-:root[data-theme="dark"] .clinical-test-image-modal-img,
-.dark .clinical-test-image-modal-img {
-  background: rgba(15, 23, 42, 0.85);
-}
-
-/* =========================================================
-   Testes Clínicos — vídeo demonstrativo premium
-   Escopo restrito ao ClinicalTestsHub. Não altera outras áreas.
-   ========================================================= */
-.clinical-test-video-thumb,
-.clinical-test-video-panel,
-.clinical-test-video-link,
-.clinical-test-video-frame,
-.clinical-test-video-native {
-  overflow: hidden;
-}
-
-.clinical-test-video-frame {
-  aspect-ratio: 16 / 9;
-  width: 100%;
-}
-
-.clinical-test-video-native {
-  aspect-ratio: 16 / 9;
-  max-height: min(70vh, 520px);
-  object-fit: contain;
-}
-
-.clinical-test-video-panel iframe,
-.clinical-test-video-panel video {
-  display: block;
-  border: 0;
-}
-
-.clinical-test-video-open,
-.clinical-test-video-open *,
-.clinical-test-video-link,
-.clinical-test-video-link * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-pill,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-pill {
-  background: #ecfeff !important;
-  color: #0e7490 !important;
-  border-color: #a5f3fc !important;
-}
-
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-panel,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-panel {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: rgba(14, 165, 233, 0.30) !important;
-  box-shadow: 0 20px 48px -34px rgba(8, 145, 178, 0.45) !important;
-}
-
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-panel h3,
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-panel span:not(.text-white),
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-panel p,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-panel h3,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-panel span:not(.text-white),
-html:not(.dark) .clinical-tests-hub .clinical-test-video-panel p {
-  opacity: 1 !important;
-}
-
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-thumb,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-thumb {
-  border-color: #a5f3fc !important;
-  box-shadow: 0 14px 36px -26px rgba(8, 145, 178, 0.50) !important;
-}
-
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-open,
-:root[data-theme="light"] .clinical-tests-hub .clinical-test-video-open *,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-open,
-html:not(.dark) .clinical-tests-hub .clinical-test-video-open * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+@keyframes clinicalImageModalGlow {
+  from {
+    filter: saturate(0.92) brightness(0.98);
+  }
+  to {
+    filter: saturate(1) brightness(1);
+  }
 }
 
 @media (max-width: 640px) {
-  .clinical-test-video-frame,
-  .clinical-test-video-native {
-    aspect-ratio: 16 / 9;
+  .clinical-test-image-modal-card {
+    max-height: 88dvh !important;
+    border-radius: 1.35rem !important;
   }
+
+  .clinical-test-image-modal-img {
+    max-height: calc(88dvh - 8.75rem) !important;
+    border-radius: 1rem !important;
+  }
+
+  .clinical-test-image-zoom-badge {
+    bottom: 0.75rem !important;
+    right: 0.75rem !important;
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.58rem !important;
+  }
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-image-helper {
+  color: #155e75 !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-card,
+html:not(.dark) .clinical-test-image-modal-header,
+html:not(.dark) .clinical-test-image-modal-footer {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-header h3,
+html:not(.dark) .clinical-test-image-modal-header p,
+html:not(.dark) .clinical-test-image-modal-footer,
+html:not(.dark) .clinical-test-image-modal-footer span {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .clinical-test-image-modal-close {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
 }
