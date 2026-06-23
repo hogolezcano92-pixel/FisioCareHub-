@@ -17,6 +17,7 @@ import {
   HeartPulse,
   Info,
   Layers,
+  PlayCircle,
   Loader2,
   Search,
   ShieldCheck,
@@ -24,6 +25,7 @@ import {
   Stethoscope,
   UserRound,
   Target,
+  Video,
   X,
   Zap,
 } from 'lucide-react';
@@ -46,6 +48,10 @@ interface ClinicalTest {
   demo: string;
   image_url?: string | null;
   video_url?: string | null;
+  video_provider?: string | null;
+  video_thumbnail_url?: string | null;
+  video_source_url?: string | null;
+  video_status?: string | null;
   source_provider?: string | null;
   source_url?: string | null;
   source_title?: string | null;
@@ -309,6 +315,10 @@ const CLINICAL_TESTS_SELECT_WITH_IMPORT = [
   'demo',
   'image_url',
   'video_url',
+  'video_provider',
+  'video_thumbnail_url',
+  'video_source_url',
+  'video_status',
   'is_active',
   'source_provider',
   'source_url',
@@ -440,6 +450,78 @@ const getClinicalIcon = (region?: string | null, category?: string | null) => {
   return Stethoscope;
 };
 
+
+const shouldDisplayClinicalVideo = (test?: ClinicalTest | null) => {
+  if (!test?.video_url) return false;
+  const status = normalizeForClinicalCompare(test.video_status || '');
+  return status !== 'rejected' && status !== 'rejeitado';
+};
+
+const extractClinicalYoutubeId = (url?: string | null) => {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host === 'youtu.be') return parsed.pathname.replace(/^\//, '').split('/')[0] || '';
+    if (host.endsWith('youtube.com')) {
+      const watchId = parsed.searchParams.get('v');
+      if (watchId) return watchId;
+      const embedMatch = parsed.pathname.match(/\/(?:embed|shorts|v)\/([^/?#]+)/i);
+      if (embedMatch?.[1]) return embedMatch[1];
+    }
+  } catch {
+    const fallback = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([^&?#/]+)/i);
+    return fallback?.[1] || '';
+  }
+
+  return '';
+};
+
+const extractClinicalVimeoId = (url?: string | null) => {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (!host.endsWith('vimeo.com')) return '';
+    const match = parsed.pathname.match(/\/(?:video\/)?(\d+)/);
+    return match?.[1] || '';
+  } catch {
+    const fallback = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    return fallback?.[1] || '';
+  }
+
+  return '';
+};
+
+const getClinicalVideoEmbedUrl = (url?: string | null, provider?: string | null) => {
+  const normalizedProvider = normalizeForClinicalCompare(provider || '');
+  const youtubeId = extractClinicalYoutubeId(url);
+  if (youtubeId || normalizedProvider.includes('youtube')) {
+    return youtubeId ? `https://www.youtube-nocookie.com/embed/${youtubeId}` : '';
+  }
+
+  const vimeoId = extractClinicalVimeoId(url);
+  if (vimeoId || normalizedProvider.includes('vimeo')) {
+    return vimeoId ? `https://player.vimeo.com/video/${vimeoId}` : '';
+  }
+
+  return '';
+};
+
+const isDirectClinicalVideoUrl = (url?: string | null) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(url || ''));
+
+const getClinicalVideoLabel = (provider?: string | null) => {
+  const normalizedProvider = normalizeForClinicalCompare(provider || '');
+  if (normalizedProvider.includes('youtube')) return 'YouTube';
+  if (normalizedProvider.includes('vimeo')) return 'Vimeo';
+  if (normalizedProvider.includes('video')) return 'Vídeo externo';
+  return 'Vídeo demonstrativo';
+};
+
 const inferImportedLevel = (demo?: string | null, category?: string | null): ClinicalTest['level'] => {
   const normalized = normalizeForClinicalCompare(`${demo || ''} ${category || ''}`);
   if (normalized.includes('contraindic') || normalized.includes('radicular') || normalized.includes('instabilidade') || normalized.includes('neuro')) return 'Avançado';
@@ -474,6 +556,10 @@ const mapImportedClinicalTest = (row: any, index = 0): ClinicalTest => {
     demo,
     image_url: row?.image_url || null,
     video_url: row?.video_url || null,
+    video_provider: row?.video_provider || null,
+    video_thumbnail_url: row?.video_thumbnail_url || null,
+    video_source_url: row?.video_source_url || null,
+    video_status: row?.video_status || null,
     source_provider: row?.source_provider || null,
     source_url: row?.source_url || null,
     source_title: row?.source_title || null,
@@ -506,6 +592,10 @@ const mergeClinicalTestsWithRows = (rows: any[] = []) => {
       demo: cleanClinicalText(row.demo, test.demo),
       image_url: row.image_url || test.image_url || null,
       video_url: row.video_url || test.video_url || null,
+      video_provider: row.video_provider || test.video_provider || null,
+      video_thumbnail_url: row.video_thumbnail_url || test.video_thumbnail_url || null,
+      video_source_url: row.video_source_url || test.video_source_url || null,
+      video_status: row.video_status || test.video_status || null,
       source_provider: row.source_provider || test.source_provider || null,
       source_url: row.source_url || test.source_url || null,
       source_title: row.source_title || test.source_title || null,
@@ -588,6 +678,9 @@ ${test.recordSuggestion}
 
 ## Demonstração
 ${test.demo}
+${shouldDisplayClinicalVideo(test) ? `
+## Vídeo demonstrativo
+${getClinicalVideoLabel(test.video_provider)}: ${test.video_url}` : ''}
 ${test.source_url ? `
 ## Fonte do teste
 ${test.source_provider === 'physiopedia' ? 'Physiopedia' : test.source_provider || 'Fonte externa'}: ${test.source_url}` : ''}
@@ -1066,7 +1159,25 @@ export default function ClinicalTestsHub() {
                     )}
                   >
                     <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
-                      {test.image_url ? (
+                      {shouldDisplayClinicalVideo(test) ? (
+                        <div className="clinical-test-video-thumb relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-cyan-200 bg-slate-950 shadow-lg ring-1 ring-cyan-100 transition group-hover:scale-[1.03] dark:border-cyan-300/20 dark:bg-slate-950 dark:ring-white/10">
+                          {test.video_thumbnail_url || test.image_url ? (
+                            <img
+                              src={test.video_thumbnail_url || test.image_url || ''}
+                              alt={`Prévia em vídeo - ${test.name}`}
+                              className="h-full w-full object-cover opacity-85"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className={cn('flex h-full w-full items-center justify-center bg-gradient-to-br text-white', test.gradient)}>
+                              <Video size={22} />
+                            </div>
+                          )}
+                          <span className="absolute inset-0 flex items-center justify-center bg-slate-950/25 text-white backdrop-blur-[1px]">
+                            <PlayCircle size={24} className="drop-shadow-lg" />
+                          </span>
+                        </div>
+                      ) : test.image_url ? (
                         <div
                           className="clinical-test-thumb-preview relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-2xl border border-white/80 bg-slate-100 shadow-lg ring-1 ring-slate-200/70 transition hover:scale-[1.03] hover:ring-blue-300 dark:border-white/10 dark:bg-white/10 dark:ring-white/10"
                           onClick={(event) => {
@@ -1091,6 +1202,9 @@ export default function ClinicalTestsHub() {
                           <div className="flex max-w-full flex-wrap items-center gap-1.5">
                             {test.source_provider && (
                               <span className="clinical-test-imported-pill max-w-full rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-violet-700 dark:border-violet-300/20 dark:bg-violet-500/10 dark:text-violet-200" style={safeWrapStyle}>Admin</span>
+                            )}
+                            {shouldDisplayClinicalVideo(test) && (
+                              <span className="clinical-test-video-pill max-w-full rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-700 dark:border-cyan-300/20 dark:bg-cyan-500/10 dark:text-cyan-200" style={safeWrapStyle}>Vídeo</span>
                             )}
                             <span className="clinical-test-badge max-w-full rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200" style={safeWrapStyle}>{test.level}</span>
                           </div>
@@ -1150,7 +1264,97 @@ export default function ClinicalTestsHub() {
                         <div className="w-full min-w-0 flex-1">
                           <h3 className="text-sm font-black uppercase tracking-widest text-cyan-800 dark:text-cyan-200" style={safeWrapStyle}>Vídeo ou imagem demonstrativa</h3>
                           <p className="mt-2 text-sm font-medium leading-relaxed text-cyan-900 dark:text-cyan-50/90" style={safeWrapStyle}>{selectedTest.demo}</p>
-                          {selectedTest.image_url ? (
+                          {shouldDisplayClinicalVideo(selectedTest) ? (() => {
+                            const videoEmbedUrl = getClinicalVideoEmbedUrl(selectedTest.video_url, selectedTest.video_provider);
+                            const directVideo = isDirectClinicalVideoUrl(selectedTest.video_url);
+                            const videoLabel = getClinicalVideoLabel(selectedTest.video_provider);
+
+                            return (
+                              <div className="clinical-test-video-panel mt-4 overflow-hidden rounded-[1.35rem] border border-cyan-200 bg-white shadow-sm shadow-cyan-100/70 dark:border-cyan-300/20 dark:bg-slate-950/45 dark:shadow-none">
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-100 bg-cyan-50/80 px-4 py-3 dark:border-cyan-300/10 dark:bg-cyan-500/10">
+                                  <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-800 dark:text-cyan-100" style={safeWrapStyle}>
+                                    <PlayCircle size={15} />
+                                    Demonstração em vídeo
+                                  </span>
+                                  <span className="rounded-full border border-cyan-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 dark:border-cyan-300/20 dark:bg-white/10 dark:text-cyan-100">
+                                    {videoLabel}
+                                  </span>
+                                </div>
+
+                                {videoEmbedUrl ? (
+                                  <div className="clinical-test-video-frame bg-slate-950">
+                                    <iframe
+                                      src={videoEmbedUrl}
+                                      title={`Vídeo demonstrativo - ${selectedTest.name}`}
+                                      className="h-full w-full"
+                                      loading="lazy"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                ) : directVideo ? (
+                                  <video
+                                    className="clinical-test-video-native w-full bg-slate-950"
+                                    src={selectedTest.video_url || undefined}
+                                    poster={selectedTest.video_thumbnail_url || selectedTest.image_url || undefined}
+                                    controls
+                                    preload="metadata"
+                                  />
+                                ) : (
+                                  <a
+                                    href={selectedTest.video_url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="clinical-test-video-link group relative block overflow-hidden bg-slate-950 text-white"
+                                  >
+                                    {selectedTest.video_thumbnail_url || selectedTest.image_url ? (
+                                      <img
+                                        src={selectedTest.video_thumbnail_url || selectedTest.image_url || ''}
+                                        alt={`Capa do vídeo - ${selectedTest.name}`}
+                                        className="h-64 w-full object-cover opacity-80 transition duration-300 group-hover:scale-[1.02] sm:h-80"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className={cn('flex h-64 w-full items-center justify-center bg-gradient-to-br sm:h-80', selectedTest.gradient)}>
+                                        <Video size={48} />
+                                      </div>
+                                    )}
+                                    <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/35 p-6 text-center backdrop-blur-[1px]">
+                                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/18 text-white shadow-2xl ring-1 ring-white/30 backdrop-blur">
+                                        <PlayCircle size={38} />
+                                      </span>
+                                      <span className="text-xs font-black uppercase tracking-[0.22em]">Abrir vídeo demonstrativo</span>
+                                    </span>
+                                  </a>
+                                )}
+
+                                <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+                                  <a
+                                    href={selectedTest.video_url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="clinical-test-video-open inline-flex max-w-full items-center gap-2 rounded-2xl bg-cyan-700 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-200/50 transition hover:bg-cyan-600 dark:shadow-none"
+                                    style={safeWrapStyle}
+                                  >
+                                    Abrir vídeo original
+                                    <ExternalLink size={14} />
+                                  </a>
+                                  {selectedTest.video_source_url && selectedTest.video_source_url !== selectedTest.video_url && (
+                                    <a
+                                      href={selectedTest.video_source_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-cyan-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-800 transition hover:bg-cyan-50 dark:border-cyan-300/20 dark:bg-white/5 dark:text-cyan-100 dark:hover:bg-white/10"
+                                      style={safeWrapStyle}
+                                    >
+                                      Fonte do vídeo
+                                      <ArrowRight size={14} />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })() : selectedTest.image_url ? (
                             <button
                               type="button"
                               onClick={() => openImagePreview(selectedTest)}
@@ -1173,16 +1377,18 @@ export default function ClinicalTestsHub() {
                               Espaço preparado para anexar imagem, GIF ou vídeo demonstrativo do teste.
                             </div>
                           )}
-                          {selectedTest.video_url && (
-                            <a
-                              href={selectedTest.video_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-cyan-700 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-200/50 transition hover:bg-cyan-600 dark:shadow-none"
+
+                          {shouldDisplayClinicalVideo(selectedTest) && selectedTest.image_url && (
+                            <button
+                              type="button"
+                              onClick={() => openImagePreview(selectedTest)}
+                              className="clinical-test-image-preview-button mt-3 inline-flex max-w-full items-center gap-2 rounded-2xl border border-cyan-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-800 shadow-sm transition hover:bg-cyan-50 dark:border-cyan-300/20 dark:bg-white/5 dark:text-cyan-100 dark:hover:bg-white/10"
+                              style={safeWrapStyle}
+                              aria-label={`Ampliar imagem complementar - ${selectedTest.name}`}
                             >
-                              Abrir vídeo demonstrativo
-                              <ArrowRight size={14} />
-                            </a>
+                              <Eye size={14} />
+                              Ver imagem complementar
+                            </button>
                           )}
                         </div>
                       </div>
