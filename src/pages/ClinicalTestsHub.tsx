@@ -11,6 +11,8 @@ import {
   ChevronRight,
   ClipboardCheck,
   Eye,
+  ExternalLink,
+  FileText,
   Filter,
   HeartPulse,
   Info,
@@ -44,6 +46,16 @@ interface ClinicalTest {
   demo: string;
   image_url?: string | null;
   video_url?: string | null;
+  source_provider?: string | null;
+  source_url?: string | null;
+  source_title?: string | null;
+  source_attribution?: string | null;
+  image_source_url?: string | null;
+  image_license?: string | null;
+  image_attribution?: string | null;
+  import_status?: string | null;
+  reviewed_by_admin?: boolean | null;
+  isImported?: boolean;
   recordSuggestion: string;
   level: 'Essencial' | 'Intermediário' | 'Avançado';
   gradient: string;
@@ -76,9 +88,17 @@ const categories = [
   'Todos',
   'Ombro',
   'Joelho',
-  'Coluna',
-  'Tornozelo',
   'Quadril',
+  'Tornozelo',
+  'Tornozelo/Pé',
+  'Coluna',
+  'Coluna cervical',
+  'Coluna lombar',
+  'Coluna torácica',
+  'Cotovelo',
+  'Punho/Mão',
+  'Pelve/Sacroilíaca',
+  'Neurodinâmico',
   'Neurofuncional',
   'Funcional',
   'Cardiorrespiratório',
@@ -281,6 +301,235 @@ const safeWrapStyle = {
   whiteSpace: 'normal',
 } as const;
 
+const CLINICAL_TESTS_SELECT_WITH_IMPORT = [
+  'id',
+  'name',
+  'region',
+  'category',
+  'demo',
+  'image_url',
+  'video_url',
+  'is_active',
+  'source_provider',
+  'source_url',
+  'source_title',
+  'source_attribution',
+  'image_source_url',
+  'image_license',
+  'image_attribution',
+  'import_status',
+  'reviewed_by_admin',
+].join(', ');
+
+const CLINICAL_TESTS_BASIC_SELECT = 'id, name, region, category, demo, image_url, video_url, is_active';
+
+const normalizeForClinicalCompare = (value?: string | null) =>
+  String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const cleanClinicalText = (value?: string | null, fallback = '') => {
+  const text = String(value || '')
+    .replace(/\r/g, '\n')
+    .replace(/\*\*/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return text || fallback;
+};
+
+const removeSourceLines = (value?: string | null) =>
+  cleanClinicalText(value)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !/^fonte\s*(original)?\s*:/i.test(line))
+    .join('\n')
+    .trim();
+
+const clinicalSectionAliases: Record<string, string[]> = {
+  objective: ['objetivo', 'objetivo clinico', 'objective'],
+  indication: ['indicacao', 'indicacoes', 'indicação', 'indicações', 'quando usar'],
+  execution: ['como executar', 'execucao', 'execução', 'procedimento', 'como e feito', 'como é feito'],
+  positive: ['sinal positivo', 'resultado positivo', 'positivo', 'teste positivo'],
+  negative: ['sinal negativo', 'resultado negativo', 'negativo', 'teste negativo'],
+  interpretation: ['interpretacao', 'interpretação', 'interpretacao cuidados', 'interpretação cuidados', 'interpretacao/cuidados', 'interpretação/cuidados'],
+  precautions: ['cuidados', 'contraindicacoes', 'contraindicações', 'precaucoes', 'precauções'],
+};
+
+const resolveClinicalSectionKey = (label: string) => {
+  const normalizedLabel = normalizeForClinicalCompare(label);
+  return Object.entries(clinicalSectionAliases).find(([, aliases]) =>
+    aliases.some((alias) => normalizedLabel === normalizeForClinicalCompare(alias) || normalizedLabel.includes(normalizeForClinicalCompare(alias)))
+  )?.[0] || '';
+};
+
+const parseClinicalDemoSections = (demo?: string | null) => {
+  const sections: Record<string, string[]> = {};
+  let currentKey = '';
+
+  cleanClinicalText(demo)
+    .replace(/\s+(Objetivo|Objetivo clínico|Indicacao|Indicação|Indicações|Como executar|Execução|Procedimento|Sinal positivo|Resultado positivo|Sinal negativo|Resultado negativo|Interpretação\/cuidados|Interpretação|Cuidados|Contraindicações|Precauções|Fonte original|Fonte)\s*:/gi, '\n$1:')
+    .split('\n')
+    .map((line) => line.trim().replace(/^[-•#\s]+/, '').trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const colonMatch = line.match(/^([^:：–—-]{2,72})\s*[:：–—-]\s*(.*)$/);
+      const exactKey = resolveClinicalSectionKey(line);
+      const key = colonMatch ? resolveClinicalSectionKey(colonMatch[1]) : exactKey;
+
+      if (key) {
+        currentKey = key;
+        const remainder = colonMatch?.[2]?.trim();
+        if (remainder) sections[currentKey] = [...(sections[currentKey] || []), remainder];
+        return;
+      }
+
+      if (currentKey) {
+        sections[currentKey] = [...(sections[currentKey] || []), line];
+      }
+    });
+
+  return Object.fromEntries(
+    Object.entries(sections).map(([key, values]) => [key, removeSourceLines(values.join(' '))])
+  ) as Record<string, string>;
+};
+
+const isImportColumnError = (error: any) => {
+  const message = [error?.message, error?.details, error?.hint, error?.code].filter(Boolean).join(' ').toLowerCase();
+  return message.includes('column') && message.includes('does not exist');
+};
+
+const shouldExposeClinicalRow = (row: any) => {
+  if (!row || row.is_active === false) return false;
+
+  const sourceProvider = String(row.source_provider || '').toLowerCase();
+  if (!sourceProvider) return true;
+
+  const importStatus = String(row.import_status || '').toLowerCase();
+  return row.reviewed_by_admin === true || importStatus === 'published' || importStatus === 'reviewed';
+};
+
+const getClinicalGradient = (region?: string | null, index = 0) => {
+  const normalizedRegion = normalizeForClinicalCompare(region);
+  if (normalizedRegion.includes('ombro')) return 'from-sky-500 via-blue-500 to-indigo-600';
+  if (normalizedRegion.includes('joelho')) return 'from-emerald-500 via-teal-500 to-cyan-600';
+  if (normalizedRegion.includes('quadril') || normalizedRegion.includes('pelve')) return 'from-fuchsia-500 via-violet-500 to-indigo-600';
+  if (normalizedRegion.includes('tornozelo') || normalizedRegion.includes('pe')) return 'from-lime-500 via-emerald-500 to-teal-600';
+  if (normalizedRegion.includes('coluna') || normalizedRegion.includes('cervical') || normalizedRegion.includes('lombar')) return 'from-amber-500 via-orange-500 to-red-600';
+  if (normalizedRegion.includes('cotovelo') || normalizedRegion.includes('punho') || normalizedRegion.includes('mao')) return 'from-cyan-500 via-blue-500 to-violet-600';
+  if (normalizedRegion.includes('neuro')) return 'from-orange-500 via-rose-500 to-pink-600';
+  if (normalizedRegion.includes('cardio')) return 'from-red-500 via-rose-500 to-fuchsia-600';
+  const gradients = [
+    'from-blue-500 via-violet-500 to-fuchsia-600',
+    'from-indigo-500 via-violet-500 to-fuchsia-600',
+    'from-purple-500 via-violet-500 to-indigo-600',
+  ];
+  return gradients[index % gradients.length];
+};
+
+const getClinicalIcon = (region?: string | null, category?: string | null) => {
+  const normalized = normalizeForClinicalCompare(`${region || ''} ${category || ''}`);
+  if (normalized.includes('neuro') || normalized.includes('cervical') || normalized.includes('lombar')) return Brain;
+  if (normalized.includes('funcional') || normalized.includes('cardio')) return HeartPulse;
+  if (normalized.includes('joelho') || normalized.includes('ombro') || normalized.includes('quadril') || normalized.includes('tornozelo')) return Bone;
+  if (normalized.includes('cotovelo') || normalized.includes('punho') || normalized.includes('mao')) return Activity;
+  return Stethoscope;
+};
+
+const inferImportedLevel = (demo?: string | null, category?: string | null): ClinicalTest['level'] => {
+  const normalized = normalizeForClinicalCompare(`${demo || ''} ${category || ''}`);
+  if (normalized.includes('contraindic') || normalized.includes('radicular') || normalized.includes('instabilidade') || normalized.includes('neuro')) return 'Avançado';
+  if (normalized.includes('menisc') || normalized.includes('compress') || normalized.includes('resistencia')) return 'Intermediário';
+  return 'Essencial';
+};
+
+const mapImportedClinicalTest = (row: any, index = 0): ClinicalTest => {
+  const demo = cleanClinicalText(row?.demo, 'Rascunho revisado pelo Admin. Complete as informações clínicas conforme necessário.');
+  const sections = parseClinicalDemoSections(demo);
+  const name = cleanClinicalText(row?.name || row?.source_title, 'Teste clínico');
+  const region = cleanClinicalText(row?.region, 'Ortopédico');
+  const category = cleanClinicalText(row?.category, 'Ortopédico');
+  const objective = removeSourceLines(sections.objective || sections.indication || demo.split('\n')[0]);
+  const execution = removeSourceLines(sections.execution || 'Completar na revisão clínica antes de aplicar no paciente.');
+  const positive = removeSourceLines(sections.positive || 'Completar sinal positivo na revisão clínica.');
+  const negative = removeSourceLines(sections.negative || 'Resultado negativo: ausência de reprodução dos sinais descritos, quando aplicável e validado pelo fisioterapeuta.');
+  const interpretation = removeSourceLines(sections.interpretation || 'Interpretar junto com história clínica, exame físico e demais achados funcionais.');
+  const precautions = removeSourceLines(sections.precautions || 'Aplicar com critério profissional, respeitando dor, irritabilidade, contraindicações e segurança do paciente.');
+
+  return {
+    id: String(row?.id || `clinical-test-${index}`),
+    name,
+    region,
+    category,
+    objective,
+    execution,
+    positive,
+    negative,
+    interpretation,
+    precautions,
+    demo,
+    image_url: row?.image_url || null,
+    video_url: row?.video_url || null,
+    source_provider: row?.source_provider || null,
+    source_url: row?.source_url || null,
+    source_title: row?.source_title || null,
+    source_attribution: row?.source_attribution || null,
+    image_source_url: row?.image_source_url || null,
+    image_license: row?.image_license || null,
+    image_attribution: row?.image_attribution || null,
+    import_status: row?.import_status || null,
+    reviewed_by_admin: row?.reviewed_by_admin ?? null,
+    isImported: Boolean(row?.source_provider),
+    recordSuggestion: `${name}: registrar lado avaliado, resposta do paciente, resultado, sinais reproduzidos, intensidade dos sintomas e correlação com o quadro funcional.`,
+    level: inferImportedLevel(demo, category),
+    gradient: getClinicalGradient(region, index),
+    icon: getClinicalIcon(region, category),
+  };
+};
+
+const mergeClinicalTestsWithRows = (rows: any[] = []) => {
+  const activeRows = rows.filter(shouldExposeClinicalRow);
+  const rowsById = new Map(activeRows.map((row) => [String(row.id || ''), row]));
+  const usedIds = new Set<string>();
+
+  const baseTests = clinicalTests.map((test) => {
+    const row = rowsById.get(test.id) as any;
+    usedIds.add(test.id);
+    if (!row) return test;
+
+    return {
+      ...test,
+      demo: cleanClinicalText(row.demo, test.demo),
+      image_url: row.image_url || test.image_url || null,
+      video_url: row.video_url || test.video_url || null,
+      source_provider: row.source_provider || test.source_provider || null,
+      source_url: row.source_url || test.source_url || null,
+      source_title: row.source_title || test.source_title || null,
+      source_attribution: row.source_attribution || test.source_attribution || null,
+      image_source_url: row.image_source_url || test.image_source_url || null,
+      image_license: row.image_license || test.image_license || null,
+      image_attribution: row.image_attribution || test.image_attribution || null,
+      import_status: row.import_status || test.import_status || null,
+      reviewed_by_admin: row.reviewed_by_admin ?? test.reviewed_by_admin ?? null,
+      isImported: Boolean(row.source_provider || test.isImported),
+    };
+  });
+
+  const importedTests = activeRows
+    .filter((row) => row?.id && !usedIds.has(String(row.id)))
+    .map((row, index) => mapImportedClinicalTest(row, index));
+
+  return [...baseTests, ...importedTests].sort((a, b) => {
+    const regionCompare = a.region.localeCompare(b.region, 'pt-BR');
+    if (regionCompare !== 0) return regionCompare;
+    return a.name.localeCompare(b.name, 'pt-BR');
+  });
+};
+
 const getPatientName = (patient?: ClinicalPatient | null) => {
   return String(patient?.nome_completo || patient?.nome || 'Paciente sem nome').trim() || 'Paciente sem nome';
 };
@@ -339,6 +588,9 @@ ${test.recordSuggestion}
 
 ## Demonstração
 ${test.demo}
+${test.source_url ? `
+## Fonte do teste
+${test.source_provider === 'physiopedia' ? 'Physiopedia' : test.source_provider || 'Fonte externa'}: ${test.source_url}` : ''}
 
 ---
 Documento clínico gerado pelo FisioCareHub para apoio ao prontuário e acompanhamento funcional do paciente.`;
@@ -360,53 +612,61 @@ export default function ClinicalTestsHub() {
   const [clinicalResult, setClinicalResult] = useState<ClinicalTestResult | ''>('');
   const [clinicalObservation, setClinicalObservation] = useState('');
   const [savingRecord, setSavingRecord] = useState(false);
+  const [testsLoading, setTestsLoading] = useState(false);
   const selectedTestDetailRef = useRef<HTMLDivElement | null>(null);
+
+  const availableCategories = useMemo(() => {
+    const dynamic = Array.from(new Set(tests.map((test) => test.region).filter(Boolean)));
+    return ['Todos', ...Array.from(new Set([...categories.slice(1), ...dynamic]))];
+  }, [tests]);
+
+  const stats = useMemo(() => [
+    { label: 'Testes clínicos', value: tests.length, icon: ClipboardCheck },
+    { label: 'Categorias', value: Math.max(availableCategories.length - 1, 0), icon: Layers },
+    { label: 'Importados publicados', value: tests.filter((test) => Boolean(test.source_provider)).length, icon: FileText },
+  ], [availableCategories.length, tests]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadClinicalTestMedia = async () => {
+    const loadClinicalTestsFromDatabase = async () => {
+      setTestsLoading(true);
       try {
-        const { data, error } = await supabase
+        let result: any = await supabase
           .from('clinical_tests')
-          .select('id, image_url, video_url, demo, is_active');
+          .select(CLINICAL_TESTS_SELECT_WITH_IMPORT)
+          .order('region', { ascending: true })
+          .order('name', { ascending: true });
 
-        if (error) {
-          console.warn('Clinical tests media not loaded:', error.message);
+        if (result.error && isImportColumnError(result.error)) {
+          result = await supabase
+            .from('clinical_tests')
+            .select(CLINICAL_TESTS_BASIC_SELECT)
+            .order('region', { ascending: true })
+            .order('name', { ascending: true });
+        }
+
+        if (result.error) {
+          console.warn('Clinical tests not loaded from database:', result.error.message);
           return;
         }
 
-        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+        if (!isMounted) return;
 
-        const mediaById = new Map(
-          data
-            .filter((item: any) => item?.is_active !== false)
-            .map((item: any) => [String(item.id), item])
-        );
-
-        const nextTests = clinicalTests.map((test) => {
-          const media = mediaById.get(test.id) as any;
-          if (!media) return test;
-
-          return {
-            ...test,
-            demo: String(media.demo || test.demo),
-            image_url: media.image_url || test.image_url || null,
-            video_url: media.video_url || test.video_url || null,
-          };
-        });
-
+        const nextTests = mergeClinicalTestsWithRows(Array.isArray(result.data) ? result.data : []);
         setTests(nextTests);
         setSelectedTest((current) => {
           if (!current) return nextTests[0] || null;
-          return nextTests.find((test) => test.id === current.id) || current;
+          return nextTests.find((test) => test.id === current.id) || nextTests[0] || null;
         });
       } catch (error) {
-        console.warn('Clinical tests media fetch failed:', error);
+        console.warn('Clinical tests fetch failed:', error);
+      } finally {
+        if (isMounted) setTestsLoading(false);
       }
     };
 
-    loadClinicalTestMedia();
+    loadClinicalTestsFromDatabase();
 
     return () => {
       isMounted = false;
@@ -414,15 +674,26 @@ export default function ClinicalTestsHub() {
   }, []);
 
   const filteredTests = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = normalizeForClinicalCompare(query);
+    const normalizedCategory = normalizeForClinicalCompare(activeCategory);
 
     return tests.filter((test) => {
-      const matchesCategory = activeCategory === 'Todos' || test.region === activeCategory || test.category === activeCategory;
-      const matchesSearch = !normalizedQuery
-        || test.name.toLowerCase().includes(normalizedQuery)
-        || test.region.toLowerCase().includes(normalizedQuery)
-        || test.category.toLowerCase().includes(normalizedQuery)
-        || test.objective.toLowerCase().includes(normalizedQuery);
+      const normalizedRegion = normalizeForClinicalCompare(test.region);
+      const normalizedTestCategory = normalizeForClinicalCompare(test.category);
+      const matchesCategory = activeCategory === 'Todos'
+        || normalizedRegion === normalizedCategory
+        || normalizedTestCategory === normalizedCategory
+        || normalizedRegion.includes(normalizedCategory)
+        || normalizedCategory.includes(normalizedRegion);
+      const searchable = normalizeForClinicalCompare([
+        test.name,
+        test.region,
+        test.category,
+        test.objective,
+        test.source_title,
+        test.demo,
+      ].filter(Boolean).join(' '));
+      const matchesSearch = !normalizedQuery || searchable.includes(normalizedQuery);
 
       return matchesCategory && matchesSearch;
     });
@@ -575,6 +846,8 @@ export default function ClinicalTestsHub() {
           clinical_result: clinicalResult,
           clinical_result_label: getClinicalResultLabel(clinicalResult),
           clinical_observation: clinicalObservation.trim() || null,
+          source_provider: pendingRecordTest.source_provider || null,
+          source_url: pendingRecordTest.source_url || null,
         },
       };
 
@@ -665,7 +938,7 @@ export default function ClinicalTestsHub() {
                     </div>
                   </div>
                   <div className="grid min-w-0 grid-cols-2 gap-3">
-                    {categories.slice(1, 7).map((category, index) => (
+                    {availableCategories.slice(1, 7).map((category, index) => (
                       <button
                         key={category}
                         onClick={() => setActiveCategory(category)}
@@ -704,7 +977,7 @@ export default function ClinicalTestsHub() {
               </div>
               <div className="mt-4 flex max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">
                 <Filter className="shrink-0 text-slate-400" size={16} />
-                {categories.map((category) => (
+                {availableCategories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
@@ -719,9 +992,22 @@ export default function ClinicalTestsHub() {
                   </button>
                 ))}
               </div>
+              {testsLoading && (
+                <div className="clinical-tests-loading-note mt-4 flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-black text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200">
+                  <Loader2 className="animate-spin" size={16} />
+                  Atualizando testes publicados pelo Admin...
+                </div>
+              )}
             </div>
 
             <div className="grid w-full min-w-0 grid-cols-1 gap-3 overflow-x-hidden">
+              {filteredTests.length === 0 && (
+                <div className="clinical-tests-empty-state rounded-[1.75rem] border border-dashed border-slate-300 bg-white/85 p-6 text-center shadow-lg shadow-slate-200/40 dark:border-white/10 dark:bg-slate-950/60 dark:shadow-none">
+                  <Search className="mx-auto mb-3 text-slate-400" size={34} />
+                  <p className="text-base font-black text-slate-950 dark:text-white">Nenhum teste encontrado</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">Revise os filtros ou publique novos testes pelo Admin.</p>
+                </div>
+              )}
               {filteredTests.map((test) => {
                 const Icon = test.icon;
                 const isActive = selectedTest?.id === test.id;
@@ -731,20 +1017,31 @@ export default function ClinicalTestsHub() {
                     type="button"
                     onClick={() => handleSelectTest(test)}
                     className={cn(
-                      'group block w-full min-w-0 overflow-hidden rounded-[1.5rem] border p-3 text-left transition-all sm:rounded-[1.75rem] sm:p-4',
+                      'clinical-test-card group block w-full min-w-0 overflow-hidden rounded-[1.5rem] border p-3 text-left transition-all sm:rounded-[1.75rem] sm:p-4',
                       isActive
-                        ? 'border-blue-300 bg-white shadow-2xl shadow-blue-200/60 dark:border-blue-300/30 dark:bg-white/10 dark:shadow-blue-950/20'
+                        ? 'clinical-test-card-active border-blue-300 bg-white shadow-2xl shadow-blue-200/60 dark:border-blue-300/30 dark:bg-white/10 dark:shadow-blue-950/20'
                         : 'border-slate-200 bg-white/80 shadow-lg shadow-slate-200/40 hover:border-violet-300 hover:bg-white dark:border-white/10 dark:bg-slate-950/60 dark:shadow-none dark:hover:bg-white/5',
                     )}
                   >
                     <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
-                      <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg sm:h-14 sm:w-14', test.gradient)}>
-                        <Icon size={24} />
-                      </div>
+                      {test.image_url ? (
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/80 bg-slate-100 shadow-lg dark:border-white/10 dark:bg-white/10">
+                          <img src={test.image_url} alt={`Prévia - ${test.name}`} className="h-full w-full object-cover" loading="lazy" />
+                        </div>
+                      ) : (
+                        <div className={cn('clinical-test-gradient-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg sm:h-14 sm:w-14', test.gradient)}>
+                          <Icon size={24} />
+                        </div>
+                      )}
                       <div className="w-full min-w-0 flex-1">
                         <div className="flex w-full min-w-0 flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                           <h3 className="w-full min-w-0 text-base font-black leading-tight text-slate-950 dark:text-white sm:w-auto sm:flex-1" style={safeWrapStyle}>{test.name}</h3>
-                          <span className="max-w-full rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200" style={safeWrapStyle}>{test.level}</span>
+                          <div className="flex max-w-full flex-wrap items-center gap-1.5">
+                            {test.source_provider && (
+                              <span className="clinical-test-imported-pill max-w-full rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-violet-700 dark:border-violet-300/20 dark:bg-violet-500/10 dark:text-violet-200" style={safeWrapStyle}>Admin</span>
+                            )}
+                            <span className="clinical-test-badge max-w-full rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200" style={safeWrapStyle}>{test.level}</span>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400" style={safeWrapStyle}>{test.region} • {test.category}</p>
                         <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300" style={safeWrapStyle}>{test.objective}</p>
@@ -770,11 +1067,16 @@ export default function ClinicalTestsHub() {
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.32),transparent_34%)]" />
                     <div className="relative flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="w-full min-w-0 flex-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/75 sm:tracking-[0.24em]" style={safeWrapStyle}>{selectedTest.region} • {selectedTest.category}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/75 sm:tracking-[0.24em]" style={safeWrapStyle}>{selectedTest.region} • {selectedTest.category}</p>
+                          {selectedTest.source_provider && (
+                            <span className="rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur">Importado pelo Admin</span>
+                          )}
+                        </div>
                         <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl" style={safeWrapStyle}>{selectedTest.name}</h2>
                         <p className="mt-3 text-sm font-medium leading-relaxed text-white/85" style={safeWrapStyle}>{selectedTest.objective}</p>
                       </div>
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur sm:h-14 sm:w-14">
+                      <div className="clinical-test-gradient-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur sm:h-14 sm:w-14">
                         <SelectedIcon size={28} />
                       </div>
                     </div>
@@ -824,6 +1126,43 @@ export default function ClinicalTestsHub() {
                         </div>
                       </div>
                     </div>
+
+
+
+                    {selectedTest.source_url && (
+                      <div className="clinical-test-source-card w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-blue-50 p-4 shadow-sm shadow-violet-100/70 dark:border-violet-300/20 dark:bg-none dark:bg-violet-500/10 dark:shadow-none sm:rounded-[1.75rem]">
+                        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
+                          <FileText className="mt-1 shrink-0 text-violet-700 dark:text-violet-200" size={22} />
+                          <div className="w-full min-w-0 flex-1">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-violet-800 dark:text-violet-200" style={safeWrapStyle}>Fonte e revisão</h3>
+                            <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-200" style={safeWrapStyle}>
+                              Conteúdo importado pelo Admin como apoio clínico e publicado após revisão. Use sempre com julgamento profissional e correlação com o paciente.
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-violet-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-violet-700 dark:border-violet-300/20 dark:bg-white/10 dark:text-violet-200">{selectedTest.source_provider === 'physiopedia' ? 'Physiopedia' : selectedTest.source_provider || 'Fonte externa'}</span>
+                              {selectedTest.image_license && (
+                                <span className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-700 dark:border-blue-300/20 dark:bg-white/10 dark:text-blue-200">Imagem: {selectedTest.image_license}</span>
+                              )}
+                            </div>
+                            <a
+                              href={selectedTest.source_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="clinical-test-source-link mt-4 inline-flex max-w-full items-center gap-2 rounded-2xl bg-violet-700 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-violet-200/70 transition hover:bg-violet-600 dark:shadow-none"
+                              style={safeWrapStyle}
+                            >
+                              Ver fonte original
+                              <ExternalLink size={14} />
+                            </a>
+                            {(selectedTest.source_attribution || selectedTest.image_attribution) && (
+                              <p className="mt-3 text-[11px] font-semibold leading-relaxed text-slate-500 dark:text-slate-400" style={safeWrapStyle}>
+                                {selectedTest.source_attribution || selectedTest.image_attribution}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10 sm:rounded-[1.75rem]">
                       <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
