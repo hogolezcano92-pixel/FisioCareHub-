@@ -7226,6 +7226,27 @@ html:not(.dark) .clinical-test-image-modal-close {
   color: #0f172a;
 }
 
+
+.clinical-test-steps-card {
+  color: #0f172a;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-steps-card {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-steps-card h3,
+html:not(.dark) .clinical-tests-hub .clinical-test-steps-card p,
+html:not(.dark) .clinical-tests-hub .clinical-test-steps-card span,
+html:not(.dark) .clinical-tests-hub .clinical-test-step-item {
+  opacity: 1 !important;
+}
+
+html:not(.dark) .clinical-tests-hub .clinical-test-step-item {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: #dbeafe !important;
+}
+
 .clinical-test-original-transcript summary::-webkit-details-marker {
   display: none;
 }
