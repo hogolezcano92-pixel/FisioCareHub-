@@ -51,7 +51,14 @@ interface ClinicalTest {
   video_provider?: string | null;
   video_thumbnail_url?: string | null;
   video_source_url?: string | null;
+  video_license?: string | null;
   video_status?: string | null;
+  video_transcript_original?: string | null;
+  video_transcript_pt?: string | null;
+  video_subtitle_vtt_pt?: string | null;
+  video_subtitle_status?: string | null;
+  video_subtitle_reviewed?: boolean | null;
+  video_subtitle_generated_at?: string | null;
   source_provider?: string | null;
   source_url?: string | null;
   source_title?: string | null;
@@ -318,7 +325,14 @@ const CLINICAL_TESTS_SELECT_WITH_IMPORT = [
   'video_provider',
   'video_thumbnail_url',
   'video_source_url',
+  'video_license',
   'video_status',
+  'video_transcript_original',
+  'video_transcript_pt',
+  'video_subtitle_vtt_pt',
+  'video_subtitle_status',
+  'video_subtitle_reviewed',
+  'video_subtitle_generated_at',
   'is_active',
   'source_provider',
   'source_url',
@@ -522,6 +536,49 @@ const getClinicalVideoLabel = (provider?: string | null) => {
   return 'Vídeo demonstrativo';
 };
 
+const decodeClinicalVttText = (vtt?: string | null) => {
+  const raw = cleanClinicalText(vtt);
+  if (!raw) return '';
+
+  return raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (!line) return false;
+      if (/^WEBVTT/i.test(line)) return false;
+      if (/^NOTE\b/i.test(line)) return false;
+      if (/^\d+$/.test(line)) return false;
+      if (/-->/.test(line)) return false;
+      return true;
+    })
+    .join(' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const getClinicalVideoTranscript = (test?: ClinicalTest | null) => {
+  return cleanClinicalText(test?.video_transcript_pt) || decodeClinicalVttText(test?.video_subtitle_vtt_pt);
+};
+
+const hasClinicalVideoTranscript = (test?: ClinicalTest | null) => Boolean(getClinicalVideoTranscript(test));
+
+const getClinicalSubtitleStatusLabel = (status?: string | null, reviewed?: boolean | null) => {
+  const normalizedStatus = normalizeForClinicalCompare(status || '');
+  if (reviewed === true || normalizedStatus === 'reviewed' || normalizedStatus === 'published') return 'Legenda revisada';
+  if (normalizedStatus === 'draft') return 'Legenda em rascunho';
+  if (normalizedStatus === 'generated') return 'Legenda gerada';
+  if (normalizedStatus === 'not generated' || normalizedStatus === 'nao gerada') return 'Legenda não gerada';
+  return status ? `Legenda: ${status}` : 'Legenda PT-BR';
+};
+
+const getClinicalSubtitleTrackSrc = (vtt?: string | null) => {
+  const raw = String(vtt || '').trim();
+  if (!raw) return '';
+  const normalized = /^WEBVTT/i.test(raw) ? raw : `WEBVTT\n\n${raw}`;
+  return `data:text/vtt;charset=utf-8,${encodeURIComponent(normalized)}`;
+};
+
 const inferImportedLevel = (demo?: string | null, category?: string | null): ClinicalTest['level'] => {
   const normalized = normalizeForClinicalCompare(`${demo || ''} ${category || ''}`);
   if (normalized.includes('contraindic') || normalized.includes('radicular') || normalized.includes('instabilidade') || normalized.includes('neuro')) return 'Avançado';
@@ -559,7 +616,14 @@ const mapImportedClinicalTest = (row: any, index = 0): ClinicalTest => {
     video_provider: row?.video_provider || null,
     video_thumbnail_url: row?.video_thumbnail_url || null,
     video_source_url: row?.video_source_url || null,
+    video_license: row?.video_license || null,
     video_status: row?.video_status || null,
+    video_transcript_original: row?.video_transcript_original || null,
+    video_transcript_pt: row?.video_transcript_pt || null,
+    video_subtitle_vtt_pt: row?.video_subtitle_vtt_pt || null,
+    video_subtitle_status: row?.video_subtitle_status || null,
+    video_subtitle_reviewed: row?.video_subtitle_reviewed ?? null,
+    video_subtitle_generated_at: row?.video_subtitle_generated_at || null,
     source_provider: row?.source_provider || null,
     source_url: row?.source_url || null,
     source_title: row?.source_title || null,
@@ -595,7 +659,14 @@ const mergeClinicalTestsWithRows = (rows: any[] = []) => {
       video_provider: row.video_provider || test.video_provider || null,
       video_thumbnail_url: row.video_thumbnail_url || test.video_thumbnail_url || null,
       video_source_url: row.video_source_url || test.video_source_url || null,
+      video_license: row.video_license || test.video_license || null,
       video_status: row.video_status || test.video_status || null,
+      video_transcript_original: row.video_transcript_original || test.video_transcript_original || null,
+      video_transcript_pt: row.video_transcript_pt || test.video_transcript_pt || null,
+      video_subtitle_vtt_pt: row.video_subtitle_vtt_pt || test.video_subtitle_vtt_pt || null,
+      video_subtitle_status: row.video_subtitle_status || test.video_subtitle_status || null,
+      video_subtitle_reviewed: row.video_subtitle_reviewed ?? test.video_subtitle_reviewed ?? null,
+      video_subtitle_generated_at: row.video_subtitle_generated_at || test.video_subtitle_generated_at || null,
       source_provider: row.source_provider || test.source_provider || null,
       source_url: row.source_url || test.source_url || null,
       source_title: row.source_title || test.source_title || null,
@@ -678,9 +749,15 @@ ${test.recordSuggestion}
 
 ## Demonstração
 ${test.demo}
+${test.image_url ? `
+## Imagem demonstrativa
+${test.image_url}` : ''}
 ${shouldDisplayClinicalVideo(test) ? `
 ## Vídeo demonstrativo
 ${getClinicalVideoLabel(test.video_provider)}: ${test.video_url}` : ''}
+${hasClinicalVideoTranscript(test) ? `
+## Legenda / transcrição clínica em português
+${getClinicalVideoTranscript(test)}` : ''}
 ${test.source_url ? `
 ## Fonte do teste
 ${test.source_provider === 'physiopedia' ? 'Physiopedia' : test.source_provider || 'Fonte externa'}: ${test.source_url}` : ''}
@@ -983,6 +1060,11 @@ export default function ClinicalTestsHub() {
           clinical_observation: clinicalObservation.trim() || null,
           source_provider: pendingRecordTest.source_provider || null,
           source_url: pendingRecordTest.source_url || null,
+          image_url: pendingRecordTest.image_url || null,
+          video_url: pendingRecordTest.video_url || null,
+          video_provider: pendingRecordTest.video_provider || null,
+          video_transcript_pt: getClinicalVideoTranscript(pendingRecordTest) || null,
+          video_subtitle_status: pendingRecordTest.video_subtitle_status || null,
         },
       };
 
@@ -1206,6 +1288,9 @@ export default function ClinicalTestsHub() {
                             {shouldDisplayClinicalVideo(test) && (
                               <span className="clinical-test-video-pill max-w-full rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-700 dark:border-cyan-300/20 dark:bg-cyan-500/10 dark:text-cyan-200" style={safeWrapStyle}>Vídeo</span>
                             )}
+                            {hasClinicalVideoTranscript(test) && (
+                              <span className="clinical-test-subtitle-pill max-w-full rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200" style={safeWrapStyle}>Legenda PT-BR</span>
+                            )}
                             <span className="clinical-test-badge max-w-full rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-500/10 dark:text-blue-200" style={safeWrapStyle}>{test.level}</span>
                           </div>
                         </div>
@@ -1299,7 +1384,17 @@ export default function ClinicalTestsHub() {
                                     poster={selectedTest.video_thumbnail_url || selectedTest.image_url || undefined}
                                     controls
                                     preload="metadata"
-                                  />
+                                  >
+                                    {selectedTest.video_subtitle_vtt_pt && (
+                                      <track
+                                        kind="subtitles"
+                                        src={getClinicalSubtitleTrackSrc(selectedTest.video_subtitle_vtt_pt)}
+                                        srcLang="pt-BR"
+                                        label="Português (Brasil)"
+                                        default
+                                      />
+                                    )}
+                                  </video>
                                 ) : (
                                   <a
                                     href={selectedTest.video_url || '#'}
@@ -1394,7 +1489,37 @@ export default function ClinicalTestsHub() {
                       </div>
                     </div>
 
-
+                    {hasClinicalVideoTranscript(selectedTest) && (
+                      <div className="clinical-test-transcript-card w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4 shadow-sm shadow-emerald-100/70 dark:border-emerald-300/20 dark:bg-none dark:bg-emerald-500/10 dark:shadow-none sm:rounded-[1.75rem]">
+                        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
+                          <FileText className="mt-1 shrink-0 text-emerald-700 dark:text-emerald-200" size={22} />
+                          <div className="w-full min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h3 className="text-sm font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200" style={safeWrapStyle}>Legenda / transcrição clínica</h3>
+                              <span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:border-emerald-300/20 dark:bg-white/10 dark:text-emerald-200" style={safeWrapStyle}>
+                                {getClinicalSubtitleStatusLabel(selectedTest.video_subtitle_status, selectedTest.video_subtitle_reviewed)}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-200" style={safeWrapStyle}>
+                              {getClinicalVideoTranscript(selectedTest)}
+                            </p>
+                            {selectedTest.video_subtitle_generated_at && (
+                              <p className="mt-3 text-[11px] font-bold text-emerald-700 dark:text-emerald-300" style={safeWrapStyle}>
+                                Gerada em {new Date(selectedTest.video_subtitle_generated_at).toLocaleDateString('pt-BR')} pelo Admin.
+                              </p>
+                            )}
+                            {selectedTest.video_transcript_original && (
+                              <details className="clinical-test-original-transcript mt-3 rounded-2xl border border-emerald-100 bg-white/75 p-3 dark:border-white/10 dark:bg-white/5">
+                                <summary className="cursor-pointer text-[11px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-200">Ver observação/transcrição original</summary>
+                                <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-300" style={safeWrapStyle}>
+                                  {selectedTest.video_transcript_original}
+                                </p>
+                              </details>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {selectedTest.source_url && (
                       <div className="clinical-test-source-card w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-blue-50 p-4 shadow-sm shadow-violet-100/70 dark:border-violet-300/20 dark:bg-none dark:bg-violet-500/10 dark:shadow-none sm:rounded-[1.75rem]">
