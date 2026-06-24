@@ -347,194 +347,49 @@ const CLINICAL_TESTS_SELECT_WITH_IMPORT = [
 
 const CLINICAL_TESTS_BASIC_SELECT = 'id, name, region, category, demo, image_url, video_url, is_active';
 
-const normalizeForClinicalCompare = (value?: unknown) =>
-  cleanClinicalText(value)
+const normalizeForClinicalCompare = (value?: string | null) =>
+  String(value || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-const isClinicalRecord = (value: unknown): value is Record<string, unknown> => {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-};
-
-const clinicalFieldLabels: Record<string, string> = {
-  objective: 'Objetivo',
-  objetivo: 'Objetivo',
-  indication: 'Indicação',
-  indicacao: 'Indicação',
-  indicacoes: 'Indicações',
-  execution: 'Como executar',
-  execucao: 'Execução',
-  procedure: 'Procedimento',
-  procedimento: 'Procedimento',
-  positive: 'Sinal positivo',
-  positivo: 'Sinal positivo',
-  negative: 'Sinal negativo',
-  negativo: 'Sinal negativo',
-  interpretation: 'Interpretação/cuidados',
-  interpretacao: 'Interpretação/cuidados',
-  precautions: 'Precauções',
-  cuidados: 'Cuidados',
-  contraindications: 'Contraindicações',
-  contraindicacoes: 'Contraindicações',
-  demo: 'Demonstração',
-  steps: 'Passo a passo',
-  passos: 'Passo a passo',
-  step_by_step: 'Passo a passo',
-  source: 'Fonte original',
-  source_url: 'Fonte original',
-};
-
-const clinicalPrimaryTextKeys = [
-  'pt_br',
-  'ptBR',
-  'pt',
-  'text',
-  'texto',
-  'content',
-  'conteudo',
-  'description',
-  'descricao',
-  'summary',
-  'resumo',
-  'extract',
-  'transcript',
-  'transcricao',
-  'caption',
-  'legenda',
-  'value',
-  'label',
-  'title',
-  'titulo',
-  'name',
-  'nome',
-];
-
-const clinicalUrlKeys = [
-  'url',
-  'href',
-  'src',
-  'link',
-  'source_url',
-  'sourceUrl',
-  'video_url',
-  'videoUrl',
-  'image_url',
-  'imageUrl',
-  'thumbnail_url',
-  'thumbnailUrl',
-  'publicUrl',
-  'descriptionurl',
-  'fullurl',
-];
-
-const humanizeClinicalObjectKey = (key: string) => {
-  const normalized = key
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .toLowerCase()
-    .trim();
-
-  const compact = normalized.replace(/\s+/g, '_');
-  if (clinicalFieldLabels[compact]) return clinicalFieldLabels[compact];
-  if (clinicalFieldLabels[normalized]) return clinicalFieldLabels[normalized];
-  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : 'Campo';
-};
-
-const stripClinicalText = (value: string) => {
-  return String(value || '')
+const cleanClinicalText = (value?: string | null, fallback = '') => {
+  const text = String(value || '')
     .replace(/\r/g, '\n')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
     .replace(/\*\*/g, '')
-    .replace(/\b\[object\s+(?:Object|Array)\]\b/gi, ' ')
     .replace(/[ \t]+/g, ' ')
-    .replace(/\n[ \t]+/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-};
 
-const clinicalTextFromUnknown = (value: unknown, depth = 0): string => {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return stripClinicalText(String(value));
-  if (value instanceof Date) return value.toISOString();
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => clinicalTextFromUnknown(item, depth + 1))
-      .filter(Boolean)
-      .join('\n')
-      .trim();
-  }
-
-  if (!isClinicalRecord(value) || depth > 4) return '';
-
-  for (const key of clinicalPrimaryTextKeys) {
-    if (Object.prototype.hasOwnProperty.call(value, key)) {
-      const direct = clinicalTextFromUnknown(value[key], depth + 1);
-      if (direct) return direct;
-    }
-  }
-
-  const lines = Object.entries(value)
-    .filter(([key]) => !['id', 'pageid', 'metadata', 'meta', 'raw', 'html'].includes(key))
-    .map(([key, item]) => {
-      const text = clinicalTextFromUnknown(item, depth + 1);
-      if (!text) return '';
-      return `${humanizeClinicalObjectKey(key)}: ${text}`;
-    })
-    .filter(Boolean);
-
-  return lines.join('\n').trim();
-};
-
-const cleanClinicalText = (value?: unknown, fallback = '') => {
-  const text = clinicalTextFromUnknown(value);
   return text || fallback;
 };
 
-const getClinicalUrl = (value?: unknown): string | null => {
-  if (value === null || value === undefined) return null;
-
-  if (typeof value === 'string') {
-    const text = cleanClinicalText(value);
-    return text && !/^\[object/i.test(text) ? text : null;
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const url = getClinicalUrl(item);
-      if (url) return url;
-    }
-    return null;
-  }
-
-  if (isClinicalRecord(value)) {
-    for (const key of clinicalUrlKeys) {
-      const url = getClinicalUrl(value[key]);
-      if (url) return url;
-    }
-  }
-
-  return null;
-};
-
-const removeSourceLines = (value?: unknown) =>
+const removeSourceLines = (value?: string | null) =>
   cleanClinicalText(value)
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line && !/^fonte\s*(original)?\s*:/i.test(line))
     .join('\n')
     .trim();
+
+const clinicalSectionAliases: Record<string, string[]> = {
+  objective: ['objetivo', 'objetivo clinico', 'objective'],
+  indication: ['indicacao', 'indicacoes', 'indicação', 'indicações', 'quando usar'],
+  execution: ['como executar', 'execucao', 'execução', 'procedimento', 'como e feito', 'como é feito'],
+  positive: ['sinal positivo', 'resultado positivo', 'positivo', 'teste positivo'],
+  negative: ['sinal negativo', 'resultado negativo', 'negativo', 'teste negativo'],
+  interpretation: ['interpretacao', 'interpretação', 'interpretacao cuidados', 'interpretação cuidados', 'interpretacao/cuidados', 'interpretação/cuidados'],
+  precautions: ['cuidados', 'contraindicacoes', 'contraindicações', 'precaucoes', 'precauções'],
+};
+
+const resolveClinicalSectionKey = (label: string) => {
+  const normalizedLabel = normalizeForClinicalCompare(label);
+  return Object.entries(clinicalSectionAliases).find(([, aliases]) =>
+    aliases.some((alias) => normalizedLabel === normalizeForClinicalCompare(alias) || normalizedLabel.includes(normalizeForClinicalCompare(alias)))
+  )?.[0] || '';
+};
 
 const parseClinicalDemoSections = (demo?: string | null) => {
   const sections: Record<string, string[]> = {};
@@ -575,10 +430,10 @@ const isImportColumnError = (error: any) => {
 const shouldExposeClinicalRow = (row: any) => {
   if (!row || row.is_active === false) return false;
 
-  const sourceProvider = cleanClinicalText(row.source_provider).toLowerCase();
+  const sourceProvider = String(row.source_provider || '').toLowerCase();
   if (!sourceProvider) return true;
 
-  const importStatus = cleanClinicalText(row.import_status).toLowerCase();
+  const importStatus = String(row.import_status || '').toLowerCase();
   return row.reviewed_by_admin === true || importStatus === 'published' || importStatus === 'reviewed';
 };
 
@@ -681,102 +536,32 @@ const getClinicalVideoLabel = (provider?: string | null) => {
   return 'Vídeo demonstrativo';
 };
 
-interface ClinicalSubtitleCue {
-  index: number;
-  start?: string;
-  end?: string;
-  text: string;
-}
+const decodeClinicalVttText = (vtt?: string | null) => {
+  const raw = cleanClinicalText(vtt);
+  if (!raw) return '';
 
-const cleanClinicalCueText = (value?: unknown) => {
-  return cleanClinicalText(value)
+  return raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (!line) return false;
+      if (/^WEBVTT/i.test(line)) return false;
+      if (/^NOTE\b/i.test(line)) return false;
+      if (/^\d+$/.test(line)) return false;
+      if (/-->/.test(line)) return false;
+      return true;
+    })
+    .join(' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/\{\\.*?\}/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-};
-
-const parseClinicalVttCues = (vtt?: unknown): ClinicalSubtitleCue[] => {
-  const raw = cleanClinicalText(vtt);
-  if (!raw) return [];
-
-  const blocks = raw
-    .replace(/^WEBVTT[^\n]*(?:\n|$)/i, '')
-    .split(/\n\s*\n+/)
-    .map((block) => block.trim())
-    .filter(Boolean);
-
-  const cues: ClinicalSubtitleCue[] = [];
-
-  blocks.forEach((block) => {
-    const lines = block
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    if (!lines.length || /^NOTE\b/i.test(lines[0])) return;
-
-    let timeLineIndex = lines.findIndex((line) => /-->/.test(line));
-    if (timeLineIndex === -1) {
-      const textOnly = cleanClinicalCueText(lines.join(' '));
-      if (textOnly) cues.push({ index: cues.length + 1, text: textOnly });
-      return;
-    }
-
-    const timeLine = lines[timeLineIndex];
-    const [start = '', endWithSettings = ''] = timeLine.split(/\s+-->\s+/);
-    const end = endWithSettings.split(/\s+/)[0] || '';
-    const text = cleanClinicalCueText(lines.slice(timeLineIndex + 1).join(' '));
-
-    if (text) {
-      cues.push({
-        index: cues.length + 1,
-        start: start.trim() || undefined,
-        end: end.trim() || undefined,
-        text,
-      });
-    }
-  });
-
-  const seen = new Set<string>();
-  return cues.filter((cue) => {
-    const key = normalizeForClinicalCompare(cue.text);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
-
-const decodeClinicalVttText = (vtt?: unknown) => {
-  return parseClinicalVttCues(vtt).map((cue) => cue.text).join(' ').trim();
-};
-
-const splitClinicalTextIntoSteps = (value?: unknown, limit = 8) => {
-  return cleanClinicalText(value)
-    .replace(/\s+(?=(?:\d+|[IVX]+)[\).\-]\s)/gi, '\n')
-    .split(/(?:\n+|(?<=[.!?])\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ0-9]))/)
-    .map((step) => step.replace(/^[-•\d.)\s]+/, '').trim())
-    .filter((step) => step.length > 8)
-    .slice(0, limit);
 };
 
 const getClinicalVideoTranscript = (test?: ClinicalTest | null) => {
   return cleanClinicalText(test?.video_transcript_pt) || decodeClinicalVttText(test?.video_subtitle_vtt_pt);
 };
 
-const getClinicalVideoSteps = (test?: ClinicalTest | null): ClinicalSubtitleCue[] => {
-  const vttCues = parseClinicalVttCues(test?.video_subtitle_vtt_pt);
-  if (vttCues.length > 0) return vttCues;
-
-  const transcriptSteps = splitClinicalTextIntoSteps(test?.video_transcript_pt);
-  if (transcriptSteps.length > 0) return transcriptSteps.map((text, index) => ({ index: index + 1, text }));
-
-  const executionSteps = splitClinicalTextIntoSteps(test?.execution || test?.demo, 6);
-  return executionSteps.map((text, index) => ({ index: index + 1, text }));
-};
-
 const hasClinicalVideoTranscript = (test?: ClinicalTest | null) => Boolean(getClinicalVideoTranscript(test));
-const hasClinicalVideoSteps = (test?: ClinicalTest | null) => getClinicalVideoSteps(test).length > 0;
 
 const getClinicalSubtitleStatusLabel = (status?: string | null, reviewed?: boolean | null) => {
   const normalizedStatus = normalizeForClinicalCompare(status || '');
@@ -790,7 +575,7 @@ const getClinicalSubtitleStatusLabel = (status?: string | null, reviewed?: boole
 const getClinicalSubtitleTrackSrc = (vtt?: string | null) => {
   const raw = String(vtt || '').trim();
   if (!raw) return '';
-  const normalized = /^WEBVTT/i.test(raw) ? raw : `WEBVTT\n\n${cleanClinicalText(raw)}`;
+  const normalized = /^WEBVTT/i.test(raw) ? raw : `WEBVTT\n\n${raw}`;
   return `data:text/vtt;charset=utf-8,${encodeURIComponent(normalized)}`;
 };
 
@@ -826,27 +611,27 @@ const mapImportedClinicalTest = (row: any, index = 0): ClinicalTest => {
     interpretation,
     precautions,
     demo,
-    image_url: getClinicalUrl(row?.image_url),
-    video_url: getClinicalUrl(row?.video_url),
-    video_provider: cleanClinicalText(row?.video_provider) || null,
-    video_thumbnail_url: getClinicalUrl(row?.video_thumbnail_url),
-    video_source_url: getClinicalUrl(row?.video_source_url),
-    video_license: cleanClinicalText(row?.video_license) || null,
-    video_status: cleanClinicalText(row?.video_status) || null,
-    video_transcript_original: cleanClinicalText(row?.video_transcript_original) || null,
-    video_transcript_pt: cleanClinicalText(row?.video_transcript_pt) || null,
-    video_subtitle_vtt_pt: cleanClinicalText(row?.video_subtitle_vtt_pt) || null,
-    video_subtitle_status: cleanClinicalText(row?.video_subtitle_status) || null,
+    image_url: row?.image_url || null,
+    video_url: row?.video_url || null,
+    video_provider: row?.video_provider || null,
+    video_thumbnail_url: row?.video_thumbnail_url || null,
+    video_source_url: row?.video_source_url || null,
+    video_license: row?.video_license || null,
+    video_status: row?.video_status || null,
+    video_transcript_original: row?.video_transcript_original || null,
+    video_transcript_pt: row?.video_transcript_pt || null,
+    video_subtitle_vtt_pt: row?.video_subtitle_vtt_pt || null,
+    video_subtitle_status: row?.video_subtitle_status || null,
     video_subtitle_reviewed: row?.video_subtitle_reviewed ?? null,
     video_subtitle_generated_at: row?.video_subtitle_generated_at || null,
-    source_provider: cleanClinicalText(row?.source_provider) || null,
-    source_url: getClinicalUrl(row?.source_url),
-    source_title: cleanClinicalText(row?.source_title) || null,
-    source_attribution: cleanClinicalText(row?.source_attribution) || null,
-    image_source_url: getClinicalUrl(row?.image_source_url),
-    image_license: cleanClinicalText(row?.image_license) || null,
-    image_attribution: cleanClinicalText(row?.image_attribution) || null,
-    import_status: cleanClinicalText(row?.import_status) || null,
+    source_provider: row?.source_provider || null,
+    source_url: row?.source_url || null,
+    source_title: row?.source_title || null,
+    source_attribution: row?.source_attribution || null,
+    image_source_url: row?.image_source_url || null,
+    image_license: row?.image_license || null,
+    image_attribution: row?.image_attribution || null,
+    import_status: row?.import_status || null,
     reviewed_by_admin: row?.reviewed_by_admin ?? null,
     isImported: Boolean(row?.source_provider),
     recordSuggestion: `${name}: registrar lado avaliado, resposta do paciente, resultado, sinais reproduzidos, intensidade dos sintomas e correlação com o quadro funcional.`,
@@ -869,27 +654,27 @@ const mergeClinicalTestsWithRows = (rows: any[] = []) => {
     return {
       ...test,
       demo: cleanClinicalText(row.demo, test.demo),
-      image_url: getClinicalUrl(row.image_url) || test.image_url || null,
-      video_url: getClinicalUrl(row.video_url) || test.video_url || null,
-      video_provider: cleanClinicalText(row.video_provider) || test.video_provider || null,
-      video_thumbnail_url: getClinicalUrl(row.video_thumbnail_url) || test.video_thumbnail_url || null,
-      video_source_url: getClinicalUrl(row.video_source_url) || test.video_source_url || null,
-      video_license: cleanClinicalText(row.video_license) || test.video_license || null,
-      video_status: cleanClinicalText(row.video_status) || test.video_status || null,
-      video_transcript_original: cleanClinicalText(row.video_transcript_original) || test.video_transcript_original || null,
-      video_transcript_pt: cleanClinicalText(row.video_transcript_pt) || test.video_transcript_pt || null,
-      video_subtitle_vtt_pt: cleanClinicalText(row.video_subtitle_vtt_pt) || test.video_subtitle_vtt_pt || null,
-      video_subtitle_status: cleanClinicalText(row.video_subtitle_status) || test.video_subtitle_status || null,
+      image_url: row.image_url || test.image_url || null,
+      video_url: row.video_url || test.video_url || null,
+      video_provider: row.video_provider || test.video_provider || null,
+      video_thumbnail_url: row.video_thumbnail_url || test.video_thumbnail_url || null,
+      video_source_url: row.video_source_url || test.video_source_url || null,
+      video_license: row.video_license || test.video_license || null,
+      video_status: row.video_status || test.video_status || null,
+      video_transcript_original: row.video_transcript_original || test.video_transcript_original || null,
+      video_transcript_pt: row.video_transcript_pt || test.video_transcript_pt || null,
+      video_subtitle_vtt_pt: row.video_subtitle_vtt_pt || test.video_subtitle_vtt_pt || null,
+      video_subtitle_status: row.video_subtitle_status || test.video_subtitle_status || null,
       video_subtitle_reviewed: row.video_subtitle_reviewed ?? test.video_subtitle_reviewed ?? null,
       video_subtitle_generated_at: row.video_subtitle_generated_at || test.video_subtitle_generated_at || null,
-      source_provider: cleanClinicalText(row.source_provider) || test.source_provider || null,
-      source_url: getClinicalUrl(row.source_url) || test.source_url || null,
-      source_title: cleanClinicalText(row.source_title) || test.source_title || null,
-      source_attribution: cleanClinicalText(row.source_attribution) || test.source_attribution || null,
-      image_source_url: getClinicalUrl(row.image_source_url) || test.image_source_url || null,
-      image_license: cleanClinicalText(row.image_license) || test.image_license || null,
-      image_attribution: cleanClinicalText(row.image_attribution) || test.image_attribution || null,
-      import_status: cleanClinicalText(row.import_status) || test.import_status || null,
+      source_provider: row.source_provider || test.source_provider || null,
+      source_url: row.source_url || test.source_url || null,
+      source_title: row.source_title || test.source_title || null,
+      source_attribution: row.source_attribution || test.source_attribution || null,
+      image_source_url: row.image_source_url || test.image_source_url || null,
+      image_license: row.image_license || test.image_license || null,
+      image_attribution: row.image_attribution || test.image_attribution || null,
+      import_status: row.import_status || test.import_status || null,
       reviewed_by_admin: row.reviewed_by_admin ?? test.reviewed_by_admin ?? null,
       isImported: Boolean(row.source_provider || test.isImported),
     };
@@ -970,9 +755,6 @@ ${test.image_url}` : ''}
 ${shouldDisplayClinicalVideo(test) ? `
 ## Vídeo demonstrativo
 ${getClinicalVideoLabel(test.video_provider)}: ${test.video_url}` : ''}
-${hasClinicalVideoSteps(test) ? `
-## Passo a passo do teste
-${getClinicalVideoSteps(test).map((cue) => `${cue.index}. ${cue.text}`).join('\n')}` : ''}
 ${hasClinicalVideoTranscript(test) ? `
 ## Legenda / transcrição clínica em português
 ${getClinicalVideoTranscript(test)}` : ''}
@@ -1282,7 +1064,6 @@ export default function ClinicalTestsHub() {
           video_url: pendingRecordTest.video_url || null,
           video_provider: pendingRecordTest.video_provider || null,
           video_transcript_pt: getClinicalVideoTranscript(pendingRecordTest) || null,
-          video_steps: getClinicalVideoSteps(pendingRecordTest).map((cue) => cue.text),
           video_subtitle_status: pendingRecordTest.video_subtitle_status || null,
         },
       };
@@ -1707,42 +1488,6 @@ export default function ClinicalTestsHub() {
                         </div>
                       </div>
                     </div>
-
-                    {hasClinicalVideoSteps(selectedTest) && (
-                      <div className="clinical-test-steps-card w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-violet-50 p-4 shadow-sm shadow-blue-100/70 dark:border-blue-300/20 dark:bg-none dark:bg-blue-500/10 dark:shadow-none sm:rounded-[1.75rem]">
-                        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
-                          <ClipboardCheck className="mt-1 shrink-0 text-blue-700 dark:text-blue-200" size={22} />
-                          <div className="w-full min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <h3 className="text-sm font-black uppercase tracking-widest text-blue-800 dark:text-blue-200" style={safeWrapStyle}>Passo a passo do teste</h3>
-                              <span className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-700 dark:border-blue-300/20 dark:bg-white/10 dark:text-blue-200" style={safeWrapStyle}>
-                                Gerado a partir da legenda/VTT
-                              </span>
-                            </div>
-                            <div className="mt-4 grid gap-3">
-                              {getClinicalVideoSteps(selectedTest).map((cue) => (
-                                <div key={`${cue.index}-${cue.start || 'step'}`} className="clinical-test-step-item rounded-2xl border border-blue-100 bg-white/85 p-3 shadow-sm shadow-blue-100/50 dark:border-white/10 dark:bg-white/5 dark:shadow-none">
-                                  <div className="flex min-w-0 items-start gap-3">
-                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-lg shadow-blue-200/60 dark:bg-blue-500 dark:shadow-none">
-                                      {cue.index}
-                                    </span>
-                                    <div className="min-w-0 flex-1">
-                                      {(cue.start || cue.end) && (
-                                        <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300" style={safeWrapStyle}>
-                                          {cue.start || '00:00:00.000'} {cue.end ? `→ ${cue.end}` : ''}
-                                        </p>
-                                      )}
-                                      <p className="text-sm font-semibold leading-relaxed text-slate-700 dark:text-slate-200" style={safeWrapStyle}>{cue.text}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
 
                     {hasClinicalVideoTranscript(selectedTest) && (
                       <div className="clinical-test-transcript-card w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4 shadow-sm shadow-emerald-100/70 dark:border-emerald-300/20 dark:bg-none dark:bg-emerald-500/10 dark:shadow-none sm:rounded-[1.75rem]">
