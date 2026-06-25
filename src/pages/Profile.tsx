@@ -1394,7 +1394,8 @@ export default function Profile() {
                               name="data_nascimento"
                               value={formData.data_nascimento}
                               onChange={handleChange}
-                              className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
+                              className="block w-full max-w-full min-w-0 appearance-none p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
+                              style={{ minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}
                             />
                           </div>
                           <div className="space-y-2">
