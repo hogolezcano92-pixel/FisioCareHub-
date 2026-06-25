@@ -25,6 +25,7 @@ import { cn, resolveStorageUrl, formatDateKeyBR, normalizeDateKey } from '../lib
 import { triggerWhatsAppNotification } from '../services/notificationService';
 import { availabilityService, Slot, toDateKey } from '../services/availabilityService';
 import StoryRail from '../components/FisioStories/StoryRail';
+import ProfessionalCredentialCard from '../components/ProfessionalCredentialCard';
 
 const isIsoDateKey = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
 
@@ -465,6 +466,12 @@ export default function ProfessionalProfile() {
                 </div>
               )}
             </div>
+
+            <ProfessionalCredentialCard
+              profile={physio}
+              isPro
+              variant="compact"
+            />
 
             <StoryRail
               physioId={physio.id}

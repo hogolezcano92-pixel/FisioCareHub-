@@ -45,6 +45,7 @@ import AvatarUpload from '../components/AvatarUpload';
 import PaymentMethods from '../components/PaymentMethods';
 import PhysioPaymentData from '../components/PhysioPaymentData';
 import PhysioWithdrawal from '../components/PhysioWithdrawal';
+import ProfessionalCredentialCard from '../components/ProfessionalCredentialCard';
 import FloatingHelpMenu from '../components/FloatingHelpMenu';
 import { isBiometricsSupported, registerBiometrics } from '../lib/webauthn';
 import { generateEmailHTML } from '../services/emailTemplate';
@@ -251,6 +252,55 @@ export default function Profile() {
   };
 
   const isPro = hasPlanAccess(getEffectivePlan(profile, subscription), 'pro');
+  const [credentialStats, setCredentialStats] = useState<{
+    appointmentsCount?: number;
+    ratingAverage?: number;
+    reviewsCount?: number;
+  }>({});
+
+  useEffect(() => {
+    if (!user?.id || !isPhysio) return;
+
+    let isMounted = true;
+
+    const fetchCredentialStats = async () => {
+      try {
+        const [appointmentsResult, reviewsResult] = await Promise.all([
+          supabase
+            .from('agendamentos')
+            .select('id', { count: 'exact', head: true })
+            .eq('fisio_id', user.id)
+            .in('status', ['concluido', 'concluído']),
+          supabase
+            .from('avaliacoes')
+            .select('nota_profissional, estrelas', { count: 'exact' })
+            .eq('profissional_id', user.id),
+        ]);
+
+        if (!isMounted) return;
+
+        const ratings = (reviewsResult.data || [])
+          .map((review: any) => Number(review.nota_profissional || review.estrelas || 0))
+          .filter((rating) => rating > 0);
+
+        setCredentialStats({
+          appointmentsCount: appointmentsResult.count || 0,
+          reviewsCount: reviewsResult.count || ratings.length,
+          ratingAverage: ratings.length
+            ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+            : undefined,
+        });
+      } catch (error) {
+        console.warn('Não foi possível carregar estatísticas da credencial:', error);
+      }
+    };
+
+    fetchCredentialStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isPhysio]);
 
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab;
@@ -1253,6 +1303,17 @@ export default function Profile() {
                         </div>
                       </div>
                     </div>
+
+                    {isPhysio && (
+                      <ProfessionalCredentialCard
+                        profile={userData || profile}
+                        isPro={isPro}
+                        appointmentsCount={credentialStats.appointmentsCount}
+                        ratingAverage={credentialStats.ratingAverage}
+                        reviewsCount={credentialStats.reviewsCount}
+                        variant="full"
+                      />
+                    )}
 
                     {/* Profile Form */}
                     <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
