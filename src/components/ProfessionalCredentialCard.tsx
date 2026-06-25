@@ -154,7 +154,6 @@ type ExportCredentialData = {
   issuedAt: string;
   isPro: boolean;
   professionalName: string;
-  publicProfileUrl: string;
   serviceLabel: string;
   specialty: string;
 };
@@ -169,7 +168,6 @@ const buildCredentialSvg = ({
   issuedAt,
   isPro,
   professionalName,
-  publicProfileUrl,
   serviceLabel,
   specialty,
 }: ExportCredentialData) => {
@@ -180,7 +178,6 @@ const buildCredentialSvg = ({
   const safeCode = escapeSvgText(credentialCode);
   const safeIssuedAt = escapeSvgText(issuedAt);
   const safeService = escapeSvgText(serviceLabel);
-  const safePath = escapeSvgText(shortenForCard(publicProfileUrl.replace(/^https?:\/\//, ''), 42));
   const verifiedLabel = approved ? 'VERIFICADO' : 'EM VALIDAÇÃO';
 
   return `
@@ -192,8 +189,8 @@ const buildCredentialSvg = ({
           <stop offset="100%" stop-color="#083344"/>
         </linearGradient>
         <clipPath id="cardClip"><rect x="24" y="24" width="968" height="592" rx="58"/></clipPath>
-        <clipPath id="avatarClip"><rect x="64" y="246" width="190" height="190" rx="44"/></clipPath>
-        <clipPath id="qrClip"><rect x="790" y="235" width="150" height="150" rx="26"/></clipPath>
+        <clipPath id="avatarClip"><rect x="64" y="248" width="190" height="190" rx="44"/></clipPath>
+        <clipPath id="qrClip"><rect x="786" y="238" width="154" height="154" rx="28"/></clipPath>
         <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
           <feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#000000" flood-opacity="0.35"/>
         </filter>
@@ -211,37 +208,36 @@ const buildCredentialSvg = ({
         <text x="64" y="88" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" letter-spacing="10" fill="#7dd3fc">FISIOCAREHUB</text>
         <text x="64" y="134" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Credencial Digital</text>
 
-        <rect x="724" y="64" width="224" height="54" rx="27" fill="#064e3b" fill-opacity="0.64" stroke="#5eead4" stroke-opacity="0.55"/>
-        <circle cx="758" cy="91" r="16" fill="#10b981"/>
-        <path d="M750 90 L756 96 L768 82" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="784" y="98" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#d1fae5">${verifiedLabel}</text>
+        <rect x="724" y="66" width="224" height="54" rx="27" fill="#064e3b" fill-opacity="0.64" stroke="#5eead4" stroke-opacity="0.55"/>
+        <circle cx="758" cy="93" r="16" fill="#10b981"/>
+        <path d="M750 92 L756 98 L768 84" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="784" y="100" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#d1fae5">${verifiedLabel}</text>
 
-        <rect x="64" y="246" width="190" height="190" rx="44" fill="#0f172a" stroke="#ffffff" stroke-opacity="0.16" stroke-width="8"/>
-        <image href="${avatarDataUrl}" x="64" y="246" width="190" height="190" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>
-        <circle cx="222" cy="404" r="32" fill="#10b981" stroke="#ffffff" stroke-width="6"/>
-        <path d="M211 402 L220 411 L236 390" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="64" y="248" width="190" height="190" rx="44" fill="#0f172a" stroke="#ffffff" stroke-opacity="0.16" stroke-width="8"/>
+        <image href="${avatarDataUrl}" x="64" y="248" width="190" height="190" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>
+        <circle cx="222" cy="406" r="32" fill="#10b981" stroke="#ffffff" stroke-width="6"/>
+        <path d="M211 404 L220 413 L236 392" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 
-        <text x="292" y="242" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="8" fill="#94a3b8">FISIOTERAPEUTA</text>
-        <text x="292" y="304" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900" fill="#ffffff">${safeName}</text>
-        <text x="292" y="356" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="7" fill="#67e8f9">${safeSpecialty}</text>
+        <text x="292" y="248" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="8" fill="#94a3b8">FISIOTERAPEUTA</text>
+        <text x="292" y="310" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900" fill="#ffffff">${safeName}</text>
+        <text x="292" y="360" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="7" fill="#67e8f9">${safeSpecialty}</text>
 
-        <rect x="292" y="385" width="260" height="66" rx="33" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.16"/>
-        <text x="326" y="428" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" letter-spacing="3" fill="#f8fafc">CREFITO: ${safeCrefito}</text>
+        <rect x="292" y="388" width="260" height="66" rx="33" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.16"/>
+        <text x="326" y="431" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" letter-spacing="3" fill="#f8fafc">CREFITO: ${safeCrefito}</text>
 
         ${isPro ? `
-        <rect x="292" y="466" width="180" height="48" rx="24" fill="#f59e0b" fill-opacity="0.20" stroke="#facc15" stroke-opacity="0.55"/>
-        <text x="327" y="497" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="3" fill="#fde68a">PLANO PRO</text>` : ''}
+        <rect x="292" y="470" width="180" height="48" rx="24" fill="#f59e0b" fill-opacity="0.20" stroke="#facc15" stroke-opacity="0.55"/>
+        <text x="327" y="501" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="3" fill="#fde68a">PLANO PRO</text>` : ''}
 
-        <rect x="704" y="184" width="268" height="318" rx="48" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.18"/>
-        <rect x="790" y="235" width="150" height="150" rx="26" fill="#ffffff"/>
-        <image href="${qrDataUrl}" x="790" y="235" width="150" height="150" preserveAspectRatio="xMidYMid meet" clip-path="url(#qrClip)"/>
-        <text x="838" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#cbd5e1">${safeCode}</text>
-        <text x="838" y="456" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#94a3b8">Validar perfil</text>
-        <text x="838" y="482" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#64748b">${safePath}</text>
+        <rect x="704" y="196" width="268" height="288" rx="46" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.18"/>
+        <rect x="786" y="238" width="154" height="154" rx="28" fill="#ffffff"/>
+        <image href="${qrDataUrl}" x="786" y="238" width="154" height="154" preserveAspectRatio="xMidYMid meet" clip-path="url(#qrClip)"/>
+        <text x="838" y="428" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#cbd5e1">${safeCode}</text>
+        <text x="838" y="458" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#94a3b8">Validar perfil</text>
 
         <rect x="64" y="540" width="888" height="1" fill="#ffffff" opacity="0.14"/>
         <text x="64" y="575" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#cbd5e1">${safeService} • ${safeCity}</text>
-        <text x="64" y="603" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">Credencial de perfil FisioCareHub. Não substitui documento oficial nem consulta ao CREFITO.</text>
+        <text x="64" y="603" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#94a3b8">Credencial de perfil FisioCareHub. Não substitui documento oficial nem consulta ao CREFITO.</text>
         <text x="952" y="575" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" fill="#e2e8f0">Emissão ${safeIssuedAt}</text>
       </g>
     </svg>
@@ -364,7 +360,6 @@ export default function ProfessionalCredentialCard({
         issuedAt,
         isPro,
         professionalName,
-        publicProfileUrl,
         serviceLabel,
         specialty,
       });
@@ -573,7 +568,8 @@ export default function ProfessionalCredentialCard({
                     <QrCode className="text-slate-900" size={34} />
                   )}
                 </div>
-                <p className="max-w-[70px] truncate text-center text-[6px] font-bold text-slate-400 sm:max-w-[110px] sm:text-[8px]">{credentialCode}</p>
+                <p className="max-w-[70px] truncate text-center text-[6px] font-black tracking-wide text-slate-300 sm:max-w-[110px] sm:text-[8px]">{credentialCode}</p>
+                <p className="hidden text-center text-[7px] font-bold text-slate-400 sm:block">Validar perfil</p>
               </div>
             </div>
 
