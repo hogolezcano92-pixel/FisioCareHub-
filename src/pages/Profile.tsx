@@ -1316,7 +1316,7 @@ export default function Profile() {
                     )}
 
                     {/* Profile Form */}
-                    <div className="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-sm">
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-5 sm:p-8 lg:p-10 rounded-[2rem] sm:rounded-[3rem] border border-white/10 shadow-sm overflow-hidden">
                       {isRejectedPhysio && (
                         <div className="mb-8 p-6 rounded-[2rem] bg-rose-500/10 border border-rose-500/20">
                           <div className="flex items-start gap-4">
@@ -1350,8 +1350,8 @@ export default function Profile() {
                         {t('profile.personal_info')}
                       </h3>
 
-                      <form onSubmit={handleUpdateProfile} className="space-y-8">
-                        <div className="grid md:grid-cols-2 gap-8">
+                      <form onSubmit={handleUpdateProfile} className="space-y-8 pb-32 md:pb-0">
+                        <div className="grid md:grid-cols-2 gap-5 md:gap-8 min-w-0">
                           <div className="space-y-2">
                             <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_name')}</label>
                             <input
@@ -1359,7 +1359,7 @@ export default function Profile() {
                               name="name"
                               value={formData.name}
                               onChange={handleChange}
-                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                              className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1369,13 +1369,13 @@ export default function Profile() {
                               name="telefone"
                               value={formData.telefone}
                               onChange={handleChange}
-                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                              className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                               placeholder="(00) 00000-0000"
                             />
                           </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-8">
+                        <div className="grid md:grid-cols-2 gap-5 md:gap-8 min-w-0">
                           <div className="space-y-2">
                             <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{t('profile.form_cpf')}</label>
                             <input
@@ -1383,7 +1383,7 @@ export default function Profile() {
                               name="cpf"
                               value={formData.cpf}
                               onChange={handleChange}
-                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                              className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                               placeholder="000.000.000-00"
                             />
                           </div>
@@ -1394,7 +1394,7 @@ export default function Profile() {
                               name="data_nascimento"
                               value={formData.data_nascimento}
                               onChange={handleChange}
-                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                              className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1403,7 +1403,7 @@ export default function Profile() {
                               name="gender"
                               value={formData.gender}
                               onChange={handleChange}
-                              className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                              className="w-full min-w-0 p-4 sm:p-5 pr-10 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base appearance-none truncate"
                             >
                               <option value="" className="bg-slate-900">{t('profile.gender_select')}</option>
                               <option value="male" className="bg-slate-900">{t('profile.gender_male')}</option>
@@ -1414,7 +1414,7 @@ export default function Profile() {
                         </div>
 
                         {isPhysio && (
-                          <div className="grid md:grid-cols-2 gap-8">
+                          <div className="grid md:grid-cols-2 gap-5 md:gap-8 min-w-0">
                             <div className="space-y-2">
                               <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CREFITO</label>
                               <input
@@ -1422,7 +1422,7 @@ export default function Profile() {
                                 name="crefito"
                                 value={formData.crefito}
                                 onChange={handleChange}
-                                className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                                className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                                 placeholder="Ex: 12345-F"
                               />
                             </div>
@@ -1433,7 +1433,7 @@ export default function Profile() {
                                 name="specialty"
                                 value={formData.specialty}
                                 onChange={handleChange}
-                                className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                                className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                                 placeholder="Ex: Ortopedia, Neuro..."
                               />
                             </div>
@@ -1448,31 +1448,31 @@ export default function Profile() {
                                 name="experiencia_profissional"
                                 value={formData.experiencia_profissional}
                                 onChange={handleChange}
-                                className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
+                                className="w-full min-w-0 h-32 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white text-sm sm:text-base"
                                 placeholder="Descreva sua trajetória profissional..."
                               />
                             </div>
 
-                            <div className="grid md:grid-cols-2 gap-8">
-                              <div className="space-y-2">
+                            <div className="grid md:grid-cols-2 gap-5 md:gap-8 min-w-0">
+                              <div className="space-y-2 min-w-0">
                                 <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Preço da Sessão (R$)</label>
                                 <input
                                   type="number"
                                   name="preco_sessao"
                                   value={formData.preco_sessao}
                                   onChange={handleChange}
-                                  className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white"
+                                  className="w-full min-w-0 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base"
                                   placeholder="0.00"
                                   step="0.01"
                                 />
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-2 min-w-0">
                                 <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Modalidade de Atendimento</label>
                                 <select
                                   name="serviceType"
                                   value={formData.serviceType}
                                   onChange={handleChange}
-                                  className="w-full p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white appearance-none"
+                                  className="w-full min-w-0 p-4 sm:p-5 pr-10 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm sm:text-base appearance-none truncate"
                                 >
                                   <option value="domicilio" className="bg-slate-900">Domiciliar</option>
                                   <option value="online" className="bg-slate-900">Online</option>
@@ -1490,39 +1490,39 @@ export default function Profile() {
                               name="observacoes_saude"
                               value={formData.observacoes_saude}
                               onChange={handleChange}
-                              className="w-full h-32 p-5 bg-white/5 border border-white/10 rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white"
+                              className="w-full min-w-0 h-32 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] focus:ring-2 focus:ring-blue-600 outline-none resize-none transition-all font-bold text-white text-sm sm:text-base"
                               placeholder="Alergias, condições crônicas, cirurgias anteriores..."
                             />
                           </div>
                         )}
 
                         {isPhysio && (
-                          <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-6 md:gap-8 min-w-0">
+                            <div className="space-y-4 min-w-0">
                               <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Formação Acadêmica</label>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                                 <input
                                   type="text"
                                   value={newEducation}
                                   onChange={(e) => setNewEducation(e.target.value)}
                                   placeholder="Ex: Graduação em Fisioterapia - USP"
-                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                                  className="w-full min-w-0 flex-1 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
                                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEducation())}
                                 />
                                 <button
                                   type="button"
                                   onClick={addEducation}
-                                  className="px-6 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all font-bold"
+                                  className="w-full sm:w-auto px-5 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all"
                                 >
                                   Add
                                 </button>
                               </div>
                               <div className="space-y-2">
                                 {formData.formacao_academica.map((item, i) => (
-                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                                      <span className="text-sm font-medium text-slate-300">{item}</span>
+                                  <div key={i} className="flex items-center justify-between gap-3 p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />
+                                      <span className="text-sm font-medium text-slate-300 break-words min-w-0">{item}</span>
                                     </div>
                                     <button
                                       type="button"
@@ -1539,10 +1539,10 @@ export default function Profile() {
                               </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-4 min-w-0">
                               <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Serviços Oferecidos</label>
 
-                              <div className="flex flex-wrap gap-2 mb-4">
+                              <div className="flex flex-wrap gap-2 mb-4 min-w-0 overflow-hidden">
                                 {commonServices.map(service => {
                                   const isSelected = formData.servicos_ofertados.includes(service);
                                   return (
@@ -1551,7 +1551,7 @@ export default function Profile() {
                                       type="button"
                                       onClick={() => toggleService(service)}
                                       className={cn(
-                                        "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
+                                        "max-w-full px-3 sm:px-4 py-2 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.12em] sm:tracking-widest border transition-all whitespace-normal break-words text-center leading-tight",
                                         isSelected 
                                           ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
                                           : "bg-white/5 border-white/10 text-slate-400 hover:border-white/30"
@@ -1563,19 +1563,19 @@ export default function Profile() {
                                 })}
                               </div>
 
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                                 <input
                                   type="text"
                                   value={newService}
                                   onChange={(e) => setNewService(e.target.value)}
                                   placeholder="Outro serviço..."
-                                  className="flex-1 p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
+                                  className="w-full min-w-0 flex-1 p-4 sm:p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-bold text-white text-sm"
                                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomService())}
                                 />
                                 <button
                                   type="button"
                                   onClick={addCustomService}
-                                  className="px-6 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all font-bold"
+                                  className="w-full sm:w-auto px-5 py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all"
                                 >
                                   Add
                                 </button>
@@ -1583,10 +1583,10 @@ export default function Profile() {
 
                               <div className="space-y-2">
                                 {formData.servicos_ofertados.filter(s => !commonServices.includes(s)).map((item, i) => (
-                                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                      <span className="text-sm font-medium text-slate-300">{item}</span>
+                                  <div key={i} className="flex items-center justify-between gap-3 p-4 bg-white/5 border border-white/5 rounded-xl group hover:border-white/20 transition-all min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
+                                      <span className="text-sm font-medium text-slate-300 break-words min-w-0">{item}</span>
                                     </div>
                                     <button
                                       type="button"
