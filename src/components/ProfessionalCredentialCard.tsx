@@ -180,8 +180,8 @@ const buildCredentialSvg = ({
   const safeCode = escapeSvgText(credentialCode);
   const safeIssuedAt = escapeSvgText(issuedAt);
   const safeService = escapeSvgText(serviceLabel);
-  const safeUrl = escapeSvgText(publicProfileUrl);
-  const verifiedLabel = approved ? 'PROFISSIONAL VERIFICADO' : 'EM VALIDAÇÃO';
+  const safePath = escapeSvgText(shortenForCard(publicProfileUrl.replace(/^https?:\/\//, ''), 42));
+  const verifiedLabel = approved ? 'VERIFICADO' : 'EM VALIDAÇÃO';
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="1016" height="640" viewBox="0 0 1016 640">
@@ -191,10 +191,7 @@ const buildCredentialSvg = ({
           <stop offset="48%" stop-color="#07182f"/>
           <stop offset="100%" stop-color="#083344"/>
         </linearGradient>
-        <linearGradient id="cyanGlow" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="#34d399" stop-opacity="0.30"/>
-        </linearGradient>
+        <clipPath id="cardClip"><rect x="24" y="24" width="968" height="592" rx="58"/></clipPath>
         <clipPath id="avatarClip"><rect x="64" y="246" width="190" height="190" rx="44"/></clipPath>
         <clipPath id="qrClip"><rect x="790" y="235" width="150" height="150" rx="26"/></clipPath>
         <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -204,46 +201,49 @@ const buildCredentialSvg = ({
 
       <rect x="16" y="16" width="984" height="608" rx="66" fill="#020617" opacity="0.80"/>
       <rect x="24" y="24" width="968" height="592" rx="58" fill="url(#cardBg)" stroke="#7dd3fc" stroke-opacity="0.55" stroke-width="2" filter="url(#softShadow)"/>
-      <circle cx="850" cy="86" r="220" fill="#0ea5e9" opacity="0.20"/>
-      <circle cx="114" cy="568" r="240" fill="#10b981" opacity="0.15"/>
-      <path d="M520 36 L452 604" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
-      <path d="M24 456 C210 396 356 430 510 510 C660 588 816 590 992 520 L992 616 L24 616 Z" fill="#000000" opacity="0.20"/>
 
-      <text x="64" y="88" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" letter-spacing="10" fill="#7dd3fc">FISIOCAREHUB</text>
-      <text x="64" y="134" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Credencial Digital</text>
+      <g clip-path="url(#cardClip)">
+        <circle cx="850" cy="86" r="210" fill="#0ea5e9" opacity="0.20"/>
+        <circle cx="114" cy="568" r="220" fill="#10b981" opacity="0.15"/>
+        <path d="M520 36 L452 604" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+        <path d="M24 456 C210 396 356 430 510 510 C660 588 816 590 992 520 L992 616 L24 616 Z" fill="#000000" opacity="0.20"/>
 
-      <rect x="696" y="64" width="252" height="54" rx="27" fill="#064e3b" fill-opacity="0.64" stroke="#5eead4" stroke-opacity="0.55"/>
-      <circle cx="730" cy="91" r="16" fill="#10b981"/>
-      <path d="M722 90 L728 96 L740 82" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="756" y="98" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#d1fae5">${verifiedLabel}</text>
+        <text x="64" y="88" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="900" letter-spacing="10" fill="#7dd3fc">FISIOCAREHUB</text>
+        <text x="64" y="134" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Credencial Digital</text>
 
-      <rect x="64" y="246" width="190" height="190" rx="44" fill="#0f172a" stroke="#ffffff" stroke-opacity="0.16" stroke-width="8"/>
-      <image href="${avatarDataUrl}" x="64" y="246" width="190" height="190" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>
-      <circle cx="222" cy="404" r="32" fill="#10b981" stroke="#ffffff" stroke-width="6"/>
-      <path d="M211 402 L220 411 L236 390" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="724" y="64" width="224" height="54" rx="27" fill="#064e3b" fill-opacity="0.64" stroke="#5eead4" stroke-opacity="0.55"/>
+        <circle cx="758" cy="91" r="16" fill="#10b981"/>
+        <path d="M750 90 L756 96 L768 82" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="784" y="98" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#d1fae5">${verifiedLabel}</text>
 
-      <text x="292" y="242" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="8" fill="#94a3b8">FISIOTERAPEUTA</text>
-      <text x="292" y="304" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900" fill="#ffffff">${safeName}</text>
-      <text x="292" y="356" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="7" fill="#67e8f9">${safeSpecialty}</text>
+        <rect x="64" y="246" width="190" height="190" rx="44" fill="#0f172a" stroke="#ffffff" stroke-opacity="0.16" stroke-width="8"/>
+        <image href="${avatarDataUrl}" x="64" y="246" width="190" height="190" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>
+        <circle cx="222" cy="404" r="32" fill="#10b981" stroke="#ffffff" stroke-width="6"/>
+        <path d="M211 402 L220 411 L236 390" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 
-      <rect x="292" y="385" width="260" height="66" rx="33" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.16"/>
-      <text x="326" y="428" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" letter-spacing="3" fill="#f8fafc">CREFITO: ${safeCrefito}</text>
+        <text x="292" y="242" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="8" fill="#94a3b8">FISIOTERAPEUTA</text>
+        <text x="292" y="304" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900" fill="#ffffff">${safeName}</text>
+        <text x="292" y="356" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="7" fill="#67e8f9">${safeSpecialty}</text>
 
-      ${isPro ? `
-      <rect x="292" y="466" width="180" height="48" rx="24" fill="#f59e0b" fill-opacity="0.20" stroke="#facc15" stroke-opacity="0.55"/>
-      <text x="327" y="497" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="3" fill="#fde68a">PLANO PRO</text>` : ''}
+        <rect x="292" y="385" width="260" height="66" rx="33" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.16"/>
+        <text x="326" y="428" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" letter-spacing="3" fill="#f8fafc">CREFITO: ${safeCrefito}</text>
 
-      <rect x="704" y="184" width="268" height="318" rx="48" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.18"/>
-      <rect x="790" y="235" width="150" height="150" rx="26" fill="#ffffff"/>
-      <image href="${qrDataUrl}" x="790" y="235" width="150" height="150" preserveAspectRatio="xMidYMid meet" clip-path="url(#qrClip)"/>
-      <text x="838" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#cbd5e1">${safeCode}</text>
-      <text x="838" y="456" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#94a3b8">Validar perfil</text>
+        ${isPro ? `
+        <rect x="292" y="466" width="180" height="48" rx="24" fill="#f59e0b" fill-opacity="0.20" stroke="#facc15" stroke-opacity="0.55"/>
+        <text x="327" y="497" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="3" fill="#fde68a">PLANO PRO</text>` : ''}
 
-      <rect x="64" y="540" width="888" height="1" fill="#ffffff" opacity="0.14"/>
-      <text x="64" y="575" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#cbd5e1">${safeService} • ${safeCity}</text>
-      <text x="64" y="603" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">Identifica o perfil dentro da plataforma. Não substitui documento oficial ou consulta ao CREFITO.</text>
-      <text x="952" y="575" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" fill="#e2e8f0">Emissão ${safeIssuedAt}</text>
-      <text x="952" y="603" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#64748b">${safeUrl}</text>
+        <rect x="704" y="184" width="268" height="318" rx="48" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.18"/>
+        <rect x="790" y="235" width="150" height="150" rx="26" fill="#ffffff"/>
+        <image href="${qrDataUrl}" x="790" y="235" width="150" height="150" preserveAspectRatio="xMidYMid meet" clip-path="url(#qrClip)"/>
+        <text x="838" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="2" fill="#cbd5e1">${safeCode}</text>
+        <text x="838" y="456" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#94a3b8">Validar perfil</text>
+        <text x="838" y="482" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#64748b">${safePath}</text>
+
+        <rect x="64" y="540" width="888" height="1" fill="#ffffff" opacity="0.14"/>
+        <text x="64" y="575" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#cbd5e1">${safeService} • ${safeCity}</text>
+        <text x="64" y="603" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">Credencial de perfil FisioCareHub. Não substitui documento oficial nem consulta ao CREFITO.</text>
+        <text x="952" y="575" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" fill="#e2e8f0">Emissão ${safeIssuedAt}</text>
+      </g>
     </svg>
   `;
 };
