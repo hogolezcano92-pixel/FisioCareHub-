@@ -330,7 +330,7 @@ function Navbar() {
   ], [user, profile, isApproved, t]);
 
   return (
-    <nav className="public-navbar bg-background/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
+    <nav className="public-navbar bg-background/60 backdrop-blur-xl border-b border-white/5 relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
@@ -749,7 +749,7 @@ function AppContent() {
 
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 relative z-[30] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem] shrink-0">
+            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 relative z-[40] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem]">
               <Logo variant="dark" size="sm" />
               <div className="flex items-center gap-3">
                 <ThemeQuickToggle />
