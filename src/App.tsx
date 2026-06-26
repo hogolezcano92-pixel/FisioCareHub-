@@ -266,62 +266,6 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allow
   return <>{children}</>;
 };
 
-
-const getMobileHeaderRoleLabel = (role?: string | null) => {
-  if (role === 'fisioterapeuta') return 'fisioterapeuta';
-  if (role === 'paciente') return 'paciente';
-  if (role === 'admin') return 'admin';
-  return 'usuário';
-};
-
-const mobileHeaderButtonClass =
-  'h-11 w-11 rounded-[1.35rem] border border-slate-200/70 bg-white/80 text-slate-700 shadow-[0_18px_42px_-26px_rgba(15,23,42,0.55)] backdrop-blur-2xl hover:bg-white hover:text-blue-700 dark:border-white/10 dark:bg-white/[0.07] dark:text-slate-100 dark:shadow-black/20 dark:hover:bg-white/[0.12] dark:hover:text-blue-200';
-
-function MobileAppHeader({ onMenuOpen }: { onMenuOpen: () => void }) {
-  const { profile } = useAuth();
-  const roleLabel = getMobileHeaderRoleLabel(profile?.tipo_usuario);
-
-  return (
-    <header className="lg:hidden pointer-events-none fixed inset-x-0 top-0 z-[90] px-5 pt-[max(0.65rem,env(safe-area-inset-top))] pb-2">
-      <div className="mx-auto flex w-full max-w-6xl items-start justify-between gap-3">
-        <Link
-          to="/descubra"
-          className="pointer-events-auto min-w-0 select-none rounded-[1.5rem] py-1 pr-2 transition-transform active:scale-[0.98]"
-          aria-label="Ir para o início do aplicativo"
-        >
-          <p className="mb-1 text-[12px] font-extrabold leading-none tracking-tight text-slate-500 [text-shadow:0_1px_18px_rgba(255,255,255,0.35)] dark:text-slate-300/90 dark:[text-shadow:0_1px_22px_rgba(2,6,23,0.65)]">
-            Olá, {roleLabel}! <span aria-hidden="true">👋</span>
-          </p>
-          <Logo variant="dark" size="sm" className="drop-shadow-[0_14px_34px_rgba(15,23,42,0.18)] dark:drop-shadow-[0_16px_34px_rgba(2,6,23,0.55)]" />
-        </Link>
-
-        <div className="pointer-events-auto flex shrink-0 items-center gap-2 pt-1">
-          <ThemeQuickToggle className={mobileHeaderButtonClass} />
-          <div
-            className={cn(
-              'relative',
-              '[&>div>button]:h-11 [&>div>button]:w-11 [&>div>button]:rounded-[1.35rem]',
-              '[&>div>button]:border-slate-200/70 [&>div>button]:bg-white/80 [&>div>button]:text-slate-700',
-              '[&>div>button]:shadow-[0_18px_42px_-26px_rgba(15,23,42,0.55)] [&>div>button]:backdrop-blur-2xl',
-              'dark:[&>div>button]:border-white/10 dark:[&>div>button]:bg-white/[0.07] dark:[&>div>button]:text-slate-100 dark:[&>div>button]:shadow-black/20'
-            )}
-          >
-            <NotificationBell />
-          </div>
-          <button
-            type="button"
-            onClick={onMenuOpen}
-            className={cn('grid place-items-center active:scale-95', mobileHeaderButtonClass)}
-            aria-label="Abrir menu"
-          >
-            <Menu size={23} strokeWidth={2.5} />
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function Navbar() {
   const { user, profile, subscription, signOut } = useAuth();
   const { t } = useTranslation();
@@ -805,7 +749,19 @@ function AppContent() {
 
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
-            <MobileAppHeader onMenuOpen={() => setIsSidebarOpen(true)} />
+            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[90] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem]">
+              <Logo variant="dark" size="sm" />
+              <div className="flex items-center gap-3">
+                <ThemeQuickToggle />
+                <NotificationBell />
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <Menu size={24} />
+                </button>
+              </div>
+            </header>
           ))}
 
           <main className={cn(
