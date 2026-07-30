@@ -251,8 +251,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         </Swiper>
       </div>
 
-      {/* Fixed Controls Container - Eliminates jumps */}
-      <div className="absolute bottom-0 left-0 w-full z-[110] px-6 pb-12 sm:px-8 pointer-events-none">
+      {/* Fixed Controls Container - Respects Safe Area */}
+      <div 
+        className="absolute bottom-0 left-0 w-full z-[110] px-6 sm:px-8 pointer-events-none"
+        style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
+      >
         <div className="max-w-xl mx-auto flex items-center justify-between w-full">
           {/* Skip Button */}
           <div className="pointer-events-auto">
@@ -312,7 +315,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         }
 
         .swiper-pagination {
-          bottom: 125px !important;
+          bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
           text-align: left !important;
           padding-left: 24px !important;
         }
