@@ -5,19 +5,37 @@ const normalizePlanValue = (value?: unknown): string => {
   return value.trim().toLowerCase();
 };
 
-const isActiveSubscription = (subscription?: any | null): boolean => {
-  return normalizePlanValue(subscription?.status) === 'ativo';
+const isActiveSubscription = (subscription?: any | null, profile?: any | null): boolean => {
+  const subStatus = normalizePlanValue(subscription?.status);
+  const profileStatus = normalizePlanValue(profile?.subscription_status);
+  const status = subStatus || profileStatus;
+
+  // Statuses that grant active access
+  if (['ativo', 'active', 'trialing', 'trial'].includes(status)) {
+    return true;
+  }
+
+  // If trial_end exists and is in the future, allow access
+  const trialEnd = subscription?.trial_end || profile?.trial_end;
+  if (trialEnd) {
+    const endTime = new Date(trialEnd).getTime();
+    if (!isNaN(endTime) && endTime > Date.now() && !['expirado', 'cancelado', 'canceled', 'bloqueado', 'past_due'].includes(status)) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
-const getSubscriptionPlan = (subscription?: any | null): UserPlan | null => {
-  if (!isActiveSubscription(subscription)) return null;
+const getSubscriptionPlan = (subscription?: any | null, profile?: any | null): UserPlan | null => {
+  if (!isActiveSubscription(subscription, profile)) return null;
 
   const rawPlan = normalizePlanValue(
     subscription?.plano ||
     subscription?.plan_type ||
     subscription?.tipo_plano ||
-    subscription?.metadata?.plan ||
-    subscription?.metadata?.plan_type
+    profile?.plan_type ||
+    profile?.plano
   );
 
   if (rawPlan === 'admin') return 'admin';
@@ -28,22 +46,28 @@ const getSubscriptionPlan = (subscription?: any | null): UserPlan | null => {
 };
 
 export const getEffectivePlan = (profile?: any | null, subscription?: any | null): UserPlan => {
-  const profilePlan = normalizePlanValue(profile?.plan_type || profile?.plano);
-  const subscriptionPlan = getSubscriptionPlan(subscription);
+  if (profile?.tipo_usuario === 'admin') return 'admin';
 
-  if (profile?.tipo_usuario === 'admin' || profilePlan === 'admin') return 'admin';
-  if (subscriptionPlan === 'admin') return 'admin';
+  const subStatus = normalizePlanValue(subscription?.status);
+  const profileStatus = normalizePlanValue(profile?.subscription_status);
 
-  // Mantém compatibilidade com usuários PRO antigos marcados por is_pro.
-  if (profile?.is_pro === true) return 'pro';
+  // Explicitly check for blocked/expired/canceled state
+  const isBlockedOrExpired = ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(subStatus) ||
+                             ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(profileStatus);
 
-  // Assinatura ativa só libera o plano que foi comprado.
-  // Isso evita o bug: assinatura Basic ativa sendo tratada como PRO.
-  if (subscriptionPlan === 'pro') return 'pro';
-  if (subscriptionPlan === 'basic') return 'basic';
+  // Check if trial has expired
+  const trialEnd = subscription?.trial_end || profile?.trial_end;
+  const isTrialExpired = trialEnd ? new Date(trialEnd).getTime() <= Date.now() : false;
 
-  if (profilePlan === 'pro' || profilePlan === 'premium') return 'pro';
-  if (profilePlan === 'basic' || profilePlan === 'basico' || profilePlan === 'básico') return 'basic';
+  if (isBlockedOrExpired || (isTrialExpired && !['ativo', 'active'].includes(subStatus) && !['ativo', 'active'].includes(profileStatus))) {
+    return 'free';
+  }
+
+  const activePlan = getSubscriptionPlan(subscription, profile);
+  if (activePlan) return activePlan;
+
+  // Compatibility for legacy marked PRO users without explicit cancellation
+  if (profile?.is_pro === true && !isBlockedOrExpired) return 'pro';
 
   return 'free';
 };
