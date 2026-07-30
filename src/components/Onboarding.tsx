@@ -179,7 +179,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const nextVideoUrl = getNextVideoUrl();
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-screen overflow-hidden flex flex-col font-sans select-none">
+    <div className="fixed inset-0 z-[9999] bg-[#0B1C2C] h-[100dvh] min-h-[100dvh] w-full overflow-hidden flex flex-col font-sans select-none">
       {/* Hidden Preloader */}
       {nextVideoUrl && (
         <video
@@ -253,7 +253,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
       {/* Fixed Controls Container - Respects Safe Area */}
       <div 
-        className="absolute bottom-0 left-0 w-full z-[110] px-6 sm:px-8 pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 w-full z-[110] px-6 sm:px-8 pointer-events-none"
         style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="max-w-xl mx-auto flex items-center justify-between w-full">
@@ -459,7 +459,10 @@ function ContentSlide({ slide, isActive, isPriority, slideIndex }: { slide: any,
         }} 
       />
 
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-16">
+      <div 
+        className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pt-12"
+        style={{ paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))' }}
+      >
         <div className="max-w-xl">
           <AnimatePresence mode="wait">
             {isActive && (
@@ -587,7 +590,13 @@ function DecisionSlide({ slide, onSelect, selectedType, isActive }: { slide: any
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-hidden bg-[#0B1C2C]">
+    <div 
+      className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 overflow-y-auto overflow-x-hidden bg-[#0B1C2C]"
+      style={{
+        paddingTop: '24px',
+        paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))'
+      }}
+    >
       <AnimatePresence>
         {isActive && (
           <>
