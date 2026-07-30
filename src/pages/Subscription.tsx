@@ -1,176 +1,150 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { Crown, Check, ShieldCheck, Zap, Key, Loader2, ArrowRight, Star, Sparkles } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { config } from '../config/api';
+import { 
+  Crown, Check, ShieldCheck, Zap, Key, Loader2, ArrowRight, Star, Sparkles, 
+  Clock, CreditCard, RefreshCw, AlertCircle, CheckCircle2, Lock, HelpCircle, XCircle 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { getEffectivePlan, hasPlanAccess } from '../lib/planAccess';
-
-type PlanId = 'basic_monthly' | 'pro_monthly' | 'pro_semester' | 'pro_yearly';
-type BillingCycle = 'monthly' | 'semester' | 'yearly';
-
-const PLAN_CONFIG: Record<PlanId, {
-  stripePlan: 'basic' | 'pro';
-  planKey: PlanId;
-  planId: PlanId;
-  planVariant: PlanId;
-  billingCycle: BillingCycle;
-  amount: number;
-  serviceName: string;
-  durationDays: number;
-}> = {
-  basic_monthly: {
-    stripePlan: 'basic',
-    planKey: 'basic_monthly',
-    planId: 'basic_monthly',
-    planVariant: 'basic_monthly',
-    billingCycle: 'monthly',
-    amount: 19.99,
-    serviceName: 'Plano Basic Mensal Fisioterapeuta',
-    durationDays: 30,
-  },
-  pro_monthly: {
-    stripePlan: 'pro',
-    planKey: 'pro_monthly',
-    planId: 'pro_monthly',
-    planVariant: 'pro_monthly',
-    billingCycle: 'monthly',
-    amount: 49.99,
-    serviceName: 'Plano Pro Mensal Fisioterapeuta',
-    durationDays: 30,
-  },
-  pro_semester: {
-    stripePlan: 'pro',
-    planKey: 'pro_semester',
-    planId: 'pro_semester',
-    planVariant: 'pro_semester',
-    billingCycle: 'semester',
-    amount: 269.90,
-    serviceName: 'Plano Pro Semestral Fisioterapeuta',
-    durationDays: 180,
-  },
-  pro_yearly: {
-    stripePlan: 'pro',
-    planKey: 'pro_yearly',
-    planId: 'pro_yearly',
-    planVariant: 'pro_yearly',
-    billingCycle: 'yearly',
-    amount: 499.90,
-    serviceName: 'Plano Pro Anual Fisioterapeuta',
-    durationDays: 365,
-  },
-};
-
+import { 
+  PLANS, PlanKey, SubscriptionDetails, fetchSubscriptionDetails, 
+  cancelSubscription, reactivateSubscription, changeSubscriptionPlan 
+} from '../services/subscriptionService';
+import { StripeElementsModal } from '../components/StripeElementsModal';
+import { SubscriptionBlockOverlay } from '../components/SubscriptionBlockOverlay';
 
 export default function Subscription() {
   const { profile, subscription, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [proKey, setProKey] = useState('');
+  const [subDetails, setSubDetails] = useState<SubscriptionDetails | null>(null);
+  const [fetchingSub, setFetchingSub] = useState(true);
+
+  // Modals state
+  const [selectedPlanForSubscribe, setSelectedPlanForSubscribe] = useState<PlanKey | null>(null);
+  const [showUpdateCardModal, setShowUpdateCardModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
   const [showKeyInput, setShowKeyInput] = useState(false);
+  const [proKey, setProKey] = useState('');
 
-  const currentEffectivePlan = getEffectivePlan(profile, subscription);
-  const isPro = hasPlanAccess(currentEffectivePlan, 'pro');
+  const effectivePlan = getEffectivePlan(profile, subscription);
+  const isPro = hasPlanAccess(effectivePlan, 'pro');
 
-  const handleUpgrade = async (method: 'payment' | 'key', selectedPlan: PlanId = 'pro_monthly') => {
-    const planConfig = PLAN_CONFIG[selectedPlan];
-    const planType = planConfig.stripePlan;
+  const loadDetails = async () => {
+    if (!profile?.id) return;
+    setFetchingSub(true);
+    try {
+      const details = await fetchSubscriptionDetails(profile.id);
+      setSubDetails(details);
+    } catch (err) {
+      console.error('[Subscription] Failed to load details:', err);
+    } finally {
+      setFetchingSub(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDetails();
+  }, [profile?.id]);
+
+  const handleCancel = async () => {
+    if (!profile?.id) return;
     setLoading(true);
     try {
-      if (method === 'key') {
-        const validKey = planType === 'pro' ? 'PRO2024' : 'BASIC2024';
-        if (proKey !== validKey) {
-          toast.error('Chave inválida', {
-            description: 'A chave inserida não é válida ou já expirou.'
-          });
-          setLoading(false);
-          return;
-        }
+      await cancelSubscription(profile.id);
+      toast.success('Assinatura programada para cancelamento', {
+        description: 'Seu acesso continua ativo até o final do período atual.'
+      });
+      await refreshProfile();
+      await loadDetails();
+      setShowCancelModal(false);
+    } catch (err: any) {
+      toast.error('Erro ao cancelar assinatura', {
+        description: err.message || 'Tente novamente ou entre em contato com o suporte.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Update assinaturas table
-        const { error } = await supabase
-          .from('assinaturas')
-          .upsert({
-            user_id: profile.id,
-            plano: planType,
-            status: 'ativo',
-            valor: planConfig.amount,
-            data_inicio: new Date().toISOString(),
-            data_expiracao: new Date(Date.now() + planConfig.durationDays * 24 * 60 * 60 * 1000).toISOString()
-          });
+  const handleReactivate = async () => {
+    if (!profile?.id) return;
+    setLoading(true);
+    try {
+      await reactivateSubscription(profile.id);
+      toast.success('Assinatura reativada com sucesso!', {
+        description: 'Aproveite seu acesso ao FisioCareHub.'
+      });
+      await refreshProfile();
+      await loadDetails();
+    } catch (err: any) {
+      toast.error('Erro ao reativar assinatura', {
+        description: err.message || 'Tente novamente.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (error) throw error;
+  const handleChangePlan = async (newPlanKey: PlanKey) => {
+    if (!profile?.id) return;
+    setLoading(true);
+    try {
+      await changeSubscriptionPlan({ userId: profile.id, newPlanKey });
+      toast.success('Plano alterado com sucesso!', {
+        description: `Seu novo plano é ${PLANS[newPlanKey].name}.`
+      });
+      await refreshProfile();
+      await loadDetails();
+      setShowPlanChangeModal(false);
+    } catch (err: any) {
+      toast.error('Erro ao alterar plano', {
+        description: err.message || 'Tente novamente.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Also update perfis for compatibility
-        await supabase
-          .from('perfis')
-          .update({ 
-            is_pro: planType === 'pro',
-            plano: planType,
-            plan_type: planType
-          })
-          .eq('id', profile.id);
+  const handleKeyActivation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.id) return;
 
-        await refreshProfile();
-        toast.success(`Assinatura ${planType.toUpperCase()} Ativada!`, {
-          description: planType === 'pro' 
-            ? 'Parabéns! Você agora tem acesso a todos os recursos avançados.'
-            : 'Sua assinatura básica foi ativada com sucesso.'
-        });
-        return;
-      }
+    if (proKey !== 'PRO2024' && proKey !== 'BASIC2024') {
+      toast.error('Chave inválida', { description: 'Verifique a chave e tente novamente.' });
+      return;
+    }
 
-      // Stripe Payment Method
-      if (!profile) {
-        throw new Error('Usuário não identificado. Por favor, faça login novamente para assinar.');
-      }
-
-      const amount = planConfig.amount;
-      const serviceName = planConfig.serviceName;
-
-      const supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
-      const url = `${supabaseUrl}/functions/v1/create-checkout-session`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': config.supabaseAnonKey,
-          'Authorization': `Bearer ${config.supabaseAnonKey}`
-        },
-        body: JSON.stringify({
-          user_id: profile.id,
-          email: profile.email,
-          plan: planType,
-          plan_key: planConfig.planKey,
-          plan_id: planConfig.planId,
-          plan_variant: planConfig.planVariant,
-          billing_cycle: planConfig.billingCycle,
-          type: 'subscription',
-          service_name: serviceName,
-          amount: amount,
-          appointment_id: null
-        })
+    setLoading(true);
+    try {
+      const planType = proKey === 'PRO2024' ? 'pro' : 'basic';
+      const { supabase } = await import('../lib/supabase');
+      
+      await supabase.from('assinaturas').upsert({
+        user_id: profile.id,
+        plano: planType,
+        status: 'ativo',
+        valor: planType === 'pro' ? 49.99 : 19.99,
+        data_inicio: new Date().toISOString(),
+        data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Erro ao comunicar com servidor de pagamentos.');
-      }
+      await supabase.from('perfis').update({
+        is_pro: planType === 'pro',
+        plano: planType,
+        plan_type: planType,
+        subscription_status: 'ativo'
+      }).eq('id', profile.id);
 
-      const data = await response.json();
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Não foi possível gerar o link de pagamento.');
-      }
-    } catch (error: any) {
-      console.error('Erro ao processar assinatura:', error);
-      toast.error('Erro ao processar assinatura', {
-        description: error.message || 'Ocorreu um erro inesperado. Tente novamente.'
-      });
+      toast.success(`Chave ativada com sucesso! (${planType.toUpperCase()})`);
+      setProKey('');
+      setShowKeyInput(false);
+      await refreshProfile();
+      await loadDetails();
+    } catch (err: any) {
+      toast.error('Erro ao ativar chave:', err.message);
     } finally {
       setLoading(false);
     }
@@ -179,305 +153,405 @@ export default function Subscription() {
   if (profile?.tipo_usuario === 'paciente') {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-sky-500/5 backdrop-blur-xl p-12 rounded-[3rem] border border-sky-500/20 shadow-2xl">
-          <ShieldCheck size={64} className="text-sky-400 mx-auto mb-6" />
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400 mb-4 tracking-tight">Você já é VIP!</h2>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
-            Como paciente, todos os recursos do FisioCareHub já estão liberados para você. Aproveite sua jornada de reabilitação!
+        <div className="bg-sky-50/80 p-10 rounded-3xl border border-sky-100 shadow-xl">
+          <ShieldCheck size={56} className="text-sky-600 mx-auto mb-4" />
+          <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Você possui acesso VIP Gratuito!</h2>
+          <p className="text-slate-600 max-w-xl mx-auto text-base leading-relaxed font-medium">
+            Como paciente do FisioCareHub, todos os módulos de exercícios, consultas e prontuários vinculados estão 100% liberados sem custo.
           </p>
         </div>
       </div>
     );
   }
 
-  if (isPro) {
-    return (
-      <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-emerald-500/5 backdrop-blur-xl p-12 rounded-[3rem] border border-emerald-500/20 shadow-2xl">
-          <Crown size={64} className="text-emerald-400 mx-auto mb-6" />
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-4 tracking-tight">Assinatura PRO Ativa</h2>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
-            Você está aproveitando o melhor do FisioCareHub. Todos os recursos avançados estão desbloqueados.
-          </p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-full font-black text-lg shadow-lg shadow-emerald-900/20">
-            Status: Assinante PRO
-          </div>
-          <p className="mt-6 text-sm text-slate-500 font-black uppercase tracking-widest">
-            Sua assinatura expira em: {subscription?.data_expiracao ? new Date(subscription.data_expiracao).toLocaleDateString() : 'N/A'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const proFeatures = [
-    "Captação de Pacientes Liberada",
-    "Perfil PRO no Marketplace",
-    "Pacientes Ilimitados",
-    "IA Completa (Análise e Sugestões)",
-    "Relatórios de Evolução Detalhados",
-    "Análise de Desempenho com Gráficos",
-    "Exportação de Prontuários em PDF",
-    "Liberar Acesso ao Paciente",
-    "Compartilhamento Externo",
-    "Gestão de Documentos Ilimitada"
-  ];
-
-  const basicFeatures = [
-    "Cadastro de Pacientes",
-    "Gestão de Documentos Próprios",
-    "Listagem de Pacientes",
-    "Histórico de Evoluções",
-    "Agendamentos Básicos"
-  ];
-
-  const currentPlan = currentEffectivePlan;
+  const isTrialActive = subDetails?.isTrial && subDetails?.trialDaysRemaining > 0;
+  const isSubscriptionActive = (subDetails?.status === 'ativo' || subDetails?.status === 'active' || isTrialActive) && subDetails?.status !== 'cancelado';
+  const isBlocked = subDetails?.status === 'expirado' || subDetails?.status === 'past_due';
 
   return (
-    <div className="max-w-6xl mx-auto py-12 px-4">
-      <div className="text-center mb-16">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500/10 text-sky-400 rounded-full font-black text-sm uppercase tracking-widest mb-6 border border-sky-500/20"
-        >
-          <Zap size={16} />
-          Eleve sua Prática
-        </motion.div>
-        <h1 className="text-4xl font-black text-white mb-6 tracking-tight">Escolha o plano ideal para você</h1>
-        <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
-          Ferramentas profissionais para fisioterapeutas que buscam excelência.
-        </p>
-      </div>
+    <div className="min-h-screen bg-slate-50/60 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
 
-      <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6 items-stretch">
-        {/* Basic Plan */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className={cn(
-            "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 flex flex-col h-full",
-            currentPlan === 'basic' && "border-sky-500/50 ring-1 ring-sky-500/50"
-          )}
-        >
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-black text-white px-4 py-1 bg-white/5 rounded-full inline-block">Plano BASIC</h3>
-              {currentPlan === 'basic' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tracking-tighter">R$ 19,99</span>
-              <span className="text-sm text-slate-500 font-bold">/mês</span>
-            </div>
-            <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
-              Ideal para quem está começando e precisa gerenciar seus pacientes e documentos de forma interna.
-            </p>
+        {/* Header Title */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-100/80 text-sky-800 text-xs font-black uppercase tracking-wider border border-sky-200">
+            <Sparkles size={14} className="text-sky-600" />
+            60 Dias de Teste Gratuito
           </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            Gestão de Assinatura
+          </h1>
+          <p className="text-slate-600 text-base font-medium">
+            Experimente o FisioCareHub com 60 dias grátis em todos os planos. Sem compromisso, cancele quando quiser.
+          </p>
+        </div>
 
-          <div className="flex-1 space-y-3 mb-8">
-            {basicFeatures.map((feature, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-sky-500/10 text-sky-400 rounded-full flex items-center justify-center border border-sky-500/20">
-                  <Check size={12} />
-                </div>
-                <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
-              </div>
-            ))}
-          </div>
-
-          {currentPlan !== 'basic' && currentPlan !== 'pro' ? (
-            <button
-              onClick={() => handleUpgrade('payment', 'basic_monthly')}
-              disabled={loading}
-              className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="animate-spin" /> : 'Assinar Basic'}
-            </button>
-          ) : (
-            <button disabled className="w-full py-4 bg-slate-800 text-slate-500 rounded-2xl font-black text-sm uppercase tracking-widest cursor-not-allowed">
-              {currentPlan === 'basic' ? 'Seu Plano Atual' : 'Plano Inferior'}
-            </button>
-          )}
-        </motion.div>
-
-        {/* Pro Monthly */}
-        {[
-          {
-            id: 'pro_monthly' as PlanId,
-            title: 'Plano PRO Mensal',
-            price: 'R$ 49,99',
-            period: '/mês',
-            description: 'Acesso total para profissionais que querem liberar todos os recursos sem compromisso longo.',
-            badge: 'Mais Completo',
-            highlight: false,
-            economy: null,
-            buttonLabel: currentPlan === 'basic' ? 'Fazer Upgrade para PRO' : 'Assinar PRO Mensal',
-          },
-          {
-            id: 'pro_semester' as PlanId,
-            title: 'Plano PRO Semestral',
-            price: 'R$ 269,90',
-            period: '/semestre',
-            description: 'Todos os benefícios PRO por 6 meses, com economia em relação ao plano mensal.',
-            badge: 'Economize',
-            highlight: false,
-            economy: 'Equivale a R$ 44,98/mês',
-            buttonLabel: 'Assinar PRO Semestral',
-          },
-          {
-            id: 'pro_yearly' as PlanId,
-            title: 'Plano PRO Anual',
-            price: 'R$ 499,90',
-            period: '/ano',
-            description: 'Melhor custo-benefício para fisioterapeutas que querem crescer no marketplace o ano todo.',
-            badge: 'Mais Vantajoso',
-            highlight: true,
-            economy: 'Equivale a R$ 41,66/mês',
-            buttonLabel: 'Assinar PRO Anual',
-          },
-        ].map((plan, index) => (
+        {/* Banner Contagem Regressiva Trial (se trial ativo) */}
+        {isTrialActive && (
           <motion.div
-            key={plan.id}
-            initial={{ opacity: 0, x: 20 + index * 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(
-              "bg-slate-900/50 backdrop-blur-xl p-8 rounded-[3rem] border-2 border-sky-500/70 relative flex flex-col h-full shadow-2xl shadow-sky-950/20",
-              plan.highlight && "border-emerald-400 shadow-emerald-950/30 bg-emerald-500/5",
-              currentPlan === 'pro' && "bg-sky-500/5"
-            )}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-600/15 relative overflow-hidden"
           >
-            <div className={cn(
-              "absolute top-0 right-0 text-white px-5 py-1.5 rounded-bl-[1.5rem] font-black text-[10px] uppercase tracking-widest",
-              plan.highlight ? "bg-emerald-500" : "bg-sky-500"
-            )}>
-              {plan.badge}
+            <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="bg-white/20 text-white text-xs font-extrabold uppercase px-3 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5">
+                    <Clock size={14} /> Trial Ativo
+                  </span>
+                  <span className="text-sky-100 text-xs font-semibold">
+                    Ativado em {subDetails.trialStart ? new Date(subDetails.trialStart).toLocaleDateString('pt-BR') : 'recentemente'}
+                  </span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  Seu teste gratuito termina em <span className="underline decoration-sky-300 underline-offset-4">{subDetails.trialDaysRemaining} {subDetails.trialDaysRemaining === 1 ? 'dia' : 'dias'}</span>
+                </h3>
+                <p className="text-sky-100 text-sm font-medium">
+                  Primeira cobrança de {subDetails.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'} apenas em{' '}
+                  <strong>{subDetails.trialEnd ? new Date(subDetails.trialEnd).toLocaleDateString('pt-BR') : '60 dias'}</strong>.
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center shrink-0 min-w-[180px]">
+                <span className="text-xs text-sky-100 font-bold uppercase tracking-wider block mb-1">Dias de Teste Restantes</span>
+                <span className="text-4xl font-black text-white">{subDetails.trialDaysRemaining}</span>
+                <span className="text-xs text-sky-200 block font-medium mt-1">de 60 dias liberados</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Card de Assinatura Atual (se possui assinatura) */}
+        {isSubscriptionActive && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-sky-100 text-sky-700 rounded-2xl flex items-center justify-center font-black">
+                  <Crown size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-black text-slate-900">
+                      Plano {subDetails?.planName || 'PRO'}
+                    </h3>
+                    <span className={cn(
+                      "text-xs font-black uppercase px-2.5 py-0.5 rounded-full border",
+                      isTrialActive
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-sky-50 text-sky-700 border-sky-200"
+                    )}>
+                      {isTrialActive ? `Trial (${subDetails?.trialDaysRemaining}d)` : 'Assinatura Ativa'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {isTrialActive ? 'Período de avaliação de 60 dias sem cobrança' : 'Acesso ilimitado ativado'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowUpdateCardModal(true)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <CreditCard size={14} /> Alterar Cartão
+                </button>
+                <button
+                  onClick={() => setShowPlanChangeModal(true)}
+                  className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-sky-200"
+                >
+                  <RefreshCw size={14} /> Trocar Plano
+                </button>
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-all border border-rose-200"
+                >
+                  Cancelar Assinatura
+                </button>
+              </div>
             </div>
 
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-black text-white px-4 py-1 bg-sky-500/20 text-sky-400 rounded-full inline-block flex items-center gap-2">
-                  {plan.highlight ? <Sparkles size={16} /> : <Crown size={16} />} {plan.title}
-                </h3>
-                {currentPlan === 'pro' && plan.id === 'pro_monthly' && <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest px-2 py-1 bg-sky-500/10 rounded-lg">Plano Atual</span>}
+            {/* Sub-grid Detalhes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1">Próxima Cobrança</span>
+                <span className="text-base font-extrabold text-slate-900">
+                  {subDetails?.nextBillingDate ? new Date(subDetails.nextBillingDate).toLocaleDateString('pt-BR') : '60 dias'}
+                </span>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Valor: {subDetails?.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'}
+                </p>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-white tracking-tighter">{plan.price}</span>
-                <span className="text-sm text-slate-500 font-bold">{plan.period}</span>
-              </div>
-              {plan.economy && (
-                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider">
-                  {plan.economy}
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1">Cartão Cadastrado</span>
+                <div className="flex items-center gap-2 text-base font-extrabold text-slate-900">
+                  <CreditCard size={18} className="text-sky-600" />
+                  {subDetails?.cardLast4 ? `${subDetails.cardBrand ? subDetails.cardBrand.toUpperCase() : 'Cartão'} •••• ${subDetails.cardLast4}` : 'Cartão de Crédito'}
                 </div>
-              )}
-              <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
-                {plan.description}
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  {subDetails?.cardExpMonth && subDetails?.cardExpYear ? `Validade: ${String(subDetails.cardExpMonth).padStart(2, '0')}/${subDetails.cardExpYear}` : 'Protegido via Stripe'}
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1">Garantia e Suporte</span>
+                <div className="flex items-center gap-1.5 text-base font-extrabold text-emerald-700">
+                  <ShieldCheck size={18} /> Cancele quando quiser
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Sem multas ou cláusula de fidelidade
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tabela / Grid de Planos Disponíveis */}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">
+                Planos FisioCareHub
+              </h2>
+              <p className="text-sm text-slate-500 font-medium">
+                Todos os planos incluem 60 dias de teste grátis no primeiro cadastro.
               </p>
             </div>
 
-            <div className="flex-1 space-y-3 mb-8">
-              {proFeatures.map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/20 shrink-0">
-                    <Check size={12} />
-                  </div>
-                  <span className="text-slate-300 font-bold text-sm tracking-tight">{feature}</span>
-                </div>
-              ))}
-            </div>
-
             <button
-              onClick={() => handleUpgrade('payment', plan.id)}
-              disabled={loading || currentPlan === 'pro'}
-              className={cn(
-                "w-full py-4 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50",
-                plan.highlight
-                  ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-900/20"
-                  : "bg-sky-500 hover:bg-sky-600 shadow-sky-900/20"
-              )}
+              onClick={() => setShowKeyInput(!showKeyInput)}
+              className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1.5 underline underline-offset-4"
             >
-              {loading ? <Loader2 className="animate-spin" /> : (
-                <>
-                  {currentPlan === 'pro' ? 'Assinatura Ativa' : plan.buttonLabel}
-                  {!loading && currentPlan !== 'pro' && <ArrowRight size={16} />}
-                </>
-              )}
+              <Key size={14} /> Possui uma chave de ativação?
             </button>
-          </motion.div>
-        ))}
-      </div>
+          </div>
 
-      {/* Key Input Section */}
-      <div className="mt-16 max-w-md mx-auto">
-        <div className="text-center mb-6">
-          <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">ou ative com uma chave de acesso</p>
-        </div>
-        
-        {showKeyInput ? (
-          <div className="space-y-4">
-            <div className="relative">
-              <Key className="absolute pointer-events-none z-20" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#94a3b8' }} />
+          {showKeyInput && (
+            <motion.form
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              onSubmit={handleKeyActivation}
+              className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-3 shadow-sm"
+            >
               <input
                 type="text"
                 value={proKey}
                 onChange={(e) => setProKey(e.target.value.toUpperCase())}
-                placeholder="INSIRA SUA CHAVE"
-                className="w-full pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-sky-500 outline-none font-black text-center tracking-widest text-white !pl-[60px]"
+                placeholder="Insira sua chave (ex: PRO2024)"
+                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => handleUpgrade('key', 'basic_monthly')}
-                disabled={loading || !proKey}
-                className="py-3 bg-white/5 border border-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm"
               >
-                Ativar Basic
+                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Ativar Chave'}
               </button>
-              <button
-                onClick={() => handleUpgrade('key', 'pro_monthly')}
-                disabled={loading || !proKey}
-                className="py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                Ativar Pro
-              </button>
-            </div>
-            <button onClick={() => setShowKeyInput(false)} className="w-full text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-400 transition-colors">Cancelar</button>
+            </motion.form>
+          )}
+
+          {/* Grid de Cards dos Planos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(Object.keys(PLANS) as PlanKey[]).map((pKey) => {
+              const plan = PLANS[pKey];
+              const isCurrent = subDetails?.planKey === pKey && isSubscriptionActive;
+              const isProMonthly = pKey === 'pro_monthly';
+
+              return (
+                <div
+                  key={pKey}
+                  className={cn(
+                    "bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between relative shadow-sm hover:shadow-md",
+                    isProMonthly ? "border-sky-500 ring-2 ring-sky-500/20" : "border-slate-200",
+                    isCurrent && "bg-sky-50/30 border-sky-300"
+                  )}
+                >
+                  {plan.badge && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                      {plan.badge}
+                    </span>
+                  )}
+
+                  <div>
+                    {/* Header do Card */}
+                    <div className="mb-4">
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{plan.stripePlan.toUpperCase()}</span>
+                      <h3 className="text-xl font-black text-slate-900 mt-0.5">{plan.name}</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-1 leading-snug min-h-[32px]">{plan.description}</p>
+                    </div>
+
+                    {/* Preço */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-5">
+                      <div className="text-2xl font-black text-slate-900">{plan.formattedAmount}</div>
+                      {plan.equivalentMonthlyPrice && (
+                        <span className="text-xs font-bold text-sky-700 block mt-0.5">{plan.equivalentMonthlyPrice}</span>
+                      )}
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md inline-block mt-2">
+                        ✦ 60 Dias Grátis Primeiro
+                      </span>
+                    </div>
+
+                    {/* Features List */}
+                    <ul className="space-y-2.5 mb-6 text-xs text-slate-600">
+                      {plan.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 size={16} className="text-sky-600 shrink-0 mt-0.5" />
+                          <span className="font-medium text-slate-700 leading-tight">{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* CTA Button */}
+                  <div>
+                    <button
+                      onClick={() => {
+                        if (isCurrent) return;
+                        if (isSubscriptionActive) {
+                          handleChangePlan(pKey);
+                        } else {
+                          setSelectedPlanForSubscribe(pKey);
+                        }
+                      }}
+                      disabled={isCurrent || loading}
+                      className={cn(
+                        "w-full py-3 px-4 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-sm",
+                        isCurrent
+                          ? "bg-emerald-100 text-emerald-800 cursor-default"
+                          : isProMonthly
+                          ? "bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20"
+                          : "bg-slate-900 hover:bg-slate-800 text-white"
+                      )}
+                    >
+                      {isCurrent ? (
+                        <>
+                          <Check size={16} /> Plano Atual
+                        </>
+                      ) : (
+                        <>
+                          Ativar 60 Dias Grátis <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <button
-            onClick={() => setShowKeyInput(true)}
-            className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-          >
-            <Key size={16} /> Tenho uma Chave de Acesso
-          </button>
-        )}
+        </div>
+
+        {/* FAQs Section */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4">
+          <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+            <HelpCircle size={20} className="text-sky-600" /> Perguntas Frequentes sobre o Trial de 60 Dias
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600">
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm mb-1">Como funciona o período de 60 dias grátis?</h4>
+              <p className="leading-relaxed font-medium">
+                Ao escolher qualquer plano e cadastrar seu cartão de crédito com o Stripe, seu acesso completo é liberado imediatamente por 60 dias sem qualquer cobrança.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm mb-1">Posso cancelar antes de vencer os 60 dias?</h4>
+              <p className="leading-relaxed font-medium">
+                Sim! Você pode cancelar a qualquer momento diretamente no app. Se cancelar durante os 60 dias, nenhuma cobrança será efetuada no seu cartão.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm mb-1">Quantas vezes posso usar o Trial?</h4>
+              <p className="leading-relaxed font-medium">
+                O teste gratuito de 60 dias é permitido apenas 1 vez por usuário. Se cancelar e assinar novamente, a cobrança será iniciada no ato do cadastro.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm mb-1">O que acontece com meus dados se a assinatura expirar?</h4>
+              <p className="leading-relaxed font-medium">
+                Seus dados, pacientes, prontuários e históricos permanecem 100% seguros e nunca são excluídos. Ao reativar sua assinatura, tudo fica disponível imediatamente.
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-          <div className="mt-10 pt-8 border-t border-white/5 text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-400 mb-2">
-              {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+      {/* Modal Stripe Elements para Assinar */}
+      {selectedPlanForSubscribe && profile && (
+        <StripeElementsModal
+          userId={profile.id}
+          userEmail={profile.email || ''}
+          userName={profile.nome_completo || ''}
+          planKey={selectedPlanForSubscribe}
+          mode="subscribe"
+          onSuccess={async () => {
+            setSelectedPlanForSubscribe(null);
+            await refreshProfile();
+            await loadDetails();
+          }}
+          onClose={() => setSelectedPlanForSubscribe(null)}
+        />
+      )}
+
+      {/* Modal Stripe Elements para Alterar Cartão */}
+      {showUpdateCardModal && profile && (
+        <StripeElementsModal
+          userId={profile.id}
+          userEmail={profile.email || ''}
+          userName={profile.nome_completo || ''}
+          mode="update_card"
+          onSuccess={async () => {
+            setShowUpdateCardModal(false);
+            await refreshProfile();
+            await loadDetails();
+          }}
+          onClose={() => setShowUpdateCardModal(false)}
+        />
+      )}
+
+      {/* Modal Confirmação de Cancelamento */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+              <AlertCircle size={24} />
             </div>
-            <p className="text-sm text-slate-500 font-medium">
-              Avaliado como 5 estrelas por mais de 500 profissionais
+
+            <h3 className="text-xl font-black text-slate-900">Cancelar Assinatura?</h3>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              Tem certeza que deseja cancelar? Seu acesso continuará liberado até o final do período atual. Seus dados de pacientes permanecerão completamente seguros.
             </p>
-          </div>
 
-      {/* Trust Badges */}
-      <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        {[
-          { icon: ShieldCheck, title: "Seguro", desc: "Pagamento Criptografado" },
-          { icon: Zap, title: "Instantâneo", desc: "Ativação na Hora" },
-          { icon: Star, title: "Garantia", desc: "7 Dias de Teste" },
-          { icon: Crown, title: "Exclusivo", desc: "Recursos Premium" }
-        ].map((badge, i) => (
-          <div key={i} className="space-y-2">
-            <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-sky-500/20">
-              <badge.icon size={24} />
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+              >
+                Manter Assinatura
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-md shadow-rose-600/20"
+              >
+                {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Sim, Cancelar'}
+              </button>
             </div>
-            <h4 className="font-black text-white text-sm uppercase tracking-wider">{badge.title}</h4>
-            <p className="text-xs text-slate-500 font-medium">{badge.desc}</p>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Overlay Bloqueio por Expiração */}
+      {isBlocked && (
+        <SubscriptionBlockOverlay
+          planName={subDetails?.planName || 'PRO'}
+          expiredDateStr={subDetails?.trialEnd ? new Date(subDetails.trialEnd).toLocaleDateString('pt-BR') : 'recentemente'}
+          onOpenCardUpdate={() => setShowUpdateCardModal(true)}
+          onReactivate={handleReactivate}
+        />
+      )}
     </div>
   );
 }
