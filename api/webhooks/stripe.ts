@@ -514,6 +514,127 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
     }
+
+    if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
+      const userId = subscription.metadata?.user_id;
+
+      const isTrial = subscription.status === 'trialing';
+      const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null;
+      const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+      const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
+      const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
+
+      const planKey = subscription.metadata?.plan_key || 'pro_monthly';
+      const planType = subscription.metadata?.plan || (planKey.startsWith('basic') ? 'basic' : 'pro');
+
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('perfis').select('id').eq('stripe_customer_id', customerId).maybeSingle();
+        targetUserId = prof?.id;
+      }
+
+      if (targetUserId) {
+        await supabase.from('perfis').update({
+          plan_type: planType,
+          plano: planType,
+          is_pro: planType === 'pro',
+          subscription_status: statusText,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          trial_utilizado: true,
+          trial_start: trialStart,
+          trial_end: trialEnd,
+          next_billing_date: nextBillingDate,
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', targetUserId);
+
+        await supabase.from('assinaturas').upsert({
+          user_id: targetUserId,
+          plano: planType,
+          plan_type: planType,
+          plan_key: planKey,
+          status: statusText,
+          data_expiracao: nextBillingDate,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          trial_utilizado: true,
+          trial_start: trialStart,
+          trial_end: trialEnd,
+          next_billing_date: nextBillingDate,
+          last_stripe_sync: new Date().toISOString()
+        });
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
+      const userId = subscription.metadata?.user_id;
+
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('perfis').select('id').eq('stripe_customer_id', customerId).maybeSingle();
+        targetUserId = prof?.id;
+      }
+
+      if (targetUserId) {
+        await supabase.from('perfis').update({
+          subscription_status: 'cancelado',
+          plan_type: 'free',
+          plano: 'free',
+          is_pro: false,
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', targetUserId);
+
+        await supabase.from('assinaturas').update({
+          status: 'cancelado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', targetUserId);
+      }
+    }
+
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+
+      if (profile) {
+        await supabase.from('perfis').update({
+          subscription_status: 'ativo',
+          last_billing_date: new Date().toISOString(),
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', profile.id);
+
+        await supabase.from('assinaturas').update({
+          status: 'ativo',
+          valor: invoice.amount_paid / 100,
+          last_billing_date: new Date().toISOString(),
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', profile.id);
+      }
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+
+      if (profile) {
+        await supabase.from('perfis').update({
+          subscription_status: 'expirado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', profile.id);
+
+        await supabase.from('assinaturas').update({
+          status: 'expirado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', profile.id);
+      }
+    }
   } catch (err: any) {
     console.error('[Stripe Webhook] Internal Error:', err);
     // Retorna 500 para o Stripe tentar novamente quando o processamento interno falhar.
