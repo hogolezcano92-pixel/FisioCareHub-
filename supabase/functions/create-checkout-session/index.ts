@@ -467,7 +467,12 @@ serve(async (req) => {
     if (mode === "subscription") {
       sessionParams.subscription_data = {
         metadata,
+        trial_period_days: 60,
+        payment_settings: {
+          save_default_payment_method: "on_subscription",
+        },
       }
+      sessionParams.payment_method_collection = "always"
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams)
