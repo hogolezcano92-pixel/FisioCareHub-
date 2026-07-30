@@ -8,7 +8,7 @@ import twilio from "twilio";
 import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
-import { generateEmailHTML } from './src/services/emailService.ts';
+import { generateEmailHTML, sendTrialStartedEmail, sendSubscriptionPaidEmail, sendSubscriptionFailedEmail } from './src/services/emailService.ts';
 import { formatDateBR, formatHourBR } from './src/utils/date.ts';
 import { 
   generateRegistrationOptions, 
@@ -251,6 +251,94 @@ const getStripe = () => {
   }
   return stripeInstance;
 };
+
+async function getOrCreateStripeCustomer(userId: string, email: string, name?: string): Promise<string> {
+  const stripe = getStripe();
+  const supabase = getSupabaseAdmin();
+
+  const { data: profile } = await supabase
+    .from('perfis')
+    .select('stripe_customer_id, email, nome_completo')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (profile?.stripe_customer_id) {
+    return profile.stripe_customer_id;
+  }
+
+  if (email || profile?.email) {
+    const searchEmail = email || profile?.email;
+    const existing = await stripe.customers.list({ email: searchEmail, limit: 1 });
+    if (existing.data.length > 0) {
+      const customerId = existing.data[0].id;
+      await supabase.from('perfis').update({ stripe_customer_id: customerId }).eq('id', userId);
+      return customerId;
+    }
+  }
+
+  const newCustomer = await stripe.customers.create({
+    email: email || profile?.email || '',
+    name: name || profile?.nome_completo || 'Usuário FisioCareHub',
+    metadata: {
+      user_id: userId
+    }
+  });
+
+  await supabase.from('perfis').update({ stripe_customer_id: newCustomer.id }).eq('id', userId);
+  return newCustomer.id;
+}
+
+const PLAN_PRICES: Record<string, { amountCents: number; interval: 'month' | 'year'; intervalCount: number; name: string; envVar?: string }> = {
+  basic_monthly: { amountCents: 1999, interval: 'month', intervalCount: 1, name: 'FisioCareHub - Basic Mensal', envVar: process.env.STRIPE_PRICE_BASIC_MONTHLY },
+  basic: { amountCents: 1999, interval: 'month', intervalCount: 1, name: 'FisioCareHub - Basic Mensal', envVar: process.env.STRIPE_PRICE_BASIC_MONTHLY },
+  pro_monthly: { amountCents: 4999, interval: 'month', intervalCount: 1, name: 'FisioCareHub - PRO Mensal', envVar: process.env.STRIPE_PRICE_PRO_MONTHLY },
+  pro: { amountCents: 4999, interval: 'month', intervalCount: 1, name: 'FisioCareHub - PRO Mensal', envVar: process.env.STRIPE_PRICE_PRO_MONTHLY },
+  pro_semester: { amountCents: 26990, interval: 'month', intervalCount: 6, name: 'FisioCareHub - PRO Semestral', envVar: process.env.STRIPE_PRICE_PRO_SEMESTER },
+  pro_yearly: { amountCents: 49990, interval: 'year', intervalCount: 1, name: 'FisioCareHub - PRO Anual', envVar: process.env.STRIPE_PRICE_PRO_YEARLY }
+};
+
+async function getOrCreateStripePrice(planKey: string): Promise<string> {
+  const stripe = getStripe();
+  const config = PLAN_PRICES[planKey] || PLAN_PRICES.pro_monthly;
+
+  if (config.envVar && config.envVar.startsWith('price_')) {
+    return config.envVar;
+  }
+
+  const products = await stripe.products.list({ limit: 50 });
+  let product = products.data.find(p => p.metadata?.plan_key === planKey || p.name === config.name);
+
+  if (!product) {
+    product = await stripe.products.create({
+      name: config.name,
+      metadata: { plan_key: planKey }
+    });
+  }
+
+  const prices = await stripe.prices.list({ product: product.id, active: true, limit: 10 });
+  const existingPrice = prices.data.find(p =>
+    p.unit_amount === config.amountCents &&
+    p.currency === 'brl' &&
+    p.recurring?.interval === config.interval &&
+    p.recurring?.interval_count === config.intervalCount
+  );
+
+  if (existingPrice) {
+    return existingPrice.id;
+  }
+
+  const newPrice = await stripe.prices.create({
+    product: product.id,
+    unit_amount: config.amountCents,
+    currency: 'brl',
+    recurring: {
+      interval: config.interval,
+      interval_count: config.intervalCount
+    }
+  });
+
+  return newPrice.id;
+}
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
 const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3";
@@ -675,10 +763,572 @@ async function startServer() {
       }
     }
 
+    // --- Subscription Lifecycle Events ---
+    if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
+      const userId = subscription.metadata?.user_id;
+
+      console.log(`[Webhook] Subscription ${event.type} for customer ${customerId}, user ${userId}`);
+
+      const isTrial = subscription.status === 'trialing';
+      const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null;
+      const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+      const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
+      const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
+
+      const planKey = subscription.metadata?.plan_key || 'pro_monthly';
+      const planType = subscription.metadata?.plan || (planKey.startsWith('basic') ? 'basic' : 'pro');
+
+      const supabase = getSupabaseAdmin();
+
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('perfis').select('id').eq('stripe_customer_id', customerId).maybeSingle();
+        targetUserId = prof?.id;
+      }
+
+      if (targetUserId) {
+        await supabase.from('perfis').update({
+          plan_type: planType,
+          plano: planType,
+          is_pro: planType === 'pro',
+          subscription_status: statusText,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          trial_utilizado: true,
+          trial_start: trialStart,
+          trial_end: trialEnd,
+          next_billing_date: nextBillingDate,
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', targetUserId);
+
+        await supabase.from('assinaturas').upsert({
+          user_id: targetUserId,
+          plano: planType,
+          plan_type: planType,
+          plan_key: planKey,
+          status: statusText,
+          data_expiracao: nextBillingDate,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          trial_utilizado: true,
+          trial_start: trialStart,
+          trial_end: trialEnd,
+          next_billing_date: nextBillingDate,
+          last_stripe_sync: new Date().toISOString()
+        });
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
+      const userId = subscription.metadata?.user_id;
+
+      console.log(`[Webhook] Subscription DELETED for customer ${customerId}, user ${userId}`);
+      const supabase = getSupabaseAdmin();
+
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('perfis').select('id').eq('stripe_customer_id', customerId).maybeSingle();
+        targetUserId = prof?.id;
+      }
+
+      if (targetUserId) {
+        await supabase.from('perfis').update({
+          subscription_status: 'cancelado',
+          plan_type: 'free',
+          plano: 'free',
+          is_pro: false,
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', targetUserId);
+
+        await supabase.from('assinaturas').update({
+          status: 'cancelado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', targetUserId);
+      }
+    }
+
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      const subscriptionId = invoice.subscription as string;
+
+      console.log(`[Webhook] Invoice PAID for customer ${customerId}, amount: ${invoice.amount_paid}`);
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+
+      if (profile) {
+        const nextBillingDateStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR');
+        const amountStr = (invoice.amount_paid / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const planLabel = profile.plan_type === 'basic' ? 'Basic' : 'PRO';
+
+        await supabase.from('perfis').update({
+          subscription_status: 'ativo',
+          last_billing_date: new Date().toISOString(),
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', profile.id);
+
+        await supabase.from('assinaturas').update({
+          status: 'ativo',
+          valor: invoice.amount_paid / 100,
+          last_billing_date: new Date().toISOString(),
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', profile.id);
+
+        if (profile.email && invoice.amount_paid > 0) {
+          await sendSubscriptionPaidEmail(profile.email, profile.nome_completo || 'Profissional', planLabel, amountStr, nextBillingDateStr);
+        }
+      }
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      console.warn(`[Webhook] Invoice PAYMENT FAILED for customer ${customerId}`);
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+
+      if (profile) {
+        const amountStr = (invoice.amount_due / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const planLabel = profile.plan_type === 'basic' ? 'Basic' : 'PRO';
+
+        await supabase.from('perfis').update({
+          subscription_status: 'expirado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('id', profile.id);
+
+        await supabase.from('assinaturas').update({
+          status: 'expirado',
+          last_stripe_sync: new Date().toISOString()
+        }).eq('user_id', profile.id);
+
+        if (profile.email) {
+          await sendSubscriptionFailedEmail(profile.email, profile.nome_completo || 'Profissional', planLabel, amountStr);
+        }
+      }
+    }
+
     res.json({ received: true });
   });
 
   app.use(express.json());
+
+  // --- Stripe Subscription & 60-Day Trial API Endpoints ---
+  app.get("/api/stripe/config", (req, res) => {
+    res.json({
+      publishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || ""
+    });
+  });
+
+  app.post("/api/stripe/create-setup-intent", async (req, res) => {
+    try {
+      const { userId, email } = req.body;
+      if (!userId) return res.status(400).json({ error: "userId obrigatório" });
+
+      const customerId = await getOrCreateStripeCustomer(userId, email || '');
+      const stripe = getStripe();
+
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        metadata: { user_id: userId }
+      });
+
+      res.json({ clientSecret: setupIntent.client_secret, customerId });
+    } catch (err: any) {
+      console.error("[Stripe API] Error creating setup intent:", err);
+      res.status(500).json({ error: err.message || "Erro interno ao criar setup intent" });
+    }
+  });
+
+  app.post("/api/stripe/create-subscription", async (req, res) => {
+    try {
+      const { userId, email, userName, planKey, paymentMethodId } = req.body;
+      if (!userId || !paymentMethodId || !planKey) {
+        return res.status(400).json({ error: "Dados incompletos (userId, planKey, paymentMethodId são obrigatórios)" });
+      }
+
+      const stripe = getStripe();
+      const supabase = getSupabaseAdmin();
+
+      const customerId = await getOrCreateStripeCustomer(userId, email || '', userName);
+
+      // Attach payment method to customer
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId }
+      });
+
+      const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+      const card = paymentMethod.card;
+
+      // Check if user has already used trial
+      const { data: profile } = await supabase
+        .from('perfis')
+        .select('trial_utilizado, email, nome_completo')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const { data: existingSub } = await supabase
+        .from('assinaturas')
+        .select('trial_utilizado')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const hasUsedTrial = Boolean(profile?.trial_utilizado || existingSub?.trial_utilizado);
+      const trialDays = hasUsedTrial ? undefined : 60;
+
+      const priceId = await getOrCreateStripePrice(planKey);
+      const planConfig = PLAN_PRICES[planKey] || PLAN_PRICES.pro_monthly;
+      const planType = planKey.startsWith('basic') ? 'basic' : 'pro';
+
+      const subParams: Stripe.SubscriptionCreateParams = {
+        customer: customerId,
+        items: [{ price: priceId }],
+        default_payment_method: paymentMethodId,
+        trial_period_days: trialDays,
+        payment_behavior: 'allow_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          user_id: userId,
+          plan_key: planKey,
+          plan: planType,
+          trial: trialDays ? 'true' : 'false'
+        }
+      };
+
+      const subscription = await stripe.subscriptions.create(subParams);
+
+      const isTrial = subscription.status === 'trialing';
+      const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : (isTrial ? new Date().toISOString() : null);
+      const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+      const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
+
+      const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
+
+      // Update Supabase perfis
+      await supabase.from('perfis').update({
+        plan_type: planType,
+        plano: planType,
+        is_pro: planType === 'pro',
+        subscription_status: statusText,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        stripe_payment_method_id: paymentMethodId,
+        card_brand: card?.brand || null,
+        card_last4: card?.last4 || null,
+        card_exp_month: card?.exp_month || null,
+        card_exp_year: card?.exp_year || null,
+        trial_utilizado: true,
+        trial_start: trialStart,
+        trial_end: trialEnd,
+        next_billing_date: nextBillingDate,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('id', userId);
+
+      // Upsert Supabase assinaturas
+      await supabase.from('assinaturas').upsert({
+        user_id: userId,
+        plano: planType,
+        plan_type: planType,
+        plan_key: planKey,
+        status: statusText,
+        valor: planConfig.amountCents / 100,
+        data_inicio: new Date().toISOString(),
+        data_expiracao: nextBillingDate,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        stripe_payment_method_id: paymentMethodId,
+        card_brand: card?.brand || null,
+        card_last4: card?.last4 || null,
+        card_exp_month: card?.exp_month || null,
+        card_exp_year: card?.exp_year || null,
+        trial_utilizado: true,
+        trial_start: trialStart,
+        trial_end: trialEnd,
+        next_billing_date: nextBillingDate,
+        last_stripe_sync: new Date().toISOString()
+      });
+
+      // Send email if trial
+      const targetEmail = email || profile?.email;
+      if (isTrial && targetEmail) {
+        const trialEndFormatted = trialEnd ? new Date(trialEnd).toLocaleDateString('pt-BR') : '';
+        const amountStr = (planConfig.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        await sendTrialStartedEmail(targetEmail, userName || profile?.nome_completo || 'Profissional', planConfig.name, trialEndFormatted, amountStr);
+      }
+
+      res.json({
+        success: true,
+        subscriptionId: subscription.id,
+        status: statusText,
+        isTrial,
+        trialEnd,
+        nextBillingDate
+      });
+    } catch (err: any) {
+      console.error("[Stripe API] Error creating subscription:", err);
+      res.status(500).json({ error: err.message || "Erro ao criar assinatura" });
+    }
+  });
+
+  app.post("/api/stripe/update-payment-method", async (req, res) => {
+    try {
+      const { userId, paymentMethodId } = req.body;
+      if (!userId || !paymentMethodId) {
+        return res.status(400).json({ error: "userId e paymentMethodId são obrigatórios" });
+      }
+
+      const stripe = getStripe();
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('stripe_customer_id, stripe_subscription_id').eq('id', userId).maybeSingle();
+      const customerId = profile?.stripe_customer_id || (await getOrCreateStripeCustomer(userId, ''));
+
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId }
+      });
+
+      if (profile?.stripe_subscription_id) {
+        await stripe.subscriptions.update(profile.stripe_subscription_id, {
+          default_payment_method: paymentMethodId
+        });
+      }
+
+      const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+      const card = pm.card;
+
+      await supabase.from('perfis').update({
+        stripe_payment_method_id: paymentMethodId,
+        card_brand: card?.brand || null,
+        card_last4: card?.last4 || null,
+        card_exp_month: card?.exp_month || null,
+        card_exp_year: card?.exp_year || null,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('id', userId);
+
+      await supabase.from('assinaturas').update({
+        stripe_payment_method_id: paymentMethodId,
+        card_brand: card?.brand || null,
+        card_last4: card?.last4 || null,
+        card_exp_month: card?.exp_month || null,
+        card_exp_year: card?.exp_year || null,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('user_id', userId);
+
+      res.json({ success: true, cardBrand: card?.brand, cardLast4: card?.last4 });
+    } catch (err: any) {
+      console.error("[Stripe API] Error updating payment method:", err);
+      res.status(500).json({ error: err.message || "Erro ao atualizar método de pagamento" });
+    }
+  });
+
+  app.post("/api/stripe/change-plan", async (req, res) => {
+    try {
+      const { userId, newPlanKey } = req.body;
+      if (!userId || !newPlanKey) {
+        return res.status(400).json({ error: "userId e newPlanKey são obrigatórios" });
+      }
+
+      const stripe = getStripe();
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('stripe_subscription_id').eq('id', userId).maybeSingle();
+      if (!profile?.stripe_subscription_id) {
+        return res.status(400).json({ error: "Assinatura não encontrada no Stripe para este usuário." });
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+      const newPriceId = await getOrCreateStripePrice(newPlanKey);
+      const newPlanConfig = PLAN_PRICES[newPlanKey] || PLAN_PRICES.pro_monthly;
+      const planType = newPlanKey.startsWith('basic') ? 'basic' : 'pro';
+
+      await stripe.subscriptions.update(profile.stripe_subscription_id, {
+        items: [{
+          id: subscription.items.data[0].id,
+          price: newPriceId
+        }],
+        proration_behavior: 'always_invoice',
+        metadata: {
+          ...subscription.metadata,
+          plan_key: newPlanKey,
+          plan: planType
+        }
+      });
+
+      await supabase.from('perfis').update({
+        plan_type: planType,
+        plano: planType,
+        is_pro: planType === 'pro',
+        last_stripe_sync: new Date().toISOString()
+      }).eq('id', userId);
+
+      await supabase.from('assinaturas').update({
+        plano: planType,
+        plan_type: planType,
+        plan_key: newPlanKey,
+        valor: newPlanConfig.amountCents / 100,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('user_id', userId);
+
+      res.json({ success: true, newPlanKey, planType });
+    } catch (err: any) {
+      console.error("[Stripe API] Error changing plan:", err);
+      res.status(500).json({ error: err.message || "Erro ao alterar plano de assinatura" });
+    }
+  });
+
+  app.post("/api/stripe/cancel-subscription", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ error: "userId é obrigatório" });
+
+      const stripe = getStripe();
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('stripe_subscription_id').eq('id', userId).maybeSingle();
+      if (!profile?.stripe_subscription_id) {
+        return res.status(400).json({ error: "Assinatura não encontrada." });
+      }
+
+      const updatedSub = await stripe.subscriptions.update(profile.stripe_subscription_id, {
+        cancel_at_period_end: true
+      });
+
+      await supabase.from('perfis').update({
+        subscription_status: 'cancelado',
+        last_stripe_sync: new Date().toISOString()
+      }).eq('id', userId);
+
+      await supabase.from('assinaturas').update({
+        status: 'cancelado',
+        last_stripe_sync: new Date().toISOString()
+      }).eq('user_id', userId);
+
+      res.json({ success: true, cancelAtPeriodEnd: updatedSub.cancel_at_period_end });
+    } catch (err: any) {
+      console.error("[Stripe API] Error canceling subscription:", err);
+      res.status(500).json({ error: err.message || "Erro ao cancelar assinatura" });
+    }
+  });
+
+  app.post("/api/stripe/reactivate-subscription", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ error: "userId é obrigatório" });
+
+      const stripe = getStripe();
+      const supabase = getSupabaseAdmin();
+
+      const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+      if (!profile?.stripe_subscription_id) {
+        return res.status(400).json({ error: "Assinatura anterior não encontrada." });
+      }
+
+      let subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+
+      if (subscription.status === 'active' || subscription.status === 'trialing') {
+        subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
+          cancel_at_period_end: false
+        });
+      } else {
+        // Create a new subscription if the previous was deleted (without trial since trial_utilizado is true)
+        const planKey = profile.plan_type === 'basic' ? 'basic_monthly' : 'pro_monthly';
+        const priceId = await getOrCreateStripePrice(planKey);
+
+        subscription = await stripe.subscriptions.create({
+          customer: profile.stripe_customer_id,
+          items: [{ price: priceId }],
+          default_payment_method: profile.stripe_payment_method_id || undefined,
+          metadata: {
+            user_id: userId,
+            plan_key: planKey,
+            plan: profile.plan_type || 'pro'
+          }
+        });
+      }
+
+      const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
+      const statusText = subscription.status === 'trialing' ? 'trialing' : 'ativo';
+
+      await supabase.from('perfis').update({
+        subscription_status: statusText,
+        stripe_subscription_id: subscription.id,
+        next_billing_date: nextBillingDate,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('id', userId);
+
+      await supabase.from('assinaturas').update({
+        status: statusText,
+        stripe_subscription_id: subscription.id,
+        next_billing_date: nextBillingDate,
+        last_stripe_sync: new Date().toISOString()
+      }).eq('user_id', userId);
+
+      res.json({ success: true, status: statusText });
+    } catch (err: any) {
+      console.error("[Stripe API] Error reactivating subscription:", err);
+      res.status(500).json({ error: err.message || "Erro ao reativar assinatura" });
+    }
+  });
+
+  app.get("/api/stripe/subscription-details", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ error: "userId parâmetro é obrigatório" });
+
+      const supabase = getSupabaseAdmin();
+      const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+      const { data: subs } = await supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1);
+
+      const sub = Array.isArray(subs) && subs.length > 0 ? subs[0] : null;
+
+      const rawStatus = (sub?.status || profile?.subscription_status || 'free').toLowerCase();
+      const trialEnd = sub?.trial_end || profile?.trial_end || null;
+      
+      let daysRemaining = 0;
+      if (trialEnd) {
+        const endMs = new Date(trialEnd).getTime();
+        if (!isNaN(endMs) && endMs > Date.now()) {
+          daysRemaining = Math.ceil((endMs - Date.now()) / (1000 * 60 * 60 * 24));
+        }
+      }
+
+      const isTrial = rawStatus === 'trialing' || (daysRemaining > 0 && rawStatus !== 'expirado' && rawStatus !== 'cancelado');
+      const planType = (sub?.plano || sub?.plan_type || profile?.plan_type || profile?.plano || 'free').toLowerCase();
+
+      res.json({
+        plan: planType,
+        planKey: sub?.plan_key || `${planType}_monthly`,
+        planName: planType === 'pro' ? 'PRO' : planType === 'basic' ? 'Basic' : 'Gratuito',
+        status: rawStatus,
+        isTrial,
+        trialDaysRemaining: daysRemaining,
+        trialStart: sub?.trial_start || profile?.trial_start || null,
+        trialEnd,
+        trialUtilizado: Boolean(profile?.trial_utilizado || sub?.trial_utilizado),
+        nextBillingDate: sub?.next_billing_date || profile?.next_billing_date || sub?.data_expiracao || null,
+        lastBillingDate: sub?.last_billing_date || profile?.last_billing_date || null,
+        amount: sub?.valor || (planType === 'pro' ? 49.99 : planType === 'basic' ? 19.99 : 0),
+        cardBrand: sub?.card_brand || profile?.card_brand || null,
+        cardLast4: sub?.card_last4 || profile?.card_last4 || null,
+        cardExpMonth: sub?.card_exp_month || profile?.card_exp_month || null,
+        cardExpYear: sub?.card_exp_year || profile?.card_exp_year || null,
+        stripeCustomerId: sub?.stripe_customer_id || profile?.stripe_customer_id || null,
+        stripeSubscriptionId: sub?.stripe_subscription_id || profile?.stripe_subscription_id || null,
+      });
+    } catch (err: any) {
+      console.error("[Stripe API] Error fetching subscription details:", err);
+      res.status(500).json({ error: err.message || "Erro ao buscar detalhes da assinatura" });
+    }
+  });
 
   // --- WebAuthn (Biometric Auth) Implementation ---
   const challenges = new Map<string, string>();
