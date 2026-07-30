@@ -462,97 +462,241 @@ const getSubscriptionPlan = (session: any) => {
   }
 }
 
-const notifySubscriptionActivated = async (supabase: any, userId: string, session: any) => {
+const notifySubscriptionEvent = async (
+  supabase: any,
+  userId: string,
+  eventKind: 'trial_started' | 'active_paid' | 'payment_failed' | 'canceled',
+  planLabel: string,
+  extraDetails?: { trialEnd?: string; amountStr?: string; nextBillingDateStr?: string }
+) => {
   const { data: profile } = await supabase
     .from("perfis")
     .select("id, nome_completo, email")
     .eq("id", userId)
     .maybeSingle()
 
-  const planInfo = getSubscriptionPlan(session)
   const userName = profile?.nome_completo || "Profissional"
-  const planLabel =
-    planInfo.variant === "pro_yearly" || planInfo.variant === "pro_annual"
-      ? "Pro Anual"
-      : planInfo.variant === "pro_semester" || planInfo.variant === "pro_semiannual"
-        ? "Pro Semestral"
-        : planInfo.plan === "basic"
-          ? "Basic"
-          : "Pro Mensal"
+
+  let title = "Atualização da Assinatura"
+  let message = `Sua assinatura do plano ${planLabel} foi atualizada.`
+  let emailSubject = `Atualização da Assinatura - FisioCareHub`
+  let emailContent = ``
+
+  if (eventKind === 'trial_started') {
+    title = "Teste gratuito de 60 dias ativado"
+    message = `Seu teste gratuito de 60 dias do plano ${planLabel} foi ativado com sucesso! Curta acesso completo até ${formatDateBR(extraDetails?.trialEnd)}.`
+    emailSubject = `Teste gratuito de 60 dias ativado - FisioCareHub`
+    emailContent = `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(userName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Seu <strong>teste gratuito de 60 dias</strong> no plano <strong>${escapeHtml(planLabel)}</strong> foi ativado com sucesso!</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
+        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
+          <p style="margin:0 0 8px;"><strong>Plano:</strong> ${escapeHtml(planLabel)}</p>
+          <p style="margin:0 0 8px;"><strong>Status:</strong> Teste Gratuito (60 dias)</p>
+          <p style="margin:0;"><strong>Término do Teste:</strong> ${escapeHtml(formatDateBR(extraDetails?.trialEnd))}</p>
+        </td></tr>
+      </table>
+      <p style="margin:0;color:#475569;font-size:16px;line-height:25px;">Aproveite todos os recursos da plataforma durante este período. Nenhuma cobrança foi efetuada hoje.</p>
+    `
+  } else if (eventKind === 'active_paid') {
+    title = "Assinatura paga ativada"
+    message = `Sua assinatura do plano ${planLabel} está ativa e com pagamento confirmado.`
+    emailSubject = `Assinatura paga ativada - FisioCareHub`
+    emailContent = `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(userName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Sua assinatura do plano <strong>${escapeHtml(planLabel)}</strong> foi confirmada e está 100% ativa no FisioCareHub.</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
+        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
+          <p style="margin:0 0 8px;"><strong>Plano:</strong> ${escapeHtml(planLabel)}</p>
+          ${extraDetails?.amountStr ? `<p style="margin:0 0 8px;"><strong>Valor Pago:</strong> ${escapeHtml(extraDetails.amountStr)}</p>` : ''}
+          ${extraDetails?.nextBillingDateStr ? `<p style="margin:0;"><strong>Próxima Renovação:</strong> ${escapeHtml(extraDetails.nextBillingDateStr)}</p>` : ''}
+        </td></tr>
+      </table>
+      <p style="margin:0;color:#475569;font-size:16px;line-height:25px;">Agradecemos por continuar com o FisioCareHub!</p>
+    `
+  } else if (eventKind === 'payment_failed') {
+    title = "Falha no pagamento da assinatura"
+    message = `Não conseguimos processar o pagamento da sua assinatura do plano ${planLabel}. Atualize seu cartão de crédito.`
+    emailSubject = `Aviso: Falha na cobrança da assinatura - FisioCareHub`
+    emailContent = `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(userName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#dc2626;font-size:16px;line-height:25px;">Houve uma falha na tentativa de cobrança do seu plano <strong>${escapeHtml(planLabel)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:24px;">Por favor, acesse as configurações de assinatura no FisioCareHub para atualizar seu método de pagamento e evitar interrupção no acesso.</p>
+    `
+  } else if (eventKind === 'canceled') {
+    title = "Assinatura cancelada"
+    message = `Sua assinatura do plano ${planLabel} foi cancelada.`
+    emailSubject = `Assinatura cancelada - FisioCareHub`
+    emailContent = `
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(userName)}</strong>.</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Sua assinatura do plano <strong>${escapeHtml(planLabel)}</strong> foi encerrada.</p>
+    `
+  }
 
   await supabase.from("notificacoes").insert({
     user_id: userId,
-    titulo: "Assinatura ativada",
-    mensagem: `Seu plano ${planLabel} foi ativado com sucesso.`,
+    titulo: title,
+    mensagem: message,
     tipo: "subscription",
     lida: false,
     link: "/subscription",
   })
 
-  const html = buildEmailLayout(
-    "Assinatura ativada",
-    `
-      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Olá, <strong>${escapeHtml(userName)}</strong>.</p>
-      <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:25px;">Seu plano <strong>${escapeHtml(planLabel)}</strong> foi ativado com sucesso no FisioCareHub.</p>
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:18px 0;">
-        <tr><td style="padding:16px;color:#334155;font-size:15px;line-height:24px;">
-          <p style="margin:0 0 8px;"><strong>Plano:</strong> ${escapeHtml(planLabel)}</p>
-          <p style="margin:0 0 8px;"><strong>Valor:</strong> ${escapeHtml(formatMoneyBR(planInfo.value))}</p>
-          <p style="margin:0;"><strong>Ciclo:</strong> ${escapeHtml(planInfo.billingCycle)}</p>
-        </td></tr>
-      </table>
-      <p style="margin:0;color:#475569;font-size:16px;line-height:25px;">Agora você pode acessar os recursos liberados para o seu plano.</p>
-    `,
-  )
-
-  await sendEmail(profile?.email, `Assinatura ${planLabel} ativada - FisioCareHub`, html)
+  if (emailContent && profile?.email) {
+    const html = buildEmailLayout(title, emailContent)
+    await sendEmail(profile.email, emailSubject, html)
+  }
 }
 
-const upsertSubscription = async (supabase: any, session: any, userId: string) => {
-  const planInfo = getSubscriptionPlan(session)
-  const expiresAt = new Date(Date.now() + planInfo.durationDays * 24 * 60 * 60 * 1000).toISOString()
+const handleSubscriptionCreatedOrUpdated = async (supabase: any, subscription: any) => {
+  const customerId = subscription.customer as string
+  const subscriptionId = subscription.id
+  const userId = subscription.metadata?.user_id
 
-  const { error: profileError } = await supabase
-    .from("perfis")
-    .update({
-      is_pro: planInfo.plan === "pro",
-      plano: planInfo.plan,
-    })
-    .eq("id", userId)
+  let targetUserId = userId
+  if (!targetUserId) {
+    const { data: prof } = await supabase.from("perfis").select("id").eq("stripe_customer_id", customerId).maybeSingle()
+    targetUserId = prof?.id
+  }
 
-  if (profileError) throw profileError
+  if (!targetUserId) {
+    console.warn("[new-stripe-webhook] Não foi possível vincular a assinatura ao usuário:", { customerId, subscriptionId })
+    return
+  }
+
+  const isTrial = subscription.status === 'trialing'
+  const statusText = isTrial ? 'trialing' : (subscription.status === 'active' ? 'ativo' : subscription.status)
+
+  const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null
+  const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+  const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString()
+
+  const planKey = subscription.metadata?.plan_key || subscription.metadata?.plan_variant || 'pro_monthly'
+  const planType = subscription.metadata?.plan || (planKey.startsWith('basic') ? 'basic' : 'pro')
+  const planLabel = planType === 'basic' ? 'Basic' : 'PRO'
+
+  await supabase.from("perfis").update({
+    plan_type: planType,
+    plano: planType,
+    is_pro: planType === 'pro',
+    subscription_status: statusText,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    trial_utilizado: true,
+    trial_start: trialStart,
+    trial_end: trialEnd,
+    next_billing_date: nextBillingDate,
+    last_stripe_sync: new Date().toISOString()
+  }).eq("id", targetUserId)
 
   const assinaturaColumns = await getTableColumns(supabase, "assinaturas")
   const payload = pickExistingColumns(
     {
-      user_id: userId,
-      plano: planInfo.plan,
-      status: "ativo",
-      valor: planInfo.value,
-      data_inicio: new Date().toISOString(),
-      data_expiracao: expiresAt,
-      billing_cycle: planInfo.billingCycle,
-      plan_variant: planInfo.variant,
-      stripe_subscription_id: session.subscription || null,
-      stripe_customer_id: session.customer || null,
-      updated_at: new Date().toISOString(),
+      user_id: targetUserId,
+      plano: planType,
+      plan_type: planType,
+      plan_key: planKey,
+      status: statusText,
+      data_expiracao: nextBillingDate,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      trial_utilizado: true,
+      trial_start: trialStart,
+      trial_end: trialEnd,
+      next_billing_date: nextBillingDate,
+      last_stripe_sync: new Date().toISOString()
     },
-    assinaturaColumns,
+    assinaturaColumns
   )
 
-  const { error: subError } = await supabase
-    .from("assinaturas")
-    .upsert(payload, { onConflict: "user_id" })
+  await supabase.from("assinaturas").upsert(payload, { onConflict: "user_id" })
 
-  if (subError) console.error("[new-stripe-webhook] Erro ao atualizar assinaturas:", subError)
+  if (isTrial) {
+    await notifySubscriptionEvent(supabase, targetUserId, 'trial_started', planLabel, { trialEnd })
+  } else if (subscription.status === 'active') {
+    await notifySubscriptionEvent(supabase, targetUserId, 'active_paid', planLabel, { nextBillingDateStr: formatDateBR(nextBillingDate) })
+  }
 
-  await notifySubscriptionActivated(supabase, userId, session)
+  console.log(`[new-stripe-webhook] Assinatura processada (${statusText}) para user ${targetUserId}`)
+}
 
-  console.log("[new-stripe-webhook] Assinatura ativada:", {
-    userId,
-    planInfo,
-    stripeSessionId: session.id,
-  })
+const handleSubscriptionDeleted = async (supabase: any, subscription: any) => {
+  const customerId = subscription.customer as string
+  const userId = subscription.metadata?.user_id
+
+  let targetUserId = userId
+  if (!targetUserId) {
+    const { data: prof } = await supabase.from("perfis").select("id").eq("stripe_customer_id", customerId).maybeSingle()
+    targetUserId = prof?.id
+  }
+
+  if (targetUserId) {
+    await supabase.from("perfis").update({
+      subscription_status: "cancelado",
+      plan_type: "free",
+      plano: "free",
+      is_pro: false,
+      last_stripe_sync: new Date().toISOString()
+    }).eq("id", targetUserId)
+
+    await supabase.from("assinaturas").update({
+      status: "cancelado",
+      last_stripe_sync: new Date().toISOString()
+    }).eq("user_id", targetUserId)
+
+    await notifySubscriptionEvent(supabase, targetUserId, 'canceled', 'FisioCareHub')
+  }
+}
+
+const handleInvoicePaid = async (supabase: any, invoice: any) => {
+  const customerId = invoice.customer as string
+  const amountPaid = (invoice.amount_paid || 0) / 100
+
+  const { data: profile } = await supabase.from("perfis").select("*").eq("stripe_customer_id", customerId).maybeSingle()
+
+  if (profile) {
+    const planLabel = profile.plan_type === 'basic' ? 'Basic' : 'PRO'
+    const amountStr = formatMoneyBR(amountPaid)
+    const nextBillingDateStr = formatDateBR(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
+
+    await supabase.from("perfis").update({
+      subscription_status: "ativo",
+      last_billing_date: new Date().toISOString(),
+      last_stripe_sync: new Date().toISOString()
+    }).eq("id", profile.id)
+
+    await supabase.from("assinaturas").update({
+      status: "ativo",
+      valor: amountPaid,
+      last_billing_date: new Date().toISOString(),
+      last_stripe_sync: new Date().toISOString()
+    }).eq("user_id", profile.id)
+
+    if (amountPaid > 0) {
+      await notifySubscriptionEvent(supabase, profile.id, 'active_paid', planLabel, { amountStr, nextBillingDateStr })
+    }
+  }
+}
+
+const handleInvoicePaymentFailed = async (supabase: any, invoice: any) => {
+  const customerId = invoice.customer as string
+  const { data: profile } = await supabase.from("perfis").select("*").eq("stripe_customer_id", customerId).maybeSingle()
+
+  if (profile) {
+    const planLabel = profile.plan_type === 'basic' ? 'Basic' : 'PRO'
+
+    await supabase.from("perfis").update({
+      subscription_status: "expirado",
+      last_stripe_sync: new Date().toISOString()
+    }).eq("id", profile.id)
+
+    await supabase.from("assinaturas").update({
+      status: "expirado",
+      last_stripe_sync: new Date().toISOString()
+    }).eq("user_id", profile.id)
+
+    await notifySubscriptionEvent(supabase, profile.id, 'payment_failed', planLabel)
+  }
 }
 
 const registerMaterialPurchase = async (supabase: any, session: any, userId: string) => {
@@ -651,12 +795,46 @@ serve(async (req) => {
         session.metadata?.plan_variant
 
       if (isSubscription && userId) {
-        await upsertSubscription(supabase, session, userId)
-        return new Response(JSON.stringify({ received: true, type: "subscription" }), {
+        if (session.customer || session.subscription) {
+          await supabase.from("perfis").update({
+            stripe_customer_id: session.customer || null,
+            stripe_subscription_id: session.subscription || null,
+            last_stripe_sync: new Date().toISOString()
+          }).eq("id", userId)
+        }
+        return new Response(JSON.stringify({ received: true, type: "subscription_checkout_completed" }), {
           headers: { "Content-Type": "application/json" },
           status: 200,
         })
       }
+    } else if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as any
+      await handleSubscriptionCreatedOrUpdated(supabase, subscription)
+      return new Response(JSON.stringify({ received: true, type: event.type }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      })
+    } else if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as any
+      await handleSubscriptionDeleted(supabase, subscription)
+      return new Response(JSON.stringify({ received: true, type: event.type }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      })
+    } else if (event.type === "invoice.paid") {
+      const invoice = event.data.object as any
+      await handleInvoicePaid(supabase, invoice)
+      return new Response(JSON.stringify({ received: true, type: event.type }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      })
+    } else if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as any
+      await handleInvoicePaymentFailed(supabase, invoice)
+      return new Response(JSON.stringify({ received: true, type: event.type }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      })
     }
 
     return new Response(JSON.stringify({ received: true, ignored: true, type: event.type }), {
