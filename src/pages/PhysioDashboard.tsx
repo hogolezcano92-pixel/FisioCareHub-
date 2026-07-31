@@ -213,9 +213,9 @@ export default function PhysioDashboard() {
         setPendingPhysioEvaluation({
           id: appointmentToEvaluate.id,
           paciente_id: appointmentToEvaluate.paciente_id,
-          paciente_nome: Array.isArray(appointmentToEvaluate.paciente)
-            ? appointmentToEvaluate.paciente[0]?.nome_completo
-            : appointmentToEvaluate.paciente?.nome_completo,
+          paciente_nome: Array.isArray((appointmentToEvaluate as any).paciente)
+            ? (appointmentToEvaluate as any).paciente[0]?.nome_completo
+            : (appointmentToEvaluate as any).paciente?.nome_completo,
         });
         setShowPhysioEvaluation(true);
       }
@@ -367,7 +367,7 @@ export default function PhysioDashboard() {
 
 
           {activeTab !== 'avaliacoes' && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <QuickActionCard
               icon={<Users size={34} />}
               label="Pacientes"
