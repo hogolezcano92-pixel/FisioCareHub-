@@ -52,6 +52,7 @@ import LGPDModal from './components/LGPDModal';
 import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
+import DesktopTopBar from './components/DesktopTopBar';
 import BottomNavigation from './components/BottomNavigation';
 import IncomingVideoCallListener from './components/IncomingVideoCallListener';
 import WelcomeVideoModal from './components/WelcomeVideoModal';
@@ -743,11 +744,8 @@ function AppContent() {
         {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
         <NotificationHandler />
         <ProfileCompletionPrompt />
-        {showSidebar && !isAdminPage && (
-          <ThemeQuickToggle className="hidden lg:inline-flex fixed top-5 right-6 z-[60]" />
-        )}
-
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
+          {showSidebar && <DesktopTopBar />}
           {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
             <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[90] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem]">
               <Logo variant="dark" size="sm" />
@@ -772,7 +770,7 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
-              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10",
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10 max-w-[1700px] mx-auto",
               showMobileBottomNavigation && "pb-28 md:pb-0"
             )}>
               <Suspense fallback={<PageLoader />}>
