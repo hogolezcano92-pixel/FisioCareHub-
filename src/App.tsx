@@ -770,7 +770,7 @@ function AppContent() {
             <div className={cn(
               "flex-1 w-full",
               !isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
-              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10 max-w-[1700px] mx-auto",
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10 2xl:p-12 max-w-[1920px] 3xl:max-w-[2400px] mx-auto",
               showMobileBottomNavigation && "pb-28 md:pb-0"
             )}>
               <Suspense fallback={<PageLoader />}>

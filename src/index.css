@@ -7255,3 +7255,129 @@ html:not(.dark) .clinical-tests-hub .clinical-test-subtitle-pill {
     min-height: 190px;
   }
 }
+
+/* =========================================================
+   GLOBAL AUTOMATED DESKTOP LAYOUT SYSTEM
+   FisioCareHub - Responsive Desktop, Full HD, 2K & 4K Enhancements
+   ========================================================= */
+
+@media (min-width: 1024px) {
+  /* High-DPI Desktop Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.6);
+  }
+
+  /* Automated Data Tables Expansion */
+  .overflow-x-auto table,
+  table.w-full {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    font-size: 0.75rem !important;
+    letter-spacing: 0.08em;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  table td {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+    transition: background-color 0.2s ease;
+  }
+
+  table tr:hover td {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Desktop Modal Dialog Expansion */
+  div[role="dialog"] > div,
+  .modal-dialog-content {
+    max-width: min(92vw, 1200px) !important;
+    border-radius: 1.75rem !important;
+    padding: 2.25rem !important;
+  }
+
+  /* Form Grids in Modals auto 2-columns on Desktop */
+  div[role="dialog"] form .space-y-4,
+  div[role="dialog"] form .space-y-5 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* Full-width elements within form grid */
+  div[role="dialog"] form .col-span-full,
+  div[role="dialog"] form textarea,
+  div[role="dialog"] form .full-width-input {
+    grid-column: 1 / -1;
+  }
+
+  /* Card elevation & spacing physics */
+  .premium-card,
+  .glass-card,
+  .admin-card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  }
+
+  .premium-card:hover,
+  .glass-card:hover,
+  .admin-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Full HD & QHD Displays (1280px - 1920px) */
+@media (min-width: 1280px) {
+  /* Auto-expand 2-column stats and card containers */
+  .grid-cols-1.md\:grid-cols-2 {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
+  }
+
+  .grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  }
+
+  /* Smooth Dashboard Header Layout */
+  .page-header-desktop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+}
+
+/* 2K & 4K Ultra-Wide Displays (1920px+) */
+@media (min-width: 1920px) {
+  /* Ultra-wide grid distribution */
+  .responsive-grid,
+  .grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-3,
+  .grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)) !important;
+    gap: 1.75rem !important;
+  }
+
+  /* Multi-column stats bars on 4K */
+  .grid-cols-2.sm\:grid-cols-3.lg\:grid-cols-6 {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+}
+
