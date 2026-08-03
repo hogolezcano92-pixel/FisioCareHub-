@@ -408,7 +408,6 @@ function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-3 ml-4">
-                <ThemeQuickToggle />
                 <Link 
                   to="/login" 
                   className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
@@ -426,7 +425,7 @@ function Navbar() {
           </div>
 
           <div className="md:hidden flex items-center gap-2">
-            <ThemeQuickToggle />
+            {user && <ThemeQuickToggle />}
             {user && <NotificationBell />}
             <button
               onClick={() => setIsOpen(!isOpen)}
