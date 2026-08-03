@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { getStripeConfig, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
 
@@ -214,9 +214,33 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
 
 export const StripeElementsModal: React.FC<FormProps> = (props) => {
   const [stripeObj, setStripeObj] = useState<any>(null);
+  const [loadingStripe, setLoadingStripe] = useState(true);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  const initStripe = async () => {
+    setLoadingStripe(true);
+    setStripeError(null);
+    try {
+      const config = await getStripeConfig();
+      const key = config?.publishableKey || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+      if (!key) {
+        throw new Error('Chave de integração do Stripe (publishableKey) não encontrada. Verifique as configurações de ambiente.');
+      }
+      const instance = await loadStripe(key);
+      if (!instance) {
+        throw new Error('Não foi possível inicializar a biblioteca do Stripe SDK.');
+      }
+      setStripeObj(instance);
+    } catch (err: any) {
+      console.error('[StripeElementsModal] Failed to load Stripe:', err);
+      setStripeError(err.message || 'Erro ao conectar ao ambiente seguro de pagamento.');
+    } finally {
+      setLoadingStripe(false);
+    }
+  };
 
   useEffect(() => {
-    getStripePromise().then(setStripeObj);
+    initStripe();
   }, []);
 
   return (
@@ -243,16 +267,43 @@ export const StripeElementsModal: React.FC<FormProps> = (props) => {
           </div>
         </div>
 
-        {stripeObj ? (
+        {loadingStripe ? (
+          <div className="py-12 text-center text-slate-500 font-medium flex flex-col items-center justify-center gap-3">
+            <Loader2 size={28} className="animate-spin text-sky-600" />
+            <span>Carregando ambiente seguro Stripe...</span>
+          </div>
+        ) : stripeError ? (
+          <div className="py-6 space-y-4">
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs font-medium space-y-2">
+              <div className="flex items-center gap-2 font-extrabold text-amber-800 text-sm">
+                <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                <span>Erro ao inicializar o Stripe</span>
+              </div>
+              <p>{stripeError}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={props.onClose}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
+              >
+                Fechar
+              </button>
+              <button
+                type="button"
+                onClick={initStripe}
+                className="flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} />
+                Tentar Novamente
+              </button>
+            </div>
+          </div>
+        ) : stripeObj ? (
           <Elements stripe={stripeObj}>
             <CardForm {...props} />
           </Elements>
-        ) : (
-          <div className="py-12 text-center text-slate-500 font-medium flex flex-col items-center justify-center gap-3">
-            <Loader2 size={28} className="animate-spin text-sky-600" />
-            Carregando ambiente seguro Stripe...
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
