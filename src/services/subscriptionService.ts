@@ -129,10 +129,14 @@ export const getStripeConfig = async () => {
     const res = await fetch('/api/stripe/config');
     if (res.ok) {
       const data = await res.json();
-      return data;
+      if (data && data.publishableKey) {
+        return data;
+      }
+    } else {
+      console.warn(`[SubscriptionService] Config fetch returned status ${res.status}`);
     }
   } catch (err) {
-    console.warn('[SubscriptionService] Config fetch failed:', err);
+    console.warn('[SubscriptionService] Config fetch failed, using environment fallback:', err);
   }
   return {
     publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
@@ -140,18 +144,27 @@ export const getStripeConfig = async () => {
 };
 
 export const createSetupIntent = async (userId: string, email: string) => {
-  const res = await fetch('/api/stripe/create-setup-intent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, email })
-  });
+  try {
+    const res = await fetch('/api/stripe/create-setup-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, email })
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao inicializar formulário de pagamento.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao inicializar formulário de pagamento.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] createSetupIntent error:', err);
+    throw new Error(err.message || 'Falha de conexão com o servidor de pagamento.');
   }
-
-  return await res.json();
 };
 
 export const createSubscriptionWithPaymentMethod = async (params: {
@@ -161,84 +174,129 @@ export const createSubscriptionWithPaymentMethod = async (params: {
   planKey: PlanKey;
   paymentMethodId: string;
 }) => {
-  const res = await fetch('/api/stripe/create-subscription', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
-  });
+  try {
+    const res = await fetch('/api/stripe/create-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao criar assinatura com o Stripe.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao criar assinatura com o Stripe.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] createSubscription error:', err);
+    throw new Error(err.message || 'Falha ao processar assinatura com o servidor.');
   }
-
-  return await res.json();
 };
 
 export const updateSubscriptionPaymentMethod = async (params: {
   userId: string;
   paymentMethodId: string;
 }) => {
-  const res = await fetch('/api/stripe/update-payment-method', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
-  });
+  try {
+    const res = await fetch('/api/stripe/update-payment-method', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao atualizar cartão no Stripe.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao atualizar cartão no Stripe.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] updatePaymentMethod error:', err);
+    throw new Error(err.message || 'Falha ao atualizar método de pagamento.');
   }
-
-  return await res.json();
 };
 
 export const changeSubscriptionPlan = async (params: {
   userId: string;
   newPlanKey: PlanKey;
 }) => {
-  const res = await fetch('/api/stripe/change-plan', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
-  });
+  try {
+    const res = await fetch('/api/stripe/change-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao alterar plano de assinatura.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao alterar plano de assinatura.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] changePlan error:', err);
+    throw new Error(err.message || 'Falha ao alterar plano no servidor.');
   }
-
-  return await res.json();
 };
 
 export const cancelSubscription = async (userId: string) => {
-  const res = await fetch('/api/stripe/cancel-subscription', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId })
-  });
+  try {
+    const res = await fetch('/api/stripe/cancel-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao cancelar assinatura.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao cancelar assinatura.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] cancelSubscription error:', err);
+    throw new Error(err.message || 'Falha ao cancelar assinatura no servidor.');
   }
-
-  return await res.json();
 };
 
 export const reactivateSubscription = async (userId: string) => {
-  const res = await fetch('/api/stripe/reactivate-subscription', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId })
-  });
+  try {
+    const res = await fetch('/api/stripe/reactivate-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Erro ao reativar assinatura.');
+    if (!res.ok) {
+      let errMessage = 'Erro ao reativar assinatura.';
+      try {
+        const err = await res.json();
+        errMessage = err.error || errMessage;
+      } catch (_) {}
+      throw new Error(errMessage);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('[SubscriptionService] reactivateSubscription error:', err);
+    throw new Error(err.message || 'Falha ao reativar assinatura no servidor.');
   }
-
-  return await res.json();
 };
 
 export const fetchSubscriptionDetails = async (userId: string): Promise<SubscriptionDetails | null> => {
