@@ -948,27 +948,50 @@ async function startServer() {
   });
 
   app.post("/api/stripe/create-subscription", async (req, res) => {
+    let currentStep = "recebendo_requisicao";
     try {
-      const { userId, email, userName, planKey, paymentMethodId } = req.body;
+      const { userId, email, userName, planKey, paymentMethodId } = req.body || {};
+      console.log(`[Stripe Backend Log] [${currentStep}] Payload recebido:`, { userId, email, userName, planKey, paymentMethodId });
+
+      currentStep = "validando_parametros";
       if (!userId || !paymentMethodId || !planKey) {
-        return res.status(400).json({ error: "Dados incompletos (userId, planKey, paymentMethodId são obrigatórios)" });
+        console.warn(`[Stripe Backend Log] [${currentStep}] Dados incompletos:`, { userId, planKey, paymentMethodId });
+        return res.status(400).json({
+          success: false,
+          step: currentStep,
+          message: "Dados incompletos (userId, planKey e paymentMethodId são obrigatórios)",
+          details: { userId, planKey, paymentMethodId },
+          stripeError: null,
+          stack: null
+        });
       }
 
       const stripe = getStripe();
       const supabase = getSupabaseAdmin();
 
+      currentStep = "buscando_ou_criando_customer";
+      console.log(`[Stripe Backend Log] [${currentStep}] Buscando/criando customer no Stripe para userId: ${userId}...`);
       const customerId = await getOrCreateStripeCustomer(userId, email || '', userName);
+      console.log(`[Stripe Backend Log] [${currentStep}] customerId retornado: ${customerId}`);
 
-      // Attach payment method to customer
-      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
-      await stripe.customers.update(customerId, {
+      currentStep = "anexando_payment_method";
+      console.log(`[Stripe Backend Log] [${currentStep}] Anexando paymentMethodId ${paymentMethodId} ao customer ${customerId}...`);
+      const attachRes = await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      console.log(`[Stripe Backend Log] [${currentStep}] Resultado stripe.paymentMethods.attach:`, JSON.stringify(attachRes));
+
+      console.log(`[Stripe Backend Log] [${currentStep}] Atualizando default_payment_method do customer ${customerId}...`);
+      const updateCustRes = await stripe.customers.update(customerId, {
         invoice_settings: { default_payment_method: paymentMethodId }
       });
+      console.log(`[Stripe Backend Log] [${currentStep}] Resultado stripe.customers.update:`, JSON.stringify(updateCustRes));
 
+      currentStep = "recuperando_cartao";
       const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
       const card = paymentMethod.card;
+      console.log(`[Stripe Backend Log] [${currentStep}] Cartão recuperado: brand=${card?.brand}, last4=${card?.last4}`);
 
-      // Check if user has already used trial
+      currentStep = "consultando_trial_utilizado";
+      console.log(`[Stripe Backend Log] [${currentStep}] Verificando histórico de trial em Supabase...`);
       const { data: profile } = await supabase
         .from('perfis')
         .select('trial_utilizado, email, nome_completo')
@@ -983,11 +1006,15 @@ async function startServer() {
 
       const hasUsedTrial = Boolean(profile?.trial_utilizado || existingSub?.trial_utilizado);
       const trialDays = hasUsedTrial ? undefined : 60;
+      console.log(`[Stripe Backend Log] [${currentStep}] Resultado trial: profileTrial=${profile?.trial_utilizado}, subTrial=${existingSub?.trial_utilizado}, hasUsedTrial=${hasUsedTrial}, trialDaysCalculado=${trialDays}`);
 
+      currentStep = "obtendo_price_id";
       const priceId = await getOrCreateStripePrice(planKey);
       const planConfig = PLAN_PRICES[planKey] || PLAN_PRICES.pro_monthly;
       const planType = planKey.startsWith('basic') ? 'basic' : 'pro';
+      console.log(`[Stripe Backend Log] [${currentStep}] priceId obtido: ${priceId} para planKey: ${planKey} (planType: ${planType})`);
 
+      currentStep = "criando_assinatura_stripe";
       const subParams: Stripe.SubscriptionCreateParams = {
         customer: customerId,
         items: [{ price: priceId }],
@@ -1003,16 +1030,19 @@ async function startServer() {
         }
       };
 
+      console.log(`[Stripe Backend Log] [${currentStep}] Disparando stripe.subscriptions.create com subParams:`, JSON.stringify(subParams, null, 2));
       const subscription = await stripe.subscriptions.create(subParams);
+      console.log(`[Stripe Backend Log] [${currentStep}] Assinatura criada com sucesso no Stripe! ID: ${subscription.id}, Status: ${subscription.status}`);
 
+      currentStep = "processando_datas_e_status";
       const isTrial = subscription.status === 'trialing';
       const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : (isTrial ? new Date().toISOString() : null);
       const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
       const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
-
       const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
 
-      // Update Supabase perfis
+      currentStep = "atualizando_banco_dados";
+      console.log(`[Stripe Backend Log] [${currentStep}] Sincronizando perfis e assinaturas no Supabase...`);
       await supabase.from('perfis').update({
         plan_type: planType,
         plano: planType,
@@ -1032,7 +1062,6 @@ async function startServer() {
         last_stripe_sync: new Date().toISOString()
       }).eq('id', userId);
 
-      // Upsert Supabase assinaturas
       await supabase.from('assinaturas').upsert({
         user_id: userId,
         plano: planType,
@@ -1056,7 +1085,7 @@ async function startServer() {
         last_stripe_sync: new Date().toISOString()
       });
 
-      // Send email if trial
+      currentStep = "enviando_email_boas_vindas";
       const targetEmail = email || profile?.email;
       if (isTrial && targetEmail) {
         const trialEndFormatted = trialEnd ? new Date(trialEnd).toLocaleDateString('pt-BR') : '';
@@ -1064,6 +1093,7 @@ async function startServer() {
         await sendTrialStartedEmail(targetEmail, userName || profile?.nome_completo || 'Profissional', planConfig.name, trialEndFormatted, amountStr);
       }
 
+      console.log(`[Stripe Backend Log] [sucesso_final] Assinatura finalizada com sucesso.`);
       res.json({
         success: true,
         subscriptionId: subscription.id,
@@ -1073,8 +1103,22 @@ async function startServer() {
         nextBillingDate
       });
     } catch (err: any) {
-      console.error("[Stripe API] Error creating subscription:", err);
-      res.status(500).json({ error: err.message || "Erro ao criar assinatura" });
+      console.error(`[Stripe Backend Error] Falha na etapa [${currentStep}]:`, {
+        message: err.message,
+        type: err.type,
+        code: err.code,
+        raw: err.raw,
+        stack: err.stack
+      });
+
+      return res.status(500).json({
+        success: false,
+        step: currentStep,
+        message: err.message || "Erro ao criar assinatura no Stripe",
+        details: err.details || err.raw?.message || String(err),
+        stripeError: err.type || err.code ? `${err.type || ''} (${err.code || ''}): ${err.message}` : null,
+        stack: err.stack || null
+      });
     }
   });
 
