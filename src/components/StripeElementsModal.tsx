@@ -55,8 +55,16 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
     setLoading(true);
 
     try {
+      console.log('[StripeElementsModal Log] Iniciando criação do PaymentMethod no Stripe...', {
+        cardHolderName: cardHolderName.trim(),
+        userEmail,
+        userId,
+        planKey,
+        mode
+      });
+
       // Create payment method with Stripe
-      const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
+      const pmResponse = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
         billing_details: {
@@ -65,22 +73,35 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         }
       });
 
+      console.log('[StripeElementsModal Log] Resultado de stripe.createPaymentMethod:', pmResponse);
+
+      const { paymentMethod, error: pmError } = pmResponse;
+
       if (pmError) {
+        console.error('[StripeElementsModal Log] Erro retornado ao criar PaymentMethod:', pmError);
         throw new Error(pmError.message || 'Erro ao validar o cartão de crédito.');
       }
 
       if (!paymentMethod) {
+        console.error('[StripeElementsModal Log] PaymentMethod retornado é nulo!');
         throw new Error('Não foi possível gerar a autorização do cartão.');
       }
 
+      console.log('[StripeElementsModal Log] PaymentMethod gerado com sucesso. ID:', paymentMethod.id);
+
       if (mode === 'subscribe' && planKey) {
-        const result = await createSubscriptionWithPaymentMethod({
+        const payload = {
           userId,
           email: userEmail,
           userName: cardHolderName.trim(),
           planKey,
           paymentMethodId: paymentMethod.id
-        });
+        };
+        console.log('[StripeElementsModal Log] Chamando createSubscriptionWithPaymentMethod com payload:', payload);
+
+        const result = await createSubscriptionWithPaymentMethod(payload);
+
+        console.log('[StripeElementsModal Log] Assinatura ativada com sucesso no backend:', result);
 
         toast.success('Assinatura ativada com sucesso!', {
           description: result.isTrial
@@ -88,10 +109,15 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
             : 'Sua assinatura foi processada com sucesso.'
         });
       } else {
-        await updateSubscriptionPaymentMethod({
+        const payload = {
           userId,
           paymentMethodId: paymentMethod.id
-        });
+        };
+        console.log('[StripeElementsModal Log] Chamando updateSubscriptionPaymentMethod com payload:', payload);
+
+        await updateSubscriptionPaymentMethod(payload);
+
+        console.log('[StripeElementsModal Log] Método de pagamento atualizado com sucesso.');
 
         toast.success('Cartão de crédito atualizado!', {
           description: 'Seu novo método de pagamento foi salvo com sucesso.'
@@ -101,7 +127,12 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error('[StripeElementsModal] Submission error:', err);
+      console.error('[StripeElementsModal Error] Exceção capturada na submissão:', {
+        message: err.message,
+        stack: err.stack,
+        serverDetails: err.serverDetails || null
+      });
+
       toast.error('Falha no processamento', {
         description: err.message || 'Verifique os dados do cartão e tente novamente.'
       });
