@@ -174,26 +174,61 @@ export const createSubscriptionWithPaymentMethod = async (params: {
   planKey: PlanKey;
   paymentMethodId: string;
 }) => {
+  const url = '/api/stripe/create-subscription';
+  console.log('[SubscriptionService Log] Enviando requisição de assinatura:', {
+    url,
+    payload: params
+  });
+
   try {
-    const res = await fetch('/api/stripe/create-subscription', {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
     });
 
-    if (!res.ok) {
-      let errMessage = 'Erro ao criar assinatura com o Stripe.';
-      try {
-        const err = await res.json();
-        errMessage = err.error || errMessage;
-      } catch (_) {}
-      throw new Error(errMessage);
+    console.log('[SubscriptionService Log] Resposta HTTP recebida:', {
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok
+    });
+
+    const responseText = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (_) {
+      data = { rawText: responseText };
     }
 
-    return await res.json();
+    console.log('[SubscriptionService Log] Corpo completo da resposta:', data);
+
+    if (!res.ok || data.success === false) {
+      const stepStr = data.step ? `[Passo: ${data.step}] ` : '';
+      const errMessage = data.message || data.error || 'Erro ao criar assinatura com o Stripe.';
+      const stripeErrStr = data.stripeError ? ` (Stripe: ${data.stripeError})` : '';
+      const fullError = `${stepStr}${errMessage}${stripeErrStr}`;
+
+      console.error('[SubscriptionService Error] Servidor retornou falha:', {
+        status: res.status,
+        data,
+        fullError
+      });
+
+      const errObj = new Error(fullError);
+      (errObj as any).serverDetails = data;
+      throw errObj;
+    }
+
+    return data;
   } catch (err: any) {
-    console.error('[SubscriptionService] createSubscription error:', err);
-    throw new Error(err.message || 'Falha ao processar assinatura com o servidor.');
+    console.error('[SubscriptionService Error] Exceção em createSubscriptionWithPaymentMethod:', {
+      message: err.message,
+      stack: err.stack,
+      serverDetails: err.serverDetails || null
+    });
+    throw err;
   }
 };
 
@@ -201,26 +236,51 @@ export const updateSubscriptionPaymentMethod = async (params: {
   userId: string;
   paymentMethodId: string;
 }) => {
+  const url = '/api/stripe/update-payment-method';
+  console.log('[SubscriptionService Log] Enviando requisição de atualização de cartão:', {
+    url,
+    payload: params
+  });
+
   try {
-    const res = await fetch('/api/stripe/update-payment-method', {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
     });
 
-    if (!res.ok) {
-      let errMessage = 'Erro ao atualizar cartão no Stripe.';
-      try {
-        const err = await res.json();
-        errMessage = err.error || errMessage;
-      } catch (_) {}
-      throw new Error(errMessage);
+    console.log('[SubscriptionService Log] Resposta HTTP recebida (update-payment-method):', {
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok
+    });
+
+    const responseText = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (_) {
+      data = { rawText: responseText };
     }
 
-    return await res.json();
+    console.log('[SubscriptionService Log] Corpo completo da resposta (update-payment-method):', data);
+
+    if (!res.ok || data.success === false) {
+      let errMessage = data.message || data.error || 'Erro ao atualizar cartão no Stripe.';
+      const errObj = new Error(errMessage);
+      (errObj as any).serverDetails = data;
+      throw errObj;
+    }
+
+    return data;
   } catch (err: any) {
-    console.error('[SubscriptionService] updatePaymentMethod error:', err);
-    throw new Error(err.message || 'Falha ao atualizar método de pagamento.');
+    console.error('[SubscriptionService Error] Exceção em updateSubscriptionPaymentMethod:', {
+      message: err.message,
+      stack: err.stack,
+      serverDetails: err.serverDetails || null
+    });
+    throw err;
   }
 };
 
