@@ -523,7 +523,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const isTrial = subscription.status === 'trialing';
       const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null;
       const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
-      const nextBillingDate = new Date(subscription.current_period_end * 1000).toISOString();
+      // stripe-node v22 tipa o período no SubscriptionItem. Webhooks criados
+      // em versões antigas da API ainda podem trazer current_period_end no
+      // nível da Subscription, então aceitamos os dois formatos.
+      const periodEnd =
+        (subscription as any).current_period_end ??
+        subscription.items?.data?.[0]?.current_period_end ??
+        subscription.trial_end ??
+        null;
+      const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
       const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
 
       const planKey = subscription.metadata?.plan_key || 'pro_monthly';
