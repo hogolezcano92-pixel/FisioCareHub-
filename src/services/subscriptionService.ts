@@ -124,12 +124,33 @@ export const calculateTrialDaysRemaining = (trialEndDate: string | Date | null |
   return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
 };
 
+const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  try {
+    return await Promise.race([Promise.resolve(promise), timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
 const getStripeApiHeaders = async (): Promise<Record<string, string>> => {
-  const { data } = await supabase.auth.getSession();
+  const { data, error } = await withTimeout(
+    supabase.auth.getSession(),
+    5000,
+    'Não foi possível validar sua sessão a tempo. Atualize a página e tente novamente.'
+  );
+  if (error) throw error;
+
   const token = data.session?.access_token;
+  if (!token) throw new Error('Sua sessão expirou. Entre novamente antes de assinar.');
+
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    Authorization: `Bearer ${token}`
   };
 };
 
@@ -209,11 +230,16 @@ export const createSubscriptionWithPaymentMethod = async (params: {
     payload: params
   });
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
   try {
+    const headers = await getStripeApiHeaders();
     const res = await fetch(url, {
       method: 'POST',
-      headers: await getStripeApiHeaders(),
-      body: JSON.stringify(params)
+      headers,
+      body: JSON.stringify(params),
+      signal: controller.signal
     });
 
     console.log('[SubscriptionService Log] Resposta HTTP recebida:', {
@@ -252,12 +278,18 @@ export const createSubscriptionWithPaymentMethod = async (params: {
 
     return data;
   } catch (err: any) {
+    const finalError = err?.name === 'AbortError'
+      ? new Error('O servidor demorou demais para criar a assinatura. Verifique os logs da Function Stripe na Vercel.')
+      : err;
+
     console.error('[SubscriptionService Error] Exceção em createSubscriptionWithPaymentMethod:', {
-      message: err.message,
-      stack: err.stack,
-      serverDetails: err.serverDetails || null
+      message: finalError.message,
+      stack: finalError.stack,
+      serverDetails: finalError.serverDetails || null
     });
-    throw err;
+    throw finalError;
+  } finally {
+    clearTimeout(timeout);
   }
 };
 
