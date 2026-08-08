@@ -138,15 +138,18 @@ const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number, message: str
 };
 
 const getStripeApiHeaders = async (): Promise<Record<string, string>> => {
+  console.log('[SubscriptionService Auth] Obtendo sessão atual do Supabase...');
   const { data, error } = await withTimeout(
     supabase.auth.getSession(),
-    5000,
-    'Não foi possível validar sua sessão a tempo. Atualize a página e tente novamente.'
+    12000,
+    'Não foi possível validar sua sessão. Atualize a página e tente novamente.'
   );
   if (error) throw error;
 
   const token = data.session?.access_token;
   if (!token) throw new Error('Sua sessão expirou. Entre novamente antes de assinar.');
+
+  console.log('[SubscriptionService Auth] Sessão válida encontrada.');
 
   return {
     'Content-Type': 'application/json',
