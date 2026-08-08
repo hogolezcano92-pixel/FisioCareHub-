@@ -124,6 +124,15 @@ export const calculateTrialDaysRemaining = (trialEndDate: string | Date | null |
   return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
 };
 
+const getStripeApiHeaders = async (): Promise<Record<string, string>> => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
+
 export const getStripeConfig = async () => {
   try {
     const res = await fetch('/api/stripe/config');
@@ -143,12 +152,12 @@ export const getStripeConfig = async () => {
   };
 };
 
-export const createSetupIntent = async (userId: string, email: string) => {
+export const createSetupIntent = async (userId: string, email: string, userName?: string) => {
   try {
     const res = await fetch('/api/stripe/create-setup-intent', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, email })
+      headers: await getStripeApiHeaders(),
+      body: JSON.stringify({ userId, email, userName })
     });
 
     if (!res.ok) {
@@ -183,7 +192,7 @@ export const createSubscriptionWithPaymentMethod = async (params: {
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getStripeApiHeaders(),
       body: JSON.stringify(params)
     });
 
@@ -245,7 +254,7 @@ export const updateSubscriptionPaymentMethod = async (params: {
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getStripeApiHeaders(),
       body: JSON.stringify(params)
     });
 
@@ -291,7 +300,7 @@ export const changeSubscriptionPlan = async (params: {
   try {
     const res = await fetch('/api/stripe/change-plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getStripeApiHeaders(),
       body: JSON.stringify(params)
     });
 
@@ -315,7 +324,7 @@ export const cancelSubscription = async (userId: string) => {
   try {
     const res = await fetch('/api/stripe/cancel-subscription', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getStripeApiHeaders(),
       body: JSON.stringify({ userId })
     });
 
@@ -339,7 +348,7 @@ export const reactivateSubscription = async (userId: string) => {
   try {
     const res = await fetch('/api/stripe/reactivate-subscription', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getStripeApiHeaders(),
       body: JSON.stringify({ userId })
     });
 
@@ -361,7 +370,7 @@ export const reactivateSubscription = async (userId: string) => {
 
 export const fetchSubscriptionDetails = async (userId: string): Promise<SubscriptionDetails | null> => {
   try {
-    const res = await fetch(`/api/stripe/subscription-details?userId=${encodeURIComponent(userId)}`);
+    const res = await fetch(`/api/stripe/subscription-details?userId=${encodeURIComponent(userId)}`, { headers: await getStripeApiHeaders() });
     if (res.ok) {
       return await res.json();
     }
