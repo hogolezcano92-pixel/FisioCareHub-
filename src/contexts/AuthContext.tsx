@@ -273,25 +273,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    // IMPORTANTE: o callback de onAuthStateChange deve permanecer síncrono.
+    // Fazer await de consultas Supabase aqui pode bloquear o lock interno do Auth
+    // e fazer chamadas posteriores (ex.: auth.getSession()) ficarem penduradas.
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (!mounted) return;
 
       console.log(`[Auth] Event: ${event}`);
 
-      // Handle sign-in/out and session changes
+      // Atualizações de estado são síncronas e seguras dentro do callback.
       setSession(currentSession);
       const currentUser = currentSession?.user ?? null;
       setUser(currentUser);
-      
+
       if (currentUser) {
         if (lastFetchedUserId.current !== currentUser.id) {
-          const { profile: p, subscription: s } = await fetchProfile(currentUser.id, currentUser.user_metadata);
-          if (mounted) {
-            setProfile(p);
-            setSubscription(s);
-            setLoading(false);
-            isInitialMount.current = false;
-          }
+          // Adia qualquer chamada assíncrona ao Supabase até o callback de Auth terminar.
+          // Isso evita deadlock no supabase-js.
+          setTimeout(() => {
+            if (!mounted) return;
+
+            void fetchProfile(currentUser.id, currentUser.user_metadata)
+              .then(({ profile: p, subscription: s }) => {
+                if (!mounted) return;
+                setProfile(p);
+                setSubscription(s);
+                setLoading(false);
+                isInitialMount.current = false;
+              })
+              .catch((error) => {
+                console.error('[Auth] Falha ao carregar perfil após evento de autenticação:', error);
+                if (mounted) setLoading(false);
+              });
+          }, 0);
         } else {
           setLoading(false);
         }
@@ -301,7 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscription(null);
         lastFetchedUserId.current = null;
         localStorage.removeItem(PROFILE_CACHE_KEY);
-        
+
         // If it was a fatal loss of session, consider clearing all
         if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
           setLoading(false);
