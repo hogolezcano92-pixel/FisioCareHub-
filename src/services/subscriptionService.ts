@@ -153,26 +153,46 @@ export const getStripeConfig = async () => {
 };
 
 export const createSetupIntent = async (userId: string, email: string, userName?: string) => {
+  const url = '/api/stripe/create-setup-intent';
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 20000);
+
   try {
-    const res = await fetch('/api/stripe/create-setup-intent', {
+    console.log('[SubscriptionService Log] Enviando create-setup-intent:', { url, userId, hasEmail: Boolean(email) });
+    const res = await fetch(url, {
       method: 'POST',
       headers: await getStripeApiHeaders(),
-      body: JSON.stringify({ userId, email, userName })
+      body: JSON.stringify({ userId, email, userName }),
+      signal: controller.signal
     });
 
-    if (!res.ok) {
-      let errMessage = 'Erro ao inicializar formulário de pagamento.';
-      try {
-        const err = await res.json();
-        errMessage = err.error || errMessage;
-      } catch (_) {}
-      throw new Error(errMessage);
+    console.log('[SubscriptionService Log] Resposta create-setup-intent:', {
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok
+    });
+
+    const responseText = await res.text();
+    let data: any = {};
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      data = { rawText: responseText };
     }
 
-    return await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || data.message || `Erro ao inicializar formulário de pagamento (HTTP ${res.status}).`);
+    }
+
+    return data;
   } catch (err: any) {
+    const message = err?.name === 'AbortError'
+      ? 'O servidor de pagamento demorou demais para responder. Verifique os logs da Function na Vercel.'
+      : (err.message || 'Falha de conexão com o servidor de pagamento.');
     console.error('[SubscriptionService] createSetupIntent error:', err);
-    throw new Error(err.message || 'Falha de conexão com o servidor de pagamento.');
+    throw new Error(message);
+  } finally {
+    window.clearTimeout(timeout);
   }
 };
 
