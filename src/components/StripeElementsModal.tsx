@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getStripeConfig, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
+import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -55,7 +55,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
     setLoading(true);
 
     try {
-      console.log('[StripeElementsModal Log] Iniciando criação do PaymentMethod no Stripe...', {
+      console.log('[StripeElementsModal Log] Preparando cartão para cobrança futura com SetupIntent...', {
         cardHolderName: cardHolderName.trim(),
         userEmail,
         userId,
@@ -63,31 +63,39 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         mode
       });
 
-      // Create payment method with Stripe
-      const pmResponse = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: cardHolderName.trim(),
-          email: userEmail
+      // Durante o trial não existe cobrança hoje. O SetupIntent prepara e autentica
+      // o cartão para a primeira cobrança futura (inclusive quando houver 3DS/SCA).
+      const setupData = await createSetupIntent(userId, userEmail, cardHolderName.trim());
+      if (!setupData?.clientSecret) {
+        throw new Error('O servidor não retornou a autorização segura do cartão.');
+      }
+
+      const setupResponse = await stripe.confirmCardSetup(setupData.clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: cardHolderName.trim(),
+            email: userEmail
+          }
         }
       });
 
-      console.log('[StripeElementsModal Log] Resultado de stripe.createPaymentMethod:', pmResponse);
+      console.log('[StripeElementsModal Log] Resultado do SetupIntent:', setupResponse);
 
-      const { paymentMethod, error: pmError } = pmResponse;
-
-      if (pmError) {
-        console.error('[StripeElementsModal Log] Erro retornado ao criar PaymentMethod:', pmError);
-        throw new Error(pmError.message || 'Erro ao validar o cartão de crédito.');
+      if (setupResponse.error) {
+        throw new Error(setupResponse.error.message || 'Não foi possível autorizar o cartão para cobranças futuras.');
       }
 
-      if (!paymentMethod) {
-        console.error('[StripeElementsModal Log] PaymentMethod retornado é nulo!');
-        throw new Error('Não foi possível gerar a autorização do cartão.');
+      const setupIntent = setupResponse.setupIntent;
+      const paymentMethodId = typeof setupIntent?.payment_method === 'string'
+        ? setupIntent.payment_method
+        : setupIntent?.payment_method?.id;
+
+      if (!paymentMethodId) {
+        throw new Error('Não foi possível identificar o método de pagamento autorizado.');
       }
 
-      console.log('[StripeElementsModal Log] PaymentMethod gerado com sucesso. ID:', paymentMethod.id);
+      console.log('[StripeElementsModal Log] PaymentMethod autorizado com sucesso. ID:', paymentMethodId);
 
       if (mode === 'subscribe' && planKey) {
         const payload = {
@@ -95,11 +103,29 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
           email: userEmail,
           userName: cardHolderName.trim(),
           planKey,
-          paymentMethodId: paymentMethod.id
+          paymentMethodId
         };
         console.log('[StripeElementsModal Log] Chamando createSubscriptionWithPaymentMethod com payload:', payload);
 
         const result = await createSubscriptionWithPaymentMethod(payload);
+
+        // Normalmente o SetupIntent anterior já resolveu a autenticação. Caso o Stripe
+        // ainda devolva uma ação pendente, concluímos enquanto o usuário está na tela.
+        if (result.setupIntentClientSecret && result.setupIntentStatus === 'requires_action') {
+          const confirmation = await stripe.confirmCardSetup(result.setupIntentClientSecret);
+          if (confirmation.error) {
+            throw new Error(confirmation.error.message || 'Autenticação adicional do cartão não concluída.');
+          }
+        }
+
+        // Para quem já usou o trial, a nova assinatura pode cobrar imediatamente.
+        // A API atual do Stripe expõe o client_secret da fatura por confirmation_secret.
+        if (!result.isTrial && result.paymentIntentClientSecret) {
+          const paymentConfirmation = await stripe.confirmCardPayment(result.paymentIntentClientSecret);
+          if (paymentConfirmation.error) {
+            throw new Error(paymentConfirmation.error.message || 'Não foi possível confirmar a cobrança da assinatura.');
+          }
+        }
 
         console.log('[StripeElementsModal Log] Assinatura ativada com sucesso no backend:', result);
 
@@ -111,7 +137,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
       } else {
         const payload = {
           userId,
-          paymentMethodId: paymentMethod.id
+          paymentMethodId
         };
         console.log('[StripeElementsModal Log] Chamando updateSubscriptionPaymentMethod com payload:', payload);
 
