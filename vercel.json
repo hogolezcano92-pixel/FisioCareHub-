@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/stripe/:action",
+      "destination": "/api/stripe-webhook?action=:action"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
