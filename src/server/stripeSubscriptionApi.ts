@@ -80,19 +80,67 @@ function setCors(res: VercelResponse, methods = 'GET,POST,OPTIONS') {
 }
 
 async function readJsonBody(req: VercelRequest): Promise<any> {
-  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
-  if (typeof req.body === 'string') {
-    try { return JSON.parse(req.body); } catch { return {}; }
+  // Como esta Function também atende o webhook Stripe, o body parser fica
+  // desabilitado. Dependendo do runtime da Vercel, req.body pode chegar como
+  // objeto, string, Buffer ou Uint8Array. Nunca devemos tentar reler o stream
+  // quando o corpo já foi materializado em req.body.
+  const body: any = req.body;
+
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body) && !(body instanceof Uint8Array)) {
+    return body;
   }
 
-  const chunks: Buffer[] = [];
-  for await (const chunk of req as any) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  if (typeof body === 'string') {
+    const raw = body.trim();
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch { return {}; }
   }
-  if (!chunks.length) return {};
-  const raw = Buffer.concat(chunks).toString('utf8').trim();
-  if (!raw) return {};
-  try { return JSON.parse(raw); } catch { return {}; }
+
+  if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
+    const raw = Buffer.from(body).toString('utf8').trim();
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+
+  // Só lê o stream quando req.body realmente não foi preenchido pelo runtime.
+  // O timeout impede a Function de ficar pendurada indefinidamente caso o
+  // stream já tenha sido consumido por alguma camada da plataforma.
+  const raw = await new Promise<string>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    const request: any = req;
+    let finished = false;
+
+    const done = (value: string) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+
+    const fail = (error: any) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      reject(error);
+    };
+
+    const timer = setTimeout(() => done(''), 3000);
+
+    request.on('data', (chunk: any) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    request.on('end', () => done(Buffer.concat(chunks).toString('utf8')));
+    request.on('error', fail);
+
+    // Se o stream já terminou antes de registrarmos os listeners, não espere.
+    if (request.readableEnded || request.complete) {
+      done('');
+    }
+  });
+
+  const trimmed = raw.trim();
+  if (!trimmed) return {};
+  try { return JSON.parse(trimmed); } catch { return {}; }
 }
 
 async function requireUser(req: VercelRequest, res: VercelResponse, expectedUserId?: string): Promise<string | null> {
@@ -267,16 +315,20 @@ function buildSubscriptionDetails(profile: any, sub: any) {
 
 async function createSetupIntent(req: VercelRequest, res: VercelResponse, body: any) {
   const { userId, email, userName } = body || {};
+  console.log('[Stripe Gateway] create-setup-intent recebido:', { userId, hasEmail: Boolean(email), hasUserName: Boolean(userName) });
   if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
   if (!await requireUser(req, res, userId)) return;
 
+  console.log('[Stripe Gateway] create-setup-intent: usuário autenticado.');
   const customerId = await getOrCreateStripeCustomer(userId, email || '', userName || '');
+  console.log('[Stripe Gateway] create-setup-intent: customer resolvido:', customerId);
   const setupIntent = await getStripe().setupIntents.create({
     customer: customerId,
     usage: 'off_session',
     payment_method_types: ['card'],
     metadata: { user_id: userId, purpose: 'subscription_trial' },
   });
+  console.log('[Stripe Gateway] create-setup-intent criado:', setupIntent.id);
   return res.status(200).json({ success: true, clientSecret: setupIntent.client_secret, customerId });
 }
 
