@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
+import { getStripeConfig, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -27,6 +27,19 @@ interface FormProps {
   onSuccess: () => void;
   onClose: () => void;
 }
+
+const withClientTimeout = async <T,>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  try {
+    return await Promise.race([Promise.resolve(promise), timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
 
 const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, mode, onSuccess, onClose }) => {
   const stripe = useStripe();
@@ -55,7 +68,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
     setLoading(true);
 
     try {
-      console.log('[StripeElementsModal Log] Preparando cartão para cobrança futura com SetupIntent...', {
+      console.log('[StripeElementsModal Log] Criando PaymentMethod seguro no Stripe...', {
         cardHolderName: cardHolderName.trim(),
         userEmail,
         userId,
@@ -63,39 +76,34 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         mode
       });
 
-      // Durante o trial não existe cobrança hoje. O SetupIntent prepara e autentica
-      // o cartão para a primeira cobrança futura (inclusive quando houver 3DS/SCA).
-      const setupData = await createSetupIntent(userId, userEmail, cardHolderName.trim());
-      if (!setupData?.clientSecret) {
-        throw new Error('O servidor não retornou a autorização segura do cartão.');
-      }
-
-      const setupResponse = await stripe.confirmCardSetup(setupData.clientSecret, {
-        payment_method: {
+      // Em assinaturas com trial, o Stripe Billing cria automaticamente um
+      // pending_setup_intent quando precisa autenticar o cartão para cobranças
+      // futuras. Por isso não criamos um SetupIntent separado antes da assinatura.
+      const paymentMethodResponse = await withClientTimeout(
+        stripe.createPaymentMethod({
+          type: 'card',
           card: cardElement,
           billing_details: {
             name: cardHolderName.trim(),
             email: userEmail
           }
-        }
-      });
+        }),
+        20000,
+        'O Stripe demorou demais para validar o cartão. Tente novamente.'
+      );
 
-      console.log('[StripeElementsModal Log] Resultado do SetupIntent:', setupResponse);
+      console.log('[StripeElementsModal Log] Resultado de stripe.createPaymentMethod:', paymentMethodResponse);
 
-      if (setupResponse.error) {
-        throw new Error(setupResponse.error.message || 'Não foi possível autorizar o cartão para cobranças futuras.');
+      if (paymentMethodResponse.error) {
+        throw new Error(paymentMethodResponse.error.message || 'Não foi possível validar os dados do cartão.');
       }
 
-      const setupIntent = setupResponse.setupIntent;
-      const paymentMethodId = typeof setupIntent?.payment_method === 'string'
-        ? setupIntent.payment_method
-        : setupIntent?.payment_method?.id;
-
+      const paymentMethodId = paymentMethodResponse.paymentMethod?.id;
       if (!paymentMethodId) {
-        throw new Error('Não foi possível identificar o método de pagamento autorizado.');
+        throw new Error('O Stripe não retornou o método de pagamento.');
       }
 
-      console.log('[StripeElementsModal Log] PaymentMethod autorizado com sucesso. ID:', paymentMethodId);
+      console.log('[StripeElementsModal Log] PaymentMethod gerado com sucesso. ID:', paymentMethodId);
 
       if (mode === 'subscribe' && planKey) {
         const payload = {
@@ -111,8 +119,16 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
 
         // Normalmente o SetupIntent anterior já resolveu a autenticação. Caso o Stripe
         // ainda devolva uma ação pendente, concluímos enquanto o usuário está na tela.
+        if (result.setupIntentStatus === 'requires_payment_method') {
+          throw new Error('O Stripe não conseguiu autorizar este cartão para cobranças futuras. Confira os dados ou use outro cartão.');
+        }
+
         if (result.setupIntentClientSecret && result.setupIntentStatus === 'requires_action') {
-          const confirmation = await stripe.confirmCardSetup(result.setupIntentClientSecret);
+          const confirmation = await withClientTimeout(
+            stripe.confirmCardSetup(result.setupIntentClientSecret),
+            30000,
+            'A autenticação do cartão demorou demais. Tente novamente.'
+          );
           if (confirmation.error) {
             throw new Error(confirmation.error.message || 'Autenticação adicional do cartão não concluída.');
           }
@@ -121,7 +137,11 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         // Para quem já usou o trial, a nova assinatura pode cobrar imediatamente.
         // A API atual do Stripe expõe o client_secret da fatura por confirmation_secret.
         if (!result.isTrial && result.paymentIntentClientSecret) {
-          const paymentConfirmation = await stripe.confirmCardPayment(result.paymentIntentClientSecret);
+          const paymentConfirmation = await withClientTimeout(
+            stripe.confirmCardPayment(result.paymentIntentClientSecret),
+            30000,
+            'A confirmação do pagamento demorou demais. Tente novamente.'
+          );
           if (paymentConfirmation.error) {
             throw new Error(paymentConfirmation.error.message || 'Não foi possível confirmar a cobrança da assinatura.');
           }
@@ -249,7 +269,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         </button>
         <button
           type="submit"
-          disabled={!stripe || loading}
+          disabled={!stripe || !cardComplete || loading}
           className="flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
