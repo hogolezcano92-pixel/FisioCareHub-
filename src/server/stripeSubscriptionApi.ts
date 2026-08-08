@@ -1,0 +1,549 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
+
+type PlanKey = 'basic_monthly' | 'pro_monthly' | 'pro_semester' | 'pro_yearly';
+
+const PLAN_PRICES: Record<PlanKey, {
+  amountCents: number;
+  interval: 'month' | 'year';
+  intervalCount: number;
+  name: string;
+  configuredPrice?: string;
+}> = {
+  basic_monthly: {
+    amountCents: 1999,
+    interval: 'month',
+    intervalCount: 1,
+    name: 'FisioCareHub - Basic Mensal',
+    configuredPrice: process.env.STRIPE_PRICE_BASIC_MONTHLY,
+  },
+  pro_monthly: {
+    amountCents: 4999,
+    interval: 'month',
+    intervalCount: 1,
+    name: 'FisioCareHub - PRO Mensal',
+    configuredPrice: process.env.STRIPE_PRICE_PRO_MONTHLY,
+  },
+  pro_semester: {
+    amountCents: 26990,
+    interval: 'month',
+    intervalCount: 6,
+    name: 'FisioCareHub - PRO Semestral',
+    configuredPrice: process.env.STRIPE_PRICE_PRO_SEMESTER,
+  },
+  pro_yearly: {
+    amountCents: 49990,
+    interval: 'year',
+    intervalCount: 1,
+    name: 'FisioCareHub - PRO Anual',
+    configuredPrice: process.env.STRIPE_PRICE_PRO_YEARLY,
+  },
+};
+
+let stripeInstance: Stripe | null = null;
+let supabaseAdminInstance: ReturnType<typeof createClient> | null = null;
+
+function getStripe(): Stripe {
+  const key = (process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!key) throw new Error('STRIPE_SECRET_KEY não configurada na Vercel.');
+  if (!stripeInstance) stripeInstance = new Stripe(key);
+  return stripeInstance;
+}
+
+function normalizeSupabaseUrl(value: string): string {
+  const raw = value.trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
+  if (/^[a-z0-9-]+\.supabase\.co$/i.test(raw)) return `https://${raw}`;
+  return raw;
+}
+
+function getSupabaseAdmin() {
+  if (!supabaseAdminInstance) {
+    const url = normalizeSupabaseUrl(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '');
+    const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    if (!url) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL não configurada na Vercel.');
+    if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada na Vercel.');
+    supabaseAdminInstance = createClient(url, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return supabaseAdminInstance;
+}
+
+function setCors(res: VercelResponse, methods = 'GET,POST,OPTIONS') {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', methods);
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+async function readJsonBody(req: VercelRequest): Promise<any> {
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of req as any) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  if (!chunks.length) return {};
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+async function requireUser(req: VercelRequest, res: VercelResponse, expectedUserId?: string): Promise<string | null> {
+  const authHeader = String(req.headers.authorization || '');
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    res.status(401).json({ error: 'Sessão não autenticada.' });
+    return null;
+  }
+
+  const { data, error } = await getSupabaseAdmin().auth.getUser(token);
+  if (error || !data.user) {
+    res.status(401).json({ error: 'Sessão inválida ou expirada.' });
+    return null;
+  }
+  if (expectedUserId && data.user.id !== expectedUserId) {
+    res.status(403).json({ error: 'Usuário não autorizado para esta operação.' });
+    return null;
+  }
+  return data.user.id;
+}
+
+function isPlanKey(value: unknown): value is PlanKey {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(PLAN_PRICES, value);
+}
+
+async function bestEffortProfileUpdate(userId: string, payload: Record<string, any>) {
+  const { error } = await getSupabaseAdmin().from('perfis').update(payload).eq('id', userId);
+  if (error) console.warn('[Stripe Gateway] Falha ao sincronizar perfil:', error.message);
+}
+
+async function bestEffortSubscriptionUpsert(userId: string, payload: Record<string, any>) {
+  const supabase = getSupabaseAdmin();
+  const existing = await supabase
+    .from('assinaturas')
+    .select('id')
+    .eq('user_id', userId)
+    .order('data_inicio', { ascending: false })
+    .limit(1);
+
+  let result = existing.data?.[0]?.id
+    ? await supabase.from('assinaturas').update(payload).eq('id', existing.data[0].id)
+    : await supabase.from('assinaturas').insert({ user_id: userId, ...payload });
+
+  if (!result.error) return;
+
+  console.warn('[Stripe Gateway] Sincronização completa em assinaturas falhou:', result.error.message);
+  const minimalPayload = {
+    plano: payload.plano || 'pro',
+    status: payload.status === 'trialing' ? 'ativo' : (payload.status || 'ativo'),
+    valor: payload.valor ?? 49.99,
+    data_inicio: payload.data_inicio || new Date().toISOString(),
+    data_expiracao: payload.data_expiracao || null,
+  };
+
+  result = existing.data?.[0]?.id
+    ? await supabase.from('assinaturas').update(minimalPayload).eq('id', existing.data[0].id)
+    : await supabase.from('assinaturas').insert({ user_id: userId, ...minimalPayload });
+
+  if (result.error) console.warn('[Stripe Gateway] Sincronização essencial também falhou:', result.error.message);
+}
+
+async function getOrCreateStripeCustomer(userId: string, email = '', name = ''): Promise<string> {
+  const stripe = getStripe();
+  const supabase = getSupabaseAdmin();
+  const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+
+  if (profile?.stripe_customer_id) {
+    try {
+      const customer = await stripe.customers.retrieve(profile.stripe_customer_id);
+      if (!(customer as any).deleted) return profile.stripe_customer_id;
+    } catch (error) {
+      console.warn('[Stripe Gateway] Customer salvo não pôde ser reutilizado:', error);
+    }
+  }
+
+  const customerEmail = (email || profile?.email || '').trim();
+  if (customerEmail) {
+    const existing = await stripe.customers.list({ email: customerEmail, limit: 10 });
+    const matching = existing.data.find((c) => c.metadata?.user_id === userId);
+    if (matching) {
+      await bestEffortProfileUpdate(userId, { stripe_customer_id: matching.id });
+      return matching.id;
+    }
+  }
+
+  const customer = await stripe.customers.create({
+    email: customerEmail || undefined,
+    name: (name || profile?.nome_completo || '').trim() || undefined,
+    metadata: { user_id: userId },
+  });
+  await bestEffortProfileUpdate(userId, { stripe_customer_id: customer.id });
+  return customer.id;
+}
+
+async function getOrCreateStripePrice(planKey: PlanKey): Promise<string> {
+  const stripe = getStripe();
+  const plan = PLAN_PRICES[planKey];
+  if (plan.configuredPrice?.startsWith('price_')) return plan.configuredPrice;
+
+  const products = await stripe.products.list({ limit: 100, active: true });
+  let product = products.data.find((item) => item.metadata?.plan_key === planKey || item.name === plan.name);
+  if (!product) {
+    product = await stripe.products.create({ name: plan.name, metadata: { plan_key: planKey } });
+  }
+
+  const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 });
+  const existing = prices.data.find((price) =>
+    price.unit_amount === plan.amountCents &&
+    price.currency === 'brl' &&
+    price.recurring?.interval === plan.interval &&
+    price.recurring?.interval_count === plan.intervalCount
+  );
+  if (existing) return existing.id;
+
+  const created = await stripe.prices.create({
+    product: product.id,
+    currency: 'brl',
+    unit_amount: plan.amountCents,
+    recurring: { interval: plan.interval, interval_count: plan.intervalCount },
+  });
+  return created.id;
+}
+
+async function hasUsedStripeTrial(customerId: string): Promise<boolean> {
+  const subscriptions = await getStripe().subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
+  return subscriptions.data.some((sub: any) => Boolean(sub.trial_start || sub.trial_end || sub.metadata?.trial === 'true'));
+}
+
+async function findExistingLiveSubscription(customerId: string): Promise<any | null> {
+  const subscriptions = await getStripe().subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
+  return subscriptions.data.find((sub: any) =>
+    ['trialing', 'active', 'past_due', 'incomplete', 'unpaid', 'paused'].includes(sub.status)
+  ) || null;
+}
+
+function getPeriodEndUnix(subscription: any): number | null {
+  return subscription?.current_period_end || subscription?.items?.data?.[0]?.current_period_end || null;
+}
+
+function buildSubscriptionDetails(profile: any, sub: any) {
+  const rawStatus = String(sub?.status || profile?.subscription_status || 'free').toLowerCase();
+  const trialEnd = sub?.trial_end || profile?.trial_end || null;
+  let daysRemaining = 0;
+  if (trialEnd) {
+    const endMs = new Date(trialEnd).getTime();
+    if (!Number.isNaN(endMs) && endMs > Date.now()) daysRemaining = Math.ceil((endMs - Date.now()) / 86_400_000);
+  }
+  const isTrial = rawStatus === 'trialing' || (daysRemaining > 0 && rawStatus !== 'expirado' && rawStatus !== 'cancelado');
+  const planType = String(sub?.plano || sub?.plan_type || profile?.plan_type || profile?.plano || 'free').toLowerCase();
+  return {
+    plan: planType,
+    planKey: sub?.plan_key || `${planType}_monthly`,
+    planName: planType === 'pro' ? 'PRO' : planType === 'basic' ? 'Basic' : 'Gratuito',
+    status: rawStatus,
+    isTrial,
+    trialDaysRemaining: daysRemaining,
+    trialStart: sub?.trial_start || profile?.trial_start || null,
+    trialEnd,
+    trialUtilizado: Boolean(profile?.trial_utilizado || sub?.trial_utilizado),
+    nextBillingDate: sub?.next_billing_date || profile?.next_billing_date || sub?.data_expiracao || null,
+    lastBillingDate: sub?.last_billing_date || profile?.last_billing_date || null,
+    amount: Number(sub?.valor ?? (planType === 'pro' ? 49.99 : planType === 'basic' ? 19.99 : 0)),
+    cardBrand: sub?.card_brand || profile?.card_brand || null,
+    cardLast4: sub?.card_last4 || profile?.card_last4 || null,
+    cardExpMonth: sub?.card_exp_month || profile?.card_exp_month || null,
+    cardExpYear: sub?.card_exp_year || profile?.card_exp_year || null,
+    stripeCustomerId: sub?.stripe_customer_id || profile?.stripe_customer_id || null,
+    stripeSubscriptionId: sub?.stripe_subscription_id || profile?.stripe_subscription_id || null,
+  };
+}
+
+async function createSetupIntent(req: VercelRequest, res: VercelResponse, body: any) {
+  const { userId, email, userName } = body || {};
+  if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
+  if (!await requireUser(req, res, userId)) return;
+
+  const customerId = await getOrCreateStripeCustomer(userId, email || '', userName || '');
+  const setupIntent = await getStripe().setupIntents.create({
+    customer: customerId,
+    usage: 'off_session',
+    payment_method_types: ['card'],
+    metadata: { user_id: userId, purpose: 'subscription_trial' },
+  });
+  return res.status(200).json({ success: true, clientSecret: setupIntent.client_secret, customerId });
+}
+
+async function createSubscription(req: VercelRequest, res: VercelResponse, body: any) {
+  let step = 'recebendo_requisicao';
+  try {
+    const { userId, email, userName, planKey, paymentMethodId } = body || {};
+    if (!userId || !paymentMethodId || !isPlanKey(planKey)) {
+      return res.status(400).json({ success: false, step: 'validando_parametros', error: 'userId, paymentMethodId e planKey válido são obrigatórios.' });
+    }
+    if (!await requireUser(req, res, userId)) return;
+
+    const stripe = getStripe();
+    step = 'customer';
+    const customerId = await getOrCreateStripeCustomer(userId, email || '', userName || '');
+
+    step = 'evitando_assinatura_duplicada';
+    const existingLive = await findExistingLiveSubscription(customerId);
+    if (existingLive) {
+      return res.status(409).json({
+        success: false,
+        step,
+        error: 'Já existe uma assinatura ativa ou em processamento para este usuário.',
+        subscriptionId: existingLive.id,
+        status: existingLive.status,
+      });
+    }
+
+    step = 'validando_payment_method';
+    const paymentMethod: any = await stripe.paymentMethods.retrieve(paymentMethodId);
+    if (paymentMethod.customer && paymentMethod.customer !== customerId) {
+      return res.status(400).json({ success: false, step, error: 'Este cartão pertence a outro cliente Stripe.' });
+    }
+    if (!paymentMethod.customer) await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: paymentMethodId } });
+
+    step = 'trial';
+    const hasUsedTrial = await hasUsedStripeTrial(customerId);
+    const trialDays = hasUsedTrial ? undefined : 60;
+
+    step = 'price';
+    const priceId = await getOrCreateStripePrice(planKey);
+    const plan = PLAN_PRICES[planKey];
+    const planType = planKey.startsWith('basic') ? 'basic' : 'pro';
+
+    step = 'stripe_subscription';
+    const params: any = {
+      customer: customerId,
+      items: [{ price: priceId }],
+      default_payment_method: paymentMethodId,
+      payment_behavior: 'default_incomplete',
+      payment_settings: { save_default_payment_method: 'on_subscription' },
+      metadata: {
+        user_id: userId,
+        plan_key: planKey,
+        plan: planType,
+        trial: trialDays ? 'true' : 'false',
+      },
+      expand: ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
+    };
+    if (trialDays) params.trial_period_days = trialDays;
+
+    const subscription: any = await stripe.subscriptions.create(params);
+    const isTrial = subscription.status === 'trialing';
+    const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : (isTrial ? new Date().toISOString() : null);
+    const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+    const periodEnd = getPeriodEndUnix(subscription);
+    const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : trialEnd;
+    const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
+    const card = paymentMethod.card;
+
+    step = 'sincronizando_supabase';
+    await bestEffortProfileUpdate(userId, {
+      plan_type: planType,
+      plano: planType,
+      is_pro: planType === 'pro',
+      subscription_status: statusText,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      stripe_payment_method_id: paymentMethodId,
+      card_brand: card?.brand || null,
+      card_last4: card?.last4 || null,
+      card_exp_month: card?.exp_month || null,
+      card_exp_year: card?.exp_year || null,
+      trial_utilizado: Boolean(trialDays) || hasUsedTrial,
+      trial_start: trialStart,
+      trial_end: trialEnd,
+      next_billing_date: nextBillingDate,
+      last_stripe_sync: new Date().toISOString(),
+    });
+    await bestEffortSubscriptionUpsert(userId, {
+      plano: planType,
+      plan_type: planType,
+      plan_key: planKey,
+      status: statusText,
+      valor: plan.amountCents / 100,
+      data_inicio: new Date().toISOString(),
+      data_expiracao: nextBillingDate,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      stripe_payment_method_id: paymentMethodId,
+      card_brand: card?.brand || null,
+      card_last4: card?.last4 || null,
+      card_exp_month: card?.exp_month || null,
+      card_exp_year: card?.exp_year || null,
+      trial_utilizado: Boolean(trialDays) || hasUsedTrial,
+      trial_start: trialStart,
+      trial_end: trialEnd,
+      next_billing_date: nextBillingDate,
+      last_stripe_sync: new Date().toISOString(),
+    });
+
+    const pendingSetup: any = subscription.pending_setup_intent;
+    const invoice: any = subscription.latest_invoice;
+    const confirmationSecret: any = invoice?.confirmation_secret;
+    return res.status(200).json({
+      success: true,
+      subscriptionId: subscription.id,
+      status: statusText,
+      isTrial,
+      trialEnd,
+      nextBillingDate,
+      setupIntentClientSecret: pendingSetup?.client_secret || null,
+      setupIntentStatus: pendingSetup?.status || null,
+      paymentIntentClientSecret: confirmationSecret?.client_secret || null,
+    });
+  } catch (error: any) {
+    console.error(`[Stripe Gateway] create-subscription falhou em ${step}:`, error);
+    return res.status(500).json({ success: false, step, error: error.message || 'Erro ao criar assinatura no Stripe.', stripeError: error.type || error.code || null });
+  }
+}
+
+async function updatePaymentMethod(req: VercelRequest, res: VercelResponse, body: any) {
+  const { userId, paymentMethodId } = body || {};
+  if (!userId || !paymentMethodId) return res.status(400).json({ error: 'userId e paymentMethodId são obrigatórios' });
+  if (!await requireUser(req, res, userId)) return;
+
+  const stripe = getStripe();
+  const supabase = getSupabaseAdmin();
+  const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+  const customerId = profile?.stripe_customer_id || await getOrCreateStripeCustomer(userId, profile?.email || '', profile?.nome_completo || '');
+  const pm: any = await stripe.paymentMethods.retrieve(paymentMethodId);
+  if (!pm.customer) await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+  if (pm.customer && pm.customer !== customerId) return res.status(400).json({ error: 'Cartão vinculado a outro cliente Stripe.' });
+  await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: paymentMethodId } });
+  if (profile?.stripe_subscription_id) await stripe.subscriptions.update(profile.stripe_subscription_id, { default_payment_method: paymentMethodId });
+
+  const card = pm.card;
+  const payload = {
+    stripe_payment_method_id: paymentMethodId,
+    card_brand: card?.brand || null,
+    card_last4: card?.last4 || null,
+    card_exp_month: card?.exp_month || null,
+    card_exp_year: card?.exp_year || null,
+    last_stripe_sync: new Date().toISOString(),
+  };
+  await bestEffortProfileUpdate(userId, payload);
+  const { error } = await supabase.from('assinaturas').update(payload).eq('user_id', userId);
+  if (error) console.warn('[Stripe Gateway] assinatura não sincronizada ao atualizar cartão:', error.message);
+  return res.status(200).json({ success: true, cardBrand: card?.brand || null, cardLast4: card?.last4 || null });
+}
+
+async function changePlan(req: VercelRequest, res: VercelResponse, body: any) {
+  const { userId, newPlanKey } = body || {};
+  if (!userId || !isPlanKey(newPlanKey)) return res.status(400).json({ error: 'userId e newPlanKey válido são obrigatórios.' });
+  if (!await requireUser(req, res, userId)) return;
+
+  const supabase = getSupabaseAdmin();
+  const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+  if (!profile?.stripe_subscription_id) return res.status(400).json({ error: 'Assinatura Stripe não encontrada.' });
+  const stripe = getStripe();
+  const subscription: any = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+  const itemId = subscription.items?.data?.[0]?.id;
+  if (!itemId) return res.status(500).json({ error: 'Item da assinatura não encontrado no Stripe.' });
+
+  const priceId = await getOrCreateStripePrice(newPlanKey);
+  const planType = newPlanKey.startsWith('basic') ? 'basic' : 'pro';
+  await stripe.subscriptions.update(profile.stripe_subscription_id, {
+    items: [{ id: itemId, price: priceId }],
+    proration_behavior: subscription.status === 'trialing' ? 'none' : 'always_invoice',
+    metadata: { ...subscription.metadata, plan_key: newPlanKey, plan: planType },
+  });
+  await bestEffortProfileUpdate(userId, { plan_type: planType, plano: planType, is_pro: planType === 'pro', last_stripe_sync: new Date().toISOString() });
+  const { error } = await supabase.from('assinaturas').update({ plano: planType, valor: PLAN_PRICES[newPlanKey].amountCents / 100 }).eq('user_id', userId);
+  if (error) console.warn('[Stripe Gateway] Falha ao atualizar plano no Supabase:', error.message);
+  return res.status(200).json({ success: true, newPlanKey, planType });
+}
+
+async function cancelSubscription(req: VercelRequest, res: VercelResponse, body: any) {
+  const userId = body?.userId;
+  if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
+  if (!await requireUser(req, res, userId)) return;
+  const supabase = getSupabaseAdmin();
+  const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+  if (!profile?.stripe_subscription_id) return res.status(400).json({ error: 'Assinatura Stripe não encontrada.' });
+  const subscription: any = await getStripe().subscriptions.update(profile.stripe_subscription_id, { cancel_at_period_end: true });
+  await bestEffortProfileUpdate(userId, { subscription_status: 'cancelado', last_stripe_sync: new Date().toISOString() });
+  const { error } = await supabase.from('assinaturas').update({ status: 'cancelado' }).eq('user_id', userId);
+  if (error) console.warn('[Stripe Gateway] Falha ao marcar assinatura cancelada:', error.message);
+  return res.status(200).json({ success: true, cancelAtPeriodEnd: subscription.cancel_at_period_end });
+}
+
+async function reactivateSubscription(req: VercelRequest, res: VercelResponse, body: any) {
+  const userId = body?.userId;
+  if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
+  if (!await requireUser(req, res, userId)) return;
+  const supabase = getSupabaseAdmin();
+  const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+  if (!profile?.stripe_subscription_id) return res.status(400).json({ error: 'Assinatura Stripe não encontrada.' });
+  const stripe = getStripe();
+  let subscription: any = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+  if (!['active', 'trialing'].includes(subscription.status)) return res.status(400).json({ error: 'Esta assinatura já encerrou. Escolha um plano para criar uma nova assinatura.' });
+  subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, { cancel_at_period_end: false });
+  const periodEnd = getPeriodEndUnix(subscription);
+  const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+  const statusText = subscription.status === 'trialing' ? 'trialing' : 'ativo';
+  await bestEffortProfileUpdate(userId, { subscription_status: statusText, next_billing_date: nextBillingDate, last_stripe_sync: new Date().toISOString() });
+  const { error } = await supabase.from('assinaturas').update({ status: statusText, data_expiracao: nextBillingDate }).eq('user_id', userId);
+  if (error) console.warn('[Stripe Gateway] Falha ao reativar no Supabase:', error.message);
+  return res.status(200).json({ success: true, status: statusText });
+}
+
+async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
+  const rawUserId = req.query.userId;
+  const userId = Array.isArray(rawUserId) ? rawUserId[0] : String(rawUserId || '');
+  if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
+  if (!await requireUser(req, res, userId)) return;
+  const supabase = getSupabaseAdmin();
+  const [{ data: profile }, { data: subs }] = await Promise.all([
+    supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1),
+  ]);
+  const sub = Array.isArray(subs) && subs.length ? subs[0] : null;
+  return res.status(200).json(buildSubscriptionDetails(profile, sub));
+}
+
+export async function handleStripeSubscriptionAction(action: string, req: VercelRequest, res: VercelResponse) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  try {
+    if (action === 'config') {
+      if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
+      const publishableKey = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || '').trim();
+      if (!publishableKey) return res.status(500).json({ error: 'VITE_STRIPE_PUBLISHABLE_KEY/STRIPE_PUBLISHABLE_KEY não configurada.' });
+      return res.status(200).json({ publishableKey });
+    }
+
+    if (action === 'subscription-details') {
+      if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
+      return await subscriptionDetails(req, res);
+    }
+
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+    const body = await readJsonBody(req);
+
+    switch (action) {
+      case 'create-setup-intent': return await createSetupIntent(req, res, body);
+      case 'create-subscription': return await createSubscription(req, res, body);
+      case 'update-payment-method': return await updatePaymentMethod(req, res, body);
+      case 'change-plan': return await changePlan(req, res, body);
+      case 'cancel-subscription': return await cancelSubscription(req, res, body);
+      case 'reactivate-subscription': return await reactivateSubscription(req, res, body);
+      default: return res.status(404).json({ error: `Ação Stripe desconhecida: ${action}` });
+    }
+  } catch (error: any) {
+    console.error(`[Stripe Gateway] ${action}:`, error);
+    return res.status(500).json({ error: error.message || 'Erro interno na integração Stripe.' });
+  }
+}
