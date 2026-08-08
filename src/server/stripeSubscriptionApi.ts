@@ -42,7 +42,10 @@ const PLAN_PRICES: Record<PlanKey, {
 };
 
 let stripeInstance: Stripe | null = null;
-let supabaseAdminInstance: ReturnType<typeof createClient> | null = null;
+// Este gateway usa tabelas legadas que ainda não possuem tipos Database gerados.
+// Mantemos o client administrativo sem schema genérico para evitar que versões
+// recentes do supabase-js infiram inserts/updates como `never`.
+let supabaseAdminInstance: any = null;
 
 function getStripe(): Stripe {
   const key = (process.env.STRIPE_SECRET_KEY || '').trim();
@@ -60,13 +63,13 @@ function normalizeSupabaseUrl(value: string): string {
   return raw;
 }
 
-function getSupabaseAdmin() {
+function getSupabaseAdmin(): any {
   if (!supabaseAdminInstance) {
     const url = normalizeSupabaseUrl(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '');
     const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     if (!url) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL não configurada na Vercel.');
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada na Vercel.');
-    supabaseAdminInstance = createClient(url, serviceRoleKey, {
+    supabaseAdminInstance = createClient<any>(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }
