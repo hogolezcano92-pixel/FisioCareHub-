@@ -1123,7 +1123,6 @@ export default function Dashboard() {
           fisio_id,
           status,
           status_pagamento,
-          payment_status,
           fisioterapeuta:perfis!fisio_id(nome_completo)
         `,
         )
@@ -1187,7 +1186,7 @@ export default function Dashboard() {
           const { data: appts } = await supabase
             .from("agendamentos")
             .select(
-              "id, paciente_id, status, status_pagamento, payment_status, pagamento_status, status_payment",
+              "id, paciente_id, status, status_pagamento",
             )
             .eq("fisio_id", data.id)
             .in("status", REAL_APPOINTMENT_STATUSES);
@@ -1201,7 +1200,7 @@ export default function Dashboard() {
 
           const { data: internalPatients } = await supabase
             .from("pacientes")
-            .select("id, perfil_id, nome_completo, nome, email, convite_email, avatar_url, foto_url")
+            .select("*")
             .eq("fisioterapeuta_id", data.id);
 
           linkedInternalPatients = internalPatients || [];
@@ -1572,9 +1571,7 @@ export default function Dashboard() {
                   .in("id", triagePatientIds),
                 supabase
                   .from("pacientes")
-                  .select(
-                    "id, nome_completo, nome, email, avatar_url, foto_url",
-                  )
+                  .select("*")
                   .in("id", triagePatientIds),
               ]);
 
@@ -1798,7 +1795,7 @@ export default function Dashboard() {
                 .in("id", patientIdsForMetadata),
               supabase
                 .from("pacientes")
-                .select("id, perfil_id, nome_completo, nome, email, convite_email, avatar_url, foto_url")
+                .select("*")
                 .in("id", patientIdsForMetadata),
             ]);
 
