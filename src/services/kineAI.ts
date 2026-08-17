@@ -169,7 +169,7 @@ export const kineAIService = {
     }
 
     try {
-      const model = "llama-3.3-70b-versatile";
+      const model = "openai/gpt-oss-120b";
       
       const systemInstruction = `
         ${KINEAI_CLINICAL_KNOWLEDGE_BASE}
@@ -237,7 +237,7 @@ export const kineAIService = {
     }
 
     try {
-      const model = "llama-3.3-70b-versatile";
+      const model = "openai/gpt-oss-120b";
       
       const systemInstruction = `
         ${KINEAI_CLINICAL_KNOWLEDGE_BASE}
@@ -284,7 +284,7 @@ export const kineAIService = {
     }
 
     try {
-      const model = "llama-3.3-70b-versatile";
+      const model = "openai/gpt-oss-120b";
       
       const systemInstruction = `
         ${KINEAI_CLINICAL_KNOWLEDGE_BASE}
