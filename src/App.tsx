@@ -212,10 +212,12 @@ function ScrollToTop() {
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
   const location = useLocation();
 
-  if (loading || (user && !profile)) {
+  // AuthGate é responsável pelo estado de perfil ausente/erro. Aqui só
+  // exibimos loader enquanto existe carregamento real em andamento.
+  if (loading || profileLoading) {
     return <PageLoader />;
   }
 
