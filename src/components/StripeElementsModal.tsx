@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getStripeConfig, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
+import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -24,7 +24,7 @@ interface FormProps {
   userName?: string;
   planKey?: PlanKey;
   mode: 'subscribe' | 'update_card';
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -68,7 +68,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
     setLoading(true);
 
     try {
-      console.log('[StripeElementsModal Log] Criando PaymentMethod seguro no Stripe...', {
+      console.log('[StripeElementsModal Log] Preparando cartão no Stripe...', {
         cardHolderName: cardHolderName.trim(),
         userEmail,
         userId,
@@ -76,34 +76,71 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         mode
       });
 
-      // Em assinaturas com trial, o Stripe Billing cria automaticamente um
-      // pending_setup_intent quando precisa autenticar o cartão para cobranças
-      // futuras. Por isso não criamos um SetupIntent separado antes da assinatura.
-      const paymentMethodResponse = await withClientTimeout(
-        stripe.createPaymentMethod({
-          type: 'card',
-          card: cardElement,
-          billing_details: {
-            name: cardHolderName.trim(),
-            email: userEmail
-          }
-        }),
-        20000,
-        'O Stripe demorou demais para validar o cartão. Tente novamente.'
-      );
+      let paymentMethodId = '';
 
-      console.log('[StripeElementsModal Log] Resultado de stripe.createPaymentMethod:', paymentMethodResponse);
+      if (mode === 'subscribe' && planKey) {
+        // Antes de iniciar os 60 dias, configuramos o cartão especificamente
+        // para cobranças futuras/off-session. Assim qualquer autenticação exigida
+        // pelo banco acontece agora, e não somente quando o trial terminar.
+        const setup = await createSetupIntent(userId, userEmail, cardHolderName.trim());
+        if (!setup?.clientSecret) {
+          throw new Error('O Stripe não conseguiu iniciar a autorização do cartão para cobranças futuras.');
+        }
 
-      if (paymentMethodResponse.error) {
-        throw new Error(paymentMethodResponse.error.message || 'Não foi possível validar os dados do cartão.');
+        const setupConfirmation = await withClientTimeout(
+          stripe.confirmCardSetup(setup.clientSecret, {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: cardHolderName.trim(),
+                email: userEmail
+              }
+            }
+          }),
+          30000,
+          'A autorização do cartão demorou demais. Tente novamente.'
+        );
+
+        if (setupConfirmation.error) {
+          throw new Error(setupConfirmation.error.message || 'Não foi possível autorizar o cartão para a cobrança após o trial.');
+        }
+
+        const setupIntent = setupConfirmation.setupIntent;
+        if (!setupIntent || setupIntent.status !== 'succeeded') {
+          throw new Error('O cartão não ficou autorizado para cobranças futuras. Confira os dados ou use outro cartão.');
+        }
+
+        const configuredPaymentMethod = setupIntent.payment_method;
+        paymentMethodId = typeof configuredPaymentMethod === 'string' ? configuredPaymentMethod : '';
+
+        if (!paymentMethodId) {
+          throw new Error('O Stripe não retornou o método de pagamento autorizado.');
+        }
+
+        console.log('[StripeElementsModal Log] Cartão autorizado para cobrança futura. PaymentMethod:', paymentMethodId);
+      } else {
+        const paymentMethodResponse = await withClientTimeout(
+          stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+            billing_details: {
+              name: cardHolderName.trim(),
+              email: userEmail
+            }
+          }),
+          20000,
+          'O Stripe demorou demais para validar o cartão. Tente novamente.'
+        );
+
+        if (paymentMethodResponse.error) {
+          throw new Error(paymentMethodResponse.error.message || 'Não foi possível validar os dados do cartão.');
+        }
+
+        paymentMethodId = paymentMethodResponse.paymentMethod?.id || '';
+        if (!paymentMethodId) {
+          throw new Error('O Stripe não retornou o método de pagamento.');
+        }
       }
-
-      const paymentMethodId = paymentMethodResponse.paymentMethod?.id;
-      if (!paymentMethodId) {
-        throw new Error('O Stripe não retornou o método de pagamento.');
-      }
-
-      console.log('[StripeElementsModal Log] PaymentMethod gerado com sucesso. ID:', paymentMethodId);
 
       if (mode === 'subscribe' && planKey) {
         const payload = {
@@ -170,7 +207,10 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         });
       }
 
-      onSuccess();
+      // Aguarda a releitura do perfil/assinatura antes de fechar o modal. Isso
+      // evita a interface continuar exibindo o plano Free por alguns instantes
+      // logo após o Stripe confirmar o trial.
+      await onSuccess();
       onClose();
     } catch (err: any) {
       console.error('[StripeElementsModal Error] Exceção capturada na submissão:', {
