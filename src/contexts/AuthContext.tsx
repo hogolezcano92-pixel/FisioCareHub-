@@ -192,7 +192,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .from('assinaturas')
             .select('*')
             .eq('user_id', userId)
-            .eq('status', 'ativo')
+            // Trial do Stripe também é uma assinatura válida e deve liberar o
+            // plano imediatamente. Aceitamos ainda "active" para registros
+            // sincronizados diretamente com a nomenclatura do Stripe.
+            .in('status', ['ativo', 'active', 'trialing', 'trial'])
             .order('data_inicio', { ascending: false })
             .limit(1)
         : Promise.resolve({ data: [] });
