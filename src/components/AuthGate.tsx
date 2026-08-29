@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import i18n from '../i18n/config';
 import PostLoginSplash from './PostLoginSplash';
@@ -9,8 +9,9 @@ interface AuthGateProps {
 }
 
 export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
-  const { loading, user, profile } = useAuth();
+  const { loading, profileLoading, profileError, user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [i18nReady, setI18nReady] = React.useState(false);
   const [postLoginSplash, setPostLoginSplash] = React.useState<null | {
     target: string;
@@ -112,11 +113,52 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     });
   }, [loading, i18nReady, user, profile, postLoginSplash]);
 
-  // If we are still loading the initial auth state OR
-  // if we have a user but the profile is still loading OR
-  // if translations are not yet ready
-  if (loading || (user && !profile) || !i18nReady) {
+  const registrationInProgress = location.pathname === '/register' && (() => {
+    try {
+      return localStorage.getItem('registration_in_progress') === '1';
+    } catch {
+      return false;
+    }
+  })();
+
+  // O loader só permanece enquanto existe uma operação real em andamento.
+  // Durante o cadastro, o AuthContext propositalmente ignora o perfil básico
+  // criado pelo trigger até o Register salvar todos os dados.
+  if (loading || (user && profileLoading && !registrationInProgress) || !i18nReady) {
     return <div className="fixed inset-0 z-[90] bg-background" />;
+  }
+
+  // Antes, `user && !profile` significava loader eterno. Agora uma falha de
+  // leitura vira um estado recuperável, com retry, sem perder a autenticação.
+  if (user && !profile && !registrationInProgress) {
+    return (
+      <div className="fixed inset-0 z-[90] bg-background flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 p-8 text-center shadow-2xl">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white mb-3">
+            Não foi possível carregar seu perfil
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            {profileError || 'Sua sessão foi iniciada, mas os dados do perfil não responderam. Tente novamente.'}
+          </p>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => void refreshProfile()}
+              className="w-full rounded-2xl bg-sky-500 px-5 py-3 font-black text-white hover:bg-sky-600 transition-colors"
+            >
+              Tentar novamente
+            </button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="w-full rounded-2xl bg-slate-100 dark:bg-white/5 px-5 py-3 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+            >
+              Sair e voltar ao início
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (postLoginSplash) {
@@ -128,6 +170,11 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
         onComplete={() => {
           const target = postLoginSplash.target || '/dashboard';
           clearPostLoginSplashPayload();
+          try {
+            sessionStorage.removeItem('pendingRedirect');
+          } catch {
+            // ignore
+          }
           setPostLoginSplash(null);
           navigate(target, { replace: true });
         }}
