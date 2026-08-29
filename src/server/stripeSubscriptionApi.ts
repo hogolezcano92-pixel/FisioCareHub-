@@ -175,35 +175,152 @@ async function bestEffortProfileUpdate(userId: string, payload: Record<string, a
   if (error) console.warn('[Stripe Gateway] Falha ao sincronizar perfil:', error.message);
 }
 
-async function bestEffortSubscriptionUpsert(userId: string, payload: Record<string, any>) {
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function normalizeSubscriptionStatus(status: unknown): string {
+  const value = String(status || '').toLowerCase();
+  if (value === 'active') return 'ativo';
+  if (value === 'canceled') return 'cancelado';
+  return value || 'free';
+}
+
+async function requiredProfileUpdate(userId: string, payload: Record<string, any>) {
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data, error } = await getSupabaseAdmin()
+      .from('perfis')
+      .update(payload)
+      .eq('id', userId)
+      .select('id')
+      .maybeSingle();
+    if (!error && data?.id) return;
+    lastError = error;
+    if (attempt < 2) await sleep(attempt === 0 ? 150 : 400);
+  }
+  throw new Error(`Não foi possível liberar o plano no perfil do Supabase: ${lastError?.message || 'perfil não encontrado'}`);
+}
+
+async function requiredSubscriptionUpsert(userId: string, payload: Record<string, any>) {
   const supabase = getSupabaseAdmin();
-  const existing = await supabase
-    .from('assinaturas')
-    .select('id')
-    .eq('user_id', userId)
-    .order('data_inicio', { ascending: false })
-    .limit(1);
+  let lastError: any = null;
 
-  let result = existing.data?.[0]?.id
-    ? await supabase.from('assinaturas').update(payload).eq('id', existing.data[0].id)
-    : await supabase.from('assinaturas').insert({ user_id: userId, ...payload });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let existingId: string | null = null;
 
-  if (!result.error) return;
+    if (payload.stripe_subscription_id) {
+      const byStripe = await supabase
+        .from('assinaturas')
+        .select('id')
+        .eq('stripe_subscription_id', payload.stripe_subscription_id)
+        .limit(1);
+      if (byStripe.error) lastError = byStripe.error;
+      existingId = byStripe.data?.[0]?.id || null;
+    }
 
-  console.warn('[Stripe Gateway] Sincronização completa em assinaturas falhou:', result.error.message);
-  const minimalPayload = {
-    plano: payload.plano || 'pro',
-    status: payload.status === 'trialing' ? 'ativo' : (payload.status || 'ativo'),
-    valor: payload.valor ?? 49.99,
-    data_inicio: payload.data_inicio || new Date().toISOString(),
-    data_expiracao: payload.data_expiracao || null,
+    if (!existingId) {
+      const byUser = await supabase
+        .from('assinaturas')
+        .select('id')
+        .eq('user_id', userId)
+        .order('data_inicio', { ascending: false })
+        .limit(1);
+      if (byUser.error) lastError = byUser.error;
+      existingId = byUser.data?.[0]?.id || null;
+    }
+
+    const result = existingId
+      ? await supabase.from('assinaturas').update(payload).eq('id', existingId)
+      : await supabase.from('assinaturas').insert({ user_id: userId, ...payload });
+
+    if (!result.error) return;
+    lastError = result.error;
+    if (attempt < 2) await sleep(attempt === 0 ? 150 : 400);
+  }
+
+  throw new Error(`Não foi possível registrar a assinatura no Supabase: ${lastError?.message || 'erro desconhecido'}`);
+}
+
+async function syncStripeSubscriptionAccess(
+  userId: string,
+  subscription: any,
+  fallbackPlanKey: PlanKey,
+  customerId: string,
+  paymentMethod?: any,
+) {
+  const planKey = isPlanKey(subscription?.metadata?.plan_key)
+    ? subscription.metadata.plan_key
+    : fallbackPlanKey;
+  const plan = PLAN_PRICES[planKey];
+  const planType = subscription?.metadata?.plan === 'basic' || planKey.startsWith('basic') ? 'basic' : 'pro';
+  const statusText = normalizeSubscriptionStatus(subscription?.status);
+  const isTrial = statusText === 'trialing';
+  const trialStart = subscription?.trial_start
+    ? new Date(subscription.trial_start * 1000).toISOString()
+    : (isTrial ? new Date().toISOString() : null);
+  const trialEnd = subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+  const periodEnd = getPeriodEndUnix(subscription);
+  const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : trialEnd;
+  const now = new Date().toISOString();
+
+  const profilePayload = {
+    plan_type: planType,
+    plano: planType,
+    is_pro: planType === 'pro',
+    subscription_status: statusText,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscription.id,
+    trial_utilizado: Boolean(subscription?.trial_start || subscription?.trial_end || subscription?.metadata?.trial === 'true'),
+    trial_start: trialStart,
+    trial_end: trialEnd,
+    next_billing_date: nextBillingDate,
+    last_stripe_sync: now,
   };
 
-  result = existing.data?.[0]?.id
-    ? await supabase.from('assinaturas').update(minimalPayload).eq('id', existing.data[0].id)
-    : await supabase.from('assinaturas').insert({ user_id: userId, ...minimalPayload });
+  const subscriptionPayload = {
+    plano: planType,
+    plan_type: planType,
+    plan_key: planKey,
+    status: statusText,
+    valor: plan.amountCents / 100,
+    data_inicio: trialStart || new Date((subscription?.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+    data_expiracao: nextBillingDate,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscription.id,
+    trial_utilizado: Boolean(subscription?.trial_start || subscription?.trial_end || subscription?.metadata?.trial === 'true'),
+    trial_start: trialStart,
+    trial_end: trialEnd,
+    next_billing_date: nextBillingDate,
+    last_stripe_sync: now,
+  };
 
-  if (result.error) console.warn('[Stripe Gateway] Sincronização essencial também falhou:', result.error.message);
+  // Estes dois registros são a autorização do usuário dentro do app. Se um
+  // deles falhar, não declaramos a assinatura como concluída silenciosamente.
+  await requiredProfileUpdate(userId, profilePayload);
+  await requiredSubscriptionUpsert(userId, subscriptionPayload);
+
+  // Dados visuais do cartão são úteis, mas não devem impedir a liberação do
+  // plano caso uma instalação antiga ainda não possua alguma coluna opcional.
+  const card = paymentMethod?.card;
+  if (paymentMethod?.id) {
+    await bestEffortProfileUpdate(userId, {
+      stripe_payment_method_id: paymentMethod.id,
+      card_brand: card?.brand || null,
+      card_last4: card?.last4 || null,
+      card_exp_month: card?.exp_month || null,
+      card_exp_year: card?.exp_year || null,
+    });
+
+    const { error } = await getSupabaseAdmin().from('assinaturas').update({
+      stripe_payment_method_id: paymentMethod.id,
+      card_brand: card?.brand || null,
+      card_last4: card?.last4 || null,
+      card_exp_month: card?.exp_month || null,
+      card_exp_year: card?.exp_year || null,
+    }).eq('stripe_subscription_id', subscription.id);
+    if (error) console.warn('[Stripe Gateway] Dados opcionais do cartão não foram sincronizados em assinaturas:', error.message);
+  }
+
+  return { planKey, planType, statusText, isTrial, trialStart, trialEnd, nextBillingDate };
 }
 
 async function getOrCreateStripeCustomer(userId: string, email = '', name = ''): Promise<string> {
@@ -348,18 +465,6 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
     step = 'customer';
     const customerId = await getOrCreateStripeCustomer(userId, email || '', userName || '');
 
-    step = 'evitando_assinatura_duplicada';
-    const existingLive = await findExistingLiveSubscription(customerId);
-    if (existingLive) {
-      return res.status(409).json({
-        success: false,
-        step,
-        error: 'Já existe uma assinatura ativa ou em processamento para este usuário.',
-        subscriptionId: existingLive.id,
-        status: existingLive.status,
-      });
-    }
-
     step = 'validando_payment_method';
     const paymentMethod: any = await stripe.paymentMethods.retrieve(paymentMethodId);
     if (paymentMethod.customer && paymentMethod.customer !== customerId) {
@@ -368,13 +473,48 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
     if (!paymentMethod.customer) await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
     await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: paymentMethodId } });
 
+    step = 'recuperando_assinatura_existente';
+    const existingLive = await findExistingLiveSubscription(customerId);
+    if (existingLive) {
+      if (['trialing', 'active'].includes(existingLive.status)) {
+        // Repara automaticamente o cenário em que o Stripe criou a assinatura,
+        // mas uma sincronização anterior com o Supabase falhou. Não cria uma
+        // segunda assinatura nem reinicia o período de teste.
+        await stripe.subscriptions.update(existingLive.id, {
+          default_payment_method: paymentMethodId,
+        });
+        const freshExisting: any = await stripe.subscriptions.retrieve(existingLive.id);
+        const synced = await syncStripeSubscriptionAccess(userId, freshExisting, planKey, customerId, paymentMethod);
+
+        return res.status(200).json({
+          success: true,
+          recovered: true,
+          subscriptionId: freshExisting.id,
+          status: synced.statusText,
+          isTrial: synced.isTrial,
+          trialEnd: synced.trialEnd,
+          nextBillingDate: synced.nextBillingDate,
+          setupIntentClientSecret: null,
+          setupIntentStatus: null,
+          paymentIntentClientSecret: null,
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        step,
+        error: 'Já existe uma assinatura no Stripe que precisa ser regularizada antes de criar outra.',
+        subscriptionId: existingLive.id,
+        status: existingLive.status,
+      });
+    }
+
     step = 'trial';
     const hasUsedTrial = await hasUsedStripeTrial(customerId);
     const trialDays = hasUsedTrial ? undefined : 60;
 
     step = 'price';
     const priceId = await getOrCreateStripePrice(planKey);
-    const plan = PLAN_PRICES[planKey];
     const planType = planKey.startsWith('basic') ? 'basic' : 'pro';
 
     step = 'stripe_subscription';
@@ -382,6 +522,7 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
       customer: customerId,
       items: [{ price: priceId }],
       default_payment_method: paymentMethodId,
+      collection_method: 'charge_automatically',
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
       metadata: {
@@ -392,57 +533,22 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
       },
       expand: ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
     };
-    if (trialDays) params.trial_period_days = trialDays;
+    if (trialDays) {
+      params.trial_period_days = trialDays;
+      params.trial_settings = {
+        end_behavior: {
+          // Como coletamos o cartão antes de iniciar o trial, normalmente este
+          // caso não ocorre. Se o método for removido no Stripe, cancelar é mais
+          // seguro do que manter uma assinatura gratuita indefinidamente.
+          missing_payment_method: 'cancel',
+        },
+      };
+    }
 
     const subscription: any = await stripe.subscriptions.create(params);
-    const isTrial = subscription.status === 'trialing';
-    const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : (isTrial ? new Date().toISOString() : null);
-    const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
-    const periodEnd = getPeriodEndUnix(subscription);
-    const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : trialEnd;
-    const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
-    const card = paymentMethod.card;
 
     step = 'sincronizando_supabase';
-    await bestEffortProfileUpdate(userId, {
-      plan_type: planType,
-      plano: planType,
-      is_pro: planType === 'pro',
-      subscription_status: statusText,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscription.id,
-      stripe_payment_method_id: paymentMethodId,
-      card_brand: card?.brand || null,
-      card_last4: card?.last4 || null,
-      card_exp_month: card?.exp_month || null,
-      card_exp_year: card?.exp_year || null,
-      trial_utilizado: Boolean(trialDays) || hasUsedTrial,
-      trial_start: trialStart,
-      trial_end: trialEnd,
-      next_billing_date: nextBillingDate,
-      last_stripe_sync: new Date().toISOString(),
-    });
-    await bestEffortSubscriptionUpsert(userId, {
-      plano: planType,
-      plan_type: planType,
-      plan_key: planKey,
-      status: statusText,
-      valor: plan.amountCents / 100,
-      data_inicio: new Date().toISOString(),
-      data_expiracao: nextBillingDate,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscription.id,
-      stripe_payment_method_id: paymentMethodId,
-      card_brand: card?.brand || null,
-      card_last4: card?.last4 || null,
-      card_exp_month: card?.exp_month || null,
-      card_exp_year: card?.exp_year || null,
-      trial_utilizado: Boolean(trialDays) || hasUsedTrial,
-      trial_start: trialStart,
-      trial_end: trialEnd,
-      next_billing_date: nextBillingDate,
-      last_stripe_sync: new Date().toISOString(),
-    });
+    const synced = await syncStripeSubscriptionAccess(userId, subscription, planKey, customerId, paymentMethod);
 
     const pendingSetup: any = subscription.pending_setup_intent;
     const invoice: any = subscription.latest_invoice;
@@ -450,10 +556,10 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
     return res.status(200).json({
       success: true,
       subscriptionId: subscription.id,
-      status: statusText,
-      isTrial,
-      trialEnd,
-      nextBillingDate,
+      status: synced.statusText,
+      isTrial: synced.isTrial,
+      trialEnd: synced.trialEnd,
+      nextBillingDate: synced.nextBillingDate,
       setupIntentClientSecret: pendingSetup?.client_secret || null,
       setupIntentStatus: pendingSetup?.status || null,
       paymentIntentClientSecret: confirmationSecret?.client_secret || null,
@@ -560,11 +666,51 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
   if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
   if (!await requireUser(req, res, userId)) return;
   const supabase = getSupabaseAdmin();
-  const [{ data: profile }, { data: subs }] = await Promise.all([
+  let [{ data: profile }, { data: subs }] = await Promise.all([
     supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
     supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1),
   ]);
-  const sub = Array.isArray(subs) && subs.length ? subs[0] : null;
+
+  let sub = Array.isArray(subs) && subs.length ? subs[0] : null;
+
+  // Auto-reconciliação: se o webhook estiver atrasado, o estado do Stripe é a
+  // referência para recuperar uma assinatura trialing/active já existente.
+  // Isso também corrige usuários que ficaram presos como Free após uma falha
+  // antiga de sincronização com o Supabase.
+  const customerId = sub?.stripe_customer_id || profile?.stripe_customer_id || null;
+  const stripeSubscriptionId = sub?.stripe_subscription_id || profile?.stripe_subscription_id || null;
+  if (customerId || stripeSubscriptionId) {
+    try {
+      const stripe = getStripe();
+      const stripeSub: any = stripeSubscriptionId
+        ? await stripe.subscriptions.retrieve(stripeSubscriptionId)
+        : await findExistingLiveSubscription(customerId);
+
+      if (stripeSub && ['trialing', 'active'].includes(stripeSub.status)) {
+        const fallbackPlanKey: PlanKey = isPlanKey(sub?.plan_key)
+          ? sub.plan_key
+          : (String(profile?.plan_type || profile?.plano || '').toLowerCase() === 'basic' ? 'basic_monthly' : 'pro_monthly');
+
+        await syncStripeSubscriptionAccess(
+          userId,
+          stripeSub,
+          fallbackPlanKey,
+          String(stripeSub.customer || customerId),
+        );
+
+        const refreshed = await Promise.all([
+          supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1),
+        ]);
+        profile = refreshed[0].data;
+        subs = refreshed[1].data;
+        sub = Array.isArray(subs) && subs.length ? subs[0] : null;
+      }
+    } catch (error) {
+      console.warn('[Stripe Gateway] Auto-reconciliação da assinatura não concluída:', error);
+    }
+  }
+
   return res.status(200).json(buildSubscriptionDetails(profile, sub));
 }
 
