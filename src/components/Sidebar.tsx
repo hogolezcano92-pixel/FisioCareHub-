@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ...(isPhysio && isApproved ? [
             { name: t('nav.my_patients'), path: '/patients', icon: Users },
             { name: 'Oportunidades', path: '/opportunities', icon: Search, pro: true },
-            { name: 'Minha Agenda', path: '/agenda', icon: Calendar, pro: true },
+            { name: 'Minha Agenda', path: '/agenda', icon: Calendar, basic: true },
           ] : []),
           ...(profile?.tipo_usuario === 'paciente' ? [
             { name: 'Jornada', path: '/jornada', icon: HeartPulse },
