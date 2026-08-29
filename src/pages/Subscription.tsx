@@ -38,6 +38,14 @@ export default function Subscription() {
     try {
       const details = await fetchSubscriptionDetails(profile.id);
       setSubDetails(details);
+
+      // O endpoint de detalhes reconcilia o estado com o Stripe. Se ele
+      // recuperar um trial/assinatura válida que o AuthContext ainda não tinha,
+      // atualizamos o contexto imediatamente para liberar os ProGuards.
+      const serverHasAccess = Boolean(details && ['trialing', 'ativo', 'active'].includes(details.status));
+      if (serverHasAccess && effectivePlan === 'free') {
+        await refreshProfile();
+      }
     } catch (err) {
       console.error('[Subscription] Failed to load details:', err);
     } finally {
