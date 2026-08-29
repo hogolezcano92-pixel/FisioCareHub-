@@ -13,7 +13,7 @@ import { primePostLoginSplashSound, stopPostLoginSplashSound } from '../lib/post
 const LOGIN_BACKGROUND_VIDEO = '/login-bg.mp4';
 
 export default function Login() {
-  const { user, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -119,34 +119,26 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user && !hasPostLoginSplashPayload()) {
-      // If already logged in, redirect based on role
-      const checkRoleAndRedirect = async () => {
-        const { data: profileData } = await supabase
-          .from('perfis')
-          .select('tipo_usuario, status_aprovacao, nome_completo')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        const isAdmin = profileData?.tipo_usuario === 'admin' || user.email?.toLowerCase() === 'hogolezcano92@gmail.com';
-        const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
-        const isApproved = profileData?.status_aprovacao === 'aprovado';
+    if (!authLoading && user && profile && !hasPostLoginSplashPayload()) {
+      // O AuthContext é a única fonte do perfil após o login. Evitamos uma
+      // segunda consulta concorrente ao Supabase enquanto o evento SIGNED_IN
+      // ainda está sendo processado.
+      const isAdmin = profile.tipo_usuario === 'admin' || user.email?.toLowerCase() === 'hogolezcano92@gmail.com';
+      const isPhysio = profile.tipo_usuario === 'fisioterapeuta';
+      const isApproved = profile.status_aprovacao === 'aprovado' || profile.aprovado === true;
 
-        let redirectTarget = fullRedirect || '/dashboard';
+      let redirectTarget = fullRedirect || '/dashboard';
 
-        if (isAdmin && fullRedirect === '/dashboard') {
-          redirectTarget = '/admin';
-        } else if (isPhysio && !isApproved) {
-          redirectTarget = '/aguardando-aprovacao';
-        }
+      if (isAdmin && fullRedirect === '/dashboard') {
+        redirectTarget = '/admin';
+      } else if (isPhysio && !isApproved) {
+        redirectTarget = '/aguardando-aprovacao';
+      }
 
-        clearPendingRedirect();
-
-        navigate(redirectTarget, { replace: true });
-      };
-      checkRoleAndRedirect();
+      clearPendingRedirect();
+      navigate(redirectTarget, { replace: true });
     }
-  }, [user, authLoading, navigate, fullRedirect]);
+  }, [user, profile, authLoading, navigate, fullRedirect]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -286,43 +278,20 @@ export default function Login() {
         return;
       }
 
-      // Force profile refresh to get the latest role
-      await refreshProfile();
-      
       const { toast } = await import('sonner');
       toast.success('Login realizado com sucesso!');
 
       // A biometria continua funcionando, mas não abrimos o modal de ativação aqui
       // para não cobrir a animação premium pós-login.
       
-      // Get profile to check role and approval status
-      const { data: profileData } = await supabase
-        .from('perfis')
-        .select('tipo_usuario, status_aprovacao, nome_completo')
-        .eq('id', data.user?.id)
-        .maybeSingle();
-
-      const isAdmin = profileData?.tipo_usuario === 'admin' || cleanEmail.toLowerCase() === 'hogolezcano92@gmail.com';
-      const isPhysio = profileData?.tipo_usuario === 'fisioterapeuta';
-      const isApproved = profileData?.status_aprovacao === 'aprovado';
-
-      let redirectTarget = '/dashboard';
-
-      if (isPhysio && !isApproved) {
-        redirectTarget = '/aguardando-aprovacao';
-      } else if (fullRedirect && fullRedirect !== '/dashboard') {
-        redirectTarget = fullRedirect;
-      } else if (isAdmin) {
-        redirectTarget = '/admin';
-      }
-
-      clearPendingRedirect();
+      // Não fazemos refreshProfile()/SELECT adicional aqui. O evento SIGNED_IN
+      // do AuthContext carrega o perfil e o AuthGate resolve papel, aprovação e
+      // redirecionamento quando esse carregamento terminar. Isso evita o lock
+      // interno do supabase-js que podia deixar o login pendurado para sempre.
       setPostLoginSplashPayload({
-        target: redirectTarget,
-        role: profileData?.tipo_usuario,
-        name: profileData?.nome_completo || data.user?.user_metadata?.nome_completo || data.user?.user_metadata?.full_name || cleanEmail,
+        target: fullRedirect || '/dashboard',
+        name: data.user?.user_metadata?.nome_completo || data.user?.user_metadata?.full_name || cleanEmail,
       });
-      // O AuthGate mostra a animação por 6 segundos e só depois redireciona.
     } catch (err: any) {
       console.error("Erro no login:", err);
       clearPostLoginSplashPayload();

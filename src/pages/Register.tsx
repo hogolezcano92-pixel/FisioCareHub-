@@ -567,7 +567,10 @@ export default function Register() {
         }
       }
 
-      await refreshProfile();
+      // Usa diretamente o usuário retornado pelo signUp. Assim o refresh não
+      // precisa consultar auth.getSession() enquanto o evento de autenticação
+      // ainda está sendo processado.
+      await refreshProfile(authData.user);
 
       toast.success('Cadastro realizado com sucesso!', {
         description: role === 'fisioterapeuta'
