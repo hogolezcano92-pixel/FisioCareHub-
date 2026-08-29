@@ -51,15 +51,18 @@ export const getEffectivePlan = (profile?: any | null, subscription?: any | null
   const subStatus = normalizePlanValue(subscription?.status);
   const profileStatus = normalizePlanValue(profile?.subscription_status);
 
-  // Explicitly check for blocked/expired/canceled state
-  const isBlockedOrExpired = ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(subStatus) ||
-                             ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(profileStatus);
+  // A linha de assinatura é a fonte mais específica quando está carregada.
+  // Antes, um status antigo como "cancelado" no perfil bloqueava o usuário
+  // mesmo quando a assinatura atual já estava "trialing"/"active".
+  const authoritativeStatus = subStatus || profileStatus;
+  const isBlockedOrExpired = ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(authoritativeStatus);
 
   // Check if trial has expired
   const trialEnd = subscription?.trial_end || profile?.trial_end;
   const isTrialExpired = trialEnd ? new Date(trialEnd).getTime() <= Date.now() : false;
+  const hasPaidActiveStatus = ['ativo', 'active'].includes(authoritativeStatus);
 
-  if (isBlockedOrExpired || (isTrialExpired && !['ativo', 'active'].includes(subStatus) && !['ativo', 'active'].includes(profileStatus))) {
+  if (isBlockedOrExpired || (isTrialExpired && !hasPaidActiveStatus)) {
     return 'free';
   }
 
