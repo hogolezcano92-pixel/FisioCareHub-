@@ -207,6 +207,10 @@ async function requiredSubscriptionUpsert(userId: string, payload: Record<string
   for (let attempt = 0; attempt < 3; attempt += 1) {
     let existingId: string | null = null;
 
+    // Cada assinatura Stripe deve manter seu próprio registro. Antes, quando um
+    // stripe_subscription_id novo ainda não existia, o código reutilizava a
+    // linha mais recente do usuário. Isso permitia que webhooks atrasados de
+    // uma assinatura antiga sobrescrevessem a assinatura atual.
     if (payload.stripe_subscription_id) {
       const byStripe = await supabase
         .from('assinaturas')
@@ -215,9 +219,8 @@ async function requiredSubscriptionUpsert(userId: string, payload: Record<string
         .limit(1);
       if (byStripe.error) lastError = byStripe.error;
       existingId = byStripe.data?.[0]?.id || null;
-    }
-
-    if (!existingId) {
+    } else {
+      // Compatibilidade apenas para registros legados sem ID do Stripe.
       const byUser = await supabase
         .from('assinaturas')
         .select('id')
@@ -395,6 +398,11 @@ async function findExistingLiveSubscription(customerId: string): Promise<any | n
   return subscriptions.data.find((sub: any) =>
     ['trialing', 'active', 'past_due', 'incomplete', 'unpaid', 'paused'].includes(sub.status)
   ) || null;
+}
+
+async function findExistingAccessSubscription(customerId: string): Promise<any | null> {
+  const subscriptions = await getStripe().subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
+  return subscriptions.data.find((sub: any) => ['trialing', 'active'].includes(sub.status)) || null;
 }
 
 function getPeriodEndUnix(subscription: any): number | null {
@@ -666,10 +674,14 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
   if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
   if (!await requireUser(req, res, userId)) return;
   const supabase = getSupabaseAdmin();
-  let [{ data: profile }, { data: subs }] = await Promise.all([
-    supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
-    supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1),
-  ]);
+  let { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+
+  // O perfil guarda o stripe_subscription_id atualmente autorizado no app.
+  // Quando há histórico de várias assinaturas, preferimos exatamente essa linha
+  // em vez de assumir que a maior data_inicio representa o contrato atual.
+  let { data: subs } = profile?.stripe_subscription_id
+    ? await supabase.from('assinaturas').select('*').eq('stripe_subscription_id', profile.stripe_subscription_id).limit(1)
+    : await supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1);
 
   let sub = Array.isArray(subs) && subs.length ? subs[0] : null;
 
@@ -677,14 +689,21 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
   // referência para recuperar uma assinatura trialing/active já existente.
   // Isso também corrige usuários que ficaram presos como Free após uma falha
   // antiga de sincronização com o Supabase.
-  const customerId = sub?.stripe_customer_id || profile?.stripe_customer_id || null;
-  const stripeSubscriptionId = sub?.stripe_subscription_id || profile?.stripe_subscription_id || null;
+  const customerId = profile?.stripe_customer_id || sub?.stripe_customer_id || null;
+  const stripeSubscriptionId = profile?.stripe_subscription_id || sub?.stripe_subscription_id || null;
   if (customerId || stripeSubscriptionId) {
     try {
       const stripe = getStripe();
-      const stripeSub: any = stripeSubscriptionId
+      let stripeSub: any = stripeSubscriptionId
         ? await stripe.subscriptions.retrieve(stripeSubscriptionId)
-        : await findExistingLiveSubscription(customerId);
+        : null;
+
+      // Se o perfil ficou apontando para uma assinatura antiga/cancelada por um
+      // webhook atrasado, procura outra assinatura realmente válida do mesmo
+      // customer e a restaura como a assinatura atual.
+      if ((!stripeSub || !['trialing', 'active'].includes(stripeSub.status)) && customerId) {
+        stripeSub = await findExistingAccessSubscription(customerId);
+      }
 
       if (stripeSub && ['trialing', 'active'].includes(stripeSub.status)) {
         const fallbackPlanKey: PlanKey = isPlanKey(sub?.plan_key)
@@ -698,12 +717,12 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
           String(stripeSub.customer || customerId),
         );
 
-        const refreshed = await Promise.all([
-          supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
-          supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1),
-        ]);
-        profile = refreshed[0].data;
-        subs = refreshed[1].data;
+        const refreshedProfile = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
+        profile = refreshedProfile.data;
+        const refreshedSubs = profile?.stripe_subscription_id
+          ? await supabase.from('assinaturas').select('*').eq('stripe_subscription_id', profile.stripe_subscription_id).limit(1)
+          : await supabase.from('assinaturas').select('*').eq('user_id', userId).order('data_inicio', { ascending: false }).limit(1);
+        subs = refreshedSubs.data;
         sub = Array.isArray(subs) && subs.length ? subs[0] : null;
       }
     } catch (error) {
