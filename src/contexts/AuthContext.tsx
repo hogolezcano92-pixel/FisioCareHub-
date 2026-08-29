@@ -13,8 +13,10 @@ interface AuthContextType {
   theme: string;
   language: string;
   loading: boolean;
+  profileLoading: boolean;
+  profileError: string | null;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: (explicitUser?: User | null) => Promise<void>;
   updateTheme: (themeId: string) => Promise<void>;
   updateLanguage: (lang: string) => Promise<void>;
 }
@@ -23,6 +25,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Cache key for local profile storage
 const PROFILE_CACHE_KEY = 'fch_profile_cache';
+const AUTH_QUERY_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(operation: PromiseLike<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(`${label} excedeu ${Math.round(timeoutMs / 1000)} segundos.`));
+    }, timeoutMs);
+
+    Promise.resolve(operation).then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -51,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return localStorage.getItem('i18nextLng') || 'pt';
   });
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const lastFetchedUserId = useRef<string | null>(null);
@@ -65,6 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProfile(null);
     setSubscription(null);
+    setProfileLoading(false);
+    setProfileError(null);
     lastFetchedUserId.current = null;
     
     // Clear all storage related to authentication
@@ -110,11 +136,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // Use maybeSingle to avoid errors if profile doesn't exist yet
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await withTimeout(
+        supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle(),
+        AUTH_QUERY_TIMEOUT_MS,
+        'Carregamento do perfil'
+      );
+
+      if (error) {
+        throw error;
+      }
       
       let finalProfile = data;
 
@@ -200,7 +234,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .limit(1)
         : Promise.resolve({ data: [] });
 
-      const { data: subRows } = await subPromise;
+      let subRows: any[] | null = [];
+      try {
+        const subResult = await withTimeout(
+          subPromise,
+          AUTH_QUERY_TIMEOUT_MS,
+          'Carregamento da assinatura'
+        );
+        subRows = (subResult as any)?.data ?? [];
+        if ((subResult as any)?.error) {
+          console.warn('[Auth] Não foi possível carregar a assinatura:', (subResult as any).error.message);
+        }
+      } catch (subscriptionError) {
+        // A assinatura não deve impedir o login. O perfil continua sendo
+        // carregado e uma atualização posterior pode reconciliar o plano.
+        console.warn('[Auth] Timeout/erro ao carregar assinatura:', subscriptionError);
+        subRows = [];
+      }
       const subData = Array.isArray(subRows) ? subRows[0] || null : null;
       
       // Update cache
@@ -209,27 +259,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       lastFetchedUserId.current = userId;
-      return { profile: finalProfile, subscription: subData };
+      return { profile: finalProfile, subscription: subData, error: null };
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
-      return { profile: null, subscription: null };
+      return {
+        profile: null,
+        subscription: null,
+        error: error instanceof Error ? error.message : 'Não foi possível carregar o perfil.'
+      };
     }
   };
 
-  const refreshProfile = async () => {
-    // Durante o cadastro, o estado React `user` pode ainda não ter sido atualizado
-    // mesmo com a sessão já criada. Por isso buscamos a sessão atual do Supabase
-    // como fallback para garantir que o perfil completo recém-salvo seja carregado.
-    const activeUser = user || session?.user || (await supabase.auth.getSession()).data.session?.user || null;
+  const refreshProfile = async (explicitUser?: User | null) => {
+    // Evitamos chamar auth.getSession() dentro do refresh do perfil. Logo após
+    // SIGNED_IN essa chamada concorria com o lock interno do Supabase Auth e
+    // podia deixar o login pendurado indefinidamente.
+    const activeUser = explicitUser || user || session?.user || null;
 
     if (activeUser) {
-      // Force a fresh Supabase read after profile edits/register. Without this, the local
-      // profile cache can make fields like bio/observacoes_saude appear unsaved.
-      const { profile: p, subscription: s } = await fetchProfile(activeUser.id, activeUser.user_metadata, true);
-      setProfile(p);
-      setSubscription(s);
-      if (p) {
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(p));
+      setProfileLoading(true);
+      setProfileError(null);
+      try {
+        // Force a fresh Supabase read after profile edits/register. Without this, the local
+        // profile cache can make fields like bio/observacoes_saude appear unsaved.
+        const { profile: p, subscription: s, error } = await fetchProfile(activeUser.id, activeUser.user_metadata, true);
+        setProfile(p);
+        setSubscription(s);
+        setProfileError(p ? null : (error || 'Não foi possível carregar seu perfil.'));
+        if (p) {
+          localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(p));
+        }
+      } finally {
+        setProfileLoading(false);
       }
     }
   };
@@ -275,106 +336,132 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: { unsubscribe: () => void } | null = null;
 
-    // IMPORTANTE: o callback de onAuthStateChange deve permanecer síncrono.
-    // Fazer await de consultas Supabase aqui pode bloquear o lock interno do Auth
-    // e fazer chamadas posteriores (ex.: auth.getSession()) ficarem penduradas.
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    const loadProfileForUser = async (currentUser: User, forceRefresh = false) => {
+      if (!mounted) return;
+
+      setProfileLoading(true);
+      setProfileError(null);
+
+      try {
+        const { profile: p, subscription: s, error } = await fetchProfile(
+          currentUser.id,
+          currentUser.user_metadata,
+          forceRefresh
+        );
+
+        if (!mounted) return;
+
+        setProfile(p);
+        setSubscription(s);
+
+        const registrationInProgress = localStorage.getItem('registration_in_progress') === '1';
+        if (!p && !registrationInProgress) {
+          setProfileError(error || 'Não foi possível carregar seu perfil.');
+        } else {
+          setProfileError(null);
+        }
+      } catch (error) {
+        console.error('[Auth] Falha ao carregar perfil:', error);
+        if (mounted) {
+          setProfileError(error instanceof Error ? error.message : 'Não foi possível carregar seu perfil.');
+        }
+      } finally {
+        if (mounted) {
+          setProfileLoading(false);
+          isInitialMount.current = false;
+        }
+      }
+    };
+
+    // O callback permanece síncrono. Qualquer consulta ao Supabase é adiada
+    // para depois do retorno do callback para não disputar o lock do Auth.
+    const handleAuthStateChange = (event: string, currentSession: Session | null) => {
       if (!mounted) return;
 
       console.log(`[Auth] Event: ${event}`);
 
-      // Atualizações de estado são síncronas e seguras dentro do callback.
       setSession(currentSession);
       const currentUser = currentSession?.user ?? null;
       setUser(currentUser);
+      setLoading(false);
 
       if (currentUser) {
         if (lastFetchedUserId.current !== currentUser.id) {
-          // Adia qualquer chamada assíncrona ao Supabase até o callback de Auth terminar.
-          // Isso evita deadlock no supabase-js.
-          setTimeout(() => {
-            if (!mounted) return;
-
-            void fetchProfile(currentUser.id, currentUser.user_metadata)
-              .then(({ profile: p, subscription: s }) => {
-                if (!mounted) return;
-                setProfile(p);
-                setSubscription(s);
-                setLoading(false);
-                isInitialMount.current = false;
-              })
-              .catch((error) => {
-                console.error('[Auth] Falha ao carregar perfil após evento de autenticação:', error);
-                if (mounted) setLoading(false);
-              });
+          window.setTimeout(() => {
+            if (mounted) void loadProfileForUser(currentUser);
           }, 0);
-        } else {
-          setLoading(false);
         }
       } else {
-        // If the session was lost or event is SIGNED_OUT, ensure we clear everything
         setProfile(null);
         setSubscription(null);
+        setProfileLoading(false);
+        setProfileError(null);
         lastFetchedUserId.current = null;
         localStorage.removeItem(PROFILE_CACHE_KEY);
-
-        // If it was a fatal loss of session, consider clearing all
-        if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-          setLoading(false);
-        }
       }
-    });
+    };
 
-    // Handle initial session check with robust error catching
-    const refreshInterval = setInterval(() => {
-      // Periodically check if session is still valid if we are "logged in"
-      // to preemptively catch refresh token errors before user interaction
-      if (mounted && user && !session) {
-        supabase.auth.getSession().then(({ error }) => {
-          if (error && (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid refresh token'))) {
-             handleFatalAuthError(error.message);
+    const initializeAuth = async () => {
+      try {
+        // Primeiro resolvemos a sessão inicial. Só depois registramos o listener,
+        // evitando duas leituras concorrentes de sessão/perfil na montagem.
+        const { data, error } = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_QUERY_TIMEOUT_MS,
+          'Validação da sessão'
+        );
+
+        if (!mounted) return;
+
+        if (error) {
+          if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid refresh token')) {
+            await handleFatalAuthError(error.message);
+            return;
           }
-        });
-      }
-    }, 30000); // Check every 30 seconds
+          console.error('[Auth] Erro ao validar sessão inicial:', error);
+        }
 
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
-      
-      if (error) {
-        if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid refresh token')) {
-          handleFatalAuthError(error.message);
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+          setLoading(false);
+          await loadProfileForUser(data.session.user);
         } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setSubscription(null);
+          setProfileLoading(false);
+          setProfileError(null);
           setLoading(false);
         }
-        return;
-      }
-
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-        fetchProfile(data.session.user.id, data.session.user.user_metadata).then(({ profile: p, subscription: s }) => {
-          if (mounted) {
-            setProfile(p);
-            setSubscription(s);
-            setLoading(false);
-          }
-        });
-      } else {
+      } catch (error) {
+        if (!mounted) return;
+        console.error('[Auth] Falha/timeout ao validar sessão inicial:', error);
         setLoading(false);
-      }
-    });
+        setProfileLoading(false);
+        setProfileError(error instanceof Error ? error.message : 'Não foi possível validar sua sessão.');
+      } finally {
+        if (!mounted) return;
 
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && loading) setLoading(false);
-    }, 4000);
+        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        authSubscription = authSub;
+      }
+    };
+
+    void initializeAuth();
+
+    // Última proteção: nunca deixar o aplicativo preso no loader global.
+    const safetyTimeout = window.setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, AUTH_QUERY_TIMEOUT_MS + 2000);
 
     return () => {
       mounted = false;
-      authSub.unsubscribe();
-      clearInterval(refreshInterval);
-      clearTimeout(safetyTimeout);
+      authSubscription?.unsubscribe();
+      window.clearTimeout(safetyTimeout);
     };
   }, []);
 
@@ -386,6 +473,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       setSubscription(null);
+      setProfileLoading(false);
+      setProfileError(null);
       localStorage.removeItem(PROFILE_CACHE_KEY);
       navigate('/');
     }
@@ -422,11 +511,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     theme,
     language,
     loading,
+    profileLoading,
+    profileError,
     signOut,
     refreshProfile,
     updateTheme,
     updateLanguage
-  }), [user, session, profile, subscription, theme, language, loading]);
+  }), [user, session, profile, subscription, theme, language, loading, profileLoading, profileError]);
 
   return (
     <AuthContext.Provider value={value}>
