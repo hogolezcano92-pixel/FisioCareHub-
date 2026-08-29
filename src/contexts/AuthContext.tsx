@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const lastFetchedUserId = useRef<string | null>(null);
   const isInitialMount = useRef(true);
+  const lastSubscriptionReconcileKey = useRef<string | null>(null);
 
   // Helper to handle fatal authentication errors (corrupted sessions, invalid refresh tokens)
   const handleFatalAuthError = async (message: string) => {
@@ -464,6 +465,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(safetyTimeout);
     };
   }, []);
+
+  // Recuperação automática de acesso: se o Supabase local estiver marcado como
+  // Free/cancelado, mas o perfil ainda tiver uma assinatura Stripe vinculada,
+  // consulta o backend uma única vez. O endpoint compara com o Stripe e repara
+  // perfis afetados por webhooks atrasados sem exigir nova assinatura/cartão.
+  useEffect(() => {
+    if (!user) {
+      lastSubscriptionReconcileKey.current = null;
+      return;
+    }
+
+    const stripeSubscriptionId = profile?.stripe_subscription_id || subscription?.stripe_subscription_id || null;
+    const localStatus = String(subscription?.status || profile?.subscription_status || '').trim().toLowerCase();
+    const localHasAccess = ['ativo', 'active', 'trialing', 'trial'].includes(localStatus);
+    const accessToken = session?.access_token;
+
+    if (!profile || !stripeSubscriptionId || !accessToken || localHasAccess) return;
+
+    const reconcileKey = `${user.id}:${stripeSubscriptionId}:${localStatus || 'unknown'}`;
+    if (lastSubscriptionReconcileKey.current === reconcileKey) return;
+    lastSubscriptionReconcileKey.current = reconcileKey;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), AUTH_QUERY_TIMEOUT_MS + 2000);
+    let disposed = false;
+
+    void fetch(`/api/stripe/subscription-details?userId=${encodeURIComponent(user.id)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then(async (details) => {
+        if (disposed || !details) return;
+        const serverStatus = String(details.status || '').trim().toLowerCase();
+        if (['ativo', 'active', 'trialing', 'trial'].includes(serverStatus)) {
+          console.info('[Auth] Assinatura válida recuperada do Stripe. Atualizando acesso local.');
+          await refreshProfile(user);
+        }
+      })
+      .catch((error) => {
+        if ((error as any)?.name !== 'AbortError') {
+          console.warn('[Auth] Reconciliação automática da assinatura não concluída:', error);
+        }
+      })
+      .finally(() => window.clearTimeout(timer));
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    user?.id,
+    session?.access_token,
+    profile?.stripe_subscription_id,
+    profile?.subscription_status,
+    subscription?.stripe_subscription_id,
+    subscription?.status,
+  ]);
 
   const signOut = async () => {
     try {
