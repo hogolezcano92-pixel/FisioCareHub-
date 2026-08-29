@@ -85,9 +85,8 @@ const persistSubscriptionRecord = async (userId: string, payload: Record<string,
       .limit(1);
     if (error) throw new Error(`Falha ao localizar assinatura pelo Stripe ID: ${error.message}`);
     existingId = data?.[0]?.id || null;
-  }
-
-  if (!existingId) {
+  } else {
+    // Compatibilidade apenas para registros legados sem stripe_subscription_id.
     const { data, error } = await supabase
       .from('assinaturas')
       .select('id')
@@ -98,12 +97,101 @@ const persistSubscriptionRecord = async (userId: string, payload: Record<string,
     existingId = data?.[0]?.id || null;
   }
 
+  // Quando o webhook traz um Stripe ID que ainda não existe, insere uma nova
+  // linha. Nunca reutiliza a linha de outra assinatura: eventos Stripe podem
+  // chegar fora de ordem e um evento antigo não pode sobrescrever o trial atual.
   const result = existingId
     ? await supabase.from('assinaturas').update(payload).eq('id', existingId)
     : await supabase.from('assinaturas').insert({ user_id: userId, ...payload });
 
   if (result.error) {
     throw new Error(`Falha ao sincronizar assinatura no Supabase: ${result.error.message}`);
+  }
+};
+
+const LIVE_SUBSCRIPTION_STATUSES = new Set(['trialing', 'active']);
+
+const getInvoiceSubscriptionId = (invoice: any): string | null => {
+  const legacy = invoice?.subscription;
+  if (typeof legacy === 'string') return legacy;
+  if (legacy?.id) return String(legacy.id);
+
+  // Nas versões mais novas da API Stripe, a referência da assinatura pode vir
+  // em parent.subscription_details.subscription.
+  const modern = invoice?.parent?.subscription_details?.subscription;
+  if (typeof modern === 'string') return modern;
+  if (modern?.id) return String(modern.id);
+  return null;
+};
+
+const getSubscriptionSyncData = (subscription: any, customerId: string) => {
+  const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null;
+  const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
+  const periodEnd =
+    subscription.current_period_end ??
+    subscription.items?.data?.[0]?.current_period_end ??
+    subscription.trial_end ??
+    null;
+  const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+  const statusText = normalizeSubscriptionStatus(subscription.status);
+  const planKey = subscription.metadata?.plan_key || 'pro_monthly';
+  const planType = subscription.metadata?.plan || (String(planKey).startsWith('basic') ? 'basic' : 'pro');
+  const now = new Date().toISOString();
+
+  return {
+    profilePayload: {
+      plan_type: planType,
+      plano: planType,
+      is_pro: planType === 'pro',
+      subscription_status: statusText,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      trial_utilizado: Boolean(subscription.trial_start || subscription.trial_end || subscription.metadata?.trial === 'true'),
+      trial_start: trialStart,
+      trial_end: trialEnd,
+      next_billing_date: nextBillingDate,
+      last_stripe_sync: now,
+    },
+    recordPayload: {
+      plano: planType,
+      plan_type: planType,
+      plan_key: planKey,
+      status: statusText,
+      data_inicio: trialStart || new Date(Number(subscription.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+      data_expiracao: nextBillingDate,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      trial_utilizado: Boolean(subscription.trial_start || subscription.trial_end || subscription.metadata?.trial === 'true'),
+      trial_start: trialStart,
+      trial_end: trialEnd,
+      next_billing_date: nextBillingDate,
+      last_stripe_sync: now,
+    },
+  };
+};
+
+const shouldApplySubscriptionToProfile = async (currentProfile: any, incomingSubscription: any): Promise<boolean> => {
+  const currentId = currentProfile?.stripe_subscription_id;
+  if (!currentId || currentId === incomingSubscription.id) return true;
+
+  try {
+    const currentSubscription: any = await stripe.subscriptions.retrieve(currentId);
+    const currentIsLive = LIVE_SUBSCRIPTION_STATUSES.has(String(currentSubscription.status));
+    const incomingIsLive = LIVE_SUBSCRIPTION_STATUSES.has(String(incomingSubscription.status));
+    const currentCreated = Number(currentSubscription.created || 0);
+    const incomingCreated = Number(incomingSubscription.created || 0);
+
+    // Uma assinatura atual ainda viva nunca deve ser derrubada por um evento
+    // atrasado de outra assinatura. Só trocamos para outro contrato se o evento
+    // recebido também for válido e representar uma assinatura realmente mais nova.
+    if (currentIsLive) {
+      return incomingIsLive && incomingCreated > currentCreated;
+    }
+
+    return incomingIsLive || incomingCreated >= currentCreated;
+  } catch (error) {
+    console.warn('[Stripe Webhook] Não foi possível comparar a assinatura atual; preservando o perfil existente.', error);
+    return false;
   }
 };
 
@@ -560,23 +648,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const customerId = subscription.customer as string;
       const userId = subscription.metadata?.user_id;
 
-      const isTrial = subscription.status === 'trialing';
-      const trialStart = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null;
-      const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null;
-      // stripe-node v22 tipa o período no SubscriptionItem. Webhooks criados
-      // em versões antigas da API ainda podem trazer current_period_end no
-      // nível da Subscription, então aceitamos os dois formatos.
-      const periodEnd =
-        (subscription as any).current_period_end ??
-        subscription.items?.data?.[0]?.current_period_end ??
-        subscription.trial_end ??
-        null;
-      const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
-      const statusText = normalizeSubscriptionStatus(subscription.status);
-
-      const planKey = subscription.metadata?.plan_key || 'pro_monthly';
-      const planType = subscription.metadata?.plan || (planKey.startsWith('basic') ? 'basic' : 'pro');
-
       let targetUserId = userId;
       if (!targetUserId) {
         const { data: prof } = await supabase.from('perfis').select('id').eq('stripe_customer_id', customerId).maybeSingle();
@@ -584,37 +655,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (targetUserId) {
-        const { error: profileError } = await supabase.from('perfis').update({
-          plan_type: planType,
-          plano: planType,
-          is_pro: planType === 'pro',
-          subscription_status: statusText,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscription.id,
-          trial_utilizado: true,
-          trial_start: trialStart,
-          trial_end: trialEnd,
-          next_billing_date: nextBillingDate,
-          last_stripe_sync: new Date().toISOString()
-        }).eq('id', targetUserId);
-        if (profileError) {
-          throw new Error(`Falha ao sincronizar perfil da assinatura: ${profileError.message}`);
+        const syncData = getSubscriptionSyncData(subscription, customerId);
+        const { data: currentProfile } = await supabase
+          .from('perfis')
+          .select('stripe_subscription_id, subscription_status')
+          .eq('id', targetUserId)
+          .maybeSingle();
+
+        const applyToProfile = await shouldApplySubscriptionToProfile(currentProfile, subscription);
+
+        if (applyToProfile) {
+          const { error: profileError } = await supabase
+            .from('perfis')
+            .update(syncData.profilePayload)
+            .eq('id', targetUserId);
+          if (profileError) {
+            throw new Error(`Falha ao sincronizar perfil da assinatura: ${profileError.message}`);
+          }
+        } else {
+          console.info('[Stripe Webhook] Evento de assinatura antigo ignorado no perfil:', {
+            incomingSubscriptionId: subscription.id,
+            currentSubscriptionId: currentProfile?.stripe_subscription_id,
+            incomingStatus: subscription.status,
+          });
         }
 
-        await persistSubscriptionRecord(targetUserId, {
-          plano: planType,
-          plan_type: planType,
-          plan_key: planKey,
-          status: statusText,
-          data_expiracao: nextBillingDate,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscription.id,
-          trial_utilizado: true,
-          trial_start: trialStart,
-          trial_end: trialEnd,
-          next_billing_date: nextBillingDate,
-          last_stripe_sync: new Date().toISOString()
-        });
+        // O histórico desta assinatura ainda é salvo/atualizado pelo próprio
+        // stripe_subscription_id, sem tocar no registro da assinatura atual.
+        await persistSubscriptionRecord(targetUserId, syncData.recordPayload);
       }
     }
 
@@ -630,59 +698,127 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (targetUserId) {
-        await supabase.from('perfis').update({
-          subscription_status: 'cancelado',
-          plan_type: 'free',
-          plano: 'free',
-          is_pro: false,
-          last_stripe_sync: new Date().toISOString()
-        }).eq('id', targetUserId);
-
-        await supabase.from('assinaturas').update({
+        // Cancela somente o registro correspondente ao contrato realmente
+        // encerrado. Antes o código marcava TODAS as assinaturas do usuário.
+        const { error: rowError } = await supabase.from('assinaturas').update({
           status: 'cancelado',
           last_stripe_sync: new Date().toISOString()
-        }).eq('user_id', targetUserId);
+        }).eq('stripe_subscription_id', subscription.id);
+        if (rowError) {
+          throw new Error(`Falha ao cancelar registro da assinatura: ${rowError.message}`);
+        }
+
+        const { data: currentProfile } = await supabase
+          .from('perfis')
+          .select('stripe_subscription_id')
+          .eq('id', targetUserId)
+          .maybeSingle();
+
+        // Um evento atrasado de uma assinatura antiga não pode derrubar a
+        // assinatura atualmente vinculada ao perfil.
+        if (currentProfile?.stripe_subscription_id && currentProfile.stripe_subscription_id !== subscription.id) {
+          console.info('[Stripe Webhook] Cancelamento antigo ignorado no perfil:', {
+            deletedSubscriptionId: subscription.id,
+            currentSubscriptionId: currentProfile.stripe_subscription_id,
+          });
+        } else {
+          // Antes de rebaixar para Free, procura outro contrato válido do mesmo
+          // customer. Isso recupera automaticamente cenários de troca/recriação.
+          const list = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
+          const liveAlternative = list.data
+            .filter((item: any) => item.id !== subscription.id && LIVE_SUBSCRIPTION_STATUSES.has(String(item.status)))
+            .sort((a: any, b: any) => Number(b.created || 0) - Number(a.created || 0))[0] as any;
+
+          if (liveAlternative) {
+            const syncData = getSubscriptionSyncData(liveAlternative, customerId);
+            const { error: restoreProfileError } = await supabase
+              .from('perfis')
+              .update(syncData.profilePayload)
+              .eq('id', targetUserId);
+            if (restoreProfileError) {
+              throw new Error(`Falha ao preservar assinatura ativa alternativa: ${restoreProfileError.message}`);
+            }
+            await persistSubscriptionRecord(targetUserId, syncData.recordPayload);
+          } else {
+            const { error: profileError } = await supabase.from('perfis').update({
+              subscription_status: 'cancelado',
+              plan_type: 'free',
+              plano: 'free',
+              is_pro: false,
+              last_stripe_sync: new Date().toISOString()
+            }).eq('id', targetUserId);
+            if (profileError) {
+              throw new Error(`Falha ao rebaixar perfil após cancelamento: ${profileError.message}`);
+            }
+          }
+        }
       }
     }
 
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
+      const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
 
-      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+      // Faturas sem vínculo com Subscription podem ser de outros produtos do
+      // sistema e não devem alterar o plano do usuário.
+      if (!invoiceSubscriptionId) {
+        console.info('[Stripe Webhook] invoice.paid sem assinatura vinculada; acesso não alterado.', { invoiceId: invoice.id });
+      } else {
+        const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
 
-      if (profile) {
-        await supabase.from('perfis').update({
-          subscription_status: 'ativo',
-          last_billing_date: new Date().toISOString(),
-          last_stripe_sync: new Date().toISOString()
-        }).eq('id', profile.id);
+        if (profile) {
+          if (!profile.stripe_subscription_id || profile.stripe_subscription_id === invoiceSubscriptionId) {
+            await supabase.from('perfis').update({
+              subscription_status: 'ativo',
+              last_billing_date: new Date().toISOString(),
+              last_stripe_sync: new Date().toISOString()
+            }).eq('id', profile.id);
+          } else {
+            console.info('[Stripe Webhook] invoice.paid antigo ignorado no perfil:', {
+              invoiceSubscriptionId,
+              currentSubscriptionId: profile.stripe_subscription_id,
+            });
+          }
 
-        await supabase.from('assinaturas').update({
-          status: 'ativo',
-          valor: invoice.amount_paid / 100,
-          last_billing_date: new Date().toISOString(),
-          last_stripe_sync: new Date().toISOString()
-        }).eq('user_id', profile.id);
+          await supabase.from('assinaturas').update({
+            status: 'ativo',
+            valor: invoice.amount_paid / 100,
+            last_billing_date: new Date().toISOString(),
+            last_stripe_sync: new Date().toISOString()
+          }).eq('stripe_subscription_id', invoiceSubscriptionId);
+        }
       }
     }
 
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
+      const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
 
-      const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
+      if (!invoiceSubscriptionId) {
+        console.info('[Stripe Webhook] invoice.payment_failed sem assinatura vinculada; acesso não alterado.', { invoiceId: invoice.id });
+      } else {
+        const { data: profile } = await supabase.from('perfis').select('*').eq('stripe_customer_id', customerId).maybeSingle();
 
-      if (profile) {
-        await supabase.from('perfis').update({
-          subscription_status: 'expirado',
-          last_stripe_sync: new Date().toISOString()
-        }).eq('id', profile.id);
+        if (profile) {
+          if (!profile.stripe_subscription_id || profile.stripe_subscription_id === invoiceSubscriptionId) {
+            await supabase.from('perfis').update({
+              subscription_status: 'expirado',
+              last_stripe_sync: new Date().toISOString()
+            }).eq('id', profile.id);
+          } else {
+            console.info('[Stripe Webhook] invoice.payment_failed antigo ignorado no perfil:', {
+              invoiceSubscriptionId,
+              currentSubscriptionId: profile.stripe_subscription_id,
+            });
+          }
 
-        await supabase.from('assinaturas').update({
-          status: 'expirado',
-          last_stripe_sync: new Date().toISOString()
-        }).eq('user_id', profile.id);
+          await supabase.from('assinaturas').update({
+            status: 'expirado',
+            last_stripe_sync: new Date().toISOString()
+          }).eq('stripe_subscription_id', invoiceSubscriptionId);
+        }
       }
     }
   } catch (err: any) {
