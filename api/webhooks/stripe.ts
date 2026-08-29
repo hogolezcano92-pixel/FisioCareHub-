@@ -67,6 +67,46 @@ const formatMoneyBR = (value: any) => {
   return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+const normalizeSubscriptionStatus = (status: unknown) => {
+  const value = String(status || '').toLowerCase();
+  if (value === 'active') return 'ativo';
+  if (value === 'canceled') return 'cancelado';
+  return value || 'free';
+};
+
+const persistSubscriptionRecord = async (userId: string, payload: Record<string, any>) => {
+  let existingId: string | null = null;
+
+  if (payload.stripe_subscription_id) {
+    const { data, error } = await supabase
+      .from('assinaturas')
+      .select('id')
+      .eq('stripe_subscription_id', payload.stripe_subscription_id)
+      .limit(1);
+    if (error) throw new Error(`Falha ao localizar assinatura pelo Stripe ID: ${error.message}`);
+    existingId = data?.[0]?.id || null;
+  }
+
+  if (!existingId) {
+    const { data, error } = await supabase
+      .from('assinaturas')
+      .select('id')
+      .eq('user_id', userId)
+      .order('data_inicio', { ascending: false })
+      .limit(1);
+    if (error) throw new Error(`Falha ao localizar assinatura do usuário: ${error.message}`);
+    existingId = data?.[0]?.id || null;
+  }
+
+  const result = existingId
+    ? await supabase.from('assinaturas').update(payload).eq('id', existingId)
+    : await supabase.from('assinaturas').insert({ user_id: userId, ...payload });
+
+  if (result.error) {
+    throw new Error(`Falha ao sincronizar assinatura no Supabase: ${result.error.message}`);
+  }
+};
+
 const getAppointmentDate = (appointment: any) => appointment?.data_servico || appointment?.data || appointment?.created_at;
 
 const buildEmailLayout = (title: string, content: string) => generateFisioCareHubEmailHTML({
@@ -532,7 +572,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         subscription.trial_end ??
         null;
       const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
-      const statusText = isTrial ? 'trialing' : subscription.status === 'active' ? 'ativo' : subscription.status;
+      const statusText = normalizeSubscriptionStatus(subscription.status);
 
       const planKey = subscription.metadata?.plan_key || 'pro_monthly';
       const planType = subscription.metadata?.plan || (planKey.startsWith('basic') ? 'basic' : 'pro');
@@ -544,7 +584,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (targetUserId) {
-        await supabase.from('perfis').update({
+        const { error: profileError } = await supabase.from('perfis').update({
           plan_type: planType,
           plano: planType,
           is_pro: planType === 'pro',
@@ -557,9 +597,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           next_billing_date: nextBillingDate,
           last_stripe_sync: new Date().toISOString()
         }).eq('id', targetUserId);
+        if (profileError) {
+          throw new Error(`Falha ao sincronizar perfil da assinatura: ${profileError.message}`);
+        }
 
-        await supabase.from('assinaturas').upsert({
-          user_id: targetUserId,
+        await persistSubscriptionRecord(targetUserId, {
           plano: planType,
           plan_type: planType,
           plan_key: planKey,
