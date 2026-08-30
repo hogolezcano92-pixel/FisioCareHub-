@@ -249,13 +249,14 @@ const splitSpecialty = (
   let firstLength = 0;
 
   for (const word of words) {
-    if (
-      firstLength + word.length + 1 <=
-      maxLength
-    ) {
+    const nextLength =
+      firstLength +
+      word.length +
+      (first.length > 0 ? 1 : 0);
+
+    if (nextLength <= maxLength) {
       first.push(word);
-      firstLength +=
-        word.length + (first.length > 1 ? 1 : 0);
+      firstLength = nextLength;
     } else {
       second.push(word);
     }
@@ -317,9 +318,7 @@ const buildCredentialSvg = ({
     specialtyLines[1] || '',
   );
 
-  const safeCrefito = escapeSvgText(
-    crefito,
-  );
+  const safeCrefito = escapeSvgText(crefito);
 
   const safeCity = escapeSvgText(
     shortenForCard(city, 28),
@@ -341,15 +340,6 @@ const buildCredentialSvg = ({
     ? 'VERIFICADO'
     : 'EM VALIDAÇÃO';
 
-  /*
-   * IMPORTANTE:
-   * O cartão continua em 640x1016.
-   * Todos os elementos agora ficam dentro dessa área.
-   *
-   * Antes, o QR do plano PRO chegava até aproximadamente
-   * y=1164, ultrapassando a altura real do SVG.
-   */
-
   const qrBoxY = isPro ? 715 : 700;
   const qrImageY = qrBoxY + 22;
   const qrImageSize = 205;
@@ -364,7 +354,6 @@ const buildCredentialSvg = ({
       height="2032"
       viewBox="0 0 640 1016"
     >
-
       <defs>
 
         <linearGradient
@@ -446,8 +435,6 @@ const buildCredentialSvg = ({
 
       </defs>
 
-      <!-- FUNDO -->
-
       <rect
         x="0"
         y="0"
@@ -510,8 +497,6 @@ const buildCredentialSvg = ({
           opacity="0.18"
         />
 
-        <!-- CABEÇALHO -->
-
         <text
           x="64"
           y="78"
@@ -534,8 +519,6 @@ const buildCredentialSvg = ({
         >
           Credencial Digital
         </text>
-
-        <!-- STATUS -->
 
         <rect
           x="64"
@@ -593,8 +576,6 @@ const buildCredentialSvg = ({
           ${verifiedLabel}
         </text>
 
-        <!-- FOTO -->
-
         <rect
           x="174"
           y="184"
@@ -626,8 +607,6 @@ const buildCredentialSvg = ({
           clip-path="url(#avatarClip)"
         />
 
-        <!-- selo -->
-
         <circle
           cx="441"
           cy="450"
@@ -645,8 +624,6 @@ const buildCredentialSvg = ({
           stroke-linecap="round"
           stroke-linejoin="round"
         />
-
-        <!-- IDENTIFICAÇÃO -->
 
         <text
           x="320"
@@ -672,8 +649,6 @@ const buildCredentialSvg = ({
         >
           ${safeName}
         </text>
-
-        <!-- ESPECIALIDADE -->
 
         <text
           x="320"
@@ -706,8 +681,6 @@ const buildCredentialSvg = ({
         `
             : ''
         }
-
-        <!-- CREFITO -->
 
         <rect
           x="126"
@@ -764,8 +737,6 @@ const buildCredentialSvg = ({
         `
             : ''
         }
-
-        <!-- QR CONTAINER -->
 
         <rect
           x="150"
@@ -848,8 +819,6 @@ const buildCredentialSvg = ({
         >
           Aponte a câmera para validar o perfil
         </text>
-
-        <!-- RODAPÉ -->
 
         <rect
           x="64"
@@ -1125,14 +1094,6 @@ export default function ProfessionalCredentialCard({
       let pngUrl = '';
 
       try {
-        /*
-         * QR GERADO LOCALMENTE
-         *
-         * Isso elimina a dependência do
-         * api.qrserver.com durante a exportação
-         * e resolve o QR branco no PNG.
-         */
-
         const qrDataUrl =
           await generateQrDataUrl(
             publicProfileUrl,
@@ -1183,16 +1144,6 @@ export default function ProfessionalCredentialCard({
           await loadImageElement(
             svgUrl,
           );
-
-        /*
-         * EXPORTAÇÃO 2X
-         *
-         * O SVG é 1280x2032 e o viewBox
-         * continua 640x1016.
-         *
-         * O PNG final fica mais nítido
-         * em celular, WhatsApp e redes sociais.
-         */
 
         const canvas =
           document.createElement(
@@ -1417,7 +1368,7 @@ export default function ProfessionalCredentialCard({
           </div>
 
           <div className="relative flex h-full flex-col gap-2">
-            <!-- HEADER -->
+            {/* HEADER */}
 
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -1448,11 +1399,11 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            <!-- CONTEÚDO -->
+            {/* CONTEÚDO */}
 
             <div className="flex min-h-0 flex-1 flex-col items-center gap-2 sm:gap-3">
 
-              <!-- FOTO -->
+              {/* FOTO */}
 
               <div className="relative mt-1 h-[104px] w-[104px] overflow-hidden rounded-[1.4rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:h-[158px] sm:w-[158px] sm:rounded-[1.8rem] sm:border-4">
                 {avatarUrl ? (
@@ -1495,7 +1446,7 @@ export default function ProfessionalCredentialCard({
                 </div>
               </div>
 
-              <!-- IDENTIDADE -->
+              {/* IDENTIDADE */}
 
               <div className="w-full min-w-0 space-y-1 text-center sm:space-y-1.5">
                 <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
@@ -1511,7 +1462,7 @@ export default function ProfessionalCredentialCard({
                 </p>
               </div>
 
-              <!-- REGISTRO -->
+              {/* REGISTRO */}
 
               <div className="flex w-full flex-col items-center gap-1">
                 <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-1.5 sm:text-[10px]">
@@ -1525,19 +1476,13 @@ export default function ProfessionalCredentialCard({
                 )}
               </div>
 
-              <!-- QR -->
+              {/* QR */}
 
               <div className="flex w-full max-w-[270px] flex-col items-center justify-center gap-1 rounded-[1rem] border border-white/10 bg-white/10 p-2 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.4rem] sm:p-3">
-
                 <div className="flex h-[94px] w-[94px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[128px] sm:w-[128px] sm:rounded-2xl sm:p-2">
-
                   {publicProfileUrl ? (
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(
-                        publicProfileUrl,
-                      )}`}
-                      alt="QR Code do perfil profissional"
-                      className="h-full w-full rounded-lg object-contain sm:rounded-xl"
+                    <QrPreview
+                      value={publicProfileUrl}
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-center text-[8px] font-black uppercase text-slate-500">
@@ -1557,10 +1502,9 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            <!-- FOOTER -->
+            {/* FOOTER */}
 
             <div className="flex flex-col gap-1 border-t border-white/10 pt-1.5 text-[6px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
-
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">
                   {serviceLabel}
@@ -1585,5 +1529,58 @@ export default function ProfessionalCredentialCard({
         </p>
       )}
     </section>
+  );
+}
+
+function QrPreview({
+  value,
+}: {
+  value: string;
+}) {
+  const [src, setSrc] = useState('');
+
+  useMemo(() => {
+    let cancelled = false;
+
+    QRCode.toDataURL(value, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 240,
+      color: {
+        dark: '#020617',
+        light: '#ffffff',
+      },
+    })
+      .then((dataUrl) => {
+        if (!cancelled) {
+          setSrc(dataUrl);
+        }
+      })
+      .catch((error) => {
+        console.error(
+          'Erro ao gerar QR Code:',
+          error,
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+
+  if (!src) {
+    return (
+      <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-center text-[7px] font-black uppercase text-slate-500">
+        Gerando QR...
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt="QR Code do perfil profissional"
+      className="h-full w-full rounded-lg object-contain sm:rounded-xl"
+    />
   );
 }
