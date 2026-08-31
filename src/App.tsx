@@ -32,7 +32,8 @@ import {
   Loader2,
   Info,
   BookOpen,
-  Search
+  Search,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/utils';
@@ -49,6 +50,7 @@ import Logo from './components/Logo';
 import AuthGate from './components/AuthGate';
 import Footer from './components/Footer';
 import LGPDModal from './components/LGPDModal';
+import InstallAppGuide, { openInstallAppGuide, useIsAppInstalled } from './components/InstallAppGuide';
 import ProGuard from './components/ProGuard';
 import ProfileCompletionPrompt from './components/ProfileCompletionPrompt';
 import ThemeQuickToggle from './components/ThemeQuickToggle';
@@ -273,6 +275,7 @@ function Navbar() {
   const { user, profile, subscription, signOut } = useAuth();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const isInstalled = useIsAppInstalled();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -369,6 +372,18 @@ function Navbar() {
               );
             })}
 
+            {!isInstalled && (
+              <button
+                type="button"
+                onClick={openInstallAppGuide}
+                className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all group cursor-pointer"
+              >
+                <Smartphone size={16} className="transition-transform group-hover:scale-110 text-slate-500 group-hover:text-blue-400" />
+                <span className="hidden lg:inline">📱 Instalar App</span>
+                <span className="lg:hidden">📱 Instalar</span>
+              </button>
+            )}
+
             {user ? (
               <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
                 <Link to="/profile" className="flex items-center gap-3 group p-1 pr-3 rounded-2xl hover:bg-white/5 transition-all">
@@ -464,6 +479,20 @@ function Navbar() {
                   {item.name}
                 </Link>
               ))}
+
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    openInstallAppGuide();
+                    setIsOpen(false);
+                  }}
+                  className="fch-public-mobile-menu-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <Smartphone size={20} className="text-slate-500" />
+                  <span>📱 Instalar App</span>
+                </button>
+              )}
 
               {user ? (
                 <div className="pt-4 mt-4 border-t border-white/5 space-y-2">
@@ -737,6 +766,7 @@ function AppContent() {
       <HeaderObserver />
       <ScrollToTop />
       <LGPDModal />
+      <InstallAppGuide />
       <Toaster position="top-right" richColors closeButton />
       <IncomingVideoCallListener />
       <WelcomeVideoModal userId={user?.id} userRole={profile?.tipo_usuario} />
