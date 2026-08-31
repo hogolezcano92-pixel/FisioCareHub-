@@ -856,7 +856,8 @@ function AppContent() {
                   <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
                   <Route path="/loja" element={<ProtectedRoute><ProductStore /></ProtectedRoute>} />
                   <Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} />
-                  <Route path="/physio/:id" element={<ProtectedRoute><ProfessionalProfile /></ProtectedRoute>} />
+                  <Route path="/physio/:id" element={<ProfessionalProfile />} />
+                  <Route path="/credencial/:id" element={<ProfessionalProfile />} />
                   <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                   <Route path="/termos" element={<Terms />} />
                   <Route path="/privacidade" element={<Privacy />} />
