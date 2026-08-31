@@ -1,4 +1,4 @@
-import {
+      import {
   useEffect,
   useMemo,
   useRef,
@@ -659,9 +659,7 @@ export default function ProfessionalCredentialCard({
         ) {
           try {
             await document.fonts.ready;
-          } catch {
-            // Continua.
-          }
+          } catch {}
         }
 
         let qrDataUrl = '';
@@ -924,7 +922,6 @@ export default function ProfessionalCredentialCard({
         </div>
       </div>
 
-      {/* CREDENCIAL VISUAL */}
       <div className="relative z-10 mx-auto w-full max-w-[520px]">
         <div
           ref={cardRef}
@@ -956,32 +953,31 @@ export default function ProfessionalCredentialCard({
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/35 to-transparent" />
           </div>
 
-          <div className="relative flex h-full flex-col gap-2.5">
-            {/* HEADER */}
-            <div className="flex items-start justify-between gap-2.5">
+          <div className="relative flex h-full flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[8px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[11px] sm:tracking-[0.34em]">
+                <p className="text-[7px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[10px] sm:tracking-[0.34em]">
                   FisioCareHub
                 </p>
 
-                <h3 className="mt-1 text-[15px] font-black leading-none tracking-tight sm:mt-1.5 sm:text-[25px]">
+                <h3 className="mt-0.5 text-sm font-black leading-none tracking-tight sm:mt-1 sm:text-2xl">
                   Credencial Profissional
                 </h3>
 
-                <p className="mt-1.5 text-[7px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[9px]">
+                <p className="mt-1 text-[6px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[8px]">
                   Identificação digital
                 </p>
               </div>
 
               <div
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[7px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3.5 sm:py-2 sm:text-[10px]',
+                  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[6px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[9px]',
                   approved
                     ? 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100'
                     : 'border-amber-300/30 bg-amber-400/10 text-amber-100',
                 )}
               >
-                <ShieldCheck size={12} />
+                <ShieldCheck size={11} />
 
                 <span>
                   {approved
@@ -991,10 +987,8 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            {/* CORPO */}
-            <div className="flex min-h-0 flex-1 flex-col items-center gap-2.5 sm:gap-3.5">
-              {/* FOTO */}
-              <div className="relative mt-1.5 h-[124px] w-[124px] overflow-hidden rounded-[1.45rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:mt-2 sm:h-[174px] sm:w-[174px] sm:rounded-[1.9rem] sm:border-4">
+            <div className="flex min-h-0 flex-1 flex-col items-center gap-2 sm:gap-3">
+              <div className="relative mt-1 h-[104px] w-[104px] overflow-hidden rounded-[1.4rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:h-[158px] sm:w-[158px] sm:rounded-[1.8rem] sm:border-4">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -1015,60 +1009,57 @@ export default function ProfessionalCredentialCard({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sky-200">
-                    <UserRound size={42} />
+                    <UserRound size={38} />
                   </div>
                 )}
 
-                <div className="absolute bottom-1.5 right-1.5 rounded-full border-2 border-slate-950 bg-emerald-500 p-0.5 text-white sm:bottom-2.5 sm:right-2.5 sm:p-1">
+                <div className="absolute bottom-1 right-1 rounded-full border-2 border-slate-950 bg-emerald-500 p-0.5 text-white sm:bottom-2 sm:right-2 sm:p-1">
                   <CheckCircle2
-                    size={11}
-                    className="sm:h-3.5 sm:w-3.5"
+                    size={10}
+                    className="sm:h-3 sm:w-3"
                   />
                 </div>
               </div>
 
-              {/* NOME */}
-              <div className="w-full min-w-0 space-y-1.5 text-center sm:space-y-2">
-                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
+              <div className="w-full min-w-0 space-y-1 text-center sm:space-y-1.5">
+                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
                   Fisioterapeuta
                 </p>
 
-                <h4 className="truncate px-1 text-[21px] font-black leading-none tracking-tight sm:text-[32px]">
+                <h4 className="truncate text-[18px] font-black leading-none tracking-tight sm:text-3xl">
                   {professionalName}
                 </h4>
 
-                <p className="mx-auto max-w-[95%] text-[9px] font-black uppercase leading-tight tracking-[0.14em] text-sky-300 sm:text-[13px] sm:tracking-[0.18em]">
+                <p className="mx-auto max-w-[95%] text-[8px] font-black uppercase leading-tight tracking-[0.14em] text-sky-300 sm:text-xs sm:tracking-[0.18em]">
                   {specialty}
                 </p>
               </div>
 
-              {/* REGISTRO */}
-              <div className="flex w-full flex-col items-center gap-1.5">
-                <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3.5 py-1.5 text-center text-[8px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-2 sm:text-[10px]">
+              <div className="flex w-full flex-col items-center gap-1">
+                <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-1.5 sm:text-[10px]">
                   CREFITO: {crefito}
                 </span>
 
                 {isPro && (
-                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3.5 py-1 text-center text-[7px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3.5 sm:py-1.5 sm:text-[8px]">
+                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-0.5 text-center text-[6px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3 sm:py-1 sm:text-[8px]">
                     Plano Pro
                   </span>
                 )}
               </div>
 
-              {/* QR */}
-              <div className="flex w-full max-w-[300px] flex-col items-center justify-center gap-1.5 rounded-[1.2rem] border border-sky-300/15 bg-white/10 p-3 backdrop-blur-xl sm:max-w-[330px] sm:gap-2 sm:rounded-[1.55rem] sm:p-4">
+              <div className="flex w-full max-w-[280px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-sky-300/15 bg-white/10 p-2.5 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.5rem] sm:p-3.5">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck
-                    size={12}
-                    className="text-emerald-300 sm:h-4 sm:w-4"
+                    size={11}
+                    className="text-emerald-300 sm:h-3.5 sm:w-3.5"
                   />
 
-                  <span className="text-[8px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[10px]">
+                  <span className="text-[7px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[9px]">
                     Validar credencial
                   </span>
                 </div>
 
-                <div className="flex h-[112px] w-[112px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[140px] sm:w-[140px] sm:rounded-2xl sm:p-2">
+                <div className="flex h-[94px] w-[94px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[128px] sm:w-[128px] sm:rounded-2xl sm:p-2">
                   {publicProfileUrl ? (
                     <QrPreview
                       value={
@@ -1083,19 +1074,18 @@ export default function ProfessionalCredentialCard({
                   )}
                 </div>
 
-                <p className="max-w-[240px] truncate text-center text-[7px] font-black tracking-wide text-slate-200 sm:text-[8px]">
+                <p className="max-w-[220px] truncate text-center text-[6px] font-black tracking-wide text-slate-200 sm:text-[8px]">
                   ID DA CREDENCIAL •{' '}
                   {credentialCode}
                 </p>
 
-                <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[9px]">
+                <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[8px]">
                   Escaneie para verificar este perfil
                 </p>
               </div>
             </div>
 
-            {/* FOOTER */}
-            <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2 text-[7px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
+            <div className="flex flex-col gap-1 border-t border-white/10 pt-1.5 text-[6px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">
                   {serviceLabel}
@@ -1120,12 +1110,6 @@ export default function ProfessionalCredentialCard({
         </p>
       )}
 
-      {/* =====================================================
-          ÁREA EXCLUSIVA DE EXPORTAÇÃO
-
-          Mantida separada da credencial visual.
-          NÃO foi alterada neste ajuste.
-          ===================================================== */}
       <div
         aria-hidden="true"
         style={{
@@ -1156,7 +1140,6 @@ export default function ProfessionalCredentialCard({
               'linear-gradient(135deg, #020617 0%, #07182f 48%, #083344 100%)',
           }}
         >
-          {/* DECORAÇÃO */}
           <div
             style={{
               position: 'absolute',
@@ -1232,7 +1215,6 @@ export default function ProfessionalCredentialCard({
                 'column',
             }}
           >
-            {/* HEADER */}
             <div
               style={{
                 display: 'flex',
@@ -1245,10 +1227,10 @@ export default function ProfessionalCredentialCard({
               <div>
                 <div
                   style={{
-                    fontSize: '24px',
+                    fontSize: '27px',
                     fontWeight: 900,
                     letterSpacing:
-                      '7px',
+                      '8px',
                     color:
                       '#7dd3fc',
                     textTransform:
@@ -1261,12 +1243,12 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '8px',
-                    fontSize: '46px',
+                      '10px',
+                    fontSize: '54px',
                     lineHeight: 1,
                     fontWeight: 900,
                     letterSpacing:
-                      '-1.5px',
+                      '-2px',
                   }}
                 >
                   Credencial
@@ -1276,11 +1258,11 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '14px',
-                    fontSize: '18px',
+                      '16px',
+                    fontSize: '20px',
                     fontWeight: 700,
                     letterSpacing:
-                      '4px',
+                      '5px',
                     color:
                       '#94a3b8',
                     textTransform:
@@ -1296,9 +1278,9 @@ export default function ProfessionalCredentialCard({
                   display: 'flex',
                   alignItems:
                     'center',
-                  gap: '10px',
+                  gap: '12px',
                   padding:
-                    '12px 20px',
+                    '14px 22px',
                   borderRadius:
                     '999px',
                   border: approved
@@ -1312,7 +1294,7 @@ export default function ProfessionalCredentialCard({
                     approved
                       ? '#d1fae5'
                       : '#fef3c7',
-                  fontSize: '17px',
+                  fontSize: '19px',
                   fontWeight: 900,
                   textTransform:
                     'uppercase',
@@ -1323,7 +1305,7 @@ export default function ProfessionalCredentialCard({
                 <span
                   style={{
                     fontSize:
-                      '20px',
+                      '23px',
                   }}
                 >
                   ✓
@@ -1335,7 +1317,6 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            {/* CORPO */}
             <div
               style={{
                 flex: 1,
@@ -1345,26 +1326,26 @@ export default function ProfessionalCredentialCard({
                 alignItems:
                   'center',
                 paddingTop:
-                  '70px',
+                  '52px',
               }}
             >
-              {/* FOTO */}
               <div
                 style={{
                   position:
                     'relative',
-                  width: '360px',
-                  height: '360px',
+                  width: '400px',
+                  height: '400px',
                   borderRadius:
-                    '70px',
+                    '76px',
                   overflow:
                     'hidden',
                   border:
-                    '8px solid rgba(125,211,252,0.20)',
+                    '9px solid rgba(125,211,252,0.20)',
                   background:
                     'rgba(255,255,255,0.08)',
                   boxShadow:
                     '0 30px 80px rgba(0,0,0,0.35)',
+                  flexShrink: 0,
                 }}
               >
                 <img
@@ -1389,10 +1370,10 @@ export default function ProfessionalCredentialCard({
                   style={{
                     position:
                       'absolute',
-                    right: '20px',
-                    bottom: '20px',
-                    width: '46px',
-                    height: '46px',
+                    right: '22px',
+                    bottom: '22px',
+                    width: '52px',
+                    height: '52px',
                     display:
                       'flex',
                     alignItems:
@@ -1408,7 +1389,7 @@ export default function ProfessionalCredentialCard({
                     color:
                       '#ffffff',
                     fontSize:
-                      '26px',
+                      '29px',
                     fontWeight: 900,
                   }}
                 >
@@ -1416,22 +1397,21 @@ export default function ProfessionalCredentialCard({
                 </div>
               </div>
 
-              {/* NOME */}
               <div
                 style={{
                   width: '100%',
                   marginTop:
-                    '36px',
+                    '28px',
                   textAlign:
                     'center',
                 }}
               >
                 <div
                   style={{
-                    fontSize: '20px',
+                    fontSize: '22px',
                     fontWeight: 900,
                     letterSpacing:
-                      '6px',
+                      '7px',
                     color:
                       '#94a3b8',
                     textTransform:
@@ -1444,13 +1424,13 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '14px',
-                    fontSize: '54px',
+                      '10px',
+                    fontSize: '60px',
                     lineHeight:
-                      '1.05',
+                      '1.02',
                     fontWeight: 900,
                     letterSpacing:
-                      '-1.5px',
+                      '-2px',
                     color:
                       '#ffffff',
                     wordBreak:
@@ -1463,10 +1443,10 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '16px',
-                    fontSize: '22px',
+                      '14px',
+                    fontSize: '25px',
                     lineHeight:
-                      '1.2',
+                      '1.15',
                     fontWeight: 900,
                     letterSpacing:
                       '4px',
@@ -1480,7 +1460,6 @@ export default function ProfessionalCredentialCard({
                 </div>
               </div>
 
-              {/* REGISTRO */}
               <div
                 style={{
                   display:
@@ -1489,22 +1468,22 @@ export default function ProfessionalCredentialCard({
                     'column',
                   alignItems:
                     'center',
-                  gap: '12px',
+                  gap: '10px',
                   marginTop:
-                    '28px',
+                    '22px',
                 }}
               >
                 <div
                   style={{
                     padding:
-                      '12px 26px',
+                      '13px 28px',
                     borderRadius:
                       '999px',
                     border:
                       '2px solid rgba(255,255,255,0.10)',
                     background:
                       'rgba(255,255,255,0.08)',
-                    fontSize: '19px',
+                    fontSize: '21px',
                     fontWeight: 900,
                     letterSpacing:
                       '3px',
@@ -1521,7 +1500,7 @@ export default function ProfessionalCredentialCard({
                   <div
                     style={{
                       padding:
-                        '8px 20px',
+                        '8px 22px',
                       borderRadius:
                         '999px',
                       border:
@@ -1531,7 +1510,7 @@ export default function ProfessionalCredentialCard({
                       color:
                         '#fde68a',
                       fontSize:
-                        '15px',
+                        '16px',
                       fontWeight:
                         900,
                       letterSpacing:
@@ -1545,16 +1524,15 @@ export default function ProfessionalCredentialCard({
                 )}
               </div>
 
-              {/* QR */}
               <div
                 style={{
-                  width: '520px',
+                  width: '570px',
                   marginTop:
-                    '34px',
+                    '24px',
                   padding:
-                    '26px',
+                    '25px 28px 24px',
                   borderRadius:
-                    '34px',
+                    '36px',
                   border:
                     '2px solid rgba(125,211,252,0.15)',
                   background:
@@ -1567,6 +1545,8 @@ export default function ProfessionalCredentialCard({
                     'center',
                   justifyContent:
                     'center',
+                  boxSizing:
+                    'border-box',
                 }}
               >
                 <div
@@ -1575,9 +1555,9 @@ export default function ProfessionalCredentialCard({
                       'flex',
                     alignItems:
                       'center',
-                    gap: '10px',
+                    gap: '11px',
                     fontSize:
-                      '17px',
+                      '19px',
                     fontWeight:
                       900,
                     letterSpacing:
@@ -1592,6 +1572,8 @@ export default function ProfessionalCredentialCard({
                     style={{
                       color:
                         '#6ee7b7',
+                      fontSize:
+                        '22px',
                     }}
                   >
                     ✓
@@ -1602,14 +1584,14 @@ export default function ProfessionalCredentialCard({
 
                 <div
                   style={{
-                    width: '250px',
-                    height: '250px',
+                    width: '290px',
+                    height: '290px',
                     marginTop:
-                      '18px',
+                      '15px',
                     padding:
-                      '16px',
+                      '17px',
                     borderRadius:
-                      '28px',
+                      '30px',
                     background:
                       '#ffffff',
                     boxShadow:
@@ -1648,7 +1630,7 @@ export default function ProfessionalCredentialCard({
                         color:
                           '#64748b',
                         fontSize:
-                          '16px',
+                          '17px',
                         fontWeight:
                           900,
                         textAlign:
@@ -1664,9 +1646,9 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '16px',
+                      '13px',
                     maxWidth:
-                      '420px',
+                      '470px',
                     overflow:
                       'hidden',
                     whiteSpace:
@@ -1676,7 +1658,7 @@ export default function ProfessionalCredentialCard({
                     textAlign:
                       'center',
                     fontSize:
-                      '14px',
+                      '15px',
                     fontWeight:
                       900,
                     letterSpacing:
@@ -1692,9 +1674,9 @@ export default function ProfessionalCredentialCard({
                 <div
                   style={{
                     marginTop:
-                      '8px',
+                      '7px',
                     fontSize:
-                      '14px',
+                      '15px',
                     fontWeight:
                       700,
                     color:
@@ -1706,17 +1688,16 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            {/* FOOTER */}
             <div
               style={{
                 paddingTop:
-                  '22px',
+                  '18px',
                 borderTop:
                   '2px solid rgba(255,255,255,0.10)',
                 color:
                   '#94a3b8',
                 fontSize:
-                  '15px',
+                  '16px',
                 fontWeight:
                   700,
               }}
@@ -1744,7 +1725,7 @@ export default function ProfessionalCredentialCard({
               <div
                 style={{
                   marginTop:
-                    '8px',
+                    '7px',
                   textAlign:
                     'center',
                   color:
