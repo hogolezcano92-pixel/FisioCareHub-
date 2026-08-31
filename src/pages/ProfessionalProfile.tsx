@@ -120,17 +120,13 @@ export default function ProfessionalProfile() {
       setLoading(true);
       try {
         // Use '*' for resilience against missing columns while still fetching what's available
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('perfis')
           .select('*')
           .eq('id', id)
-          .eq('tipo_usuario', 'fisioterapeuta')
-          .eq('status_aprovacao', 'aprovado')
-          // Perfil público/agendamento por pacientes só fica disponível para PRO.
-          .or('is_pro.eq.true,plano.eq.pro,plan_type.eq.pro')
-          .single();
+          .maybeSingle();
 
-        if (error) {
+        if (error || !data) {
           console.error('Erro ao buscar perfil:', error);
           throw new Error('Profissional não encontrado');
         }
