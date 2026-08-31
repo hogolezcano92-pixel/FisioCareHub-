@@ -1,4 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   CheckCircle2,
   Copy,
@@ -9,21 +15,35 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react';
+
 import QRCode from 'qrcode';
 import { toast } from 'sonner';
 import { cn, resolveStorageUrl } from '../lib/utils';
 
-const safeText = (value: unknown, fallback = 'Não informado') => {
+const safeText = (
+  value: unknown,
+  fallback = 'Não informado',
+) => {
   const text = String(value ?? '').trim();
   return text || fallback;
 };
 
-const getServiceLabel = (type?: string | null) => {
+const getServiceLabel = (
+  type?: string | null,
+) => {
   const normalized = String(type || '').toLowerCase();
 
-  if (normalized === 'online') return 'Atendimento online';
-  if (normalized === 'domicilio') return 'Atendimento domiciliar';
-  if (normalized === 'ambos') return 'Domiciliar e online';
+  if (normalized === 'online') {
+    return 'Atendimento online';
+  }
+
+  if (normalized === 'domicilio') {
+    return 'Atendimento domiciliar';
+  }
+
+  if (normalized === 'ambos') {
+    return 'Domiciliar e online';
+  }
 
   return 'Atendimento fisioterapêutico';
 };
@@ -46,16 +66,23 @@ const getInitials = (name: string) => {
     .filter(Boolean);
 
   if (parts.length === 0) return 'FH';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
 
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0]}${
+    parts[parts.length - 1][0]
+  }`.toUpperCase();
 };
 
 const createAvatarFallback = (
   name: string,
   subtitle: string,
 ) => {
-  const initials = escapeSvgText(getInitials(name));
+  const initials = escapeSvgText(
+    getInitials(name),
+  );
 
   return svgToDataUrl(`
     <svg
@@ -65,10 +92,25 @@ const createAvatarFallback = (
       viewBox="0 0 500 500"
     >
       <defs>
-        <linearGradient id="avatarGradient" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#020617"/>
-          <stop offset="55%" stop-color="#075985"/>
-          <stop offset="100%" stop-color="#0f766e"/>
+        <linearGradient
+          id="avatarGradient"
+          x1="0"
+          y1="0"
+          x2="1"
+          y2="1"
+        >
+          <stop
+            offset="0%"
+            stop-color="#020617"
+          />
+          <stop
+            offset="55%"
+            stop-color="#075985"
+          />
+          <stop
+            offset="100%"
+            stop-color="#0f766e"
+          />
         </linearGradient>
       </defs>
 
@@ -131,7 +173,9 @@ const createAvatarFallback = (
   `);
 };
 
-const fileNameFromName = (value: string) => {
+const fileNameFromName = (
+  value: string,
+) => {
   const normalized = value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -142,8 +186,12 @@ const fileNameFromName = (value: string) => {
   return normalized || 'profissional';
 };
 
-const urlToDataUrl = async (url: string) => {
-  if (!url || url.startsWith('data:')) return url;
+const urlToDataUrl = async (
+  url: string,
+) => {
+  if (!url || url.startsWith('data:')) {
+    return url;
+  }
 
   const response = await fetch(url, {
     mode: 'cors',
@@ -151,66 +199,91 @@ const urlToDataUrl = async (url: string) => {
   });
 
   if (!response.ok) {
-    throw new Error('Falha ao carregar imagem.');
+    throw new Error(
+      'Falha ao carregar imagem.',
+    );
   }
 
   const blob = await response.blob();
 
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
+  return await new Promise<string>(
+    (resolve, reject) => {
+      const reader = new FileReader();
 
-    reader.onloadend = () => {
-      resolve(String(reader.result || ''));
-    };
+      reader.onloadend = () => {
+        resolve(
+          String(reader.result || ''),
+        );
+      };
 
-    reader.onerror = () => {
-      reject(new Error('Falha ao converter imagem.'));
-    };
+      reader.onerror = () => {
+        reject(
+          new Error(
+            'Falha ao converter imagem.',
+          ),
+        );
+      };
 
-    reader.readAsDataURL(blob);
-  });
+      reader.readAsDataURL(blob);
+    },
+  );
 };
 
-const generateQrDataUrl = async (profileUrl: string) => {
+const generateQrDataUrl = async (
+  profileUrl: string,
+) => {
   if (!profileUrl) return '';
 
   try {
-    return await QRCode.toDataURL(profileUrl, {
-      errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 520,
-      color: {
-        dark: '#020617',
-        light: '#ffffff',
+    return await QRCode.toDataURL(
+      profileUrl,
+      {
+        errorCorrectionLevel: 'H',
+        margin: 2,
+        width: 520,
+        color: {
+          dark: '#020617',
+          light: '#ffffff',
+        },
       },
-    });
+    );
   } catch (error) {
-    console.error('Erro ao gerar QR Code:', error);
+    console.error(
+      'Erro ao gerar QR Code:',
+      error,
+    );
+
     return '';
   }
 };
 
-const loadImageElement = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
+const loadImageElement = (
+  src: string,
+) =>
+  new Promise<HTMLImageElement>(
+    (resolve, reject) => {
+      const image = new Image();
 
-    image.onload = () => resolve(image);
+      image.onload = () =>
+        resolve(image);
 
-    image.onerror = () =>
-      reject(
-        new Error(
-          'Falha ao carregar imagem para exportação.',
-        ),
-      );
+      image.onerror = () =>
+        reject(
+          new Error(
+            'Falha ao carregar imagem para exportação.',
+          ),
+        );
 
-    image.src = src;
-  });
+      image.src = src;
+    },
+  );
 
 const downloadBlobUrl = (
   url: string,
   fileName: string,
 ) => {
-  const link = document.createElement('a');
+  const link =
+    document.createElement('a');
 
   link.href = url;
   link.download = fileName;
@@ -224,7 +297,9 @@ const shortenForCard = (
   value: string,
   maxLength = 28,
 ) => {
-  if (value.length <= maxLength) return value;
+  if (value.length <= maxLength) {
+    return value;
+  }
 
   return `${value
     .slice(0, maxLength - 1)
@@ -264,7 +339,10 @@ const splitSpecialty = (
 
   if (second.length === 0) {
     return [
-      shortenForCard(normalized, maxLength),
+      shortenForCard(
+        normalized,
+        maxLength,
+      ),
     ];
   }
 
@@ -302,50 +380,67 @@ const buildCredentialSvg = ({
   specialty,
 }: ExportCredentialData) => {
   const safeName = escapeSvgText(
-    shortenForCard(professionalName, 25),
+    shortenForCard(
+      professionalName,
+      25,
+    ),
   );
 
-  const specialtyLines = splitSpecialty(
-    specialty.toUpperCase(),
-    27,
-  );
+  const specialtyLines =
+    splitSpecialty(
+      specialty.toUpperCase(),
+      27,
+    );
 
-  const safeSpecialty1 = escapeSvgText(
-    specialtyLines[0] || 'FISIOTERAPIA',
-  );
+  const safeSpecialty1 =
+    escapeSvgText(
+      specialtyLines[0] ||
+        'FISIOTERAPIA',
+    );
 
-  const safeSpecialty2 = escapeSvgText(
-    specialtyLines[1] || '',
-  );
+  const safeSpecialty2 =
+    escapeSvgText(
+      specialtyLines[1] || '',
+    );
 
-  const safeCrefito = escapeSvgText(crefito);
+  const safeCrefito =
+    escapeSvgText(crefito);
 
-  const safeCity = escapeSvgText(
-    shortenForCard(city, 28),
-  );
+  const safeCity =
+    escapeSvgText(
+      shortenForCard(city, 25),
+    );
 
-  const safeCode = escapeSvgText(
-    credentialCode,
-  );
+  const safeCode =
+    escapeSvgText(
+      credentialCode,
+    );
 
-  const safeIssuedAt = escapeSvgText(
-    issuedAt,
-  );
+  const safeIssuedAt =
+    escapeSvgText(issuedAt);
 
-  const safeService = escapeSvgText(
-    serviceLabel,
-  );
+  const safeService =
+    escapeSvgText(serviceLabel);
 
-  const verifiedLabel = approved
-    ? 'VERIFICADO'
-    : 'EM VALIDAÇÃO';
+  const verifiedLabel =
+    approved
+      ? 'PROFISSIONAL VERIFICADO'
+      : 'EM VALIDAÇÃO';
 
-  const qrBoxY = isPro ? 715 : 700;
-  const qrImageY = qrBoxY + 22;
-  const qrImageSize = 205;
+  /*
+   * Nova área do QR:
+   * mais compacta e com hierarquia
+   * explícita de validação.
+   */
+  const qrBoxY = isPro ? 714 : 700;
+  const qrImageY = qrBoxY + 39;
+  const qrImageSize = 196;
 
-  const qrCodeY = qrImageY + qrImageSize + 19;
-  const qrLabelY = qrCodeY + 19;
+  const qrCodeY =
+    qrImageY + qrImageSize + 17;
+
+  const qrLabelY =
+    qrCodeY + 18;
 
   return `
     <svg
@@ -435,6 +530,8 @@ const buildCredentialSvg = ({
 
       </defs>
 
+      <!-- FUNDO -->
+
       <rect
         x="0"
         y="0"
@@ -468,6 +565,8 @@ const buildCredentialSvg = ({
 
       <g clip-path="url(#cardClip)">
 
+        <!-- ELEMENTOS DECORATIVOS -->
+
         <circle
           cx="555"
           cy="80"
@@ -492,14 +591,20 @@ const buildCredentialSvg = ({
         />
 
         <path
-          d="M24 800 C180 735 325 785 470 840 C535 865 575 860 616 845 L616 992 L24 992 Z"
+          d="M24 800
+             C180 735 325 785 470 840
+             C535 865 575 860 616 845
+             L616 992
+             L24 992 Z"
           fill="#000000"
           opacity="0.18"
         />
 
+        <!-- MARCA -->
+
         <text
           x="64"
-          y="78"
+          y="77"
           font-family="Arial, Helvetica, sans-serif"
           font-size="18"
           font-weight="900"
@@ -513,17 +618,19 @@ const buildCredentialSvg = ({
           x="64"
           y="120"
           font-family="Arial, Helvetica, sans-serif"
-          font-size="34"
+          font-size="33"
           font-weight="900"
           fill="#ffffff"
         >
-          Credencial Digital
+          Credencial Profissional
         </text>
+
+        <!-- VERIFICAÇÃO -->
 
         <rect
           x="64"
           y="140"
-          width="190"
+          width="225"
           height="42"
           rx="21"
           fill="${
@@ -531,13 +638,13 @@ const buildCredentialSvg = ({
               ? '#064e3b'
               : '#78350f'
           }"
-          fill-opacity="0.65"
+          fill-opacity="0.72"
           stroke="${
             approved
               ? '#5eead4'
               : '#fbbf24'
           }"
-          stroke-opacity="0.50"
+          stroke-opacity="0.55"
         />
 
         <circle
@@ -552,7 +659,9 @@ const buildCredentialSvg = ({
         />
 
         <path
-          d="M83 161 L88 166 L97 155"
+          d="M83 161
+             L88 166
+             L97 155"
           fill="none"
           stroke="#ffffff"
           stroke-width="3.5"
@@ -564,9 +673,9 @@ const buildCredentialSvg = ({
           x="110"
           y="167"
           font-family="Arial, Helvetica, sans-serif"
-          font-size="13"
+          font-size="12"
           font-weight="900"
-          letter-spacing="1.5"
+          letter-spacing="1.2"
           fill="${
             approved
               ? '#d1fae5'
@@ -576,6 +685,8 @@ const buildCredentialSvg = ({
           ${verifiedLabel}
         </text>
 
+        <!-- FOTO -->
+
         <rect
           x="174"
           y="184"
@@ -584,7 +695,7 @@ const buildCredentialSvg = ({
           rx="70"
           fill="#020617"
           stroke="url(#accent)"
-          stroke-opacity="0.40"
+          stroke-opacity="0.45"
           stroke-width="3"
         />
 
@@ -607,6 +718,8 @@ const buildCredentialSvg = ({
           clip-path="url(#avatarClip)"
         />
 
+        <!-- SELO SOBRE A FOTO -->
+
         <circle
           cx="441"
           cy="450"
@@ -617,13 +730,17 @@ const buildCredentialSvg = ({
         />
 
         <path
-          d="M429 450 L438 459 L454 440"
+          d="M429 450
+             L438 459
+             L454 440"
           fill="none"
           stroke="#ffffff"
           stroke-width="5"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
+
+        <!-- IDENTIDADE -->
 
         <text
           x="320"
@@ -657,7 +774,7 @@ const buildCredentialSvg = ({
           font-family="Arial, Helvetica, sans-serif"
           font-size="14"
           font-weight="900"
-          letter-spacing="2.5"
+          letter-spacing="2.4"
           fill="#67e8f9"
         >
           ${safeSpecialty1}
@@ -673,7 +790,7 @@ const buildCredentialSvg = ({
           font-family="Arial, Helvetica, sans-serif"
           font-size="14"
           font-weight="900"
-          letter-spacing="2.5"
+          letter-spacing="2.4"
           fill="#67e8f9"
         >
           ${safeSpecialty2}
@@ -681,6 +798,8 @@ const buildCredentialSvg = ({
         `
             : ''
         }
+
+        <!-- REGISTRO -->
 
         <rect
           x="126"
@@ -691,7 +810,7 @@ const buildCredentialSvg = ({
           fill="#ffffff"
           fill-opacity="0.08"
           stroke="#ffffff"
-          stroke-opacity="0.14"
+          stroke-opacity="0.16"
         />
 
         <text
@@ -707,27 +826,29 @@ const buildCredentialSvg = ({
           CREFITO: ${safeCrefito}
         </text>
 
+        <!-- PLANO -->
+
         ${
           isPro
             ? `
         <rect
-          x="246"
+          x="251"
           y="676"
-          width="148"
-          height="30"
-          rx="15"
+          width="138"
+          height="28"
+          rx="14"
           fill="#f59e0b"
-          fill-opacity="0.16"
+          fill-opacity="0.12"
           stroke="#facc15"
-          stroke-opacity="0.45"
+          stroke-opacity="0.38"
         />
 
         <text
           x="320"
-          y="696"
+          y="695"
           text-anchor="middle"
           font-family="Arial, Helvetica, sans-serif"
-          font-size="11"
+          font-size="10"
           font-weight="900"
           letter-spacing="2"
           fill="#fde68a"
@@ -738,6 +859,8 @@ const buildCredentialSvg = ({
             : ''
         }
 
+        <!-- ÁREA DE VALIDAÇÃO -->
+
         <rect
           x="150"
           y="${qrBoxY}"
@@ -746,16 +869,31 @@ const buildCredentialSvg = ({
           rx="38"
           fill="#ffffff"
           fill-opacity="0.075"
-          stroke="#ffffff"
-          stroke-opacity="0.16"
+          stroke="#7dd3fc"
+          stroke-opacity="0.18"
         />
 
+        <text
+          x="320"
+          y="${qrBoxY + 25}"
+          text-anchor="middle"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="11"
+          font-weight="900"
+          letter-spacing="2.2"
+          fill="#67e8f9"
+        >
+          VALIDAR CREDENCIAL
+        </text>
+
+        <!-- QR -->
+
         <rect
-          x="217"
-          y="${qrImageY}"
-          width="${qrImageSize}"
-          height="${qrImageSize}"
-          rx="24"
+          x="222"
+          y="${qrImageY - 5}"
+          width="206"
+          height="206"
+          rx="25"
           fill="#ffffff"
         />
 
@@ -764,26 +902,26 @@ const buildCredentialSvg = ({
             ? `
         <image
           href="${qrDataUrl}"
-          x="225"
-          y="${qrImageY + 8}"
-          width="189"
-          height="189"
+          x="230"
+          y="${qrImageY + 3}"
+          width="190"
+          height="190"
           preserveAspectRatio="xMidYMid meet"
         />
         `
             : `
         <rect
-          x="225"
-          y="${qrImageY + 8}"
-          width="189"
-          height="189"
+          x="230"
+          y="${qrImageY + 3}"
+          width="190"
+          height="190"
           rx="14"
           fill="#f8fafc"
         />
 
         <text
-          x="320"
-          y="${qrImageY + 110}"
+          x="325"
+          y="${qrImageY + 105}"
           text-anchor="middle"
           font-family="Arial, Helvetica, sans-serif"
           font-size="14"
@@ -795,6 +933,8 @@ const buildCredentialSvg = ({
         `
         }
 
+        <!-- ID -->
+
         <text
           x="320"
           y="${qrCodeY}"
@@ -805,7 +945,7 @@ const buildCredentialSvg = ({
           letter-spacing="1.4"
           fill="#e2e8f0"
         >
-          ${safeCode}
+          ID DA CREDENCIAL • ${safeCode}
         </text>
 
         <text
@@ -817,8 +957,10 @@ const buildCredentialSvg = ({
           font-weight="700"
           fill="#94a3b8"
         >
-          Aponte a câmera para validar o perfil
+          Escaneie para verificar este perfil
         </text>
+
+        <!-- FOOTER -->
 
         <rect
           x="64"
@@ -888,7 +1030,8 @@ export default function ProfessionalCredentialCard({
   variant = 'full',
   className,
 }: ProfessionalCredentialCardProps) {
-  const cardRef = useRef<HTMLDivElement | null>(null);
+  const cardRef =
+    useRef<HTMLDivElement | null>(null);
 
   const [downloading, setDownloading] =
     useState(false);
@@ -901,57 +1044,66 @@ export default function ProfessionalCredentialCard({
     profile?.user_id ||
     '';
 
-  const publicProfileUrl = useMemo(() => {
-    if (
-      !profileId ||
-      typeof window === 'undefined'
-    ) {
-      return '';
-    }
+  const publicProfileUrl =
+    useMemo(() => {
+      if (
+        !profileId ||
+        typeof window === 'undefined'
+      ) {
+        return '';
+      }
 
-    return `${window.location.origin}/physio/${profileId}`;
-  }, [profileId]);
+      return `${window.location.origin}/physio/${profileId}`;
+    }, [profileId]);
 
-  const professionalName = safeText(
-    profile?.nome_completo ||
-      profile?.nome ||
-      profile?.name,
-    'Fisioterapeuta',
-  );
+  const professionalName =
+    safeText(
+      profile?.nome_completo ||
+        profile?.nome ||
+        profile?.name,
+      'Fisioterapeuta',
+    );
 
-  const specialty = safeText(
-    profile?.especialidade ||
-      profile?.especialidade_principal ||
-      profile?.specialty,
-    'Fisioterapia',
-  );
+  const specialty =
+    safeText(
+      profile?.especialidade ||
+        profile?.especialidade_principal ||
+        profile?.specialty,
+      'Fisioterapia',
+    );
 
-  const crefito = safeText(
-    profile?.crefito ||
-      profile?.registro_profissional ||
-      profile?.numero_crefito,
-    'Pendente',
-  );
+  const crefito =
+    safeText(
+      profile?.crefito ||
+        profile?.registro_profissional ||
+        profile?.numero_crefito,
+      'Pendente',
+    );
 
-  const city = safeText(
-    profile?.localizacao ||
-      [profile?.cidade, profile?.estado]
-        .filter(Boolean)
-        .join(', '),
-    'Região não informada',
-  );
+  const city =
+    safeText(
+      profile?.localizacao ||
+        [
+          profile?.cidade,
+          profile?.estado,
+        ]
+          .filter(Boolean)
+          .join(', '),
+      'Região não informada',
+    );
 
-  const avatarFallbackUrl = useMemo(
-    () =>
-      createAvatarFallback(
+  const avatarFallbackUrl =
+    useMemo(
+      () =>
+        createAvatarFallback(
+          professionalName,
+          specialty,
+        ),
+      [
         professionalName,
         specialty,
-      ),
-    [
-      professionalName,
-      specialty,
-    ],
-  );
+      ],
+    );
 
   const resolvedAvatarUrl =
     resolveStorageUrl(
@@ -965,7 +1117,8 @@ export default function ProfessionalCredentialCard({
   const approved =
     String(
       profile?.status_aprovacao || '',
-    ).toLowerCase() === 'aprovado' ||
+    ).toLowerCase() ===
+      'aprovado' ||
     Boolean(
       profile?.aprovado ||
         profile?.verificado,
@@ -1008,7 +1161,7 @@ export default function ProfessionalCredentialCard({
       setSharing(true);
 
       const shareText =
-        `${professionalName} • ${specialty} • Credencial Digital FisioCareHub`;
+        `${professionalName} • ${specialty} • Credencial Profissional Digital FisioCareHub`;
 
       try {
         if (
@@ -1018,7 +1171,7 @@ export default function ProfessionalCredentialCard({
         ) {
           await navigator.share({
             title:
-              'Credencial Digital FisioCareHub',
+              'Credencial Profissional Digital FisioCareHub',
             text: shareText,
             url: publicProfileUrl,
           });
@@ -1067,7 +1220,9 @@ export default function ProfessionalCredentialCard({
 
   const handleCopyLink =
     async () => {
-      if (!publicProfileUrl) return;
+      if (!publicProfileUrl) {
+        return;
+      }
 
       try {
         await navigator.clipboard.writeText(
@@ -1086,7 +1241,9 @@ export default function ProfessionalCredentialCard({
 
   const handleDownloadCredential =
     async () => {
-      if (downloading) return;
+      if (downloading) {
+        return;
+      }
 
       setDownloading(true);
 
@@ -1154,9 +1311,7 @@ export default function ProfessionalCredentialCard({
         canvas.height = 2032;
 
         const context =
-          canvas.getContext(
-            '2d',
-          );
+          canvas.getContext('2d');
 
         if (!context) {
           throw new Error(
@@ -1269,7 +1424,7 @@ export default function ProfessionalCredentialCard({
 
             {!isCompact && (
               <p className="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400">
-                Carteira digital vertical para compartilhar seu perfil profissional verificado.
+                Carteira digital profissional para identificação, compartilhamento e validação do perfil.
               </p>
             )}
           </div>
@@ -1288,13 +1443,9 @@ export default function ProfessionalCredentialCard({
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
           >
             {sharing ? (
-              <Sparkles
-                size={15}
-              />
+              <Sparkles size={15} />
             ) : (
-              <Share2
-                size={15}
-              />
+              <Share2 size={15} />
             )}
 
             Compartilhar
@@ -1305,14 +1456,10 @@ export default function ProfessionalCredentialCard({
             onClick={
               handleDownloadCredential
             }
-            disabled={
-              downloading
-            }
+            disabled={downloading}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Download
-              size={15}
-            />
+            <Download size={15} />
 
             {downloading
               ? 'Gerando...'
@@ -1321,12 +1468,8 @@ export default function ProfessionalCredentialCard({
 
           <button
             type="button"
-            onClick={
-              handleCopyLink
-            }
-            disabled={
-              !publicProfileUrl
-            }
+            onClick={handleCopyLink}
+            disabled={!publicProfileUrl}
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
           >
             <Copy size={14} />
@@ -1368,6 +1511,7 @@ export default function ProfessionalCredentialCard({
           </div>
 
           <div className="relative flex h-full flex-col gap-2">
+
             {/* HEADER */}
 
             <div className="flex items-start justify-between gap-2">
@@ -1377,13 +1521,17 @@ export default function ProfessionalCredentialCard({
                 </p>
 
                 <h3 className="mt-0.5 text-sm font-black leading-none tracking-tight sm:mt-1 sm:text-2xl">
-                  Credencial Digital
+                  Credencial Profissional
                 </h3>
+
+                <p className="mt-1 text-[6px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[8px]">
+                  Identificação digital
+                </p>
               </div>
 
               <div
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[6px] font-black uppercase tracking-[0.11em] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[9px]',
+                  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[6px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[9px]',
                   approved
                     ? 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100'
                     : 'border-amber-300/30 bg-amber-400/10 text-amber-100',
@@ -1415,9 +1563,7 @@ export default function ProfessionalCredentialCard({
                     }
                     crossOrigin="anonymous"
                     className="h-full w-full object-cover object-center"
-                    onError={(
-                      event,
-                    ) => {
+                    onError={(event) => {
                       const image =
                         event.currentTarget;
 
@@ -1432,9 +1578,7 @@ export default function ProfessionalCredentialCard({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sky-200">
-                    <UserRound
-                      size={38}
-                    />
+                    <UserRound size={38} />
                   </div>
                 )}
 
@@ -1470,19 +1614,33 @@ export default function ProfessionalCredentialCard({
                 </span>
 
                 {isPro && (
-                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/15 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-amber-200 sm:px-4 sm:py-1.5 sm:text-[10px]">
+                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-0.5 text-center text-[6px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3 sm:py-1 sm:text-[8px]">
                     Plano Pro
                   </span>
                 )}
               </div>
 
-              {/* QR */}
+              {/* QR / VALIDAÇÃO */}
 
-              <div className="flex w-full max-w-[270px] flex-col items-center justify-center gap-1 rounded-[1rem] border border-white/10 bg-white/10 p-2 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.4rem] sm:p-3">
+              <div className="flex w-full max-w-[280px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-sky-300/15 bg-white/10 p-2.5 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.5rem] sm:p-3.5">
+
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck
+                    size={11}
+                    className="text-emerald-300 sm:h-3.5 sm:w-3.5"
+                  />
+
+                  <span className="text-[7px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[9px]">
+                    Validar credencial
+                  </span>
+                </div>
+
                 <div className="flex h-[94px] w-[94px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[128px] sm:w-[128px] sm:rounded-2xl sm:p-2">
                   {publicProfileUrl ? (
                     <QrPreview
-                      value={publicProfileUrl}
+                      value={
+                        publicProfileUrl
+                      }
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-center text-[8px] font-black uppercase text-slate-500">
@@ -1492,12 +1650,13 @@ export default function ProfessionalCredentialCard({
                   )}
                 </div>
 
-                <p className="max-w-[180px] truncate text-center text-[6px] font-black tracking-wide text-slate-300 sm:text-[8px]">
+                <p className="max-w-[220px] truncate text-center text-[6px] font-black tracking-wide text-slate-200 sm:text-[8px]">
+                  ID DA CREDENCIAL •{' '}
                   {credentialCode}
                 </p>
 
                 <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[8px]">
-                  Aponte a câmera para validar
+                  Escaneie para verificar este perfil
                 </p>
               </div>
             </div>
@@ -1515,7 +1674,7 @@ export default function ProfessionalCredentialCard({
                 </span>
               </div>
 
-              <span className="truncate text-center">
+              <span className="truncate text-center text-slate-300">
                 {city}
               </span>
             </div>
@@ -1539,8 +1698,15 @@ function QrPreview({
 }) {
   const [src, setSrc] = useState('');
 
-  useMemo(() => {
+  /*
+   * Corrigido:
+   * useEffect é apropriado para geração
+   * assíncrona do QR Code.
+   */
+  useEffect(() => {
     let cancelled = false;
+
+    setSrc('');
 
     QRCode.toDataURL(value, {
       errorCorrectionLevel: 'H',
@@ -1579,7 +1745,7 @@ function QrPreview({
   return (
     <img
       src={src}
-      alt="QR Code do perfil profissional"
+      alt="QR Code para validação da credencial profissional"
       className="h-full w-full rounded-lg object-contain sm:rounded-xl"
     />
   );
