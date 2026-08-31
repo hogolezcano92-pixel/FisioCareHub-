@@ -18,27 +18,41 @@ import {
 
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
+import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import { cn, resolveStorageUrl } from '../lib/utils';
+import {
+  cn,
+  resolveStorageUrl,
+} from '../lib/utils';
+
+const EXPORT_WIDTH = 1280;
+const EXPORT_HEIGHT = 2048;
 
 const safeText = (
   value: unknown,
   fallback = 'Não informado',
 ) => {
-  const text = String(value ?? '').trim();
+  const text = String(
+    value ?? '',
+  ).trim();
+
   return text || fallback;
 };
 
 const getServiceLabel = (
   type?: string | null,
 ) => {
-  const normalized = String(type || '').toLowerCase();
+  const normalized = String(
+    type || '',
+  ).toLowerCase();
 
   if (normalized === 'online') {
     return 'Atendimento online';
   }
 
-  if (normalized === 'domicilio') {
+  if (
+    normalized === 'domicilio'
+  ) {
     return 'Atendimento domiciliar';
   }
 
@@ -49,21 +63,43 @@ const getServiceLabel = (
   return 'Atendimento fisioterapêutico';
 };
 
-const svgToDataUrl = (svg: string) =>
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+const svgToDataUrl = (
+  svg: string,
+) =>
+  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    svg,
+  )}`;
 
-const escapeSvgText = (value: string) =>
+const escapeSvgText = (
+  value: string,
+) =>
   value
     .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replace(
+      /</g,
+      '&lt;',
+    )
+    .replace(
+      />/g,
+      '&gt;',
+    )
+    .replace(
+      /"/g,
+      '&quot;',
+    )
+    .replace(
+      /'/g,
+      '&apos;',
+    );
 
-const getInitials = (name: string) => {
+const getInitials = (
+  name: string,
+) => {
   const parts = name
     .split(/\s+/)
-    .map((part) => part.trim())
+    .map((part) =>
+      part.trim(),
+    )
     .filter(Boolean);
 
   if (parts.length === 0) {
@@ -83,11 +119,11 @@ const getInitials = (name: string) => {
 
 const createAvatarFallback = (
   name: string,
-  subtitle: string,
 ) => {
-  const initials = escapeSvgText(
-    getInitials(name),
-  );
+  const initials =
+    escapeSvgText(
+      getInitials(name),
+    );
 
   return svgToDataUrl(`
     <svg
@@ -183,187 +219,202 @@ const fileNameFromName = (
 ) => {
   const normalized = value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(
+      /[\u0300-\u036f]/g,
+      '',
+    )
     .toLowerCase()
-    .replace(/[^a-z0-9]+/gi, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(
+      /[^a-z0-9]+/gi,
+      '-',
+    )
+    .replace(
+      /^-+|-+$/g,
+      '',
+    );
 
-  return normalized || 'profissional';
+  return (
+    normalized ||
+    'profissional'
+  );
 };
 
 const wait = (
   milliseconds: number,
 ) =>
-  new Promise<void>((resolve) => {
-    window.setTimeout(
-      resolve,
-      milliseconds,
-    );
-  });
+  new Promise<void>(
+    (resolve) => {
+      window.setTimeout(
+        resolve,
+        milliseconds,
+      );
+    },
+  );
 
 const waitForImage = (
   image: HTMLImageElement,
-  timeout = 5000,
+  timeout = 7000,
 ) =>
-  new Promise<void>((resolve) => {
-    if (
-      image.complete &&
-      image.naturalWidth > 0
-    ) {
-      resolve();
-      return;
-    }
-
-    let finished = false;
-
-    const finish = () => {
-      if (finished) {
+  new Promise<void>(
+    (resolve) => {
+      if (
+        image.complete &&
+        image.naturalWidth > 0
+      ) {
+        resolve();
         return;
       }
 
-      finished = true;
+      let finished = false;
 
-      image.removeEventListener(
+      const finish = () => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+
+        image.removeEventListener(
+          'load',
+          finish,
+        );
+
+        image.removeEventListener(
+          'error',
+          finish,
+        );
+
+        resolve();
+      };
+
+      image.addEventListener(
         'load',
         finish,
       );
 
-      image.removeEventListener(
+      image.addEventListener(
         'error',
         finish,
       );
 
-      resolve();
-    };
+      window.setTimeout(
+        finish,
+        timeout,
+      );
+    },
+  );
 
-    image.addEventListener(
-      'load',
-      finish,
+const imageUrlToDataUrl =
+  async (
+    url: string,
+  ): Promise<string | null> => {
+    if (!url) {
+      return null;
+    }
+
+    if (
+      url.startsWith(
+        'data:',
+      ) ||
+      url.startsWith(
+        'blob:',
+      )
+    ) {
+      return url;
+    }
+
+    try {
+      const response =
+        await fetch(url, {
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-cache',
+        });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const blob =
+        await response.blob();
+
+      if (
+        !blob.type.startsWith(
+          'image/',
+        )
+      ) {
+        return null;
+      }
+
+      return await new Promise<
+        string | null
+      >((resolve) => {
+        const reader =
+          new FileReader();
+
+        reader.onload = () => {
+          resolve(
+            typeof reader.result ===
+              'string'
+              ? reader.result
+              : null,
+          );
+        };
+
+        reader.onerror = () => {
+          resolve(null);
+        };
+
+        reader.readAsDataURL(
+          blob,
+        );
+      });
+    } catch (error) {
+      console.warn(
+        'Não foi possível converter a imagem para Data URL:',
+        error,
+      );
+
+      return null;
+    }
+  };
+
+const createQrDataUrl =
+  async (
+    value: string,
+  ) => {
+    return QRCode.toDataURL(
+      value,
+      {
+        errorCorrectionLevel:
+          'H',
+        margin: 2,
+        width: 600,
+        color: {
+          dark: '#020617',
+          light: '#ffffff',
+        },
+      },
     );
+  };
 
-    image.addEventListener(
-      'error',
-      finish,
-    );
-
-    window.setTimeout(
-      finish,
-      timeout,
-    );
-  });
-
-const downloadBlob = (
+const downloadFile = (
   blob: Blob,
   fileName: string,
 ) => {
-  const url =
-    URL.createObjectURL(blob);
-
-  const link =
-    document.createElement('a');
-
-  link.href = url;
-  link.download = fileName;
-  link.rel = 'noopener';
-
-  link.style.position = 'fixed';
-  link.style.left = '-9999px';
-  link.style.top = '0';
-  link.style.opacity = '0';
-
-  document.body.appendChild(link);
-
-  try {
-    link.click();
-  } finally {
-    link.remove();
-
-    window.setTimeout(
-      () => {
-        URL.revokeObjectURL(url);
-      },
-      2000,
-    );
-  }
+  saveAs(blob, fileName);
 };
 
-const imageUrlToDataUrl = async (
-  url: string,
-): Promise<string | null> => {
-  if (!url) {
-    return null;
-  }
-
-  if (
-    url.startsWith('data:') ||
-    url.startsWith('blob:')
-  ) {
-    return url;
-  }
-
-  try {
-    const response =
-      await fetch(url, {
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'no-cache',
-      });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const blob =
-      await response.blob();
-
-    if (
-      !blob.type.startsWith(
-        'image/',
-      )
-    ) {
-      return null;
-    }
-
-    return await new Promise<
-      string | null
-    >((resolve) => {
-      const reader =
-        new FileReader();
-
-      reader.onload = () => {
-        resolve(
-          typeof reader.result ===
-            'string'
-            ? reader.result
-            : null,
-        );
-      };
-
-      reader.onerror = () => {
-        resolve(null);
-      };
-
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn(
-      'Não foi possível converter imagem externa para Data URL:',
-      error,
-    );
-
-    return null;
-  }
-};
-
-type ProfessionalCredentialCardProps = {
-  profile: any;
-  isPro?: boolean;
-  appointmentsCount?: number;
-  ratingAverage?: number;
-  reviewsCount?: number;
-  variant?: 'full' | 'compact';
-  className?: string;
-};
+type ProfessionalCredentialCardProps =
+  {
+    profile: any;
+    isPro?: boolean;
+    appointmentsCount?: number;
+    ratingAverage?: number;
+    reviewsCount?: number;
+    variant?: 'full' | 'compact';
+    className?: string;
+  };
 
 export default function ProfessionalCredentialCard({
   profile,
@@ -375,6 +426,11 @@ export default function ProfessionalCredentialCard({
   className,
 }: ProfessionalCredentialCardProps) {
   const cardRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
+  const exportRef =
     useRef<HTMLDivElement | null>(
       null,
     );
@@ -444,12 +500,8 @@ export default function ProfessionalCredentialCard({
       () =>
         createAvatarFallback(
           professionalName,
-          specialty,
         ),
-      [
-        professionalName,
-        specialty,
-      ],
+      [professionalName],
     );
 
   const resolvedAvatarUrl =
@@ -484,7 +536,9 @@ export default function ProfessionalCredentialCard({
 
   const credentialCode =
     profileId
-      ? `FCH-${String(profileId)
+      ? `FCH-${String(
+          profileId,
+        )
           .slice(0, 8)
           .toUpperCase()}`
       : 'FCH-PERFIL';
@@ -528,8 +582,6 @@ export default function ProfessionalCredentialCard({
         }
 
         if (
-          typeof navigator !==
-            'undefined' &&
           navigator.clipboard
             ?.writeText
         ) {
@@ -549,7 +601,8 @@ export default function ProfessionalCredentialCard({
         );
       } catch (error) {
         if (
-          (error as Error)?.name !==
+          (error as Error)
+            ?.name !==
           'AbortError'
         ) {
           console.error(
@@ -587,41 +640,29 @@ export default function ProfessionalCredentialCard({
       }
     };
 
+  /**
+   * EXPORTAÇÃO
+   *
+   * A exportação NÃO captura mais
+   * diretamente a credencial
+   * responsiva exibida na tela.
+   *
+   * Existe uma versão própria,
+   * fixa em 1280 x 2048, abaixo
+   * da interface.
+   */
   const handleDownloadCredential =
     async () => {
       if (
         downloading ||
-        !cardRef.current
+        !exportRef.current
       ) {
         return;
       }
 
       setDownloading(true);
 
-      let temporaryContainer:
-        HTMLDivElement | null = null;
-
       try {
-        const sourceElement =
-          cardRef.current;
-
-        const rect =
-          sourceElement.getBoundingClientRect();
-
-        if (
-          rect.width <= 0 ||
-          rect.height <= 0
-        ) {
-          throw new Error(
-            'A credencial não possui dimensões válidas.',
-          );
-        }
-
-        /**
-         * Garante que as fontes
-         * estejam carregadas antes
-         * da captura.
-         */
         if (
           typeof document !==
             'undefined' &&
@@ -630,202 +671,107 @@ export default function ProfessionalCredentialCard({
           try {
             await document.fonts.ready;
           } catch {
-            // Continua mesmo se o navegador
-            // não conseguir informar o estado.
+            // Continua.
           }
         }
 
         /**
-         * Aguarda o layout estabilizar.
+         * Gera um QR novo diretamente
+         * como Data URL.
+         *
+         * Assim a exportação não
+         * depende do estado visual
+         * do componente QrPreview.
+         */
+        let qrDataUrl = '';
+
+        if (publicProfileUrl) {
+          qrDataUrl =
+            await createQrDataUrl(
+              publicProfileUrl,
+            );
+        }
+
+        /**
+         * Converte a foto para Data URL.
+         *
+         * Se o storage bloquear CORS,
+         * utiliza o avatar interno.
+         */
+        let exportAvatar =
+          avatarFallbackUrl;
+
+        if (
+          resolvedAvatarUrl
+        ) {
+          const converted =
+            await imageUrlToDataUrl(
+              resolvedAvatarUrl,
+            );
+
+          if (converted) {
+            exportAvatar =
+              converted;
+          }
+        }
+
+        /**
+         * Atualiza os elementos
+         * da versão de exportação.
+         */
+        const exportElement =
+          exportRef.current;
+
+        const avatarImage =
+          exportElement.querySelector(
+            '[data-export-avatar]',
+          ) as HTMLImageElement | null;
+
+        if (avatarImage) {
+          avatarImage.src =
+            exportAvatar;
+        }
+
+        const qrImage =
+          exportElement.querySelector(
+            '[data-export-qr]',
+          ) as HTMLImageElement | null;
+
+        if (
+          qrImage &&
+          qrDataUrl
+        ) {
+          qrImage.src =
+            qrDataUrl;
+        }
+
+        /**
+         * Aguarda as imagens.
+         */
+        const images =
+          Array.from(
+            exportElement.querySelectorAll(
+              'img',
+            ),
+          );
+
+        await Promise.all(
+          images.map((image) =>
+            waitForImage(
+              image,
+              7000,
+            ),
+          ),
+        );
+
+        /**
+         * Aguarda o navegador
+         * terminar o layout.
          */
         await wait(100);
 
-        /**
-         * Verifica as imagens
-         * atualmente renderizadas.
-         */
-        const sourceImages =
-          Array.from(
-            sourceElement.querySelectorAll(
-              'img',
-            ),
-          );
-
-        await Promise.all(
-          sourceImages.map(
-            (image) =>
-              waitForImage(
-                image,
-                5000,
-              ),
-          ),
-        );
-
-        /**
-         * Cria um clone isolado.
-         */
-        const clone =
-          sourceElement.cloneNode(
-            true,
-          ) as HTMLDivElement;
-
-        clone.removeAttribute('id');
-
-        /**
-         * Container fora da tela.
-         *
-         * Importante:
-         * não usamos display:none,
-         * visibility:hidden ou
-         * transform:scale().
-         *
-         * Isso evita que o html2canvas
-         * interprete a credencial
-         * como elemento invisível.
-         */
-        temporaryContainer =
-          document.createElement(
-            'div',
-          );
-
-        Object.assign(
-          temporaryContainer.style,
-          {
-            position: 'fixed',
-            left: '0',
-            top: '0',
-            width: `${rect.width}px`,
-            height: `${rect.height}px`,
-            margin: '0',
-            padding: '0',
-            overflow: 'hidden',
-            opacity: '0',
-            pointerEvents: 'none',
-            zIndex: '-10000',
-            background:
-              'transparent',
-          },
-        );
-
-        Object.assign(
-          clone.style,
-          {
-            position: 'relative',
-            left: '0',
-            top: '0',
-            width: `${rect.width}px`,
-            height: `${rect.height}px`,
-            maxWidth: 'none',
-            maxHeight: 'none',
-            margin: '0',
-            transform: 'none',
-          },
-        );
-
-        temporaryContainer.appendChild(
-          clone,
-        );
-
-        document.body.appendChild(
-          temporaryContainer,
-        );
-
-        /**
-         * Converte as imagens do clone
-         * para Data URLs.
-         *
-         * Isso evita problemas de CORS
-         * durante a captura.
-         */
-        const cloneImages =
-          Array.from(
-            clone.querySelectorAll(
-              'img',
-            ),
-          );
-
-        await Promise.all(
-          cloneImages.map(
-            async (image) => {
-              const originalSrc =
-                image.getAttribute(
-                  'src',
-                ) || '';
-
-              if (
-                originalSrc.startsWith(
-                  'data:',
-                )
-              ) {
-                image.removeAttribute(
-                  'crossorigin',
-                );
-
-                return;
-              }
-
-              const dataUrl =
-                await imageUrlToDataUrl(
-                  originalSrc,
-                );
-
-              if (dataUrl) {
-                image.setAttribute(
-                  'src',
-                  dataUrl,
-                );
-              } else {
-                image.setAttribute(
-                  'src',
-                  avatarFallbackUrl,
-                );
-              }
-
-              image.removeAttribute(
-                'crossorigin',
-              );
-
-              image.removeAttribute(
-                'crossOrigin',
-              );
-            },
-          ),
-        );
-
-        /**
-         * Aguarda as imagens
-         * depois da substituição.
-         */
-        const processedImages =
-          Array.from(
-            clone.querySelectorAll(
-              'img',
-            ),
-          );
-
-        await Promise.all(
-          processedImages.map(
-            (image) =>
-              waitForImage(
-                image,
-                5000,
-              ),
-          ),
-        );
-
-        /**
-         * O QR Code é um Data URL,
-         * mas garantimos que ele tenha
-         * terminado de carregar.
-         */
-        await wait(100);
-
-        /**
-         * Força o navegador a calcular
-         * o layout do clone.
-         */
-        void clone.offsetWidth;
-        void clone.offsetHeight;
+        void exportElement.offsetWidth;
+        void exportElement.offsetHeight;
 
         await new Promise<void>(
           (resolve) => {
@@ -840,39 +786,25 @@ export default function ProfessionalCredentialCard({
         );
 
         /**
-         * Escala calculada para manter
-         * boa qualidade sem estourar
-         * a memória do navegador.
+         * Captura DIRETAMENTE a
+         * versão fixa 1280x2048.
+         *
+         * Não existe segundo canvas
+         * nem redimensionamento posterior.
          */
-        const targetWidth =
-          1280;
-
-        const calculatedScale =
-          targetWidth /
-          rect.width;
-
-        const captureScale =
-          Math.min(
-            3,
-            Math.max(
-              2,
-              calculatedScale,
-            ),
-          );
-
-        /**
-         * Captura da credencial.
-         */
-        const capturedCanvas =
+        const canvas =
           await html2canvas(
-            clone,
+            exportElement,
             {
+              width: EXPORT_WIDTH,
+              height: EXPORT_HEIGHT,
+
+              scale: 1,
+
               backgroundColor:
-                null,
+                '#020617',
 
-              scale: captureScale,
-
-              useCORS: true,
+              useCORS: false,
 
               allowTaint: false,
 
@@ -883,175 +815,39 @@ export default function ProfessionalCredentialCard({
               foreignObjectRendering:
                 false,
 
-              width: Math.ceil(
-                rect.width,
-              ),
-
-              height: Math.ceil(
-                rect.height,
-              ),
-
-              windowWidth:
-                Math.ceil(
-                  rect.width,
-                ),
-
-              windowHeight:
-                Math.ceil(
-                  rect.height,
-                ),
-
               scrollX: 0,
 
               scrollY: 0,
 
+              windowWidth:
+                EXPORT_WIDTH,
+
+              windowHeight:
+                EXPORT_HEIGHT,
+
               removeContainer: true,
-
-              onclone: (
-                clonedDocument,
-              ) => {
-                const clonedImages =
-                  clonedDocument.querySelectorAll(
-                    'img',
-                  );
-
-                clonedImages.forEach(
-                  (image) => {
-                    image.removeAttribute(
-                      'crossorigin',
-                    );
-
-                    image.removeAttribute(
-                      'crossOrigin',
-                    );
-                  },
-                );
-              },
             },
           );
 
         if (
-          !capturedCanvas ||
-          capturedCanvas.width <= 0 ||
-          capturedCanvas.height <= 0
+          !canvas ||
+          canvas.width !==
+            EXPORT_WIDTH ||
+          canvas.height !==
+            EXPORT_HEIGHT
         ) {
           throw new Error(
-            'O navegador retornou uma captura vazia.',
+            `Canvas inválido: ${canvas?.width}x${canvas?.height}`,
           );
         }
 
         /**
-         * Canvas final exatamente
-         * em 1280 x 2048.
-         */
-        const outputWidth =
-          1280;
-
-        const outputHeight =
-          2048;
-
-        const finalCanvas =
-          document.createElement(
-            'canvas',
-          );
-
-        finalCanvas.width =
-          outputWidth;
-
-        finalCanvas.height =
-          outputHeight;
-
-        const context =
-          finalCanvas.getContext(
-            '2d',
-          );
-
-        if (!context) {
-          throw new Error(
-            'Não foi possível criar o contexto do canvas.',
-          );
-        }
-
-        context.imageSmoothingEnabled =
-          true;
-
-        context.imageSmoothingQuality =
-          'high';
-
-        context.clearRect(
-          0,
-          0,
-          outputWidth,
-          outputHeight,
-        );
-
-        /**
-         * A credencial possui proporção
-         * 5:8.
-         *
-         * Em vez de simplesmente esticar,
-         * calculamos a proporção para
-         * preservar exatamente o conteúdo.
-         */
-        const sourceRatio =
-          capturedCanvas.width /
-          capturedCanvas.height;
-
-        const targetRatio =
-          outputWidth /
-          outputHeight;
-
-        let drawWidth =
-          outputWidth;
-
-        let drawHeight =
-          outputHeight;
-
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (
-          sourceRatio >
-          targetRatio
-        ) {
-          drawHeight =
-            outputWidth /
-            sourceRatio;
-
-          offsetY =
-            (outputHeight -
-              drawHeight) /
-            2;
-        } else {
-          drawWidth =
-            outputHeight *
-            sourceRatio;
-
-          offsetX =
-            (outputWidth -
-              drawWidth) /
-            2;
-        }
-
-        context.drawImage(
-          capturedCanvas,
-          0,
-          0,
-          capturedCanvas.width,
-          capturedCanvas.height,
-          offsetX,
-          offsetY,
-          drawWidth,
-          drawHeight,
-        );
-
-        /**
-         * Converte para PNG.
+         * PNG final.
          */
         const blob =
           await new Promise<Blob | null>(
             (resolve) => {
-              finalCanvas.toBlob(
+              canvas.toBlob(
                 resolve,
                 'image/png',
                 1,
@@ -1061,13 +857,15 @@ export default function ProfessionalCredentialCard({
 
         if (!blob) {
           throw new Error(
-            'O navegador não conseguiu criar o PNG.',
+            'Não foi possível criar o arquivo PNG.',
           );
         }
 
-        if (blob.size < 1000) {
+        if (
+          blob.size < 5000
+        ) {
           throw new Error(
-            'O PNG gerado possui tamanho inválido.',
+            `Arquivo PNG inválido ou vazio: ${blob.size} bytes`,
           );
         }
 
@@ -1077,38 +875,37 @@ export default function ProfessionalCredentialCard({
           )}.png`;
 
         /**
-         * Faz o download.
-         *
-         * O Blob URL é criado somente
-         * depois de todo o processamento.
+         * Download usando FileSaver,
+         * já disponível no projeto.
          */
-        downloadBlob(
+        downloadFile(
           blob,
           fileName,
         );
 
+        /**
+         * Também permite compartilhar
+         * o arquivo diretamente em
+         * navegadores que suportam
+         * Web Share com arquivos.
+         *
+         * Não executamos automaticamente
+         * para não abrir o menu de
+         * compartilhamento no desktop.
+         */
         toast.success(
           'Credencial baixada com sucesso.',
         );
       } catch (error) {
         console.error(
-          'Erro ao baixar credencial:',
+          'Erro ao exportar credencial:',
           error,
         );
 
         toast.error(
-          'Não foi possível baixar a credencial agora. Tente novamente.',
+          'Não foi possível gerar a credencial. Verifique o console para detalhes.',
         );
       } finally {
-        if (
-          temporaryContainer &&
-          temporaryContainer.parentNode
-        ) {
-          temporaryContainer.parentNode.removeChild(
-            temporaryContainer,
-          );
-        }
-
         setDownloading(false);
       }
     };
@@ -1184,8 +981,12 @@ export default function ProfessionalCredentialCard({
 
           <button
             type="button"
-            onClick={handleCopyLink}
-            disabled={!publicProfileUrl}
+            onClick={
+              handleCopyLink
+            }
+            disabled={
+              !publicProfileUrl
+            }
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
           >
             <Copy size={14} />
@@ -1195,6 +996,7 @@ export default function ProfessionalCredentialCard({
         </div>
       </div>
 
+      {/* CREDENCIAL VISUAL */}
       <div className="relative z-10 mx-auto w-full max-w-[520px]">
         <div
           ref={cardRef}
@@ -1227,9 +1029,6 @@ export default function ProfessionalCredentialCard({
           </div>
 
           <div className="relative flex h-full flex-col gap-2">
-
-            {/* HEADER */}
-
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[7px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[10px] sm:tracking-[0.34em]">
@@ -1263,20 +1062,12 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            {/* CONTEÚDO */}
-
             <div className="flex min-h-0 flex-1 flex-col items-center gap-2 sm:gap-3">
-
-              {/* FOTO */}
-
               <div className="relative mt-1 h-[104px] w-[104px] overflow-hidden rounded-[1.4rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:h-[158px] sm:w-[158px] sm:rounded-[1.8rem] sm:border-4">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={professionalName}
-                    data-fallback-src={
-                      avatarFallbackUrl
-                    }
                     className="h-full w-full object-cover object-center"
                     onError={(event) => {
                       const image =
@@ -1305,8 +1096,6 @@ export default function ProfessionalCredentialCard({
                 </div>
               </div>
 
-              {/* IDENTIDADE */}
-
               <div className="w-full min-w-0 space-y-1 text-center sm:space-y-1.5">
                 <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
                   Fisioterapeuta
@@ -1321,8 +1110,6 @@ export default function ProfessionalCredentialCard({
                 </p>
               </div>
 
-              {/* REGISTRO */}
-
               <div className="flex w-full flex-col items-center gap-1">
                 <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-1.5 sm:text-[10px]">
                   CREFITO: {crefito}
@@ -1335,10 +1122,7 @@ export default function ProfessionalCredentialCard({
                 )}
               </div>
 
-              {/* QR / VALIDAÇÃO */}
-
               <div className="flex w-full max-w-[280px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-sky-300/15 bg-white/10 p-2.5 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.5rem] sm:p-3.5">
-
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck
                     size={11}
@@ -1376,8 +1160,6 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            {/* FOOTER */}
-
             <div className="flex flex-col gap-1 border-t border-white/10 pt-1.5 text-[6px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">
@@ -1402,6 +1184,646 @@ export default function ProfessionalCredentialCard({
           Esta credencial identifica o perfil profissional dentro da plataforma e não substitui consulta oficial junto ao CREFITO.
         </p>
       )}
+
+      {/* =====================================================
+          ÁREA EXCLUSIVA DE EXPORTAÇÃO
+          
+          Fica fora da área visual da aplicação, mas NÃO usa
+          display:none, visibility:hidden ou opacity:0.
+          
+          É uma credencial FIXA de 1280 x 2048.
+          ===================================================== */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          left: '-10000px',
+          top: '0',
+          width: `${EXPORT_WIDTH}px`,
+          height: `${EXPORT_HEIGHT}px`,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          zIndex: -9999,
+        }}
+      >
+        <div
+          ref={exportRef}
+          data-credential-export
+          style={{
+            position: 'relative',
+            width: `${EXPORT_WIDTH}px`,
+            height: `${EXPORT_HEIGHT}px`,
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            padding: '64px',
+            color: '#ffffff',
+            fontFamily:
+              'Arial, Helvetica, sans-serif',
+            background:
+              'linear-gradient(135deg, #020617 0%, #07182f 48%, #083344 100%)',
+          }}
+        >
+          {/* DECORAÇÃO */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                right: '-100px',
+                top: '-100px',
+                width: '430px',
+                height: '430px',
+                borderRadius: '50%',
+                background:
+                  'rgba(14,165,233,0.25)',
+                filter:
+                  'blur(70px)',
+              }}
+            />
+
+            <div
+              style={{
+                position: 'absolute',
+                left: '-120px',
+                bottom: '-100px',
+                width: '500px',
+                height: '500px',
+                borderRadius: '50%',
+                background:
+                  'rgba(16,185,129,0.18)',
+                filter:
+                  'blur(80px)',
+              }}
+            />
+
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: 0,
+                width: '2px',
+                height: '100%',
+                background:
+                  'rgba(255,255,255,0.07)',
+                transform:
+                  'rotate(12deg)',
+              }}
+            />
+
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: '50%',
+                background:
+                  'linear-gradient(to top, rgba(0,0,0,0.35), transparent)',
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection:
+                'column',
+            }}
+          >
+            {/* HEADER */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent:
+                  'space-between',
+                alignItems:
+                  'flex-start',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 900,
+                    letterSpacing:
+                      '7px',
+                    color:
+                      '#7dd3fc',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  FisioCareHub
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '8px',
+                    fontSize: '46px',
+                    lineHeight: 1,
+                    fontWeight: 900,
+                    letterSpacing:
+                      '-1.5px',
+                  }}
+                >
+                  Credencial
+                  Profissional
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '14px',
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    letterSpacing:
+                      '4px',
+                    color:
+                      '#94a3b8',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  Identificação digital
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems:
+                    'center',
+                  gap: '10px',
+                  padding:
+                    '12px 20px',
+                  borderRadius:
+                    '999px',
+                  border: approved
+                    ? '2px solid rgba(110,231,183,0.30)'
+                    : '2px solid rgba(252,211,77,0.30)',
+                  background:
+                    approved
+                      ? 'rgba(52,211,153,0.10)'
+                      : 'rgba(251,191,36,0.10)',
+                  color:
+                    approved
+                      ? '#d1fae5'
+                      : '#fef3c7',
+                  fontSize: '17px',
+                  fontWeight: 900,
+                  textTransform:
+                    'uppercase',
+                  letterSpacing:
+                    '2px',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize:
+                      '20px',
+                  }}
+                >
+                  ✓
+                </span>
+
+                {approved
+                  ? 'Verificado'
+                  : 'Validação'}
+              </div>
+            </div>
+
+            {/* CORPO */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection:
+                  'column',
+                alignItems:
+                  'center',
+                paddingTop:
+                  '70px',
+              }}
+            >
+              {/* FOTO */}
+              <div
+                style={{
+                  position:
+                    'relative',
+                  width: '360px',
+                  height: '360px',
+                  borderRadius:
+                    '70px',
+                  overflow:
+                    'hidden',
+                  border:
+                    '8px solid rgba(125,211,252,0.20)',
+                  background:
+                    'rgba(255,255,255,0.08)',
+                  boxShadow:
+                    '0 30px 80px rgba(0,0,0,0.35)',
+                }}
+              >
+                <img
+                  data-export-avatar
+                  src={
+                    avatarFallbackUrl
+                  }
+                  alt=""
+                  style={{
+                    display:
+                      'block',
+                    width: '100%',
+                    height: '100%',
+                    objectFit:
+                      'cover',
+                    objectPosition:
+                      'center',
+                  }}
+                />
+
+                <div
+                  style={{
+                    position:
+                      'absolute',
+                    right: '20px',
+                    bottom: '20px',
+                    width: '46px',
+                    height: '46px',
+                    display:
+                      'flex',
+                    alignItems:
+                      'center',
+                    justifyContent:
+                      'center',
+                    borderRadius:
+                      '50%',
+                    border:
+                      '4px solid #020617',
+                    background:
+                      '#10b981',
+                    color:
+                      '#ffffff',
+                    fontSize:
+                      '26px',
+                    fontWeight: 900,
+                  }}
+                >
+                  ✓
+                </div>
+              </div>
+
+              {/* NOME */}
+              <div
+                style={{
+                  width: '100%',
+                  marginTop:
+                    '36px',
+                  textAlign:
+                    'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: 900,
+                    letterSpacing:
+                      '6px',
+                    color:
+                      '#94a3b8',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  Fisioterapeuta
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '14px',
+                    fontSize: '54px',
+                    lineHeight:
+                      '1.05',
+                    fontWeight: 900,
+                    letterSpacing:
+                      '-1.5px',
+                    color:
+                      '#ffffff',
+                    wordBreak:
+                      'break-word',
+                  }}
+                >
+                  {professionalName}
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '16px',
+                    fontSize: '22px',
+                    lineHeight:
+                      '1.2',
+                    fontWeight: 900,
+                    letterSpacing:
+                      '4px',
+                    color:
+                      '#7dd3fc',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  {specialty}
+                </div>
+              </div>
+
+              {/* REGISTRO */}
+              <div
+                style={{
+                  display:
+                    'flex',
+                  flexDirection:
+                    'column',
+                  alignItems:
+                    'center',
+                  gap: '12px',
+                  marginTop:
+                    '28px',
+                }}
+              >
+                <div
+                  style={{
+                    padding:
+                      '12px 26px',
+                    borderRadius:
+                      '999px',
+                    border:
+                      '2px solid rgba(255,255,255,0.10)',
+                    background:
+                      'rgba(255,255,255,0.08)',
+                    fontSize: '19px',
+                    fontWeight: 900,
+                    letterSpacing:
+                      '3px',
+                    color:
+                      '#f8fafc',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  CREFITO: {crefito}
+                </div>
+
+                {isPro && (
+                  <div
+                    style={{
+                      padding:
+                        '8px 20px',
+                      borderRadius:
+                        '999px',
+                      border:
+                        '2px solid rgba(252,211,77,0.30)',
+                      background:
+                        'rgba(251,191,36,0.10)',
+                      color:
+                        '#fde68a',
+                      fontSize:
+                        '15px',
+                      fontWeight:
+                        900,
+                      letterSpacing:
+                        '3px',
+                      textTransform:
+                        'uppercase',
+                    }}
+                  >
+                    Plano Pro
+                  </div>
+                )}
+              </div>
+
+              {/* QR */}
+              <div
+                style={{
+                  width: '520px',
+                  marginTop:
+                    '34px',
+                  padding:
+                    '26px',
+                  borderRadius:
+                    '34px',
+                  border:
+                    '2px solid rgba(125,211,252,0.15)',
+                  background:
+                    'rgba(255,255,255,0.08)',
+                  display:
+                    'flex',
+                  flexDirection:
+                    'column',
+                  alignItems:
+                    'center',
+                  justifyContent:
+                    'center',
+                }}
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+                    alignItems:
+                      'center',
+                    gap: '10px',
+                    fontSize:
+                      '17px',
+                    fontWeight:
+                      900,
+                    letterSpacing:
+                      '4px',
+                    color:
+                      '#bae6fd',
+                    textTransform:
+                      'uppercase',
+                  }}
+                >
+                  <span
+                    style={{
+                      color:
+                        '#6ee7b7',
+                    }}
+                  >
+                    ✓
+                  </span>
+
+                  Validar credencial
+                </div>
+
+                <div
+                  style={{
+                    width: '250px',
+                    height: '250px',
+                    marginTop:
+                      '18px',
+                    padding:
+                      '16px',
+                    borderRadius:
+                      '28px',
+                    background:
+                      '#ffffff',
+                    boxShadow:
+                      '0 20px 50px rgba(0,0,0,0.25)',
+                    boxSizing:
+                      'border-box',
+                  }}
+                >
+                  {publicProfileUrl ? (
+                    <img
+                      data-export-qr
+                      src=""
+                      alt=""
+                      style={{
+                        display:
+                          'block',
+                        width: '100%',
+                        height: '100%',
+                        objectFit:
+                          'contain',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width:
+                          '100%',
+                        height:
+                          '100%',
+                        display:
+                          'flex',
+                        alignItems:
+                          'center',
+                        justifyContent:
+                          'center',
+                        color:
+                          '#64748b',
+                        fontSize:
+                          '16px',
+                        fontWeight:
+                          900,
+                        textAlign:
+                          'center',
+                      }}
+                    >
+                      Perfil
+                      indisponível
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '16px',
+                    maxWidth:
+                      '420px',
+                    overflow:
+                      'hidden',
+                    whiteSpace:
+                      'nowrap',
+                    textOverflow:
+                      'ellipsis',
+                    textAlign:
+                      'center',
+                    fontSize:
+                      '14px',
+                    fontWeight:
+                      900,
+                    letterSpacing:
+                      '2px',
+                    color:
+                      '#e2e8f0',
+                  }}
+                >
+                  ID DA CREDENCIAL •{' '}
+                  {credentialCode}
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      '8px',
+                    fontSize:
+                      '14px',
+                    fontWeight:
+                      700,
+                    color:
+                      '#94a3b8',
+                  }}
+                >
+                  Escaneie para verificar este perfil
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div
+              style={{
+                paddingTop:
+                  '22px',
+                borderTop:
+                  '2px solid rgba(255,255,255,0.10)',
+                color:
+                  '#94a3b8',
+                fontSize:
+                  '15px',
+                fontWeight:
+                  700,
+              }}
+            >
+              <div
+                style={{
+                  display:
+                    'flex',
+                  alignItems:
+                    'center',
+                  justifyContent:
+                    'space-between',
+                  gap: '20px',
+                }}
+              >
+                <span>
+                  {serviceLabel}
+                </span>
+
+                <span>
+                  Emissão {issuedAt}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  marginTop:
+                    '8px',
+                  textAlign:
+                    'center',
+                  color:
+                    '#cbd5e1',
+                }}
+              >
+                {city}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -1422,7 +1844,8 @@ function QrPreview({
     QRCode.toDataURL(
       value,
       {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel:
+          'H',
         margin: 2,
         width: 240,
         color: {
