@@ -1,4 +1,4 @@
-      import {
+import React, {
   useEffect,
   useMemo,
   useRef,
@@ -6,1798 +6,1534 @@
 } from 'react';
 
 import {
+  Check,
   CheckCircle2,
   Copy,
   Crown,
   Download,
+  ExternalLink,
+  Mail,
+  MessageCircle,
+  Palette,
+  QrCode,
+  Send,
   Share2,
-  ShieldCheck,
+  Smartphone,
   Sparkles,
   UserRound,
+  X,
 } from 'lucide-react';
 
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import {
-  cn,
-  resolveStorageUrl,
-} from '../lib/utils';
+import { cn, resolveStorageUrl } from '../lib/utils';
 
-const EXPORT_WIDTH = 1280;
-const EXPORT_HEIGHT = 2048;
+// ==========================================
+// THEME DEFINITIONS & COLOR PALETTES
+// ==========================================
 
-const safeText = (
-  value: unknown,
-  fallback = 'Não informado',
-) => {
-  const text = String(
-    value ?? '',
-  ).trim();
+export type CredentialThemeId = 'blue' | 'orange' | 'green' | 'white-purple';
 
+export interface CredentialThemeConfig {
+  id: CredentialThemeId;
+  name: string;
+  emoji: string;
+  previewBg: string;
+  description: string;
+  isLightMode?: boolean;
+
+  // Background & Borders
+  cardBg: string;
+  cardBorder: string;
+  cardShadow: string;
+  ambientGlow: string;
+
+  // 3D Geometric Accents (SVG Gradients)
+  sphereTopStops: { offset: string; color: string }[];
+  coneLightStops: { offset: string; color: string }[];
+  coneShadowStops: { offset: string; color: string }[];
+  torusStroke: string;
+  sphereBottomStops: { offset: string; color: string }[];
+  prismStops: { offset: string; color: string }[];
+
+  // Typography
+  brandColor: string;
+  titleColor: string;
+  subtitleColor: string;
+  roleColor: string;
+  nameColor: string;
+  specialtyColor: string;
+
+  // Verified Badge & Rosette Seal
+  verifiedBg: string;
+  verifiedBorder: string;
+  verifiedText: string;
+  rosetteStops: { offset: string; color: string }[];
+  rosetteInner: string;
+  rosetteCheck: string;
+
+  // Photo Frame
+  avatarBorder: string;
+  avatarBg: string;
+  avatarShadow: string;
+  avatarCheckBg: string;
+  avatarCheckBorder: string;
+  avatarCheckColor: string;
+
+  // Badges & Pills
+  crefitoBg: string;
+  crefitoBorder: string;
+  crefitoText: string;
+  proBg: string;
+  proBorder: string;
+  proText: string;
+
+  // QR Code Validation Box
+  qrCardBg: string;
+  qrCardBorder: string;
+  qrCardShadow: string;
+  qrHeaderCheck: string;
+  qrHeaderText: string;
+  qrBoxBg: string;
+  qrDarkColor: string;
+  qrIdColor: string;
+  qrSubColor: string;
+
+  // Footer Info
+  footerBorder: string;
+  footerTextColor: string;
+  footerCenterColor: string;
+}
+
+export const CREDENTIAL_THEMES: Record<CredentialThemeId, CredentialThemeConfig> = {
+  // 1. Azul Claro (Tecnologia, Saúde, Moderno)
+  blue: {
+    id: 'blue',
+    name: 'Azul Claro',
+    emoji: '🔵',
+    previewBg: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+    description: 'Tecnologia, saúde e modernidade',
+    cardBg: 'linear-gradient(165deg, #031526 0%, #072846 30%, #0c3e69 60%, #062744 85%, #021220 100%)',
+    cardBorder: 'rgba(56, 189, 248, 0.4)',
+    cardShadow: '0 30px 70px -15px rgba(2, 132, 199, 0.45), 0 0 40px rgba(56, 189, 248, 0.15)',
+    ambientGlow: 'rgba(14, 165, 233, 0.25)',
+    sphereTopStops: [
+      { offset: '0%', color: '#f0f9ff' },
+      { offset: '30%', color: '#7dd3fc' },
+      { offset: '70%', color: '#0284c7' },
+      { offset: '100%', color: '#075985' },
+    ],
+    coneLightStops: [
+      { offset: '0%', color: '#e0f2fe' },
+      { offset: '50%', color: '#38bdf8' },
+      { offset: '100%', color: '#0284c7' },
+    ],
+    coneShadowStops: [
+      { offset: '0%', color: '#0284c7' },
+      { offset: '70%', color: '#075985' },
+      { offset: '100%', color: '#082f49' },
+    ],
+    torusStroke: 'rgba(125, 211, 252, 0.45)',
+    sphereBottomStops: [
+      { offset: '0%', color: '#e0f2fe' },
+      { offset: '30%', color: '#38bdf8' },
+      { offset: '70%', color: '#0284c7' },
+      { offset: '100%', color: '#075985' },
+    ],
+    prismStops: [
+      { offset: '0%', color: '#7dd3fc' },
+      { offset: '60%', color: '#0284c7' },
+      { offset: '100%', color: '#0c4a6e' },
+    ],
+    brandColor: '#7dd3fc',
+    titleColor: '#ffffff',
+    subtitleColor: '#bae6fd',
+    roleColor: '#7dd3fc',
+    nameColor: '#ffffff',
+    specialtyColor: '#e0f2fe',
+    verifiedBg: 'rgba(2, 132, 199, 0.95)',
+    verifiedBorder: 'rgba(125, 211, 252, 0.55)',
+    verifiedText: '#f0f9ff',
+    rosetteStops: [
+      { offset: '0%', color: '#f0f9ff' },
+      { offset: '35%', color: '#7dd3fc' },
+      { offset: '75%', color: '#0284c7' },
+      { offset: '100%', color: '#0369a1' },
+    ],
+    rosetteInner: '#0369a1',
+    rosetteCheck: '#ffffff',
+    avatarBorder: 'rgba(125, 211, 252, 0.5)',
+    avatarBg: 'rgba(12, 74, 110, 0.6)',
+    avatarShadow: '0 16px 40px rgba(2, 132, 199, 0.4)',
+    avatarCheckBg: '#0284c7',
+    avatarCheckBorder: '#031526',
+    avatarCheckColor: '#ffffff',
+    crefitoBg: 'rgba(7, 43, 72, 0.95)',
+    crefitoBorder: 'rgba(125, 211, 252, 0.45)',
+    crefitoText: '#f0f9ff',
+    proBg: 'rgba(251, 191, 36, 0.2)',
+    proBorder: 'rgba(252, 211, 77, 0.5)',
+    proText: '#fef08a',
+    qrCardBg: 'rgba(12, 74, 110, 0.65)',
+    qrCardBorder: 'rgba(125, 211, 252, 0.35)',
+    qrCardShadow: '0 20px 45px rgba(2, 132, 199, 0.35)',
+    qrHeaderCheck: '#34d399',
+    qrHeaderText: '#bae6fd',
+    qrBoxBg: '#ffffff',
+    qrDarkColor: '#020617',
+    qrIdColor: '#f0f9ff',
+    qrSubColor: '#bae6fd',
+    footerBorder: 'rgba(125, 211, 252, 0.25)',
+    footerTextColor: '#93c5fd',
+    footerCenterColor: '#f0f9ff',
+  },
+
+  // 2. Laranja (Moderno, Energético, Elegante)
+  orange: {
+    id: 'orange',
+    name: 'Laranja',
+    emoji: '🟠',
+    previewBg: 'linear-gradient(135deg, #ea580c 0%, #fb923c 100%)',
+    description: 'Energia, calor e sofisticação',
+    cardBg: 'linear-gradient(165deg, #1a0a03 0%, #331406 30%, #4d1c08 60%, #2b0e03 85%, #150600 100%)',
+    cardBorder: 'rgba(251, 146, 60, 0.4)',
+    cardShadow: '0 30px 70px -15px rgba(234, 88, 12, 0.45), 0 0 40px rgba(251, 146, 60, 0.15)',
+    ambientGlow: 'rgba(234, 88, 12, 0.25)',
+    sphereTopStops: [
+      { offset: '0%', color: '#fff7ed' },
+      { offset: '30%', color: '#fdba74' },
+      { offset: '70%', color: '#ea580c' },
+      { offset: '100%', color: '#9a3412' },
+    ],
+    coneLightStops: [
+      { offset: '0%', color: '#ffedd5' },
+      { offset: '50%', color: '#fb923c' },
+      { offset: '100%', color: '#ea580c' },
+    ],
+    coneShadowStops: [
+      { offset: '0%', color: '#ea580c' },
+      { offset: '70%', color: '#7c2d12' },
+      { offset: '100%', color: '#431407' },
+    ],
+    torusStroke: 'rgba(253, 186, 116, 0.45)',
+    sphereBottomStops: [
+      { offset: '0%', color: '#ffedd5' },
+      { offset: '30%', color: '#fb923c' },
+      { offset: '70%', color: '#ea580c' },
+      { offset: '100%', color: '#9a3412' },
+    ],
+    prismStops: [
+      { offset: '0%', color: '#fdba74' },
+      { offset: '60%', color: '#ea580c' },
+      { offset: '100%', color: '#7c2d12' },
+    ],
+    brandColor: '#fdba74',
+    titleColor: '#ffffff',
+    subtitleColor: '#fed7aa',
+    roleColor: '#fdba74',
+    nameColor: '#ffffff',
+    specialtyColor: '#ffedd5',
+    verifiedBg: 'rgba(217, 83, 11, 0.95)',
+    verifiedBorder: 'rgba(253, 186, 116, 0.55)',
+    verifiedText: '#fff7ed',
+    rosetteStops: [
+      { offset: '0%', color: '#fff7ed' },
+      { offset: '35%', color: '#fdba74' },
+      { offset: '75%', color: '#ea580c' },
+      { offset: '100%', color: '#9a3412' },
+    ],
+    rosetteInner: '#9a3412',
+    rosetteCheck: '#ffffff',
+    avatarBorder: 'rgba(253, 186, 116, 0.5)',
+    avatarBg: 'rgba(77, 28, 8, 0.6)',
+    avatarShadow: '0 16px 40px rgba(234, 88, 12, 0.4)',
+    avatarCheckBg: '#ea580c',
+    avatarCheckBorder: '#1a0a03',
+    avatarCheckColor: '#ffffff',
+    crefitoBg: 'rgba(51, 20, 6, 0.95)',
+    crefitoBorder: 'rgba(253, 186, 116, 0.45)',
+    crefitoText: '#fff7ed',
+    proBg: 'rgba(251, 191, 36, 0.2)',
+    proBorder: 'rgba(252, 211, 77, 0.5)',
+    proText: '#fef08a',
+    qrCardBg: 'rgba(77, 28, 8, 0.65)',
+    qrCardBorder: 'rgba(253, 186, 116, 0.35)',
+    qrCardShadow: '0 20px 45px rgba(234, 88, 12, 0.35)',
+    qrHeaderCheck: '#4ade80',
+    qrHeaderText: '#fed7aa',
+    qrBoxBg: '#ffffff',
+    qrDarkColor: '#1a0a03',
+    qrIdColor: '#fff7ed',
+    qrSubColor: '#fed7aa',
+    footerBorder: 'rgba(251, 146, 60, 0.25)',
+    footerTextColor: '#fdba74',
+    footerCenterColor: '#fff7ed',
+  },
+
+  // 3. Verde Claro (Saúde, Leve, Elegante)
+  green: {
+    id: 'green',
+    name: 'Verde Claro',
+    emoji: '🟢',
+    previewBg: 'linear-gradient(135deg, #059669 0%, #34d399 100%)',
+    description: 'Saúde, equilíbrio e frescor',
+    cardBg: 'linear-gradient(165deg, #021711 0%, #053324 30%, #094a34 60%, #062e20 85%, #01140e 100%)',
+    cardBorder: 'rgba(52, 211, 153, 0.4)',
+    cardShadow: '0 30px 70px -15px rgba(5, 150, 105, 0.45), 0 0 40px rgba(52, 211, 153, 0.15)',
+    ambientGlow: 'rgba(16, 185, 129, 0.25)',
+    sphereTopStops: [
+      { offset: '0%', color: '#f0fdf4' },
+      { offset: '30%', color: '#6ee7b7' },
+      { offset: '70%', color: '#059669' },
+      { offset: '100%', color: '#047857' },
+    ],
+    coneLightStops: [
+      { offset: '0%', color: '#ecfdf5' },
+      { offset: '50%', color: '#34d399' },
+      { offset: '100%', color: '#059669' },
+    ],
+    coneShadowStops: [
+      { offset: '0%', color: '#059669' },
+      { offset: '70%', color: '#065f46' },
+      { offset: '100%', color: '#022c22' },
+    ],
+    torusStroke: 'rgba(110, 231, 183, 0.45)',
+    sphereBottomStops: [
+      { offset: '0%', color: '#ecfdf5' },
+      { offset: '30%', color: '#34d399' },
+      { offset: '70%', color: '#059669' },
+      { offset: '100%', color: '#047857' },
+    ],
+    prismStops: [
+      { offset: '0%', color: '#6ee7b7' },
+      { offset: '60%', color: '#059669' },
+      { offset: '100%', color: '#064e3b' },
+    ],
+    brandColor: '#6ee7b7',
+    titleColor: '#ffffff',
+    subtitleColor: '#a7f3d0',
+    roleColor: '#6ee7b7',
+    nameColor: '#ffffff',
+    specialtyColor: '#ecfdf5',
+    verifiedBg: 'rgba(5, 150, 105, 0.95)',
+    verifiedBorder: 'rgba(110, 231, 183, 0.55)',
+    verifiedText: '#f0fdf4',
+    rosetteStops: [
+      { offset: '0%', color: '#f0fdf4' },
+      { offset: '35%', color: '#6ee7b7' },
+      { offset: '75%', color: '#059669' },
+      { offset: '100%', color: '#047857' },
+    ],
+    rosetteInner: '#047857',
+    rosetteCheck: '#ffffff',
+    avatarBorder: 'rgba(110, 231, 183, 0.5)',
+    avatarBg: 'rgba(9, 74, 52, 0.6)',
+    avatarShadow: '0 16px 40px rgba(5, 150, 105, 0.4)',
+    avatarCheckBg: '#059669',
+    avatarCheckBorder: '#021711',
+    avatarCheckColor: '#ffffff',
+    crefitoBg: 'rgba(5, 51, 36, 0.95)',
+    crefitoBorder: 'rgba(110, 231, 183, 0.45)',
+    crefitoText: '#f0fdf4',
+    proBg: 'rgba(251, 191, 36, 0.2)',
+    proBorder: 'rgba(252, 211, 77, 0.5)',
+    proText: '#fef08a',
+    qrCardBg: 'rgba(9, 74, 52, 0.65)',
+    qrCardBorder: 'rgba(110, 231, 183, 0.35)',
+    qrCardShadow: '0 20px 45px rgba(5, 150, 105, 0.35)',
+    qrHeaderCheck: '#6ee7b7',
+    qrHeaderText: '#a7f3d0',
+    qrBoxBg: '#ffffff',
+    qrDarkColor: '#021711',
+    qrIdColor: '#f0fdf4',
+    qrSubColor: '#a7f3d0',
+    footerBorder: 'rgba(52, 211, 153, 0.25)',
+    footerTextColor: '#6ee7b7',
+    footerCenterColor: '#f0fdf4',
+  },
+
+  // 4. Branco + Roxo (Fundo Branco, Detalhes Roxo, Premium)
+  'white-purple': {
+    id: 'white-purple',
+    name: 'Branco + Roxo',
+    emoji: '🟣',
+    previewBg: 'linear-gradient(135deg, #ffffff 0%, #f3e8ff 45%, #7e22ce 100%)',
+    description: 'Fundo branco com detalhes em roxo',
+    isLightMode: true,
+    cardBg: 'linear-gradient(165deg, #ffffff 0%, #faf5ff 30%, #f3e8ff 65%, #e9d5ff 88%, #f8f5fe 100%)',
+    cardBorder: 'rgba(147, 51, 234, 0.4)',
+    cardShadow: '0 30px 70px -15px rgba(126, 34, 206, 0.3), 0 0 35px rgba(168, 85, 247, 0.12)',
+    ambientGlow: 'rgba(168, 85, 247, 0.2)',
+    sphereTopStops: [
+      { offset: '0%', color: '#f3e8ff' },
+      { offset: '30%', color: '#c084fc' },
+      { offset: '70%', color: '#7e22ce' },
+      { offset: '100%', color: '#581c87' },
+    ],
+    coneLightStops: [
+      { offset: '0%', color: '#f3e8ff' },
+      { offset: '50%', color: '#a855f7' },
+      { offset: '100%', color: '#6b21a8' },
+    ],
+    coneShadowStops: [
+      { offset: '0%', color: '#7e22ce' },
+      { offset: '70%', color: '#581c87' },
+      { offset: '100%', color: '#3b0764' },
+    ],
+    torusStroke: 'rgba(168, 85, 247, 0.5)',
+    sphereBottomStops: [
+      { offset: '0%', color: '#f3e8ff' },
+      { offset: '30%', color: '#a855f7' },
+      { offset: '70%', color: '#6b21a8' },
+      { offset: '100%', color: '#4c1d95' },
+    ],
+    prismStops: [
+      { offset: '0%', color: '#c084fc' },
+      { offset: '60%', color: '#7e22ce' },
+      { offset: '100%', color: '#3b0764' },
+    ],
+    brandColor: '#6b21a8',
+    titleColor: '#1e1b4b',
+    subtitleColor: '#7c3aed',
+    roleColor: '#6b21a8',
+    nameColor: '#1e1b4b',
+    specialtyColor: '#4338ca',
+    verifiedBg: 'rgba(126, 34, 206, 0.95)',
+    verifiedBorder: 'rgba(147, 51, 234, 0.55)',
+    verifiedText: '#ffffff',
+    rosetteStops: [
+      { offset: '0%', color: '#f3e8ff' },
+      { offset: '35%', color: '#c084fc' },
+      { offset: '75%', color: '#7e22ce' },
+      { offset: '100%', color: '#4c1d95' },
+    ],
+    rosetteInner: '#581c87',
+    rosetteCheck: '#ffffff',
+    avatarBorder: 'rgba(147, 51, 234, 0.5)',
+    avatarBg: 'rgba(243, 232, 255, 0.95)',
+    avatarShadow: '0 16px 40px rgba(126, 34, 206, 0.22)',
+    avatarCheckBg: '#7e22ce',
+    avatarCheckBorder: '#ffffff',
+    avatarCheckColor: '#ffffff',
+    crefitoBg: 'rgba(243, 232, 255, 0.95)',
+    crefitoBorder: 'rgba(147, 51, 234, 0.45)',
+    crefitoText: '#581c87',
+    proBg: 'rgba(251, 191, 36, 0.25)',
+    proBorder: 'rgba(217, 119, 6, 0.55)',
+    proText: '#92400e',
+    qrCardBg: 'rgba(255, 255, 255, 0.92)',
+    qrCardBorder: 'rgba(168, 85, 247, 0.38)',
+    qrCardShadow: '0 20px 45px rgba(126, 34, 206, 0.15)',
+    qrHeaderCheck: '#16a34a',
+    qrHeaderText: '#6b21a8',
+    qrBoxBg: '#ffffff',
+    qrDarkColor: '#2e1065',
+    qrIdColor: '#1e1b4b',
+    qrSubColor: '#6b21a8',
+    footerBorder: 'rgba(147, 51, 234, 0.25)',
+    footerTextColor: '#6b21a8',
+    footerCenterColor: '#1e1b4b',
+  },
+};
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
+const safeText = (value: unknown, fallback = 'Não informado') => {
+  const text = String(value ?? '').trim();
   return text || fallback;
 };
 
-const getServiceLabel = (
-  type?: string | null,
-) => {
-  const normalized = String(
-    type || '',
-  ).toLowerCase();
-
-  if (normalized === 'online') {
-    return 'Atendimento online';
-  }
-
-  if (
-    normalized === 'domicilio'
-  ) {
-    return 'Atendimento domiciliar';
-  }
-
-  if (normalized === 'ambos') {
-    return 'Domiciliar e online';
-  }
-
+const getServiceLabel = (type?: string | null) => {
+  const normalized = String(type || '').toLowerCase();
+  if (normalized === 'online') return 'Atendimento online';
+  if (normalized === 'domicilio') return 'Atendimento domiciliar';
+  if (normalized === 'ambos') return 'Domiciliar e online';
   return 'Atendimento fisioterapêutico';
 };
 
-const svgToDataUrl = (
-  svg: string,
-) =>
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    svg,
-  )}`;
-
-const escapeSvgText = (
-  value: string,
-) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(
-      /</g,
-      '&lt;',
-    )
-    .replace(
-      />/g,
-      '&gt;',
-    )
-    .replace(
-      /"/g,
-      '&quot;',
-    )
-    .replace(
-      /'/g,
-      '&apos;',
-    );
-
-const getInitials = (
-  name: string,
-) => {
-  const parts = name
-    .split(/\s+/)
-    .map((part) =>
-      part.trim(),
-    )
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return 'FH';
-  }
-
-  if (parts.length === 1) {
-    return parts[0]
-      .slice(0, 2)
-      .toUpperCase();
-  }
-
-  return `${parts[0][0]}${
-    parts[parts.length - 1][0]
-  }`.toUpperCase();
+const getInitials = (name: string) => {
+  const parts = name.split(/\s+/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 0) return 'FH';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
-const createAvatarFallback = (
-  name: string,
-) => {
-  const initials =
-    escapeSvgText(
-      getInitials(name),
-    );
+const createAvatarFallback = (name: string, theme: CredentialThemeConfig) => {
+  const initials = getInitials(name);
+  const isLight = theme.isLightMode;
+  const bg1 = isLight ? '#f3e8ff' : '#0f172a';
+  const bg2 = isLight ? '#ede9fe' : '#1e1b4b';
+  const textColor = isLight ? '#6b21a8' : '#ffffff';
+  const subColor = isLight ? '#7c3aed' : '#c4b5fd';
 
-  return svgToDataUrl(`
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="500"
-      height="500"
-      viewBox="0 0 500 500"
-    >
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
       <defs>
-        <linearGradient
-          id="avatarGradient"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stop-color="#020617"
-          />
-          <stop
-            offset="55%"
-            stop-color="#075985"
-          />
-          <stop
-            offset="100%"
-            stop-color="#0f766e"
-          />
+        <linearGradient id="avGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${bg1}" />
+          <stop offset="100%" stop-color="${bg2}" />
         </linearGradient>
       </defs>
-
-      <rect
-        width="500"
-        height="500"
-        rx="110"
-        fill="url(#avatarGradient)"
-      />
-
-      <circle
-        cx="420"
-        cy="80"
-        r="150"
-        fill="#38bdf8"
-        opacity="0.16"
-      />
-
-      <circle
-        cx="60"
-        cy="440"
-        r="170"
-        fill="#34d399"
-        opacity="0.13"
-      />
-
-      <circle
-        cx="250"
-        cy="205"
-        r="110"
-        fill="#ffffff"
-        opacity="0.08"
-      />
-
-      <text
-        x="250"
-        y="235"
-        text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif"
-        font-size="120"
-        font-weight="900"
-        fill="#ffffff"
-      >
+      <rect width="500" height="500" rx="90" fill="url(#avGrad)" />
+      <circle cx="410" cy="90" r="140" fill="${theme.brandColor}" opacity="0.25" />
+      <circle cx="80" cy="430" r="160" fill="${theme.brandColor}" opacity="0.2" />
+      <text x="250" y="270" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="130" font-weight="900" fill="${textColor}">
         ${initials}
       </text>
-
-      <text
-        x="250"
-        y="315"
-        text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif"
-        font-size="22"
-        font-weight="800"
-        letter-spacing="4"
-        fill="#bae6fd"
-      >
+      <text x="250" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" letter-spacing="6" fill="${subColor}">
         FISIOCAREHUB
       </text>
     </svg>
-  `);
+  `)}`;
 };
 
-const fileNameFromName = (
-  value: string,
-) => {
+const fileNameFromName = (value: string) => {
   const normalized = value
     .normalize('NFD')
-    .replace(
-      /[\u0300-\u036f]/g,
-      '',
-    )
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(
-      /[^a-z0-9]+/gi,
-      '-',
-    )
-    .replace(
-      /^-+|-+$/g,
-      '',
-    );
-
-  return (
-    normalized ||
-    'profissional'
-  );
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized || 'profissional';
 };
 
-const wait = (
-  milliseconds: number,
-) =>
-  new Promise<void>(
-    (resolve) => {
-      window.setTimeout(
-        resolve,
-        milliseconds,
-      );
-    },
-  );
+const imageUrlToDataUrl = async (url: string): Promise<string | null> => {
+  if (!url) return null;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
-const waitForImage = (
-  image: HTMLImageElement,
-  timeout = 7000,
-) =>
-  new Promise<void>(
-    (resolve) => {
-      if (
-        image.complete &&
-        image.naturalWidth > 0
-      ) {
-        resolve();
+  try {
+    const response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache',
+    });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) return null;
+
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
+
+// ==========================================
+// INNER CREDENTIAL CARD (ON-SCREEN PREVIEW)
+// ==========================================
+
+export interface CredentialCardInnerProps {
+  theme: CredentialThemeConfig;
+  professionalName: string;
+  specialty: string;
+  crefito: string;
+  city: string;
+  serviceLabel: string;
+  issuedAt: string;
+  credentialCode: string;
+  approved: boolean;
+  isPro?: boolean;
+  publicProfileUrl: string;
+  avatarSrc: string;
+  avatarFallbackSrc: string;
+  qrDataUrl?: string;
+}
+
+export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCardInnerProps>(
+  (
+    {
+      theme,
+      professionalName,
+      specialty,
+      crefito,
+      city,
+      serviceLabel,
+      issuedAt,
+      credentialCode,
+      approved,
+      isPro,
+      publicProfileUrl,
+      avatarSrc,
+      avatarFallbackSrc,
+      qrDataUrl,
+    },
+    ref,
+  ) => {
+    const [internalQr, setInternalQr] = useState<string>('');
+
+    // Generate QR code data URL matching theme if not provided
+    useEffect(() => {
+      if (qrDataUrl) {
+        setInternalQr(qrDataUrl);
+        return;
+      }
+      let cancelled = false;
+      if (!publicProfileUrl) {
+        setInternalQr('');
         return;
       }
 
-      let finished = false;
-
-      const finish = () => {
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-
-        image.removeEventListener(
-          'load',
-          finish,
-        );
-
-        image.removeEventListener(
-          'error',
-          finish,
-        );
-
-        resolve();
-      };
-
-      image.addEventListener(
-        'load',
-        finish,
-      );
-
-      image.addEventListener(
-        'error',
-        finish,
-      );
-
-      window.setTimeout(
-        finish,
-        timeout,
-      );
-    },
-  );
-
-const imageUrlToDataUrl =
-  async (
-    url: string,
-  ): Promise<string | null> => {
-    if (!url) {
-      return null;
-    }
-
-    if (
-      url.startsWith(
-        'data:',
-      ) ||
-      url.startsWith(
-        'blob:',
-      )
-    ) {
-      return url;
-    }
-
-    try {
-      const response =
-        await fetch(url, {
-          mode: 'cors',
-          credentials: 'omit',
-          cache: 'no-cache',
-        });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const blob =
-        await response.blob();
-
-      if (
-        !blob.type.startsWith(
-          'image/',
-        )
-      ) {
-        return null;
-      }
-
-      return await new Promise<
-        string | null
-      >((resolve) => {
-        const reader =
-          new FileReader();
-
-        reader.onload = () => {
-          resolve(
-            typeof reader.result ===
-              'string'
-              ? reader.result
-              : null,
-          );
-        };
-
-        reader.onerror = () => {
-          resolve(null);
-        };
-
-        reader.readAsDataURL(
-          blob,
-        );
-      });
-    } catch (error) {
-      console.warn(
-        'Não foi possível converter a imagem para Data URL:',
-        error,
-      );
-
-      return null;
-    }
-  };
-
-const createQrDataUrl =
-  async (
-    value: string,
-  ) => {
-    return QRCode.toDataURL(
-      value,
-      {
-        errorCorrectionLevel:
-          'H',
+      QRCode.toDataURL(publicProfileUrl, {
+        errorCorrectionLevel: 'H',
         margin: 2,
-        width: 600,
+        width: 400,
         color: {
-          dark: '#020617',
+          dark: theme.qrDarkColor,
           light: '#ffffff',
         },
-      },
-    );
-  };
-
-const downloadFile = (
-  blob: Blob,
-  fileName: string,
-) => {
-  saveAs(blob, fileName);
-};
-
-type ProfessionalCredentialCardProps =
-  {
-    profile: any;
-    isPro?: boolean;
-    appointmentsCount?: number;
-    ratingAverage?: number;
-    reviewsCount?: number;
-    variant?: 'full' | 'compact';
-    className?: string;
-  };
-
-export default function ProfessionalCredentialCard({
-  profile,
-  isPro = false,
-  appointmentsCount,
-  ratingAverage,
-  reviewsCount,
-  variant = 'full',
-  className,
-}: ProfessionalCredentialCardProps) {
-  const cardRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
-
-  const exportRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
-
-  const [downloading, setDownloading] =
-    useState(false);
-
-  const [sharing, setSharing] =
-    useState(false);
-
-  const profileId =
-    profile?.id ||
-    profile?.user_id ||
-    '';
-
-  const publicProfileUrl =
-    useMemo(() => {
-      if (
-        !profileId ||
-        typeof window ===
-          'undefined'
-      ) {
-        return '';
-      }
-
-      return `${window.location.origin}/physio/${profileId}`;
-    }, [profileId]);
-
-  const professionalName =
-    safeText(
-      profile?.nome_completo ||
-        profile?.nome ||
-        profile?.name,
-      'Fisioterapeuta',
-    );
-
-  const specialty =
-    safeText(
-      profile?.especialidade ||
-        profile?.especialidade_principal ||
-        profile?.specialty,
-      'Fisioterapia',
-    );
-
-  const crefito =
-    safeText(
-      profile?.crefito ||
-        profile?.registro_profissional ||
-        profile?.numero_crefito,
-      'Pendente',
-    );
-
-  const city =
-    safeText(
-      profile?.localizacao ||
-        [
-          profile?.cidade,
-          profile?.estado,
-        ]
-          .filter(Boolean)
-          .join(', '),
-      'Região não informada',
-    );
-
-  const avatarFallbackUrl =
-    useMemo(
-      () =>
-        createAvatarFallback(
-          professionalName,
-        ),
-      [professionalName],
-    );
-
-  const resolvedAvatarUrl =
-    resolveStorageUrl(
-      profile?.avatar_url || '',
-    );
-
-  const avatarUrl =
-    resolvedAvatarUrl ||
-    avatarFallbackUrl;
-
-  const approved =
-    String(
-      profile?.status_aprovacao ||
-        '',
-    ).toLowerCase() ===
-      'aprovado' ||
-    Boolean(
-      profile?.aprovado ||
-        profile?.verificado,
-    );
-
-  const issuedAt =
-    new Intl.DateTimeFormat(
-      'pt-BR',
-      {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      },
-    ).format(new Date());
-
-  const credentialCode =
-    profileId
-      ? `FCH-${String(
-          profileId,
-        )
-          .slice(0, 8)
-          .toUpperCase()}`
-      : 'FCH-PERFIL';
-
-  const serviceLabel =
-    getServiceLabel(
-      profile?.tipo_servico,
-    );
-
-  const isCompact =
-    variant === 'compact';
-
-  const handleShareCredential =
-    async () => {
-      if (
-        !publicProfileUrl ||
-        sharing
-      ) {
-        return;
-      }
-
-      setSharing(true);
-
-      const shareText =
-        `${professionalName} • ${specialty} • Credencial Profissional Digital FisioCareHub`;
-
-      try {
-        if (
-          typeof navigator !==
-            'undefined' &&
-          navigator.share
-        ) {
-          await navigator.share({
-            title:
-              'Credencial Profissional Digital FisioCareHub',
-            text: shareText,
-            url: publicProfileUrl,
-          });
-
-          return;
-        }
-
-        if (
-          navigator.clipboard
-            ?.writeText
-        ) {
-          await navigator.clipboard.writeText(
-            publicProfileUrl,
-          );
-
-          toast.success(
-            'Link da credencial copiado.',
-          );
-
-          return;
-        }
-
-        toast.info(
-          'Copie o link do perfil público para compartilhar a credencial.',
-        );
-      } catch (error) {
-        if (
-          (error as Error)
-            ?.name !==
-          'AbortError'
-        ) {
-          console.error(
-            'Erro ao compartilhar credencial:',
-            error,
-          );
-
-          toast.error(
-            'Não foi possível compartilhar a credencial agora.',
-          );
-        }
-      } finally {
-        setSharing(false);
-      }
-    };
-
-  const handleCopyLink =
-    async () => {
-      if (!publicProfileUrl) {
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(
-          publicProfileUrl,
-        );
-
-        toast.success(
-          'Link copiado.',
-        );
-      } catch {
-        toast.error(
-          'Não foi possível copiar o link.',
-        );
-      }
-    };
-
-  const handleDownloadCredential =
-    async () => {
-      if (
-        downloading ||
-        !exportRef.current
-      ) {
-        return;
-      }
-
-      setDownloading(true);
-
-      try {
-        if (
-          typeof document !==
-            'undefined' &&
-          'fonts' in document
-        ) {
-          try {
-            await document.fonts.ready;
-          } catch {}
-        }
-
-        let qrDataUrl = '';
-
-        if (publicProfileUrl) {
-          qrDataUrl =
-            await createQrDataUrl(
-              publicProfileUrl,
-            );
-        }
-
-        let exportAvatar =
-          avatarFallbackUrl;
-
-        if (
-          resolvedAvatarUrl
-        ) {
-          const converted =
-            await imageUrlToDataUrl(
-              resolvedAvatarUrl,
-            );
-
-          if (converted) {
-            exportAvatar =
-              converted;
-          }
-        }
-
-        const exportElement =
-          exportRef.current;
-
-        const avatarImage =
-          exportElement.querySelector(
-            '[data-export-avatar]',
-          ) as HTMLImageElement | null;
-
-        if (avatarImage) {
-          avatarImage.src =
-            exportAvatar;
-        }
-
-        const qrImage =
-          exportElement.querySelector(
-            '[data-export-qr]',
-          ) as HTMLImageElement | null;
-
-        if (
-          qrImage &&
-          qrDataUrl
-        ) {
-          qrImage.src =
-            qrDataUrl;
-        }
-
-        const images =
-          Array.from(
-            exportElement.querySelectorAll(
-              'img',
-            ),
-          );
-
-        await Promise.all(
-          images.map((image) =>
-            waitForImage(
-              image,
-              7000,
-            ),
-          ),
-        );
-
-        await wait(100);
-
-        void exportElement.offsetWidth;
-        void exportElement.offsetHeight;
-
-        await new Promise<void>(
-          (resolve) => {
-            requestAnimationFrame(
-              () => {
-                requestAnimationFrame(
-                  () => resolve(),
-                );
-              },
-            );
-          },
-        );
-
-        const canvas =
-          await html2canvas(
-            exportElement,
-            {
-              width: EXPORT_WIDTH,
-              height: EXPORT_HEIGHT,
-              scale: 1,
-              backgroundColor:
-                '#020617',
-              useCORS: false,
-              allowTaint: false,
-              logging: false,
-              imageTimeout: 15000,
-              foreignObjectRendering:
-                false,
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth:
-                EXPORT_WIDTH,
-              windowHeight:
-                EXPORT_HEIGHT,
-              removeContainer: true,
-            },
-          );
-
-        if (
-          !canvas ||
-          canvas.width !==
-            EXPORT_WIDTH ||
-          canvas.height !==
-            EXPORT_HEIGHT
-        ) {
-          throw new Error(
-            `Canvas inválido: ${canvas?.width}x${canvas?.height}`,
-          );
-        }
-
-        const blob =
-          await new Promise<Blob | null>(
-            (resolve) => {
-              canvas.toBlob(
-                resolve,
-                'image/png',
-                1,
-              );
-            },
-          );
-
-        if (!blob) {
-          throw new Error(
-            'Não foi possível criar o arquivo PNG.',
-          );
-        }
-
-        if (
-          blob.size < 5000
-        ) {
-          throw new Error(
-            `Arquivo PNG inválido ou vazio: ${blob.size} bytes`,
-          );
-        }
-
-        const fileName =
-          `credencial-fisiocarehub-${fileNameFromName(
-            professionalName,
-          )}.png`;
-
-        downloadFile(
-          blob,
-          fileName,
-        );
-
-        toast.success(
-          'Credencial baixada com sucesso.',
-        );
-      } catch (error) {
-        console.error(
-          'Erro ao exportar credencial:',
-          error,
-        );
-
-        toast.error(
-          'Não foi possível gerar a credencial. Verifique o console para detalhes.',
-        );
-      } finally {
-        setDownloading(false);
-      }
-    };
-
-  return (
-    <section
-      className={cn(
-        'relative mb-24 overflow-hidden rounded-[1.75rem] border border-sky-200/70 bg-white p-4 shadow-xl shadow-sky-100/70 dark:border-white/10 dark:bg-slate-900/50 dark:shadow-black/20 sm:rounded-[2.25rem] sm:p-5',
-        isCompact &&
-          'p-3 sm:p-4',
-        className,
-      )}
-    >
-      <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-sky-400/20 blur-3xl dark:bg-blue-500/20" />
-
-      <div className="absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-emerald-400/20 blur-3xl dark:bg-emerald-500/10" />
-
-      <div className="relative z-10 mb-4 space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300">
-              <Crown
-                size={13}
-                fill="currentColor"
-              />
-
-              Credencial premium
+      })
+        .then((url) => {
+          if (!cancelled) setInternalQr(url);
+        })
+        .catch(() => {});
+
+      return () => {
+        cancelled = true;
+      };
+    }, [publicProfileUrl, theme.qrDarkColor, qrDataUrl]);
+
+    const activeQr = qrDataUrl || internalQr;
+
+    return (
+      <div
+        ref={ref}
+        data-credential-card
+        className="relative aspect-[9/16] min-h-[580px] sm:min-h-[660px] w-full overflow-hidden rounded-[2.25rem] sm:rounded-[2.75rem] p-5 sm:p-7 flex flex-col justify-between select-none"
+        style={{
+          background: theme.cardBg,
+          borderColor: theme.cardBorder,
+          borderWidth: '2px',
+          borderStyle: 'solid',
+          boxShadow: theme.cardShadow,
+          color: theme.titleColor,
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* 3D Abstract Geometric Background Elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          {/* Top Right 3D Sphere */}
+          <svg
+            className="absolute -right-10 -top-10 w-48 h-48 sm:w-60 sm:h-60 opacity-90"
+            viewBox="0 0 200 200"
+            fill="none"
+          >
+            <defs>
+              <radialGradient id={`sphereTop_${theme.id}`} cx="38%" cy="32%" r="65%" fx="32%" fy="28%">
+                {theme.sphereTopStops.map((stop, idx) => (
+                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                ))}
+              </radialGradient>
+            </defs>
+            <circle cx="100" cy="100" r="70" fill={`url(#sphereTop_${theme.id})`} />
+          </svg>
+
+          {/* Left Side 3D Cone & Torus Ring */}
+          <svg
+            className="absolute -left-12 top-1/4 w-40 h-52 sm:w-52 sm:h-68 opacity-85"
+            viewBox="0 0 160 220"
+            fill="none"
+          >
+            <defs>
+              <linearGradient id={`coneLight_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
+                {theme.coneLightStops.map((stop, idx) => (
+                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                ))}
+              </linearGradient>
+              <linearGradient id={`coneShadow_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
+                {theme.coneShadowStops.map((stop, idx) => (
+                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                ))}
+              </linearGradient>
+            </defs>
+            <ellipse
+              cx="60"
+              cy="130"
+              rx="55"
+              ry="55"
+              stroke={theme.torusStroke}
+              strokeWidth="8"
+              fill="none"
+            />
+            <polygon points="85,30 20,170 85,185" fill={`url(#coneLight_${theme.id})`} />
+            <polygon points="85,30 85,185 140,160" fill={`url(#coneShadow_${theme.id})`} />
+          </svg>
+
+          {/* Bottom Right 3D Sphere & Prism */}
+          <svg
+            className="absolute -right-12 -bottom-12 w-48 h-52 sm:w-60 sm:h-64 opacity-85"
+            viewBox="0 0 200 200"
+            fill="none"
+          >
+            <defs>
+              <radialGradient id={`sphereBottom_${theme.id}`} cx="35%" cy="30%" r="70%" fx="30%" fy="25%">
+                {theme.sphereBottomStops.map((stop, idx) => (
+                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                ))}
+              </radialGradient>
+              <linearGradient id={`prismGrad_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
+                {theme.prismStops.map((stop, idx) => (
+                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                ))}
+              </linearGradient>
+            </defs>
+            <polygon points="110,40 190,140 100,180" fill={`url(#prismGrad_${theme.id})`} opacity="0.9" />
+            <circle cx="70" cy="120" r="56" fill={`url(#sphereBottom_${theme.id})`} />
+          </svg>
+
+          {/* Soft Ambient Light Glow */}
+          <div
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+            style={{ background: theme.ambientGlow }}
+          />
+        </div>
+
+        {/* Foreground Content */}
+        <div className="relative z-10 flex h-full flex-col justify-between">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.28em] sm:text-xs sm:tracking-[0.32em]"
+                style={{ color: theme.brandColor }}
+              >
+                FisioCareHub
+              </p>
+              <h3
+                className="mt-0.5 text-lg font-black leading-tight tracking-tight sm:text-2xl"
+                style={{ color: theme.titleColor }}
+              >
+                Credencial Profissional
+              </h3>
+              <p
+                className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] sm:text-[10px]"
+                style={{ color: theme.subtitleColor }}
+              >
+                Identificação digital
+              </p>
             </div>
 
-            {!isCompact && (
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400">
-                Carteira digital profissional para identificação, compartilhamento e validação do perfil.
+            {/* Verified Tag + Rosette Medal Seal */}
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <div
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-wider shadow-md backdrop-blur-sm sm:px-3.5 sm:py-1 sm:text-[10px]"
+                style={{
+                  background: theme.verifiedBg,
+                  borderColor: theme.verifiedBorder,
+                  borderWidth: '1.5px',
+                  borderStyle: 'solid',
+                  color: theme.verifiedText,
+                }}
+              >
+                <span>✓</span>
+                <span>{approved ? 'Verificado' : 'Verificado'}</span>
+              </div>
+
+              {/* Scalloped Rosette Seal Badge */}
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center -mr-0.5">
+                <svg viewBox="0 0 48 48" className="w-full h-full drop-shadow-md">
+                  <defs>
+                    <linearGradient id={`rosetteGrad_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
+                      {theme.rosetteStops.map((stop, idx) => (
+                        <stop key={idx} offset={stop.offset} stopColor={stop.color} />
+                      ))}
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M24 2 C26.2 2 28 4.2 29.5 5.5 C31.5 5.3 33.7 6.1 35 7.7 C36.1 9.2 36.1 11.4 36.8 13.1 C38.5 14.3 39.7 16.4 39.7 18.5 C39.7 20.3 38.8 22.1 39.5 23.9 C39.5 26.1 38.3 28.2 36.8 29.5 C36.1 31.2 36.1 33.4 34.8 34.9 C33.3 36.3 31.2 36.9 29.5 36.7 C28 38 26.2 40.2 24 40.2 C21.8 40.2 20 38 18.5 36.7 C16.8 36.9 14.7 36.3 13.2 34.9 C11.9 33.4 11.9 31.2 11.2 29.5 C9.7 28.2 8.5 26.1 8.5 23.9 C9.2 22.1 8.3 20.3 8.3 18.5 C8.3 16.4 9.5 14.3 11.2 13.1 C11.9 11.4 11.9 9.2 13 7.7 C14.3 6.1 16.5 5.3 18.5 5.5 C20 4.2 21.8 2 24 2 Z"
+                    fill={`url(#rosetteGrad_${theme.id})`}
+                    stroke="rgba(255,255,255,0.4)"
+                    strokeWidth="1.5"
+                  />
+                  <circle cx="24" cy="21" r="11" fill={theme.rosetteInner} opacity="0.4" />
+                  <path
+                    d="M19 21 L22.5 24.5 L29 17.5"
+                    stroke={theme.rosetteCheck}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Section: Avatar + Name + Specialization + CREFITO + QR evenly distributed */}
+          <div className="flex flex-1 flex-col items-center justify-evenly py-2 my-1">
+            {/* Photo Frame */}
+            <div
+              className="relative h-24 w-24 sm:h-32 sm:w-32 overflow-hidden rounded-[1.75rem] sm:rounded-[2.2rem]"
+              style={{
+                borderWidth: '2.5px',
+                borderStyle: 'solid',
+                borderColor: theme.avatarBorder,
+                background: theme.avatarBg,
+                boxShadow: theme.avatarShadow,
+              }}
+            >
+              {avatarSrc ? (
+                <img
+                  src={avatarSrc}
+                  alt={professionalName}
+                  crossOrigin="anonymous"
+                  className="h-full w-full object-cover object-center"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (img.src !== avatarFallbackSrc) {
+                      img.src = avatarFallbackSrc;
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-current opacity-75">
+                  <UserRound size={36} />
+                </div>
+              )}
+
+              {/* Verified Badge inside photo */}
+              <div
+                className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 rounded-full p-0.5 shadow-md flex items-center justify-center"
+                style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: theme.avatarCheckBorder,
+                  background: theme.avatarCheckBg,
+                  color: theme.avatarCheckColor,
+                }}
+              >
+                <CheckCircle2 size={12} className="sm:h-3.5 sm:w-3.5" />
+              </div>
+            </div>
+
+            {/* Title, Name, Specialization */}
+            <div className="w-full min-w-0 space-y-0.5 text-center px-2">
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.26em] sm:text-xs"
+                style={{ color: theme.roleColor }}
+              >
+                Fisioterapeuta
               </p>
-            )}
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={
-              handleShareCredential
-            }
-            disabled={
-              !publicProfileUrl ||
-              sharing
-            }
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-          >
-            {sharing ? (
-              <Sparkles size={15} />
-            ) : (
-              <Share2 size={15} />
-            )}
+              <h4
+                className="truncate text-lg font-black leading-tight tracking-tight sm:text-2xl"
+                style={{ color: theme.nameColor }}
+              >
+                {professionalName}
+              </h4>
 
-            Compartilhar
-          </button>
+              <p
+                className="mx-auto max-w-[95%] text-[9px] font-bold uppercase leading-tight tracking-[0.15em] sm:text-xs sm:tracking-[0.18em]"
+                style={{ color: theme.specialtyColor }}
+              >
+                {specialty}
+              </p>
+            </div>
 
-          <button
-            type="button"
-            onClick={
-              handleDownloadCredential
-            }
-            disabled={downloading}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Download size={15} />
+            {/* CREFITO Pill + Pro Badge */}
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex items-center justify-center rounded-full px-3.5 py-1 text-center text-[9px] font-black uppercase tracking-widest shadow-inner sm:px-5 sm:py-1.5 sm:text-xs"
+                style={{
+                  background: theme.crefitoBg,
+                  borderColor: theme.crefitoBorder,
+                  borderWidth: '1.5px',
+                  borderStyle: 'solid',
+                  color: theme.crefitoText,
+                }}
+              >
+                CREFITO: {crefito}
+              </span>
 
-            {downloading
-              ? 'Gerando...'
-              : 'Baixar imagem'}
-          </button>
+              {isPro && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full px-3 py-1 text-center text-[8px] font-black uppercase tracking-wider sm:text-[10px]"
+                  style={{
+                    background: theme.proBg,
+                    borderColor: theme.proBorder,
+                    borderWidth: '1.5px',
+                    borderStyle: 'solid',
+                    color: theme.proText,
+                  }}
+                >
+                  Pro
+                </span>
+              )}
+            </div>
 
-          <button
-            type="button"
-            onClick={
-              handleCopyLink
-            }
-            disabled={
-              !publicProfileUrl
-            }
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-          >
-            <Copy size={14} />
-
-            Copiar link
-          </button>
-        </div>
-      </div>
-
-      <div className="relative z-10 mx-auto w-full max-w-[520px]">
-        <div
-          ref={cardRef}
-          className="relative aspect-[5/8] w-full overflow-hidden rounded-[1.35rem] border border-white/60 bg-slate-950 p-3 text-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-950/5 dark:border-white/15 sm:rounded-[1.85rem] sm:p-5"
-          style={{
-            background:
-              'linear-gradient(135deg, #020617 0%, #07182f 48%, #083344 100%)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-70">
+            {/* QR Code Validation Box */}
             <div
-              className="absolute -right-12 -top-14 h-40 w-40 rounded-full blur-3xl"
+              className="flex w-full max-w-[260px] sm:max-w-[300px] flex-col items-center justify-center gap-1.5 rounded-[1.4rem] sm:rounded-[1.7rem] p-2.5 sm:p-3.5 backdrop-blur-md"
               style={{
-                background:
-                  'rgba(14, 165, 233, 0.30)',
+                background: theme.qrCardBg,
+                borderColor: theme.qrCardBorder,
+                borderWidth: '1.5px',
+                borderStyle: 'solid',
+                boxShadow: theme.qrCardShadow,
               }}
-            />
-
-            <div
-              className="absolute -bottom-16 -left-12 h-44 w-44 rounded-full blur-3xl"
-              style={{
-                background:
-                  'rgba(16, 185, 129, 0.20)',
-              }}
-            />
-
-            <div className="absolute left-1/2 top-0 h-full w-px rotate-12 bg-white/10" />
-
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/35 to-transparent" />
-          </div>
-
-          <div className="relative flex h-full flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[7px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[10px] sm:tracking-[0.34em]">
-                  FisioCareHub
-                </p>
-
-                <h3 className="mt-0.5 text-sm font-black leading-none tracking-tight sm:mt-1 sm:text-2xl">
-                  Credencial Profissional
-                </h3>
-
-                <p className="mt-1 text-[6px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[8px]">
-                  Identificação digital
-                </p>
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black" style={{ color: theme.qrHeaderCheck }}>
+                  ✓
+                </span>
+                <span
+                  className="text-[9px] font-black uppercase tracking-[0.2em] sm:text-[11px]"
+                  style={{ color: theme.qrHeaderText }}
+                >
+                  Validar credencial
+                </span>
               </div>
 
               <div
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[6px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[9px]',
-                  approved
-                    ? 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100'
-                    : 'border-amber-300/30 bg-amber-400/10 text-amber-100',
-                )}
+                className="flex h-[92px] w-[92px] sm:h-[120px] sm:w-[120px] items-center justify-center rounded-2xl p-2 shadow-lg"
+                style={{ background: theme.qrBoxBg }}
               >
-                <ShieldCheck size={11} />
-
-                <span>
-                  {approved
-                    ? 'Verificado'
-                    : 'Validação'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-1 flex-col items-center gap-2 sm:gap-3">
-              <div className="relative mt-1 h-[104px] w-[104px] overflow-hidden rounded-[1.4rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:h-[158px] sm:w-[158px] sm:rounded-[1.8rem] sm:border-4">
-                {avatarUrl ? (
+                {activeQr ? (
                   <img
-                    src={avatarUrl}
-                    alt={professionalName}
-                    className="h-full w-full object-cover object-center"
-                    onError={(event) => {
-                      const image =
-                        event.currentTarget;
-
-                      if (
-                        image.src !==
-                        avatarFallbackUrl
-                      ) {
-                        image.src =
-                          avatarFallbackUrl;
-                      }
-                    }}
+                    src={activeQr}
+                    alt="QR Code"
+                    className="h-full w-full rounded-xl object-contain"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sky-200">
-                    <UserRound size={38} />
+                  <div className="flex h-full w-full items-center justify-center text-center text-[8px] font-black uppercase text-slate-500">
+                    Gerando QR...
                   </div>
                 )}
-
-                <div className="absolute bottom-1 right-1 rounded-full border-2 border-slate-950 bg-emerald-500 p-0.5 text-white sm:bottom-2 sm:right-2 sm:p-1">
-                  <CheckCircle2
-                    size={10}
-                    className="sm:h-3 sm:w-3"
-                  />
-                </div>
               </div>
 
-              <div className="w-full min-w-0 space-y-1 text-center sm:space-y-1.5">
-                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
-                  Fisioterapeuta
-                </p>
+              <p
+                className="max-w-[240px] truncate text-center text-[8px] font-black tracking-wider sm:text-[9.5px] uppercase mt-0.5"
+                style={{ color: theme.qrIdColor }}
+              >
+                ID DA CREDENCIAL - {credentialCode}
+              </p>
 
-                <h4 className="truncate text-[18px] font-black leading-none tracking-tight sm:text-3xl">
-                  {professionalName}
-                </h4>
-
-                <p className="mx-auto max-w-[95%] text-[8px] font-black uppercase leading-tight tracking-[0.14em] text-sky-300 sm:text-xs sm:tracking-[0.18em]">
-                  {specialty}
-                </p>
-              </div>
-
-              <div className="flex w-full flex-col items-center gap-1">
-                <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-1.5 sm:text-[10px]">
-                  CREFITO: {crefito}
-                </span>
-
-                {isPro && (
-                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-0.5 text-center text-[6px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3 sm:py-1 sm:text-[8px]">
-                    Plano Pro
-                  </span>
-                )}
-              </div>
-
-              <div className="flex w-full max-w-[280px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-sky-300/15 bg-white/10 p-2.5 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.5rem] sm:p-3.5">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck
-                    size={11}
-                    className="text-emerald-300 sm:h-3.5 sm:w-3.5"
-                  />
-
-                  <span className="text-[7px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[9px]">
-                    Validar credencial
-                  </span>
-                </div>
-
-                <div className="flex h-[94px] w-[94px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[128px] sm:w-[128px] sm:rounded-2xl sm:p-2">
-                  {publicProfileUrl ? (
-                    <QrPreview
-                      value={
-                        publicProfileUrl
-                      }
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-center text-[8px] font-black uppercase text-slate-500">
-                      Perfil
-                      indisponível
-                    </div>
-                  )}
-                </div>
-
-                <p className="max-w-[220px] truncate text-center text-[6px] font-black tracking-wide text-slate-200 sm:text-[8px]">
-                  ID DA CREDENCIAL •{' '}
-                  {credentialCode}
-                </p>
-
-                <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[8px]">
-                  Escaneie para verificar este perfil
-                </p>
-              </div>
+              <p
+                className="text-center text-[7.5px] font-medium sm:text-[8.5px]"
+                style={{ color: theme.qrSubColor }}
+              >
+                Escanear para verificar este perfil
+              </p>
             </div>
+          </div>
 
-            <div className="flex flex-col gap-1 border-t border-white/10 pt-1.5 text-[6px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate">
-                  {serviceLabel}
-                </span>
-
-                <span className="shrink-0">
-                  Emissão {issuedAt}
-                </span>
-              </div>
-
-              <span className="truncate text-center text-slate-300">
+          {/* Bottom Footer Info Bar */}
+          <div
+            className="pt-2 text-[8px] font-medium sm:pt-3 sm:text-[9.5px]"
+            style={{
+              borderTopWidth: '1.5px',
+              borderTopStyle: 'solid',
+              borderTopColor: theme.footerBorder,
+            }}
+          >
+            <div className="flex items-center justify-between gap-1 px-1">
+              <span className="truncate text-left font-semibold max-w-[34%]" style={{ color: theme.footerTextColor }}>
+                {serviceLabel}
+              </span>
+              <span className="truncate text-center font-bold max-w-[34%]" style={{ color: theme.footerCenterColor }}>
                 {city}
+              </span>
+              <span className="truncate text-right font-semibold max-w-[32%]" style={{ color: theme.footerTextColor }}>
+                Emissão {issuedAt}
               </span>
             </div>
           </div>
         </div>
       </div>
+    );
+  },
+);
 
-      {!isCompact && (
-        <p className="relative z-10 mx-auto mt-3 max-w-[520px] text-[10px] font-semibold leading-relaxed text-slate-500 dark:text-slate-500">
-          Esta credencial identifica o perfil profissional dentro da plataforma e não substitui consulta oficial junto ao CREFITO.
-        </p>
-      )}
+CredentialCardInner.displayName = 'CredentialCardInner';
 
+// ==========================================
+// SHARE MODAL COMPONENT (MULTI-APP SHARING)
+// ==========================================
+
+interface ShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  publicProfileUrl: string;
+  professionalName: string;
+  specialty: string;
+  qrDataUrl: string;
+  onDownloadImage: () => void;
+  downloading: boolean;
+}
+
+function ShareModal({
+  isOpen,
+  onClose,
+  publicProfileUrl,
+  professionalName,
+  specialty,
+  qrDataUrl,
+  onDownloadImage,
+  downloading,
+}: ShareModalProps) {
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const shareText = `Confira a Credencial Digital Profissional de ${professionalName} (${specialty}) no FisioCareHub:`;
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${publicProfileUrl}`)}`;
+  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(publicProfileUrl)}&text=${encodeURIComponent(shareText)}`;
+  const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicProfileUrl)}`;
+  const emailUrl = `mailto:?subject=${encodeURIComponent(`Credencial Profissional • ${professionalName}`)}&body=${encodeURIComponent(`${shareText}\n\n${publicProfileUrl}`)}`;
+
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: `Credencial Profissional • ${professionalName}`,
+          text: shareText,
+          url: publicProfileUrl,
+        });
+        toast.success('Compartilhado com sucesso!');
+        onClose();
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.warn('Native share failed', err);
+          handleCopy();
+        }
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(publicProfileUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = publicProfileUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-99999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopied(true);
+      toast.success('Link copiado para a área de transferência!');
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      toast.error('Erro ao copiar link.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          left: '-10000px',
-          top: '0',
-          width: `${EXPORT_WIDTH}px`,
-          height: `${EXPORT_HEIGHT}px`,
-          overflow: 'hidden',
-          pointerEvents: 'none',
-          zIndex: -9999,
-        }}
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-2xl dark:border-white/10 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          ref={exportRef}
-          data-credential-export
-          style={{
-            position: 'relative',
-            width: `${EXPORT_WIDTH}px`,
-            height: `${EXPORT_HEIGHT}px`,
-            overflow: 'hidden',
-            boxSizing: 'border-box',
-            padding: '64px',
-            color: '#ffffff',
-            fontFamily:
-              'Arial, Helvetica, sans-serif',
-            background:
-              'linear-gradient(135deg, #020617 0%, #07182f 48%, #083344 100%)',
-          }}
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200 transition-colors"
         >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                right: '-100px',
-                top: '-100px',
-                width: '430px',
-                height: '430px',
-                borderRadius: '50%',
-                background:
-                  'rgba(14,165,233,0.25)',
-                filter:
-                  'blur(70px)',
-              }}
-            />
+          <X size={20} />
+        </button>
 
-            <div
-              style={{
-                position: 'absolute',
-                left: '-120px',
-                bottom: '-100px',
-                width: '500px',
-                height: '500px',
-                borderRadius: '50%',
-                background:
-                  'rgba(16,185,129,0.18)',
-                filter:
-                  'blur(80px)',
-              }}
-            />
+        {/* Title */}
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600 dark:bg-sky-400/10 dark:text-sky-400">
+            <Share2 size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-black tracking-tight sm:text-xl">
+              Compartilhar Credencial
+            </h3>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Envie sua identificação digital oficial para pacientes e parceiros.
+            </p>
+          </div>
+        </div>
 
-            <div
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: 0,
-                width: '2px',
-                height: '100%',
-                background:
-                  'rgba(255,255,255,0.07)',
-                transform:
-                  'rotate(12deg)',
-              }}
-            />
+        {/* Apps Grid */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {/* WhatsApp */}
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-50/60 p-3.5 text-center text-emerald-800 transition-all hover:bg-emerald-100/80 hover:scale-[1.02] dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
+                <MessageCircle size={20} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider">WhatsApp</span>
+            </a>
 
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: '50%',
-                background:
-                  'linear-gradient(to top, rgba(0,0,0,0.35), transparent)',
-              }}
-            />
+            {/* Native Share (Instagram, etc.) */}
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-sky-500/20 bg-sky-50/60 p-3.5 text-center text-sky-800 transition-all hover:bg-sky-100/80 hover:scale-[1.02] dark:border-sky-500/30 dark:bg-sky-950/30 dark:text-sky-300 dark:hover:bg-sky-950/50"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-500 text-white shadow-md shadow-sky-500/25">
+                <Smartphone size={20} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider">Outros Apps</span>
+            </button>
+
+            {/* Telegram */}
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-blue-500/20 bg-blue-50/60 p-3.5 text-center text-blue-800 transition-all hover:bg-blue-100/80 hover:scale-[1.02] dark:border-blue-500/30 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow-md shadow-blue-500/25">
+                <Send size={18} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider">Telegram</span>
+            </a>
+
+            {/* Email */}
+            <a
+              href={emailUrl}
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-indigo-500/20 bg-indigo-50/60 p-3.5 text-center text-indigo-800 transition-all hover:bg-indigo-100/80 hover:scale-[1.02] dark:border-indigo-500/30 dark:bg-indigo-950/30 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-white shadow-md shadow-indigo-500/25">
+                <Mail size={18} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider">E-mail</span>
+            </a>
           </div>
 
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 2,
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection:
-                'column',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent:
-                  'space-between',
-                alignItems:
-                  'flex-start',
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: '27px',
-                    fontWeight: 900,
-                    letterSpacing:
-                      '8px',
-                    color:
-                      '#7dd3fc',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  FisioCareHub
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '10px',
-                    fontSize: '54px',
-                    lineHeight: 1,
-                    fontWeight: 900,
-                    letterSpacing:
-                      '-2px',
-                  }}
-                >
-                  Credencial
-                  Profissional
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '16px',
-                    fontSize: '20px',
-                    fontWeight: 700,
-                    letterSpacing:
-                      '5px',
-                    color:
-                      '#94a3b8',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  Identificação digital
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems:
-                    'center',
-                  gap: '12px',
-                  padding:
-                    '14px 22px',
-                  borderRadius:
-                    '999px',
-                  border: approved
-                    ? '2px solid rgba(110,231,183,0.30)'
-                    : '2px solid rgba(252,211,77,0.30)',
-                  background:
-                    approved
-                      ? 'rgba(52,211,153,0.10)'
-                      : 'rgba(251,191,36,0.10)',
-                  color:
-                    approved
-                      ? '#d1fae5'
-                      : '#fef3c7',
-                  fontSize: '19px',
-                  fontWeight: 900,
-                  textTransform:
-                    'uppercase',
-                  letterSpacing:
-                    '2px',
-                }}
+          {/* Direct Link Copy Box */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Link de Acesso Público
+            </label>
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 dark:border-white/10 dark:bg-slate-800/80">
+              <input
+                type="text"
+                readOnly
+                value={publicProfileUrl}
+                className="w-full bg-transparent px-2 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 outline-none truncate"
+              />
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 shrink-0 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-black uppercase tracking-wider text-white transition-all hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
               >
-                <span
-                  style={{
-                    fontSize:
-                      '23px',
-                  }}
-                >
-                  ✓
-                </span>
-
-                {approved
-                  ? 'Verificado'
-                  : 'Validação'}
-              </div>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? 'Copiado' : 'Copiar'}
+              </button>
             </div>
+          </div>
 
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection:
-                  'column',
-                alignItems:
-                  'center',
-                paddingTop:
-                  '52px',
+          {/* Quick Actions Footer */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onDownloadImage();
               }}
+              disabled={downloading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-sky-500/20 hover:bg-sky-700 transition-all disabled:opacity-60"
             >
-              <div
-                style={{
-                  position:
-                    'relative',
-                  width: '400px',
-                  height: '400px',
-                  borderRadius:
-                    '76px',
-                  overflow:
-                    'hidden',
-                  border:
-                    '9px solid rgba(125,211,252,0.20)',
-                  background:
-                    'rgba(255,255,255,0.08)',
-                  boxShadow:
-                    '0 30px 80px rgba(0,0,0,0.35)',
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  data-export-avatar
-                  src={
-                    avatarFallbackUrl
-                  }
-                  alt=""
-                  style={{
-                    display:
-                      'block',
-                    width: '100%',
-                    height: '100%',
-                    objectFit:
-                      'cover',
-                    objectPosition:
-                      'center',
-                  }}
-                />
+              <Download size={15} />
+              {downloading ? 'Baixando...' : 'Baixar Imagem HD'}
+            </button>
 
-                <div
-                  style={{
-                    position:
-                      'absolute',
-                    right: '22px',
-                    bottom: '22px',
-                    width: '52px',
-                    height: '52px',
-                    display:
-                      'flex',
-                    alignItems:
-                      'center',
-                    justifyContent:
-                      'center',
-                    borderRadius:
-                      '50%',
-                    border:
-                      '4px solid #020617',
-                    background:
-                      '#10b981',
-                    color:
-                      '#ffffff',
-                    fontSize:
-                      '29px',
-                    fontWeight: 900,
-                  }}
-                >
-                  ✓
-                </div>
-              </div>
-
-              <div
-                style={{
-                  width: '100%',
-                  marginTop:
-                    '28px',
-                  textAlign:
-                    'center',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '22px',
-                    fontWeight: 900,
-                    letterSpacing:
-                      '7px',
-                    color:
-                      '#94a3b8',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  Fisioterapeuta
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '10px',
-                    fontSize: '60px',
-                    lineHeight:
-                      '1.02',
-                    fontWeight: 900,
-                    letterSpacing:
-                      '-2px',
-                    color:
-                      '#ffffff',
-                    wordBreak:
-                      'break-word',
-                  }}
-                >
-                  {professionalName}
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '14px',
-                    fontSize: '25px',
-                    lineHeight:
-                      '1.15',
-                    fontWeight: 900,
-                    letterSpacing:
-                      '4px',
-                    color:
-                      '#7dd3fc',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  {specialty}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display:
-                    'flex',
-                  flexDirection:
-                    'column',
-                  alignItems:
-                    'center',
-                  gap: '10px',
-                  marginTop:
-                    '22px',
-                }}
-              >
-                <div
-                  style={{
-                    padding:
-                      '13px 28px',
-                    borderRadius:
-                      '999px',
-                    border:
-                      '2px solid rgba(255,255,255,0.10)',
-                    background:
-                      'rgba(255,255,255,0.08)',
-                    fontSize: '21px',
-                    fontWeight: 900,
-                    letterSpacing:
-                      '3px',
-                    color:
-                      '#f8fafc',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  CREFITO: {crefito}
-                </div>
-
-                {isPro && (
-                  <div
-                    style={{
-                      padding:
-                        '8px 22px',
-                      borderRadius:
-                        '999px',
-                      border:
-                        '2px solid rgba(252,211,77,0.30)',
-                      background:
-                        'rgba(251,191,36,0.10)',
-                      color:
-                        '#fde68a',
-                      fontSize:
-                        '16px',
-                      fontWeight:
-                        900,
-                      letterSpacing:
-                        '3px',
-                      textTransform:
-                        'uppercase',
-                    }}
-                  >
-                    Plano Pro
-                  </div>
-                )}
-              </div>
-
-              <div
-                style={{
-                  width: '570px',
-                  marginTop:
-                    '24px',
-                  padding:
-                    '25px 28px 24px',
-                  borderRadius:
-                    '36px',
-                  border:
-                    '2px solid rgba(125,211,252,0.15)',
-                  background:
-                    'rgba(255,255,255,0.08)',
-                  display:
-                    'flex',
-                  flexDirection:
-                    'column',
-                  alignItems:
-                    'center',
-                  justifyContent:
-                    'center',
-                  boxSizing:
-                    'border-box',
-                }}
-              >
-                <div
-                  style={{
-                    display:
-                      'flex',
-                    alignItems:
-                      'center',
-                    gap: '11px',
-                    fontSize:
-                      '19px',
-                    fontWeight:
-                      900,
-                    letterSpacing:
-                      '4px',
-                    color:
-                      '#bae6fd',
-                    textTransform:
-                      'uppercase',
-                  }}
-                >
-                  <span
-                    style={{
-                      color:
-                        '#6ee7b7',
-                      fontSize:
-                        '22px',
-                    }}
-                  >
-                    ✓
-                  </span>
-
-                  Validar credencial
-                </div>
-
-                <div
-                  style={{
-                    width: '290px',
-                    height: '290px',
-                    marginTop:
-                      '15px',
-                    padding:
-                      '17px',
-                    borderRadius:
-                      '30px',
-                    background:
-                      '#ffffff',
-                    boxShadow:
-                      '0 20px 50px rgba(0,0,0,0.25)',
-                    boxSizing:
-                      'border-box',
-                  }}
-                >
-                  {publicProfileUrl ? (
-                    <img
-                      data-export-qr
-                      src=""
-                      alt=""
-                      style={{
-                        display:
-                          'block',
-                        width: '100%',
-                        height: '100%',
-                        objectFit:
-                          'contain',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width:
-                          '100%',
-                        height:
-                          '100%',
-                        display:
-                          'flex',
-                        alignItems:
-                          'center',
-                        justifyContent:
-                          'center',
-                        color:
-                          '#64748b',
-                        fontSize:
-                          '17px',
-                        fontWeight:
-                          900,
-                        textAlign:
-                          'center',
-                      }}
-                    >
-                      Perfil
-                      indisponível
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '13px',
-                    maxWidth:
-                      '470px',
-                    overflow:
-                      'hidden',
-                    whiteSpace:
-                      'nowrap',
-                    textOverflow:
-                      'ellipsis',
-                    textAlign:
-                      'center',
-                    fontSize:
-                      '15px',
-                    fontWeight:
-                      900,
-                    letterSpacing:
-                      '2px',
-                    color:
-                      '#e2e8f0',
-                  }}
-                >
-                  ID DA CREDENCIAL •{' '}
-                  {credentialCode}
-                </div>
-
-                <div
-                  style={{
-                    marginTop:
-                      '7px',
-                    fontSize:
-                      '15px',
-                    fontWeight:
-                      700,
-                    color:
-                      '#94a3b8',
-                  }}
-                >
-                  Escaneie para verificar este perfil
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                paddingTop:
-                  '18px',
-                borderTop:
-                  '2px solid rgba(255,255,255,0.10)',
-                color:
-                  '#94a3b8',
-                fontSize:
-                  '16px',
-                fontWeight:
-                  700,
-              }}
+            <a
+              href={publicProfileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-all"
             >
-              <div
-                style={{
-                  display:
-                    'flex',
-                  alignItems:
-                    'center',
-                  justifyContent:
-                    'space-between',
-                  gap: '20px',
-                }}
-              >
-                <span>
-                  {serviceLabel}
-                </span>
-
-                <span>
-                  Emissão {issuedAt}
-                </span>
-              </div>
-
-              <div
-                style={{
-                  marginTop:
-                    '7px',
-                  textAlign:
-                    'center',
-                  color:
-                    '#cbd5e1',
-                }}
-              >
-                {city}
-              </div>
-            </div>
+              <ExternalLink size={15} />
+              Visualizar Página
+            </a>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-function QrPreview({
-  value,
-}: {
-  value: string;
-}) {
-  const [src, setSrc] =
-    useState('');
+// ==========================================
+// MAIN COMPONENT EXPORT
+// ==========================================
 
+export interface ProfessionalCredentialCardProps {
+  profile: any;
+  isPro?: boolean;
+  appointmentsCount?: number;
+  ratingAverage?: number;
+  reviewsCount?: number;
+  variant?: 'full' | 'compact';
+  className?: string;
+}
+
+export default function ProfessionalCredentialCard({
+  profile,
+  isPro = false,
+  variant = 'full',
+  className,
+}: ProfessionalCredentialCardProps) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const [selectedThemeId, setSelectedThemeId] = useState<CredentialThemeId>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fisiocare_credential_theme') as CredentialThemeId;
+      if (saved && CREDENTIAL_THEMES[saved]) return saved;
+    }
+    return 'blue';
+  });
+
+  const [downloading, setDownloading] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string>('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  const currentTheme = CREDENTIAL_THEMES[selectedThemeId] || CREDENTIAL_THEMES.blue;
+
+  const profileId = profile?.id || profile?.user_id || '';
+
+  const publicProfileUrl = useMemo(() => {
+    if (!profileId || typeof window === 'undefined') return '';
+    return `${window.location.origin}/physio/${profileId}`;
+  }, [profileId]);
+
+  const professionalName = safeText(
+    profile?.nome_completo || profile?.nome || profile?.name,
+    'Fisioterapeuta',
+  );
+
+  const specialty = safeText(
+    profile?.especialidade || profile?.especialidade_principal || profile?.specialty,
+    'Fisioterapia',
+  );
+
+  const crefito = safeText(
+    profile?.crefito || profile?.registro_profissional || profile?.numero_crefito,
+    'Pendente',
+  );
+
+  const city = safeText(
+    profile?.localizacao || [profile?.cidade, profile?.estado].filter(Boolean).join(', '),
+    'Região não informada',
+  );
+
+  const avatarFallbackUrl = useMemo(
+    () => createAvatarFallback(professionalName, currentTheme),
+    [professionalName, currentTheme],
+  );
+
+  const resolvedAvatarUrl = resolveStorageUrl(profile?.avatar_url || '');
+
+  // Pre-convert avatar to Data URL so html2canvas never suffers from CORS or security issues
   useEffect(() => {
-    let cancelled = false;
+    let active = true;
+    if (resolvedAvatarUrl) {
+      imageUrlToDataUrl(resolvedAvatarUrl).then((dataUrl) => {
+        if (active && dataUrl) {
+          setAvatarDataUrl(dataUrl);
+        }
+      });
+    } else {
+      setAvatarDataUrl('');
+    }
+    return () => {
+      active = false;
+    };
+  }, [resolvedAvatarUrl]);
 
-    setSrc('');
-
-    QRCode.toDataURL(
-      value,
-      {
-        errorCorrectionLevel:
-          'H',
+  // Generate high-resolution QR code (500x500 px) for the export card
+  useEffect(() => {
+    let active = true;
+    if (publicProfileUrl) {
+      QRCode.toDataURL(publicProfileUrl, {
+        errorCorrectionLevel: 'H',
         margin: 2,
-        width: 240,
+        width: 500,
         color: {
-          dark: '#020617',
+          dark: currentTheme.qrDarkColor,
           light: '#ffffff',
         },
-      },
-    )
-      .then((dataUrl) => {
-        if (!cancelled) {
-          setSrc(dataUrl);
-        }
       })
-      .catch((error) => {
-        console.error(
-          'Erro ao gerar QR Code:',
-          error,
-        );
-      });
-
+        .then((url) => {
+          if (active) setQrDataUrl(url);
+        })
+        .catch(() => {});
+    }
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [value]);
+  }, [publicProfileUrl, currentTheme.qrDarkColor]);
 
-  if (!src) {
-    return (
-      <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-center text-[7px] font-black uppercase text-slate-500">
-        Gerando QR...
-      </div>
-    );
-  }
+  const finalAvatarSrc = avatarDataUrl || resolvedAvatarUrl || avatarFallbackUrl;
+
+  const approved =
+    String(profile?.status_aprovacao || '').toLowerCase() === 'aprovado' ||
+    Boolean(profile?.aprovado || profile?.verificado);
+
+  const issuedAt = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date());
+
+  const credentialCode = profileId
+    ? `FCH-${String(profileId).slice(0, 8).toUpperCase()}`
+    : 'FCH-PERFIL';
+
+  const serviceLabel = getServiceLabel(profile?.tipo_servico);
+  const isCompact = variant === 'compact';
+
+  const handleSelectTheme = (themeId: CredentialThemeId) => {
+    setSelectedThemeId(themeId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fisiocare_credential_theme', themeId);
+    }
+  };
+
+  // Capture the EXACT on-screen credential card with high-resolution scale
+  const generateCardBlob = async (): Promise<Blob> => {
+    const cardEl = cardRef.current;
+    if (!cardEl) {
+      throw new Error('Componente da credencial não encontrado.');
+    }
+
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      try {
+        await document.fonts.ready;
+      } catch {}
+    }
+
+    // Capture exact on-screen element with 3x crisp retina scaling
+    const canvas = await html2canvas(cardEl, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      imageTimeout: 15000,
+      scrollX: 0,
+      scrollY: 0,
+    });
+
+    if (!canvas) {
+      throw new Error('Não foi possível renderizar a credencial.');
+    }
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/png', 1.0);
+    });
+
+    if (!blob || blob.size < 5000) {
+      throw new Error('Arquivo de imagem gerado está incompleto.');
+    }
+
+    return blob;
+  };
+
+  const handleDownloadCredential = async () => {
+    if (downloading) return;
+    setDownloading(true);
+
+    try {
+      const blob = await generateCardBlob();
+      const fileName = `credencial-fisiocarehub-${fileNameFromName(professionalName)}.png`;
+      saveAs(blob, fileName);
+      toast.success('Credencial baixada com sucesso.');
+    } catch (error) {
+      console.error('Erro ao baixar credencial:', error);
+      toast.error('Não foi possível gerar o download da credencial.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleOpenShare = () => {
+    setIsShareModalOpen(true);
+  };
+
+  const handleCopyLink = async () => {
+    if (!publicProfileUrl) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(publicProfileUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = publicProfileUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-99999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      toast.success('Link da credencial copiado com sucesso!');
+    } catch {
+      toast.error('Não foi possível copiar o link.');
+    }
+  };
 
   return (
-    <img
-      src={src}
-      alt="QR Code para validação da credencial profissional"
-      className="h-full w-full rounded-lg object-contain sm:rounded-xl"
-    />
+    <section
+      className={cn(
+        'relative mb-24 overflow-hidden rounded-[2rem] border border-sky-200/70 bg-white p-4 shadow-xl shadow-sky-100/70 dark:border-white/10 dark:bg-slate-900/50 dark:shadow-black/20 sm:rounded-[2.5rem] sm:p-6',
+        isCompact && 'p-3 sm:p-4',
+        className,
+      )}
+    >
+      {/* Background Decorative Blurs */}
+      <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-sky-400/20 blur-3xl dark:bg-blue-500/20 pointer-events-none" />
+      <div className="absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-emerald-400/20 blur-3xl dark:bg-emerald-500/10 pointer-events-none" />
+
+      {/* Top Header & Actions */}
+      <div className="relative z-10 mb-6 space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300">
+              <Crown size={13} fill="currentColor" />
+              Credencial premium
+            </div>
+
+            {!isCompact && (
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400">
+                Carteira digital profissional para identificação, compartilhamento em aplicativos e validação do perfil.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Color Theme Selector ("Personalizar credencial") */}
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-white/10 dark:bg-slate-800/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Palette size={15} className="text-primary" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+              Personalizar credencial
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {(Object.keys(CREDENTIAL_THEMES) as CredentialThemeId[]).map((themeKey) => {
+              const themeItem = CREDENTIAL_THEMES[themeKey];
+              const isSelected = selectedThemeId === themeKey;
+
+              return (
+                <button
+                  key={themeKey}
+                  type="button"
+                  onClick={() => handleSelectTheme(themeKey)}
+                  className={cn(
+                    'flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer',
+                    isSelected
+                      ? 'border-primary ring-2 ring-primary/30 bg-white shadow-md dark:bg-slate-700/90 dark:border-primary'
+                      : 'border-slate-200 bg-white/70 hover:border-slate-300 hover:bg-white dark:border-white/5 dark:bg-slate-800/40 dark:hover:bg-slate-800',
+                  )}
+                >
+                  {/* Swatch Preview Pill */}
+                  <div
+                    className="w-5 h-5 rounded-full shrink-0 border border-black/10 shadow-sm"
+                    style={{ background: themeItem.previewBg }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
+                      {themeItem.name}
+                    </p>
+                    <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                      {themeItem.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action Buttons: Compartilhar, Baixar Imagem, Copiar Link */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={handleOpenShare}
+            disabled={!publicProfileUrl}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Share2 size={15} />
+            Compartilhar no WhatsApp / Apps
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadCredential}
+            disabled={downloading}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            <Download size={15} />
+            {downloading ? 'Gerando...' : 'Baixar credencial (HD)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            disabled={!publicProfileUrl}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition-all hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            <Copy size={14} />
+            Copiar link
+          </button>
+        </div>
+      </div>
+
+      {/* On-Screen Credential Component */}
+      <div className="relative z-10 mx-auto w-full max-w-[440px]">
+        <CredentialCardInner
+          ref={cardRef}
+          theme={currentTheme}
+          professionalName={professionalName}
+          specialty={specialty}
+          crefito={crefito}
+          city={city}
+          serviceLabel={serviceLabel}
+          issuedAt={issuedAt}
+          credentialCode={credentialCode}
+          approved={approved}
+          isPro={isPro}
+          publicProfileUrl={publicProfileUrl}
+          avatarSrc={finalAvatarSrc}
+          avatarFallbackSrc={avatarFallbackUrl}
+          qrDataUrl={qrDataUrl}
+        />
+      </div>
+
+      {/* Interactive Multi-App Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        publicProfileUrl={publicProfileUrl}
+        professionalName={professionalName}
+        specialty={specialty}
+        qrDataUrl={qrDataUrl}
+        onDownloadImage={handleDownloadCredential}
+        downloading={downloading}
+      />
+
+      {!isCompact && (
+        <p className="relative z-10 mx-auto mt-4 max-w-[520px] text-[10px] font-semibold leading-relaxed text-slate-500 dark:text-slate-500 text-center">
+          Esta credencial identifica o perfil profissional dentro da plataforma e não substitui consulta oficial junto ao CREFITO.
+        </p>
+      )}
+    </section>
   );
 }
