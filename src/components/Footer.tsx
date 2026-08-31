@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Mail, Shield, FileText, HelpCircle, LayoutDashboard, User } from 'lucide-react';
+import { Mail, Shield, FileText, HelpCircle, LayoutDashboard, User, Smartphone } from 'lucide-react';
 import Logo from './Logo';
+import { openInstallAppGuide, useIsAppInstalled } from './InstallAppGuide';
 
 const WhatsAppIcon = ({ className = '' }: { className?: string }) => (
   <svg
@@ -46,6 +47,7 @@ const InstagramIcon = ({ className = '' }: { className?: string }) => (
 
 export default function Footer() {
   const { t } = useTranslation();
+  const isInstalled = useIsAppInstalled();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -76,6 +78,18 @@ export default function Footer() {
                   {t('footer.account', 'Minha Conta')}
                 </Link>
               </li>
+              {!isInstalled && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={openInstallAppGuide}
+                    className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-blue-400 transition-colors group text-left cursor-pointer"
+                  >
+                    <Smartphone size={16} className="text-slate-500 group-hover:text-blue-400 shrink-0" />
+                    <span>{t('footer.install_app', '📱 Instale o FisioCareHub')}</span>
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 
