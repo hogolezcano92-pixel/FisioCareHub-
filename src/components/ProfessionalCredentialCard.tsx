@@ -640,17 +640,6 @@ export default function ProfessionalCredentialCard({
       }
     };
 
-  /**
-   * EXPORTAÇÃO
-   *
-   * A exportação NÃO captura mais
-   * diretamente a credencial
-   * responsiva exibida na tela.
-   *
-   * Existe uma versão própria,
-   * fixa em 1280 x 2048, abaixo
-   * da interface.
-   */
   const handleDownloadCredential =
     async () => {
       if (
@@ -675,14 +664,6 @@ export default function ProfessionalCredentialCard({
           }
         }
 
-        /**
-         * Gera um QR novo diretamente
-         * como Data URL.
-         *
-         * Assim a exportação não
-         * depende do estado visual
-         * do componente QrPreview.
-         */
         let qrDataUrl = '';
 
         if (publicProfileUrl) {
@@ -692,12 +673,6 @@ export default function ProfessionalCredentialCard({
             );
         }
 
-        /**
-         * Converte a foto para Data URL.
-         *
-         * Se o storage bloquear CORS,
-         * utiliza o avatar interno.
-         */
         let exportAvatar =
           avatarFallbackUrl;
 
@@ -715,10 +690,6 @@ export default function ProfessionalCredentialCard({
           }
         }
 
-        /**
-         * Atualiza os elementos
-         * da versão de exportação.
-         */
         const exportElement =
           exportRef.current;
 
@@ -745,9 +716,6 @@ export default function ProfessionalCredentialCard({
             qrDataUrl;
         }
 
-        /**
-         * Aguarda as imagens.
-         */
         const images =
           Array.from(
             exportElement.querySelectorAll(
@@ -764,10 +732,6 @@ export default function ProfessionalCredentialCard({
           ),
         );
 
-        /**
-         * Aguarda o navegador
-         * terminar o layout.
-         */
         await wait(100);
 
         void exportElement.offsetWidth;
@@ -785,46 +749,27 @@ export default function ProfessionalCredentialCard({
           },
         );
 
-        /**
-         * Captura DIRETAMENTE a
-         * versão fixa 1280x2048.
-         *
-         * Não existe segundo canvas
-         * nem redimensionamento posterior.
-         */
         const canvas =
           await html2canvas(
             exportElement,
             {
               width: EXPORT_WIDTH,
               height: EXPORT_HEIGHT,
-
               scale: 1,
-
               backgroundColor:
                 '#020617',
-
               useCORS: false,
-
               allowTaint: false,
-
               logging: false,
-
               imageTimeout: 15000,
-
               foreignObjectRendering:
                 false,
-
               scrollX: 0,
-
               scrollY: 0,
-
               windowWidth:
                 EXPORT_WIDTH,
-
               windowHeight:
                 EXPORT_HEIGHT,
-
               removeContainer: true,
             },
           );
@@ -841,9 +786,6 @@ export default function ProfessionalCredentialCard({
           );
         }
 
-        /**
-         * PNG final.
-         */
         const blob =
           await new Promise<Blob | null>(
             (resolve) => {
@@ -874,25 +816,11 @@ export default function ProfessionalCredentialCard({
             professionalName,
           )}.png`;
 
-        /**
-         * Download usando FileSaver,
-         * já disponível no projeto.
-         */
         downloadFile(
           blob,
           fileName,
         );
 
-        /**
-         * Também permite compartilhar
-         * o arquivo diretamente em
-         * navegadores que suportam
-         * Web Share com arquivos.
-         *
-         * Não executamos automaticamente
-         * para não abrir o menu de
-         * compartilhamento no desktop.
-         */
         toast.success(
           'Credencial baixada com sucesso.',
         );
@@ -1028,31 +956,32 @@ export default function ProfessionalCredentialCard({
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/35 to-transparent" />
           </div>
 
-          <div className="relative flex h-full flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
+          <div className="relative flex h-full flex-col gap-2.5">
+            {/* HEADER */}
+            <div className="flex items-start justify-between gap-2.5">
               <div className="min-w-0">
-                <p className="text-[7px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[10px] sm:tracking-[0.34em]">
+                <p className="text-[8px] font-black uppercase tracking-[0.28em] text-sky-300 sm:text-[11px] sm:tracking-[0.34em]">
                   FisioCareHub
                 </p>
 
-                <h3 className="mt-0.5 text-sm font-black leading-none tracking-tight sm:mt-1 sm:text-2xl">
+                <h3 className="mt-1 text-[15px] font-black leading-none tracking-tight sm:mt-1.5 sm:text-[25px]">
                   Credencial Profissional
                 </h3>
 
-                <p className="mt-1 text-[6px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[8px]">
+                <p className="mt-1.5 text-[7px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-[9px]">
                   Identificação digital
                 </p>
               </div>
 
               <div
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[6px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[9px]',
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[7px] font-black uppercase tracking-[0.08em] sm:gap-2 sm:px-3.5 sm:py-2 sm:text-[10px]',
                   approved
                     ? 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100'
                     : 'border-amber-300/30 bg-amber-400/10 text-amber-100',
                 )}
               >
-                <ShieldCheck size={11} />
+                <ShieldCheck size={12} />
 
                 <span>
                   {approved
@@ -1062,8 +991,10 @@ export default function ProfessionalCredentialCard({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col items-center gap-2 sm:gap-3">
-              <div className="relative mt-1 h-[104px] w-[104px] overflow-hidden rounded-[1.4rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:h-[158px] sm:w-[158px] sm:rounded-[1.8rem] sm:border-4">
+            {/* CORPO */}
+            <div className="flex min-h-0 flex-1 flex-col items-center gap-2.5 sm:gap-3.5">
+              {/* FOTO */}
+              <div className="relative mt-1.5 h-[124px] w-[124px] overflow-hidden rounded-[1.45rem] border-[3px] border-sky-300/20 bg-white/10 shadow-2xl sm:mt-2 sm:h-[174px] sm:w-[174px] sm:rounded-[1.9rem] sm:border-4">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -1084,57 +1015,60 @@ export default function ProfessionalCredentialCard({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sky-200">
-                    <UserRound size={38} />
+                    <UserRound size={42} />
                   </div>
                 )}
 
-                <div className="absolute bottom-1 right-1 rounded-full border-2 border-slate-950 bg-emerald-500 p-0.5 text-white sm:bottom-2 sm:right-2 sm:p-1">
+                <div className="absolute bottom-1.5 right-1.5 rounded-full border-2 border-slate-950 bg-emerald-500 p-0.5 text-white sm:bottom-2.5 sm:right-2.5 sm:p-1">
                   <CheckCircle2
-                    size={10}
-                    className="sm:h-3 sm:w-3"
+                    size={11}
+                    className="sm:h-3.5 sm:w-3.5"
                   />
                 </div>
               </div>
 
-              <div className="w-full min-w-0 space-y-1 text-center sm:space-y-1.5">
-                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
+              {/* NOME */}
+              <div className="w-full min-w-0 space-y-1.5 text-center sm:space-y-2">
+                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-[10px] sm:tracking-[0.24em]">
                   Fisioterapeuta
                 </p>
 
-                <h4 className="truncate text-[18px] font-black leading-none tracking-tight sm:text-3xl">
+                <h4 className="truncate px-1 text-[21px] font-black leading-none tracking-tight sm:text-[32px]">
                   {professionalName}
                 </h4>
 
-                <p className="mx-auto max-w-[95%] text-[8px] font-black uppercase leading-tight tracking-[0.14em] text-sky-300 sm:text-xs sm:tracking-[0.18em]">
+                <p className="mx-auto max-w-[95%] text-[9px] font-black uppercase leading-tight tracking-[0.14em] text-sky-300 sm:text-[13px] sm:tracking-[0.18em]">
                   {specialty}
                 </p>
               </div>
 
-              <div className="flex w-full flex-col items-center gap-1">
-                <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-center text-[7px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-1.5 sm:text-[10px]">
+              {/* REGISTRO */}
+              <div className="flex w-full flex-col items-center gap-1.5">
+                <span className="inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-3.5 py-1.5 text-center text-[8px] font-black uppercase tracking-widest text-white/90 sm:px-4 sm:py-2 sm:text-[10px]">
                   CREFITO: {crefito}
                 </span>
 
                 {isPro && (
-                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-0.5 text-center text-[6px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3 sm:py-1 sm:text-[8px]">
+                  <span className="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-400/10 px-3.5 py-1 text-center text-[7px] font-black uppercase tracking-[0.16em] text-amber-200 sm:px-3.5 sm:py-1.5 sm:text-[8px]">
                     Plano Pro
                   </span>
                 )}
               </div>
 
-              <div className="flex w-full max-w-[280px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-sky-300/15 bg-white/10 p-2.5 backdrop-blur-xl sm:max-w-[310px] sm:gap-2 sm:rounded-[1.5rem] sm:p-3.5">
+              {/* QR */}
+              <div className="flex w-full max-w-[300px] flex-col items-center justify-center gap-1.5 rounded-[1.2rem] border border-sky-300/15 bg-white/10 p-3 backdrop-blur-xl sm:max-w-[330px] sm:gap-2 sm:rounded-[1.55rem] sm:p-4">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck
-                    size={11}
-                    className="text-emerald-300 sm:h-3.5 sm:w-3.5"
+                    size={12}
+                    className="text-emerald-300 sm:h-4 sm:w-4"
                   />
 
-                  <span className="text-[7px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[9px]">
+                  <span className="text-[8px] font-black uppercase tracking-[0.18em] text-sky-200 sm:text-[10px]">
                     Validar credencial
                   </span>
                 </div>
 
-                <div className="flex h-[94px] w-[94px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[128px] sm:w-[128px] sm:rounded-2xl sm:p-2">
+                <div className="flex h-[112px] w-[112px] items-center justify-center rounded-xl bg-white p-1.5 shadow-xl sm:h-[140px] sm:w-[140px] sm:rounded-2xl sm:p-2">
                   {publicProfileUrl ? (
                     <QrPreview
                       value={
@@ -1149,18 +1083,19 @@ export default function ProfessionalCredentialCard({
                   )}
                 </div>
 
-                <p className="max-w-[220px] truncate text-center text-[6px] font-black tracking-wide text-slate-200 sm:text-[8px]">
+                <p className="max-w-[240px] truncate text-center text-[7px] font-black tracking-wide text-slate-200 sm:text-[8px]">
                   ID DA CREDENCIAL •{' '}
                   {credentialCode}
                 </p>
 
-                <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[8px]">
+                <p className="text-center text-[7px] font-bold text-slate-400 sm:text-[9px]">
                   Escaneie para verificar este perfil
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 border-t border-white/10 pt-1.5 text-[6px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
+            {/* FOOTER */}
+            <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2 text-[7px] font-bold text-slate-400 sm:pt-3 sm:text-[9px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">
                   {serviceLabel}
@@ -1187,11 +1122,9 @@ export default function ProfessionalCredentialCard({
 
       {/* =====================================================
           ÁREA EXCLUSIVA DE EXPORTAÇÃO
-          
-          Fica fora da área visual da aplicação, mas NÃO usa
-          display:none, visibility:hidden ou opacity:0.
-          
-          É uma credencial FIXA de 1280 x 2048.
+
+          Mantida separada da credencial visual.
+          NÃO foi alterada neste ajuste.
           ===================================================== */}
       <div
         aria-hidden="true"
