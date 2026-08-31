@@ -191,10 +191,74 @@ const fileNameFromName = (
   return normalized || 'profissional';
 };
 
-const downloadBlobUrl = (
-  url: string,
+const wait = (
+  milliseconds: number,
+) =>
+  new Promise<void>((resolve) => {
+    window.setTimeout(
+      resolve,
+      milliseconds,
+    );
+  });
+
+const waitForImage = (
+  image: HTMLImageElement,
+  timeout = 5000,
+) =>
+  new Promise<void>((resolve) => {
+    if (
+      image.complete &&
+      image.naturalWidth > 0
+    ) {
+      resolve();
+      return;
+    }
+
+    let finished = false;
+
+    const finish = () => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      image.removeEventListener(
+        'load',
+        finish,
+      );
+
+      image.removeEventListener(
+        'error',
+        finish,
+      );
+
+      resolve();
+    };
+
+    image.addEventListener(
+      'load',
+      finish,
+    );
+
+    image.addEventListener(
+      'error',
+      finish,
+    );
+
+    window.setTimeout(
+      finish,
+      timeout,
+    );
+  });
+
+const downloadBlob = (
+  blob: Blob,
   fileName: string,
 ) => {
+  const url =
+    URL.createObjectURL(blob);
+
   const link =
     document.createElement('a');
 
@@ -202,19 +266,27 @@ const downloadBlobUrl = (
   link.download = fileName;
   link.rel = 'noopener';
 
+  link.style.position = 'fixed';
+  link.style.left = '-9999px';
+  link.style.top = '0';
+  link.style.opacity = '0';
+
   document.body.appendChild(link);
-  link.click();
-  link.remove();
+
+  try {
+    link.click();
+  } finally {
+    link.remove();
+
+    window.setTimeout(
+      () => {
+        URL.revokeObjectURL(url);
+      },
+      2000,
+    );
+  }
 };
 
-/**
- * Converte uma imagem acessível para
- * Data URL.
- *
- * Se a imagem não permitir CORS,
- * retorna null em vez de quebrar
- * toda a exportação.
- */
 const imageUrlToDataUrl = async (
   url: string,
 ): Promise<string | null> => {
@@ -230,14 +302,12 @@ const imageUrlToDataUrl = async (
   }
 
   try {
-    const response = await fetch(
-      url,
-      {
+    const response =
+      await fetch(url, {
         mode: 'cors',
         credentials: 'omit',
-        cache: 'force-cache',
-      },
-    );
+        cache: 'no-cache',
+      });
 
     if (!response.ok) {
       return null;
@@ -246,31 +316,35 @@ const imageUrlToDataUrl = async (
     const blob =
       await response.blob();
 
-    if (!blob.type.startsWith('image/')) {
+    if (
+      !blob.type.startsWith(
+        'image/',
+      )
+    ) {
       return null;
     }
 
-    return await new Promise<string | null>(
-      (resolve) => {
-        const reader =
-          new FileReader();
+    return await new Promise<
+      string | null
+    >((resolve) => {
+      const reader =
+        new FileReader();
 
-        reader.onload = () => {
-          resolve(
-            typeof reader.result ===
-              'string'
-              ? reader.result
-              : null,
-          );
-        };
+      reader.onload = () => {
+        resolve(
+          typeof reader.result ===
+            'string'
+            ? reader.result
+            : null,
+        );
+      };
 
-        reader.onerror = () => {
-          resolve(null);
-        };
+      reader.onerror = () => {
+        resolve(null);
+      };
 
-        reader.readAsDataURL(blob);
-      },
-    );
+      reader.readAsDataURL(blob);
+    });
   } catch (error) {
     console.warn(
       'Não foi possível converter imagem externa para Data URL:',
@@ -301,7 +375,9 @@ export default function ProfessionalCredentialCard({
   className,
 }: ProfessionalCredentialCardProps) {
   const cardRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null,
+    );
 
   const [downloading, setDownloading] =
     useState(false);
@@ -318,7 +394,8 @@ export default function ProfessionalCredentialCard({
     useMemo(() => {
       if (
         !profileId ||
-        typeof window === 'undefined'
+        typeof window ===
+          'undefined'
       ) {
         return '';
       }
@@ -386,7 +463,8 @@ export default function ProfessionalCredentialCard({
 
   const approved =
     String(
-      profile?.status_aprovacao || '',
+      profile?.status_aprovacao ||
+        '',
     ).toLowerCase() ===
       'aprovado' ||
     Boolean(
@@ -509,25 +587,6 @@ export default function ProfessionalCredentialCard({
       }
     };
 
-  /**
-   * EXPORTAÇÃO DA CREDENCIAL
-   *
-   * A exportação usa um clone da credencial.
-   *
-   * Isso é importante porque:
-   *
-   * 1. Não altera a credencial que está
-   *    aparecendo na tela.
-   *
-   * 2. Permite tratar imagens externas
-   *    individualmente.
-   *
-   * 3. Evita que uma imagem com CORS
-   *    impeça a criação do PNG.
-   *
-   * 4. Mantém o tamanho final em
-   *    1280 x 2048 pixels.
-   */
   const handleDownloadCredential =
     async () => {
       if (
@@ -546,24 +605,22 @@ export default function ProfessionalCredentialCard({
         const sourceElement =
           cardRef.current;
 
-        /**
-         * Verifica se a credencial
-         * realmente está renderizada.
-         */
         const rect =
           sourceElement.getBoundingClientRect();
 
         if (
-          !rect.width ||
-          !rect.height
+          rect.width <= 0 ||
+          rect.height <= 0
         ) {
           throw new Error(
-            'Não foi possível determinar o tamanho da credencial.',
+            'A credencial não possui dimensões válidas.',
           );
         }
 
         /**
-         * Aguarda as fontes.
+         * Garante que as fontes
+         * estejam carregadas antes
+         * da captura.
          */
         if (
           typeof document !==
@@ -573,12 +630,19 @@ export default function ProfessionalCredentialCard({
           try {
             await document.fonts.ready;
           } catch {
-            // Continua normalmente.
+            // Continua mesmo se o navegador
+            // não conseguir informar o estado.
           }
         }
 
         /**
-         * Aguarda imagens existentes.
+         * Aguarda o layout estabilizar.
+         */
+        await wait(100);
+
+        /**
+         * Verifica as imagens
+         * atualmente renderizadas.
          */
         const sourceImages =
           Array.from(
@@ -589,100 +653,74 @@ export default function ProfessionalCredentialCard({
 
         await Promise.all(
           sourceImages.map(
-            async (image) => {
-              if (
-                image.complete
-              ) {
-                return;
-              }
-
-              await new Promise<void>(
-                (resolve) => {
-                  const finish =
-                    () => {
-                      image.removeEventListener(
-                        'load',
-                        finish,
-                      );
-
-                      image.removeEventListener(
-                        'error',
-                        finish,
-                      );
-
-                      resolve();
-                    };
-
-                  image.addEventListener(
-                    'load',
-                    finish,
-                  );
-
-                  image.addEventListener(
-                    'error',
-                    finish,
-                  );
-
-                  setTimeout(
-                    finish,
-                    5000,
-                  );
-                },
-              );
-            },
+            (image) =>
+              waitForImage(
+                image,
+                5000,
+              ),
           ),
         );
 
         /**
-         * Cria clone da credencial.
+         * Cria um clone isolado.
          */
         const clone =
           sourceElement.cloneNode(
             true,
           ) as HTMLDivElement;
 
-        /**
-         * Remove referência ao React.
-         */
         clone.removeAttribute('id');
 
         /**
-         * Container temporário.
+         * Container fora da tela.
+         *
+         * Importante:
+         * não usamos display:none,
+         * visibility:hidden ou
+         * transform:scale().
+         *
+         * Isso evita que o html2canvas
+         * interprete a credencial
+         * como elemento invisível.
          */
         temporaryContainer =
           document.createElement(
             'div',
           );
 
-        temporaryContainer.style.position =
-          'fixed';
+        Object.assign(
+          temporaryContainer.style,
+          {
+            position: 'fixed',
+            left: '0',
+            top: '0',
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            margin: '0',
+            padding: '0',
+            overflow: 'hidden',
+            opacity: '0',
+            pointerEvents: 'none',
+            zIndex: '-10000',
+            background:
+              'transparent',
+          },
+        );
 
-        temporaryContainer.style.left =
-          '-100000px';
-
-        temporaryContainer.style.top =
-          '0';
-
-        temporaryContainer.style.width =
-          `${rect.width}px`;
-
-        temporaryContainer.style.height =
-          `${rect.height}px`;
-
-        temporaryContainer.style.margin =
-          '0';
-
-        temporaryContainer.style.padding =
-          '0';
-
-        temporaryContainer.style.background =
-          'transparent';
-
-        temporaryContainer.style.pointerEvents =
-          'none';
-
-        temporaryContainer.style.zIndex =
-          '-9999';
+        Object.assign(
+          clone.style,
+          {
+            position: 'relative',
+            left: '0',
+            top: '0',
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            maxWidth: 'none',
+            maxHeight: 'none',
+            margin: '0',
+            transform: 'none',
+          },
+        );
 
         temporaryContainer.appendChild(
           clone,
@@ -693,8 +731,11 @@ export default function ProfessionalCredentialCard({
         );
 
         /**
-         * Trata todas as imagens
-         * existentes dentro do clone.
+         * Converte as imagens do clone
+         * para Data URLs.
+         *
+         * Isso evita problemas de CORS
+         * durante a captura.
          */
         const cloneImages =
           Array.from(
@@ -711,10 +752,6 @@ export default function ProfessionalCredentialCard({
                   'src',
                 ) || '';
 
-              /**
-               * Data URLs já são seguras
-               * para o html2canvas.
-               */
               if (
                 originalSrc.startsWith(
                   'data:',
@@ -727,10 +764,6 @@ export default function ProfessionalCredentialCard({
                 return;
               }
 
-              /**
-               * Tenta transformar a
-               * imagem externa em Data URL.
-               */
               const dataUrl =
                 await imageUrlToDataUrl(
                   originalSrc,
@@ -741,37 +774,29 @@ export default function ProfessionalCredentialCard({
                   'src',
                   dataUrl,
                 );
-
-                image.removeAttribute(
-                  'crossorigin',
+              } else {
+                image.setAttribute(
+                  'src',
+                  avatarFallbackUrl,
                 );
-
-                return;
               }
-
-              /**
-               * Se a imagem externa
-               * não permitir CORS,
-               * usamos o avatar SVG
-               * interno como fallback.
-               */
-              image.setAttribute(
-                'src',
-                avatarFallbackUrl,
-              );
 
               image.removeAttribute(
                 'crossorigin',
+              );
+
+              image.removeAttribute(
+                'crossOrigin',
               );
             },
           ),
         );
 
         /**
-         * Garante que as imagens
-         * do clone foram processadas.
+         * Aguarda as imagens
+         * depois da substituição.
          */
-        const finalImages =
+        const processedImages =
           Array.from(
             clone.querySelectorAll(
               'img',
@@ -779,93 +804,64 @@ export default function ProfessionalCredentialCard({
           );
 
         await Promise.all(
-          finalImages.map(
+          processedImages.map(
             (image) =>
-              new Promise<void>(
-                (resolve) => {
-                  if (
-                    image.complete
-                  ) {
-                    resolve();
-                    return;
-                  }
-
-                  const finish =
-                    () => {
-                      image.removeEventListener(
-                        'load',
-                        finish,
-                      );
-
-                      image.removeEventListener(
-                        'error',
-                        finish,
-                      );
-
-                      resolve();
-                    };
-
-                  image.addEventListener(
-                    'load',
-                    finish,
-                  );
-
-                  image.addEventListener(
-                    'error',
-                    finish,
-                  );
-
-                  setTimeout(
-                    finish,
-                    3000,
-                  );
-                },
+              waitForImage(
+                image,
+                5000,
               ),
           ),
         );
 
         /**
-         * Força o clone a permanecer
-         * exatamente no tamanho visual
-         * original.
+         * O QR Code é um Data URL,
+         * mas garantimos que ele tenha
+         * terminado de carregar.
          */
-        clone.style.width =
-          `${rect.width}px`;
-
-        clone.style.height =
-          `${rect.height}px`;
-
-        clone.style.maxWidth =
-          'none';
-
-        clone.style.maxHeight =
-          'none';
-
-        clone.style.transform =
-          'none';
-
-        clone.style.margin =
-          '0';
+        await wait(100);
 
         /**
-         * Pequeno tempo para o navegador
-         * recalcular layout e imagens.
+         * Força o navegador a calcular
+         * o layout do clone.
          */
+        void clone.offsetWidth;
+        void clone.offsetHeight;
+
         await new Promise<void>(
-          (resolve) =>
+          (resolve) => {
             requestAnimationFrame(
-              () =>
+              () => {
                 requestAnimationFrame(
                   () => resolve(),
-                ),
-            ),
+                );
+              },
+            );
+          },
         );
 
         /**
-         * Captura o CLONE.
-         *
-         * O elemento original não é
-         * alterado.
+         * Escala calculada para manter
+         * boa qualidade sem estourar
+         * a memória do navegador.
+         */
+        const targetWidth =
+          1280;
+
+        const calculatedScale =
+          targetWidth /
+          rect.width;
+
+        const captureScale =
+          Math.min(
+            3,
+            Math.max(
+              2,
+              calculatedScale,
+            ),
+          );
+
+        /**
+         * Captura da credencial.
          */
         const capturedCanvas =
           await html2canvas(
@@ -874,14 +870,7 @@ export default function ProfessionalCredentialCard({
               backgroundColor:
                 null,
 
-              scale: Math.min(
-                4,
-                Math.max(
-                  2,
-                  1280 /
-                    rect.width,
-                ),
-              ),
+              scale: captureScale,
 
               useCORS: true,
 
@@ -894,21 +883,33 @@ export default function ProfessionalCredentialCard({
               foreignObjectRendering:
                 false,
 
-              width: rect.width,
+              width: Math.ceil(
+                rect.width,
+              ),
 
-              height: rect.height,
+              height: Math.ceil(
+                rect.height,
+              ),
+
+              windowWidth:
+                Math.ceil(
+                  rect.width,
+                ),
+
+              windowHeight:
+                Math.ceil(
+                  rect.height,
+                ),
 
               scrollX: 0,
 
               scrollY: 0,
 
+              removeContainer: true,
+
               onclone: (
                 clonedDocument,
               ) => {
-                /**
-                 * Remove qualquer
-                 * crossorigin restante.
-                 */
                 const clonedImages =
                   clonedDocument.querySelectorAll(
                     'img',
@@ -919,6 +920,10 @@ export default function ProfessionalCredentialCard({
                     image.removeAttribute(
                       'crossorigin',
                     );
+
+                    image.removeAttribute(
+                      'crossOrigin',
+                    );
                   },
                 );
               },
@@ -927,16 +932,17 @@ export default function ProfessionalCredentialCard({
 
         if (
           !capturedCanvas ||
-          !capturedCanvas.width ||
-          !capturedCanvas.height
+          capturedCanvas.width <= 0 ||
+          capturedCanvas.height <= 0
         ) {
           throw new Error(
-            'A captura da credencial retornou um canvas vazio.',
+            'O navegador retornou uma captura vazia.',
           );
         }
 
         /**
-         * Dimensões finais.
+         * Canvas final exatamente
+         * em 1280 x 2048.
          */
         const outputWidth =
           1280;
@@ -962,7 +968,7 @@ export default function ProfessionalCredentialCard({
 
         if (!context) {
           throw new Error(
-            'Canvas indisponível.',
+            'Não foi possível criar o contexto do canvas.',
           );
         }
 
@@ -972,12 +978,6 @@ export default function ProfessionalCredentialCard({
         context.imageSmoothingQuality =
           'high';
 
-        /**
-         * Fundo transparente.
-         *
-         * A própria credencial já
-         * possui o fundo escuro.
-         */
         context.clearRect(
           0,
           0,
@@ -986,19 +986,63 @@ export default function ProfessionalCredentialCard({
         );
 
         /**
-         * Mantém exatamente a proporção
+         * A credencial possui proporção
          * 5:8.
+         *
+         * Em vez de simplesmente esticar,
+         * calculamos a proporção para
+         * preservar exatamente o conteúdo.
          */
+        const sourceRatio =
+          capturedCanvas.width /
+          capturedCanvas.height;
+
+        const targetRatio =
+          outputWidth /
+          outputHeight;
+
+        let drawWidth =
+          outputWidth;
+
+        let drawHeight =
+          outputHeight;
+
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (
+          sourceRatio >
+          targetRatio
+        ) {
+          drawHeight =
+            outputWidth /
+            sourceRatio;
+
+          offsetY =
+            (outputHeight -
+              drawHeight) /
+            2;
+        } else {
+          drawWidth =
+            outputHeight *
+            sourceRatio;
+
+          offsetX =
+            (outputWidth -
+              drawWidth) /
+            2;
+        }
+
         context.drawImage(
           capturedCanvas,
           0,
           0,
           capturedCanvas.width,
           capturedCanvas.height,
-          0,
-          0,
-          outputWidth,
-          outputHeight,
+          offsetX,
+          offsetY,
+          drawWidth,
+          drawHeight,
         );
 
         /**
@@ -1017,13 +1061,13 @@ export default function ProfessionalCredentialCard({
 
         if (!blob) {
           throw new Error(
-            'Não foi possível criar o arquivo PNG.',
+            'O navegador não conseguiu criar o PNG.',
           );
         }
 
         if (blob.size < 1000) {
           throw new Error(
-            'O arquivo PNG gerado está vazio ou inválido.',
+            'O PNG gerado possui tamanho inválido.',
           );
         }
 
@@ -1033,28 +1077,15 @@ export default function ProfessionalCredentialCard({
           )}.png`;
 
         /**
-         * Download.
+         * Faz o download.
+         *
+         * O Blob URL é criado somente
+         * depois de todo o processamento.
          */
-        const pngUrl =
-          URL.createObjectURL(
-            blob,
-          );
-
-        try {
-          downloadBlobUrl(
-            pngUrl,
-            fileName,
-          );
-        } finally {
-          setTimeout(
-            () => {
-              URL.revokeObjectURL(
-                pngUrl,
-              );
-            },
-            1500,
-          );
-        }
+        downloadBlob(
+          blob,
+          fileName,
+        );
 
         toast.success(
           'Credencial baixada com sucesso.',
@@ -1066,12 +1097,9 @@ export default function ProfessionalCredentialCard({
         );
 
         toast.error(
-          'Não foi possível baixar a credencial agora. Tente novamente em alguns segundos.',
+          'Não foi possível baixar a credencial agora. Tente novamente.',
         );
       } finally {
-        /**
-         * Remove o clone temporário.
-         */
         if (
           temporaryContainer &&
           temporaryContainer.parentNode
@@ -1249,7 +1277,6 @@ export default function ProfessionalCredentialCard({
                     data-fallback-src={
                       avatarFallbackUrl
                     }
-                    crossOrigin="anonymous"
                     className="h-full w-full object-cover object-center"
                     onError={(event) => {
                       const image =
@@ -1384,22 +1411,26 @@ function QrPreview({
 }: {
   value: string;
 }) {
-  const [src, setSrc] = useState('');
+  const [src, setSrc] =
+    useState('');
 
   useEffect(() => {
     let cancelled = false;
 
     setSrc('');
 
-    QRCode.toDataURL(value, {
-      errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 240,
-      color: {
-        dark: '#020617',
-        light: '#ffffff',
+    QRCode.toDataURL(
+      value,
+      {
+        errorCorrectionLevel: 'H',
+        margin: 2,
+        width: 240,
+        color: {
+          dark: '#020617',
+          light: '#ffffff',
+        },
       },
-    })
+    )
       .then((dataUrl) => {
         if (!cancelled) {
           setSrc(dataUrl);
