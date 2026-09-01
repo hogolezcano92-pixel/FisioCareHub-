@@ -64,11 +64,25 @@ function normalizeSupabaseUrl(value: string): string {
   return raw;
 }
 
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 function getSupabaseAdmin(): any {
   if (!supabaseAdminInstance) {
-    const url = normalizeSupabaseUrl(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '');
+    // Algumas instalações antigas salvaram por engano uma chave no campo
+    // SUPABASE_URL. Não deixamos esse valor inválido esconder uma
+    // VITE_SUPABASE_URL correta.
+    const url = [process.env.SUPABASE_URL, process.env.VITE_SUPABASE_URL]
+      .map((value) => normalizeSupabaseUrl(value || ''))
+      .find(isValidHttpUrl) || '';
     const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-    if (!url) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL não configurada na Vercel.');
+    if (!url) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL não contém uma URL HTTP(S) válida na Vercel.');
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada na Vercel.');
     supabaseAdminInstance = createClient<any>(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -396,14 +410,16 @@ async function hasUsedStripeTrial(customerId: string): Promise<boolean> {
 
 async function findExistingLiveSubscription(customerId: string): Promise<any | null> {
   const subscriptions = await getStripe().subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
-  return subscriptions.data.find((sub: any) =>
-    ['trialing', 'active', 'past_due', 'incomplete', 'unpaid', 'paused'].includes(sub.status)
-  ) || null;
+  return subscriptions.data
+    .filter((sub: any) => ['trialing', 'active', 'past_due', 'incomplete', 'unpaid', 'paused'].includes(sub.status))
+    .sort((a: any, b: any) => Number(b.created || 0) - Number(a.created || 0))[0] || null;
 }
 
 async function findExistingAccessSubscription(customerId: string): Promise<any | null> {
   const subscriptions = await getStripe().subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
-  return subscriptions.data.find((sub: any) => ['trialing', 'active'].includes(sub.status)) || null;
+  return subscriptions.data
+    .filter((sub: any) => ['trialing', 'active'].includes(sub.status))
+    .sort((a: any, b: any) => Number(b.created || 0) - Number(a.created || 0))[0] || null;
 }
 
 function getPeriodEndUnix(subscription: any): number | null {
@@ -621,7 +637,10 @@ async function updatePaymentMethod(req: VercelRequest, res: VercelResponse, body
     last_stripe_sync: new Date().toISOString(),
   };
   await bestEffortProfileUpdate(userId, payload);
-  const { error } = await supabase.from('assinaturas').update(payload).eq('user_id', userId);
+  const subscriptionUpdate = supabase.from('assinaturas').update(payload);
+  const { error } = profile?.stripe_subscription_id
+    ? await subscriptionUpdate.eq('stripe_subscription_id', profile.stripe_subscription_id)
+    : await subscriptionUpdate.eq('user_id', userId);
   if (error) console.warn('[Stripe Gateway] assinatura não sincronizada ao atualizar cartão:', error.message);
   return res.status(200).json({ success: true, cardBrand: card?.brand || null, cardLast4: card?.last4 || null });
 }
@@ -641,15 +660,34 @@ async function changePlan(req: VercelRequest, res: VercelResponse, body: any) {
 
   const priceId = await getOrCreateStripePrice(newPlanKey);
   const planType = newPlanKey.startsWith('basic') ? 'basic' : 'pro';
-  await stripe.subscriptions.update(profile.stripe_subscription_id, {
+  const updatedSubscription: any = await stripe.subscriptions.update(profile.stripe_subscription_id, {
     items: [{ id: itemId, price: priceId }],
     proration_behavior: subscription.status === 'trialing' ? 'none' : 'always_invoice',
     metadata: { ...subscription.metadata, plan_key: newPlanKey, plan: planType },
   });
-  await bestEffortProfileUpdate(userId, { plan_type: planType, plano: planType, is_pro: planType === 'pro', last_stripe_sync: new Date().toISOString() });
-  const { error } = await supabase.from('assinaturas').update({ plano: planType, valor: PLAN_PRICES[newPlanKey].amountCents / 100 }).eq('user_id', userId);
-  if (error) console.warn('[Stripe Gateway] Falha ao atualizar plano no Supabase:', error.message);
-  return res.status(200).json({ success: true, newPlanKey, planType });
+
+  // A mesma rotina usada na criação passa a ser a única fonte de sincronização
+  // da troca de plano. Ela atualiza perfil + linha exata da assinatura e falha
+  // explicitamente se o Supabase não puder liberar o novo acesso.
+  const customerId = typeof updatedSubscription.customer === 'string'
+    ? updatedSubscription.customer
+    : updatedSubscription.customer?.id;
+  if (!customerId) throw new Error('Customer Stripe não encontrado após a troca de plano.');
+
+  const synced = await syncStripeSubscriptionAccess(
+    userId,
+    updatedSubscription,
+    newPlanKey,
+    customerId,
+  );
+
+  return res.status(200).json({
+    success: true,
+    newPlanKey: synced.planKey,
+    planType: synced.planType,
+    status: synced.statusText,
+    nextBillingDate: synced.nextBillingDate,
+  });
 }
 
 async function cancelSubscription(req: VercelRequest, res: VercelResponse, body: any) {
@@ -660,10 +698,21 @@ async function cancelSubscription(req: VercelRequest, res: VercelResponse, body:
   const { data: profile } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle();
   if (!profile?.stripe_subscription_id) return res.status(400).json({ error: 'Assinatura Stripe não encontrada.' });
   const subscription: any = await getStripe().subscriptions.update(profile.stripe_subscription_id, { cancel_at_period_end: true });
-  await bestEffortProfileUpdate(userId, { subscription_status: 'cancelado', last_stripe_sync: new Date().toISOString() });
-  const { error } = await supabase.from('assinaturas').update({ status: 'cancelado' }).eq('user_id', userId);
-  if (error) console.warn('[Stripe Gateway] Falha ao marcar assinatura cancelada:', error.message);
-  return res.status(200).json({ success: true, cancelAtPeriodEnd: subscription.cancel_at_period_end });
+  const fallbackPlanKey: PlanKey = isPlanKey(subscription.metadata?.plan_key)
+    ? subscription.metadata.plan_key
+    : (String(profile?.plan_type || profile?.plano || '').toLowerCase() === 'basic' ? 'basic_monthly' : 'pro_monthly');
+  const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+  if (!customerId) throw new Error('Customer Stripe não encontrado ao programar o cancelamento.');
+
+  // cancel_at_period_end mantém a assinatura active/trialing até o vencimento.
+  // Não bloqueamos o usuário antes da data final prometida na interface.
+  const synced = await syncStripeSubscriptionAccess(userId, subscription, fallbackPlanKey, customerId);
+  return res.status(200).json({
+    success: true,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    status: synced.statusText,
+    nextBillingDate: synced.nextBillingDate,
+  });
 }
 
 async function reactivateSubscription(req: VercelRequest, res: VercelResponse, body: any) {
@@ -677,13 +726,18 @@ async function reactivateSubscription(req: VercelRequest, res: VercelResponse, b
   let subscription: any = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
   if (!['active', 'trialing'].includes(subscription.status)) return res.status(400).json({ error: 'Esta assinatura já encerrou. Escolha um plano para criar uma nova assinatura.' });
   subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, { cancel_at_period_end: false });
-  const periodEnd = getPeriodEndUnix(subscription);
-  const nextBillingDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
-  const statusText = subscription.status === 'trialing' ? 'trialing' : 'ativo';
-  await bestEffortProfileUpdate(userId, { subscription_status: statusText, next_billing_date: nextBillingDate, last_stripe_sync: new Date().toISOString() });
-  const { error } = await supabase.from('assinaturas').update({ status: statusText, data_expiracao: nextBillingDate }).eq('user_id', userId);
-  if (error) console.warn('[Stripe Gateway] Falha ao reativar no Supabase:', error.message);
-  return res.status(200).json({ success: true, status: statusText });
+  const fallbackPlanKey: PlanKey = isPlanKey(subscription.metadata?.plan_key)
+    ? subscription.metadata.plan_key
+    : (String(profile?.plan_type || profile?.plano || '').toLowerCase() === 'basic' ? 'basic_monthly' : 'pro_monthly');
+  const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+  if (!customerId) throw new Error('Customer Stripe não encontrado ao reativar a assinatura.');
+
+  const synced = await syncStripeSubscriptionAccess(userId, subscription, fallbackPlanKey, customerId);
+  return res.status(200).json({
+    success: true,
+    status: synced.statusText,
+    nextBillingDate: synced.nextBillingDate,
+  });
 }
 
 async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
