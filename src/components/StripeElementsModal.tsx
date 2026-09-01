@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, PlanKey, PLANS } from '../services/subscriptionService';
+import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, fetchSubscriptionDetails, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -184,7 +184,22 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
           }
         }
 
-        console.log('[StripeElementsModal Log] Assinatura ativada com sucesso no backend:', result);
+        // A criação da assinatura pode retornar `incomplete` quando o usuário já
+        // consumiu o trial e a cobrança precisa ser confirmada no navegador.
+        // Depois de confirmCardPayment, reconciliamos imediatamente com o Stripe
+        // antes de o AuthContext reler o perfil. Assim a liberação não depende do
+        // tempo de entrega do webhook customer.subscription.updated.
+        const reconciled = await fetchSubscriptionDetails(userId);
+        const reconciledStatus = String(reconciled?.status || '').toLowerCase();
+        if (!['trialing', 'ativo', 'active'].includes(reconciledStatus)) {
+          throw new Error(
+            reconciledStatus
+              ? `O pagamento foi processado, mas a assinatura ainda está com status ${reconciledStatus}. Atualize a página em instantes ou contate o suporte.`
+              : 'O pagamento foi processado, mas não foi possível confirmar a liberação da assinatura.'
+          );
+        }
+
+        console.log('[StripeElementsModal Log] Assinatura reconciliada e liberada:', { result, reconciled });
 
         toast.success('Assinatura ativada com sucesso!', {
           description: result.isTrial
