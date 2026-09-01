@@ -7447,6 +7447,17 @@ html:not(.dark) .clinical-tests-hub .clinical-test-subtitle-pill {
   color: #ffffff !important;
 }
 
+:root[data-theme] .subscription-theme .subscription-trial-counter {
+  background: rgba(15, 23, 42, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .subscription-theme .subscription-trial-counter {
+  background: rgba(15, 23, 42, 0.62) !important;
+  border-color: rgba(255, 255, 255, 0.48) !important;
+}
+
 :root[data-theme] .subscription-primary-dark {
   background-color: #0f172a !important;
   color: #ffffff !important;
