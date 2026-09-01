@@ -394,3 +394,170 @@ export const sendExercisePrescriptionEmail = async (
   }
 };
 
+/**
+ * Sends an email confirming the start of the 60-day free trial
+ */
+export const sendTrialStartedEmail = async (
+  email: string | undefined | null,
+  name: string,
+  planName: string,
+  trialEndDate: string,
+  monthlyAmount: string,
+  trialStartDate?: string,
+  periodicity?: string
+) => {
+  if (!email) return { success: false, error: 'Email não fornecido' };
+
+  const startFormatted = trialStartDate || new Date().toLocaleDateString('pt-BR');
+  const periodText = periodicity || 'Mensal (/mês)';
+  const cleanPlanName = planName || 'Plano PRO';
+
+  const html = generateFisioCareHubEmailHTML({
+    title: '🎉 Seu Premium está ativo!',
+    subtitle: 'Sua assinatura com 60 dias de teste gratuito foi confirmada com sucesso.',
+    preheader: 'Seu período gratuito de 60 dias no FisioCareHub começou.',
+    greetingName: name,
+    variant: 'payment',
+    contentHtml: `
+      <p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:25px;">
+        Sua assinatura do plano <strong>${escapeHtml(cleanPlanName)}</strong> foi confirmada e seu acesso Premium já está ativo.
+      </p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;margin:18px 0;">
+        <tr>
+          <td style="padding:16px 18px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:#2563eb;margin-bottom:4px;">Seu período gratuito</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;line-height:25px;font-weight:900;color:#1e3a8a;">60 dias de Premium sem cobrança.</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:21px;color:#475569;margin-top:4px;">
+              Durante esse período você terá acesso irrestrito a todos os recursos profissionais da plataforma para gerenciar atendimentos, prontuários, exercícios e captação de pacientes.
+            </div>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:18px 0 0;color:#475569;font-size:14px;line-height:22px;">
+        Após o período gratuito, será realizada a cobrança de <strong>${escapeHtml(monthlyAmount)} ${escapeHtml(periodText)}</strong>, conforme o plano escolhido. Você pode gerenciar ou cancelar sua assinatura a qualquer momento nas configurações da sua conta antes do término do teste.
+      </p>
+    `,
+    details: [
+      { label: 'Plano', value: cleanPlanName },
+      { label: 'Período de teste', value: '60 dias de acesso completo' },
+      { label: 'Início do trial', value: startFormatted },
+      { label: 'Término do trial', value: trialEndDate },
+      { label: 'Cobrança após o teste', value: `${monthlyAmount} (${periodText})`, helper: `Primeira cobrança prevista para ${trialEndDate}` },
+    ],
+    ctas: [{ label: 'ACESSAR MEU FISIOCAREHUB', href: 'https://fisiocarehub.company/dashboard' }],
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: `🎉 Seu Premium está ativo! (60 Dias Grátis) - FisioCareHub`,
+      html
+    });
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Trial started email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED to send trial started email:`, error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Sends an email confirming a subscription invoice payment
+ */
+export const sendSubscriptionPaidEmail = async (
+  email: string | undefined | null,
+  name: string,
+  planName: string,
+  amount: string,
+  nextBillingDate: string,
+  billingDate?: string,
+  periodicity?: string
+) => {
+  if (!email) return { success: false, error: 'Email não fornecido' };
+
+  const billDate = billingDate || new Date().toLocaleDateString('pt-BR');
+  const periodText = periodicity || 'Mensal (/mês)';
+  const cleanPlanName = planName || 'Plano PRO';
+
+  const html = generateFisioCareHubEmailHTML({
+    title: 'Pagamento da assinatura confirmado',
+    subtitle: 'Sua assinatura Premium continua 100% ativa.',
+    preheader: 'Confirmação de pagamento da sua assinatura FisioCareHub.',
+    greetingName: name,
+    variant: 'payment',
+    contentHtml: `
+      <p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:25px;">
+        Confirmamos que o pagamento da sua assinatura do plano <strong>${escapeHtml(cleanPlanName)}</strong> foi processado com sucesso. Seu acesso Premium continua ativo.
+      </p>
+      <p style="margin:0;color:#475569;font-size:14px;line-height:22px;">
+        Agradecemos pela sua confiança. Todos os recursos profissionais seguem liberados para o seu dia a dia clínico.
+      </p>
+    `,
+    details: [
+      { label: 'Plano contratado', value: cleanPlanName },
+      { label: 'Valor cobrado', value: amount },
+      { label: 'Data da cobrança', value: billDate },
+      { label: 'Periodicidade', value: periodText },
+      { label: 'Próxima renovação', value: nextBillingDate },
+    ],
+    ctas: [{ label: 'ACESSAR MEU FISIOCAREHUB', href: 'https://fisiocarehub.company/dashboard' }],
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: `Pagamento da assinatura confirmado - FisioCareHub`,
+      html
+    });
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Subscription paid email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED to send subscription paid email:`, error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Sends an email notifying of a failed subscription payment attempt
+ */
+export const sendSubscriptionFailedEmail = async (
+  email: string | undefined | null,
+  name: string,
+  planName: string,
+  amount: string
+) => {
+  if (!email) return { success: false, error: 'Email não fornecido' };
+
+  const html = generateFisioCareHubEmailHTML({
+    title: 'Problema no pagamento da assinatura',
+    subtitle: 'Não conseguimos processar a cobrança do seu plano.',
+    preheader: 'Aviso importante sobre sua assinatura FisioCareHub.',
+    greetingName: name,
+    variant: 'default',
+    contentHtml: `
+      <p style="margin:0 0 14px;">Houve uma falha ao tentar processar o pagamento de <strong>${escapeHtml(amount)}</strong> para a renovação do seu plano <strong>${escapeHtml(planName)}</strong>.</p>
+      <p style="margin:0 0 14px;">Por favor, verifique se o seu cartão cadastrado possui limite disponível ou atualize seus dados de pagamento para evitar a suspensão temporária dos seus recursos profissionais.</p>
+      <p style="margin:0;">Faremos uma nova tentativa automática em breve.</p>
+    `,
+    details: [
+      { label: 'Plano', value: planName },
+      { label: 'Valor', value: amount },
+      { label: 'Situação', value: 'Tentativa de cobrança não autorizada' },
+    ],
+    ctas: [{ label: 'Atualizar dados de pagamento', href: 'https://fisiocarehub.company/profile' }],
+  });
+
+  try {
+    await invokeFunction('Send-email', {
+      to: email,
+      subject: `Aviso: Falha no Pagamento da Assinatura - FisioCareHub`,
+      html
+    });
+    console.log(`[EmailService] [FLOW-AUDIT] SUCCESS: Subscription failed email sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[EmailService] [FLOW-AUDIT] FAILED to send subscription failed email:`, error);
+    return { success: false, error };
+  }
+};
+
