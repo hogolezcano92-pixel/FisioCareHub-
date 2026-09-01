@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { sendTrialStartedConfirmationEmailSafe } from '../services/subscriptionEmailHelper.js';
 
 type PlanKey = 'basic_monthly' | 'pro_monthly' | 'pro_semester' | 'pro_yearly';
 
@@ -557,6 +558,23 @@ async function createSubscription(req: VercelRequest, res: VercelResponse, body:
 
     step = 'sincronizando_supabase';
     const synced = await syncStripeSubscriptionAccess(userId, subscription, planKey, customerId, paymentMethod);
+
+    if (synced.isTrial && (email || userId)) {
+      const supabaseAdmin = getSupabaseAdmin();
+      sendTrialStartedConfirmationEmailSafe({
+        supabase: supabaseAdmin,
+        userId,
+        email,
+        userName,
+        planKey,
+        stripeSubscriptionId: subscription.id,
+        trialStart: synced.trialStart,
+        trialEnd: synced.trialEnd,
+        nextBillingDate: synced.nextBillingDate,
+      }).catch((err) => {
+        console.warn('[Stripe Subscription API] Falha não-bloqueante ao enviar email trial:', err);
+      });
+    }
 
     const pendingSetup: any = subscription.pending_setup_intent;
     const invoice: any = subscription.latest_invoice;
