@@ -189,8 +189,8 @@ export const CREDENTIAL_THEMES: Record<CredentialThemeId, CredentialThemeConfig>
     qrCardShadow: '0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
     qrHeaderCheck: '#4ade80',
     qrHeaderText: '#ffffff',
-    qrBoxBg: '#ffffff',
-    qrDarkColor: '#020617',
+    qrBoxBg: 'transparent',
+    qrDarkColor: '#ffffff',
     qrIdColor: '#38bdf8',
     qrSubColor: '#cbd5e1',
     footerBorder: 'rgba(56, 189, 248, 0.2)',
@@ -271,8 +271,8 @@ export const CREDENTIAL_THEMES: Record<CredentialThemeId, CredentialThemeConfig>
     qrCardShadow: '0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
     qrHeaderCheck: '#4ade80',
     qrHeaderText: '#ffffff',
-    qrBoxBg: '#ffffff',
-    qrDarkColor: '#1a0a03',
+    qrBoxBg: 'transparent',
+    qrDarkColor: '#ffffff',
     qrIdColor: '#fdba74',
     qrSubColor: '#fed7aa',
     footerBorder: 'rgba(251, 146, 60, 0.25)',
@@ -353,8 +353,8 @@ export const CREDENTIAL_THEMES: Record<CredentialThemeId, CredentialThemeConfig>
     qrCardShadow: '0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
     qrHeaderCheck: '#6ee7b7',
     qrHeaderText: '#ffffff',
-    qrBoxBg: '#ffffff',
-    qrDarkColor: '#021711',
+    qrBoxBg: 'transparent',
+    qrDarkColor: '#ffffff',
     qrIdColor: '#6ee7b7',
     qrSubColor: '#a7f3d0',
     footerBorder: 'rgba(52, 211, 153, 0.25)',
@@ -436,8 +436,8 @@ export const CREDENTIAL_THEMES: Record<CredentialThemeId, CredentialThemeConfig>
     qrCardShadow: '0 15px 35px rgba(126, 34, 206, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
     qrHeaderCheck: '#16a34a',
     qrHeaderText: '#6b21a8',
-    qrBoxBg: '#ffffff',
-    qrDarkColor: '#2e1065',
+    qrBoxBg: 'transparent',
+    qrDarkColor: '#3b0764',
     qrIdColor: '#1e1b4b',
     qrSubColor: '#6b21a8',
     footerBorder: 'rgba(147, 51, 234, 0.25)',
@@ -639,11 +639,11 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
 
       QRCode.toDataURL(publicProfileUrl, {
         errorCorrectionLevel: 'H',
-        margin: 2,
+        margin: 1,
         width: 400,
         color: {
           dark: theme.qrDarkColor,
-          light: '#ffffff',
+          light: '#00000000',
         },
       })
         .then((url) => {
@@ -941,17 +941,8 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
               )}
             </div>
 
-            {/* Central Glassmorphism Validation Panel */}
-            <div
-              className="flex w-full max-w-[270px] sm:max-w-[310px] flex-col items-center justify-center gap-1.5 rounded-[1.5rem] sm:rounded-[1.8rem] p-3 sm:p-4 backdrop-blur-xl"
-              style={{
-                background: theme.qrCardBg,
-                borderColor: theme.qrCardBorder,
-                borderWidth: '1.5px',
-                borderStyle: 'solid',
-                boxShadow: theme.qrCardShadow,
-              }}
-            >
+            {/* Central QR Validation Area (No background card box) */}
+            <div className="flex w-full flex-col items-center justify-center gap-1.5 py-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black" style={{ color: theme.qrHeaderCheck }}>
                   ✓
@@ -964,17 +955,15 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
                 </span>
               </div>
 
-              <div
-                className="flex h-[95px] w-[95px] sm:h-[125px] sm:w-[125px] items-center justify-center rounded-2xl p-2 shadow-lg"
-                style={{ background: theme.qrBoxBg }}
-              >
+              {/* QR Code directly on the card without background box */}
+              <div className="flex h-[105px] w-[105px] sm:h-[135px] sm:w-[135px] items-center justify-center p-0">
                 {activeQr ? (
                   <img
                     data-credential-qr="true"
                     src={activeQr}
                     alt="QR Code"
                     crossOrigin="anonymous"
-                    className="h-full w-full rounded-xl object-contain"
+                    className="h-full w-full object-contain filter drop-shadow-sm"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-center text-[8px] font-black uppercase text-slate-500">
@@ -984,7 +973,7 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
               </div>
 
               <p
-                className="max-w-[250px] truncate text-center text-[8.5px] font-black tracking-wider sm:text-[10px] uppercase mt-0.5"
+                className="max-w-[280px] truncate text-center text-[8.5px] font-black tracking-wider sm:text-[10px] uppercase mt-0.5"
                 style={{ color: theme.qrIdColor }}
               >
                 ID DA CREDENCIAL - {credentialCode}
@@ -1543,11 +1532,11 @@ export default function ProfessionalCredentialCard({
     const targetUrl = publicProfileUrl || 'https://fisiocarehub.app';
     QRCode.toDataURL(targetUrl, {
       errorCorrectionLevel: 'H',
-      margin: 2,
+      margin: 1,
       width: 600,
       color: {
         dark: currentTheme.qrDarkColor,
-        light: '#ffffff',
+        light: '#00000000',
       },
     })
       .then((url) => {
@@ -1598,11 +1587,11 @@ export default function ProfessionalCredentialCard({
           `${typeof window !== 'undefined' ? window.location.origin : 'https://fisiocarehub.app'}/physio/${profileId || 'preview'}`;
         const generatedQr = await QRCode.toDataURL(qrTarget, {
           errorCorrectionLevel: 'H',
-          margin: 2,
+          margin: 1,
           width: 600,
           color: {
             dark: currentTheme.qrDarkColor,
-            light: '#ffffff',
+            light: '#00000000',
           },
         });
         if (generatedQr) {
