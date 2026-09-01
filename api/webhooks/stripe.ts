@@ -2,6 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { generateFisioCareHubEmailHTML } from '../_shared/fisioEmailTemplate.js';
+import {
+  sendTrialStartedConfirmationEmailSafe,
+  sendSubscriptionPaidConfirmationEmailSafe,
+} from '../../src/services/subscriptionEmailHelper.js';
 
 const getEnv = (key: string, fallback = ''): string => {
   const value = process.env[key];
@@ -683,6 +687,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // O histórico desta assinatura ainda é salvo/atualizado pelo próprio
         // stripe_subscription_id, sem tocar no registro da assinatura atual.
         await persistSubscriptionRecord(targetUserId, syncData.recordPayload);
+
+        // Disparo seguro e deduplicado do e-mail de início do trial
+        if (subscription.status === 'trialing') {
+          const { data: profData } = await supabase.from('perfis').select('email, nome_completo, plan_type').eq('id', targetUserId).maybeSingle();
+          if (profData?.email) {
+            await sendTrialStartedConfirmationEmailSafe({
+              supabase,
+              userId: targetUserId,
+              email: profData.email,
+              userName: profData.nome_completo,
+              planKey: subscription.metadata?.plan_key || profData.plan_type,
+              stripeSubscriptionId: subscription.id,
+              trialStart: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
+              trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+              nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+            });
+          }
+        }
       }
     }
 
@@ -787,6 +809,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             last_billing_date: new Date().toISOString(),
             last_stripe_sync: new Date().toISOString()
           }).eq('stripe_subscription_id', invoiceSubscriptionId);
+
+          if (profile.email && invoice.amount_paid > 0) {
+            const nextBillingDateStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR');
+            await sendSubscriptionPaidConfirmationEmailSafe({
+              supabase,
+              userId: profile.id,
+              email: profile.email,
+              userName: profile.nome_completo,
+              planKey: profile.plan_key || profile.plan_type,
+              stripeSubscriptionId: invoiceSubscriptionId,
+              invoiceId: invoice.id,
+              amountPaidCents: invoice.amount_paid,
+              billingDate: new Date(),
+              nextBillingDate: nextBillingDateStr,
+            });
+          }
         }
       }
     }
