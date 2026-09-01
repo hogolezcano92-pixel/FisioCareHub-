@@ -14,8 +14,10 @@ import {
   Download,
   ExternalLink,
   Home,
+  Loader2,
   Mail,
   MapPin,
+  Maximize2,
   MessageCircle,
   Palette,
   QrCode,
@@ -34,6 +36,7 @@ import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 import { cn, resolveStorageUrl } from '../lib/utils';
+import { renderCredentialToBlob } from '../services/credentialCanvasRenderer';
 
 // ==========================================
 // THEME DEFINITIONS & COLOR PALETTES
@@ -475,8 +478,7 @@ const createAvatarFallback = (name: string, theme: CredentialThemeConfig) => {
   const textColor = isLight ? '#6b21a8' : '#ffffff';
   const subColor = isLight ? '#7c3aed' : '#c4b5fd';
 
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
       <defs>
         <linearGradient id="avGrad" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="${bg1}" />
@@ -492,8 +494,16 @@ const createAvatarFallback = (name: string, theme: CredentialThemeConfig) => {
       <text x="250" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" letter-spacing="6" fill="${subColor}">
         FISIOCAREHUB
       </text>
-    </svg>
-  `)}`;
+    </svg>`;
+
+  try {
+    if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+      const base64 = window.btoa(unescape(encodeURIComponent(svg.trim())));
+      return `data:image/svg+xml;base64,${base64}`;
+    }
+  } catch {}
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
 const fileNameFromName = (value: string) => {
@@ -510,7 +520,16 @@ const imageUrlToDataUrl = async (url: string): Promise<string | null> => {
   if (!url) return null;
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
-  // Strategy 1: Fetch as blob and convert via FileReader
+  const blobToDataUrl = (blob: Blob): Promise<string | null> => {
+    return new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  // Strategy 1: Direct CORS fetch
   try {
     const response = await fetch(url, {
       mode: 'cors',
@@ -519,18 +538,26 @@ const imageUrlToDataUrl = async (url: string): Promise<string | null> => {
     if (response.ok) {
       const blob = await response.blob();
       if (blob.type.startsWith('image/')) {
-        const dataUrl = await new Promise<string | null>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(blob);
-        });
+        const dataUrl = await blobToDataUrl(blob);
         if (dataUrl) return dataUrl;
       }
     }
   } catch {}
 
-  // Strategy 2: Image object with crossOrigin anonymous + Canvas (bypasses some restrictive mode headers)
+  // Strategy 2: Server-side Image Proxy (bypasses CORS restrictions)
+  try {
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    const proxyRes = await fetch(proxyUrl);
+    if (proxyRes.ok) {
+      const blob = await proxyRes.blob();
+      if (blob.type.startsWith('image/')) {
+        const dataUrl = await blobToDataUrl(blob);
+        if (dataUrl) return dataUrl;
+      }
+    }
+  } catch {}
+
+  // Strategy 3: Image object with crossOrigin anonymous + Canvas
   try {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -688,24 +715,12 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
             <circle cx="100" cy="100" r="70" fill={`url(#sphereTop_${theme.id})`} />
           </svg>
 
-          {/* Left Side 3D Cone & Torus Ring */}
+          {/* Left Side 3D Torus Ring */}
           <svg
             className="absolute -left-12 top-1/4 w-40 h-52 sm:w-52 sm:h-68 opacity-85"
             viewBox="0 0 160 220"
             fill="none"
           >
-            <defs>
-              <linearGradient id={`coneLight_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
-                {theme.coneLightStops.map((stop, idx) => (
-                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
-                ))}
-              </linearGradient>
-              <linearGradient id={`coneShadow_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
-                {theme.coneShadowStops.map((stop, idx) => (
-                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
-                ))}
-              </linearGradient>
-            </defs>
             <ellipse
               cx="60"
               cy="130"
@@ -715,11 +730,9 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
               strokeWidth="8"
               fill="none"
             />
-            <polygon points="85,30 20,170 85,185" fill={`url(#coneLight_${theme.id})`} />
-            <polygon points="85,30 85,185 140,160" fill={`url(#coneShadow_${theme.id})`} />
           </svg>
 
-          {/* Bottom Right 3D Sphere & Prism */}
+          {/* Bottom Right 3D Sphere */}
           <svg
             className="absolute -right-12 -bottom-12 w-48 h-52 sm:w-60 sm:h-64 opacity-85"
             viewBox="0 0 200 200"
@@ -731,13 +744,7 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
                   <stop key={idx} offset={stop.offset} stopColor={stop.color} />
                 ))}
               </radialGradient>
-              <linearGradient id={`prismGrad_${theme.id}`} x1="0" y1="0" x2="1" y2="1">
-                {theme.prismStops.map((stop, idx) => (
-                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
-                ))}
-              </linearGradient>
             </defs>
-            <polygon points="110,40 190,140 100,180" fill={`url(#prismGrad_${theme.id})`} opacity="0.9" />
             <circle cx="70" cy="120" r="56" fill={`url(#sphereBottom_${theme.id})`} />
           </svg>
 
@@ -966,6 +973,7 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
                     data-credential-qr="true"
                     src={activeQr}
                     alt="QR Code"
+                    crossOrigin="anonymous"
                     className="h-full w-full rounded-xl object-contain"
                   />
                 ) : (
@@ -1271,6 +1279,160 @@ function ShareModal({
 }
 
 // ==========================================
+// FULL-VIEW CREDENTIAL MODAL WITH AUTO-DOWNLOAD
+// ==========================================
+
+export interface FullViewCredentialModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  theme: CredentialThemeConfig;
+  professionalName: string;
+  specialty: string;
+  crefito: string;
+  city: string;
+  serviceLabel: string;
+  issuedAt: string;
+  credentialCode: string;
+  approved: boolean;
+  isPro?: boolean;
+  publicProfileUrl: string;
+  avatarSrc: string;
+  avatarFallbackSrc: string;
+  qrDataUrl?: string;
+  onDownload: () => void;
+  downloading: boolean;
+  onOpenShare: () => void;
+}
+
+export function FullViewCredentialModal({
+  isOpen,
+  onClose,
+  theme,
+  professionalName,
+  specialty,
+  crefito,
+  city,
+  serviceLabel,
+  issuedAt,
+  credentialCode,
+  approved,
+  isPro,
+  publicProfileUrl,
+  avatarSrc,
+  avatarFallbackSrc,
+  qrDataUrl,
+  onDownload,
+  downloading,
+  onOpenShare,
+}: FullViewCredentialModalProps) {
+  // Trigger automatic download when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      onDownload();
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fullview-modal-title"
+    >
+      <div
+        className="relative w-full max-w-[440px] my-auto flex flex-col items-center gap-3.5 py-2 text-slate-900 dark:text-slate-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Control Bar */}
+        <div className="w-full flex items-center justify-between px-3.5 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-2xl py-2.5 shadow-xl text-white">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 id="fullview-modal-title" className="text-xs font-black tracking-wide uppercase">
+                Visualização Oficial
+              </h3>
+              <p className="text-[10px] text-slate-400 font-medium">
+                {downloading ? 'Iniciando download automático...' : 'Credencial pronta para download'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar visualização"
+            className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* The Exact Credential Card in Mobile-Optimized Size */}
+        <div className="w-full shadow-2xl rounded-[2.25rem] sm:rounded-[2.75rem] overflow-hidden">
+          <CredentialCardInner
+            theme={theme}
+            professionalName={professionalName}
+            specialty={specialty}
+            crefito={crefito}
+            city={city}
+            serviceLabel={serviceLabel}
+            issuedAt={issuedAt}
+            credentialCode={credentialCode}
+            approved={approved}
+            isPro={isPro}
+            publicProfileUrl={publicProfileUrl}
+            avatarSrc={avatarSrc}
+            avatarFallbackSrc={avatarFallbackSrc}
+            qrDataUrl={qrDataUrl}
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="w-full grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={downloading}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-sky-600/30 hover:bg-sky-500 active:scale-[0.98] transition-all disabled:opacity-60"
+          >
+            {downloading ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                <span>Baixando...</span>
+              </>
+            ) : (
+              <>
+                <Download size={15} />
+                <span>Baixar credencial</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenShare();
+            }}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-slate-900/90 px-4 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-slate-800 active:scale-[0.98] transition-all"
+          >
+            <Share2 size={15} />
+            <span>Compartilhar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
 // MAIN COMPONENT EXPORT
 // ==========================================
 
@@ -1302,6 +1464,7 @@ export default function ProfessionalCredentialCard({
 
   const [downloading, setDownloading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isFullViewOpen, setIsFullViewOpen] = useState(false);
   const [avatarDataUrl, setAvatarDataUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
@@ -1425,11 +1588,6 @@ export default function ProfessionalCredentialCard({
 
   // Capture the EXACT on-screen credential card with high-resolution scale
   const generateCardBlob = async (): Promise<Blob> => {
-    const cardEl = cardRef.current;
-    if (!cardEl) {
-      throw new Error('Componente da credencial não encontrado.');
-    }
-
     // PREPARATION PHASE:
     // 1. Ensure QR Code is generated as high-resolution Data URL (600x600)
     let effectiveQr = qrDataUrl;
@@ -1470,77 +1628,49 @@ export default function ProfessionalCredentialCard({
       effectiveAvatar = avatarFallbackUrl;
     }
 
-    // 3. Directly assign verified Data URLs to card DOM images to ensure zero CORS or network latency issues
+    // 3. PRIMARY EXPORT: Use robust Pure Canvas 2D Renderer (Guarantees Photo & QR code rendering)
+    try {
+      const canvasBlob = await renderCredentialToBlob({
+        theme: currentTheme,
+        professionalName,
+        specialty,
+        crefito,
+        city,
+        serviceLabel,
+        issuedAt,
+        credentialCode,
+        approved,
+        isPro,
+        avatarUrl: effectiveAvatar || resolvedAvatarUrl || avatarFallbackUrl,
+        qrDataUrl: effectiveQr,
+        publicProfileUrl,
+      });
+
+      if (canvasBlob && canvasBlob.size > 5000) {
+        return canvasBlob;
+      }
+    } catch (canvasErr) {
+      console.warn('Canvas 2D renderer warning, attempting DOM fallback:', canvasErr);
+    }
+
+    // 4. SECONDARY FALLBACK: DOM to image capture
+    const cardEl = cardRef.current;
+    if (!cardEl) {
+      throw new Error('Componente da credencial não encontrado.');
+    }
+
     const avatarImg = cardEl.querySelector<HTMLImageElement>('img[data-credential-avatar]');
     if (avatarImg && effectiveAvatar) {
       avatarImg.src = effectiveAvatar;
+      avatarImg.setAttribute('src', effectiveAvatar);
     }
 
     const qrImg = cardEl.querySelector<HTMLImageElement>('img[data-credential-qr]');
     if (qrImg && effectiveQr) {
       qrImg.src = effectiveQr;
+      qrImg.setAttribute('src', effectiveQr);
     }
 
-    // 4. Wait for all <img> elements inside cardEl to complete and decode
-    const allImages = Array.from(cardEl.querySelectorAll('img'));
-    await Promise.all(
-      allImages.map(async (img) => {
-        if (!img.complete || img.naturalWidth === 0) {
-          await new Promise<void>((resolve) => {
-            const timer = setTimeout(resolve, 2500);
-            img.onload = () => {
-              clearTimeout(timer);
-              resolve();
-            };
-            img.onerror = () => {
-              clearTimeout(timer);
-              resolve();
-            };
-          });
-        }
-        try {
-          await img.decode?.();
-        } catch {}
-      }),
-    );
-
-    // 5. Wait for web fonts to be completely ready
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      try {
-        await document.fonts.ready;
-      } catch {}
-    }
-
-    // 6. Wait for animation frame and layout stabilization
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(resolve, 120);
-        });
-      });
-    });
-
-    // CAPTURE PHASE:
-    // 1. Primary: Use toPng from html-to-image which natively supports CSS gradients and SVG filters
-    try {
-      const dataUrl = await toPng(cardEl, {
-        pixelRatio: 3,
-        cacheBust: false,
-        skipAutoScale: true,
-      });
-
-      if (dataUrl && dataUrl.length > 500) {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        if (blob && blob.size > 5000) {
-          return blob;
-        }
-      }
-    } catch (err) {
-      console.warn('html-to-image export warning, attempting fallback:', err);
-    }
-
-    // 2. Fallback: html2canvas
     const fallbackCanvas = await html2canvas(cardEl, {
       scale: 3,
       useCORS: true,
@@ -1550,6 +1680,26 @@ export default function ProfessionalCredentialCard({
       imageTimeout: 15000,
       scrollX: 0,
       scrollY: 0,
+      onclone: (clonedDoc) => {
+        const clonedCard = clonedDoc.querySelector('[data-credential-card]');
+        if (clonedCard) {
+          const clonedAvatar = clonedCard.querySelector<HTMLImageElement>('img[data-credential-avatar]');
+          if (clonedAvatar && effectiveAvatar) {
+            clonedAvatar.src = effectiveAvatar;
+            clonedAvatar.setAttribute('src', effectiveAvatar);
+          }
+          const clonedQr = clonedCard.querySelector<HTMLImageElement>('img[data-credential-qr]');
+          if (clonedQr && effectiveQr) {
+            clonedQr.src = effectiveQr;
+            clonedQr.setAttribute('src', effectiveQr);
+          }
+          const blurElements = clonedCard.querySelectorAll<HTMLElement>('.backdrop-blur-xl, .backdrop-blur-sm, .backdrop-blur-md');
+          blurElements.forEach((el) => {
+            el.style.backdropFilter = 'none';
+            (el.style as any).webkitBackdropFilter = 'none';
+          });
+        }
+      },
     });
 
     if (!fallbackCanvas) {
@@ -1717,26 +1867,69 @@ export default function ProfessionalCredentialCard({
         </div>
       </div>
 
-      {/* On-Screen Credential Component */}
+      {/* On-Screen Credential Component (Clickable to open full-view and download) */}
       <div className="relative z-10 mx-auto w-full max-w-[440px]">
-        <CredentialCardInner
-          ref={cardRef}
-          theme={currentTheme}
-          professionalName={professionalName}
-          specialty={specialty}
-          crefito={crefito}
-          city={city}
-          serviceLabel={serviceLabel}
-          issuedAt={issuedAt}
-          credentialCode={credentialCode}
-          approved={approved}
-          isPro={isPro}
-          publicProfileUrl={publicProfileUrl}
-          avatarSrc={finalAvatarSrc}
-          avatarFallbackSrc={avatarFallbackUrl}
-          qrDataUrl={qrDataUrl}
-        />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setIsFullViewOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsFullViewOpen(true);
+            }
+          }}
+          className="group relative cursor-pointer rounded-[2.25rem] sm:rounded-[2.75rem] transition-all duration-300 hover:scale-[1.012] active:scale-[0.988] focus:outline-none focus:ring-4 focus:ring-sky-500/30"
+          aria-label="Toque para abrir a credencial digital completa e baixar"
+        >
+          {/* Subtle click indicator badge */}
+          <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-1.5 rounded-full bg-slate-950/75 px-3 py-1 text-[10px] font-bold text-white shadow-md backdrop-blur-md opacity-90 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105 border border-white/10 pointer-events-none">
+            <Maximize2 size={11} className="text-sky-400" />
+            <span>Toque para abrir</span>
+          </div>
+
+          <CredentialCardInner
+            ref={cardRef}
+            theme={currentTheme}
+            professionalName={professionalName}
+            specialty={specialty}
+            crefito={crefito}
+            city={city}
+            serviceLabel={serviceLabel}
+            issuedAt={issuedAt}
+            credentialCode={credentialCode}
+            approved={approved}
+            isPro={isPro}
+            publicProfileUrl={publicProfileUrl}
+            avatarSrc={finalAvatarSrc}
+            avatarFallbackSrc={avatarFallbackUrl}
+            qrDataUrl={qrDataUrl}
+          />
+        </div>
       </div>
+
+      {/* Full-View Credential Modal with Auto-Download & Fallback */}
+      <FullViewCredentialModal
+        isOpen={isFullViewOpen}
+        onClose={() => setIsFullViewOpen(false)}
+        theme={currentTheme}
+        professionalName={professionalName}
+        specialty={specialty}
+        crefito={crefito}
+        city={city}
+        serviceLabel={serviceLabel}
+        issuedAt={issuedAt}
+        credentialCode={credentialCode}
+        approved={approved}
+        isPro={isPro}
+        publicProfileUrl={publicProfileUrl}
+        avatarSrc={finalAvatarSrc}
+        avatarFallbackSrc={avatarFallbackUrl}
+        qrDataUrl={qrDataUrl}
+        onDownload={handleDownloadCredential}
+        downloading={downloading}
+        onOpenShare={handleOpenShare}
+      />
 
       {/* Interactive Multi-App Share Modal */}
       <ShareModal

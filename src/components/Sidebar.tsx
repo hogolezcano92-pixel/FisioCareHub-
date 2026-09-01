@@ -140,7 +140,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     {
       title: t('nav.account'),
       items: [
-        ...(isApproved ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
+        ...(isApproved ? [
+          { name: t('nav.profile'), path: '/profile', icon: User },
+          ...(isPhysio ? [{ name: 'Meu Credencial', path: '/profile?tab=credential', icon: ShieldCheck }] : [])
+        ] : []),
         { name: profile?.tipo_usuario === 'paciente' ? t('nav.patient_guide') : t('nav.guide'), path: '/guia', icon: BookOpen },
         { name: t('nav.about'), path: '/sobre', icon: Info },
         { name: t('nav.help'), path: '#help', icon: HelpCircle },
