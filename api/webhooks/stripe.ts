@@ -15,7 +15,27 @@ const getEnv = (key: string, fallback = ''): string => {
   return trimmed;
 };
 
-const supabaseUrl = getEnv('SUPABASE_URL', getEnv('VITE_SUPABASE_URL', 'https://exciqetztunqgxbwwodo.supabase.co'));
+const normalizeSupabaseUrl = (value: string): string => {
+  const raw = value.trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[a-z0-9]{20}$/i.test(raw)) return `https://${raw}.supabase.co`;
+  if (/^[a-z0-9-]+\.supabase\.co$/i.test(raw)) return `https://${raw}`;
+  return raw;
+};
+
+const isValidHttpUrl = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+
+const supabaseUrl = [getEnv('SUPABASE_URL'), getEnv('VITE_SUPABASE_URL'), 'https://exciqetztunqgxbwwodo.supabase.co']
+  .map(normalizeSupabaseUrl)
+  .find(isValidHttpUrl) || 'https://exciqetztunqgxbwwodo.supabase.co';
 const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 const supabase: any = createClient<any>(supabaseUrl, supabaseServiceRoleKey);
 
@@ -701,7 +721,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               stripeSubscriptionId: subscription.id,
               trialStart: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
               trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
-              nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+              // Stripe API atual expõe o período no SubscriptionItem. A rotina
+              // de sincronização já normaliza versões antigas e novas.
+              nextBillingDate: syncData.recordPayload.next_billing_date,
             });
           }
         }
