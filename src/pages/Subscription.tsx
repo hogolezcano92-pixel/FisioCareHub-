@@ -160,8 +160,8 @@ export default function Subscription() {
 
   if (profile?.tipo_usuario === 'paciente') {
     return (
-      <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-sky-50/80 p-10 rounded-3xl border border-sky-100 shadow-xl">
+      <div className="subscription-theme subscription-page min-h-screen max-w-4xl mx-auto py-12 px-4 text-center">
+        <div className="subscription-card p-10 rounded-3xl border border-sky-100 shadow-xl">
           <ShieldCheck size={56} className="text-sky-600 mx-auto mb-4" />
           <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Você possui acesso VIP Gratuito!</h2>
           <p className="text-slate-600 max-w-xl mx-auto text-base leading-relaxed font-medium">
@@ -177,7 +177,7 @@ export default function Subscription() {
   const isBlocked = subDetails?.status === 'expirado' || subDetails?.status === 'past_due';
 
   return (
-    <div className="min-h-screen bg-slate-50/60 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="subscription-theme subscription-page min-h-screen py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
 
         {/* Header Title */}
@@ -199,7 +199,7 @@ export default function Subscription() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-600/15 relative overflow-hidden"
+            className="subscription-on-color bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-600/15 relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
@@ -232,7 +232,7 @@ export default function Subscription() {
 
         {/* Card de Assinatura Atual (se possui assinatura) */}
         {isSubscriptionActive && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+          <div className="subscription-card bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-sky-100 text-sky-700 rounded-2xl flex items-center justify-center font-black">
@@ -341,7 +341,7 @@ export default function Subscription() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               onSubmit={handleKeyActivation}
-              className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-3 shadow-sm"
+              className="subscription-card p-4 bg-white border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-3 shadow-sm"
             >
               <input
                 type="text"
@@ -353,7 +353,7 @@ export default function Subscription() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                className="subscription-primary-dark w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'Ativar Chave'}
               </button>
@@ -371,13 +371,13 @@ export default function Subscription() {
                 <div
                   key={pKey}
                   className={cn(
-                    "bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between relative shadow-sm hover:shadow-md",
+                    "subscription-card bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between relative shadow-sm hover:shadow-md",
                     isProMonthly ? "border-sky-500 ring-2 ring-sky-500/20" : "border-slate-200",
                     isCurrent && "bg-sky-50/30 border-sky-300"
                   )}
                 >
                   {plan.badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                    <span className="subscription-on-color absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
                       {plan.badge}
                     </span>
                   )}
@@ -429,8 +429,8 @@ export default function Subscription() {
                         isCurrent
                           ? "bg-emerald-100 text-emerald-800 cursor-default"
                           : isProMonthly
-                          ? "bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20"
-                          : "bg-slate-900 hover:bg-slate-800 text-white"
+                          ? "subscription-on-color bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20"
+                          : "subscription-primary-dark bg-slate-900 hover:bg-slate-800 text-white"
                       )}
                     >
                       {isCurrent ? (
@@ -451,7 +451,7 @@ export default function Subscription() {
         </div>
 
         {/* FAQs Section */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4">
+        <div className="subscription-card bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
             <HelpCircle size={20} className="text-sky-600" /> Perguntas Frequentes sobre o Trial de 60 Dias
           </h3>
@@ -522,7 +522,7 @@ export default function Subscription() {
       {/* Modal Confirmação de Cancelamento */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+          <div className="subscription-theme subscription-card bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
             <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
               <AlertCircle size={24} />
             </div>
@@ -542,7 +542,7 @@ export default function Subscription() {
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-md shadow-rose-600/20"
+                className="subscription-on-color flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-md shadow-rose-600/20"
               >
                 {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Sim, Cancelar'}
               </button>
