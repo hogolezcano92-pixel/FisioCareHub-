@@ -5,8 +5,24 @@ const normalizePlanValue = (value?: unknown): string => {
   return value.trim().toLowerCase();
 };
 
+const getAuthoritativeSubscription = (subscription?: any | null, profile?: any | null): any | null => {
+  if (!subscription) return null;
+
+  const profileSubscriptionId = normalizePlanValue(profile?.stripe_subscription_id);
+  const rowSubscriptionId = normalizePlanValue(subscription?.stripe_subscription_id);
+
+  // Se ambos os lados identificam contratos diferentes, a linha recebida é
+  // histórica e não pode sobrepor o plano/status do contrato atual do perfil.
+  if (profileSubscriptionId && rowSubscriptionId && profileSubscriptionId !== rowSubscriptionId) {
+    return null;
+  }
+
+  return subscription;
+};
+
 const isActiveSubscription = (subscription?: any | null, profile?: any | null): boolean => {
-  const subStatus = normalizePlanValue(subscription?.status);
+  const currentSubscription = getAuthoritativeSubscription(subscription, profile);
+  const subStatus = normalizePlanValue(currentSubscription?.status);
   const profileStatus = normalizePlanValue(profile?.subscription_status);
   const status = subStatus || profileStatus;
 
@@ -16,7 +32,7 @@ const isActiveSubscription = (subscription?: any | null, profile?: any | null): 
   }
 
   // If trial_end exists and is in the future, allow access
-  const trialEnd = subscription?.trial_end || profile?.trial_end;
+  const trialEnd = currentSubscription?.trial_end || profile?.trial_end;
   if (trialEnd) {
     const endTime = new Date(trialEnd).getTime();
     if (!isNaN(endTime) && endTime > Date.now() && !['expirado', 'cancelado', 'canceled', 'bloqueado', 'past_due'].includes(status)) {
@@ -28,12 +44,13 @@ const isActiveSubscription = (subscription?: any | null, profile?: any | null): 
 };
 
 const getSubscriptionPlan = (subscription?: any | null, profile?: any | null): UserPlan | null => {
-  if (!isActiveSubscription(subscription, profile)) return null;
+  const currentSubscription = getAuthoritativeSubscription(subscription, profile);
+  if (!isActiveSubscription(currentSubscription, profile)) return null;
 
   const rawPlan = normalizePlanValue(
-    subscription?.plano ||
-    subscription?.plan_type ||
-    subscription?.tipo_plano ||
+    currentSubscription?.plano ||
+    currentSubscription?.plan_type ||
+    currentSubscription?.tipo_plano ||
     profile?.plan_type ||
     profile?.plano
   );
@@ -48,7 +65,8 @@ const getSubscriptionPlan = (subscription?: any | null, profile?: any | null): U
 export const getEffectivePlan = (profile?: any | null, subscription?: any | null): UserPlan => {
   if (profile?.tipo_usuario === 'admin') return 'admin';
 
-  const subStatus = normalizePlanValue(subscription?.status);
+  const currentSubscription = getAuthoritativeSubscription(subscription, profile);
+  const subStatus = normalizePlanValue(currentSubscription?.status);
   const profileStatus = normalizePlanValue(profile?.subscription_status);
 
   // A linha de assinatura é a fonte mais específica quando está carregada.
@@ -58,7 +76,7 @@ export const getEffectivePlan = (profile?: any | null, subscription?: any | null
   const isBlockedOrExpired = ['expirado', 'past_due', 'cancelado', 'canceled', 'bloqueado'].includes(authoritativeStatus);
 
   // Check if trial has expired
-  const trialEnd = subscription?.trial_end || profile?.trial_end;
+  const trialEnd = currentSubscription?.trial_end || profile?.trial_end;
   const isTrialExpired = trialEnd ? new Date(trialEnd).getTime() <= Date.now() : false;
   const hasPaidActiveStatus = ['ativo', 'active'].includes(authoritativeStatus);
 
@@ -66,7 +84,7 @@ export const getEffectivePlan = (profile?: any | null, subscription?: any | null
     return 'free';
   }
 
-  const activePlan = getSubscriptionPlan(subscription, profile);
+  const activePlan = getSubscriptionPlan(currentSubscription, profile);
   if (activePlan) return activePlan;
 
   // Compatibility for legacy marked PRO users without explicit cancellation
